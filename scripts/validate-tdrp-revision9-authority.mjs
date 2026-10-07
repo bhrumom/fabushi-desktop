@@ -82,6 +82,12 @@ const gm=parseGitmodules(gmRaw);
 const pins=new Map(lock.direct_gitlinks.map(x=>[x.path,x]));
 fail(pins.size===links.length,'lock/direct gitlink cardinality mismatch');
 const nested=[];
+const recursiveInventory=[
+  ...tree.filter(e=>e.type!=='tree').map(e=>({
+    repository:u.repository,commit:u.commit,scope:'root',path:e.path,mode:e.mode,type:e.type,object:e.sha,size:e.size??null
+  }))
+];
+const directComponentCounts=[];
 for (const g of links) {
   const p=pins.get(g.path);
   fail(p && p.commit===g.sha,'gitlink pin mismatch '+g.path);
@@ -89,6 +95,11 @@ for (const g of links) {
   fail(repo===p.repository,'gitlink repository mismatch '+g.path);
   const td=await ghTree(repo,g.sha);
   fail(td.truncated===false,'truncated direct gitlink '+g.path);
+  const componentEntries=(td.tree||[]).filter(e=>e.type!=='tree');
+  directComponentCounts.push({mount:g.path,repository:repo,commit:g.sha,entries:componentEntries.length});
+  recursiveInventory.push(...componentEntries.map(e=>({
+    repository:repo,commit:g.sha,scope:'direct-gitlink',mount:g.path,path:e.path,mode:e.mode,type:e.type,object:e.sha,size:e.size??null
+  })));
   for (const e of td.tree||[]) if (e.mode==='160000') nested.push({parent:`${repo}@${g.sha}`,path:e.path,commit:e.sha});
 }
 for (const k of lock.known_nested_gitlinks.filter(x=>!x.repository.startsWith('gitlab.com/'))) {
@@ -96,6 +107,18 @@ for (const k of lock.known_nested_gitlinks.filter(x=>!x.repository.startsWith('g
 }
 const unexpected=nested.filter(n=>!lock.known_nested_gitlinks.some(k=>k.parent===n.parent&&k.path===n.path&&k.commit===n.commit));
 fail(unexpected.length===0,'unexpected nested gitlinks '+JSON.stringify(unexpected));
+
+const githubNestedCounts=[];
+for (const k of lock.known_nested_gitlinks.filter(x=>!x.repository.startsWith('gitlab.com/'))) {
+  const td=await ghTree(k.repository,k.commit);
+  fail(td.truncated===false,'truncated nested gitlink '+k.repository+'@'+k.commit);
+  const entries=(td.tree||[]).filter(e=>e.type!=='tree');
+  githubNestedCounts.push({parent:k.parent,path:k.path,repository:k.repository,commit:k.commit,entries:entries.length});
+  recursiveInventory.push(...entries.map(e=>({
+    repository:k.repository,commit:k.commit,scope:'nested-gitlink',parent:k.parent,mount:k.path,path:e.path,mode:e.mode,type:e.type,object:e.sha,size:e.size??null
+  })));
+  fail(!(td.tree||[]).some(e=>e.mode==='160000'),'known GitHub nested gitlink gained an untracked deeper gitlink '+k.repository+'@'+k.commit);
+}
 
 const cppgir=lock.known_nested_gitlinks.find(x=>x.repository==='gitlab.com/mnauw/cppgir');
 fail(cppgir,'cppgir nested pin missing');
@@ -106,9 +129,18 @@ const cppModules=parseGitmodules(await gitlabRaw('mnauw/cppgir',cppgir.commit,'.
 const childPath=cppNested[0].path;
 const childRepo=ghRepo(cppModules.get(childPath)||'');
 fail(childRepo,'cppgir nested gitlink is not a resolvable GitHub repository');
+recursiveInventory.push(...cppTree.filter(e=>e.type!=='tree').map(e=>({
+  repository:'gitlab.com/mnauw/cppgir',commit:cppgir.commit,scope:'nested-gitlink',parent:cppgir.parent,mount:cppgir.path,
+  path:e.path,mode:e.mode??null,type:e.type,object:e.id,size:null
+})));
 const childTree=await ghTree(childRepo,cppNested[0].id);
 fail(childTree.truncated===false,'cppgir child recursive tree truncated');
 fail(!(childTree.tree||[]).some(e=>e.mode==='160000'),'cppgir child gained a further nested gitlink');
+const childEntries=(childTree.tree||[]).filter(e=>e.type!=='tree');
+recursiveInventory.push(...childEntries.map(e=>({
+  repository:childRepo,commit:cppNested[0].id,scope:'nested-gitlink-child',parent:'gitlab.com/mnauw/cppgir@'+cppgir.commit,mount:childPath,
+  path:e.path,mode:e.mode,type:e.type,object:e.sha,size:e.size??null
+})));
 
 const attrs=await get(`https://raw.githubusercontent.com/${u.repository}/${u.commit}/.gitattributes`,false);
 fail(!/filter=lfs|diff=lfs|merge=lfs/.test(attrs),'Git LFS attributes detected; explicit LFS closure required');
@@ -122,11 +154,18 @@ await fs.writeFile(path.join(root,'artifacts/tdrp-authority/upstream-root-invent
   project_id:'TDRP-001',spec_revision:9,repository:u.repository,commit:u.commit,tree:u.tree,
   entries:tree.filter(e=>e.type!=='tree').map(e=>({path:e.path,mode:e.mode,type:e.type,object:e.sha,size:e.size??null}))
 },null,2)+'\n');
+await fs.writeFile(path.join(root,'artifacts/tdrp-authority/upstream-recursive-inventory.json'),JSON.stringify({
+  project_id:'TDRP-001',spec_revision:9,root:{repository:u.repository,commit:u.commit,tree:u.tree},
+  counts:{entries:recursiveInventory.length,direct_components:directComponentCounts,github_nested_components:githubNestedCounts,
+    gitlab_cppgir_entries:cppTree.filter(e=>e.type!=='tree').length,cppgir_child_entries:childEntries.length},
+  entries:recursiveInventory
+},null,2)+'\n');
 const report={
   project_id:'TDRP-001',spec_revision:9,target_commit:process.env.GITHUB_SHA||null,
   upstream_commit:u.commit,upstream_tree:u.tree,root_tree_truncated:false,
-  root_entries:tree.length,root_blobs:blobs.length,direct_gitlinks:links.length,
-  github_nested_gitlinks:nested,gitlab_cppgir_entries:cppTree.length,cppgir_child:{path:childPath,repository:childRepo,commit:cppNested[0].id},
+  root_entries:tree.length,root_blobs:blobs.length,direct_gitlinks:links.length,recursive_non_directory_entries:recursiveInventory.length,
+  direct_component_counts:directComponentCounts,github_nested_gitlinks:nested,github_nested_component_counts:githubNestedCounts,
+  gitlab_cppgir_entries:cppTree.length,cppgir_child:{path:childPath,repository:childRepo,commit:cppNested[0].id,entries:childEntries.length},
   build_time_pin_changes:lock.build_time_pin_changes,coverage:lock.coverage,
   baseline_accepted:u.accepted,source_closure_ready:lock.acceptance.baseline_ready
 };
