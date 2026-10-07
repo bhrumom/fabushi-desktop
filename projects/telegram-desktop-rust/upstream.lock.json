@@ -302,5 +302,12 @@
     "artifact_name": "tdrp-revision9-authority-cc318d81532c44f8710681039cc1dba3dafe72cc",
     "artifact_digest": "sha256:087136a99675f1a112602e748573c9d20aeaa27e3e2b308f00603d0d9f4a3dad",
     "recursive_non_directory_entries": 15788
+  },
+  "build_time_acquisition_inventory": {
+    "path": "projects/telegram-desktop-rust/inventory/build-time-acquisitions.json",
+    "candidate_lines_total": 150,
+    "immutable_commit_pin_occurrences_classified": 17,
+    "candidate_lines_pending_classification": 133,
+    "closure_status": "open"
   }
 }

@@ -51,6 +51,7 @@ const schema=await readJson('projects/telegram-desktop-rust/contracts/parity-led
 const spec=await read('docs/specs/telegram-desktop-rust-equivalence-migration.md');
 const rtm=await read('projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md');
 const ledger=await readJson('projects/telegram-desktop-rust/parity-ledger.json');
+const acquisitionInventory=await readJson('projects/telegram-desktop-rust/inventory/build-time-acquisitions.json');
 
 fail(lock.project_id==='TDRP-001' && lock.spec_revision===9,'lock is not TDRP Revision 9');
 fail(schema.properties?.spec_revision?.const===9,'ledger schema is not Revision 9');
@@ -61,6 +62,20 @@ fail(ledger.coverage?.unknown>=lock.coverage.unknown_minimum,'ledger unknown cou
 fail(ledger.coverage?.unread>=lock.coverage.unread_minimum,'ledger unread count understates lock minimum');
 fail(ledger.coverage?.omitted===lock.coverage.omitted_known,'ledger omitted count disagrees with lock');
 fail(Array.isArray(ledger.rows),'ledger rows must be an array');
+fail(acquisitionInventory.project_id==='TDRP-001' && acquisitionInventory.spec_revision===9,'build-time acquisition inventory is not Revision 9');
+fail(acquisitionInventory.upstream_commit===lock.upstream.commit,'build-time acquisition inventory upstream commit drift');
+fail(lock.build_time_acquisition_inventory?.path==='projects/telegram-desktop-rust/inventory/build-time-acquisitions.json','lock missing build-time acquisition inventory authority');
+fail(acquisitionInventory.discovery?.candidate_lines_total===lock.build_time_acquisition_inventory.candidate_lines_total,'build-time candidate count drift');
+fail(acquisitionInventory.discovery?.immutable_commit_pin_occurrences_classified===lock.build_time_acquisition_inventory.immutable_commit_pin_occurrences_classified,'classified immutable acquisition count drift');
+fail(acquisitionInventory.discovery?.candidate_lines_pending_classification===lock.build_time_acquisition_inventory.candidate_lines_pending_classification,'pending acquisition count drift');
+fail(acquisitionInventory.discovery.candidate_lines_total===acquisitionInventory.discovery.immutable_commit_pin_occurrences_classified+acquisitionInventory.discovery.candidate_lines_pending_classification,'build-time acquisition candidate accounting is not closed arithmetically');
+fail(lock.build_time_acquisition_inventory.closure_status==='open','build-time acquisition closure must remain open while candidate lines are pending');
+for (const acquisition of acquisitionInventory.immutable_commit_pin_occurrences || []) {
+  fail(/^[0-9a-f]{40}$/.test(acquisition.commit),'immutable acquisition lacks full commit pin: '+acquisition.id);
+  const raw=await get(`https://raw.githubusercontent.com/${lock.upstream.repository}/${lock.upstream.commit}/${acquisition.source_path}`,false);
+  fail(raw.includes(acquisition.repository),'acquisition repository missing at accepted upstream: '+acquisition.id);
+  fail(raw.includes(acquisition.commit),'acquisition commit missing at accepted upstream: '+acquisition.id);
+}
 const rowRequired=schema.$defs?.row?.required||[];
 const responsibilityIds=new Set();
 const targetSymbolOwners=new Map();
@@ -220,7 +235,7 @@ const report={
   root_entries:tree.length,root_blobs:blobs.length,direct_gitlinks:links.length,recursive_non_directory_entries:recursiveInventory.length,
   direct_component_counts:directComponentCounts,github_nested_gitlinks:nested,github_nested_component_counts:githubNestedCounts,
   gitlab_cppgir_entries:cppTree.length,cppgir_child:{path:childPath,repository:childRepo,commit:cppNested[0].id,entries:childEntries.length},
-  build_time_pin_changes:lock.build_time_pin_changes,coverage:lock.coverage,ledger_coverage:ledger.coverage,
+  build_time_pin_changes:lock.build_time_pin_changes,build_time_acquisition_inventory:acquisitionInventory.discovery,coverage:lock.coverage,ledger_coverage:ledger.coverage,
   baseline_accepted:u.accepted,source_closure_ready:lock.acceptance.baseline_ready
 };
 await fs.writeFile(path.join(root,'artifacts/tdrp-authority/authority-report.json'),JSON.stringify(report,null,2)+'\n');

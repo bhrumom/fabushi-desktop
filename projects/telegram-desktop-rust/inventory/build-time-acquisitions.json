@@ -1,0 +1,207 @@
+{
+  "format_version": 1,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream_repository": "telegramdesktop/tdesktop",
+  "upstream_commit": "f23c37857220eb84f8559f0901ea26fb304b564b",
+  "discovery": {
+    "evidence_run_id": 37599901141,
+    "evidence_head_sha": "ae1ac10ec40d67232d17adf170d0a2e673b7fc5d",
+    "artifact_id": 11471884811,
+    "artifact_digest": "sha256:4a66f6b054d1b30b91da7635fc310610ce01cf508c37dee05acad4a2567fdf63",
+    "candidate_file": "build-time-acquisition-candidates.txt",
+    "candidate_lines_total": 150,
+    "immutable_commit_pin_occurrences_classified": 17,
+    "candidate_lines_pending_classification": 133,
+    "note": "Counts are candidate-line accounting, not dependency cardinality. Pending lines include documentation, CI-only fetches, mutable refs/tags/branches, tool bootstraps, and additional build inputs that still require exact disposition."
+  },
+  "immutable_commit_pin_occurrences": [
+    {
+      "id": "ACQ-R9-IMMUTABLE-001",
+      "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+      "source_line": 88,
+      "repository": "https://github.com/yugr/Implib.so.git",
+      "ref_kind": "commit",
+      "commit": "ecf7bb51a92a0fb16834c5b698570ab25f9f1d21",
+      "disposition": "build-input-exact-pin",
+      "status": "classified",
+      "source_scope": "accepted-upstream"
+    },
+    {
+      "id": "ACQ-R9-IMMUTABLE-002",
+      "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+      "source_line": 163,
+      "repository": "https://github.com/desktop-app/patches.git",
+      "ref_kind": "commit",
+      "commit": "ebcd707f1763651089e3e7220ddd4f97cbcf87e0",
+      "disposition": "build-input-exact-pin",
+      "status": "classified",
+      "source_scope": "accepted-upstream"
+    },
+    {
+      "id": "ACQ-R9-IMMUTABLE-003",
+      "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+      "source_line": 173,
+      "repository": "https://github.com/madler/zlib.git",
+      "ref_kind": "commit",
+      "commit": "e3dc0a85b7032e98380dec011bc8f2c2ee0d8fca",
+      "disposition": "build-input-exact-pin",
+      "status": "classified",
+      "source_scope": "accepted-upstream"
+    },
+    {
+      "id": "ACQ-R9-IMMUTABLE-004",
+      "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+      "source_line": 292,
+      "repository": "https://github.com/webmproject/libvpx.git",
+      "ref_kind": "commit",
+      "commit": "12f3a2ac603e8f10742105519e0cd03c3b8f71dd",
+      "disposition": "build-input-exact-pin",
+      "status": "classified",
+      "source_scope": "accepted-upstream"
+    },
+    {
+      "id": "ACQ-R9-IMMUTABLE-005",
+      "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+      "source_line": 452,
+      "repository": "https://github.com/gitlab-freedesktop-mirrors/libxcb-keysyms.git",
+      "ref_kind": "commit",
+      "commit": "ef5cb393d27511ba511c68a54f8ff7b9aab4a384",
+      "disposition": "build-input-exact-pin",
+      "status": "classified",
+      "source_scope": "accepted-upstream"
+    },
+    {
+      "id": "ACQ-R9-IMMUTABLE-006",
+      "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+      "source_line": 467,
+      "repository": "https://github.com/gitlab-freedesktop-mirrors/libxcb-render-util.git",
+      "ref_kind": "commit",
+      "commit": "5ad9853d6ddcac394d42dd2d4e34436b5db9da39",
+      "disposition": "build-input-exact-pin",
+      "status": "classified",
+      "source_scope": "accepted-upstream"
+    },
+    {
+      "id": "ACQ-R9-IMMUTABLE-007",
+      "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+      "source_line": 486,
+      "repository": "https://github.com/gitlab-freedesktop-mirrors/libxcb-cursor.git",
+      "ref_kind": "commit",
+      "commit": "4929f6051658ba5424b41703a1fb63f9db896065",
+      "disposition": "build-input-exact-pin",
+      "status": "classified",
+      "source_scope": "accepted-upstream"
+    },
+    {
+      "id": "ACQ-R9-IMMUTABLE-008",
+      "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+      "source_line": 916,
+      "repository": "https://chromium.googlesource.com/breakpad/breakpad.git",
+      "ref_kind": "commit",
+      "commit": "9aebd3d8ef5a246deb2c929b5666aaba160ebce6",
+      "disposition": "build-input-exact-pin",
+      "status": "classified",
+      "source_scope": "accepted-upstream"
+    },
+    {
+      "id": "ACQ-R9-IMMUTABLE-009",
+      "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+      "source_line": 921,
+      "repository": "https://chromium.googlesource.com/linux-syscall-support.git",
+      "ref_kind": "commit",
+      "commit": "29164a80da4d41134950d76d55199ea33fbb9613",
+      "disposition": "build-input-exact-pin",
+      "status": "classified",
+      "source_scope": "accepted-upstream"
+    },
+    {
+      "id": "ACQ-R9-IMMUTABLE-010",
+      "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+      "source_line": 954,
+      "repository": "https://github.com/desktop-app/tg_owt.git",
+      "ref_kind": "commit",
+      "commit": "e2d0e88d1bde6cc600da5dc92581dc97e4c1e685",
+      "disposition": "build-input-exact-pin",
+      "status": "classified",
+      "source_scope": "accepted-upstream"
+    },
+    {
+      "id": "ACQ-R9-IMMUTABLE-011",
+      "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+      "source_line": 984,
+      "repository": "https://github.com/tdlib/td.git",
+      "ref_kind": "commit",
+      "commit": "51743dfd01dff6179e2d8f7095729caa4e2222e9",
+      "disposition": "build-input-exact-pin",
+      "status": "classified",
+      "source_scope": "accepted-upstream"
+    },
+    {
+      "id": "ACQ-R9-IMMUTABLE-012",
+      "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+      "source_line": 1007,
+      "repository": "https://github.com/dkaraush/tlottie.git",
+      "ref_kind": "commit",
+      "commit": "31f1b542f88e7b4be9a01e749920d857535fc715",
+      "disposition": "build-input-exact-pin",
+      "status": "classified",
+      "source_scope": "accepted-upstream"
+    },
+    {
+      "id": "ACQ-R9-IMMUTABLE-013",
+      "source_path": "snap/snapcraft.yaml",
+      "source_line": 126,
+      "repository": "https://github.com/desktop-app/patches.git",
+      "ref_kind": "commit",
+      "commit": "ebcd707f1763651089e3e7220ddd4f97cbcf87e0",
+      "disposition": "build-input-exact-pin",
+      "status": "classified",
+      "source_scope": "accepted-upstream"
+    },
+    {
+      "id": "ACQ-R9-IMMUTABLE-014",
+      "source_path": "snap/snapcraft.yaml",
+      "source_line": 324,
+      "repository": "https://github.com/madler/zlib.git",
+      "ref_kind": "commit",
+      "commit": "e3dc0a85b7032e98380dec011bc8f2c2ee0d8fca",
+      "disposition": "build-input-exact-pin",
+      "status": "classified",
+      "source_scope": "accepted-upstream"
+    },
+    {
+      "id": "ACQ-R9-IMMUTABLE-015",
+      "source_path": "snap/snapcraft.yaml",
+      "source_line": 462,
+      "repository": "https://github.com/tdlib/td.git",
+      "ref_kind": "commit",
+      "commit": "51743dfd01dff6179e2d8f7095729caa4e2222e9",
+      "disposition": "build-input-exact-pin",
+      "status": "classified",
+      "source_scope": "accepted-upstream"
+    },
+    {
+      "id": "ACQ-R9-IMMUTABLE-016",
+      "source_path": "snap/snapcraft.yaml",
+      "source_line": 479,
+      "repository": "https://github.com/dkaraush/tlottie.git",
+      "ref_kind": "commit",
+      "commit": "31f1b542f88e7b4be9a01e749920d857535fc715",
+      "disposition": "build-input-exact-pin",
+      "status": "classified",
+      "source_scope": "accepted-upstream"
+    },
+    {
+      "id": "ACQ-R9-IMMUTABLE-017",
+      "source_path": "snap/snapcraft.yaml",
+      "source_line": 510,
+      "repository": "https://github.com/desktop-app/tg_owt.git",
+      "ref_kind": "commit",
+      "commit": "e2d0e88d1bde6cc600da5dc92581dc97e4c1e685",
+      "disposition": "build-input-exact-pin",
+      "status": "classified",
+      "source_scope": "accepted-upstream"
+    }
+  ]
+}
