@@ -8,7 +8,9 @@ use crate::conversation::{
     Conversation, ConversationDraft, ConversationFolder, ConversationId, NotificationSettings,
     TopicDraft,
 };
-use crate::message::{ClientMessageId, Message, MessageContent, MessageId, ReactionSummary};
+use crate::message::{
+    ClientMessageId, ForwardPrivacy, Message, MessageContent, MessageId, ReactionSummary,
+};
 use crate::miniapp::{
     MiniAppGrant, MiniAppManifest, MiniAppRequest, MiniAppResponse, MiniAppSession,
 };
@@ -135,6 +137,8 @@ pub enum ClientCommand {
         scheduled_at_ms: Option<i64>,
         #[serde(default)]
         silent: bool,
+        #[serde(default)]
+        privacy: ForwardPrivacy,
     },
     BeginBlobUpload {
         metadata: BlobMetadata,
