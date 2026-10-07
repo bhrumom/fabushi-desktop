@@ -1,0 +1,16 @@
+{
+  "format_version": 3,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream_commit": "f23c37857220eb84f8559f0901ea26fb304b564b",
+  "target_commit": "28e9ba327ebf2446df1b0dec72143cea5ebfb67d",
+  "coverage": {
+    "source_entries_total": 15788,
+    "unknown": 15788,
+    "unread": 15788,
+    "omitted": 0,
+    "responsibilities_total": 0,
+    "unmapped_responsibilities": 0
+  },
+  "rows": []
+}
