@@ -54,11 +54,20 @@ test("CONTRACT-TDRP-STORY-CANONICAL-ROUTE-001 keeps Story RPC on Coordinator to 
   const shared = read("source/shared/rpc/coordinator.ts");
   const gatewayApi = read("source/host/src/host_gateway_api.rs");
   const gateway = read("source/host/src/extensions/session/gateway.rs");
-  for (const method of ["getStoryStealthStatus", "activateStoryStealth", "listStories", "viewStory", "reactStory", "deleteStory"]) {
+  const storyMethods = ["getStoryStealthStatus", "activateStoryStealth", "listStories", "viewStory", "reactStory", "deleteStory"];
+  const extensionRegistry = gatewayApi.match(
+    /pub const FABUSHI_HOST_GATEWAY_METHODS: &\\[&str\\] = &\\[([\\s\\S]*?)\\];/,
+  )?.[1];
+  assert.ok(extensionRegistry, "Fabushi Host gateway extension registry must remain present");
+  assert.deepEqual(
+    [...extensionRegistry.matchAll(/"([^"]+)"/g)].map((match) => match[1]),
+    storyMethods,
+  );
+  for (const method of storyMethods) {
     assert.match(client, new RegExp(method));
     assert.match(shared, new RegExp(method));
-    assert.ok(gatewayApi.includes(`("${method}", Stories)`));
-    assert.ok(gateway.includes(`"${method}" =>`));
+    assert.ok(extensionRegistry.includes(`"${method}"`), `${method} must remain in the Fabushi Host gateway extension registry`);
+    assert.ok(gateway.includes(`"${method}" =>`), `${method} must remain routed by the shipping Host session gateway`);
   }
 });
 
