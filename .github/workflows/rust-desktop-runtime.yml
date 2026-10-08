@@ -679,6 +679,122 @@ jobs:
           499|Telegram/Resources/icons/chat/ai_star1.svg|4c62840ce6e7b304657c98fe83b66ec0f89ab073
           500|Telegram/Resources/icons/chat/ai_star2.svg|45d06aefd76fb6c9ffac3ee1fb7e57642be456cd
           EOF
+          printf '%s\n' "accepted_upstream=$upstream_sha" > artifacts/tdrp-authority/source-binary-evidence-501-600.txt
+          while IFS='|' read -r order path expected_blob; do
+            actual_blob="$(git -C "$work" hash-object "$path")"
+            test "$actual_blob" = "$expected_blob"
+            size="$(wc -c < "$work/$path" | tr -d '[:space:]')"
+            kind="$(file -b "$work/$path")"
+            printf '%s|%s|%s|%s|%s\n' "$order" "$path" "$actual_blob" "$size" "$kind" >> artifacts/tdrp-authority/source-binary-evidence-501-600.txt
+          done <<'EOF'
+          501|Telegram/Resources/icons/chat/ai_style_tone.svg|778574b6790deb105584382556e079a7fbce425a
+          502|Telegram/Resources/icons/chat/audio_once.png|4d1f93652302cd716fe27732e3c5dbe8aba3f60c
+          503|Telegram/Resources/icons/chat/audio_once@2x.png|f66cfbbcb64460699be84a0b5fb13782246fb078
+          504|Telegram/Resources/icons/chat/audio_once@3x.png|bce2481c5534a96ce9c1659f2e5b8becf9c2eb20
+          505|Telegram/Resources/icons/chat/code_tags.svg|f03e9ce1b3a53b8cafa95ba4bd25b5fd2e331b88
+          506|Telegram/Resources/icons/chat/ephemeral_badge.png|ecf83ae66bd5c454d2135423f7bd0c102146b551
+          507|Telegram/Resources/icons/chat/ephemeral_badge@2x.png|72b8b139e83dc5189176adaaf3e1aa90b19ffed6
+          508|Telegram/Resources/icons/chat/ephemeral_badge@3x.png|8a39185e6848d724ddcc79666fe09177f97ccafd
+          509|Telegram/Resources/icons/chat/filled_forge.svg|02b46ac4817b3ac25907c7672bbc4420e2e832f9
+          510|Telegram/Resources/icons/chat/filled_location.png|12cd2dcc81112e4b61bf1abab39b18c1a0eff905
+          511|Telegram/Resources/icons/chat/filled_location@2x.png|cdef3f274a76935568c1501b895922906429f340
+          512|Telegram/Resources/icons/chat/filled_location@3x.png|11caf17cade61efbac78edf521e8528e02b041d8
+          513|Telegram/Resources/icons/chat/filled_requests.svg|007a4053281bb7482ebbf4a438c961888284cfa1
+          514|Telegram/Resources/icons/chat/input_attach.png|959b6ff3d25877507eca1b854c16f39c55a8112e
+          515|Telegram/Resources/icons/chat/input_attach@2x.png|d3af81c6f58cdcd5a2a2cc670bbf4486d62730a0
+          516|Telegram/Resources/icons/chat/input_attach@3x.png|96ff13d0dc00f77bebe6f873415703bd2e126b88
+          517|Telegram/Resources/icons/chat/input_autodelete.png|68f8f7b74e5e5c1ecc243602c95556953bfb6ec5
+          518|Telegram/Resources/icons/chat/input_autodelete@2x.png|37c858111a613f9bfe8092e5e64a4a8a5ab4ec09
+          519|Telegram/Resources/icons/chat/input_autodelete@3x.png|2ad4551d10a08c41e3a11baf846c9101f6b44d05
+          520|Telegram/Resources/icons/chat/input_bot_command.png|de47f606a45c2529995649ec219b21c287c3b053
+          521|Telegram/Resources/icons/chat/input_bot_command@2x.png|fc879a4053afd3b1a734d23ca10861b65033a2ae
+          522|Telegram/Resources/icons/chat/input_bot_command@3x.png|09308bfe50f16ebb623a299b71a1af534fbaaae2
+          523|Telegram/Resources/icons/chat/input_bot_keyboard.png|56366259ce5780d935ea96cad206c4babbe2d4fd
+          524|Telegram/Resources/icons/chat/input_bot_keyboard@2x.png|fa9c349e3ce1cf1d58532cc37eb6fa702627c22a
+          525|Telegram/Resources/icons/chat/input_bot_keyboard@3x.png|2ddaa5d2f751139f051eeb9e7a9f45b4bc2df39b
+          526|Telegram/Resources/icons/chat/input_bot_keyboard_hide.png|ce48577920e47b3b43d1b7c272c7132604d4e71b
+          527|Telegram/Resources/icons/chat/input_bot_keyboard_hide@2x.png|b16a2f6347bafb7feca3db01777e01c30d25cc97
+          528|Telegram/Resources/icons/chat/input_bot_keyboard_hide@3x.png|80fc2b800c2b506d6234d5ed804f11d6ab94b66a
+          529|Telegram/Resources/icons/chat/input_comments_expand.png|2a67d963186765d47d24226ed215c413be2d30bd
+          530|Telegram/Resources/icons/chat/input_comments_expand@2x.png|5fe041c4ad8ab21e226263a6b66126adb2b9a3d2
+          531|Telegram/Resources/icons/chat/input_comments_expand@3x.png|4e675a43f0dc2bebc4c68816f9b42ed85b51fd23
+          532|Telegram/Resources/icons/chat/input_comments_hide.png|606fb2c4979c49c017346059045d8805e4ae8646
+          533|Telegram/Resources/icons/chat/input_comments_hide@2x.png|233fd06490ecc214df5a3e9c2c30f8975654e257
+          534|Telegram/Resources/icons/chat/input_comments_hide@3x.png|e6f6d925c0e5b1b23ac05631cb9e2f3f44e73b38
+          535|Telegram/Resources/icons/chat/input_discard.svg|e3d394f3c8f21c0b5fcfa35b6c009588172f135b
+          536|Telegram/Resources/icons/chat/input_draw.png|37f5c854c2d3b9223f900399c58cc710f7f0caf3
+          537|Telegram/Resources/icons/chat/input_draw@2x.png|0087392e5ef83c0b721627fbf98f66dc3cabfb56
+          538|Telegram/Resources/icons/chat/input_draw@3x.png|e2fd682f6a02649003d7c0b142c3b3a595df9f31
+          539|Telegram/Resources/icons/chat/input_edit.png|43282531346bdf7d9fa32c1e866f995ef3dbfae0
+          540|Telegram/Resources/icons/chat/input_edit@2x.png|70c031a4a54f422dd2a9bfc0feac74811546d3b3
+          541|Telegram/Resources/icons/chat/input_edit@3x.png|fa6be01a577223cddfd0bb0c33074346990af3b3
+          542|Telegram/Resources/icons/chat/input_forward.png|2d9c78335437873d77d777240c7cec1597533844
+          543|Telegram/Resources/icons/chat/input_forward@2x.png|26e435458b38ec40a6ec13bf079158b6090c20b7
+          544|Telegram/Resources/icons/chat/input_forward@3x.png|488f8e1e109bc5b097eaab02c711b5829e44103e
+          545|Telegram/Resources/icons/chat/input_gift.png|eac02d4b2a04b1d8bab45a4eb8dddc826294fd73
+          546|Telegram/Resources/icons/chat/input_gift@2x.png|51c3472a6e27cee1c9cacfa8b3dfb43dcdb9c883
+          547|Telegram/Resources/icons/chat/input_gift@3x.png|d88028bb459bbf56675734723b12b06214b664a6
+          548|Telegram/Resources/icons/chat/input_like.png|c7ccead7e2d8a4b30fce9a3dcb2d7f254b984943
+          549|Telegram/Resources/icons/chat/input_like@2x.png|965ae814b2c68d5018bda421299c1152271acb6a
+          550|Telegram/Resources/icons/chat/input_like@3x.png|cb2285df9fa379bd6d931fcd7f198ab171da328d
+          551|Telegram/Resources/icons/chat/input_liked.png|5a267ca1dcc25a971c766b452bb6fcd064def113
+          552|Telegram/Resources/icons/chat/input_liked@2x.png|600b472be6ef34c0a8ec2099cc66bf04ab7eb948
+          553|Telegram/Resources/icons/chat/input_liked@3x.png|5d6c546e61902de675c4cd4131b4e8f09e0ed329
+          554|Telegram/Resources/icons/chat/input_link_settings.png|bd01d4ad19da88b990687ec4193a9279b1258add
+          555|Telegram/Resources/icons/chat/input_link_settings@2x.png|0eb12d2033a21267742df7b62a3ba3d14892153f
+          556|Telegram/Resources/icons/chat/input_link_settings@3x.png|851858fafd273a93da6f4f3c777f7b7542e36b7d
+          557|Telegram/Resources/icons/chat/input_paid.svg|1179751c9a6d9e27ea947d27184f1cba42a086df
+          558|Telegram/Resources/icons/chat/input_record.png|af2c2eed4b91b90bce5624e98088d8722af71844
+          559|Telegram/Resources/icons/chat/input_record@2x.png|0d08699510d0f0d0452c781146434a74a87620aa
+          560|Telegram/Resources/icons/chat/input_record@3x.png|df31cf9e80fb60190c247f301205c4d738efac4a
+          561|Telegram/Resources/icons/chat/input_record_filled.png|d1c14a2c2f7d09275ef5a66ffb071342b652d9eb
+          562|Telegram/Resources/icons/chat/input_record_filled@2x.png|e02119463ba6eeb6d14d90ab347c2c7b347ba7c6
+          563|Telegram/Resources/icons/chat/input_record_filled@3x.png|1a2211196a56001650108f4d15c194671dfc991c
+          564|Telegram/Resources/icons/chat/input_replace.png|e0bc68cb34897c575afb220447364d0b2815b9f4
+          565|Telegram/Resources/icons/chat/input_replace@2x.png|3a634692ab1e58b9f231174d097b95cb6323e1f9
+          566|Telegram/Resources/icons/chat/input_replace@3x.png|edcd082afde8c4bd6f52ba7911aa53c33b223fcb
+          567|Telegram/Resources/icons/chat/input_reply_quote.png|0f0ade5dcd2af8b575bf84de0795d9c906bba6e2
+          568|Telegram/Resources/icons/chat/input_reply_quote@2x.png|c7bcb7d8eb746bf32d3e0fa1962bad88c36ac1d8
+          569|Telegram/Resources/icons/chat/input_reply_quote@3x.png|f1bc500a1f7cc37a577581b8f482f7447311a9c4
+          570|Telegram/Resources/icons/chat/input_reply_settings.png|9b67e535c29a7170c36363063d2f05c8d23126fb
+          571|Telegram/Resources/icons/chat/input_reply_settings@2x.png|2a4aef116e3608f9e1029df99888c99af59a5e10
+          572|Telegram/Resources/icons/chat/input_reply_settings@3x.png|e2f131d6aa4356e090975a845a10d10747d31a39
+          573|Telegram/Resources/icons/chat/input_save.png|762ae8f4b00fa86196211c4e9f82370a898aa7d7
+          574|Telegram/Resources/icons/chat/input_save@2x.png|68d1cdfdf438447304a74e193497ddf2e0611c68
+          575|Telegram/Resources/icons/chat/input_save@3x.png|d0995b86c1bafeb589ecc70bbadcf78803cba2b2
+          576|Telegram/Resources/icons/chat/input_schedule.png|f1d0b922d204846c4b46ae13358ffc1838529fbe
+          577|Telegram/Resources/icons/chat/input_schedule@2x.png|b4debc667af670e80720fd1ad6a7bf4f7ce7b1f8
+          578|Telegram/Resources/icons/chat/input_schedule@3x.png|e94d8ef29083c5c281dd70f3c1110199dbfb2957
+          579|Telegram/Resources/icons/chat/input_scheduled.png|2f057ff2950196385212b18f28a0595071015128
+          580|Telegram/Resources/icons/chat/input_scheduled@2x.png|213da8d67380a12a928f5489c947cd5d24127e0c
+          581|Telegram/Resources/icons/chat/input_scheduled@3x.png|a7e3367638a5693a90a7c177c4a4e1135655ae08
+          582|Telegram/Resources/icons/chat/input_scheduled_dot.png|b68359d941bf719ec94ec572640aa10e61bfc0d5
+          583|Telegram/Resources/icons/chat/input_scheduled_dot@2x.png|e8bd9ed7410b56f938851bf40918d46635058a61
+          584|Telegram/Resources/icons/chat/input_scheduled_dot@3x.png|d1199622ebb79ba260056f090357612e3259fba8
+          585|Telegram/Resources/icons/chat/input_send.png|6414c8bfaa3d896cf5b3636b05df309a7d185b4d
+          586|Telegram/Resources/icons/chat/input_send@2x.png|559248cea3ea5b74cccb64682d23c3417d6472f1
+          587|Telegram/Resources/icons/chat/input_send@3x.png|c8d3c00d68d35b132ac457882ce24b8396fc3b9e
+          588|Telegram/Resources/icons/chat/input_send_round.png|7052e9116defd866f32548a56783af3cc405d2d0
+          589|Telegram/Resources/icons/chat/input_send_round@2x.png|92b3b02c7f00e57fdafc21f827933fa39c3e32ba
+          590|Telegram/Resources/icons/chat/input_send_round@3x.png|f33a744a6214d0e40a0da32e644e63a8fcb9a4d2
+          591|Telegram/Resources/icons/chat/input_silent.png|e109ec8780758d2ff862eb031dde5fca7852a1f3
+          592|Telegram/Resources/icons/chat/input_silent@2x.png|5e9059e252ac84a19b2606b8174710ef87af5a5a
+          593|Telegram/Resources/icons/chat/input_silent@3x.png|e213f6e56048d00c40e86d7c4c3af91ade54736f
+          594|Telegram/Resources/icons/chat/input_silent_on.png|1d80850c98f548dd8dc7c80935fcbe9e541e22f5
+          595|Telegram/Resources/icons/chat/input_silent_on@2x.png|f10fafecaab4a23af760beeac1b35f2facb21b3c
+          596|Telegram/Resources/icons/chat/input_silent_on@3x.png|49fc440e1fe45f3b092c0870533d25a88fc0272d
+          597|Telegram/Resources/icons/chat/input_smile_face.png|8d836cef461d7a001a40b0e5a565cf7c90102d65
+          598|Telegram/Resources/icons/chat/input_smile_face@2x.png|88c4320b7d13d5163bdf0fb1985250787c8378f5
+          599|Telegram/Resources/icons/chat/input_smile_face@3x.png|6e26d44aba9e1092c01e684d980df6832a4c1f12
+          600|Telegram/Resources/icons/chat/input_video.png|34a71853d435f3852e253d9303512b893ecc5832
+          EOF
+          {
+            printf '%s\n' "accepted_upstream=$upstream_sha"
+            for symbol in input_liked input_record input_record_filled input_video; do
+              printf 'symbol=%s\n' "$symbol"
+              git -C "$work" grep -n -F "$symbol" -- Telegram/SourceFiles Telegram/Resources ':!Telegram/Resources/icons/chat/' || true
+            done
+          } > artifacts/tdrp-authority/source-consumer-reachability-501-600.txt
       - name: Validate Revision 9 authority
         env:
           GITHUB_TOKEN: ${{ github.token }}
