@@ -249,3 +249,27 @@ This row remains `IMPLEMENTED`, not `VERIFIED`, because shipping recipient-picke
 - `INV-TDRP-R9-RICH-EXPORT-NO-SECOND-RENDERER-001`: rich export may reuse canonical content semantics but cannot become a second live TranscriptEntry renderer/state owner.
 - Dossier: `projects/telegram-desktop-rust/dossiers/resource-emoji-export-279-338-complete-read.md`.
 - These rows grant source-read/traceability credit only. They do not grant Fabushi production, test, release, or independent-acceptance credit.
+
+### TDRP Revision 9 resource-read requirements 339-368
+
+| requirement_id | risk | oracle_ids | invariant_ids | unit/property | contract/integration | e2e/temporal | ui/visual/a11y | perf/security | regression_ids | evidence_ids | reviewer | verdict |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| TDRP-R9-ARCHIVE-AVATAR-ASSET-001 | medium | ORA-TDRP-R9-ARCHIVE-AVATAR-ASSET-001 | INV-TDRP-R9-ARCHIVE-STATE-NOT-PIXELS-001 | pending | pending canonical ConversationRow/Avatar evidence | pending | pending archive-row visual/a11y | provenance pending | pending | run 37846454160 job 113548896289 artifact 11579099694 + dossier resource-icons-339-368-complete-read.md | pending-independent-review | MAPPED-SOURCE-READ-PRODUCTION-OPEN |
+| TDRP-R9-SELECT-ARROW-ASSET-001 | medium | ORA-TDRP-R9-SELECT-ARROW-ASSET-001 | INV-TDRP-R9-SELECTION-STATE-NOT-ICON-001 | pending | pending canonical Menu/Popover/Picker evidence | pending | pending schedule/select visual/a11y | provenance pending | pending | same exact artifact + dossier | pending-independent-review | MAPPED-SOURCE-READ-PRODUCTION-OPEN |
+| TDRP-R9-BOOST-GIFT-ASSETS-001 | high | ORA-TDRP-R9-BOOST-GIFT-ASSETS-001 | INV-TDRP-R9-ENTITLEMENT-TRUTH-SINGLE-OWNER-001 | pending | pending canonical commerce/entitlement owner binding | pending | pending Badge/Status/ListRow evidence | rights/provenance + claimability security pending | pending | same exact artifact + consumer traces + dossier | pending-independent-review | MAPPED-SOURCE-READ-PRODUCTION-OPEN |
+| TDRP-R9-BUBBLE-TAIL-ASSET-001 | medium | ORA-TDRP-R9-BUBBLE-TAIL-ASSET-001 | INV-TDRP-R9-TRANSCRIPT-STATE-NOT-DECORATION-001 | pending | pending canonical TranscriptEntry visual contract | pending | pending direction/selection visual/a11y | provenance pending | pending | same exact artifact + chat_style consumer + dossier | pending-independent-review | MAPPED-SOURCE-READ-PRODUCTION-OPEN |
+| TDRP-R9-CALENDAR-DIRECTION-ASSET-001 | medium | ORA-TDRP-R9-CALENDAR-DIRECTION-ASSET-001 | INV-TDRP-R9-DATE-STATE-NOT-ICON-001 | pending | pending canonical Picker/Popover/Menu navigation evidence | pending | pending previous/next/disabled/RTL/a11y | provenance pending | pending | same exact artifact + boxes/iv/calls style consumers + dossier | pending-independent-review | MAPPED-SOURCE-READ-PRODUCTION-OPEN |
+
+- `ORA-TDRP-R9-ARCHIVE-AVATAR-ASSET-001`: orders 339-341 are scale variants consumed by `dialogsArchiveUserpic`; archive membership remains canonical conversation state.
+- `INV-TDRP-R9-ARCHIVE-STATE-NOT-PIXELS-001`: placeholder pixels cannot become archive membership or conversation identity.
+- `ORA-TDRP-R9-SELECT-ARROW-ASSET-001`: orders 342-344 are shared dropdown/selector affordances used by schedule-repeat and AI selector styles.
+- `INV-TDRP-R9-SELECTION-STATE-NOT-ICON-001`: selection/open/schedule truth remains with canonical control owners.
+- `ORA-TDRP-R9-BOOST-GIFT-ASSETS-001`: orders 345-362 render boost/gift/giveaway status across statistics/chat/giveaway styles.
+- `INV-TDRP-R9-ENTITLEMENT-TRUTH-SINGLE-OWNER-001`: visual status cannot own entitlement, claimability or purchase state.
+- `ORA-TDRP-R9-BUBBLE-TAIL-ASSET-001`: orders 363-365 are derived incoming/outgoing/selected message-bubble decoration.
+- `INV-TDRP-R9-TRANSCRIPT-STATE-NOT-DECORATION-001`: `TranscriptEntry`/message state remains authoritative; decoration is derived.
+- `ORA-TDRP-R9-CALENDAR-DIRECTION-ASSET-001`: orders 366-368 are directional date/search/calendar affordances used by boxes/IV/call styles.
+- `INV-TDRP-R9-DATE-STATE-NOT-ICON-001`: selected date, search position and call/message schedule remain canonical state, not icon state.
+- Dossier: `projects/telegram-desktop-rust/dossiers/resource-icons-339-368-complete-read.md`.
+- These rows grant source-read/traceability credit only. They do not grant Fabushi production, test, release, or independent-acceptance credit.
+
