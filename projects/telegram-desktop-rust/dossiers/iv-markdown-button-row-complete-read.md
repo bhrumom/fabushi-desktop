@@ -81,6 +81,18 @@ Before either row can become implemented/verified, GitHub Actions must cover at 
 
 Relevant normative gates: `TDRP-MOD-01`, `TDRP-MOD-02`, `TDRP-OWN-01`, `TDRP-COMP-01`, `G-FILE`, `G-MODULE`, `G-PRODUCTION`, `G-COMPOSITION`, `G-UI-FUNCTIONAL`, `G-TEMPORAL`, `G-EVIDENCE`.
 
+## Current PR implementation candidate
+
+The current PR branch now extends the existing TranscriptCard composition rather than adding a source-specific runtime:
+
+- `protocol.ts` projects optional typed `open-url`, `authorize-url` and `copy-text` option actions and rejects unknown/malformed action payloads;
+- `url-card.ts` separates exact disclosure/copy payloads from the canonical HTTP(S)-normalised external-open boundary;
+- `views/widget.tsx` routes pointer and keyboard activation through the same option action path, opens only canonical-normalised URLs, copies CopyText locally, and exposes URL/copy tooltips including measured label-elision context;
+- `message-actions.tsx` reuses the existing TranscriptCard message context-menu owner for `Copy Link` / `Copy Text` instead of adding a Telegram/Markdown menu;
+- the existing Actions-executed `recovered-conversation-infra.contract.test.ts` now covers fail-closed action projection plus duplicate-pending and stale-scope settlement.
+
+These changes are an implementation candidate only. They do not close packaged keyboard/context-menu/a11y evidence, reload/restart evidence, or independent responsibility acceptance, and therefore neither ledger row is promoted to `implemented` or `verified` yet.
+
 ## Current verdict
 
-Read-complete and mapped-open only. No shipping implementation or current-head execution evidence is claimed by this dossier.
+Read-complete / mapped-open with a current-PR production implementation candidate. Exact-head GitHub Actions and independent acceptance are still required before status promotion.
