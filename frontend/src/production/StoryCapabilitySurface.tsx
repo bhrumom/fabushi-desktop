@@ -153,6 +153,7 @@ export function StoryCapabilitySurface({ client, enabled, resolveMedia, onOpenOw
       const viewed = await client.viewStory({ storyId: target.id });
       if (generation !== requestGenerationRef.current) return;
       replaceStory(viewed);
+      setReaction(viewed.myReaction ?? null);
     } catch (error) {
       if (generation !== requestGenerationRef.current) return;
       setErrorMessage(error instanceof Error ? error.message : "Story view failed");
@@ -261,7 +262,7 @@ export function StoryCapabilitySurface({ client, enabled, resolveMedia, onOpenOw
       const updated = await client.reactStory({ storyId: selectedStory.id, reaction: nextReaction });
       if (requestGeneration !== requestGenerationRef.current || reactionGeneration !== reactionGenerationRef.current) return;
       replaceStory(updated);
-      setReaction(nextReaction);
+      setReaction(updated.myReaction ?? null);
     } catch (error) {
       if (requestGeneration !== requestGenerationRef.current || reactionGeneration !== reactionGenerationRef.current) return;
       setErrorMessage(error instanceof Error ? error.message : "Story reaction failed");
@@ -470,7 +471,7 @@ export function StoryCapabilitySurface({ client, enabled, resolveMedia, onOpenOw
           />)}
         </div> : null}
         {menuOpen ? <div aria-label="Story menu" role="menu" style={{ display: "flex", gap: 8, marginTop: 8 }}>
-          <SandButton onClick={() => void remove()} size="sm" variant="secondary">Delete</SandButton>
+          {selectedStory.canDelete ? <SandButton onClick={() => void remove()} size="sm" variant="secondary">Delete</SandButton> : null}
           <SandButton onClick={close} size="sm" variant="secondary">Close</SandButton>
         </div> : null}
         {errorMessage == null ? null : <p aria-live="polite" role="status">{errorMessage}</p>}

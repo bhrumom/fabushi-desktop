@@ -33,6 +33,8 @@ test("CONTRACT-TDRP-STORY-ACTION-LIFECYCLE-001 shares viewer actions and fences 
   assert.match(surface, /QUICK_REACTION_EMOJIS\.map/);
   assert.match(surface, /<ReactionCell/);
   assert.match(surface, /aria-label="Story reactions"/);
+  assert.match(surface, /setReaction\(viewed\.myReaction \?\? null\)/);
+  assert.match(surface, /selectedStory\.canDelete \? <SandButton[\s\S]*?>Delete<\/SandButton> : null/);
   assert.match(surface, /aria-label="Story media navigation"/);
   assert.match(surface, /aria-label="Story caption"/);
   assert.match(surface, /WebkitLineClamp: 2/);
@@ -63,6 +65,7 @@ test("CONTRACT-TDRP-STORY-CANONICAL-ROUTE-001 keeps Story RPC on Coordinator to 
 test("CONTRACT-TDRP-STORY-STEALTH-SHIPPING-001 keeps entitlement state server-owned", () => {
   const surface = read("frontend/src/production/StoryCapabilitySurface.tsx");
   const production = read("source/host/src/extensions/session/production.rs");
+  const shared = read("source/shared/rpc/coordinator.ts");
   const engine = read("native/mahayana-messaging/src/engine.rs");
   assert.match(surface, /client\.getStoryStealthStatus\(\)/);
   assert.match(surface, /client\.activateStoryStealth\(\{ requestId \}\)/);
@@ -73,6 +76,11 @@ test("CONTRACT-TDRP-STORY-STEALTH-SHIPPING-001 keeps entitlement state server-ow
   assert.match(surface, /Anonymous viewing available in/);
   assert.match(production, /MessagingClientCommand::StoryStealthStatus/);
   assert.match(production, /MessagingClientCommand::ActivateStoryStealth/);
+  assert.match(production, /fn project_story_for_surface/);
+  assert.match(production, /story\.owner_id == actor_id/);
+  assert.match(production, /view\.reaction\.clone\(\)/);
+  assert.match(shared, /readonly canDelete: boolean/);
+  assert.match(shared, /readonly myReaction\?: string \| null/);
   assert.match(engine, /StoryStealthEntitlementRequired/);
   assert.match(engine, /StoryStealthCooldown/);
   assert.match(engine, /anonymize_recent_view/);

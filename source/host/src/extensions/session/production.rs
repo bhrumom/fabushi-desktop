@@ -7,7 +7,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use sha2::{Digest, Sha256};
 use uuid::Uuid;
 
-use fabushi_messaging_core::{Actor as MessagingActor, ActorId as MessagingActorId, ClientCommand as MessagingClientCommand, ClientEnvelope as MessagingClientEnvelope, FABUSHI_MESSAGING_PROTOCOL_VERSION, FileBlobStore as MessagingFileBlobStore, JsonFileStateStore as MessagingJsonFileStateStore, MessagingService, RequestContext as MessagingRequestContext, ServerEnvelope as MessagingServerEnvelope, ServerEvent as MessagingServerEvent, StoryId as MessagingStoryId};
+use fabushi_messaging_core::{Actor as MessagingActor, ActorId as MessagingActorId, ClientCommand as MessagingClientCommand, ClientEnvelope as MessagingClientEnvelope, FABUSHI_MESSAGING_PROTOCOL_VERSION, FileBlobStore as MessagingFileBlobStore, JsonFileStateStore as MessagingJsonFileStateStore, MessagingService, RequestContext as MessagingRequestContext, ServerEnvelope as MessagingServerEnvelope, ServerEvent as MessagingServerEvent, Story as MessagingStory, StoryId as MessagingStoryId};
 
 use crate::agent_isolation::{
     AgentWorkerPool, ProductionAgentStoreWorkerBackend,
@@ -3183,6 +3183,26 @@ impl ProductionSessionWorkers {
         ).map_err(|error| format!("canonical Story command failed: {error}"))
     }
 
+    fn project_story_for_surface(&self, story: MessagingStory) -> Result<serde_json::Value, String> {
+        let actor_id = self.story_actor_id()?;
+        let can_delete = story.owner_id == actor_id;
+        let my_reaction = story
+            .views
+            .get(&actor_id)
+            .and_then(|view| view.reaction.clone());
+        let mut value = serde_json::to_value(story)
+            .map_err(|error| format!("canonical Story projection serialization failed: {error}"))?;
+        let object = value
+            .as_object_mut()
+            .ok_or_else(|| "canonical Story projection was not an object".to_string())?;
+        object.insert("canDelete".into(), serde_json::Value::Bool(can_delete));
+        object.insert(
+            "myReaction".into(),
+            my_reaction.map_or(serde_json::Value::Null, serde_json::Value::String),
+        );
+        Ok(value)
+    }
+
     pub fn story_stealth_status(&self) -> Result<serde_json::Value, String> {
         let responses = self.execute_story_messaging(MessagingClientCommand::StoryStealthStatus)?;
         responses
@@ -3222,7 +3242,7 @@ impl ProductionSessionWorkers {
             _ => None,
         }).ok_or_else(|| "canonical Story projection returned no StoriesSnapshot".to_string())?;
         stories.into_iter()
-            .map(|story| serde_json::to_value(story).map_err(|error| error.to_string()))
+            .map(|story| self.project_story_for_surface(story))
             .collect()
     }
 
@@ -3234,10 +3254,11 @@ impl ProductionSessionWorkers {
         let responses = self.execute_story_messaging(MessagingClientCommand::ViewStory {
             story_id: MessagingStoryId(story_id.to_string()),
         })?;
-        responses.into_iter().find_map(|envelope| match envelope.event {
-            MessagingServerEvent::StoryChanged { story } => serde_json::to_value(story).ok(),
+        let story = responses.into_iter().find_map(|envelope| match envelope.event {
+            MessagingServerEvent::StoryChanged { story } => Some(story),
             _ => None,
-        }).ok_or_else(|| "canonical Story view returned no StoryChanged projection".to_string())
+        }).ok_or_else(|| "canonical Story view returned no StoryChanged projection".to_string())?;
+        self.project_story_for_surface(story)
     }
 
     pub fn react_story(&self, story_id: &str, reaction: Option<&str>) -> Result<serde_json::Value, String> {
@@ -3253,10 +3274,11 @@ impl ProductionSessionWorkers {
             story_id: MessagingStoryId(story_id.to_string()),
             reaction,
         })?;
-        responses.into_iter().find_map(|envelope| match envelope.event {
-            MessagingServerEvent::StoryChanged { story } => serde_json::to_value(story).ok(),
+        let story = responses.into_iter().find_map(|envelope| match envelope.event {
+            MessagingServerEvent::StoryChanged { story } => Some(story),
             _ => None,
-        }).ok_or_else(|| "canonical Story reaction returned no StoryChanged projection".to_string())
+        }).ok_or_else(|| "canonical Story reaction returned no StoryChanged projection".to_string())?;
+        self.project_story_for_surface(story)
     }
 
     pub fn delete_story(&self, story_id: &str) -> Result<bool, String> {

@@ -51,6 +51,8 @@ export interface CoordinatorStory {
   readonly protectedContent: boolean;
   readonly allowReplies: boolean;
   readonly views: Readonly<Record<string, unknown>>;
+  readonly canDelete: boolean;
+  readonly myReaction?: string | null;
 }
 
 export interface CoordinatorStoryStealthState {
@@ -105,6 +107,7 @@ export function parseCoordinatorStory(value: unknown): CoordinatorStory | null {
   if (!isFiniteNumber(value.createdAtMs) || !isFiniteNumber(value.expiresAtMs)) return null;
   if (value.editedAtMs !== undefined && value.editedAtMs !== null && !isFiniteNumber(value.editedAtMs)) return null;
   if (typeof value.pinnedToProfile !== "boolean" || typeof value.protectedContent !== "boolean" || typeof value.allowReplies !== "boolean" || !isRecord(value.views)) return null;
+  if (typeof value.canDelete !== "boolean" || !isNullableString(value.myReaction)) return null;
   return value as unknown as CoordinatorStory;
 }
 
