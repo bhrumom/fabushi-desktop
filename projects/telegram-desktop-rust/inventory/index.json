@@ -13,10 +13,10 @@
     "recursive_non_directory_entries": 15812,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 15746,
-    "unread_minimum": 15680,
+    "unknown_minimum": 15731,
+    "unread_minimum": 15665,
     "omitted_known": 0,
-    "note": "Live aac515c recursive census is 15,812. 132 exact entries are read-complete; unknown 15,746, unread 15,680, omitted 0. Entries 1-72 are fully read/decomposed. Open applicable responsibilities in this prefix are canary release/update, Linux build/package, Snap, Windows multi-arch build/package and WinGet distribution."
+    "note": "Live aac515c recursive census is 15,812. 147 exact entries are read-complete; unknown 15,731, unread 15,665, omitted 0. Root metadata through REVIEW.md is now dispositioned without double-counting product semantics documented in developer guides."
   },
   "latest_recursive_evidence": {
     "run_id": 37596744991,
@@ -43,7 +43,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Accepted aac515c authority is exact. 132 full-read entries are now credited; unread_minimum is 15,680, unknown remains 15,746, omitted remains 0. Machine-readable unknown closure remains non-contiguous after entry 53 because release/build/distribution responsibilities at entries 54, 60, 66, 71 and 72 are applicable and incomplete.",
+  "note": "Accepted aac515c authority is exact. 147 full-read entries are now credited; unread_minimum is 15,665, unknown remains 15,731, omitted remains 0. Entries 1-87 are fully read/decomposed; known applicable open release/build/distribution entries remain 54, 60, 66, 71 and 72.",
   "rebaseline": {
     "from_commit": "d346b42a1d30ef60dc989b6e5191bb8e571f6bd5",
     "to_commit": "aac515c5408015231a273c80ab4c4b33815e63ab",
@@ -79,8 +79,8 @@
     "upstream_commit": "aac515c5408015231a273c80ab4c4b33815e63ab",
     "deterministic_prefix_closed": 53,
     "development_only_non_applicable": 62,
-    "unknown_closed": 66,
+    "unknown_closed": 81,
     "omitted": 0,
-    "read_through": 72
+    "read_through": 87
   }
 }
