@@ -296,3 +296,13 @@ This row remains `IMPLEMENTED`, not `VERIFIED`, because shipping recipient-picke
 
 Dossier: `projects/telegram-desktop-rust/dossiers/resource-call-ai-icons-431-500-complete-read.md`.
 
+### TDRP Revision 9 source-read requirements 501-600
+
+| requirement | risk | invariant | exact source evidence | production status |
+| --- | --- | --- | --- | --- |
+| TDRP-R9-COMPOSER-501-575 | high | all draft/edit/reply/Bot/media actions reuse canonical owners | run 37849904823 / job 113560126953 / artifact 11580638761 + dossier | mixed mapped/partial; reachability-open rows explicit |
+| TDRP-R9-SCHEDULE-SILENT-576-596 | critical | one Composer/submission/Host/server scheduler path; no recipient delivery before due; idempotency includes silent/scheduled time | same artifact + server PR #2746 + desktop Host/RPC/Composer contracts | IMPLEMENTED; exact-head/release acceptance still pending |
+| TDRP-R9-CONSUMER-REACHABILITY-551-553-558-563-600 | medium | filenames never substitute for consumer proof | source-consumer-reachability-501-600.txt | OPEN |
+
+Dossier: `projects/telegram-desktop-rust/dossiers/resource-composer-chat-501-600-complete-read.md`.
+
