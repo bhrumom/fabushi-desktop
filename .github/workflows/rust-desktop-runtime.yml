@@ -425,13 +425,13 @@ jobs:
             echo "::error::build-time acquisition candidate drift: discovered $actual_count, inventory expects $expected_count"
             exit 1
           fi
-          printf '%s\n' "accepted_upstream=$upstream_sha" > artifacts/tdrp-authority/source-binary-evidence-245-277.txt
+          printf '%s\n' "accepted_upstream=$upstream_sha" > artifacts/tdrp-authority/source-binary-evidence-245-335.txt
           while IFS='|' read -r order path expected_blob; do
             actual_blob="$(git -C "$work" hash-object "$path")"
             test "$actual_blob" = "$expected_blob"
             size="$(wc -c < "$work/$path" | tr -d '[:space:]')"
             kind="$(file -b "$work/$path")"
-            printf '%s|%s|%s|%s|%s\n' "$order" "$path" "$actual_blob" "$size" "$kind" >> artifacts/tdrp-authority/source-binary-evidence-245-277.txt
+            printf '%s|%s|%s|%s|%s\n' "$order" "$path" "$actual_blob" "$size" "$kind" >> artifacts/tdrp-authority/source-binary-evidence-245-335.txt
           done <<'EOF'
           245|Telegram/Resources/art/mac_setup.tiff|71d8354694ced401b149d375e5e912065cb60b49
           246|Telegram/Resources/art/premium/coin_border.png|03a5254f5689472e31b89db6058830eeb1afc581
@@ -442,6 +442,62 @@ jobs:
           272|Telegram/Resources/art/verified_fg.webp|3535123495877e3de02cff29ca7e3d2ef3a70921
           276|Telegram/Resources/day-blue.tdesktop-theme|ccc3dbdf9dc6d1aed5ae02df7d9430334839900f
           277|Telegram/Resources/day-custom-base.tdesktop-theme|162d90457d8254d3eefcf772c3ca62545a97508a
+          279|Telegram/Resources/emoji/emoji_1.webp|362a2181f8607de749c55c0cd490b3163ee78b24
+          280|Telegram/Resources/emoji/emoji_2.webp|76c88d7ca6dc651bd9290a4c7cd8709b17bf0adc
+          281|Telegram/Resources/emoji/emoji_3.webp|40eb047651506c152d00ca3ad0ca8f43ed75b3f2
+          282|Telegram/Resources/emoji/emoji_4.webp|a8eb5bdd406abf3ab860fb81e27802e345bf11d8
+          283|Telegram/Resources/emoji/emoji_5.webp|d05d5508de9d191fcd11aa80346e6b9d253908e9
+          284|Telegram/Resources/emoji/emoji_6.webp|e82b78b6b984e6ad946a0410caba8fd96f22896c
+          285|Telegram/Resources/emoji/emoji_7.webp|61a75eeaaf23dff496189cdd0eec84b6eb7a7e50
+          286|Telegram/Resources/emoji/emoji_8.webp|72f0e7f3d3430845746485ea569aafdc1590e539
+          287|Telegram/Resources/emoji/set0_preview.webp|122654fa61de2f3e51a139cf73ad26ab9003ab62
+          288|Telegram/Resources/emoji/set1_preview.webp|2a8a03bbcb43bac9a2c25a264eeffd8bec1d2b83
+          289|Telegram/Resources/emoji/set2_preview.webp|2b682dd02ee91951ab4df795650fc52aee9d7a3f
+          290|Telegram/Resources/emoji/set3_preview.webp|0e89f3a38d9983a86639c0e6052516abb6cdecb4
+          292|Telegram/Resources/export_html/images/back.png|846479f94860d2d0e8a02b239e639d66503d9d1c
+          293|Telegram/Resources/export_html/images/back@2x.png|03e3e5851fabcf2f06de70b02634708035043200
+          294|Telegram/Resources/export_html/images/media_call.png|9614b9562698f1fd7c3b6e4e1d8c00ea2b0e9199
+          295|Telegram/Resources/export_html/images/media_call@2x.png|92cdbe618bea5edcce64ac9761b879bf273f6d81
+          296|Telegram/Resources/export_html/images/media_contact.png|be79172d5e08c31e5ab70dbcf1e79570243dfa78
+          297|Telegram/Resources/export_html/images/media_contact@2x.png|e4be8b0377646223fb4276b9d399b65e01af7370
+          298|Telegram/Resources/export_html/images/media_file.png|3a5bde66c616062585b528f80fe83fa0c9b25714
+          299|Telegram/Resources/export_html/images/media_file@2x.png|ad2c6cc2c986e60d8245b5d99a2e87d976a4a30f
+          300|Telegram/Resources/export_html/images/media_game.png|cad8ab854c0603572b4e50fc14c5443f0c83c12d
+          301|Telegram/Resources/export_html/images/media_game@2x.png|09c2eb395e694807baa3c1650cffc5448123d80e
+          302|Telegram/Resources/export_html/images/media_location.png|ab8080b7e91f9a0004a4a776d0ea566ffa653d98
+          303|Telegram/Resources/export_html/images/media_location@2x.png|11d88d52934d0167cb13139ee13ff4ec726dbeed
+          304|Telegram/Resources/export_html/images/media_music.png|057a694b45485e503ca7a2ce8184724e698ee715
+          305|Telegram/Resources/export_html/images/media_music@2x.png|20c805644b56335d37919921573e91f33b4742f7
+          306|Telegram/Resources/export_html/images/media_photo.png|d229387677a7f50f652eafd5ce527a078cbaa6d3
+          307|Telegram/Resources/export_html/images/media_photo@2x.png|e46794fe2d1eb270455e3095b759017d9e0a4f1d
+          308|Telegram/Resources/export_html/images/media_shop.png|4a92ce83ec947aa23dc82d7816dc2cb37a30ab2a
+          309|Telegram/Resources/export_html/images/media_shop@2x.png|9cfe5512b53be10f9e1436466e9c31314c61f58f
+          310|Telegram/Resources/export_html/images/media_video.png|b0a132a155c2bfc0e25e51afa43642b49079b214
+          311|Telegram/Resources/export_html/images/media_video@2x.png|2b554b0280bb5a9e7fd34695b56d33069c544d1a
+          312|Telegram/Resources/export_html/images/media_voice.png|af33c2ed8d653aeabd46f81552497c245bc7ffd5
+          313|Telegram/Resources/export_html/images/media_voice@2x.png|5356a377cf757ab2f3a45a3d9d5359df4a1c8eb1
+          314|Telegram/Resources/export_html/images/section_calls.png|adb42e2f5874c4d4a4a221d9d3b0f50253cc39ee
+          315|Telegram/Resources/export_html/images/section_calls@2x.png|eb2de58b03b317439a1a85f40f352895389d8033
+          316|Telegram/Resources/export_html/images/section_chats.png|354ea9e3a7fa2d2280d4e1ae63a784ffb37cacc2
+          317|Telegram/Resources/export_html/images/section_chats@2x.png|b7252a82ba51661c449588c090b4dc0f4139b051
+          318|Telegram/Resources/export_html/images/section_contacts.png|1b94b8ee3d8217b5ede47b78404ba79a15231001
+          319|Telegram/Resources/export_html/images/section_contacts@2x.png|64a213d2f0e2fa593de19f2e50fe47e57978c537
+          320|Telegram/Resources/export_html/images/section_frequent.png|1656019951c0f227c872f335f5fdc83257552750
+          321|Telegram/Resources/export_html/images/section_frequent@2x.png|ca9c3c85bc9e94ea1ac7f3871b545d16010f94d3
+          322|Telegram/Resources/export_html/images/section_leftchats.png|350d22cd4756eebe51cb654465a0becdf25260de
+          323|Telegram/Resources/export_html/images/section_leftchats@2x.png|b33520d101f0e5126ca44730239383d5184af18e
+          324|Telegram/Resources/export_html/images/section_music.png|a76a2449d54fd270397f50f414bc6a0c5f893fe6
+          325|Telegram/Resources/export_html/images/section_music@2x.png|53dc7022c658576e45533fa552d7676d044ed029
+          326|Telegram/Resources/export_html/images/section_other.png|a60ed7a40120c24560098b53f059515242d95e18
+          327|Telegram/Resources/export_html/images/section_other@2x.png|497fb33383cc6caddf758d9a0e0b98175cbd518a
+          328|Telegram/Resources/export_html/images/section_photos.png|3b511aee4e8cefcbf322e28a18f6e9ed327cef02
+          329|Telegram/Resources/export_html/images/section_photos@2x.png|587b4ff8cdc20b691523b18d08171fe197b8f01e
+          330|Telegram/Resources/export_html/images/section_sessions.png|0354af4f534c6123e0016a9dc6e1b5f309396f7d
+          331|Telegram/Resources/export_html/images/section_sessions@2x.png|58b213e845bdb996cdbe33cc45db247acbad016e
+          332|Telegram/Resources/export_html/images/section_stories.png|650c69c91f7966a5e18dedee4cb00a8354291b3f
+          333|Telegram/Resources/export_html/images/section_stories@2x.png|429245138d9d9aa5af1375b66d1c69d418e7b93f
+          334|Telegram/Resources/export_html/images/section_web.png|d82e7fb31ec9ee43583866d9522782430d9211d4
+          335|Telegram/Resources/export_html/images/section_web@2x.png|b436884e8dde750e99f5cede0bcb11550cef3a48
           EOF
       - name: Validate Revision 9 authority
         env:
