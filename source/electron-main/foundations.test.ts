@@ -10,6 +10,7 @@ import { SAND_DEV_PRELOAD_FILENAME, SAND_PRIMARY_PRELOAD_FILENAME, resolveSandMa
 import { createDevGatewayOfflineControl } from "./dev/dev-gateway-offline.js";
 import { registerExperimentsIpc } from "./experiments/experiments-ipc.js";
 import { computeDockBadgeTotal } from "./notifications/dock-badge.js";
+import { SandOsNotificationManager } from "./notifications/os-notification-manager.js";
 import { resolveScanRoots } from "./process-metrics/wiring.js";
 import { computeUpdateDisabledReason } from "./update/update-gate.js";
 import { isSafeToRelaunchForUpdate } from "./update/safe-relaunch-gate.js";
@@ -482,4 +483,75 @@ test("MAS packaging declares camera and microphone authority for Human calls", (
   const extendInfo = desktopPackage.build?.mas?.extendInfo ?? {};
   assert.equal(typeof extendInfo.NSMicrophoneUsageDescription, "string");
   assert.equal(typeof extendInfo.NSCameraUsageDescription, "string");
+});
+
+
+test("OS notification manager retires only the exact canonical scope", () => {
+  type FakeNotification = {
+    readonly closeCount: { value: number };
+    click(): void;
+  };
+  const created: FakeNotification[] = [];
+  let focusCount = 0;
+  let activationCount = 0;
+  const manager = new SandOsNotificationManager({
+    getWindow: () => ({
+      isFocused: () => false,
+      isMinimized: () => false,
+      restore: () => undefined,
+      show: () => undefined,
+      focus: () => { focusCount += 1; },
+    }),
+    isSupported: () => true,
+    createNotification: () => {
+      let click: (() => void) | undefined;
+      let close: (() => void) | undefined;
+      const closeCount = { value: 0 };
+      const fake: FakeNotification = {
+        closeCount,
+        click: () => click?.(),
+      };
+      created.push(fake);
+      return {
+        on: (_event, listener) => { click = listener; },
+        once: (_event, listener) => { close = listener; },
+        show: () => undefined,
+        close: () => {
+          closeCount.value += 1;
+          close?.();
+        },
+      };
+    },
+    openAgent: () => undefined,
+  });
+
+  const topicScope = { kind: "conversation", conversationId: "conversation-1", childId: "topic-7" } as const;
+  const savedScope = { kind: "conversation", conversationId: "conversation-1", childId: "saved-9" } as const;
+  assert.equal(manager.showScoped({
+    scope: topicScope,
+    title: "Topic",
+    body: "Message",
+    silent: false,
+    urgency: "normal",
+    onActivate: () => { activationCount += 1; },
+  }), true);
+  assert.equal(manager.showScoped({
+    scope: savedScope,
+    title: "Saved",
+    body: "Message",
+    silent: false,
+    urgency: "normal",
+    onActivate: () => { activationCount += 1; },
+  }), true);
+
+  manager.clearScope(topicScope);
+  assert.equal(created[0]?.closeCount.value, 1);
+  assert.equal(created[1]?.closeCount.value, 0);
+
+  created[1]?.click();
+  assert.equal(focusCount, 1);
+  assert.equal(activationCount, 1);
+
+  manager.reset();
+  assert.equal(created[1]?.closeCount.value, 1);
 });
