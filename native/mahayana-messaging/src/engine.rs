@@ -4443,6 +4443,107 @@ mod recent_open_history_tests {
     }
 
     #[test]
+    fn recent_search_suggestions_are_bounded_deduped_mutable_and_persisted() {
+        let owner = ActorId::new("human:recent-search-owner");
+        let mut state = MessagingState::default();
+        state
+            .actors
+            .insert(owner.clone(), Actor::human(owner.0.clone(), "Owner"));
+        for index in 0..=MAX_RECENT_SEARCH_SUGGESTIONS {
+            let target = ActorId::new(format!("human:recent-search:{index}"));
+            state
+                .actors
+                .insert(target.clone(), Actor::human(target.0.clone(), format!("Peer {index}")));
+        }
+        let mut engine = MessagingEngine::from_state(state);
+
+        for index in 0..=MAX_RECENT_SEARCH_SUGGESTIONS {
+            engine
+                .bump_recent_search_suggestion(
+                    &owner,
+                    RecentSearchSuggestion::Actor {
+                        actor_id: ActorId::new(format!("human:recent-search:{index}")),
+                    },
+                )
+                .expect("canonical target");
+        }
+        let recent = engine.recent_search_suggestions(&owner);
+        assert_eq!(recent.len(), MAX_RECENT_SEARCH_SUGGESTIONS);
+        assert_eq!(
+            recent.first(),
+            Some(&RecentSearchSuggestion::Actor {
+                actor_id: ActorId::new(format!(
+                    "human:recent-search:{}",
+                    MAX_RECENT_SEARCH_SUGGESTIONS
+                )),
+            })
+        );
+        assert!(!recent.contains(&RecentSearchSuggestion::Actor {
+            actor_id: ActorId::new("human:recent-search:0"),
+        }));
+
+        let existing = RecentSearchSuggestion::Actor {
+            actor_id: ActorId::new("human:recent-search:5"),
+        };
+        engine
+            .bump_recent_search_suggestion(&owner, existing.clone())
+            .expect("existing target");
+        assert_eq!(engine.recent_search_suggestions(&owner).first(), Some(&existing));
+        assert_eq!(
+            engine
+                .recent_search_suggestions(&owner)
+                .iter()
+                .filter(|item| *item == &existing)
+                .count(),
+            1
+        );
+
+        let restored = MessagingEngine::from_state(engine.state().clone());
+        assert_eq!(
+            restored.recent_search_suggestions(&owner),
+            engine.recent_search_suggestions(&owner),
+            "ordinary recent suggestions must survive snapshot restore"
+        );
+
+        engine
+            .remove_recent_search_suggestion(&owner, &existing)
+            .expect("owner");
+        assert!(!engine.recent_search_suggestions(&owner).contains(&existing));
+        engine
+            .clear_recent_search_suggestions(&owner)
+            .expect("owner");
+        assert!(engine.recent_search_suggestions(&owner).is_empty());
+    }
+
+    #[test]
+    fn recent_search_suggestion_restore_fails_closed_for_corrupt_projection() {
+        let owner = ActorId::new("human:recent-search-corrupt-owner");
+        let target = ActorId::new("human:recent-search-corrupt-target");
+        let valid = RecentSearchSuggestion::Actor {
+            actor_id: target.clone(),
+        };
+        let missing = RecentSearchSuggestion::Conversation {
+            conversation_id: ConversationId::new("conversation:missing"),
+        };
+        let mut state = MessagingState::default();
+        state
+            .actors
+            .insert(owner.clone(), Actor::human(owner.0.clone(), "Owner"));
+        state
+            .actors
+            .insert(target.clone(), Actor::human(target.0.clone(), "Target"));
+        state
+            .recent_search_suggestions
+            .insert(owner.clone(), vec![valid.clone(), valid, missing]);
+
+        let restored = MessagingEngine::from_state(state);
+        assert!(
+            restored.recent_search_suggestions(&owner).is_empty(),
+            "one invalid or duplicate entry invalidates the whole local projection"
+        );
+    }
+
+    #[test]
     fn recent_open_history_is_runtime_only_across_state_restore() {
         let actor_id = ActorId::new("human:recent-open");
         let destination = ConversationDestination::nested_conversation(
