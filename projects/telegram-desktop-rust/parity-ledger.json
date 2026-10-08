@@ -5298,9 +5298,12 @@
         "createFindInChatController",
         "TranscriptAttachmentGallery",
         "MediaViewer",
+        "MediaThumbnail",
         "resolveWithSingleRetry",
         "useNearViewport",
+        "observeDerivedMediaVisibility",
         "shouldResolveDerivedMedia",
+        "shouldResolveDerivedThumbnail",
         "RetainedHorizontalScrollRegion",
         "restoreHorizontalScrollOffset",
         "SendMessageTextTranscriptCard"
@@ -5327,8 +5330,8 @@
       "implementation_status": "mapped",
       "coverage_disposition": "fabushi-ui-replacement",
       "blockers": [
-        "Current PR provides canonical Math/Media/URL lifecycle slices, bounded missing-media recovery, owner-keyed horizontal-scroll continuity, and near-viewport image/video derived-resource release/reload; exact-head GitHub Actions evidence remains required.",
-        "Full edit/drop/anchor reveal, compatible partial-patch fallback, active-viewer/runtime pruning, visible-range equivalence, packaged accessibility/performance evidence and independent acceptance remain open."
+        "Current PR provides canonical Math/Media/URL lifecycle slices, bounded missing-media recovery, owner-keyed horizontal-scroll continuity, shared near-viewport transcript-card image/video release/reload, and active-or-near filmstrip thumbnail resolution; exact-head GitHub Actions evidence remains required.",
+        "Full edit/drop/anchor reveal, compatible partial-patch fallback, active-viewer and broader runtime pruning, visible-range equivalence, packaged accessibility/performance evidence and independent acceptance remain open."
       ],
       "production_entrypoints": [
         "ProductShell -> ConversationWorkspace -> ConversationTranscript -> existing Search/Math/Resource/URL/action owners"
@@ -5600,9 +5603,12 @@
         "AssistantMath",
         "TranscriptAttachmentGallery",
         "MediaViewer",
+        "MediaThumbnail",
         "resolveWithSingleRetry",
         "useNearViewport",
+        "observeDerivedMediaVisibility",
         "shouldResolveDerivedMedia",
+        "shouldResolveDerivedThumbnail",
         "RetainedHorizontalScrollRegion",
         "captureHorizontalScroll",
         "restoreHorizontalScrollOffset",
@@ -5631,8 +5637,8 @@
       "implementation_status": "mapped",
       "coverage_disposition": "fabushi-ui-replacement",
       "blockers": [
-        "Current PR implements formula generation fencing, media replacement/retry, canonical-message/structural-owner horizontal-scroll continuity, and bounded near-viewport unload/reload of transcript image/video derived state with stale-settlement cancellation; exact-head GitHub Actions evidence remains required.",
-        "Compatible/incompatible partial-leaf fallback, highlight/runtime pruning breadth, active-viewer/thumbnail heavy-resource policy, visible-range/date retained-layout evidence, packaged temporal/performance evidence and independent acceptance remain open."
+        "Current PR implements formula generation fencing, media replacement/retry, canonical-message/structural-owner horizontal-scroll continuity, shared near-viewport unload/reload of transcript image/video derived state, and active-or-near filmstrip thumbnail resolution with stale-settlement cancellation; exact-head GitHub Actions evidence remains required.",
+        "Compatible/incompatible partial-leaf fallback, highlight/runtime pruning breadth, active-viewer heavy-resource policy, visible-range/date retained-layout evidence, packaged temporal/performance evidence and independent acceptance remain open."
       ],
       "production_entrypoints": [
         "ProductShell -> ConversationWorkspace -> ConversationTranscript -> existing Search/Math/Resource/URL/action owners"
@@ -5819,7 +5825,7 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior mapped from accepted telegramdesktop/tdesktop d346 exact blobs; Qt/C++ presentation is not retained and legal/source provenance remains recorded.",
       "reviewer": null,
-      "notes": "Read-complete; current PR shares AssistantMath work only across compatible loader/expression/display identities, fences media replacement and bounded recovery, retains code/table horizontal offset only for the same canonical message plus compatible structural owner, and releases transcript-card image/video derived media outside a near-viewport margin while reconstructing from canonical attachment metadata on re-entry. Audio and the explicitly opened viewer stay live; broader article patch/highlight/runtime/active-viewer/visible-date invariants remain mapped-open."
+      "notes": "Read-complete; current PR shares AssistantMath work only across compatible loader/expression/display identities, fences media replacement and bounded recovery, retains code/table horizontal offset only for the same canonical message plus compatible structural owner, shares visibility observers by margin, releases transcript-card image/video derived media outside a near-viewport margin, and resolves filmstrip thumbnails only while active or horizontally near-visible. Audio and the explicitly opened viewer stay live; broader article patch/highlight/runtime/active-viewer/visible-date invariants remain mapped-open."
     },
     {
       "source_repository": "telegramdesktop/tdesktop",

@@ -18,7 +18,7 @@ import { projectRichMessageAction, projectRichMessageActionAffordance } from "./
 import { createWidgetInteractionAdapter } from "./conversation/cards/transcript-card/widget-interactions.ts";
 import { createAssistantMathMarkupCache, type KatexRuntime } from "./conversation/workspace/math-runtime.ts";
 import { resolveWithSingleRetry } from "./conversation/workspace/media-runtime.ts";
-import { isVisibilityBoundDerivedMedia, shouldResolveDerivedMedia } from "./conversation/workspace/media-visibility.ts";
+import { DERIVED_MEDIA_PRELOAD_ROOT_MARGIN, DERIVED_MEDIA_THUMBNAIL_ROOT_MARGIN, isVisibilityBoundDerivedMedia, observeDerivedMediaVisibility, shouldResolveDerivedMedia, shouldResolveDerivedThumbnail } from "./conversation/workspace/media-visibility.ts";
 import { captureHorizontalScroll, clampHorizontalScrollOffset, restoreHorizontalScrollOffset } from "./conversation/workspace/horizontal-scroll-state.ts";
 import {
   createHiddenChatsMutationController,
@@ -537,14 +537,66 @@ test("UNIT-TDRP-IV-ARTICLE-MEDIA-VISIBILITY-001 derived transcript media follows
   assert.equal(shouldResolveDerivedMedia("image", false), false);
   assert.equal(shouldResolveDerivedMedia("video", true), true);
   assert.equal(shouldResolveDerivedMedia("audio", false), true);
+  assert.equal(shouldResolveDerivedThumbnail(false, false), false);
+  assert.equal(shouldResolveDerivedThumbnail(false, true), true);
+  assert.equal(shouldResolveDerivedThumbnail(true, false), true);
+
+  const previousObserver = globalThis.IntersectionObserver;
+  const instances: FakeIntersectionObserver[] = [];
+  class FakeIntersectionObserver {
+    readonly root = null;
+    readonly thresholds = [0];
+    readonly observed = new Set<Element>();
+    readonly callback: IntersectionObserverCallback;
+    readonly options: IntersectionObserverInit | undefined;
+    disconnected = false;
+    constructor(callback: IntersectionObserverCallback, options?: IntersectionObserverInit) {
+      this.callback = callback;
+      this.options = options;
+      instances.push(this);
+    }
+    observe(target: Element) { this.observed.add(target); }
+    unobserve(target: Element) { this.observed.delete(target); }
+    disconnect() { this.disconnected = true; this.observed.clear(); }
+    takeRecords(): IntersectionObserverEntry[] { return []; }
+  }
+  Object.defineProperty(globalThis, "IntersectionObserver", { configurable: true, writable: true, value: FakeIntersectionObserver as unknown as typeof IntersectionObserver });
+  try {
+    const first = {} as Element;
+    const second = {} as Element;
+    const firstStates: boolean[] = [];
+    const secondStates: boolean[] = [];
+    const releaseFirst = observeDerivedMediaVisibility(first, DERIVED_MEDIA_PRELOAD_ROOT_MARGIN, (value) => firstStates.push(value));
+    const releaseSecond = observeDerivedMediaVisibility(second, DERIVED_MEDIA_PRELOAD_ROOT_MARGIN, (value) => secondStates.push(value));
+    assert.equal(instances.length, 1);
+    assert.equal(instances[0]?.options?.rootMargin, DERIVED_MEDIA_PRELOAD_ROOT_MARGIN);
+    instances[0]?.callback([
+      { target: first, isIntersecting: true } as IntersectionObserverEntry,
+      { target: second, isIntersecting: false } as IntersectionObserverEntry,
+    ], instances[0] as unknown as IntersectionObserver);
+    assert.deepEqual(firstStates, [true]);
+    assert.deepEqual(secondStates, [false]);
+    releaseFirst();
+    assert.equal(instances[0]?.disconnected, false);
+    releaseSecond();
+    assert.equal(instances[0]?.disconnected, true);
+  } finally {
+    if (previousObserver == null) Reflect.deleteProperty(globalThis, "IntersectionObserver");
+    else Object.defineProperty(globalThis, "IntersectionObserver", { configurable: true, writable: true, value: previousObserver });
+  }
+  assert.equal(DERIVED_MEDIA_THUMBNAIL_ROOT_MARGIN, "0px 320px");
 });
 
-test("CONTRACT-TDRP-IV-ARTICLE-MEDIA-LIFECYCLE-001 attachment cards release offscreen image and video resources without changing canonical metadata", () => {
+test("CONTRACT-TDRP-IV-ARTICLE-MEDIA-LIFECYCLE-001 attachment cards and filmstrip thumbnails release offscreen derived media without changing canonical metadata", () => {
   const source = readFileSync(new URL("./conversation/workspace/media-viewer.tsx", import.meta.url), "utf8");
-  assert.match(source, /typeof IntersectionObserver === "undefined"/);
-  assert.match(source, /rootMargin: DERIVED_MEDIA_PRELOAD_ROOT_MARGIN/);
+  const visibilitySource = readFileSync(new URL("./conversation/workspace/media-visibility.ts", import.meta.url), "utf8");
+  assert.match(visibilitySource, /const visibilityBuckets = new Map/);
+  assert.match(visibilitySource, /new IntersectionObserver/);
+  assert.match(source, /observeDerivedMediaVisibility\(element, rootMargin, setIsNearViewport\)/);
   assert.match(source, /const shouldResolve = resolveMedia != null && supportedMediaKind && shouldResolveDerivedMedia\(kind, isNearViewport\);/);
   assert.match(source, /if \(!shouldResolve \|\| resolveMedia == null\) \{[\s\S]{0,120}setMedia\(null\);[\s\S]{0,120}setLoading\(false\);/);
+  assert.match(source, /const shouldResolve = shouldResolveDerivedThumbnail\(isNearViewport, isActive\);/);
+  assert.match(source, /<MediaThumbnail isActive=\{attachmentIndex === index\}/);
   assert.match(source, /<MediaCard[\s\S]{0,400}observe=\{observeMediaCard\}/);
   assert.match(source, /<MediaViewer attachments=\{mediaAttachments\}/);
 });

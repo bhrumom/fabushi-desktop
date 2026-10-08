@@ -6,7 +6,7 @@ import { attachmentBasename, formatAttachmentBytes, inferAttachmentKind, type At
 import { PdfAttachmentViewer, type PdfBytesResolver } from "./pdf-viewer";
 import type { TranscriptAdjacency } from "./transcript-adjacency";
 import { resolveWithSingleRetry } from "./media-runtime";
-import { DERIVED_MEDIA_PRELOAD_ROOT_MARGIN, isVisibilityBoundDerivedMedia, shouldResolveDerivedMedia } from "./media-visibility";
+import { DERIVED_MEDIA_PRELOAD_ROOT_MARGIN, DERIVED_MEDIA_THUMBNAIL_ROOT_MARGIN, isVisibilityBoundDerivedMedia, observeDerivedMediaVisibility, shouldResolveDerivedMedia, shouldResolveDerivedThumbnail } from "./media-visibility";
 
 // @evidence src/app/dist/renderer/assets/view-DPSBrvyV.js#byteOffset=0 (user-attachment media/file leaf)
 // @evidence src/app/dist/renderer/assets/view-DPSBrvyV.js#SHA256=5bf28224da62a9042885e9da60e3fce82ed544846f470241ed6bcf4e12e64040
@@ -50,7 +50,7 @@ function clamp(value: number, minimum: number, maximum: number): number {
   return Math.min(maximum, Math.max(minimum, value));
 }
 
-function useNearViewport(enabled: boolean): [(element: HTMLElement | null) => void, boolean] {
+function useNearViewport(enabled: boolean, rootMargin = DERIVED_MEDIA_PRELOAD_ROOT_MARGIN): [(element: HTMLElement | null) => void, boolean] {
   const [element, setElement] = useState<HTMLElement | null>(null);
   const [isNearViewport, setIsNearViewport] = useState(() => !enabled || typeof IntersectionObserver === "undefined");
   const bindElement = useCallback((next: HTMLElement | null) => setElement(next), []);
@@ -61,21 +61,8 @@ function useNearViewport(enabled: boolean): [(element: HTMLElement | null) => vo
       return undefined;
     }
     if (element == null) return undefined;
-    if (typeof IntersectionObserver === "undefined") {
-      setIsNearViewport(true);
-      return undefined;
-    }
-    let active = true;
-    const observer = new IntersectionObserver((entries) => {
-      const entry = entries.find((candidate) => candidate.target === element);
-      if (active && entry != null) setIsNearViewport(entry.isIntersecting);
-    }, { rootMargin: DERIVED_MEDIA_PRELOAD_ROOT_MARGIN });
-    observer.observe(element);
-    return () => {
-      active = false;
-      observer.disconnect();
-    };
-  }, [element, enabled]);
+    return observeDerivedMediaVisibility(element, rootMargin, setIsNearViewport);
+  }, [element, enabled, rootMargin]);
 
   return [bindElement, isNearViewport];
 }
@@ -86,11 +73,18 @@ interface Transform {
   y: number;
 }
 
-function MediaThumbnail({ source, resolveMedia }: { source: string; resolveMedia: MediaResolver }) {
+function MediaThumbnail({ source, resolveMedia, isActive }: { source: string; resolveMedia: MediaResolver; isActive: boolean }) {
+  const [observeThumbnail, isNearViewport] = useNearViewport(true, DERIVED_MEDIA_THUMBNAIL_ROOT_MARGIN);
+  const shouldResolve = shouldResolveDerivedThumbnail(isNearViewport, isActive);
   const [media, setMedia] = useState<AttachmentMedia | null>(null);
-  const [state, setState] = useState<"loading" | "missing">("loading");
+  const [state, setState] = useState<"idle" | "loading" | "missing">(() => shouldResolve ? "loading" : "idle");
   useEffect(() => {
     let active = true;
+    if (!shouldResolve) {
+      setMedia(null);
+      setState("idle");
+      return () => { active = false; };
+    }
     setMedia(null);
     setState("loading");
     void resolveWithSingleRetry(resolveMedia, source).then((next) => {
@@ -104,10 +98,10 @@ function MediaThumbnail({ source, resolveMedia }: { source: string; resolveMedia
       if (active) setState("missing");
     });
     return () => { active = false; };
-  }, [resolveMedia, source]);
-  if (media?.kind === "video") return <video aria-hidden className="sand-media-viewer__thumb-video" muted preload="metadata" src={media.src} />;
-  if (media?.kind === "image") return <img alt="" aria-hidden className="sand-media-viewer__thumb-image" draggable={false} src={media.dataUrl} />;
-  return <div aria-hidden className="sand-media-viewer__thumb-fallback" data-state={state} />;
+  }, [resolveMedia, shouldResolve, source]);
+  if (media?.kind === "video") return <video aria-hidden className="sand-media-viewer__thumb-video" muted preload="metadata" ref={observeThumbnail} src={media.src} />;
+  if (media?.kind === "image") return <img alt="" aria-hidden className="sand-media-viewer__thumb-image" draggable={false} ref={observeThumbnail} src={media.dataUrl} />;
+  return <div aria-hidden className="sand-media-viewer__thumb-fallback" data-state={state} ref={observeThumbnail} />;
 }
 
 function MediaViewer({ attachments, startIndex, resolveMedia, onClose, restoreFocus }: { attachments: readonly MediaViewerAttachment[]; startIndex: number; resolveMedia: MediaResolver; onClose: () => void; restoreFocus: () => void }) {
@@ -224,7 +218,7 @@ function MediaViewer({ attachments, startIndex, resolveMedia, onClose, restoreFo
           {content}
         </div>
         {caption.length > 0 ? <div className="sand-media-viewer__caption">{caption}</div> : null}
-        {total > 1 ? <div className="sand-media-viewer__filmstrip"><div className="sand-media-viewer__filmstrip-track">{attachments.map((attachment, attachmentIndex) => <button aria-current={attachmentIndex === index || undefined} aria-label={`View media ${attachmentIndex + 1} of ${total}`} className="sand-media-viewer__thumb" key={`${attachment.path}:${attachmentIndex}`} onClick={(event) => { event.stopPropagation(); setIndex(attachmentIndex); }} type="button"><MediaThumbnail resolveMedia={resolveMedia} source={attachment.path} /></button>)}</div></div> : null}
+        {total > 1 ? <div className="sand-media-viewer__filmstrip"><div className="sand-media-viewer__filmstrip-track">{attachments.map((attachment, attachmentIndex) => <button aria-current={attachmentIndex === index || undefined} aria-label={`View media ${attachmentIndex + 1} of ${total}`} className="sand-media-viewer__thumb" key={`${attachment.path}:${attachmentIndex}`} onClick={(event) => { event.stopPropagation(); setIndex(attachmentIndex); }} type="button"><MediaThumbnail isActive={attachmentIndex === index} resolveMedia={resolveMedia} source={attachment.path} /></button>)}</div></div> : null}
       </div>
     </div>,
     document.body,

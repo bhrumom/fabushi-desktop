@@ -94,20 +94,20 @@ These rows are additive to the AC coverage plan. A row at `IMPLEMENTED` is not a
 
 - `ORA-TDRP-IV-ARTICLE-001`: rich-content projection remains under the canonical transcript/message identity; derived horizontal-scroll state never becomes a second article or message owner. Both the ordinary transcript and send-message:text lazy leaf must pass the canonical entry identity.
 - `INV-TDRP-IV-ARTICLE-SCROLL-001`: code/table horizontal scroll restores only for a compatible canonical message plus structural owner and clamps to current geometry.
-- `INV-TDRP-IV-ARTICLE-HEAVY-001`: transcript-card image/video derived state is resolved only inside a bounded near-viewport margin, released with stale-settlement fencing outside it, and reconstructed from canonical attachment metadata; audio and the explicitly opened `MediaViewer` remain outside this unload policy.
+- `INV-TDRP-IV-ARTICLE-HEAVY-001`: transcript-card image/video derived state is resolved only inside a bounded near-viewport margin, filmstrip thumbnails resolve only while active or horizontally near-visible, equal-margin subscriptions share one observer, and off-budget state is released with stale-settlement fencing before reconstruction from canonical attachment metadata; audio and the explicitly opened `MediaViewer` remain outside this unload policy.
 - Current cases: `UNIT-TDRP-IV-ARTICLE-SCROLL-CLAMP-001`, `UNIT-TDRP-IV-ARTICLE-MEDIA-VISIBILITY-001`, `CONTRACT-TDRP-IV-ARTICLE-SCROLL-CONTINUITY-001`, and `CONTRACT-TDRP-IV-ARTICLE-MEDIA-LIFECYCLE-001`.
 - Dossier: `projects/telegram-desktop-rust/dossiers/iv-markdown-article-complete-read.md`.
-- Current verdict: `MAPPED`; bounded scroll and transcript-card derived-media lifecycle slices are present, while exact-head execution and the full article contract remain pending.
+- Current verdict: `MAPPED`; bounded scroll plus shared transcript-card/filmstrip derived-media lifecycle slices are present, while exact-head execution and the full article contract remain pending.
 
 ### TDRP-R9-IV-ARTICLE-CONTENT-LIFECYCLE-001 oracle
 
 - `ORA-TDRP-IV-ARTICLE-001`: compatible derived state may be reused only while its canonical message plus structural owner remains compatible through content revision.
 - `INV-TDRP-IV-ARTICLE-SCROLL-001`: code/table horizontal scroll is captured before content revision, restored only for the same owner identity, clamped to current geometry, and reset on owner mismatch.
 - `INV-TDRP-IV-ARTICLE-RUNTIME-001`: scroll geometry remains derived component state rather than canonical message truth and is released with the owning transcript region.
-- `INV-TDRP-IV-ARTICLE-HEAVY-001`: visibility changes cancel stale image/video settlement and retire only reconstructable transcript-card media state; canonical attachment identity, audio playback policy, and an explicitly opened viewer remain owned by their existing boundaries.
+- `INV-TDRP-IV-ARTICLE-HEAVY-001`: visibility changes cancel stale image/video and filmstrip-thumbnail settlement, retire only reconstructable derived state, and release a shared observer after its final subscriber; canonical attachment identity, audio playback policy, and an explicitly opened viewer remain owned by their existing boundaries.
 - Current cases: `UNIT-TDRP-IV-ARTICLE-SCROLL-CLAMP-001`, `UNIT-TDRP-IV-ARTICLE-MEDIA-VISIBILITY-001`, `CONTRACT-TDRP-IV-ARTICLE-SCROLL-CONTINUITY-001`, and `CONTRACT-TDRP-IV-ARTICLE-MEDIA-LIFECYCLE-001`.
 - Dossier: `projects/telegram-desktop-rust/dossiers/iv-markdown-article-complete-read.md`.
-- Current verdict: `MAPPED`; bounded code/table and transcript-card derived-media lifecycle slices are present, while exact-head execution and the broader article lifecycle remain pending.
+- Current verdict: `MAPPED`; bounded code/table plus shared transcript-card/filmstrip derived-media lifecycle slices are present, while exact-head execution and the broader article lifecycle remain pending.
 
 ### TDRP-R9-IV-ARTICLE-INTERACTION-001 oracle
 
