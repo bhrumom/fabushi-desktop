@@ -3869,7 +3869,8 @@
       "implementation_status": "mapped",
       "coverage_disposition": "fabushi-ui-replacement",
       "blockers": [
-        "Shipping rich-message button composition and exact-head behavior/temporal/accessibility evidence remain open."
+        "Current PR implementation candidate still requires exact-head GitHub Actions build/test evidence.",
+        "Packaged keyboard/context-menu/accessibility evidence and independent responsibility review remain open."
       ],
       "production_entrypoints": [
         "ConversationTranscript -> TranscriptCard action/URL projection -> canonical Button primitive -> typed desktop/native action boundary"
@@ -3880,7 +3881,9 @@
         "path:frontend/src/recovered/features/conversation/cards/transcript-card/url-card.ts",
         "path:frontend/src/recovered/features/conversation/workspace/transcript.tsx"
       ],
-      "test_evidence": [],
+      "test_evidence": [
+        "path:frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts"
+      ],
       "target_commit": "3bc92400826cc4ca7ac665b467708e22261edc61",
       "workflow_run": null,
       "run_attempt": null,
@@ -4025,7 +4028,7 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior mapped from accepted telegramdesktop/tdesktop d346 exact blobs; Qt/C++ presentation is not retained and legal provenance remains in project records.",
       "reviewer": null,
-      "notes": "Read-complete and mapped only; no implemented/verified claim.",
+      "notes": "Read-complete; typed URL/Auth/CopyText projection, URL disclosure/copy affordances and current TranscriptCard context-menu composition are implemented on the current PR branch, but this row intentionally remains mapped until exact-head execution evidence and independent acceptance exist.",
       "source_path": "Telegram/SourceFiles/iv/markdown/iv_markdown_button_row.h",
       "source_blob_sha": "0b9a011680bac413aecefe8b1aa2750b30ab62a0",
       "source_kind": "header",
@@ -4064,11 +4067,18 @@
       "platform_delta": "React/TypeScript canonical transcript-card interaction replaces Qt click-handler/painter presentation.",
       "fabushi_target_paths": [
         "frontend/src/recovered/ui/sand-kit-primitives.tsx",
-        "frontend/src/recovered/features/conversation/cards/transcript-card/url-card.ts"
+        "frontend/src/recovered/features/conversation/cards/transcript-card/protocol.ts",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/url-card.ts",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/message-actions.tsx",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/views/widget.tsx"
       ],
       "fabushi_target_symbols": [
         "SandButton",
-        "normalizeLinkUrl"
+        "WidgetOptionAction",
+        "normalizeLinkUrl",
+        "projectRichMessageActionAffordance",
+        "projectTranscriptInlineCopyTarget",
+        "WidgetChoice"
       ],
       "command_event_contracts": [
         "Transcript button action -> existing typed action/native boundary",
@@ -4120,7 +4130,8 @@
       "implementation_status": "mapped",
       "coverage_disposition": "fabushi-ui-replacement",
       "blockers": [
-        "Shipping rich-message button composition and exact-head behavior/temporal/accessibility evidence remain open."
+        "Current PR implementation candidate still requires exact-head GitHub Actions build/test evidence.",
+        "Packaged temporal/reload/restart/accessibility evidence and independent responsibility review remain open."
       ],
       "production_entrypoints": [
         "ConversationTranscript -> TranscriptCard action/URL projection -> canonical Button primitive -> typed desktop/native action boundary"
@@ -4131,7 +4142,9 @@
         "path:frontend/src/recovered/features/conversation/cards/transcript-card/url-card.ts",
         "path:frontend/src/recovered/features/conversation/workspace/transcript.tsx"
       ],
-      "test_evidence": [],
+      "test_evidence": [
+        "path:frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts"
+      ],
       "target_commit": "3bc92400826cc4ca7ac665b467708e22261edc61",
       "workflow_run": null,
       "run_attempt": null,
@@ -4276,7 +4289,7 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior mapped from accepted telegramdesktop/tdesktop d346 exact blobs; Qt/C++ presentation is not retained and legal provenance remains in project records.",
       "reviewer": null,
-      "notes": "Read-complete and mapped only; no implemented/verified claim.",
+      "notes": "Read-complete; current-slot action fencing, duplicate-pending rejection, stale scope settlement and rich-action copy/context projection are implemented on the current PR branch, but this row intentionally remains mapped until exact-head execution evidence and independent acceptance exist.",
       "source_path": "Telegram/SourceFiles/iv/markdown/iv_markdown_button_row.cpp",
       "source_blob_sha": "cf02fad9c6b76a2b2d9f3f7404b2e763cab41b64",
       "source_kind": "source",
@@ -4317,10 +4330,15 @@
       "platform_delta": "Browser/React event and lifecycle mechanisms replace Qt ClickHandler/timer/ripple implementation behind the same canonical transcript state.",
       "fabushi_target_paths": [
         "frontend/src/recovered/features/conversation/cards/transcript-card/widget-interactions.ts",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/message-actions.tsx",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/views/widget.tsx",
         "frontend/src/recovered/features/conversation/workspace/transcript.tsx"
       ],
       "fabushi_target_symbols": [
         "createWidgetInteractionAdapter",
+        "projectTranscriptInlineCopyTarget",
+        "TranscriptCardActionAnchor",
+        "WidgetChoice",
         "ConversationTranscript"
       ],
       "command_event_contracts": [
