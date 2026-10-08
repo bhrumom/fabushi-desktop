@@ -34,6 +34,34 @@ pub struct StoryView {
     pub forwarded: bool,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct StoryProgressState {
+    pub index: usize,
+    pub total: usize,
+    pub progress: f64,
+}
+
+impl Default for StoryProgressState {
+    fn default() -> Self {
+        Self { index: 0, total: 1, progress: 0.0 }
+    }
+}
+
+impl StoryProgressState {
+    /// Projects the source-neutral Story slider state used by a capability surface.
+    /// Every show call resets playback progress before exposing bounded index/total.
+    pub fn show(&mut self, index: usize, total: usize) {
+        self.progress = 0.0;
+        self.total = total.max(1);
+        self.index = index.min(self.total - 1);
+    }
+
+    /// Updates only the active Story playback projection with a finite bounded value.
+    pub fn update_playback(&mut self, progress: f64) {
+        self.progress = if progress.is_finite() { progress.clamp(0.0, 1.0) } else { 0.0 };
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Story {
@@ -111,4 +139,47 @@ pub enum StoryError {
     Expired(StoryId),
     #[error("story viewer {0:?} was not found")]
     ViewerNotFound(ActorId),
+}
+
+
+#[cfg(test)]
+mod progress_tests {
+    use super::StoryProgressState;
+
+    #[test]
+    fn story_progress_show_normalizes_bounds_and_resets_playback() {
+        let mut state = StoryProgressState::default();
+        state.update_playback(0.75);
+        state.show(9, 3);
+        assert_eq!(state.index, 2);
+        assert_eq!(state.total, 3);
+        assert_eq!(state.progress, 0.0);
+        state.update_playback(0.5);
+        state.show(0, 0);
+        assert_eq!(state.index, 0);
+        assert_eq!(state.total, 1);
+        assert_eq!(state.progress, 0.0);
+    }
+
+    #[test]
+    fn story_progress_updates_only_with_bounded_finite_values() {
+        let mut state = StoryProgressState::default();
+        state.update_playback(-1.0);
+        assert_eq!(state.progress, 0.0);
+        state.update_playback(2.0);
+        assert_eq!(state.progress, 1.0);
+        state.update_playback(f64::NAN);
+        assert_eq!(state.progress, 0.0);
+        state.update_playback(0.375);
+        assert_eq!(state.progress, 0.375);
+    }
+
+    #[test]
+    fn repeated_show_resets_progress_even_when_selection_is_unchanged() {
+        let mut state = StoryProgressState::default();
+        state.show(1, 3);
+        state.update_playback(0.8);
+        state.show(1, 3);
+        assert_eq!(state, StoryProgressState { index: 1, total: 3, progress: 0.0 });
+    }
 }
