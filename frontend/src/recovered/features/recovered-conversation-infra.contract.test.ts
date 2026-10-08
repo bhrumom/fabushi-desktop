@@ -18,6 +18,7 @@ import { projectRichMessageAction, projectRichMessageActionAffordance, projectTr
 import { createWidgetInteractionAdapter } from "./conversation/cards/transcript-card/widget-interactions.ts";
 import { createAssistantMathMarkupCache, type KatexRuntime } from "./conversation/workspace/math-runtime.ts";
 import { resolveWithSingleRetry } from "./conversation/workspace/media-runtime.ts";
+import { accumulateWheelZoomSteps, normalizeWheelZoomDelta } from "./conversation/workspace/media-zoom.ts";
 import { DERIVED_MEDIA_PRELOAD_ROOT_MARGIN, DERIVED_MEDIA_THUMBNAIL_ROOT_MARGIN, isVisibilityBoundDerivedMedia, observeDerivedMediaVisibility, shouldResolveDerivedMedia, shouldResolveDerivedThumbnail } from "./conversation/workspace/media-visibility.ts";
 import { captureHorizontalScroll, clampHorizontalScrollOffset, restoreHorizontalScrollOffset } from "./conversation/workspace/horizontal-scroll-state.ts";
 import {
@@ -652,6 +653,17 @@ test("CONTRACT-TDRP-IV-VIEW-CODE-COPY-SANITIZED-001 code copy crosses only the c
 
   const source = readFileSync(new URL("./conversation/workspace/code-copy.ts", import.meta.url), "utf8");
   assert.doesNotMatch(source, /session|window|controller|host|coordinator/i);
+});
+
+
+test("UNIT-TDRP-IV-VIEW-CONTROL-WHEEL-ZOOM-001 accumulates deterministic control-wheel steps", () => {
+  assert.equal(normalizeWheelZoomDelta(-120, 0), 120);
+  assert.equal(normalizeWheelZoomDelta(3, 1), -48);
+  assert.equal(normalizeWheelZoomDelta(1, 2), -100);
+  assert.deepEqual(accumulateWheelZoomSteps(0, 60), { remainder: 60, steps: 0 });
+  assert.deepEqual(accumulateWheelZoomSteps(60, 60), { remainder: 0, steps: 1 });
+  assert.deepEqual(accumulateWheelZoomSteps(0, -250), { remainder: -10, steps: -2 });
+  assert.deepEqual(accumulateWheelZoomSteps(Number.NaN, 120), { remainder: 0, steps: 1 });
 });
 
 

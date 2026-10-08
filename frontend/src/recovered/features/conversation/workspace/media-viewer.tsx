@@ -6,6 +6,7 @@ import { attachmentBasename, formatAttachmentBytes, inferAttachmentKind, type At
 import { PdfAttachmentViewer, type PdfBytesResolver } from "./pdf-viewer";
 import type { TranscriptAdjacency } from "./transcript-adjacency";
 import { resolveWithSingleRetry } from "./media-runtime";
+import { accumulateWheelZoomSteps, normalizeWheelZoomDelta } from "./media-zoom";
 import { DERIVED_MEDIA_PRELOAD_ROOT_MARGIN, DERIVED_MEDIA_THUMBNAIL_ROOT_MARGIN, isVisibilityBoundDerivedMedia, observeDerivedMediaVisibility, shouldResolveDerivedMedia, shouldResolveDerivedThumbnail } from "./media-visibility";
 
 // @evidence src/app/dist/renderer/assets/view-DPSBrvyV.js#byteOffset=0 (user-attachment media/file leaf)
@@ -111,6 +112,7 @@ function MediaViewer({ attachments, startIndex, resolveMedia, onClose, restoreFo
   const [failed, setFailed] = useState(false);
   const [transform, setTransform] = useState<Transform>({ scale: MIN_ZOOM, x: 0, y: 0 });
   const viewerRef = useRef<HTMLDivElement | null>(null);
+  const wheelZoomRemainderRef = useRef(0);
   const pointerRef = useRef<{ id: number | null; startX: number; startY: number; originX: number; originY: number; moved: boolean }>({ id: null, startX: 0, startY: 0, originX: 0, originY: 0, moved: false });
   const current = attachments[index] ?? attachments[0];
   const total = attachments.length;
@@ -123,6 +125,7 @@ function MediaViewer({ attachments, startIndex, resolveMedia, onClose, restoreFo
     setLoading(true);
     setFailed(false);
     setTransform({ scale: MIN_ZOOM, x: 0, y: 0 });
+    wheelZoomRemainderRef.current = 0;
     const activePointerId = pointerRef.current.id;
     const viewer = viewerRef.current;
     if (activePointerId != null && viewer?.hasPointerCapture(activePointerId)) {
@@ -190,8 +193,15 @@ function MediaViewer({ attachments, startIndex, resolveMedia, onClose, restoreFo
 
   const onWheel = (event: React.WheelEvent<HTMLDivElement>) => {
     event.preventDefault();
-    const multiplier = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? 100 : 1;
-    zoom(Math.exp(-event.deltaY * multiplier * 0.0015));
+    const normalizedDelta = normalizeWheelZoomDelta(event.deltaY, event.deltaMode);
+    if (event.ctrlKey) {
+      const accumulated = accumulateWheelZoomSteps(wheelZoomRemainderRef.current, normalizedDelta);
+      wheelZoomRemainderRef.current = accumulated.remainder;
+      if (accumulated.steps !== 0) zoom(Math.pow(1.2, accumulated.steps));
+      return;
+    }
+    wheelZoomRemainderRef.current = 0;
+    zoom(Math.exp(normalizedDelta * 0.0015));
   };
   const onPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     if (event.button !== 0 || transform.scale <= MIN_ZOOM) return;
