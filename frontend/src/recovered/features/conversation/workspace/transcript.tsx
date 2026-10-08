@@ -320,13 +320,13 @@ function renderAssistantInlineText(text: string, openExternal?: TranscriptExtern
       } else {
         const trailing = markdownLabel == null ? rawUrl.match(/[),.!?;:\]}]+$/u)?.[0] ?? "" : "";
         const href = rawUrl.slice(0, rawUrl.length - trailing.length);
-        const external = projectTranscriptExternalLink(href);
+        const external = projectTranscriptExternalLink(href, markdownLabel ?? undefined);
         if (external == null) {
           nodes.push(match[0]);
         } else {
           nodes.push(openExternal == null
             ? (markdownLabel ?? external.copyText)
-            : <a className="sand-l1v4ol sand-krqix3 sand-1sur9pj" data-transcript-copy-label={external.copyLabel} data-transcript-copy-text={external.copyText} href={external.href} key={`assistant-link-${match.index}`} onClick={(event) => { event.preventDefault(); if (!transcriptSelectionBlocksActivation()) openExternal(external.href); }} rel="noopener noreferrer">{markdownLabel ?? external.copyText}</a>);
+            : <a className="sand-l1v4ol sand-krqix3 sand-1sur9pj" data-transcript-copy-label={external.copyLabel} data-transcript-copy-text={external.copyText} href={external.href} key={`assistant-link-${match.index}`} onClick={(event) => { event.preventDefault(); if (!transcriptSelectionBlocksActivation()) openExternal(external.href); }} rel="noopener noreferrer" title={external.tooltip ?? undefined}>{markdownLabel ?? external.copyText}</a>);
           if (trailing.length > 0) nodes.push(trailing);
         }
       }
@@ -602,8 +602,8 @@ function applyRichTextMarks(node: ProseMirrorNode, content: ReactNode, openExter
       case "underline": return <u key={key}>{current}</u>;
       case "code": return <code key={key}>{current}</code>;
       case "link": {
-        const external = projectTranscriptExternalLink(mark.attrs.href);
-        return external == null || openExternal == null ? current : <a data-transcript-copy-label={external.copyLabel} data-transcript-copy-text={external.copyText} href={external.href} key={key} onClick={(event) => { event.preventDefault(); if (!transcriptSelectionBlocksActivation()) openExternal(external.href); }}>{current}</a>;
+        const external = projectTranscriptExternalLink(mark.attrs.href, node.text ?? undefined);
+        return external == null || openExternal == null ? current : <a data-transcript-copy-label={external.copyLabel} data-transcript-copy-text={external.copyText} href={external.href} key={key} onClick={(event) => { event.preventDefault(); if (!transcriptSelectionBlocksActivation()) openExternal(external.href); }} title={external.tooltip ?? undefined}>{current}</a>;
       }
       default: return current;
     }
