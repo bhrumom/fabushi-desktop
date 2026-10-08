@@ -2848,7 +2848,8 @@ impl<S: MessagingStateStore> MessagingService<S> {
                     audience.insert(session.actor_id.clone());
                 }
             }
-            ServerEvent::SyncBatch { .. }
+            ServerEvent::StoriesSnapshot { .. }
+            | ServerEvent::SyncBatch { .. }
             | ServerEvent::SearchResults { .. }
             | ServerEvent::FolderChanged { .. }
             | ServerEvent::FolderDeleted { .. }
