@@ -2962,3 +2962,115 @@ impl<S: MessagingStateStore> MessagingService<S> {
         Ok(())
     }
 }
+
+
+#[cfg(test)]
+mod recent_search_suggestion_service_tests {
+    use super::*;
+    use crate::actor::Actor;
+    use crate::protocol::RequestContext;
+    use crate::search::RecentSearchSuggestion;
+    use crate::store::MemoryStateStore;
+
+    fn envelope(actor_id: &ActorId, command: ClientCommand) -> ClientEnvelope {
+        ClientEnvelope::new(
+            RequestContext {
+                request_id: "recent-search-request".into(),
+                device_id: "device:recent-search".into(),
+                actor_id: actor_id.clone(),
+                session_id: "session:recent-search".into(),
+                sent_at_ms: 10,
+            },
+            command,
+        )
+    }
+
+    fn suggestions(responses: &[ServerEnvelope]) -> Vec<RecentSearchSuggestion> {
+        assert_eq!(responses.len(), 1);
+        match &responses[0].event {
+            ServerEvent::RecentSearchSuggestions { suggestions } => suggestions.clone(),
+            other => panic!("expected recent search suggestions, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn recent_search_suggestion_protocol_persists_without_advancing_server_cursor() {
+        let owner = ActorId::new("human:recent-search-owner");
+        let target = ActorId::new("human:recent-search-target");
+        let mut state = crate::engine::MessagingState::default();
+        state
+            .actors
+            .insert(owner.clone(), Actor::human(owner.0.clone(), "Owner"));
+        state
+            .actors
+            .insert(target.clone(), Actor::human(target.0.clone(), "Target"));
+
+        let mut service = MessagingService {
+            engine: MessagingEngine::from_state(state),
+            store: MemoryStateStore::default(),
+            blob_store: None,
+            cursor: 7,
+        };
+        let suggestion = RecentSearchSuggestion::Actor {
+            actor_id: target.clone(),
+        };
+
+        let bumped = service
+            .handle(
+                envelope(
+                    &owner,
+                    ClientCommand::BumpRecentSearchSuggestion {
+                        suggestion: suggestion.clone(),
+                    },
+                ),
+                20,
+            )
+            .expect("bump local suggestion");
+        assert_eq!(suggestions(&bumped), vec![suggestion.clone()]);
+        assert_eq!(service.cursor(), 7, "local preference must not mint a server event cursor");
+
+        let restored =
+            MessagingService::load(service.store.clone()).expect("reload persisted suggestion");
+        let listed = restored
+            .recent_search_suggestions_envelope(&owner, 30);
+        assert_eq!(
+            suggestions(std::slice::from_ref(&listed)),
+            vec![suggestion.clone()]
+        );
+        assert_eq!(restored.cursor(), 7);
+
+        let mut restored = restored;
+        let removed = restored
+            .handle(
+                envelope(
+                    &owner,
+                    ClientCommand::RemoveRecentSearchSuggestion {
+                        suggestion: suggestion.clone(),
+                    },
+                ),
+                40,
+            )
+            .expect("remove local suggestion");
+        assert!(suggestions(&removed).is_empty());
+
+        restored
+            .handle(
+                envelope(
+                    &owner,
+                    ClientCommand::BumpRecentSearchSuggestion {
+                        suggestion: suggestion.clone(),
+                    },
+                ),
+                50,
+            )
+            .expect("re-add local suggestion");
+        let cleared = restored
+            .handle(
+                envelope(&owner, ClientCommand::ClearRecentSearchSuggestions),
+                60,
+            )
+            .expect("clear local suggestions");
+        assert!(suggestions(&cleared).is_empty());
+        assert_eq!(restored.cursor(), 7);
+    }
+}
