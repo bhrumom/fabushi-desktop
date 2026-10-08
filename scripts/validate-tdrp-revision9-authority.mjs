@@ -90,6 +90,7 @@ const inventoryIndex=await readJson('projects/telegram-desktop-rust/inventory/in
 const rtm=await read('projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md');
 const ledger=await readJson('projects/telegram-desktop-rust/parity-ledger.json');
 const acquisitionInventory=await readJson('projects/telegram-desktop-rust/inventory/build-time-acquisitions.json');
+const sourceDispositions=await readJson('projects/telegram-desktop-rust/inventory/source-dispositions.json');
 
 fail(lock.project_id==='TDRP-001' && lock.spec_revision===9,'lock is not TDRP Revision 9');
 const authorityCommit=lock.upstream?.commit;
@@ -763,6 +764,27 @@ recursiveInventory.push(...childEntries.map(e=>({
   repository:childRepo,commit:cppNested[0].id,scope:'nested-gitlink-child',parent:'gitlab.com/mnauw/cppgir@'+cppgir.commit,mount:childPath,
   path:e.path,mode:e.mode,type:e.type,object:e.sha,size:e.size??null
 })));
+
+const dispositionPrefix=sourceDispositions.deterministic_recursive_prefix;
+fail(sourceDispositions.upstream?.commit===authorityCommit && sourceDispositions.upstream?.tree===authorityTree,'source-dispositions upstream authority drift');
+fail(Number.isInteger(dispositionPrefix?.first_order) && dispositionPrefix.first_order===1,'source-dispositions prefix must start at order 1');
+fail(Number.isInteger(dispositionPrefix?.last_order) && dispositionPrefix.last_order>=0,'source-dispositions prefix last order missing');
+fail(dispositionPrefix.entries===dispositionPrefix.last_order,'source-dispositions prefix entry count drift');
+fail(Array.isArray(sourceDispositions.rows),'source-dispositions rows must be an array');
+fail(sourceDispositions.rows.length===dispositionPrefix.entries,'source-dispositions row count differs from deterministic prefix');
+const rootNonDirectory=tree.filter(e=>e.type!=='tree');
+fail(dispositionPrefix.last_order<=rootNonDirectory.length,'source-dispositions prefix crossed root inventory without an explicit component identity schema');
+const dispositionOrders=new Set();
+for (const row of sourceDispositions.rows) {
+  fail(Number.isInteger(row.recursive_order) && row.recursive_order>=1 && row.recursive_order<=dispositionPrefix.last_order,'source-dispositions row order outside deterministic prefix: '+row.recursive_order);
+  fail(!dispositionOrders.has(row.recursive_order),'duplicate source-dispositions recursive order: '+row.recursive_order);
+  dispositionOrders.add(row.recursive_order);
+  const expected=rootNonDirectory[row.recursive_order-1];
+  fail(expected?.path===row.source_path,'source-dispositions deterministic path drift at order '+row.recursive_order+': expected '+expected?.path+', recorded '+row.source_path);
+  fail(expected?.sha===row.source_blob_sha,'source-dispositions deterministic blob drift at order '+row.recursive_order+': '+row.source_path);
+  fail(row.read_complete===true && row.responsibility_decomposition_complete===true,'source-dispositions prefix contains unread/incomplete row at order '+row.recursive_order);
+}
+for (let order=1; order<=dispositionPrefix.last_order; order++) fail(dispositionOrders.has(order),'source-dispositions deterministic prefix has a gap at order '+order);
 
 const checkedRecursive=checkRecursiveInventory({
   lock, inventoryIndex, ledger, entries:recursiveInventory,
