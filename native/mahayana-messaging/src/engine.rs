@@ -3643,10 +3643,54 @@ impl MessagingEngine {
                 conversation_id,
                 message_ids,
             } => {
-                if let Some(messages) = self.state.messages.get_mut(&conversation_id) {
-                    for id in message_ids {
-                        if let Some(message) = messages.get_mut(&id) {
-                            message.deleted = true;
+                for id in message_ids {
+                    let message = self
+                        .state
+                        .messages
+                        .get(&conversation_id)
+                        .and_then(|messages| messages.get(&id))
+                        .cloned();
+                    if let Some(message) = message.as_ref() {
+                        for child in &mut self.state.conversation_child_states {
+                            let exact_member = match child.destination.child.as_ref() {
+                                Some(ConversationChildIdentity::Topic { root_message_id }) => {
+                                    child.destination.conversation_id == conversation_id
+                                        && message
+                                            .thread_root_message_id
+                                            .as_ref()
+                                            .is_some_and(|root| &root.0 == root_message_id)
+                                }
+                                Some(ConversationChildIdentity::SavedSublist { .. }) => {
+                                    child.destination.conversation_id == conversation_id
+                                        && child.has_authoritative_message(&id.0)
+                                }
+                                Some(ConversationChildIdentity::Conversation {
+                                    conversation_id: child_conversation_id,
+                                }) => child_conversation_id == &conversation_id,
+                                None => false,
+                            };
+                            if exact_member {
+                                child.remove_message(&id.0);
+                            }
+                        }
+                    }
+                    if let Some(message) = self
+                        .state
+                        .messages
+                        .get_mut(&conversation_id)
+                        .and_then(|messages| messages.get_mut(&id))
+                    {
+                        message.deleted = true;
+                    }
+                    if let Some(conversation) =
+                        self.state.conversations.get_mut(&conversation_id)
+                    {
+                        conversation.pinned_message_ids.retain(|pinned| pinned != &id.0);
+                    }
+                    if let Some(by_message) = self.state.poll_votes.get_mut(&conversation_id) {
+                        by_message.remove(&id);
+                        if by_message.is_empty() {
+                            self.state.poll_votes.remove(&conversation_id);
                         }
                     }
                 }
