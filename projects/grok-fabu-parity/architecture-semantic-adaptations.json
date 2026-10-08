@@ -1403,6 +1403,20 @@
         ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "source/electron-main/update/win32-installer.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "8d92c9fe41b04a82fe05c4f7c794e35fb4ebd5ee",
+      "behavioralEvidence": [
+        "source/electron-main/update/win32-installer.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves the frozen Grok Windows installer handoff owner while adapting it for the accepted Telegram updater responsibility: bind the parent PID to its creation-time identity, wait up to WINDOWS_PARENT_EXIT_GRACE_MS=5000 for clean exit, re-read creation time after timeout, force-terminate only when the identity is unchanged, then hand off the already verified NSIS installer with the existing --updated /S / --force-run arguments. The generated PowerShell keeps native single Windows path separators and PowerShell single-quote escaping. No parallel updater/runtime owner is introduced, and the focused cross-platform updater contract plus Electron foundations contract cover the adaptation."
     }
   ]
 }
