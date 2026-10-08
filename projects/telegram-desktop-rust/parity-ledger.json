@@ -7,9 +7,9 @@
   "coverage": {
     "source_entries_total": 15788,
     "unknown": 15788,
-    "unread": 15735,
+    "unread": 15733,
     "omitted": 0,
-    "responsibilities_total": 47,
+    "responsibilities_total": 49,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -11175,6 +11175,502 @@
             "MessagingEngine"
           ],
           "responsibility_scope": "source-message removal convergence, child-destroy sequencing, and stale-forward lifecycle fencing"
+        }
+      ]
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "d346b42a1d30ef60dc989b6e5191bb8e571f6bd5",
+      "source_path": "Telegram/SourceFiles/history/view/controls/history_view_draft_options.h",
+      "source_blob_sha": "d42c352af7f6949e546585427ece86987563def2",
+      "source_kind": "source",
+      "module_id": "tdesktop.history.draft-options",
+      "responsibility_id": "TDRP-R9-DRAFT-OPTIONS-CONTRACT-001",
+      "source_symbols": [
+        "EditDraftOptionsArgs",
+        "EditDraftOptions",
+        "ShowReplyToChatBox"
+      ],
+      "capability_ids": [
+        "CAP-CONVERSATION-FORWARD-DRAFT",
+        "CAP-CONVERSATION-COMPOSER",
+        "CAP-CONVERSATION-DRAFTS"
+      ],
+      "dependency_ids": [
+        "Conversation",
+        "Message",
+        "Composer",
+        "ConversationChildRuntimeState",
+        "MessagingEngine",
+        "Search",
+        "Permissions"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/draft-options-complete-read.md",
+      "behavior_contract": "Defines the source contract that composes reply/quote, link-preview and forwarding option state into one destination-aware edit surface and callback boundary without introducing a second draft or forward owner.",
+      "state_machine": "canonical destination draft + reply/link/forward inputs -> resolve valid option sections -> user mutation -> normalized callback result -> canonical Composer/Conversation owner",
+      "side_effects": [
+        "Carries typed reply and forward results to canonical owners",
+        "Routes destination replacement through the canonical recipient flow",
+        "Preserves explicit old-draft cleanup callback ordering"
+      ],
+      "failure_cases": [
+        "Topic and SavedSublist destination identity is conflated",
+        "Options surface invents a parallel draft truth",
+        "Recipient replacement bypasses canonical authorization or paid-send checks"
+      ],
+      "ui_disposition": "Do not port Telegram/Qt presentation. Re-express the behavior in the existing canonical ConversationWorkspace/Composer/forward-share surfaces and design system.",
+      "non_ui_responsibilities": [
+        "typed destination-scoped forward staging",
+        "forward option normalization",
+        "source message removal convergence",
+        "destination child destruction convergence",
+        "reply/draft cleanup"
+      ],
+      "platform_delta": "Qt panel/widget behavior is decomposed into canonical Fabushi Conversation/Message/Composer state plus existing React/TypeScript projection; no Telegram/source-shaped panel owner.",
+      "existing_owner_candidates": [
+        "native/mahayana-messaging/src/conversation.rs",
+        "native/mahayana-messaging/src/engine.rs",
+        "frontend/src/recovered/features/conversation/workspace"
+      ],
+      "existing_owner": "Fabushi canonical Conversation child runtime + MessagingEngine; canonical ConversationWorkspace/Composer and ShareBox/Search remain projection/discovery owners",
+      "rejected_existing_owners": [
+        "New Telegram ForwardPanel owner would duplicate canonical Composer/Conversation state.",
+        "ShareBox search/gateway alone cannot own destination-scoped composer staging or reply/draft lifecycle."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "native/mahayana-messaging/src/conversation.rs",
+        "native/mahayana-messaging/src/engine.rs"
+      ],
+      "fabushi_target_symbols": [
+        "ConversationChildRuntimeState",
+        "MessagingEngine"
+      ],
+      "target_language": "Rust + React/TypeScript",
+      "language_rationale": "Durable forward/draft lifecycle and authorization state belong in the existing Rust messaging domain; visual projection belongs in existing canonical renderer components.",
+      "command_event_contracts": [
+        "Canonical destination-scoped forward staging -> option/reply mutation -> Conversation/Composer projection -> clear on source removal or destination destruction"
+      ],
+      "state_owner": "Canonical Conversation/Message/Composer state",
+      "lifecycle_owner": "MessagingEngine canonical Conversation child/message lifecycle",
+      "persistence_and_restart": "Forward staging must be keyed by canonical destination identity and recover/clear through the existing state owner; no parallel source-shaped store.",
+      "concurrency_and_cancellation": "Source message removal, destination destruction, scope replacement and stale UI callbacks must retire old forward staging without reviving stale items.",
+      "security_boundary": "Forward options and native/UI actions may not bypass canonical message/conversation authority or paid-send/revalidation policy.",
+      "network_service_dependencies": [
+        "Fabushi canonical messaging/sync service",
+        "SavedSublist authoritative relation/membership feed for SavedSublist scope"
+      ],
+      "service_owner": "Fabushi canonical messaging/sync service",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Destination-scoped forward/reply options parity is not yet proven across all Conversation kinds.",
+        "Paid-send and final recipient revalidation remain open beyond narrow Human-direct evidence.",
+        "SavedSublist authoritative relation/membership feed remains a service blocker."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [],
+      "target_commit": "d8992bfa6ac9d363388c267f2b5866fda1de4c6a",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi ProductShell -> Messages -> ConversationWorkspace -> Composer",
+      "composition_slot": "Canonical composer forward staging / destination-scoped draft capability",
+      "capability_component": "Composer forward staging",
+      "variation_axes": [
+        "Human direct",
+        "Group",
+        "Channel",
+        "Topic",
+        "SavedSublist",
+        "preserve sender/caption",
+        "drop sender",
+        "drop sender+caption"
+      ],
+      "shared_owner_contracts": [
+        "Canonical Conversation identity",
+        "Canonical Message identity",
+        "Canonical permissions",
+        "Canonical Composer",
+        "Canonical draft identity"
+      ],
+      "duplicate_root_check": "No Telegram/source-shaped ForwardPanel or draft store is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Object-scoped Conversation capability",
+      "primary_navigation_target": "Messages",
+      "collection_surface": "ConversationWorkspace",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Forward staging/options/clear",
+      "detail_section": "Not applicable",
+      "capability_surface": "Composer / forward preview",
+      "route_contract": "Reuse the same canonical ConversationWorkspace route and typed child destination.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "No new search owner; ShareBox recipient exposure remains under canonical Search permissions.",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Reuse existing ConversationWorkspace responsive behavior.",
+      "accessibility_contract": "Forward preview/options must use canonical Composer/list/button semantics and preserve keyboard/screen-reader behavior.",
+      "keyboard_contract": "Forward option editing/clear must remain reachable through canonical Composer controls without source-specific shortcuts.",
+      "state_continuity_contract": "Source removal, destination destruction, reload and scope replacement cannot resurrect stale staged forwards.",
+      "ui_acceptance_scenarios": [
+        "Source item removal removes it from staged forward preview",
+        "Destroyed Topic/SavedSublist clears staged destination",
+        "Invalid hide-author option is normalized fail-closed",
+        "Reply-to clear preserves unrelated draft payload"
+      ],
+      "design_system_version": "FBCP Revision 7 live Fabushi design system",
+      "semantic_token_usage": [
+        "Existing canonical Composer/Conversation tokens only"
+      ],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [
+        "ConversationWorkspace",
+        "Composer"
+      ],
+      "screen_pattern_id": "ConversationWorkspace",
+      "screen_slots": [
+        "transcript",
+        "composer"
+      ],
+      "visual_state_matrix": [
+        "empty",
+        "staged",
+        "option-edited",
+        "source-removed",
+        "destination-destroyed"
+      ],
+      "density_contract": "Existing ConversationWorkspace/Composer density unchanged.",
+      "icon_asset_contract": "No source-branded icon.",
+      "avatar_contract": "Canonical participant/conversation avatar only.",
+      "content_copy_keys": [],
+      "motion_contract": "Existing application motion contract.",
+      "reduced_motion_contract": "Existing reduced-motion contract.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-DRAFT-OPTIONS-CONTRACT-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-R9-DRAFT-OPTIONS-CONTRACT-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-R9-DRAFT-OPTIONS-CONTRACT-001-CANONICAL"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-PRODUCTION",
+        "G-COMPOSITION",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "GitHub Actions only"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "not-run",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Behavior is source-informed from accepted telegramdesktop/tdesktop Telegram/SourceFiles/history/view/controls/history_view_draft_options.h blob d42c352af7f6949e546585427ece86987563def2; no Telegram C++/Qt runtime is retained.",
+      "reviewer": null,
+      "notes": "Exact accepted 48-line header was read in full. Mapped/open only; no implementation or verification credit.",
+      "fabushi_target_bindings": [
+        {
+          "path": "native/mahayana-messaging/src/conversation.rs",
+          "symbols": [
+            "ConversationChildRuntimeState"
+          ],
+          "responsibility_scope": "draft-options contract typed destination draft/child state"
+        },
+        {
+          "path": "native/mahayana-messaging/src/engine.rs",
+          "symbols": [
+            "MessagingEngine"
+          ],
+          "responsibility_scope": "draft-options contract lifecycle, authorization and source-message convergence"
+        }
+      ]
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "d346b42a1d30ef60dc989b6e5191bb8e571f6bd5",
+      "source_path": "Telegram/SourceFiles/history/view/controls/history_view_draft_options.cpp",
+      "source_blob_sha": "9dabfb109125f82f5b78b0103a2fe65b79e27f8d",
+      "source_kind": "source",
+      "module_id": "tdesktop.history.draft-options",
+      "responsibility_id": "TDRP-R9-DRAFT-OPTIONS-LIFECYCLE-001",
+      "source_symbols": [
+        "DraftOptionsBox",
+        "PreviewWrap",
+        "showForwardSelector",
+        "showQuoteSelector",
+        "showLinkSelector",
+        "NormalizeForwardOptions",
+        "CanHideForwardAuthor",
+        "HideForwardAuthorPremiumRequired",
+        "ShowReplyToChatBox",
+        "EditDraftOptions",
+        "LocalDraftSet"
+      ],
+      "capability_ids": [
+        "CAP-CONVERSATION-FORWARD-DRAFT",
+        "CAP-CONVERSATION-COMPOSER",
+        "CAP-CONVERSATION-DRAFTS"
+      ],
+      "dependency_ids": [
+        "Conversation",
+        "Message",
+        "Composer",
+        "ConversationChildRuntimeState",
+        "MessagingEngine",
+        "Search",
+        "Permissions"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/draft-options-complete-read.md",
+      "behavior_contract": "Implements staged reply/forward/link option convergence, exact source-item removal repair, sender/caption normalization with rich-message/premium restrictions, and typed reply transfer to Topic/SavedSublist destinations before asynchronous old-draft cleanup.",
+      "state_machine": "staged reply/link/forward -> normalize and rebuild -> exact source item/view changes converge -> submit -> typed destination draft write -> LocalDraftSet -> asynchronous old-draft clear; invalid/empty state closes",
+      "side_effects": [
+        "Creates transient preview-only local items and destroys them on rebuild",
+        "Prunes exactly removed source items",
+        "Normalizes forward options on display and submit",
+        "Writes destination draft with topicRootId and monoforumPeerId",
+        "Schedules old-draft cleanup only after destination write"
+      ],
+      "failure_cases": [
+        "Removed source item remains staged/actionable",
+        "Premium/rich-message restriction is bypassed",
+        "Old draft clears before new typed destination draft exists",
+        "Topic/SavedSublist identity aliases",
+        "Unrelated destination draft payload is discarded"
+      ],
+      "ui_disposition": "Do not port Telegram/Qt presentation. Re-express the behavior in the existing canonical ConversationWorkspace/Composer/forward-share surfaces and design system.",
+      "non_ui_responsibilities": [
+        "typed destination-scoped forward staging",
+        "forward option normalization",
+        "source message removal convergence",
+        "destination child destruction convergence",
+        "reply/draft cleanup"
+      ],
+      "platform_delta": "Qt panel/widget behavior is decomposed into canonical Fabushi Conversation/Message/Composer state plus existing React/TypeScript projection; no Telegram/source-shaped panel owner.",
+      "existing_owner_candidates": [
+        "native/mahayana-messaging/src/conversation.rs",
+        "native/mahayana-messaging/src/engine.rs",
+        "frontend/src/recovered/features/conversation/workspace"
+      ],
+      "existing_owner": "Fabushi canonical Conversation child runtime + MessagingEngine; canonical ConversationWorkspace/Composer and ShareBox/Search remain projection/discovery owners",
+      "rejected_existing_owners": [
+        "New Telegram ForwardPanel owner would duplicate canonical Composer/Conversation state.",
+        "ShareBox search/gateway alone cannot own destination-scoped composer staging or reply/draft lifecycle."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "native/mahayana-messaging/src/conversation.rs",
+        "native/mahayana-messaging/src/engine.rs"
+      ],
+      "fabushi_target_symbols": [
+        "ConversationChildRuntimeState",
+        "MessagingEngine"
+      ],
+      "target_language": "Rust + React/TypeScript",
+      "language_rationale": "Durable forward/draft lifecycle and authorization state belong in the existing Rust messaging domain; visual projection belongs in existing canonical renderer components.",
+      "command_event_contracts": [
+        "Canonical destination-scoped forward staging -> option/reply mutation -> Conversation/Composer projection -> clear on source removal or destination destruction"
+      ],
+      "state_owner": "Canonical Conversation/Message/Composer state",
+      "lifecycle_owner": "MessagingEngine canonical Conversation child/message lifecycle",
+      "persistence_and_restart": "Forward staging must be keyed by canonical destination identity and recover/clear through the existing state owner; no parallel source-shaped store.",
+      "concurrency_and_cancellation": "Source message removal, destination destruction, scope replacement and stale UI callbacks must retire old forward staging without reviving stale items.",
+      "security_boundary": "Forward options and native/UI actions may not bypass canonical message/conversation authority or paid-send/revalidation policy.",
+      "network_service_dependencies": [
+        "Fabushi canonical messaging/sync service",
+        "SavedSublist authoritative relation/membership feed for SavedSublist scope"
+      ],
+      "service_owner": "Fabushi canonical messaging/sync service",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Destination-scoped forward/reply options parity is not yet proven across all Conversation kinds.",
+        "Paid-send and final recipient revalidation remain open beyond narrow Human-direct evidence.",
+        "SavedSublist authoritative relation/membership feed remains a service blocker."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [],
+      "target_commit": "d8992bfa6ac9d363388c267f2b5866fda1de4c6a",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi ProductShell -> Messages -> ConversationWorkspace -> Composer",
+      "composition_slot": "Canonical composer forward staging / destination-scoped draft capability",
+      "capability_component": "Composer forward staging",
+      "variation_axes": [
+        "Human direct",
+        "Group",
+        "Channel",
+        "Topic",
+        "SavedSublist",
+        "preserve sender/caption",
+        "drop sender",
+        "drop sender+caption"
+      ],
+      "shared_owner_contracts": [
+        "Canonical Conversation identity",
+        "Canonical Message identity",
+        "Canonical permissions",
+        "Canonical Composer",
+        "Canonical draft identity"
+      ],
+      "duplicate_root_check": "No Telegram/source-shaped ForwardPanel or draft store is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Object-scoped Conversation capability",
+      "primary_navigation_target": "Messages",
+      "collection_surface": "ConversationWorkspace",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Forward staging/options/clear",
+      "detail_section": "Not applicable",
+      "capability_surface": "Composer / forward preview",
+      "route_contract": "Reuse the same canonical ConversationWorkspace route and typed child destination.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "No new search owner; ShareBox recipient exposure remains under canonical Search permissions.",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Reuse existing ConversationWorkspace responsive behavior.",
+      "accessibility_contract": "Forward preview/options must use canonical Composer/list/button semantics and preserve keyboard/screen-reader behavior.",
+      "keyboard_contract": "Forward option editing/clear must remain reachable through canonical Composer controls without source-specific shortcuts.",
+      "state_continuity_contract": "Source removal, destination destruction, reload and scope replacement cannot resurrect stale staged forwards.",
+      "ui_acceptance_scenarios": [
+        "Source item removal removes it from staged forward preview",
+        "Destroyed Topic/SavedSublist clears staged destination",
+        "Invalid hide-author option is normalized fail-closed",
+        "Reply-to clear preserves unrelated draft payload"
+      ],
+      "design_system_version": "FBCP Revision 7 live Fabushi design system",
+      "semantic_token_usage": [
+        "Existing canonical Composer/Conversation tokens only"
+      ],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [
+        "ConversationWorkspace",
+        "Composer"
+      ],
+      "screen_pattern_id": "ConversationWorkspace",
+      "screen_slots": [
+        "transcript",
+        "composer"
+      ],
+      "visual_state_matrix": [
+        "empty",
+        "staged",
+        "option-edited",
+        "source-removed",
+        "destination-destroyed"
+      ],
+      "density_contract": "Existing ConversationWorkspace/Composer density unchanged.",
+      "icon_asset_contract": "No source-branded icon.",
+      "avatar_contract": "Canonical participant/conversation avatar only.",
+      "content_copy_keys": [],
+      "motion_contract": "Existing application motion contract.",
+      "reduced_motion_contract": "Existing reduced-motion contract.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-DRAFT-OPTIONS-LIFECYCLE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-R9-DRAFT-OPTIONS-LIFECYCLE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-R9-DRAFT-OPTIONS-LIFECYCLE-001-STALE-FREE"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-PRODUCTION",
+        "G-COMPOSITION",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "GitHub Actions only"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "not-run",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Behavior is source-informed from accepted telegramdesktop/tdesktop Telegram/SourceFiles/history/view/controls/history_view_draft_options.cpp blob 9dabfb109125f82f5b78b0103a2fe65b79e27f8d; no Telegram C++/Qt runtime is retained.",
+      "reviewer": null,
+      "notes": "Exact accepted 1516-line implementation was read in four contiguous segments covering every line. Mapped/open only; no production or verification credit.",
+      "fabushi_target_bindings": [
+        {
+          "path": "native/mahayana-messaging/src/conversation.rs",
+          "symbols": [
+            "ConversationChildRuntimeState"
+          ],
+          "responsibility_scope": "draft-options lifecycle typed destination draft/child state"
+        },
+        {
+          "path": "native/mahayana-messaging/src/engine.rs",
+          "symbols": [
+            "MessagingEngine"
+          ],
+          "responsibility_scope": "draft-options lifecycle lifecycle, authorization and source-message convergence"
         }
       ]
     }
