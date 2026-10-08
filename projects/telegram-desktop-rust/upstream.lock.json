@@ -259,9 +259,9 @@
     "root_source_entries_total": 6363,
     "recursive_source_entries_total": 15812,
     "unknown_minimum": 15812,
-    "unread_minimum": 15749,
+    "unread_minimum": 15747,
     "omitted_known": 0,
-    "note": "Accepted telegramdesktop/tdesktop@aac515c5408015231a273c80ab4c4b33815e63ab root tree cf3a60d601c2d063903e620602b7e5913d3b0654. The corrected recursive census remains 15,812 = 6,363 root + 6,771 direct-gitlink + 2,531 GitHub-nested + 104 GitLab cppgir + 43 cppgir child. Sixty-three exact entries are now read-complete, including the first three deterministic recursive entries documented in projects/telegram-desktop-rust/dossiers/upstream-agent-evidence-infrastructure-complete-read.md; unknown remains 15,812, unread is 15,749, omitted 0. Current-head source-authority evidence and full source/production closure are still required."
+    "note": "Accepted telegramdesktop/tdesktop@aac515c5408015231a273c80ab4c4b33815e63ab root tree cf3a60d601c2d063903e620602b7e5913d3b0654. The corrected recursive census remains 15,812 = 6,363 root + 6,771 direct-gitlink + 2,531 GitHub-nested + 104 GitLab cppgir + 43 cppgir child. Sixty-five exact entries are now read-complete, including the first five deterministic recursive entries documented in projects/telegram-desktop-rust/dossiers/upstream-agent-evidence-infrastructure-complete-read.md; unknown remains 15,812, unread is 15,747, omitted 0. Current-head source-authority evidence and full source/production closure are still required."
   },
   "acceptance": {
     "baseline_ready": false,
