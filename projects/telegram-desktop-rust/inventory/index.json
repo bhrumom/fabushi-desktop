@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15730,
-    "unread_minimum": 15654,
+    "unread_minimum": 15646,
     "omitted_known": 0,
-    "note": "Live aac515c recursive census is 15,812. 158 exact entries are read-complete; unknown 15,730, unread 15,654, omitted 0. Animation resources through Telegram/Resources/animations/chat/white_flag_emoji.tgs are fully read/decomposed; applicable consumer evidence remains open."
+    "note": "Live aac515c recursive census is 15,812. 166 exact entries are read-complete; unknown 15,730, unread 15,646, omitted 0. Animation resources through cloud_password/validate.tgs are fully read/decomposed."
   },
   "latest_recursive_evidence": {
     "run_id": 37596744991,
@@ -43,7 +43,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Accepted aac515c authority is exact. 158 full-read entries are now credited; unread_minimum is 15,654, unknown remains 15,730, omitted remains 0. Entries 90-98 are semantically read/decompressed and have exact consumer references, but remain unknown-open until their production consumers are fully read and canonical Fabushi implementation/test evidence is bound.",
+  "note": "Accepted aac515c authority is exact. 166 full-read entries are now credited; unread_minimum is 15,646, unknown remains 15,730, omitted remains 0. Entries 99-106 are semantically read/decompressed and consumer-attributed where discoverable; production consumer evidence remains open.",
   "rebaseline": {
     "from_commit": "d346b42a1d30ef60dc989b6e5191bb8e571f6bd5",
     "to_commit": "aac515c5408015231a273c80ab4c4b33815e63ab",
@@ -81,6 +81,6 @@
     "development_only_non_applicable": 62,
     "unknown_closed": 82,
     "omitted": 0,
-    "read_through": 98
+    "read_through": 106
   }
 }

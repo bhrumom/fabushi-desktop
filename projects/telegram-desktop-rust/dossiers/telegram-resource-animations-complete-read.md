@@ -36,3 +36,9 @@ These entries are read/decomposed but intentionally remain implementation-open u
 
 Accounting: full-read `158`, unread `15,654`, unknown `15,730`, omitted `0`.
 
+## Entries 99–106 — chat link, storage/filter, and cloud-password animations
+
+These eight TGS resources were streamed and gzip-decompressed without persistent checkout/build artifacts; exact Lottie metadata and QRC inclusion were inspected. Production consumers were identified for cache clearing, cloud filters, and all cloud-password assets. `chat_link.tgs` has clear link-in-bubble semantics but no exact asset-load consumer beyond QRC was found in the current search, so it remains especially explicit as consumer-open.
+
+No entry receives implementation credit before its referenced production source is fully read. Accounting: full-read `166`, unread `15,646`, unknown `15,730`, omitted `0`.
+

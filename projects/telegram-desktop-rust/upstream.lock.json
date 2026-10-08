@@ -259,9 +259,9 @@
     "root_source_entries_total": 6363,
     "recursive_source_entries_total": 15812,
     "unknown_minimum": 15730,
-    "unread_minimum": 15654,
+    "unread_minimum": 15646,
     "omitted_known": 0,
-    "note": "Accepted telegramdesktop/tdesktop@aac515c5408015231a273c80ab4c4b33815e63ab root tree cf3a60d601c2d063903e620602b7e5913d3b0654. 158 exact entries are read-complete; unknown 15,730, unread 15,654, omitted 0. Entries 89-98 are applicable visual resources with consumer production evidence still open."
+    "note": "Accepted telegramdesktop/tdesktop@aac515c5408015231a273c80ab4c4b33815e63ab root tree cf3a60d601c2d063903e620602b7e5913d3b0654. 166 exact entries are read-complete; unknown 15,730, unread 15,646, omitted 0. Entries 89-106 are applicable visual resources with production-consumer evidence still open."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -588,6 +588,6 @@
     "deterministic_prefix_closed": 53,
     "unknown_closed": 82,
     "omitted": 0,
-    "read_through": 98
+    "read_through": 106
   }
 }
