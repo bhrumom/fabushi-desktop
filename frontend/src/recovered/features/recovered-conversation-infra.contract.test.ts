@@ -690,7 +690,7 @@ test("CONTRACT-TDRP-MEDIAVIEW-WINDOW-CHROME-REPLACEMENT-001 media preview replac
   assert.match(styles, /\.sand-media-viewer__close \{ pointer-events: auto; \}/);
   const closeRule = styles.match(/\.sand-media-viewer__close \{[^}]*\}/)?.[0] ?? "";
   assert.doesNotMatch(closeRule, /#[0-9a-f]{3,8}|color\s*:|background\s*:|border\s*:|outline\s*:/i);
-  const primitiveStyles = readFileSync(new URL("../../ui/sand-kit-primitives.css", import.meta.url), "utf8");
+  const primitiveStyles = readFileSync(new URL("../ui/sand-kit-primitives.css", import.meta.url), "utf8");
   assert.match(primitiveStyles, /\.sand-kit-icon-button:focus-visible[\s\S]{0,120}var\(--cursor-stroke-focused\)/);
   assert.match(styles, /\.sand-media-viewer__image \{[\s\S]{0,100}max-width: 92vw;[\s\S]{0,100}max-height: calc\(100vh - 145px\)/);
 });
