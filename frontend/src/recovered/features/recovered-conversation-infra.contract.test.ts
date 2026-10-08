@@ -563,14 +563,18 @@ test("CONTRACT-TDRP-IV-VIEW-POINTER-ACTIVATION-FENCE-001 content replacement inv
 });
 
 
-test("media replacement retires stale pointer ownership before the new resource settles", () => {
+test("CONTRACT-TDRP-IV-VIEW-MEDIA-POINTER-RELEASE-001 media replacement releases stale viewer pointer ownership before the new resource settles", () => {
   const source = readFileSync(new URL("./conversation/workspace/media-viewer.tsx", import.meta.url), "utf8");
   const replacementStart = source.indexOf("setMedia(null);");
   const resolverStart = source.indexOf("void resolveWithSingleRetry(resolveMedia, current.path)", replacementStart);
   assert.ok(replacementStart >= 0 && resolverStart > replacementStart);
   const replacementBlock = source.slice(replacementStart, resolverStart);
   assert.match(replacementBlock, /setTransform\(\{ scale: MIN_ZOOM, x: 0, y: 0 \}\);/);
+  assert.match(replacementBlock, /activePointerId = pointerRef\.current\.id;[\s\S]{0,260}viewer\?\.hasPointerCapture\(activePointerId\)[\s\S]{0,120}viewer\.releasePointerCapture\(activePointerId\)/);
   assert.match(replacementBlock, /pointerRef\.current = \{ id: null, startX: 0, startY: 0, originX: 0, originY: 0, moved: false \};/);
+  assert.match(source, /useEffect\(\(\) => \(\) => \{[\s\S]{0,360}releasePointerCapture\(activePointerId\)[\s\S]{0,160}pointerRef\.current\.id = null/);
+  assert.match(source, /event\.target\.closest\("button, a\[href\], input, select, textarea, \[role='button'\]"\) != null\) return;/);
+  assert.match(source, /ref=\{viewerRef\} role="dialog"/);
   assert.match(source, /if \(pointer\.id !== event\.pointerId\) return;/);
 });
 
