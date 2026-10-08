@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import type { CoordinatorStory } from "../../../source/shared/rpc/coordinator";
+import type { CoordinatorStory, CoordinatorStoryStealthStatus } from "../../../source/shared/rpc/coordinator";
 import type { ProductionCoordinatorClient } from "./coordinator-client";
 import { SandButton } from "../recovered/ui/sand-kit-primitives";
 import { OverlayDialog } from "../recovered/ui/overlay-primitives";
@@ -31,6 +31,8 @@ export function StoryCapabilitySurface({ client, enabled, onOpenOwner }: StoryCa
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [reaction, setReaction] = useState<string | null>(null);
+  const [stealth, setStealth] = useState<CoordinatorStoryStealthStatus | null>(null);
+  const [stealthBusy, setStealthBusy] = useState(false);
   const requestGenerationRef = useRef(0);
   const mediaGenerationRef = useRef(0);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -43,9 +45,13 @@ export function StoryCapabilitySurface({ client, enabled, onOpenOwner }: StoryCa
     setStatus("loading");
     setErrorMessage(null);
     try {
-      const nextStories = await client.listStories({ limit: 100 });
+      const [nextStories, nextStealth] = await Promise.all([
+        client.listStories({ limit: 100 }),
+        client.getStoryStealthStatus(),
+      ]);
       if (generation !== requestGenerationRef.current) return;
       setStories(nextStories);
+      setStealth(nextStealth);
       setStatus("idle");
     } catch (error) {
       if (generation !== requestGenerationRef.current) return;
@@ -61,6 +67,8 @@ export function StoryCapabilitySurface({ client, enabled, onOpenOwner }: StoryCa
       setSelectedIndex(null);
       setStatus("idle");
       setErrorMessage(null);
+      setStealth(null);
+      setStealthBusy(false);
       return;
     }
     void refresh();
@@ -172,6 +180,25 @@ export function StoryCapabilitySurface({ client, enabled, onOpenOwner }: StoryCa
     }
   }, [client, close, selectedStory]);
 
+  const activateStealth = useCallback(async () => {
+    if (client == null || stealth == null || !stealth.entitled || stealthBusy) return;
+    const now = Date.now();
+    if (stealth.state.enabledTillMs > now || stealth.state.cooldownTillMs > now) return;
+    const generation = requestGenerationRef.current;
+    setStealthBusy(true);
+    try {
+      const requestId = `desktop-story-stealth:${generation}:${now}`;
+      const state = await client.activateStoryStealth({ requestId });
+      if (generation !== requestGenerationRef.current) return;
+      setStealth({ state, entitled: true });
+    } catch (error) {
+      if (generation !== requestGenerationRef.current) return;
+      setErrorMessage(error instanceof Error ? error.message : "Anonymous Story viewing could not be enabled");
+    } finally {
+      if (generation === requestGenerationRef.current) setStealthBusy(false);
+    }
+  }, [client, stealth, stealthBusy]);
+
   const share = useCallback(async () => {
     if (selectedStory == null || selectedStory.protectedContent) return;
     const source = storyMediaSource(selectedStory);
@@ -267,6 +294,20 @@ export function StoryCapabilitySurface({ client, enabled, onOpenOwner }: StoryCa
           <SandButton aria-pressed={reaction === "❤"} onClick={() => void react(reaction === "❤" ? null : "❤")} size="sm" variant="secondary">React</SandButton>
           <SandButton disabled={selectedStory.protectedContent} onClick={() => void share()} size="sm" variant="secondary">Share</SandButton>
           <SandButton disabled={onOpenOwner == null} onClick={() => onOpenOwner?.(selectedStory.ownerId)} size="sm" variant="secondary">Profile</SandButton>
+          <SandButton
+            disabled={stealthBusy || stealth == null || !stealth.entitled || stealth.state.cooldownTillMs > Date.now()}
+            onClick={() => { void activateStealth(); }}
+            size="sm"
+            variant="secondary"
+          >
+            {stealth?.state.enabledTillMs != null && stealth.state.enabledTillMs > Date.now()
+              ? "Anonymous viewing active"
+              : stealth?.entitled === false
+                ? "Anonymous viewing requires entitlement"
+                : stealth?.state.cooldownTillMs != null && stealth.state.cooldownTillMs > Date.now()
+                  ? "Anonymous viewing cooling down"
+                  : stealthBusy ? "Enabling anonymous viewing…" : "View anonymously"}
+          </SandButton>
           <span aria-label="Story reply availability" role="status">{selectedStory.allowReplies ? "Replies enabled" : "Replies disabled"}</span>
         </div>
         {menuOpen ? <div aria-label="Story menu" role="menu" style={{ display: "flex", gap: 8, marginTop: 8 }}>

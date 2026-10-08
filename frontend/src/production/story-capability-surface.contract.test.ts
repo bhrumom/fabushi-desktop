@@ -33,10 +33,26 @@ test("CONTRACT-TDRP-STORY-CANONICAL-ROUTE-001 keeps Story RPC on Coordinator to 
   const shared = read("source/shared/rpc/coordinator.ts");
   const gatewayApi = read("source/host/src/host_gateway_api.rs");
   const gateway = read("source/host/src/extensions/session/gateway.rs");
-  for (const method of ["listStories", "viewStory", "reactStory", "deleteStory"]) {
+  for (const method of ["getStoryStealthStatus", "activateStoryStealth", "listStories", "viewStory", "reactStory", "deleteStory"]) {
     assert.match(client, new RegExp(method));
     assert.match(shared, new RegExp(method));
     assert.ok(gatewayApi.includes(`("${method}", Stories)`));
     assert.ok(gateway.includes(`"${method}" =>`));
   }
+});
+
+test("CONTRACT-TDRP-STORY-STEALTH-SHIPPING-001 keeps entitlement state server-owned", () => {
+  const surface = read("frontend/src/production/StoryCapabilitySurface.tsx");
+  const production = read("source/host/src/extensions/session/production.rs");
+  const engine = read("native/mahayana-messaging/src/engine.rs");
+  assert.match(surface, /client\.getStoryStealthStatus\(\)/);
+  assert.match(surface, /client\.activateStoryStealth\(\{ requestId \}\)/);
+  assert.match(surface, /Anonymous viewing requires entitlement/);
+  assert.match(surface, /Anonymous viewing cooling down/);
+  assert.match(production, /MessagingClientCommand::StoryStealthStatus/);
+  assert.match(production, /MessagingClientCommand::ActivateStoryStealth/);
+  assert.match(engine, /StoryStealthEntitlementRequired/);
+  assert.match(engine, /StoryStealthCooldown/);
+  assert.match(engine, /anonymize_recent_view/);
+  assert.match(engine, /record_anonymous_view/);
 });
