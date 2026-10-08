@@ -273,3 +273,15 @@ This row remains `IMPLEMENTED`, not `VERIFIED`, because shipping recipient-picke
 - Dossier: `projects/telegram-desktop-rust/dossiers/resource-icons-339-368-complete-read.md`.
 - These rows grant source-read/traceability credit only. They do not grant Fabushi production, test, release, or independent-acceptance credit.
 
+### TDRP Revision 9 call-resource requirements 369-430
+
+| requirement_id | risk | oracle_ids | invariant_ids | contract/integration | e2e/temporal | ui/visual/a11y | evidence_ids | verdict |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| TDRP-R9-CALL-CORE-ASSETS-001 | high | ORA-TDRP-R9-CALL-CORE-ASSETS-001 | INV-TDRP-R9-CALL-STATE-NOT-ASSET-001 | existing HumanCallControls/CallSession subset; exact-head evidence required | pending | pending | run 37848024391 job 113553686091 artifact 11580506869 + dossier | MAPPED-SOURCE-READ-PRODUCTION-PARTIAL |
+| TDRP-R9-GROUP-CALL-ASSETS-001 | critical | ORA-TDRP-R9-GROUP-CALL-ASSETS-001 | INV-TDRP-R9-ONE-CALL-DOMAIN-OWNER-001 | participant/message/recording/rating gaps open | pending | pending | same artifact + calls.style/group consumers + dossier | MAPPED-SOURCE-READ-PRODUCTION-GAP |
+
+- `INV-TDRP-R9-CALL-STATE-NOT-ASSET-001`: raster resources are derived call presentation and never own call/session/media state.
+- `INV-TDRP-R9-ONE-CALL-DOMAIN-OWNER-001`: group-call additions must extend canonical HumanCallControls/CallSession/server call domain rather than introduce Telegram-shaped duplicate owners.
+- Current two-party call support is not accepted as evidence for group-call completion.
+- Dossier: `projects/telegram-desktop-rust/dossiers/resource-calls-369-430-complete-read.md`.
+
