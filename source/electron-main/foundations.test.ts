@@ -14,6 +14,7 @@ import { SandOsNotificationManager } from "./notifications/os-notification-manag
 import { resolveScanRoots } from "./process-metrics/wiring.js";
 import { computeUpdateDisabledReason } from "./update/update-gate.js";
 import { isSafeToRelaunchForUpdate } from "./update/safe-relaunch-gate.js";
+import { SandWindowsInstaller, WINDOWS_PARENT_EXIT_GRACE_MS, buildWindowsInstallerParentHandoffScript } from "./update/win32-installer.js";
 import { createProductionWindowBroadcaster } from "./window-broadcast.js";
 import { unavailableOnePasswordProvisioningSink, OnePasswordProvisioningError } from "./onepassword/onepassword-provisioning-contract.js";
 import { requireDisposable, requireFunction, requireObject } from "./adapters/provider-guards.js";
@@ -162,6 +163,42 @@ test("update gates fail closed unless every safe-relaunch condition holds", () =
   assert.equal(isSafeToRelaunchForUpdate(safe), true);
   assert.equal(isSafeToRelaunchForUpdate({ ...safe, hostIdle: { kind: "busy" } }), false);
   assert.equal(isSafeToRelaunchForUpdate({ ...safe, screenLocked: false }), false);
+});
+
+
+test("Windows updater handoff waits for the exact parent identity before NSIS apply", () => {
+  const script = buildWindowsInstallerParentHandoffScript({
+    installerPath: "C:\\Fabushi's Updates\\fabushi setup.exe",
+    installerArgs: ["--updated", "/S", "--force-run"],
+    parentProcessId: 4242,
+  });
+  assert.match(script, /\$parentId = 4242/);
+  assert.match(script, new RegExp(`\\$graceMs = ${WINDOWS_PARENT_EXIT_GRACE_MS}`));
+  assert.match(script, /StartTime\.ToUniversalTime\(\)\.Ticks/);
+  assert.match(script, /WaitForExit\(\$graceMs\)/);
+  assert.match(script, /\$currentCreated -eq \$parentCreated/);
+  assert.match(script, /Stop-Process -Id \$parentId -Force/);
+  assert.match(script, /C:\\\\Fabushi''s Updates\\\\fabushi setup\.exe/);
+  assert.match(script, /--force-run/);
+
+  const spawned: Array<{ command: string; args: readonly string[] }> = [];
+  const installer = new SandWindowsInstaller({
+    quit: () => undefined,
+    parentProcessId: 777,
+    spawnDetached: (command, args) => { spawned.push({ command, args }); },
+  });
+  installer.installOnQuit("C:\\updates\\fabushi.exe", { forceRun: true });
+  assert.equal(spawned.length, 1);
+  assert.equal(spawned[0]?.command, "powershell.exe");
+  assert.deepEqual(spawned[0]?.args.slice(0, 4), [
+    "-NoProfile",
+    "-NonInteractive",
+    "-WindowStyle",
+    "Hidden",
+  ]);
+  const handoff = spawned[0]?.args.at(-1) ?? "";
+  assert.match(handoff, /\$parentId = 777/);
+  assert.match(handoff, /Start-Process -FilePath 'C:\\\\updates\\\\fabushi\.exe'/);
 });
 
 test("provider guards and unavailable 1Password sink fail closed", async () => {
