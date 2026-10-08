@@ -879,7 +879,7 @@ export function ConversationTranscript({ entries, hasOlder = false, isLoadingOld
           ? { revision: pointerActivationRevisionRef.current, target, pointerId: event.pointerId, startX: event.clientX, startY: event.clientY }
           : null;
       }}
-      onPointerLeaveCapture={() => {
+      onPointerLeave={() => {
         pointerActivationIntentRef.current = null;
       }}
       onPointerMoveCapture={(event) => {
