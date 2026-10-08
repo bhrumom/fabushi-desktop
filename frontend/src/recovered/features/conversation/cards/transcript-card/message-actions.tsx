@@ -129,7 +129,7 @@ export function transcriptReplyActionLabel(entry: TranscriptCardActionEntry): st
 
 export interface TranscriptInlineCopyProjection {
   readonly text: string;
-  readonly label: "Copy Link" | "Copy Text";
+  readonly label: "Copy Link" | "Copy Email" | "Copy Text";
 }
 
 export function projectTranscriptInlineCopyTarget(target: EventTarget | null): TranscriptInlineCopyProjection | null {
@@ -137,7 +137,7 @@ export function projectTranscriptInlineCopyTarget(target: EventTarget | null): T
   const source = target.closest("[data-transcript-copy-text]");
   const text = source?.getAttribute("data-transcript-copy-text");
   const label = source?.getAttribute("data-transcript-copy-label");
-  if (text == null || text.length === 0 || (label !== "Copy Link" && label !== "Copy Text")) return null;
+  if (text == null || text.length === 0 || (label !== "Copy Link" && label !== "Copy Email" && label !== "Copy Text")) return null;
   return { text, label };
 }
 
