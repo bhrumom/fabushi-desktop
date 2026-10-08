@@ -1,7 +1,7 @@
 import { getSchema, type JSONContent } from "@tiptap/core";
 import { normalizeLinkUrl } from "../cards/transcript-card/url-card";
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
-import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import "./transcript-utility-parity.css";
 import { AssistantMath } from "./math";
 import { TranscriptAttachmentGallery } from "./media-viewer";
@@ -30,6 +30,7 @@ import type { SendMessageTextImage } from "../cards/transcript-card/send-message
 import { ThreadAffordance } from "../cards/transcript-card/thread-affordance";
 import type { TranscriptThreadSummary } from "../cards/transcript-card/thread-summary-controller";
 import { captureHorizontalScroll, clampHorizontalScrollOffset, restoreHorizontalScrollOffset, type HorizontalScrollSnapshot } from "./horizontal-scroll-state";
+import { reconcileAssistantContentProjection, type AssistantProjectionCandidate, type AssistantProjectionState } from "./assistant-content-projection";
 
 function transcriptIds(id: string, hasTimestamp: boolean) {
   const base = `sand-conversation-entry-${encodeURIComponent(id)}`;
@@ -242,6 +243,9 @@ function StreamingMessage() {
 type AssistantContentBlock = { kind: "text"; text: string } | { kind: "code"; language: string; code: string };
 type AssistantListItem = { text: string; task?: boolean; checked?: boolean };
 type AssistantTextBlock = { kind: "paragraph"; text: string } | { kind: "heading"; level: 1 | 2 | 3; text: string } | { kind: "list"; ordered: boolean; start?: number; items: AssistantListItem[] } | { kind: "blockquote"; text: string } | { kind: "horizontal-rule" } | { kind: "table"; headers: string[]; rows: string[][] } | { kind: "math"; expression: string };
+type AssistantRenderableBlock =
+  | { kind: "code"; code: string; language: string; ownerId: string; projection: AssistantProjectionCandidate }
+  | { kind: "text"; block: AssistantTextBlock; ownerId: string; projection: AssistantProjectionCandidate };
 
 function isHttpUrl(value: string): boolean {
   try {
@@ -480,6 +484,70 @@ function assistantContentBlocks(text: string): AssistantContentBlock[] {
   return blocks;
 }
 
+function assistantTextProjectionCandidate(block: AssistantTextBlock, path: string): AssistantProjectionCandidate {
+  if (block.kind === "paragraph" || block.kind === "blockquote") {
+    return { path, kind: block.kind, structuralIdentity: block.kind, revision: { mode: "text-prefix", value: block.text } };
+  }
+  if (block.kind === "heading") {
+    return { path, kind: block.kind, structuralIdentity: `heading:${block.level}`, revision: { mode: "text-prefix", value: block.text } };
+  }
+  if (block.kind === "math") {
+    return { path, kind: block.kind, structuralIdentity: "math", revision: { mode: "text-prefix", value: block.expression } };
+  }
+  if (block.kind === "horizontal-rule") {
+    return { path, kind: block.kind, structuralIdentity: "horizontal-rule", revision: { mode: "exact", value: "horizontal-rule" } };
+  }
+  if (block.kind === "list") {
+    return {
+      path,
+      kind: block.kind,
+      structuralIdentity: JSON.stringify({ ordered: block.ordered, start: block.start ?? null }),
+      revision: {
+        mode: "append-sequence",
+        values: block.items.map((item) => `${item.task === true ? "task" : "item"}:${item.checked === true ? "checked" : "open"}:${item.text}`),
+      },
+    };
+  }
+  return {
+    path,
+    kind: block.kind,
+    structuralIdentity: JSON.stringify(block.headers),
+    revision: { mode: "append-sequence", values: block.rows.map((row) => row.join("\u001f")) },
+  };
+}
+
+function assistantRenderableBlocks(text: string, ownerId: string): AssistantRenderableBlock[] {
+  const renderable: AssistantRenderableBlock[] = [];
+  assistantContentBlocks(text).forEach((block, contentIndex) => {
+    if (block.kind === "code") {
+      const path = `content:${contentIndex}:code`;
+      renderable.push({
+        kind: "code",
+        code: block.code,
+        language: block.language,
+        ownerId: `${ownerId}:code:${contentIndex}:${block.language || "plain"}`,
+        projection: {
+          path,
+          kind: "code",
+          structuralIdentity: `code:${block.language || "plain"}`,
+          revision: { mode: "text-prefix", value: block.code },
+        },
+      });
+      return;
+    }
+    assistantTextBlocks(block.text).forEach((textBlock, textIndex) => {
+      const path = `content:${contentIndex}:text:${textIndex}`;
+      renderable.push({
+        kind: "text",
+        block: textBlock,
+        ownerId: `${ownerId}:text:${contentIndex}:${textIndex}`,
+        projection: assistantTextProjectionCandidate(textBlock, path),
+      });
+    });
+  });
+  return renderable;
+}
+
 const assistantCodeCopyButtonClass = "ui-icon-button sand-10l6tqk sand-1jgjl8u sand-1s3hisn sand-1uspnb1 sand-18o3ruo sand-1ifrsg7 sand-qjedn3 sand-1y0btm7 sand-qz0629 sand-t9pb60 sand-12sv23o sand-1mh7f6w sand-1hc1fzr sand-m072we sand-o8ljoj sand-1yas17b sand-67bb7w sand-14ux7ur sand-1nn4xpi sand-q1nbte sand-cdv909 sand-fe0yzn sand-sagj69";
 
 function AssistantCodeCopyButton({ code }: { code: string }) {
@@ -586,9 +654,29 @@ function UserMessageContent({ text, richText, openExternal }: { text: string; ri
 }
 
 export function AssistantMessageContent({ text, images, channel, isSourceTrusted, isStreaming = false, openExternal, ownerId }: { text: string; images?: readonly SendMessageTextImage[]; channel?: string | null; isSourceTrusted?: boolean; isStreaming?: boolean; openExternal?: TranscriptExternalLinkOpener; ownerId: string }) {
-  return <div className="sand-message-prose" data-source-trusted={isSourceTrusted || undefined}>{isStreaming && text.length === 0 ? <StreamingMessage /> : assistantContentBlocks(text).flatMap((block, index) => block.kind === "code"
-    ? [<AssistantCodeBlock code={block.code} key={`code-${index}`} language={block.language} ownerId={`${ownerId}:code:${index}:${block.language || "plain"}`} />]
-    : assistantTextBlocks(block.text).map((textBlock, textIndex) => <AssistantTextBlock block={textBlock} key={`text-${index}-${textIndex}`} openExternal={openExternal} ownerId={`${ownerId}:text:${index}:${textIndex}`} />))}{images == null ? null : <SendMessageTextImages images={images} />}{channel == null ? null : <span className="sand-channel-tag" title={`Sent to ${channel}`}>{channel}</span>}</div>;
+  const committedProjectionRef = useRef<AssistantProjectionState | null>(null);
+  const projectedContent = useMemo(() => {
+    const renderable = assistantRenderableBlocks(text, ownerId);
+    return {
+      renderable,
+      projection: reconcileAssistantContentProjection(committedProjectionRef.current, {
+        ownerId,
+        streaming: isStreaming,
+        candidates: renderable.map((block) => block.projection),
+      }),
+    };
+  }, [isStreaming, ownerId, text]);
+  useLayoutEffect(() => {
+    committedProjectionRef.current = projectedContent.projection;
+  }, [projectedContent.projection]);
+
+  return <div className="sand-message-prose" data-source-trusted={isSourceTrusted || undefined}>{isStreaming && text.length === 0 ? <StreamingMessage /> : projectedContent.renderable.map((block, index) => {
+    const projectionEntry = projectedContent.projection.entries[index];
+    if (projectionEntry == null) return null;
+    return block.kind === "code"
+      ? <AssistantCodeBlock code={block.code} key={projectionEntry.key} language={block.language} ownerId={block.ownerId} />
+      : <AssistantTextBlock block={block.block} key={projectionEntry.key} openExternal={openExternal} ownerId={block.ownerId} />;
+  })}{images == null ? null : <SendMessageTextImages images={images} />}{channel == null ? null : <span className="sand-channel-tag" title={`Sent to ${channel}`}>{channel}</span>}</div>;
 }
 
 function formatToolName(name: string): string {

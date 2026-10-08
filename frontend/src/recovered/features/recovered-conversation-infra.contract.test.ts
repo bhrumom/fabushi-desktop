@@ -21,6 +21,11 @@ import { resolveWithSingleRetry } from "./conversation/workspace/media-runtime.t
 import { DERIVED_MEDIA_PRELOAD_ROOT_MARGIN, DERIVED_MEDIA_THUMBNAIL_ROOT_MARGIN, isVisibilityBoundDerivedMedia, observeDerivedMediaVisibility, shouldResolveDerivedMedia, shouldResolveDerivedThumbnail } from "./conversation/workspace/media-visibility.ts";
 import { captureHorizontalScroll, clampHorizontalScrollOffset, restoreHorizontalScrollOffset } from "./conversation/workspace/horizontal-scroll-state.ts";
 import {
+  areAssistantProjectionCandidatesCompatible,
+  reconcileAssistantContentProjection,
+  type AssistantProjectionCandidate,
+} from "./conversation/workspace/assistant-content-projection.ts";
+import {
   createHiddenChatsMutationController,
 } from "./hidden-chats/overlay/mutation-controller.ts";
 import {
@@ -529,6 +534,155 @@ test("CONTRACT-TDRP-IV-ARTICLE-SCROLL-CONTINUITY-001 assistant code and table sc
   assert.match(source, /className="fabushi-rich-content-scroll-region"/);
 });
 
+
+test("UNIT-TDRP-IV-ARTICLE-PROJECTION-RECONCILE-001 assistant content projection preserves only compatible committed identities", () => {
+  const paragraph = (value: string): AssistantProjectionCandidate => ({
+    path: "content:0:text:0",
+    kind: "paragraph",
+    structuralIdentity: "paragraph",
+    revision: { mode: "text-prefix", value },
+  });
+  const code = (value: string): AssistantProjectionCandidate => ({
+    path: "content:1:code",
+    kind: "code",
+    structuralIdentity: "code:typescript",
+    revision: { mode: "text-prefix", value },
+  });
+
+  const initial = reconcileAssistantContentProjection(null, {
+    ownerId: "message-1",
+    streaming: true,
+    candidates: [paragraph("Hello")],
+  });
+  assert.equal(initial.mode, "initial");
+  assert.equal(initial.generation, 0);
+  const paragraphKey = initial.entries[0]?.key;
+  assert.ok(paragraphKey);
+
+  const appended = reconcileAssistantContentProjection(initial, {
+    ownerId: "message-1",
+    streaming: true,
+    candidates: [paragraph("Hello world"), code("const value")],
+  });
+  assert.equal(appended.mode, "patch");
+  assert.equal(appended.generation, 0);
+  assert.equal(appended.entries[0]?.key, paragraphKey);
+  const codeKey = appended.entries[1]?.key;
+  assert.ok(codeKey);
+
+  const settled = reconcileAssistantContentProjection(appended, {
+    ownerId: "message-1",
+    streaming: false,
+    candidates: [paragraph("Hello world!"), code("const value = 1;")],
+  });
+  assert.equal(settled.mode, "patch");
+  assert.equal(settled.entries[0]?.key, paragraphKey);
+  assert.equal(settled.entries[1]?.key, codeKey);
+
+  const settledBase = reconcileAssistantContentProjection(null, {
+    ownerId: "settled-message",
+    streaming: false,
+    candidates: [paragraph("Complete")],
+  });
+  const settledTailAppend = reconcileAssistantContentProjection(settledBase, {
+    ownerId: "settled-message",
+    streaming: false,
+    candidates: [paragraph("Complete"), code("const late = true;")],
+  });
+  assert.equal(settledTailAppend.mode, "replace");
+  assert.equal(settledTailAppend.generation, 1);
+
+  const rewritten = reconcileAssistantContentProjection(settled, {
+    ownerId: "message-1",
+    streaming: false,
+    candidates: [paragraph("Rewritten text"), code("const value = 1;")],
+  });
+  assert.equal(rewritten.mode, "replace");
+  assert.equal(rewritten.generation, 1);
+  assert.notEqual(rewritten.entries[0]?.key, paragraphKey);
+  assert.notEqual(rewritten.entries[1]?.key, codeKey);
+
+  const shortened = reconcileAssistantContentProjection(rewritten, {
+    ownerId: "message-1",
+    streaming: false,
+    candidates: [paragraph("Rewritten text")],
+  });
+  assert.equal(shortened.mode, "replace");
+  assert.equal(shortened.generation, 2);
+
+  const newOwner = reconcileAssistantContentProjection(shortened, {
+    ownerId: "message-2",
+    streaming: false,
+    candidates: [paragraph("Rewritten text")],
+  });
+  assert.equal(newOwner.mode, "replace");
+  assert.equal(newOwner.ownerId, "message-2");
+  assert.notEqual(newOwner.entries[0]?.key, shortened.entries[0]?.key);
+});
+
+test("UNIT-TDRP-IV-ARTICLE-PROJECTION-SEQUENCE-001 list and table growth fails closed when an earlier unit changes", () => {
+  const list = (values: readonly string[]): AssistantProjectionCandidate => ({
+    path: "content:0:text:0",
+    kind: "list",
+    structuralIdentity: JSON.stringify({ ordered: false, start: null }),
+    revision: { mode: "append-sequence", values },
+  });
+  assert.equal(areAssistantProjectionCandidatesCompatible(
+    list(["item:open:first"]),
+    list(["item:open:first", "item:open:second"]),
+    true,
+  ), true);
+  assert.equal(areAssistantProjectionCandidatesCompatible(
+    list(["item:open:first", "item:open:sec"]),
+    list(["item:open:first", "item:open:second"]),
+    true,
+  ), true);
+  assert.equal(areAssistantProjectionCandidatesCompatible(
+    list(["item:open:first", "item:open:second"]),
+    list(["item:open:changed", "item:open:second"]),
+    true,
+  ), false);
+  assert.equal(areAssistantProjectionCandidatesCompatible(
+    list(["item:open:first"]),
+    { ...list(["item:open:first"]), structuralIdentity: JSON.stringify({ ordered: true, start: 1 }) },
+    true,
+  ), false);
+
+  const table = (values: readonly string[]): AssistantProjectionCandidate => ({
+    path: "content:0:text:1",
+    kind: "table",
+    structuralIdentity: JSON.stringify(["Name", "Value"]),
+    revision: { mode: "append-sequence", values },
+  });
+  assert.equal(areAssistantProjectionCandidatesCompatible(
+    table(["first\u001f1"]),
+    table(["first\u001f1", "second\u001f2"]),
+    true,
+  ), true);
+  assert.equal(areAssistantProjectionCandidatesCompatible(
+    table(["first\u001f1", "second\u001f2"]),
+    table(["changed\u001f1", "second\u001f2"]),
+    true,
+  ), false);
+  assert.equal(areAssistantProjectionCandidatesCompatible(
+    table(["first\u001f1"]),
+    { ...table(["first\u001f1"]), structuralIdentity: JSON.stringify(["Changed", "Value"]) },
+    true,
+  ), false);
+});
+
+test("CONTRACT-TDRP-IV-ARTICLE-PARTIAL-FALLBACK-001 assistant projection patches compatible growth and remounts incompatible structure", () => {
+  const source = readFileSync(new URL("./conversation/workspace/transcript.tsx", import.meta.url), "utf8");
+  const projectionSource = readFileSync(new URL("./conversation/workspace/assistant-content-projection.ts", import.meta.url), "utf8");
+  assert.match(source, /reconcileAssistantContentProjection\(committedProjectionRef\.current/);
+  assert.match(source, /useLayoutEffect\(\(\) => \{\s*committedProjectionRef\.current = projectedContent\.projection;/);
+  assert.match(source, /key=\{projectionEntry\.key\}/);
+  assert.doesNotMatch(source, /key=\{`code-\$\{index\}`\}/);
+  assert.match(projectionSource, /allowGrowth && input\.candidates\.length > previous\.entries\.length/);
+  assert.match(projectionSource, /previous\.ownerId === input\.ownerId/);
+  assert.match(projectionSource, /mode: "replace"/);
+  assert.match(projectionSource, /previous\.generation \+ 1/);
+});
 
 test("UNIT-TDRP-IV-ARTICLE-MEDIA-VISIBILITY-001 derived transcript media follows a bounded visibility budget", () => {
   assert.equal(isVisibilityBoundDerivedMedia("image"), true);

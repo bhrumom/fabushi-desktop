@@ -5271,6 +5271,7 @@
       "platform_delta": "React/browser rich-content components replace Qt article/painter/event structures.",
       "existing_owner_candidates": [
         "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "frontend/src/recovered/features/conversation/workspace/assistant-content-projection.ts",
         "frontend/src/recovered/features/conversation/workspace/find-in-chat-controller.ts",
         "frontend/src/recovered/features/conversation/workspace/math.tsx",
         "frontend/src/recovered/features/conversation/workspace/media-viewer.tsx",
@@ -5295,6 +5296,9 @@
       ],
       "fabushi_target_symbols": [
         "ConversationTranscript",
+        "AssistantMessageContent",
+        "reconcileAssistantContentProjection",
+        "areAssistantProjectionCandidatesCompatible",
         "createFindInChatController",
         "TranscriptAttachmentGallery",
         "MediaViewer",
@@ -5330,8 +5334,8 @@
       "implementation_status": "mapped",
       "coverage_disposition": "fabushi-ui-replacement",
       "blockers": [
-        "Current PR provides canonical Math/Media/URL lifecycle slices, bounded missing-media recovery, owner-keyed horizontal-scroll continuity, shared near-viewport transcript-card image/video release/reload, and active-or-near filmstrip thumbnail resolution; exact-head GitHub Actions evidence remains required.",
-        "Full edit/drop/anchor reveal, compatible partial-patch fallback, active-viewer and broader runtime pruning, visible-range equivalence, packaged accessibility/performance evidence and independent acceptance remain open."
+        "Current PR provides canonical Math/Media/URL lifecycle slices, bounded missing-media recovery, owner-keyed horizontal-scroll continuity, shared near-viewport media lifetime, and bounded assistant projection patch-versus-replace reconciliation; exact-head GitHub Actions evidence remains required.",
+        "Full edit/drop/anchor reveal, arbitrary non-assistant prepared-leaf patch breadth, active-viewer and broader runtime pruning, visible-range equivalence, packaged accessibility/performance evidence and independent acceptance remain open."
       ],
       "production_entrypoints": [
         "ProductShell -> ConversationWorkspace -> ConversationTranscript -> existing Search/Math/Resource/URL/action owners"
@@ -5339,6 +5343,7 @@
       "production_evidence": [
         "main:3bc92400826cc4ca7ac665b467708e22261edc61",
         "path:frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "path:frontend/src/recovered/features/conversation/workspace/assistant-content-projection.ts",
         "path:frontend/src/recovered/features/conversation/workspace/media-viewer.tsx",
         "path:frontend/src/recovered/features/conversation/workspace/media-visibility.ts",
         "path:frontend/src/production/ProductionRenderer.tsx",
@@ -5476,12 +5481,15 @@
       ],
       "unit_case_ids": [
         "UNIT-TDRP-IV-ARTICLE-SCROLL-CLAMP-001",
-        "UNIT-TDRP-IV-ARTICLE-MEDIA-VISIBILITY-001"
+        "UNIT-TDRP-IV-ARTICLE-MEDIA-VISIBILITY-001",
+        "UNIT-TDRP-IV-ARTICLE-PROJECTION-RECONCILE-001",
+        "UNIT-TDRP-IV-ARTICLE-PROJECTION-SEQUENCE-001"
       ],
       "property_state_case_ids": [],
       "contract_case_ids": [
         "CONTRACT-TDRP-IV-ARTICLE-SCROLL-CONTINUITY-001",
-        "CONTRACT-TDRP-IV-ARTICLE-MEDIA-LIFECYCLE-001"
+        "CONTRACT-TDRP-IV-ARTICLE-MEDIA-LIFECYCLE-001",
+        "CONTRACT-TDRP-IV-ARTICLE-PARTIAL-FALLBACK-001"
       ],
       "integration_case_ids": [],
       "functional_e2e_case_ids": [],
@@ -5518,7 +5526,7 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior mapped from accepted telegramdesktop/tdesktop d346 exact blobs; Qt/C++ presentation is not retained and legal/source provenance remains recorded.",
       "reviewer": null,
-      "notes": "Read-complete; current PR reuses canonical ConversationTranscript, Math, MediaViewer and URL owners and adds compatibility-safe formula caching, media replacement pointer retirement, bounded one-retry media recovery, typed rich actions, selection-vs-link arbitration, and owner-keyed code/table horizontal-scroll continuity. The complete article contract remains mapped-open."
+      "notes": "Read-complete; current PR reuses canonical ConversationTranscript, Math, MediaViewer and URL owners and adds compatibility-safe formula caching, media replacement pointer retirement, bounded one-retry recovery, typed rich actions, owner-keyed horizontal-scroll continuity, shared derived-media visibility, and committed-generation assistant projection reconciliation. Compatible monotonic assistant growth retains keys; shortening, non-prefix rewrite, owner or structural mismatch remounts the whole projection. The complete article contract remains mapped-open."
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
@@ -5576,6 +5584,7 @@
       "platform_delta": "React memoization/resource generation/Abort fencing replaces C++ cache and pointer mechanics behind existing canonical owners.",
       "existing_owner_candidates": [
         "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "frontend/src/recovered/features/conversation/workspace/assistant-content-projection.ts",
         "frontend/src/recovered/features/conversation/workspace/find-in-chat-controller.ts",
         "frontend/src/recovered/features/conversation/workspace/math.tsx",
         "frontend/src/recovered/features/conversation/workspace/media-viewer.tsx",
@@ -5600,6 +5609,8 @@
       ],
       "fabushi_target_symbols": [
         "AssistantMessageContent",
+        "reconcileAssistantContentProjection",
+        "areAssistantProjectionCandidatesCompatible",
         "AssistantMath",
         "TranscriptAttachmentGallery",
         "MediaViewer",
@@ -5637,8 +5648,8 @@
       "implementation_status": "mapped",
       "coverage_disposition": "fabushi-ui-replacement",
       "blockers": [
-        "Current PR implements formula generation fencing, media replacement/retry, canonical-message/structural-owner horizontal-scroll continuity, shared near-viewport unload/reload of transcript image/video derived state, and active-or-near filmstrip thumbnail resolution with stale-settlement cancellation; exact-head GitHub Actions evidence remains required.",
-        "Compatible/incompatible partial-leaf fallback, highlight/runtime pruning breadth, active-viewer heavy-resource policy, visible-range/date retained-layout evidence, packaged temporal/performance evidence and independent acceptance remain open."
+        "Current PR implements formula generation fencing, media replacement/retry, owner-keyed horizontal-scroll continuity, shared derived-media visibility, and assistant projection reconciliation that retains only compatible committed identities and otherwise performs a generation-wide remount; exact-head GitHub Actions evidence remains required.",
+        "Arbitrary non-assistant prepared-leaf patch breadth, highlight/runtime pruning breadth, active-viewer heavy-resource policy, visible-range/date retained-layout evidence, packaged temporal/performance evidence and independent acceptance remain open."
       ],
       "production_entrypoints": [
         "ProductShell -> ConversationWorkspace -> ConversationTranscript -> existing Search/Math/Resource/URL/action owners"
@@ -5646,6 +5657,7 @@
       "production_evidence": [
         "main:3bc92400826cc4ca7ac665b467708e22261edc61",
         "path:frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "path:frontend/src/recovered/features/conversation/workspace/assistant-content-projection.ts",
         "path:frontend/src/recovered/features/conversation/workspace/media-viewer.tsx",
         "path:frontend/src/recovered/features/conversation/workspace/media-visibility.ts",
         "path:frontend/src/production/ProductionRenderer.tsx",
@@ -5783,12 +5795,15 @@
       ],
       "unit_case_ids": [
         "UNIT-TDRP-IV-ARTICLE-SCROLL-CLAMP-001",
-        "UNIT-TDRP-IV-ARTICLE-MEDIA-VISIBILITY-001"
+        "UNIT-TDRP-IV-ARTICLE-MEDIA-VISIBILITY-001",
+        "UNIT-TDRP-IV-ARTICLE-PROJECTION-RECONCILE-001",
+        "UNIT-TDRP-IV-ARTICLE-PROJECTION-SEQUENCE-001"
       ],
       "property_state_case_ids": [],
       "contract_case_ids": [
         "CONTRACT-TDRP-IV-ARTICLE-SCROLL-CONTINUITY-001",
-        "CONTRACT-TDRP-IV-ARTICLE-MEDIA-LIFECYCLE-001"
+        "CONTRACT-TDRP-IV-ARTICLE-MEDIA-LIFECYCLE-001",
+        "CONTRACT-TDRP-IV-ARTICLE-PARTIAL-FALLBACK-001"
       ],
       "integration_case_ids": [],
       "functional_e2e_case_ids": [],
@@ -5825,7 +5840,7 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior mapped from accepted telegramdesktop/tdesktop d346 exact blobs; Qt/C++ presentation is not retained and legal/source provenance remains recorded.",
       "reviewer": null,
-      "notes": "Read-complete; current PR shares AssistantMath work only across compatible loader/expression/display identities, fences media replacement and bounded recovery, retains code/table horizontal offset only for the same canonical message plus compatible structural owner, shares visibility observers by margin, releases transcript-card image/video derived media outside a near-viewport margin, and resolves filmstrip thumbnails only while active or horizontally near-visible. Audio and the explicitly opened viewer stay live; broader article patch/highlight/runtime/active-viewer/visible-date invariants remain mapped-open."
+      "notes": "Read-complete; current PR shares AssistantMath work only across compatible generations, fences media replacement/recovery, retains scroll only for compatible owners, shares derived-media visibility, and reconciles assistant rich-content keys against the last committed projection. Monotonic compatible growth patches; shortening, non-prefix rewrite, owner or structural mismatch increments generation and remounts all assistant blocks. Audio and the explicitly opened viewer stay live; arbitrary non-assistant patch/highlight/runtime/active-viewer/visible-date invariants remain mapped-open."
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
