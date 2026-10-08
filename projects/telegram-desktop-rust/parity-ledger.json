@@ -7,9 +7,9 @@
   "coverage": {
     "source_entries_total": 15788,
     "unknown": 15788,
-    "unread": 15744,
+    "unread": 15740,
     "omitted": 0,
-    "responsibilities_total": 38,
+    "responsibilities_total": 42,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -8846,6 +8846,849 @@
       "license_and_provenance": "Source-informed mapping from accepted telegramdesktop/tdesktop recent_peers authority; no retained Telegram C++ runtime or copied presentation.",
       "reviewer": null,
       "notes": "Exact accepted cpp read complete; do not infer persistence for recent-open _opens because this file serializes only ordinary _list."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "d346b42a1d30ef60dc989b6e5191bb8e571f6bd5",
+      "source_path": "Telegram/SourceFiles/storage/storage_shared_media.h",
+      "source_blob_sha": "cd0d29d594e012d5fabb0e53e148fe98e4e86d44",
+      "source_kind": "source",
+      "module_id": "tdesktop.storage.shared_media",
+      "responsibility_id": "TDRP-R9-SHARED-MEDIA-STORAGE-CONTRACT-001",
+      "source_symbols": [
+        "SharedMediaType",
+        "SharedMediaKey",
+        "SharedMediaQuery",
+        "SharedMediaUnloadThread",
+        "SharedMedia",
+        "SharedMediaAddNew",
+        "SharedMediaRemoveOne"
+      ],
+      "capability_ids": [
+        "CAP-MESSAGE-MEDIA-PROJECTION",
+        "CAP-RESOURCE-LIFECYCLE"
+      ],
+      "dependency_ids": [
+        "Message",
+        "MessageContent",
+        "MediaRef",
+        "SearchIndex",
+        "MediaCache",
+        "ConversationDestination"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/shared-media-storage-complete-read.md",
+      "behavior_contract": "Shared-media is a typed message-derived projection keyed by parent peer plus topic/SavedSublist discriminator; exact thread unload removes only that projection and never grants message ownership or child membership.",
+      "state_machine": "canonical Message/MediaRef state -> derived Media/Files/Links projection -> exact typed child invalidation/unload -> projection absent while underlying media/blob lifetime remains independently owned.",
+      "side_effects": [
+        "Invalidate only the affected derived shared-media/search projection",
+        "Do not delete underlying media bytes solely because one thread projection unloads"
+      ],
+      "failure_cases": [
+        "Stale deleted-child media remains searchable",
+        "Thread unload removes media still referenced elsewhere",
+        "Projection key aliases Topic and SavedSublist scopes"
+      ],
+      "ui_disposition": "Reuse canonical Search Media/Files/Links and Resource surfaces; no Telegram SharedMedia UI/root.",
+      "non_ui_responsibilities": [
+        "Typed message-derived media projection",
+        "Exact child-scope invalidation",
+        "Separation of projection lifetime from physical media cache lifetime"
+      ],
+      "platform_delta": "Fabushi does not need the upstream SparseIdsList cache shape; equivalent product behavior is existing MessageContent/MediaRef truth projected by SearchIndex with MediaCache as independent physical cache.",
+      "existing_owner_candidates": [
+        "native/mahayana-messaging/src/message.rs",
+        "native/mahayana-messaging/src/search.rs",
+        "native/mahayana-messaging/src/media_cache.rs",
+        "native/mahayana-messaging/src/engine.rs"
+      ],
+      "existing_owner": "Fabushi canonical Message/Search/MediaCache resource owners",
+      "rejected_existing_owners": [
+        "New SharedMedia subsystem: duplicates canonical Message/Search truth",
+        "Conversation child runtime alone: does not own media/search projection or physical media bytes"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "native/mahayana-messaging/src/message.rs",
+        "native/mahayana-messaging/src/search.rs",
+        "native/mahayana-messaging/src/media_cache.rs",
+        "native/mahayana-messaging/src/engine.rs"
+      ],
+      "fabushi_target_symbols": [
+        "MessageContent",
+        "MediaRef",
+        "SearchIndex",
+        "MediaCache",
+        "Event::ConversationChildDestroyed"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "This is non-UI message/resource/search state and lifecycle; existing canonical Rust owners already express the target architecture.",
+      "command_event_contracts": [
+        "Canonical message add/remove -> SearchIndex media projection update",
+        "Exact child destruction -> remove child-owned messages/projection only when authoritative membership proves ownership"
+      ],
+      "state_owner": "Canonical Message store + SearchIndex; MediaCache owns physical materialization only",
+      "lifecycle_owner": "Canonical messaging engine/resource lifecycle",
+      "persistence_and_restart": "Message/Search truth is rebuilt/restored from canonical message state; physical MediaCache lifetime is independent and must not become conversation membership authority.",
+      "concurrency_and_cancellation": "Deletion and projection invalidation must be ordered so a stale asynchronous search/cache refresh cannot reinsert media from a destroyed child.",
+      "security_boundary": "Search/Media projection may expose only messages the actor may read; cache presence never grants access.",
+      "network_service_dependencies": [
+        "SavedSublist exact message membership feed for authoritative child-owned message deletion"
+      ],
+      "service_owner": "Fabushi canonical messaging/sync service; SavedSublist membership feed remains blocked.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Exact child-owned message destruction/search invalidation composition remains open",
+        "SavedSublist authoritative membership shipping feed remains service-blocked"
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [],
+      "target_commit": "6e6744eb8716671f060251aacc986ef5fb483b0c",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi ProductShell -> Messages -> ConversationWorkspace",
+      "composition_slot": "Canonical Conversation child collection/runtime",
+      "capability_component": "Typed Conversation child capability",
+      "variation_axes": [
+        "canonical self SavedMessages",
+        "explicit parent-scoped SavedSublist",
+        "unsupported/no-authority"
+      ],
+      "shared_owner_contracts": [
+        "Canonical Conversation identity",
+        "Canonical Message identity",
+        "Canonical permissions",
+        "Canonical sync authority"
+      ],
+      "duplicate_root_check": "No new Conversation, Message, Search, Settings, or source-named root is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Object-scoped Conversation capability",
+      "primary_navigation_target": "Messages",
+      "collection_surface": "Canonical Conversation child list",
+      "creation_flow": "Not applicable; children are authoritative relations, not renderer-created roots.",
+      "object_action_scope": "Child selection/pagination/read state",
+      "detail_section": "Not applicable",
+      "capability_surface": "ConversationWorkspace child collection",
+      "route_contract": "Reuse canonical ConversationWorkspace route with typed child identity.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "No search exposure is added by this responsibility.",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Reuse existing ConversationWorkspace responsive behavior.",
+      "accessibility_contract": "Reuse canonical child-list/list-row semantics; no new root.",
+      "keyboard_contract": "Reuse canonical ConversationWorkspace selection/navigation.",
+      "state_continuity_contract": "Child authority and lifecycle must survive reload/restart and reject stale generations.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "FBCP Revision 7 live Fabushi design system",
+      "semantic_token_usage": [
+        "Existing canonical Conversation components only"
+      ],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [
+        "ConversationWorkspace",
+        "ConversationRow"
+      ],
+      "screen_pattern_id": "ConversationWorkspace",
+      "screen_slots": [
+        "child collection",
+        "transcript"
+      ],
+      "visual_state_matrix": [
+        "loading",
+        "empty",
+        "error",
+        "unsupported",
+        "populated"
+      ],
+      "density_contract": "Existing ConversationWorkspace density unchanged.",
+      "icon_asset_contract": "No new source-branded icon.",
+      "avatar_contract": "Existing canonical participant/conversation avatar contract.",
+      "content_copy_keys": [],
+      "motion_contract": "Existing application motion contract.",
+      "reduced_motion_contract": "Existing reduced-motion contract.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-SHARED-MEDIA-STORAGE-CONTRACT-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-R9-SHARED-MEDIA-STORAGE-CONTRACT-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-R9-SHARED-MEDIA-STORAGE-CONTRACT-001-CANONICAL"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-SEARCH",
+        "G-RESOURCE",
+        "G-TEMPORAL",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "GitHub Actions only"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "not-run",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Source-informed mapping from accepted telegramdesktop/tdesktop storage_shared_media.h; no Telegram runtime or presentation retained.",
+      "reviewer": null,
+      "notes": "Exact accepted 316-line header read complete. Mapped-open only; global unknown unchanged."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "d346b42a1d30ef60dc989b6e5191bb8e571f6bd5",
+      "source_path": "Telegram/SourceFiles/storage/storage_shared_media.cpp",
+      "source_blob_sha": "b52ec6c64d3c8d05e211ae4abe92b5dc5c19d642",
+      "source_kind": "source",
+      "module_id": "tdesktop.storage.shared_media",
+      "responsibility_id": "TDRP-R9-SHARED-MEDIA-STORAGE-LIFECYCLE-001",
+      "source_symbols": [
+        "SharedMedia::enforceLists",
+        "SharedMedia::add",
+        "SharedMedia::remove",
+        "SharedMedia::invalidate",
+        "SharedMedia::unload",
+        "SharedMedia::query",
+        "SharedMedia::snapshot"
+      ],
+      "capability_ids": [
+        "CAP-MESSAGE-MEDIA-PROJECTION",
+        "CAP-RESOURCE-LIFECYCLE"
+      ],
+      "dependency_ids": [
+        "Message",
+        "SearchIndex",
+        "MediaCache",
+        "ConversationDestination"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/shared-media-storage-complete-read.md",
+      "behavior_contract": "Shared-media updates fan out to parent and already-materialized typed child projections; remove propagates to matching projections; unload of one typed thread erases exactly its cached projection; unload-all-topics removes only topic-root projections.",
+      "state_machine": "no projection -> materialized typed projection -> incremental add/remove/invalidate -> exact thread unload or topic unload -> absent; querying an absent projection returns empty/done rather than inventing data.",
+      "side_effects": [
+        "Derived projection update events",
+        "Exact projection erase without physical-media ownership transfer"
+      ],
+      "failure_cases": [
+        "Absent projection is treated as authoritative non-empty data",
+        "Unloading one child clears unrelated parent/children",
+        "Removed message remains in derived Search media scope"
+      ],
+      "ui_disposition": "No direct UI port; project through canonical Search/Transcript/Resource components.",
+      "non_ui_responsibilities": [
+        "Projection fan-out",
+        "Exact key isolation",
+        "Empty-on-unmaterialized query",
+        "Derived projection invalidation"
+      ],
+      "platform_delta": "Replace SparseIdsList implementation details with canonical SearchIndex derived from Message state; preserve exact invalidation semantics and stale-result fencing.",
+      "existing_owner_candidates": [
+        "native/mahayana-messaging/src/search.rs",
+        "native/mahayana-messaging/src/message.rs",
+        "native/mahayana-messaging/src/media_cache.rs",
+        "native/mahayana-messaging/src/engine.rs"
+      ],
+      "existing_owner": "Fabushi canonical Message/Search/MediaCache resource owners",
+      "rejected_existing_owners": [
+        "New SparseIdsList/SharedMedia cache: source-shaped duplicate"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "native/mahayana-messaging/src/search.rs",
+        "native/mahayana-messaging/src/message.rs",
+        "native/mahayana-messaging/src/media_cache.rs",
+        "native/mahayana-messaging/src/engine.rs"
+      ],
+      "fabushi_target_symbols": [
+        "SearchIndex::index_message",
+        "SearchIndex::remove_message",
+        "content_matches_scope",
+        "MediaCache",
+        "Event::ConversationChildDestroyed"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "Derived index/resource lifecycle is canonical Rust state.",
+      "command_event_contracts": [
+        "Message lifecycle -> SearchIndex index/remove",
+        "Conversation child deletion -> authoritative child message destruction -> search/resource invalidation"
+      ],
+      "state_owner": "Canonical Message store + SearchIndex",
+      "lifecycle_owner": "Canonical messaging engine/resource lifecycle",
+      "persistence_and_restart": "No second persisted SharedMedia truth; projections must be deterministic from canonical messages after restore.",
+      "concurrency_and_cancellation": "Stale search/index tasks must be generation-fenced against message/child deletion.",
+      "security_boundary": "Derived index cannot outlive read authorization; media cache identifiers are non-authoritative.",
+      "network_service_dependencies": [
+        "SavedSublist authoritative message membership for child-scoped destructive cleanup"
+      ],
+      "service_owner": "Fabushi canonical messaging/sync service.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Current engine does not yet prove full SavedSublist child message destruction/search removal on shipping path",
+        "Service membership feed blocked"
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [],
+      "target_commit": "6e6744eb8716671f060251aacc986ef5fb483b0c",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi ProductShell -> Messages -> ConversationWorkspace",
+      "composition_slot": "Canonical Conversation child collection/runtime",
+      "capability_component": "Typed Conversation child capability",
+      "variation_axes": [
+        "canonical self SavedMessages",
+        "explicit parent-scoped SavedSublist",
+        "unsupported/no-authority"
+      ],
+      "shared_owner_contracts": [
+        "Canonical Conversation identity",
+        "Canonical Message identity",
+        "Canonical permissions",
+        "Canonical sync authority"
+      ],
+      "duplicate_root_check": "No new Conversation, Message, Search, Settings, or source-named root is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Object-scoped Conversation capability",
+      "primary_navigation_target": "Messages",
+      "collection_surface": "Canonical Conversation child list",
+      "creation_flow": "Not applicable; children are authoritative relations, not renderer-created roots.",
+      "object_action_scope": "Child selection/pagination/read state",
+      "detail_section": "Not applicable",
+      "capability_surface": "ConversationWorkspace child collection",
+      "route_contract": "Reuse canonical ConversationWorkspace route with typed child identity.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "No search exposure is added by this responsibility.",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Reuse existing ConversationWorkspace responsive behavior.",
+      "accessibility_contract": "Reuse canonical child-list/list-row semantics; no new root.",
+      "keyboard_contract": "Reuse canonical ConversationWorkspace selection/navigation.",
+      "state_continuity_contract": "Child authority and lifecycle must survive reload/restart and reject stale generations.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "FBCP Revision 7 live Fabushi design system",
+      "semantic_token_usage": [
+        "Existing canonical Conversation components only"
+      ],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [
+        "ConversationWorkspace",
+        "ConversationRow"
+      ],
+      "screen_pattern_id": "ConversationWorkspace",
+      "screen_slots": [
+        "child collection",
+        "transcript"
+      ],
+      "visual_state_matrix": [
+        "loading",
+        "empty",
+        "error",
+        "unsupported",
+        "populated"
+      ],
+      "density_contract": "Existing ConversationWorkspace density unchanged.",
+      "icon_asset_contract": "No new source-branded icon.",
+      "avatar_contract": "Existing canonical participant/conversation avatar contract.",
+      "content_copy_keys": [],
+      "motion_contract": "Existing application motion contract.",
+      "reduced_motion_contract": "Existing reduced-motion contract.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-SHARED-MEDIA-STORAGE-LIFECYCLE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-R9-SHARED-MEDIA-STORAGE-LIFECYCLE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-R9-SHARED-MEDIA-STORAGE-LIFECYCLE-001-CANONICAL"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-SEARCH",
+        "G-RESOURCE",
+        "G-RECOVERY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "GitHub Actions only"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "not-run",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Source-informed mapping from accepted telegramdesktop/tdesktop storage_shared_media.cpp; no source cache implementation retained.",
+      "reviewer": null,
+      "notes": "Exact accepted 242-line cpp read complete. Mapped-open only."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "d346b42a1d30ef60dc989b6e5191bb8e571f6bd5",
+      "source_path": "Telegram/SourceFiles/storage/storage_facade.h",
+      "source_blob_sha": "8d7ddcde8efd4dd82c08670cb1ab303eb9c928d6",
+      "source_kind": "source",
+      "module_id": "tdesktop.storage.shared_media",
+      "responsibility_id": "TDRP-R9-STORAGE-FACADE-CONTRACT-001",
+      "source_symbols": [
+        "Facade",
+        "add",
+        "remove",
+        "invalidate",
+        "unload",
+        "query",
+        "snapshot",
+        "empty"
+      ],
+      "capability_ids": [
+        "CAP-RESOURCE-LIFECYCLE"
+      ],
+      "dependency_ids": [
+        "SearchIndex",
+        "MediaCache",
+        "Message"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/shared-media-storage-complete-read.md",
+      "behavior_contract": "Storage facade is a single delegation boundary for shared-media/user-photo storage operations; it owns no parallel product truth.",
+      "state_machine": "caller command -> one canonical storage/resource owner -> result/update; facade itself adds no lifecycle state.",
+      "side_effects": [
+        "Delegates to canonical storage owner only"
+      ],
+      "failure_cases": [
+        "Facade becomes a second state owner",
+        "Different callers observe divergent resource truth"
+      ],
+      "ui_disposition": "No UI.",
+      "non_ui_responsibilities": [
+        "Single delegation boundary",
+        "No duplicated state ownership"
+      ],
+      "platform_delta": "No source-shaped Facade class is needed; use existing Rust module/service boundaries and direct typed owner APIs.",
+      "existing_owner_candidates": [
+        "native/mahayana-messaging/src/engine.rs",
+        "native/mahayana-messaging/src/search.rs",
+        "native/mahayana-messaging/src/media_cache.rs"
+      ],
+      "existing_owner": "Existing canonical messaging/resource owner boundaries",
+      "rejected_existing_owners": [
+        "New StorageFacade owner: would add indirection without new responsibility"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "native/mahayana-messaging/src/engine.rs",
+        "native/mahayana-messaging/src/search.rs",
+        "native/mahayana-messaging/src/media_cache.rs"
+      ],
+      "fabushi_target_symbols": [
+        "MessagingEngine",
+        "SearchIndex",
+        "MediaCache"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "Existing Rust owner boundaries replace the C++ facade pattern.",
+      "command_event_contracts": [
+        "Typed engine/service call -> existing Search/Media owner"
+      ],
+      "state_owner": "No independent state; delegates to canonical owners",
+      "lifecycle_owner": "Canonical messaging/resource owners",
+      "persistence_and_restart": "No facade persistence.",
+      "concurrency_and_cancellation": "Delegation must preserve the owning module's ordering/fencing semantics.",
+      "security_boundary": "Facade/delegation cannot bypass canonical message/search authorization.",
+      "network_service_dependencies": [],
+      "service_owner": "Not applicable.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "End-to-end child deletion/resource invalidation composition remains open"
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [],
+      "target_commit": "6e6744eb8716671f060251aacc986ef5fb483b0c",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi ProductShell -> Messages -> ConversationWorkspace",
+      "composition_slot": "Canonical Conversation child collection/runtime",
+      "capability_component": "Typed Conversation child capability",
+      "variation_axes": [
+        "canonical self SavedMessages",
+        "explicit parent-scoped SavedSublist",
+        "unsupported/no-authority"
+      ],
+      "shared_owner_contracts": [
+        "Canonical Conversation identity",
+        "Canonical Message identity",
+        "Canonical permissions",
+        "Canonical sync authority"
+      ],
+      "duplicate_root_check": "No new Conversation, Message, Search, Settings, or source-named root is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Object-scoped Conversation capability",
+      "primary_navigation_target": "Messages",
+      "collection_surface": "Canonical Conversation child list",
+      "creation_flow": "Not applicable; children are authoritative relations, not renderer-created roots.",
+      "object_action_scope": "Child selection/pagination/read state",
+      "detail_section": "Not applicable",
+      "capability_surface": "ConversationWorkspace child collection",
+      "route_contract": "Reuse canonical ConversationWorkspace route with typed child identity.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "No search exposure is added by this responsibility.",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Reuse existing ConversationWorkspace responsive behavior.",
+      "accessibility_contract": "Reuse canonical child-list/list-row semantics; no new root.",
+      "keyboard_contract": "Reuse canonical ConversationWorkspace selection/navigation.",
+      "state_continuity_contract": "Child authority and lifecycle must survive reload/restart and reject stale generations.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "FBCP Revision 7 live Fabushi design system",
+      "semantic_token_usage": [
+        "Existing canonical Conversation components only"
+      ],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [
+        "ConversationWorkspace",
+        "ConversationRow"
+      ],
+      "screen_pattern_id": "ConversationWorkspace",
+      "screen_slots": [
+        "child collection",
+        "transcript"
+      ],
+      "visual_state_matrix": [
+        "loading",
+        "empty",
+        "error",
+        "unsupported",
+        "populated"
+      ],
+      "density_contract": "Existing ConversationWorkspace density unchanged.",
+      "icon_asset_contract": "No new source-branded icon.",
+      "avatar_contract": "Existing canonical participant/conversation avatar contract.",
+      "content_copy_keys": [],
+      "motion_contract": "Existing application motion contract.",
+      "reduced_motion_contract": "Existing reduced-motion contract.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-STORAGE-FACADE-CONTRACT-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-R9-STORAGE-FACADE-CONTRACT-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-R9-STORAGE-FACADE-CONTRACT-001-CANONICAL"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-RESOURCE",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "GitHub Actions only"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "not-run",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Source-informed mapping from accepted telegramdesktop/tdesktop storage_facade.h.",
+      "reviewer": null,
+      "notes": "Exact accepted 84-line header read complete. Source facade shape is not copied."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "d346b42a1d30ef60dc989b6e5191bb8e571f6bd5",
+      "source_path": "Telegram/SourceFiles/storage/storage_facade.cpp",
+      "source_blob_sha": "ffb252a7edf89b0e86b4a98e09835c9b2ab19930",
+      "source_kind": "source",
+      "module_id": "tdesktop.storage.shared_media",
+      "responsibility_id": "TDRP-R9-STORAGE-FACADE-DELEGATION-001",
+      "source_symbols": [
+        "Facade::Impl",
+        "Facade::add",
+        "Facade::remove",
+        "Facade::invalidate",
+        "Facade::unload",
+        "Facade::query",
+        "Facade::snapshot"
+      ],
+      "capability_ids": [
+        "CAP-RESOURCE-LIFECYCLE"
+      ],
+      "dependency_ids": [
+        "SearchIndex",
+        "MediaCache",
+        "Message"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/shared-media-storage-complete-read.md",
+      "behavior_contract": "Facade implementation is transparent delegation: every shared-media operation forwards to the single SharedMedia owner and every photo operation to UserPhotos, with no hidden transformation or second cache.",
+      "state_machine": "typed operation received -> forward exactly once to existing owner -> return same result/update stream.",
+      "side_effects": [
+        "Exactly one canonical owner mutation per delegated operation"
+      ],
+      "failure_cases": [
+        "Duplicated mutation",
+        "Facade-only cache/state",
+        "Operation silently omitted"
+      ],
+      "ui_disposition": "No UI.",
+      "non_ui_responsibilities": [
+        "Transparent single-owner delegation"
+      ],
+      "platform_delta": "Represent by existing Rust composition rather than a dedicated source-shaped facade.",
+      "existing_owner_candidates": [
+        "native/mahayana-messaging/src/engine.rs",
+        "native/mahayana-messaging/src/search.rs",
+        "native/mahayana-messaging/src/media_cache.rs"
+      ],
+      "existing_owner": "Existing canonical messaging/resource owner composition",
+      "rejected_existing_owners": [
+        "New StorageFacade module: no novel responsibility"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "native/mahayana-messaging/src/engine.rs",
+        "native/mahayana-messaging/src/search.rs",
+        "native/mahayana-messaging/src/media_cache.rs"
+      ],
+      "fabushi_target_symbols": [
+        "MessagingEngine",
+        "SearchIndex",
+        "MediaCache"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "Existing Rust typed composition provides equivalent delegation.",
+      "command_event_contracts": [
+        "Engine/resource command -> one existing owner call"
+      ],
+      "state_owner": "No independent state",
+      "lifecycle_owner": "Canonical messaging/resource owners",
+      "persistence_and_restart": "No facade persistence.",
+      "concurrency_and_cancellation": "Preserve delegated owner's ordering and cancellation.",
+      "security_boundary": "Delegation cannot elevate access.",
+      "network_service_dependencies": [],
+      "service_owner": "Not applicable.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Shipping SavedMessages deletion still needs child-message/search/resource composition"
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [],
+      "target_commit": "6e6744eb8716671f060251aacc986ef5fb483b0c",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi ProductShell -> Messages -> ConversationWorkspace",
+      "composition_slot": "Canonical Conversation child collection/runtime",
+      "capability_component": "Typed Conversation child capability",
+      "variation_axes": [
+        "canonical self SavedMessages",
+        "explicit parent-scoped SavedSublist",
+        "unsupported/no-authority"
+      ],
+      "shared_owner_contracts": [
+        "Canonical Conversation identity",
+        "Canonical Message identity",
+        "Canonical permissions",
+        "Canonical sync authority"
+      ],
+      "duplicate_root_check": "No new Conversation, Message, Search, Settings, or source-named root is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Object-scoped Conversation capability",
+      "primary_navigation_target": "Messages",
+      "collection_surface": "Canonical Conversation child list",
+      "creation_flow": "Not applicable; children are authoritative relations, not renderer-created roots.",
+      "object_action_scope": "Child selection/pagination/read state",
+      "detail_section": "Not applicable",
+      "capability_surface": "ConversationWorkspace child collection",
+      "route_contract": "Reuse canonical ConversationWorkspace route with typed child identity.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "No search exposure is added by this responsibility.",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Reuse existing ConversationWorkspace responsive behavior.",
+      "accessibility_contract": "Reuse canonical child-list/list-row semantics; no new root.",
+      "keyboard_contract": "Reuse canonical ConversationWorkspace selection/navigation.",
+      "state_continuity_contract": "Child authority and lifecycle must survive reload/restart and reject stale generations.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "FBCP Revision 7 live Fabushi design system",
+      "semantic_token_usage": [
+        "Existing canonical Conversation components only"
+      ],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [
+        "ConversationWorkspace",
+        "ConversationRow"
+      ],
+      "screen_pattern_id": "ConversationWorkspace",
+      "screen_slots": [
+        "child collection",
+        "transcript"
+      ],
+      "visual_state_matrix": [
+        "loading",
+        "empty",
+        "error",
+        "unsupported",
+        "populated"
+      ],
+      "density_contract": "Existing ConversationWorkspace density unchanged.",
+      "icon_asset_contract": "No new source-branded icon.",
+      "avatar_contract": "Existing canonical participant/conversation avatar contract.",
+      "content_copy_keys": [],
+      "motion_contract": "Existing application motion contract.",
+      "reduced_motion_contract": "Existing reduced-motion contract.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-STORAGE-FACADE-DELEGATION-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-R9-STORAGE-FACADE-DELEGATION-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-R9-STORAGE-FACADE-DELEGATION-001-CANONICAL"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-RESOURCE",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "GitHub Actions only"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "not-run",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Source-informed mapping from accepted telegramdesktop/tdesktop storage_facade.cpp.",
+      "reviewer": null,
+      "notes": "Exact accepted 238-line cpp read complete. Delegation responsibility maps to existing composition."
     }
   ],
   "rebaseline": {

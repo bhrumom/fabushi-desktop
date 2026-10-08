@@ -14,7 +14,7 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15788,
-    "unread_minimum": 15744,
+    "unread_minimum": 15740,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -42,7 +42,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Accepted d346 authority remains exact. In addition to the already read-complete data_saved_messages.{h,cpp}, Telegram/SourceFiles/data/components/recent_peers.h@5d8b1187d8db1138003cc406d86cbdec6626468a and recent_peers.cpp@bf676e4407fcfa4bf93b2bf7e468b8f61c6ffd05 are exact-blob read-complete. recent_peers distinguishes ordinary recent Search suggestions (persisted projection capped at 48; malformed/partial decode clears the whole list) from recent-open Thread history (separate weak projection capped at 32; dead-entry pruning, stable-identity move-front dedupe, oldest eviction, exact removal for destroyed Topic/SavedSublist). These reads do not imply production closure. unread_minimum is 15,744; unknown remains 15,788; omitted remains 0.",
+  "note": "Accepted d346 authority remains exact. Read-complete entries now include data_saved_messages.{h,cpp}, recent_peers.{h,cpp}, and the direct shared-media storage authority storage_shared_media.{h,cpp} plus storage_facade.{h,cpp}. The storage pair proves a typed shared-media projection keyed by peer/topicRoot/monoforumPeer and exact thread unload; the facade pair is delegation-only and does not own a second store. Fabushi maps this to canonical MessageContent/MediaRef + SearchIndex Media/Files/Links scopes + MediaCache/resource lifecycle instead of creating a Telegram-style SharedMedia subsystem. These four new reads reduce unread_minimum by exactly four to 15,740; unknown remains 15,788; omitted remains 0. Production deletion/search/resource wiring remains open.",
   "rebaseline": {
     "from_commit": "e1ed57a44e7c14e0cbb91bcf0f7ec3e408786a39",
     "to_commit": "d346b42a1d30ef60dc989b6e5191bb8e571f6bd5",
