@@ -9,8 +9,8 @@
   },
   "deterministic_recursive_prefix": {
     "first_order": 1,
-    "last_order": 88,
-    "entries": 88
+    "last_order": 89,
+    "entries": 89
   },
   "semantics": {
     "development_only_non_applicable_is_not_omission": true,
@@ -1863,6 +1863,27 @@
       "test_evidence": "Current exact-head Actions must re-prove renderer/Rust/updater/platform gates; concrete feature/build evidence remains attached to each downstream production owner.",
       "disposition": "applicable-build-composition-mapped-to-canonical-stack",
       "unknown_closed": true,
+      "omitted": false
+    },
+    {
+      "recursive_order": 89,
+      "source_path": "Telegram/Resources/animations/ban.tgs",
+      "source_blob_sha": "1ac1aaa8a493a99160d772a7739224a08435cc68",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Provide a 512x512, 60fps, 120-frame gzip-compressed Lottie vector animation named 'Comp 1' whose primary vector layer/group is 'Hand'/'Block-user', packaged into the Telegram animations QRC for a user-block/ban visual state.",
+      "upstream_owner": "Telegram embedded animation resource; exact runtime consumer still requires production-source attribution",
+      "state_machine": "resource load from QRC -> Lottie decode -> frame animation over frames 0..120; resource itself has no business-state transitions",
+      "side_effects": "renders an embedded vector animation only",
+      "failure_cases": "missing/corrupt gzip or Lottie JSON, QRC omission, unsupported renderer, or incorrect runtime consumer binding",
+      "ui_disposition": "applicable visual/UI resource semantics, but exact canonical consumer and product-state trigger remain open until the referencing production source is read",
+      "fabushi_canonical_owner": "existing Fabushi canonical EmptyState/Dialog/Profile/participant moderation surface once exact consumer responsibility is established; do not create a Telegram-specific component",
+      "fabushi_target": "open pending consumer attribution",
+      "platform_differences": "none intrinsic; Lottie rendering implementation may differ, but visible effect must be preserved if the owning moderation/block flow is applicable",
+      "production_evidence": "Exact blob decompressed read: Lottie v5.7.1, fr=60, ip=0, op=120, w=h=512, layer 'Hand', vector group 'Block-user'. QRC inclusion confirmed in Telegram/Resources/qrc/telegram/animations.qrc.",
+      "test_evidence": "No Fabushi production/test credit yet because exact runtime consumer has not been attributed; visual/light-dark/responsive evidence will belong to that canonical consumer if applicable.",
+      "disposition": "applicable-resource-read-consumer-open",
+      "unknown_closed": false,
       "omitted": false
     }
   ]
