@@ -259,9 +259,9 @@
     "root_source_entries_total": 6355,
     "recursive_source_entries_total": 15788,
     "unknown_minimum": 15788,
-    "unread_minimum": 15730,
+    "unread_minimum": 15728,
     "omitted_known": 0,
-    "note": "Revision 9 live authority remains telegramdesktop/tdesktop@d346b42a1d30ef60dc989b6e5191bb8e571f6bd5 with root tree 5db05afa460bb030ac36316beb6496df03742c59. Accepted complete reads now additionally include history_view_forward_panel.{h,cpp}, data_drafts.h, notifications_manager.{h,cpp}, history_view_draft_options.{h,cpp}, data_changes.{h,cpp}, and data_types.h at their exact accepted blobs. The newest reads establish typed staged reply/forward/link options, exact Topic/SavedSublist draft identity, realtime-before-coalesced change delivery with synchronous destruction retirement, ForwardDraft values/options, and shared Message/Resource value contracts. They map to canonical Conversation/Message/Composer/MessagingEngine/Search/Resource owners and remain mapped-open; no production or verification credit is claimed. Source semantic closure remains open: unknown 15,788, unread_minimum 15,730, omitted 0."
+    "note": "Revision 9 live authority remains telegramdesktop/tdesktop@d346b42a1d30ef60dc989b6e5191bb8e571f6bd5 with root tree 5db05afa460bb030ac36316beb6496df03742c59. Accepted complete reads now additionally include history/history.{h,cpp} at exact blobs d3a6412fc9d5246164c8bfed777ecf6bb32c31e8 and 1fabd7d7d9399f8db8141c29d71068d447736595. The full History lifecycle establishes exact Topic/SavedSublist draft identity, deletion/destruction observer ordering, notification removal, unread reconciliation, recent/chat-list ordering, shared-media/message-index cleanup and stale-state fencing. These responsibilities map to existing canonical MessagingEngine/Conversation/Message owners, while Search/resource cleanup remains explicitly open and no production or verification credit is claimed. Source semantic closure remains open: unknown 15,788, unread_minimum 15,728, omitted 0."
   },
   "acceptance": {
     "baseline_ready": false,
