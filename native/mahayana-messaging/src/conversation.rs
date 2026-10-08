@@ -626,6 +626,30 @@ impl ConversationChildRuntimeState {
         }
     }
 
+    /// Retires one message from an already-authoritative child scope.
+    ///
+    /// Callers must establish exact child membership first. In particular a
+    /// SavedSublist may only call this after the server/native membership snapshot
+    /// names the message; parent-conversation visibility is not membership proof.
+    pub fn remove_message(&mut self, message_id: &str) {
+        self.pagination.message_ids.retain(|id| id != message_id);
+        self.pending_incoming_notification_message_ids
+            .retain(|id| id != message_id);
+        self.unread_things.clear_message(message_id);
+        self.authoritative_message_ids
+            .retain(|id| id != message_id);
+        if self.draft_reply_to_message_id.as_deref() == Some(message_id) {
+            self.draft_reply_to_message_id = None;
+            if self.draft_text.trim().is_empty() {
+                self.draft_updated_at_ms = None;
+            }
+        }
+        // A deleted member may have contributed to the server unread count.
+        // Without per-message authoritative unread truth, stale precision is
+        // worse than unknown; the next server reconciliation restores a count.
+        self.unread_count = None;
+    }
+
     /// Clears transient child-owned state when the exact child identity is
     /// destroyed. The parent Conversation remains intact and is not selected as
     /// a silent fallback.
@@ -904,6 +928,51 @@ mod child_destination_tests {
         ));
         assert!(!page.has_gap_before());
         assert!(!page.has_gap_after());
+    }
+
+    #[test]
+    fn child_runtime_message_removal_clears_exact_transient_projections() {
+        let destination = ConversationDestination::saved_sublist(
+            ConversationId::new("conversation:self"),
+            ActorId::new("human:peer"),
+        );
+        let mut state =
+            ConversationChildRuntimeState::new(destination, ActorId::new("human:self"))
+                .expect("valid child state");
+        assert!(state.reconcile_authoritative_message_ids(vec![
+            "message:keep".into(),
+            "message:delete".into(),
+        ]));
+        assert!(state.pagination.replace_window(
+            vec!["message:keep".into(), "message:delete".into()],
+            Some(0),
+            Some(0),
+            Some(2),
+        ));
+        state.reconcile_unread_things(
+            true,
+            vec!["message:delete".into()],
+            vec!["message:delete".into()],
+            vec!["message:keep".into()],
+        );
+        state.replace_pending_incoming_notifications(vec![
+            "message:delete".into(),
+            "message:keep".into(),
+        ]);
+        state.set_draft("", Some("message:delete".into()), 42);
+        state.unread_count = Some(2);
+
+        state.remove_message("message:delete");
+
+        assert_eq!(state.pagination.message_ids, vec!["message:keep"]);
+        assert_eq!(state.authoritative_message_ids, vec!["message:keep"]);
+        assert!(state.unread_things.mention_message_ids.is_empty());
+        assert!(state.unread_things.reaction_message_ids.is_empty());
+        assert_eq!(state.unread_things.poll_vote_message_ids, vec!["message:keep"]);
+        assert_eq!(state.pending_incoming_notification_message_ids, vec!["message:keep"]);
+        assert!(state.draft_reply_to_message_id.is_none());
+        assert!(state.draft_updated_at_ms.is_none());
+        assert!(state.unread_count.is_none());
     }
 
     #[test]
