@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15730,
-    "unread_minimum": 15586,
+    "unread_minimum": 15566,
     "omitted_known": 0,
-    "note": "Live aac515c recursive census is 15,812. 226 exact entries are read-complete; unknown 15,730, unread 15,586, omitted 0. Animation resources through stats.tgs are fully read/decomposed; production-consumer implementation evidence remains open."
+    "note": "Live aac515c recursive census is 15,812. 246 exact entries are read-complete; unknown 15,730, unread 15,566, omitted 0. Animation resources through toast/forward.tgs are fully read/decomposed; production-consumer implementation evidence remains open."
   },
   "latest_recursive_evidence": {
     "run_id": 37596744991,
@@ -43,7 +43,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Accepted aac515c authority is exact. 226 full-read entries are now credited; unread_minimum is 15,586, unknown remains 15,730, omitted remains 0. Entries 147-166 are semantically decompressed/read; exact consumers are recorded where proven and unproven loaders remain explicitly open.",
+  "note": "Accepted aac515c authority is exact. 246 full-read entries are now credited; unread_minimum is 15,566, unknown remains 15,730, omitted remains 0. Entries 167-186 are decompressed/read; exact toast/statistics consumers are recorded while swipe-action registry/load ownership remains explicitly open.",
   "rebaseline": {
     "from_commit": "d346b42a1d30ef60dc989b6e5191bb8e571f6bd5",
     "to_commit": "aac515c5408015231a273c80ab4c4b33815e63ab",
@@ -81,6 +81,6 @@
     "development_only_non_applicable": 62,
     "unknown_closed": 82,
     "omitted": 0,
-    "read_through": 166
+    "read_through": 186
   }
 }

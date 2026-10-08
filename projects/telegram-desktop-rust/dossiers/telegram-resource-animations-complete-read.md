@@ -63,3 +63,10 @@ Accounting: full-read `206`, unread `15,606`, unknown `15,730`, omitted `0`. No 
 Twenty exact TGS blobs were streamed and gzip-decompressed without persistent checkout/build artifacts. Exact consumers were proven for profile mute/unmute, RTMP, search empty state, privacy/premium last-seen/read-time, business away-message sleep, star-referral link and statistics visuals. The photo-editor text-align asset, photo suggestion, robot, chat-automation and star-reaction segment loaders remain explicitly consumer-open because focused basename searches did not prove their shipping composition sites.
 
 Accounting: full-read `226`, unread `15,586`, unknown `15,730`, omitted `0`. No applicable resource is marked implemented or unknown-closed solely from asset semantics.
+
+
+## Entries 167–186 — statistics, swipe actions and toast feedback
+
+Twenty exact TGS blobs were streamed/decompressed. Statistics boosts/earn, stop, and toast resources were tied to exact production consumers. Swipe-action archive/delete/disabled/mute/pin/read/unarchive/ungroup/unmute/unpin/unread assets were fully read, but a focused exact-source scan did not yet prove the runtime registry/path builder, so those rows remain explicitly consumer-open; generic words such as `mute`, `read` or `delete` are not accepted as asset evidence.
+
+Accounting: full-read `246`, unread `15,566`, unknown `15,730`, omitted `0`.
