@@ -1985,9 +1985,12 @@ impl ProductionSessionWorkers {
             "authorId": sender_id,
             "content": remote.text,
             "timestampMs": timestamp_ms,
-            "delivery": "sent",
+            "delivery": if remote.delivery_state.as_deref() == Some("scheduled") { "scheduled" } else { "sent" },
             "remoteMessageId": remote_id,
             "remoteCreatedAt": remote.created_at,
+            "silent": remote.silent,
+            "scheduledAtMs": remote.scheduled_at_ms,
+            "deliveredAt": remote.delivered_at,
         });
         let object = entry
             .as_object_mut()
@@ -2182,7 +2185,9 @@ impl ProductionSessionWorkers {
             let reply_to_id = entry.get("replyToId").and_then(serde_json::Value::as_str);
             let composed_at_ms = entry.get("composedAtMs").and_then(serde_json::Value::as_f64);
             let attachments = entry.get("attachments").and_then(serde_json::Value::as_array).cloned().unwrap_or_default();
-            let _ = self.append_human_message(conversation_id, text, client_nonce, composed_at_ms, reply_to_id, &attachments);
+            let silent = entry.get("silent").and_then(serde_json::Value::as_bool).unwrap_or(false);
+            let scheduled_at_ms = entry.get("scheduledAtMs").and_then(serde_json::Value::as_i64);
+            let _ = self.append_human_message(conversation_id, text, client_nonce, composed_at_ms, reply_to_id, &attachments, silent, scheduled_at_ms);
         }
         let peer_human_id = self.peer_human_id_from_metadata(&metadata)?;
         let existing = owner
@@ -2695,6 +2700,8 @@ impl ProductionSessionWorkers {
                 None,
                 None,
                 &attachments,
+                false,
+                None,
                 Some(&forward_context),
             ) {
                 Ok(entry) => settlement.push(serde_json::json!({
@@ -2730,6 +2737,8 @@ impl ProductionSessionWorkers {
         composed_at_ms: Option<f64>,
         reply_to_id: Option<&str>,
         attachments: &[serde_json::Value],
+        silent: bool,
+        scheduled_at_ms: Option<i64>,
     ) -> Result<serde_json::Value, String> {
         self.append_human_message_with_context(
             conversation_id,
@@ -2738,6 +2747,8 @@ impl ProductionSessionWorkers {
             composed_at_ms,
             reply_to_id,
             attachments,
+            silent,
+            scheduled_at_ms,
             None,
         )
     }
@@ -2750,6 +2761,8 @@ impl ProductionSessionWorkers {
         composed_at_ms: Option<f64>,
         reply_to_id: Option<&str>,
         attachments: &[serde_json::Value],
+        silent: bool,
+        scheduled_at_ms: Option<i64>,
         forward_context: Option<&serde_json::Value>,
     ) -> Result<serde_json::Value, String> {
         let sender_id = self.local_human_id()?;
@@ -2763,6 +2776,9 @@ impl ProductionSessionWorkers {
         }
         if client_nonce.len() > 200 {
             return Err("sendHumanMessage clientNonce is too long".into());
+        }
+        if scheduled_at_ms.is_some_and(|value| value <= 0 || value > 9_007_199_254_740_991) {
+            return Err("sendHumanMessage scheduledAtMs must be a positive JavaScript-safe integer".into());
         }
         let owner = self.open_human_conversation_db_owner(conversation_id)?;
         let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
@@ -2829,7 +2845,9 @@ impl ProductionSessionWorkers {
                 None => normalized_attachments.is_empty(),
             };
             let same_forward_context = entry.get("forwardContext") == forward_context;
-            if !(same_sender && same_text && same_reply && same_attachments && same_forward_context) {
+            let same_silent = entry.get("silent").and_then(serde_json::Value::as_bool).unwrap_or(false) == silent;
+            let same_schedule = entry.get("scheduledAtMs").and_then(serde_json::Value::as_i64) == scheduled_at_ms;
+            if !(same_sender && same_text && same_reply && same_attachments && same_forward_context && same_silent && same_schedule) {
                 return Err("sendHumanMessage clientNonce already identifies different content or forward context".into());
             }
             if entry.get("remoteMessageId").is_some()
@@ -2860,6 +2878,8 @@ impl ProductionSessionWorkers {
                     "composedAtMs": composed_at_ms,
                     "timestampMs": timestamp_ms,
                     "delivery": "pending",
+                    "silent": silent,
+                    "scheduledAtMs": scheduled_at_ms,
                 });
                 let object = entry.as_object_mut().expect("Human pending message must be an object");
                 if let Some(reply_id) = normalized_reply { object.insert("replyToId".into(), serde_json::json!(reply_id)); }
@@ -2925,7 +2945,7 @@ impl ProductionSessionWorkers {
                     .map_err(|error| error.to_string())?
                     .ok_or_else(|| "Human pending send disappeared before dispatch".to_string())?;
 
-                let remote = client.send_direct_message(&peer_human_id, text, client_nonce, remote_reply_to_id.as_deref(), &uploaded)?;
+                let remote = client.send_direct_message(&peer_human_id, text, client_nonce, remote_reply_to_id.as_deref(), &uploaded, silent, scheduled_at_ms)?;
                 let remote_sender = fabushi_identity_text(&remote.sender_user_id)?;
                 let remote_recipient = fabushi_identity_text(&remote.recipient_user_id)?;
                 let remote_reply_matches = match (&remote_reply_to_id, &remote.reply_to_message_id) {
@@ -2939,6 +2959,8 @@ impl ProductionSessionWorkers {
                     || remote_recipient != peer_human_id
                     || remote.text.trim() != text
                     || remote.client_request_id.as_deref() != Some(client_nonce)
+                    || remote.silent != silent
+                    || remote.scheduled_at_ms != scheduled_at_ms
                     || !remote_reply_matches
                     || remote_resources != uploaded_resources
                 {
@@ -2964,6 +2986,9 @@ impl ProductionSessionWorkers {
             return dispatch_result;
         }
 
+        if scheduled_at_ms.is_some() {
+            return Err("scheduled Human messages require the canonical server transport".into());
+        }
         let mut entry = serde_json::json!({
             "id": format!("human-message:{client_nonce}"),
             "kind": "message",
@@ -2975,6 +3000,8 @@ impl ProductionSessionWorkers {
             "composedAtMs": composed_at_ms,
             "timestampMs": timestamp_ms,
             "delivery": "sent",
+            "silent": silent,
+            "scheduledAtMs": scheduled_at_ms,
         });
         let object = entry
             .as_object_mut()
@@ -3724,7 +3751,7 @@ mod sharebox_shipping_tests {
         let beta = conversation_id(&workers.create_human_conversation("human-beta", "Beta").unwrap());
 
         let source_entry = workers
-            .append_human_message(&source, "forward me", "source-nonce", Some(10.0), None, &[])
+            .append_human_message(&source, "forward me", "source-nonce", Some(10.0), None, &[], false, None)
             .unwrap();
         let source_entry_id = source_entry.get("id").and_then(serde_json::Value::as_str).unwrap();
 

@@ -16,6 +16,10 @@ export interface ComposerSubmission {
   createdAtMs: number;
   replyToId?: string;
   isFork?: boolean;
+  /** Direct-Human delivery option; transported through the same journal/queue. */
+  silent?: boolean;
+  /** Positive epoch milliseconds; server owns durable due-time activation. */
+  scheduledAtMs?: number;
   /** Renderer-local draft source; never forwarded to Coordinator/Host payloads. */
   draftOrigin?: "composer" | "stash";
 }

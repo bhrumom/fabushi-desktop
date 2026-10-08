@@ -417,6 +417,11 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
             }
             let text = optional_string(args, "text")?.unwrap_or_default();
             let reply_to_id = optional_string(args, "replyToId")?;
+            let silent = optional_bool(args, "silent")?.unwrap_or(false);
+            let scheduled_at_ms = optional_i64(args, "scheduledAtMs");
+            if scheduled_at_ms.is_some_and(|value| value <= 0 || value > 9_007_199_254_740_991) {
+                return Err(SessionGatewayError::bad("scheduledAtMs must be a positive JavaScript-safe integer"));
+            }
             let attachments = match args.get("attachments") {
                 None | Some(Value::Null) => Vec::new(),
                 Some(Value::Array(values)) => values.clone(),
@@ -431,6 +436,8 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
                         optional_f64(args, "composedAtMs"),
                         reply_to_id,
                         &attachments,
+                        silent,
+                        scheduled_at_ms,
                     )
                     .map_err(SessionGatewayError::internal)
             })

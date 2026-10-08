@@ -39,6 +39,8 @@ export interface ConversationComposerProps {
   onChange(draft: ComposerDraft): void;
   onStageFiles(files: File[]): void | Promise<void>;
   onSubmit(): void | Promise<void>;
+  onSendSilently?(): void | Promise<void>;
+  onScheduleSend?(): void;
   onExchangeStash?(): void;
   onSendStash?(): void | Promise<void>;
   onRemoveStash?(): void | Promise<void>;
@@ -216,6 +218,13 @@ export function ConversationComposer({ acceptedSendGeneration = 0, canExchangeSt
         <div className="sand-prompt-actions-row">
           <SandIconButton aria-label="Attach file" className={PROMPT_ATTACH_CLASS} disabled={disabled || atLimit || voiceBusy} icon="plus" onClick={() => fileInput.current?.click()} shape="circle" size="lg" type="button" variant="default" />
           {onExchangeStash == null ? null : <SandIconButton aria-label={hasStash ? "Swap saved draft" : "Store draft"} disabled={disabled || !canExchangeStash || voiceBusy} icon="arrow-swap" onClick={onExchangeStash} shape="circle" size="lg" title={`${hasStash ? "Swap saved draft" : "Store draft"} (Ctrl+Shift+Y)`} type="button" variant="default" />}
+          {onSendSilently == null && onScheduleSend == null ? null : <SandMenuRoot placement="top-start">
+            <SandMenuTrigger><SandIconButton aria-label="Send options" disabled={disabled || voiceBusy || !hasPayload} icon="more" shape="circle" size="lg" type="button" variant="default" /></SandMenuTrigger>
+            <SandMenuContent ariaLabel="Send options">
+              {onSendSilently == null ? null : <SandMenuItem disabled={disabled || voiceBusy || !hasPayload} index={0} onSelect={() => { void onSendSilently(); }}>Send silently</SandMenuItem>}
+              {onScheduleSend == null ? null : <SandMenuItem disabled={disabled || voiceBusy || !hasPayload} index={1} onSelect={onScheduleSend}>Schedule send…</SandMenuItem>}
+            </SandMenuContent>
+          </SandMenuRoot>}
           {!hasStash || onSendStash == null || onRemoveStash == null ? null : <SandMenuRoot placement="top-start">
             <SandMenuTrigger><SandIconButton aria-label="Saved draft actions" disabled={disabled || voiceBusy} icon="more" shape="circle" size="lg" type="button" variant="default" /></SandMenuTrigger>
             <SandMenuContent ariaLabel="Saved draft actions">
