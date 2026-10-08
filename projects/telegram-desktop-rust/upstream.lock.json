@@ -259,9 +259,9 @@
     "root_source_entries_total": 6355,
     "recursive_source_entries_total": 15788,
     "unknown_minimum": 15788,
-    "unread_minimum": 15740,
+    "unread_minimum": 15739,
     "omitted_known": 0,
-    "note": "Revision 9 live authority remains telegramdesktop/tdesktop@d346b42a1d30ef60dc989b6e5191bb8e571f6bd5 with root tree 5db05afa460bb030ac36316beb6496df03742c59. Previously accepted full reads remain read-only accounting credit. Four additional exact accepted files are now full-read and mapped-open: storage/storage_shared_media.h@cd0d29d594e012d5fabb0e53e148fe98e4e86d44, storage_shared_media.cpp@b52ec6c64d3c8d05e211ae4abe92b5dc5c19d642, storage_facade.h@8d7ddcde8efd4dd82c08670cb1ab303eb9c928d6, storage_facade.cpp@ffb252a7edf89b0e86b4a98e09835c9b2ab19930. They establish typed shared-media projection/unload semantics and a delegation-only facade; Fabushi maps them to canonical Message/Search/MediaCache owners rather than a source-shaped subsystem. These reads grant no production/verification credit. Source semantic closure remains open: unknown 15,788, unread_minimum 15,740, omitted 0."
+    "note": "Revision 9 live authority remains telegramdesktop/tdesktop@d346b42a1d30ef60dc989b6e5191bb8e571f6bd5 with root tree 5db05afa460bb030ac36316beb6496df03742c59. Previously accepted full reads remain read-only accounting credit. The storage shared-media/facade quartet remains mapped-open. One additional exact accepted file is now full-read and fully decomposed: Telegram/SourceFiles/data/data_drafts.h@f610d7ab604fade113d3311f7cc8b19daf946174 (268 lines). It establishes cloud/local/edit/scheduled/welcome/business draft scopes, typed topic/SavedSublist key isolation, serialized-key compatibility, draft payload/equality/null helpers, and chat-link draft mutation. Fabushi maps it to canonical Conversation draft state and Composer persistence; missing typed namespaces/payload/cloud-sync parity stays open and receives no production/verification credit. Source semantic closure remains open: unknown 15,788, unread_minimum 15,739, omitted 0."
   },
   "acceptance": {
     "baseline_ready": false,
