@@ -33,6 +33,7 @@ import {
   findInChatSearchText,
   includeFindInChatDisclosure,
 } from "./conversation/workspace/find-in-chat-controller.ts";
+import { createFindHighlightRefreshRuntime } from "./conversation/workspace/find-highlight-runtime.ts";
 import { formatTranscriptToolCallName } from "./conversation/workspace/tool-call-label.ts";
 import {
   formatRoutineRunTimestamp,
@@ -765,6 +766,70 @@ test("CONTRACT-TDRP-IV-ARTICLE-PARTIAL-FALLBACK-001 assistant projection patches
   assert.match(projectionSource, /previous\.ownerId === input\.ownerId/);
   assert.match(projectionSource, /mode: "replace"/);
   assert.match(projectionSource, /previous\.generation \+ 1/);
+});
+
+test("UNIT-TDRP-IV-VIEW-HIGHLIGHT-RUNTIME-001 find highlight refresh supersedes and cancels stale frames", () => {
+  const frames: Array<{ active: boolean; callback: () => void }> = [];
+  const runtime = createFindHighlightRefreshRuntime((callback) => {
+    const frame = { active: true, callback };
+    frames.push(frame);
+    return () => { frame.active = false; };
+  });
+  const settled: string[] = [];
+
+  runtime.schedule(() => settled.push("first"));
+  runtime.schedule(() => settled.push("second"));
+  assert.equal(frames.length, 2);
+  assert.equal(frames[0]?.active, false);
+  frames[0]?.callback();
+  assert.deepEqual(settled, []);
+  frames[1]?.callback();
+  assert.deepEqual(settled, ["second"]);
+
+  runtime.schedule(() => settled.push("invalidated"));
+  const invalidatedFrame = frames.at(-1);
+  runtime.invalidate();
+  assert.equal(invalidatedFrame?.active, false);
+  invalidatedFrame?.callback();
+  assert.deepEqual(settled, ["second"]);
+
+  runtime.schedule(() => settled.push("disposed"));
+  const disposedFrame = frames.at(-1);
+  runtime.dispose();
+  assert.equal(disposedFrame?.active, false);
+  disposedFrame?.callback();
+  runtime.schedule(() => settled.push("after-dispose"));
+  assert.equal(frames.length, 4);
+  assert.deepEqual(settled, ["second"]);
+
+  let synchronousSettlements = 0;
+  let staleSynchronousCancels = 0;
+  const synchronousRuntime = createFindHighlightRefreshRuntime((callback) => {
+    callback();
+    return () => { staleSynchronousCancels += 1; };
+  });
+  synchronousRuntime.schedule(() => { synchronousSettlements += 1; });
+  synchronousRuntime.invalidate();
+  assert.equal(synchronousSettlements, 1);
+  assert.equal(staleSynchronousCancels, 0);
+});
+
+test("CONTRACT-TDRP-IV-VIEW-HIGHLIGHT-DISPOSAL-001 find highlights cannot settle into a replaced or disposed transcript", () => {
+  const source = readFileSync(new URL("./conversation/workspace/find-in-chat.tsx", import.meta.url), "utf8");
+  const runtimeSource = readFileSync(new URL("./conversation/workspace/find-highlight-runtime.ts", import.meta.url), "utf8");
+  assert.match(source, /createFindHighlightRefreshRuntime\(\)/);
+  assert.match(source, /highlightRefreshRuntime\.schedule\(\(\) => \{/);
+  assert.match(source, /controllerRef\.current\.getSnapshot\(\)/);
+  assert.match(source, /applyFindHighlights\(transcriptContainerRef\.current/);
+  assert.match(source, /highlightRefreshRuntime\.invalidate\(\);\s*controllerRef\.current = controller;\s*transcriptContainerRef\.current = transcriptContainer/);
+  assert.match(source, /return \(\) => highlightRefreshRuntime\.invalidate\(\);/);
+  assert.match(source, /return \(\) => clearFindHighlights\(\);/);
+  assert.match(source, /highlightRefreshRuntime\.dispose\(\);/);
+  assert.doesNotMatch(source, /requestAnimationFrame\(refresh\)/);
+  assert.match(runtimeSource, /cancelPending\?\.\(\);/);
+  assert.match(runtimeSource, /disposed \|\| generation !== scheduledGeneration/);
+  assert.match(runtimeSource, /queueMicrotask/);
+  assert.match(runtimeSource, /cancelAnimationFrame/);
 });
 
 test("UNIT-TDRP-IV-ARTICLE-MEDIA-VISIBILITY-001 derived transcript media follows a bounded visibility budget", () => {
