@@ -1,7 +1,7 @@
 # GitHub/community/release infrastructure — complete source read
 
 Status: entries 45–53 disposition-closed; entry 54 mapped/open  
-Accepted upstream: `telegramdesktop/tdesktop@6ec5014a92c4580841a043c440d65e8fc605ff78`
+Accepted upstream: `telegramdesktop/tdesktop@22b352e866d0402505c07fa4ed21d75d7e4fb3db`
 
 ## Entries 45–53
 

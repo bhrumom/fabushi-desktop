@@ -1,6 +1,6 @@
 # Telegram shipping build composition — complete source read
 
-Accepted upstream: `telegramdesktop/tdesktop@6ec5014a92c4580841a043c440d65e8fc605ff78`
+Accepted upstream: `telegramdesktop/tdesktop@22b352e866d0402505c07fa4ed21d75d7e4fb3db`
 Source: `Telegram/CMakeLists.txt@23997fd6503cd46389c2c13803a83b45b40c21f7`  
 Read status: complete, 2,672 lines.
 

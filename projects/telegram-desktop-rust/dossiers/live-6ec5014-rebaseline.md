@@ -15,10 +15,12 @@ The live C-locale root non-directory order inserts four development/evidence fil
 
 ## Build-time acquisitions
 
-The exact workflow scanner against this authority yields 4,003 candidate lines. The prior 320-line disposition is historical and is not inherited. Current machine authority therefore records 0 current classified / 4,003 pending until the new exact-head diagnostic artifact is uploaded and each candidate is reclassified. This is intentionally fail-closed.
+The exact workflow scanner against this authority yields 325 candidate lines. The prior 320-line disposition is historical and is not inherited. Current machine authority therefore records 0 current classified / 325 pending until the new exact-head diagnostic artifact is uploaded and each candidate is reclassified. This is intentionally fail-closed.
 
 The live Qt reachability source blobs are `Telegram/build/prepare/prepare.py@1248e5e6405325dc74fb4f9d211ecddebcf89752`, `Telegram/build/docker/centos_env/Dockerfile@c60fa6a8b2b16b3beda750b67ab5e27007a641db`, and `snap/snapcraft.yaml@1c37daafffa537bf4861d567e39d9e29026e4426`.
 
 ## Acceptance impact
 
 This rebaseline does not claim migration or release acceptance. Source completeness, current-head acquisition classification, ComposeStash parity, Windows/Linux shipping release evidence, full Bot regression, and independent release acceptance remain open. Any earlier workflow or artifact is historical after this authority commit changes PR #42 HEAD.
+
+> Superseded: live `dev` advanced to `22b352e866d0402505c07fa4ed21d75d7e4fb3db` while same-head Actions were running. This dossier remains historical evidence for the 6ec rebaseline calculation only.

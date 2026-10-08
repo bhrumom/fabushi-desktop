@@ -1,6 +1,6 @@
 # Telegram animation resources — rolling complete-read dossier
 
-Accepted upstream: `telegramdesktop/tdesktop@6ec5014a92c4580841a043c440d65e8fc605ff78`
+Accepted upstream: `telegramdesktop/tdesktop@22b352e866d0402505c07fa4ed21d75d7e4fb3db`
 
 ## Entry 89 — ban.tgs
 

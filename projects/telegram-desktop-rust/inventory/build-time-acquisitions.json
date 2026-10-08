@@ -3,17 +3,17 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_repository": "telegramdesktop/tdesktop",
-  "upstream_commit": "6ec5014a92c4580841a043c440d65e8fc605ff78",
+  "upstream_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db",
   "discovery": {
     "evidence_run_id": null,
     "evidence_head_sha": null,
     "artifact_id": null,
     "artifact_digest": null,
     "candidate_file": "build-time-acquisition-candidates.txt",
-    "candidate_lines_total": 4003,
+    "candidate_lines_total": 325,
     "immutable_commit_pin_occurrences_classified": 0,
-    "candidate_lines_pending_classification": 4003,
-    "note": "Live scan at telegramdesktop/tdesktop@6ec5014a92c4580841a043c440d65e8fc605ff78 yields 4,003 candidate lines under the exact workflow scanner. The prior 320-line classification is historical and is not inherited. All 4,003 live candidates remain pending current-head artifact-backed reclassification; source/build closure therefore fails closed.",
+    "candidate_lines_pending_classification": 325,
+    "note": "Exact current workflow scanner yields 325 candidate lines at 22b352e866d0402505c07fa4ed21d75d7e4fb3db. The previous 320-line classification is historical and is not inherited. All 325 live candidate keys remain pending current-head artifact-backed reclassification; closure stays fail-closed.",
     "candidate_lines_classified": 0,
     "disposition_closure_status": "open",
     "recursive_authority_closure_status": "open",
@@ -312,7 +312,7 @@
   ],
   "recursive_build_reachability": {
     "status": "partial-audited-disposition-open",
-    "accepted_upstream_commit": "6ec5014a92c4580841a043c440d65e8fc605ff78",
+    "accepted_upstream_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db",
     "rule": "A recursively discovered repository is source/build authority only when an accepted TDesktop build path actually initializes, downloads, generates, patches, or consumes it. Presence as an unselected superproject gitlink is not sufficient.",
     "qt_superproject": {
       "repository": "https://github.com/qt/qt5",
@@ -348,17 +348,17 @@
       "accepted_upstream_evidence": [
         {
           "path": "Telegram/build/prepare/prepare.py",
-          "blob": "93ff2c8ab4f3275644145012c9231718530c1486",
+          "blob": "1248e5e6405325dc74fb4f9d211ecddebcf89752",
           "evidence": "Qt 5 initializes only qtbase qtimageformats qtsvg; Qt 6 prepare initializes only qtbase qtimageformats qtshadertools qtsvg."
         },
         {
           "path": "Telegram/build/docker/centos_env/Dockerfile",
-          "blob": "09a05179b48b4f9185697134002bad4e486ca4fd",
+          "blob": "c60fa6a8b2b16b3beda750b67ab5e27007a641db",
           "evidence": "Qt 6 Linux image initializes only qtbase qtdeclarative qtwayland qtimageformats qtsvg qtshadertools."
         },
         {
           "path": "snap/snapcraft.yaml",
-          "blob": "b363829e5c131fce5e80e0644c0fb6546da8ad6c",
+          "blob": "1c37daafffa537bf4861d567e39d9e29026e4426",
           "evidence": "Snap Qt source-submodules lists only qtbase qtdeclarative qtimageformats qtshadertools qtsvg qtwayland."
         }
       ],

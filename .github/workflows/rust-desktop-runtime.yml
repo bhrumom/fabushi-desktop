@@ -401,6 +401,30 @@ jobs:
           NODE
       - name: Regression test recursive inventory fail-closed contract
         run: node --test scripts/tdrp-recursive-inventory-contract.test.mjs
+      - name: Scan build-time acquisition candidates for diagnostics
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/tdrp-authority
+          : > artifacts/tdrp-authority/build-time-acquisition-candidates.txt
+          upstream_sha="$(node -p "require('./projects/telegram-desktop-rust/upstream.lock.json').upstream.commit")"
+          work="$RUNNER_TEMP/tdesktop-acquisition-scan"
+          git clone --filter=blob:none --no-checkout https://github.com/telegramdesktop/tdesktop.git "$work"
+          git -C "$work" checkout --detach "$upstream_sha"
+          test "$(git -C "$work" rev-parse HEAD)" = "$upstream_sha"
+          (
+            cd "$work"
+            grep -RInE --exclude-dir=.git --exclude='*.patch' --exclude='*.diff' \
+              '(git[[:space:]]+(clone|fetch|submodule)|curl[[:space:]]|wget[[:space:]]|(^|[;&|[:space:]])(iwr|Invoke-WebRequest)[[:space:]]|git\+https?://|^[[:space:]]*source[[:space:]]*:|source-(url|commit|tag|branch):|GIT_REPOSITORY|GIT_TAG|URL[[:space:]]+https?://|python(3(\.[0-9]+)*)?[[:space:]]+-m[[:space:]]+pip[[:space:]]+install|pip(3)?[[:space:]]+install|pacman[[:space:]]+-S|apt(-get)?[[:space:]]+(install|update)|dnf[[:space:]][^#]*install|brew[[:space:]]+install|cargo[[:space:]]+install|uses:[[:space:]]|^[[:space:]]*FROM[[:space:]]|https://github\.com/.+\.git|https://gitlab\.com/.+\.git)' \
+              Telegram/build Telegram/cmake cmake snap tools .github 2>/dev/null || true
+          ) | LC_ALL=C sort -u > "$GITHUB_WORKSPACE/artifacts/tdrp-authority/build-time-acquisition-candidates.txt"
+          actual_count="$(wc -l < artifacts/tdrp-authority/build-time-acquisition-candidates.txt | tr -d '[:space:]')"
+          expected_count="$(node -p "require('./projects/telegram-desktop-rust/inventory/build-time-acquisitions.json').discovery.candidate_lines_total")"
+          printf '%s\n' "upstream=$upstream_sha" "actual_count=$actual_count" "expected_count=$expected_count" > artifacts/tdrp-authority/build-time-acquisition-summary.txt
+          if [ "$actual_count" != "$expected_count" ]; then
+            echo "::error::build-time acquisition candidate drift: discovered $actual_count, inventory expects $expected_count"
+            exit 1
+          fi
       - name: Validate Revision 9 authority
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -420,6 +444,7 @@ jobs:
           grep -Eq 'accepted mode requires acceptance.accepted=true|accepted mode requires baseline_ready=true|G-INVENTORY unknown must be 0|G-INVENTORY unread must be 0' /tmp/accepted.log
           ! grep -Eqi 'baseline drift|traceability.*missing|validator.*error|source commit differs|blob mismatch' /tmp/accepted.log
       - name: Upload current-head source-authority evidence
+        if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
           name: tdrp-revision9-authority-${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
