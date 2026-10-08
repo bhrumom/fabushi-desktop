@@ -108,6 +108,15 @@ export function checkRecursiveInventory({
     [lock.coverage.unread_minimum,inventoryIndex.inventory.unread_minimum,ledger.coverage.unread,total,'unread'],
     [lock.coverage.omitted_known,inventoryIndex.inventory.omitted_known,ledger.coverage.omitted,total,'omitted']
   ]) assert(Number.isInteger(a) && a >= 0 && a <= d && a === b && a === c, label + ' three-store accounting drift');
+  const formattedCount = value => value.toLocaleString('en-US');
+  const narrative = inventoryIndex.note;
+  assert(typeof narrative === 'string' && narrative.includes('unread_minimum is ' + formattedCount(inventoryIndex.inventory.unread_minimum)), 'inventory narrative unread count drift');
+  assert(typeof narrative === 'string' && narrative.includes('unknown remains ' + formattedCount(inventoryIndex.inventory.unknown_minimum)), 'inventory narrative unknown count drift');
+  assert(typeof narrative === 'string' && narrative.includes('omitted remains ' + formattedCount(inventoryIndex.inventory.omitted_known)), 'inventory narrative omitted count drift');
+  const inventoryNarrative = inventoryIndex.inventory.note;
+  assert(typeof inventoryNarrative === 'string' && inventoryNarrative.includes('unknown ' + formattedCount(inventoryIndex.inventory.unknown_minimum)), 'inventory detail narrative unknown count drift');
+  assert(typeof inventoryNarrative === 'string' && inventoryNarrative.includes('unread ' + formattedCount(inventoryIndex.inventory.unread_minimum)), 'inventory detail narrative unread count drift');
+  assert(typeof inventoryNarrative === 'string' && inventoryNarrative.includes('omitted ' + formattedCount(inventoryIndex.inventory.omitted_known)), 'inventory detail narrative omitted count drift');
   const rows = [...entries].sort((a,b) => key(a).localeCompare(key(b))).map(e => [key(e),e.mode,e.type,e.object].join('\0'));
   return { total, counts, identity_sha256: createHash('sha256').update(rows.join('\n')+'\n').digest('hex') };
 }
