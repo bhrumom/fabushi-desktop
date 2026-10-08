@@ -45,7 +45,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live 22b352e authority is exact through order 430. Orders 369-430 bind call resource groups to calls.style/chat_style/group-call consumers and to Fabushi HumanCallControls/CallSession where implemented. The audit keeps group-call membership/message/recording/rating gaps open. unread_minimum is 15,690; unknown 16,033; omitted 0.",
+  "note": "Live 22b352e authority is exact through order 430. Orders 369-430 bind call resource groups to calls.style/chat_style/group-call consumers and to Fabushi HumanCallControls/CallSession where implemented. The audit keeps group-call membership/message/recording/rating gaps open. unread_minimum is 15,690; unknown remains 16,033; omitted remains 0.",
   "rebaseline": {
     "from_commit": "6ec5014a92c4580841a043c440d65e8fc605ff78",
     "to_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db",
