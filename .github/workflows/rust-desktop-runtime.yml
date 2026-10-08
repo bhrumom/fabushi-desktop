@@ -228,6 +228,8 @@ jobs:
         run: npm --prefix desktop ci --prefer-offline --no-audit --no-fund
       - name: Build Electron updater contract
         run: npm --prefix desktop run build:electron
+      - name: Compile Electron updater contract
+        run: ./desktop/node_modules/.bin/tsc -p desktop/tsconfig.grok-electron.json
       - name: Test updater parent-handoff and platform gates
         run: >-
           node --test
