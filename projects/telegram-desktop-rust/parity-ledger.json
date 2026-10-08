@@ -13170,27 +13170,32 @@
         "Attachment"
       ],
       "source_analysis_path": "projects/telegram-desktop-rust/dossiers/composer-stash-exchange.md",
-      "behavior_contract": "A conversation/scope owns one transient stash slot that atomically exchanges with the active composer draft. Rich text, reply metadata and prepared attachments move together; restore is revalidated before displacing current state; removal and scope teardown clear only the exact keyed slot.",
-      "state_machine": "empty/current draft -> Store/Swap -> transient keyed stash + empty/restored current -> optional second Swap reverses atomically; invalid restore leaves current+stash unchanged; remove/child-scope teardown clears exact stash.",
+      "behavior_contract": "A conversation/scope owns one transient stash slot that atomically exchanges with the active composer draft. Rich text, reply metadata and prepared attachments move together; restore is revalidated before displacing current state; canonical Composer actions can send the captured stash through the existing submission/Host route or remove it without replacing the live draft, and asynchronous send completion only clears the exact matching stash.",
+      "state_machine": "empty/current draft -> Store/Swap -> transient keyed stash + empty/restored current -> optional second Swap reverses atomically; invalid restore leaves current+stash unchanged; Send saved draft snapshots stash -> existing submission queue -> success compare-and-remove / failure preserve stash; Remove saved draft compare-and-removes exact slot while queued-send attachment references remain retained; scope teardown clears exact stash.",
       "side_effects": [
         "Updates only the existing ComposerDraftStateStore and canonical Composer projection",
-        "Preserves prepared attachment references without committing or discarding them during exchange"
+        "Preserves prepared attachment references without committing or discarding them during exchange",
+        "Saved-draft send reuses the existing ComposerSubmissionQueue and Coordinator/Host transport; remove keeps staged files referenced by an already queued stash send"
       ],
       "failure_cases": [
         "Invalid/restricted restored attachments displace current draft",
         "Rich text/reply/attachment metadata is split across owners",
         "Account or child-scope teardown leaks a stash into another scope",
-        "Stash becomes durable cloud state and resurrects after account restore"
+        "Stash becomes durable cloud state and resurrects after account restore",
+        "A stale saved-draft send completion removes a newer stash",
+        "Removing a stash discards staged attachments still referenced by an offline/queued saved-draft send"
       ],
-      "ui_disposition": "Reuse the single ConversationComposer with canonical SandIconButton/arrow-swap affordance and keyboard hint; no Telegram-specific composer root or button component.",
+      "ui_disposition": "Reuse the single ConversationComposer with canonical SandIconButton/arrow-swap affordance and canonical SandMenu saved-draft actions; no Telegram-specific composer root, menu, or button component.",
       "non_ui_responsibilities": [
         "keyed transient slot",
         "atomic exchange",
         "pre-restore validation hook",
         "exact-scope cleanup",
-        "non-persistence across account restore"
+        "non-persistence across account restore",
+        "compare-and-remove fencing for asynchronous saved-draft settlement",
+        "queued-send attachment retention"
       ],
-      "platform_delta": "Telegram DraftKey is represented by the existing Fabushi composer scope key. The stash remains transient while the ordinary draft keeps existing account persistence. Telegram send-options/forward-draft transport is intentionally not claimed by this scoped row.",
+      "platform_delta": "Telegram DraftKey is represented by the existing Fabushi composer scope key. The stash remains transient while the ordinary draft keeps existing account persistence. Saved-draft send/remove is rewritten through Fabushi's existing submission queue and Host boundary; forward-draft, silent-send, durable schedule/reminder, and full topic/child scope composition remain open.",
       "existing_owner_candidates": [
         "frontend/src/recovered/features/conversation/workspace/draft-state.ts",
         "frontend/src/recovered/features/conversation/workspace/composer.tsx",
@@ -13210,46 +13215,59 @@
       ],
       "fabushi_target_symbols": [
         "exchangeDraft",
+        "removeStashIfMatches",
         "clearScope",
         "ConversationComposer",
-        "exchangeComposerStash"
+        "exchangeComposerStash",
+        "sendComposerStash",
+        "removeComposerStash"
       ],
       "target_language": "TypeScript",
       "language_rationale": "The existing canonical renderer composer owns draft editing/staging and is already the production state/persistence boundary for this responsibility.",
       "command_event_contracts": [
         "Composer Swap/Store or Ctrl/Cmd+Shift+Y -> exact-scope exchangeDraft with attachment-limit validator -> one snapshot update",
+        "Saved draft actions Menu -> Send saved draft -> existing ComposerSubmissionQueue -> existing Coordinator/Host send route -> successful exact-content compare-and-remove",
+        "Saved draft actions Menu -> Remove saved draft -> exact-content compare-and-remove; queued stash-send attachment references are retained",
         "Scope teardown -> clearScope -> draft/stash removal"
       ],
       "state_owner": "ComposerDraftStateStore keyed by canonical conversation/scope identity",
       "lifecycle_owner": "ProductionRenderer + ConversationComposer lifecycle",
       "persistence_and_restart": "Ordinary drafts keep existing schema/persistence; stash is intentionally transient and cleared on account restore/reset/dispose, matching a temporary exchange slot rather than a second durable draft store.",
-      "concurrency_and_cancellation": "Atomic synchronous map exchange prevents partial current/stash states; restore generation fencing remains unchanged for durable drafts.",
-      "security_boundary": "The stash contains only data already admitted to the authorized composer scope; validation must pass before restoration and scope teardown cannot expose data cross-account.",
+      "concurrency_and_cancellation": "Atomic synchronous map exchange prevents partial current/stash states; restore generation fencing remains unchanged for durable drafts. Saved-draft send captures immutable submission data and successful completion uses removeStashIfMatches so a later swap cannot be deleted by an older completion; transport failure leaves the stash available for retry.",
+      "security_boundary": "The stash contains only data already admitted to the authorized composer scope; validation must pass before restoration, saved-draft send uses the same authenticated Coordinator/Host path as ordinary composer send, and exact/account lifecycle fencing prevents cross-account deletion or exposure.",
       "network_service_dependencies": [
-        "Existing composer attachment staging/send boundary only; no new service introduced by exchange core"
+        "Existing ComposerSubmissionQueue and existing Fabushi Coordinator/Host send boundary only; no new service introduced by stash send/remove"
       ],
       "service_owner": "Existing Fabushi Coordinator/Host send boundary",
       "deployment_evidence": [],
       "implementation_status": "implemented",
       "coverage_disposition": "rewritten",
       "blockers": [
-        "Forward-draft integration, stashed send/remove menu, silent/schedule transport and full Mahayana topic/child composition remain separate open ComposeStash responsibilities; this row intentionally claims only the exchange core.",
+        "Forward-draft integration, true silent-send transport, durable schedule/reminder transport, and full Mahayana topic/child composition remain open ComposeStash responsibilities.",
         "Exact-head GitHub Actions and independent review pending."
       ],
       "production_entrypoints": [
-        "ProductShell -> ProductionRenderer -> ConversationComposer -> exchangeComposerStash -> ComposerDraftStateStore.exchangeDraft"
+        "ProductShell -> ProductionRenderer -> ConversationComposer -> exchangeComposerStash -> ComposerDraftStateStore.exchangeDraft",
+        "ProductShell -> ProductionRenderer -> ConversationComposer saved-draft Menu -> sendComposerStash -> ComposerSubmissionQueue -> existing Coordinator/Host send route",
+        "ProductShell -> ProductionRenderer -> ConversationComposer saved-draft Menu -> removeComposerStash -> ComposerDraftStateStore.removeStashIfMatches"
       ],
       "production_evidence": [
         "commit:2e8cd87fbaac9427b0e9a8cf424ac1dabb44f346",
         "path:frontend/src/recovered/features/conversation/workspace/draft-state.ts#exchangeDraft",
         "path:frontend/src/recovered/features/conversation/workspace/composer.tsx#ConversationComposer",
-        "path:frontend/src/production/ProductionRenderer.tsx#exchangeComposerStash"
+        "path:frontend/src/production/ProductionRenderer.tsx#exchangeComposerStash",
+        "commit:58e9d0dfbb6931cf421f63f2d4d067a143bce35f",
+        "path:frontend/src/recovered/features/conversation/workspace/draft-state.ts#removeStashIfMatches",
+        "path:frontend/src/recovered/features/conversation/workspace/composer.tsx#ConversationComposer-saved-draft-actions",
+        "path:frontend/src/production/ProductionRenderer.tsx#sendComposerStash",
+        "path:frontend/src/production/ProductionRenderer.tsx#removeComposerStash"
       ],
       "test_evidence": [
         "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts#composer stash atomically exchanges rich drafts and prepared attachments per scope",
-        "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts#composer stash revalidates before restore and child-scope cleanup removes draft plus stash"
+        "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts#composer stash revalidates before restore and child-scope cleanup removes draft plus stash",
+        "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts#composer stash atomically exchanges rich drafts and prepared attachments per scope (compare-and-remove stale completion fence)"
       ],
-      "target_commit": "2e8cd87fbaac9427b0e9a8cf424ac1dabb44f346",
+      "target_commit": "58e9d0dfbb6931cf421f63f2d4d067a143bce35f",
       "workflow_run": null,
       "run_attempt": null,
       "job": null,
@@ -13296,7 +13314,10 @@
         "Store a rich draft with attachment then restore it without losing metadata",
         "Swap two drafts repeatedly without cross-scope leakage",
         "Invalid restored attachment set leaves current and stash unchanged",
-        "Ctrl/Cmd+Shift+Y respects disabled state"
+        "Ctrl/Cmd+Shift+Y respects disabled state",
+        "Send saved draft through the normal submission/Host route without replacing the live draft; failed send preserves stash",
+        "Swap to a newer stash while an older saved-draft send is pending; older completion cannot delete the newer stash",
+        "Remove saved draft while a saved-draft send is queued; attachment files referenced by the queued submission remain available"
       ],
       "design_system_version": "FBCP Revision 7 live Fabushi design system",
       "semantic_token_usage": [
@@ -13305,7 +13326,8 @@
       "legacy_token_adapter": null,
       "canonical_component_ids": [
         "Composer",
-        "IconButton"
+        "IconButton",
+        "Menu"
       ],
       "screen_pattern_id": "ConversationWorkspace",
       "screen_slots": [
@@ -13388,7 +13410,7 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior was source-informed from accepted telegramdesktop/tdesktop ComposeStash/StashManager code and rewritten into existing Fabushi canonical composer owners; no Telegram C++ runtime or UI root is retained.",
       "reviewer": null,
-      "notes": "Implemented scope is deliberately narrow: keyed transient exchange, draft/rich/reply/prepared-attachment preservation, validation hook, exact-scope removal/cleanup and canonical keyboard/UI affordance. Forward-draft send, stashed send menu, silent/schedule and full topic-child composition remain open and must not be inferred complete from this row."
+      "notes": "Implemented scope now includes keyed transient exchange plus canonical saved-draft send/remove actions. Saved-draft send uses the existing submission/Host transport and exact-content compare-and-remove; remove retains queued-send attachment references. Forward-draft integration, silent-send, durable schedule/reminder, full topic/child Mahayana composition, and exact-head acceptance remain open and must not be inferred complete."
     }
   ],
   "rebaseline": {
