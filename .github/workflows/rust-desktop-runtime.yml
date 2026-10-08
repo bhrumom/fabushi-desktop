@@ -193,6 +193,47 @@ jobs:
           production_backend_emits_native_consumable_cpu_profile_artifact
           -- --exact --nocapture
 
+
+  updater-platform-contract:
+    name: Updater contract / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2025, macos-15]
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+      - name: Bind exact tested HEAD
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual="$(git rev-parse HEAD)"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            expected="${{ github.event.pull_request.head.sha }}"
+          else
+            expected="${{ github.sha }}"
+          fi
+          test "$actual" = "$expected"
+          echo "Exact tested HEAD: $actual" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - name: Install desktop dependencies
+        run: npm --prefix desktop ci --prefer-offline --no-audit --no-fund
+      - name: Build Electron updater contract
+        run: npm --prefix desktop run build:electron
+      - name: Test updater parent-handoff and platform gates
+        run: >-
+          node --test
+          --test-name-pattern="Windows updater handoff|update gates"
+          desktop/.tmp-grok-electron/source/electron-main/foundations.test.js
+
   platform-worker:
     runs-on: ubuntu-24.04
     timeout-minutes: 45
