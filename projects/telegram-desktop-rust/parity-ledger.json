@@ -4396,7 +4396,8 @@
       "implementation_status": "mapped",
       "coverage_disposition": "fabushi-ui-replacement",
       "blockers": [
-        "Shipping parity for the recovered typed link/button/formula/media edge cases and exact-head quality evidence remains open."
+        "Shared AssistantMath cache/fallback lifecycle is implemented on the current PR branch but still needs exact-head GitHub Actions evidence.",
+        "Typed link-kind coverage, bounded hostile inline-button label behavior, packaged UI/a11y/performance evidence and independent acceptance remain open."
       ],
       "production_entrypoints": [
         "ConversationTranscript -> rich-text URL/Math/Resource/TranscriptCard projection -> existing typed boundaries"
@@ -4408,7 +4409,9 @@
         "path:frontend/src/recovered/features/conversation/cards/transcript-card/url-card.ts",
         "path:frontend/src/recovered/features/conversation/workspace/media-viewer.tsx"
       ],
-      "test_evidence": [],
+      "test_evidence": [
+        "path:frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts"
+      ],
       "target_commit": "3bc92400826cc4ca7ac665b467708e22261edc61",
       "workflow_run": null,
       "run_attempt": null,
@@ -4568,7 +4571,7 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior mapped from accepted telegramdesktop/tdesktop d346 exact blobs; Qt/C++ presentation is not retained and legal/source provenance remains recorded.",
       "reviewer": null,
-      "notes": "Read-complete and mapped only; no implemented/verified claim.",
+      "notes": "Read-complete; current PR adds shared loader/expression/display-mode math render caching with loader isolation, invalidation and retry-after-load-failure while preserving source-text fallback. The broader article-text responsibility intentionally remains mapped until the remaining typed-link/button/media cases and exact-head/independent evidence close.",
       "source_path": "Telegram/SourceFiles/iv/markdown/iv_markdown_article_text.h",
       "source_blob_sha": "82da919256c01a0fcd09765d9e22b0c2d0ded1f3",
       "source_kind": "header",
@@ -4615,7 +4618,8 @@
       "fabushi_target_symbols": [
         "normalizeLinkUrl",
         "AssistantMath",
-        "TranscriptAttachmentGallery"
+        "TranscriptAttachmentGallery",
+        "createAssistantMathMarkupCache"
       ],
       "command_event_contracts": [
         "Typed link -> existing navigation/external-open owner",
@@ -4674,7 +4678,8 @@
       "implementation_status": "mapped",
       "coverage_disposition": "fabushi-ui-replacement",
       "blockers": [
-        "Shipping parity for the recovered typed link/button/formula/media edge cases and exact-head quality evidence remains open."
+        "Shared AssistantMath cache/fallback lifecycle is implemented on the current PR branch but still needs exact-head GitHub Actions evidence.",
+        "Typed link-kind coverage, bounded hostile inline-button label behavior, packaged UI/a11y/performance evidence and independent acceptance remain open."
       ],
       "production_entrypoints": [
         "ConversationTranscript -> rich-text URL/Math/Resource/TranscriptCard projection -> existing typed boundaries"
@@ -4686,7 +4691,9 @@
         "path:frontend/src/recovered/features/conversation/cards/transcript-card/url-card.ts",
         "path:frontend/src/recovered/features/conversation/workspace/media-viewer.tsx"
       ],
-      "test_evidence": [],
+      "test_evidence": [
+        "path:frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts"
+      ],
       "target_commit": "3bc92400826cc4ca7ac665b467708e22261edc61",
       "workflow_run": null,
       "run_attempt": null,
@@ -4846,7 +4853,7 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior mapped from accepted telegramdesktop/tdesktop d346 exact blobs; Qt/C++ presentation is not retained and legal/source provenance remains recorded.",
       "reviewer": null,
-      "notes": "Read-complete and mapped only; no implemented/verified claim.",
+      "notes": "Read-complete; current PR adds shared loader/expression/display-mode math render caching with loader isolation, invalidation and retry-after-load-failure while preserving source-text fallback. The broader article-text responsibility intentionally remains mapped until the remaining typed-link/button/media cases and exact-head/independent evidence close.",
       "source_path": "Telegram/SourceFiles/iv/markdown/iv_markdown_article_text.cpp",
       "source_blob_sha": "2fcab1a3e549d320ca38266373d562238c13fe29",
       "source_kind": "source",
@@ -4898,7 +4905,9 @@
         "createUrlCardProvider",
         "renderKatexMarkup",
         "AssistantMessageContent",
-        "createWidgetInteractionTransport"
+        "createWidgetInteractionTransport",
+        "createAssistantMathMarkupCache",
+        "AssistantMath"
       ],
       "command_event_contracts": [
         "Typed external link -> desktop/native open boundary",
