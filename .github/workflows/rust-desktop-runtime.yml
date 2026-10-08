@@ -355,6 +355,8 @@ jobs:
           await printGitlinks('openssl/openssl','45e844fa2a14ec92d146bd8f5778ac130b6625fb','OPENSSL');
           await printGitlinks('desktop-app/tg_owt','d1cf250ea73de26c4c1f0a3c8173eb2648efbb04','TGOWT');
           NODE
+      - name: Regression test recursive inventory fail-closed contract
+        run: node --test scripts/tdrp-recursive-inventory-contract.test.mjs
       - name: Validate Revision 9 authority
         env:
           GITHUB_TOKEN: ${{ github.token }}

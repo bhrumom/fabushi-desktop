@@ -10,12 +10,13 @@
   },
   "inventory": {
     "root_non_directory_entries": 6355,
-    "recursive_non_directory_entries": 15788,
+    "recursive_non_directory_entries": 15804,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 15788,
-    "unread_minimum": 15728,
-    "omitted_known": 0
+    "unknown_minimum": 15804,
+    "unread_minimum": 15744,
+    "omitted_known": 0,
+    "note": "Accepted d346 recursive census corrected from 15,788 to 15,804 using GitHub Actions run 37722053430 source-authority job 113131801648: root 6,355; 35 direct gitlink mounts 6,771; GitHub nested 2,531; GitLab cppgir 104; expected-lite 43. xxHash has 100 entries (+16 from stale denominator). Exactly the same previously documented 60 full-read source entries remain credited; unknown 15,804, unread 15,744, omitted 0. Production completeness remains open."
   },
   "latest_recursive_evidence": {
     "run_id": 37596744991,

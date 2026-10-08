@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { checkRecursiveInventory } from './tdrp-recursive-inventory-contract.mjs';
 
 const root = process.cwd();
 const requireAccepted = process.argv.includes('--require-accepted');
@@ -763,6 +764,12 @@ recursiveInventory.push(...childEntries.map(e=>({
   path:e.path,mode:e.mode,type:e.type,object:e.sha,size:e.size??null
 })));
 
+const checkedRecursive=checkRecursiveInventory({
+  lock, inventoryIndex, ledger, entries:recursiveInventory,
+  directComponents:directComponentCounts, githubNestedComponents:githubNestedCounts,
+  cppgirTreeEntries:cppTree.length, cppgirNonDirectoryEntries:cppTree.filter(e=>e.type!=='tree').length,
+  cppgirChild:{path:childPath,repository:childRepo,commit:cppNested[0].id,entries:childEntries.length}
+});
 const attrs=await get(`https://raw.githubusercontent.com/${u.repository}/${u.commit}/.gitattributes`,false);
 fail(!/filter=lfs|diff=lfs|merge=lfs/.test(attrs),'Git LFS attributes detected; explicit LFS closure required');
 for (const p of lock.build_time_pin_changes) {
@@ -779,13 +786,14 @@ await fs.writeFile(path.join(root,'artifacts/tdrp-authority/upstream-recursive-i
   project_id:'TDRP-001',spec_revision:9,root:{repository:u.repository,commit:u.commit,tree:u.tree},
   counts:{entries:recursiveInventory.length,direct_components:directComponentCounts,github_nested_components:githubNestedCounts,
     gitlab_cppgir_entries:cppTree.filter(e=>e.type!=='tree').length,cppgir_child_entries:childEntries.length},
-  entries:recursiveInventory
+  identity_sha256:checkedRecursive.identity_sha256,entries:recursiveInventory
 },null,2)+'\n');
 const targetCommit=process.env.TDRP_TARGET_SHA||process.env.GITHUB_SHA||null;
 const report={
   project_id:'TDRP-001',spec_revision:9,target_commit:targetCommit,
   upstream_commit:u.commit,upstream_tree:u.tree,root_tree_truncated:false,
-  root_entries:tree.length,root_blobs:blobs.length,direct_gitlinks:links.length,recursive_non_directory_entries:recursiveInventory.length,
+  root_entries:tree.length,root_blobs:blobs.length,direct_gitlinks:links.length,recursive_non_directory_entries:checkedRecursive.total,
+  recursive_inventory_breakdown:checkedRecursive.counts,recursive_path_blob_sha256:checkedRecursive.identity_sha256,
   direct_component_counts:directComponentCounts,github_nested_gitlinks:nested,github_nested_component_counts:githubNestedCounts,
   gitlab_cppgir_entries:cppTree.length,cppgir_child:{path:childPath,repository:childRepo,commit:cppNested[0].id,entries:childEntries.length},
   build_time_pin_changes:lock.build_time_pin_changes,build_time_acquisition_inventory:acquisitionInventory.discovery,coverage:lock.coverage,ledger_coverage:ledger.coverage,
