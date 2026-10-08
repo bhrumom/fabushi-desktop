@@ -118,6 +118,20 @@ export interface HorizontalScrollWheelUpdate {
   readonly axis: HorizontalScrollWheelAxis | null;
 }
 
+export function normalizeHorizontalScrollWheelDelta(
+  deltaX: number,
+  deltaY: number,
+  deltaMode: number,
+  pageWidth: number,
+): { readonly x: number; readonly y: number } {
+  const x = Number.isFinite(deltaX) ? deltaX : 0;
+  const y = Number.isFinite(deltaY) ? deltaY : 0;
+  const mode = Number.isFinite(deltaMode) ? deltaMode : 0;
+  const page = Number.isFinite(pageWidth) && pageWidth > 0 ? pageWidth : 1;
+  const scale = mode === 1 ? 16 : mode === 2 ? page : 1;
+  return { x: x * scale, y: y * scale };
+}
+
 export function updateHorizontalScrollWheelLock(
   lock: HorizontalScrollWheelLock | null,
   deltaX: number,
