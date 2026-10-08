@@ -35,6 +35,7 @@ import {
 } from "./conversation/workspace/find-in-chat-controller.ts";
 import { createFindHighlightRefreshRuntime } from "./conversation/workspace/find-highlight-runtime.ts";
 import { formatTranscriptToolCallName } from "./conversation/workspace/tool-call-label.ts";
+import { copyTranscriptCodeText } from "./conversation/workspace/code-copy.ts";
 import {
   formatRoutineRunTimestamp,
   presentRoutineRunHistory,
@@ -627,6 +628,26 @@ test("CONTRACT-TDRP-IV-VIEW-MEDIA-POINTER-RELEASE-001 media replacement releases
   assert.match(source, /const onLostPointerCapture = \(event: React\.PointerEvent<HTMLDivElement>\) => \{[\s\S]{0,140}pointerRef\.current\.id === event\.pointerId[\s\S]{0,80}pointerRef\.current\.id = null/);
   assert.match(source, /ref=\{viewerRef\} role="dialog"/);
   assert.match(source, /if \(pointer\.id !== event\.pointerId\) return;/);
+});
+
+
+test("CONTRACT-TDRP-IV-VIEW-CODE-COPY-SANITIZED-001 code copy crosses only the clipboard writer boundary", async () => {
+  const writes: string[] = [];
+  assert.equal(await copyTranscriptCodeText("const x = 1;\n", {
+    async writeText(text) {
+      writes.push(text);
+    },
+  }), true);
+  assert.deepEqual(writes, ["const x = 1;\n"]);
+  assert.equal(await copyTranscriptCodeText("secret", null), false);
+  assert.equal(await copyTranscriptCodeText("secret", {
+    async writeText() {
+      throw new Error("clipboard denied");
+    },
+  }), false);
+
+  const source = readFileSync(new URL("./conversation/workspace/code-copy.ts", import.meta.url), "utf8");
+  assert.doesNotMatch(source, /session|window|controller|host|coordinator/i);
 });
 
 

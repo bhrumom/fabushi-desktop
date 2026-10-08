@@ -32,6 +32,7 @@ import type { TranscriptThreadSummary } from "../cards/transcript-card/thread-su
 import { captureHorizontalScroll, clampHorizontalScrollOffset, restoreHorizontalScrollOffset, type HorizontalScrollSnapshot } from "./horizontal-scroll-state";
 import { reconcileAssistantContentProjection, type AssistantProjectionCandidate, type AssistantProjectionState } from "./assistant-content-projection";
 import { formatTranscriptToolCallName } from "./tool-call-label";
+import { copyTranscriptCodeText } from "./code-copy";
 
 function transcriptIds(id: string, hasTimestamp: boolean) {
   const base = `sand-conversation-entry-${encodeURIComponent(id)}`;
@@ -568,8 +569,10 @@ function AssistantCodeCopyButton({ code }: { code: string }) {
   const iconName = copied ? "check" : "copy";
   const iconCodePoint = copied ? 0xeab2 : 0xebcc;
   return <button aria-label={label} className={assistantCodeCopyButtonClass} onClick={() => {
-    if (typeof navigator === "undefined" || navigator.clipboard == null) return;
-    void navigator.clipboard.writeText(code).then(() => setCopied(true)).catch(() => {});
+    const clipboard = typeof navigator === "undefined" ? null : navigator.clipboard;
+    void copyTranscriptCodeText(code, clipboard).then((copiedNow) => {
+      if (copiedNow) setCopied(true);
+    });
   }} type="button"><span aria-hidden="true" data-icon-name={iconName} data-size="base" style={{ fontFamily: "cursor-icons" }}>{String.fromCodePoint(iconCodePoint)}</span></button>;
 }
 
