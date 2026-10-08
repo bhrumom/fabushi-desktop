@@ -17,6 +17,7 @@ import {
 import { projectRichMessageAction, projectRichMessageActionAffordance } from "./conversation/cards/transcript-card/url-card.ts";
 import { createWidgetInteractionAdapter } from "./conversation/cards/transcript-card/widget-interactions.ts";
 import { createAssistantMathMarkupCache, type KatexRuntime } from "./conversation/workspace/math-runtime.ts";
+import { resolveWithSingleRetry } from "./conversation/workspace/media-runtime.ts";
 import {
   createHiddenChatsMutationController,
 } from "./hidden-chats/overlay/mutation-controller.ts";
@@ -466,4 +467,39 @@ test("media replacement retires stale pointer ownership before the new resource 
   assert.match(replacementBlock, /setTransform\(\{ scale: MIN_ZOOM, x: 0, y: 0 \}\);/);
   assert.match(replacementBlock, /pointerRef\.current = \{ id: null, startX: 0, startY: 0, originX: 0, originY: 0, moved: false \};/);
   assert.match(source, /if \(pointer\.id !== event\.pointerId\) return;/);
+});
+
+
+test("media missing-resource recovery is bounded to one retry", async () => {
+  let attempts = 0;
+  const recovered = await resolveWithSingleRetry(async () => {
+    attempts += 1;
+    return attempts === 1 ? null : { kind: "ok" };
+  }, "media://recover");
+  assert.deepEqual(recovered, { kind: "ok" });
+  assert.equal(attempts, 2);
+
+  attempts = 0;
+  const missing = await resolveWithSingleRetry(async () => {
+    attempts += 1;
+    return null;
+  }, "media://missing");
+  assert.equal(missing, null);
+  assert.equal(attempts, 2);
+
+  attempts = 0;
+  const afterFailure = await resolveWithSingleRetry(async () => {
+    attempts += 1;
+    if (attempts === 1) throw new Error("transient");
+    return { kind: "ok" };
+  }, "media://transient");
+  assert.deepEqual(afterFailure, { kind: "ok" });
+  assert.equal(attempts, 2);
+
+  attempts = 0;
+  await assert.rejects(() => resolveWithSingleRetry(async () => {
+    attempts += 1;
+    throw new Error(`failure-${attempts}`);
+  }, "media://broken"), /failure-2/);
+  assert.equal(attempts, 2);
 });
