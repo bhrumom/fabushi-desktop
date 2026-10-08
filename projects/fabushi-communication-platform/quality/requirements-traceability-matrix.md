@@ -81,6 +81,30 @@ These rows are additive to the AC coverage plan. A row at `IMPLEMENTED` is not a
 | TDRP-R9-EXTERNAL-URL-AUTH-CONTEXT-001 | critical | ORA-TDRP-URL-AUTH-ACCEPTED-CONTEXT-001 | INV-TDRP-URL-AUTH-STRIP-FOREIGN-001; INV-TDRP-URL-AUTH-EXACT-ORIGIN-001; INV-TDRP-URL-AUTH-NO-RENDERER-UPGRADE-001 | PROP-TDRP-URL-AUTH-ENCODING-001 | CONTRACT-TDRP-URL-AUTH-BOUNDARY-001; INT-TDRP-FABUSHI-ACCOUNT-EXTERNAL-OPEN-001 | E2E-TDRP-EXTERNAL-URL-AUTH-001; TEMP-TDRP-URL-AUTH-EPHEMERAL-CONTEXT-001 | — | SEC-TDRP-URL-AUTH-STRIP-001; SEC-TDRP-URL-AUTH-EXACT-ORIGIN-001; SEC-TDRP-URL-AUTH-PRIVILEGE-001 | REG-TDRP-URL-AUTH-TOKEN-SMUGGLING-001 | commit:aa9df7fef3454a81aacf489fecae984099cdeab4; workflow:pending-current-head | pending-independent-review | IMPLEMENTED |
 | TDRP-R9-SHARE-FORWARD-PRIVACY-001 | critical | ORA-TDRP-SHARE-FORWARD-PRIVACY-001 | INV-TDRP-FORWARD-CAPTION-IMPLIES-NO-SENDER-001; INV-TDRP-FORWARD-PRIVACY-NATIVE-001; INV-TDRP-FORWARD-PRIVACY-IDEMPOTENT-001 | PROP-TDRP-SHARE-FORWARD-PRIVACY-001 | CONTRACT-TDRP-SHARE-FORWARD-PRIVACY-001; INT-TDRP-SHARE-FORWARD-PRIVACY-001 | TEMP-TDRP-SHARE-FORWARD-PRIVACY-001; FAULT-TDRP-SHARE-FORWARD-PRIVACY-001 | pending shipping Forward E2E | — | REG-TDRP-FORWARD-PRIVACY-001 | workflow:pending-current-head | pending-independent-review | IMPLEMENTED |
 | TDRP-R9-SHARE-RECIPIENT-ELIGIBILITY-001 | critical | ORA-TDRP-SHARE-RECIPIENT-ELIGIBILITY-001 | INV-TDRP-RECIPIENT-AUTH-BEFORE-EXPOSURE-001; INV-TDRP-RECIPIENT-MEDIA-POLL-ELIGIBILITY-001; INV-TDRP-RECIPIENT-CHANNEL-POSTING-001 | PROP-TDRP-SHARE-RECIPIENT-ELIGIBILITY-001 | CONTRACT-TDRP-SHARE-RECIPIENT-ELIGIBILITY-001; INT-TDRP-SHARE-RECIPIENT-ELIGIBILITY-001 | TEMP-TDRP-SHARE-RECIPIENT-POLICY-REFRESH-001; FAULT-TDRP-SHARE-RECIPIENT-ELIGIBILITY-001 | pending shipping recipient-picker E2E | — | REG-TDRP-RECIPIENT-PREEXPOSURE-001 | workflow:pending-current-head | pending-independent-review | IMPLEMENTED |
+| TDRP-R9-DATA-CHANGES-CONTRACT-001 | high | ORA-TDRP-R9-DATA-CHANGES-CONTRACT-001 | INV-TDRP-R9-DATA-CHANGES-CONTRACT-001-CANONICAL | pending | pending | pending destruction/cleanup integration and temporal coverage | pending canonical Conversation/Composer projection coverage | pending resource/security cleanup coverage | pending Bot + messaging regression | evidence:pending-current-head | pending-independent-review | MAPPED |
+| TDRP-R9-DATA-CHANGES-LIFECYCLE-001 | high | ORA-TDRP-R9-DATA-CHANGES-LIFECYCLE-001 | INV-TDRP-R9-DATA-CHANGES-LIFECYCLE-001-CANONICAL | pending | pending | pending realtime/coalesced/destroyed sequencing coverage | pending child lifecycle projection coverage | pending stale-event/resource cleanup coverage | pending Bot + messaging regression | evidence:pending-current-head | pending-independent-review | MAPPED |
+| TDRP-R9-DATA-TYPES-VALUE-CONTRACT-001 | high | ORA-TDRP-R9-DATA-TYPES-VALUE-CONTRACT-001 | INV-TDRP-R9-DATA-TYPES-VALUE-CONTRACT-001-CANONICAL | pending | pending | pending forward/message value-contract integration coverage | pending Composer/Conversation projection coverage | pending resource/cache/security applicability coverage | pending Bot + messaging regression | evidence:pending-current-head | pending-independent-review | MAPPED |
+
+### TDRP-R9-DATA-CHANGES-CONTRACT-001 oracle
+
+- `ORA-TDRP-R9-DATA-CHANGES-CONTRACT-001`: canonical Fabushi owners preserve the typed Topic/SavedSublist/Message/Entry change identity and destination scope needed by draft, unread, notification, Search and resource observers; no source-shaped event bus or renderer inference becomes authoritative.
+- `INV-TDRP-R9-DATA-CHANGES-CONTRACT-001-CANONICAL`: mapped state is owned by existing canonical MessagingEngine/Conversation/Message/Composer boundaries. Search/resource cleanup remain explicit downstream open responsibilities until their shipping owner bindings and evidence are added; absence of those bindings is not treated as implementation.
+- Dossier: `projects/telegram-desktop-rust/dossiers/data-changes-types-complete-read.md`.
+- Current verdict: `MAPPED`; production/test evidence intentionally pending.
+
+### TDRP-R9-DATA-CHANGES-LIFECYCLE-001 oracle
+
+- `ORA-TDRP-R9-DATA-CHANGES-LIFECYCLE-001`: ordinary typed changes may coalesce, but destruction merges pending flags, publishes the exact identity before retirement, and prevents a later scheduled callback from reviving stale child/message/entry state.
+- `INV-TDRP-R9-DATA-CHANGES-LIFECYCLE-001-CANONICAL`: destruction sequencing is mapped to existing MessagingEngine lifecycle ownership; notification clear, draft clear, unread reconciliation, Search projection removal and resource cleanup remain open until wired and proven in shipping composition.
+- Dossier: `projects/telegram-desktop-rust/dossiers/data-changes-types-complete-read.md`.
+- Current verdict: `MAPPED`; no current-head implementation or verification claim.
+
+### TDRP-R9-DATA-TYPES-VALUE-CONTRACT-001 oracle
+
+- `ORA-TDRP-R9-DATA-TYPES-VALUE-CONTRACT-001`: source value semantics such as ForwardOptions/ForwardDraft, message identity/flags, cursors and resource/cache classifications are decomposed into the corresponding existing Fabushi owners without introducing a monolithic Telegram-shaped DataTypes owner.
+- `INV-TDRP-R9-DATA-TYPES-VALUE-CONTRACT-001-CANONICAL`: only target symbols that actually exist in the current exact-head canonical owners may be registered; future Search/resource/cache bindings remain open rather than being represented by invented target symbols or fake evidence.
+- Dossier: `projects/telegram-desktop-rust/dossiers/data-changes-types-complete-read.md`.
+- Current verdict: `MAPPED`; applicability implementation/tests remain pending.
 
 ### TDRP-R9-SEARCH-ROW-REPLACEMENT-001 oracle
 
