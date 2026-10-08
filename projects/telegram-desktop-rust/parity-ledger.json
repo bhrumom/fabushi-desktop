@@ -5031,7 +5031,9 @@
         "resolveWithSingleRetry",
         "beginHorizontalScrollPointer",
         "updateHorizontalScrollPointer",
-        "RetainedHorizontalScrollRegion"
+        "RetainedHorizontalScrollRegion",
+        "updateHorizontalScrollWheelLock",
+        "normalizeHorizontalScrollWheelDelta"
       ],
       "target_language": "TypeScript/React",
       "language_rationale": "Applicable behavior is ConversationWorkspace interaction/lifecycle projection and belongs in the existing web renderer owners; durable domain/resource truth remains behind existing typed contracts.",
@@ -5054,8 +5056,8 @@
       "implementation_status": "mapped",
       "coverage_disposition": "fabushi-ui-replacement",
       "blockers": [
-        "Current branch implements canonical HTTP(S) action routing, typed copy projection, selection-vs-link activation fencing, media replacement pointer retirement, bounded media recovery, deterministic Control-wheel zoom, and touch-like horizontal pointer direction/capture balancing; exact-head GitHub Actions evidence remains required.",
-        "Native wheel phase-direction locking, mouse scrollbar/content drag parity, broader touch/zoom/reflow continuity, hidden-window timer quiescence, packaged temporal/a11y/performance evidence and independent acceptance remain open."
+        "Current branch implements canonical HTTP(S) action routing, typed copy projection, selection-vs-link activation fencing, media replacement pointer retirement, bounded media recovery, deterministic Control-wheel zoom, touch-like horizontal pointer balancing, and browser wheel-burst direction locking with delta-unit normalization; exact-head GitHub Actions evidence remains required.",
+        "Mouse scrollbar/content-drag packaged temporal evidence, broader touch/zoom/reflow continuity, hidden-window timer quiescence, packaged a11y/performance evidence and independent acceptance remain open."
       ],
       "production_entrypoints": [
         "ProductShell -> ConversationWorkspace -> ConversationTranscript -> existing FindInChat/URL/Resource/action owners"
@@ -5234,7 +5236,7 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior mapped from accepted telegramdesktop/tdesktop d346 exact blob; Qt widget/painter code is not retained and legal/source provenance remains recorded.",
       "reviewer": null,
-      "notes": "Read-complete and mapped-open. The existing ConversationTranscript/URL/context-menu/MediaViewer owners now also keep touch-like horizontal scroll intent source-neutral: below-threshold movement stays pending, vertical movement yields to native pan, horizontal movement alone captures the pointer, and up/cancel/lost-capture/replacement retire ownership. This bounded slice does not claim the remaining wheel-phase, mouse-drag, hidden-window, packaged or independent evidence."
+      "notes": "Read-complete and mapped-open. Existing canonical ConversationTranscript/Resource/URL owners now also adapt the accepted Qt wheel phase lock to Web wheel bursts: first-axis wins until an idle settlement window, line/page units normalize before scroll projection, vertical remains native, horizontal alone is consumed, and Control-wheel retires the scroll lock for the zoom owner. This does not claim mouse-scrollbar packaged behavior, hidden timer quiescence, broader media gestures, or independent acceptance."
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
@@ -5956,7 +5958,9 @@
         "TranscriptToolCallRow",
         "scrollToEntryWithoutHighlight",
         "beginHorizontalScrollPointer",
-        "updateHorizontalScrollPointer"
+        "updateHorizontalScrollPointer",
+        "updateHorizontalScrollWheelLock",
+        "normalizeHorizontalScrollWheelDelta"
       ],
       "target_language": "TypeScript/React",
       "language_rationale": "Applicable behavior is transcript rich-content projection, lifecycle, search/navigation and interaction; existing canonical renderer owners are TypeScript/React while durable resource/domain truth remains behind typed existing contracts.",
@@ -5980,8 +5984,8 @@
       "implementation_status": "mapped",
       "coverage_disposition": "fabushi-ui-replacement",
       "blockers": [
-        "Current branch implements canonical URL/selection arbitration, owner-keyed horizontal-scroll continuity, touch-like horizontal pointer direction/capture balancing, and find-in-chat navigation for collapsed thinking/tool-call details; exact-head GitHub Actions evidence remains required.",
-        "Structural drag/drop, quote/details ancestor expansion beyond canonical outline rows, full anchor reveal after relayout, visible-range equivalence, native wheel-phase/mouse-scrollbar ownership, packaged a11y/temporal evidence and independent acceptance remain open."
+        "Current branch implements canonical URL/selection arbitration, owner-keyed horizontal-scroll continuity, touch-like pointer balancing, browser wheel-burst direction locking with normalized deltas, and find-in-chat navigation for collapsed thinking/tool-call details; exact-head GitHub Actions evidence remains required.",
+        "Structural drag/drop, quote/details ancestor expansion beyond canonical outline rows, full anchor reveal after relayout, visible-range equivalence, mouse-scrollbar packaged temporal evidence, packaged a11y evidence and independent acceptance remain open."
       ],
       "production_entrypoints": [
         "ProductShell -> ConversationWorkspace -> ConversationTranscript -> existing Search/Math/Resource/URL/action owners"
@@ -6169,7 +6173,7 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior mapped from accepted telegramdesktop/tdesktop d346 exact blobs; Qt/C++ presentation is not retained and legal/source provenance remains recorded.",
       "reviewer": null,
-      "notes": "Read-complete and mapped-open. Canonical code/table scroll state remains owner-keyed across compatible revisions, and touch-like pointer scrolling now begins only after horizontal direction wins, captures only the active pointer, clamps against the live region, and retires on up/cancel/lost capture or content replacement. Existing FindInChat and typed action owners remain unchanged; broader edit/drop/reveal/wheel/mouse semantics remain open."
+      "notes": "Read-complete and mapped-open. Canonical code/table overflow remains owner-keyed across compatible revisions; touch-like pointer drag and browser wheel bursts now arbitrate horizontal ownership without stealing native vertical pan. Browser idle settlement replaces Qt wheel phases, and deltaMode line/page values normalize before clamped scroll projection. Broader edit/drop/reveal/mouse-scrollbar packaged semantics remain open."
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
