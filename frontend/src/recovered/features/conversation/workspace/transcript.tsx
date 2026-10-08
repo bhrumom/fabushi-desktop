@@ -258,6 +258,7 @@ function isHttpUrl(value: string): boolean {
 }
 
 type TranscriptExternalLinkOpener = (url: string) => void;
+const TRANSCRIPT_POINTER_ACTIVATION_DRAG_THRESHOLD = 4;
 
 function transcriptSelectionBlocksActivation(): boolean {
   if (typeof window === "undefined") return false;
@@ -746,7 +747,7 @@ export function TranscriptThinkingRow({ entry, expanded, onToggle }: { entry: Tr
 export function ConversationTranscript({ entries, hasOlder = false, isLoadingOlder = false, loadOlder, isAgentRunning = false, renderComputerHandoff, isTransportDown = false, isReadOnly = false, onCancelQueuedSend, onCopyMessage, onDeleteFailedSend, onForward, onReply, onStartThread, renderMessageReactionActions, renderMessageReactionPills, resolveTranscriptCardInteractions, onResendFailedSend, resolveAttachmentMedia, readAttachmentBytes, downloadAttachment, resolveReplyPreview, isReplyTargetInScope, onOpenReply, onOpenAutomation, localToolPermissionStore, resolveLocalToolPermission, transcriptCards, urlCards, threadRootId = null, transcriptHandleRef }: { entries: readonly ConversationTranscriptEntry[]; isAgentRunning?: boolean; isReadOnly?: boolean; renderComputerHandoff?(entry: TranscriptComputerHandoff): ReactNode; resolveAttachmentMedia?: (source: string) => Promise<AttachmentMedia | null>; readAttachmentBytes?: (path: string, maxBytes: number) => Promise<AttachmentBytesResult | null>; downloadAttachment?: (path: string, suggestedName?: string) => Promise<boolean>; resolveReplyPreview?(targetId: string): TranscriptReplyPreview | null; isReplyTargetInScope?(targetId: string): boolean; localToolPermissionStore?: LocalToolPermissionStore; resolveLocalToolPermission?(input: ResolveLocalToolPermissionInput): Promise<unknown>; transcriptCards?: TranscriptCardRootMountContract; resolveTranscriptCardInteractions?: TranscriptCardInteractionContext; urlCards?: UrlCardProvider | null; threadRootId?: string | null; transcriptHandleRef?: { current: FindInChatTranscriptHandle | null } } & ConversationTranscriptActions) {
   const transcriptRef = useRef<HTMLDivElement | null>(null);
   const pointerActivationRevisionRef = useRef(0);
-  const pointerActivationIntentRef = useRef<{ revision: number; target: HTMLElement } | null>(null);
+  const pointerActivationIntentRef = useRef<{ revision: number; target: HTMLElement; pointerId: number; startX: number; startY: number } | null>(null);
   const olderLoadInFlightRef = useRef(false);
   const viewCommitListenersRef = useRef(new Set<() => void>());
   const revealFindEntryRef = useRef<(entryId: string, kind: FindInChatDisclosureKind) => void>(() => {});
@@ -875,11 +876,18 @@ export function ConversationTranscript({ entries, hasOlder = false, isLoadingOld
         }
         const target = event.target instanceof Element ? event.target.closest<HTMLElement>("a[href], button") : null;
         pointerActivationIntentRef.current = target != null && transcriptRef.current?.contains(target)
-          ? { revision: pointerActivationRevisionRef.current, target }
+          ? { revision: pointerActivationRevisionRef.current, target, pointerId: event.pointerId, startX: event.clientX, startY: event.clientY }
           : null;
       }}
       onPointerLeaveCapture={() => {
         pointerActivationIntentRef.current = null;
+      }}
+      onPointerMoveCapture={(event) => {
+        const intent = pointerActivationIntentRef.current;
+        if (intent == null || intent.pointerId !== event.pointerId) return;
+        if (Math.hypot(event.clientX - intent.startX, event.clientY - intent.startY) > TRANSCRIPT_POINTER_ACTIVATION_DRAG_THRESHOLD) {
+          pointerActivationIntentRef.current = null;
+        }
       }}
       ref={transcriptRef}
       role="log"
