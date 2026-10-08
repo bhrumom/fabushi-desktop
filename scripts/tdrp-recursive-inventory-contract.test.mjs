@@ -33,7 +33,7 @@ function fixture() {
   ];
   return {
     lock,
-    inventoryIndex: {inventory:{root_non_directory_entries:1,recursive_non_directory_entries:6,unknown_minimum:6,unread_minimum:5,omitted_known:0}},
+    inventoryIndex: {note:'unread_minimum is 5; unknown remains 6; omitted remains 0.',inventory:{root_non_directory_entries:1,recursive_non_directory_entries:6,unknown_minimum:6,unread_minimum:5,omitted_known:0,note:'Recursive source census 6; unknown 6, unread 5, omitted 0.'}},
     ledger: {coverage:{source_entries_total:6,unknown:6,unread:5,omitted:0}},
     entries,
     directComponents:lock.observed_recursive_inventory.direct_component_counts,
@@ -78,4 +78,13 @@ test('duplicate paths and invalid blob identities fail closed', () => {
 test('the three persisted accounting stores must agree without pretending unread is zero', () => {
   const f=fixture();f.inventoryIndex.inventory.unread_minimum=4;
   assert.throws(() => checkRecursiveInventory(f),/unread three-store accounting drift/);
+});
+
+test('stale human-readable inventory accounting fails closed', () => {
+  const f=fixture();
+  f.inventoryIndex.note='unread_minimum is 4; unknown remains 6; omitted remains 0.';
+  assert.throws(() => checkRecursiveInventory(f),/inventory narrative unread count drift/);
+  const g=fixture();
+  g.inventoryIndex.inventory.note='Recursive source census 6; unknown 6, unread 4, omitted 0.';
+  assert.throws(() => checkRecursiveInventory(g),/inventory detail narrative unread count drift/);
 });
