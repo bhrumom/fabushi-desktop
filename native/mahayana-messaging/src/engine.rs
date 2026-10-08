@@ -884,6 +884,28 @@ fn append_community_audit(
     });
 }
 
+/// Returns the last non-deleted canonical message of the requested exact
+/// Conversation/Topic scope. This is a derived projection, not an index owner.
+fn latest_live_message_id(
+    messages: Option<&BTreeMap<MessageId, Message>>,
+    topic_id: Option<&str>,
+) -> Option<String> {
+    messages?
+        .values()
+        .filter(|message| !message.deleted)
+        .filter(|message| {
+            topic_id.is_none_or(|id| {
+                message
+                    .thread_root_message_id
+                    .as_ref()
+                    .and_then(topic_id_from_root)
+                    == Some(id)
+            })
+        })
+        .max_by_key(|message| (message.created_at_ms, message.id.clone()))
+        .map(|message| message.id.0.clone())
+}
+
 fn message_content_uses_media(content: &MessageContent) -> bool {
     matches!(
         content,
@@ -3643,6 +3665,11 @@ impl MessagingEngine {
                 conversation_id,
                 message_ids,
             } => {
+                // Keep the authoritative tombstone in canonical Message state, but
+                // use the complete batch of identities to reconcile all dependent
+                // projections once, after every tombstone has been applied.
+                let deleted_ids: BTreeSet<String> =
+                    message_ids.iter().map(|id| id.0.clone()).collect();
                 for id in message_ids {
                     let message = self
                         .state
@@ -3697,6 +3724,80 @@ impl MessagingEngine {
                         });
                     if remove_poll_bucket {
                         self.state.poll_votes.remove(&conversation_id);
+                    }
+                }
+
+                // A parent/Topic last-message cursor must never continue to
+                // reference a deleted Message. Preserve the existing authoritative
+                // cursor if its message survived, including for out-of-order events;
+                // only the affected scopes are recomputed from surviving messages.
+                let surviving_messages = self.state.messages.get(&conversation_id);
+                let parent_last_is_deleted = self
+                    .state
+                    .conversations
+                    .get(&conversation_id)
+                    .and_then(|conversation| conversation.last_message_id.as_ref())
+                    .is_some_and(|id| deleted_ids.contains(id));
+                if parent_last_is_deleted {
+                    let latest = latest_live_message_id(surviving_messages, None);
+                    if let Some(conversation) = self.state.conversations.get_mut(&conversation_id) {
+                        conversation.last_message_id = latest;
+                    }
+                }
+                if let Some(community) = self.state.communities.get_mut(&conversation_id) {
+                    for (topic_id, topic) in &mut community.topics {
+                        if topic
+                            .last_message_id
+                            .as_ref()
+                            .is_some_and(|id| deleted_ids.contains(id))
+                        {
+                            topic.last_message_id =
+                                latest_live_message_id(surviving_messages, Some(topic_id));
+                        }
+                    }
+                }
+
+                // Message deletion retires reply targets, not a user's unsent text.
+                // Both root drafts and legacy topic-draft compatibility projections
+                // must follow the canonical tombstone (child-owned drafts were
+                // reconciled above through exact authoritative child membership).
+                if let Some(drafts_by_actor) = self.state.drafts.get_mut(&conversation_id) {
+                    for draft in drafts_by_actor.values_mut() {
+                        if draft
+                            .reply_to_message_id
+                            .as_ref()
+                            .is_some_and(|id| deleted_ids.contains(id))
+                        {
+                            draft.reply_to_message_id = None;
+                        }
+                    }
+                    drafts_by_actor.retain(|_, draft| {
+                        !draft.text.trim().is_empty() || draft.reply_to_message_id.is_some()
+                    });
+                    if drafts_by_actor.is_empty() {
+                        self.state.drafts.remove(&conversation_id);
+                    }
+                }
+                if let Some(topic_drafts_by_actor) =
+                    self.state.topic_drafts.get_mut(&conversation_id)
+                {
+                    for topics in topic_drafts_by_actor.values_mut() {
+                        for draft in topics.values_mut() {
+                            if draft
+                                .reply_to_message_id
+                                .as_ref()
+                                .is_some_and(|id| deleted_ids.contains(id))
+                            {
+                                draft.reply_to_message_id = None;
+                            }
+                        }
+                        topics.retain(|_, draft| {
+                            !draft.text.trim().is_empty() || draft.reply_to_message_id.is_some()
+                        });
+                    }
+                    topic_drafts_by_actor.retain(|_, topics| !topics.is_empty());
+                    if topic_drafts_by_actor.is_empty() {
+                        self.state.topic_drafts.remove(&conversation_id);
                     }
                 }
             }
@@ -4354,5 +4455,220 @@ mod recent_open_history_tests {
 
         let restored = MessagingEngine::from_state(engine.state().clone());
         assert!(restored.recent_open_destinations(&actor_id).is_empty());
+    }
+}
+
+#[cfg(test)]
+mod message_deletion_projection_tests {
+    use super::*;
+
+    fn test_message(
+        conversation_id: &ConversationId,
+        id: &str,
+        created_at_ms: i64,
+        topic: Option<&str>,
+    ) -> Message {
+        Message {
+            id: MessageId::new(id),
+            conversation_id: conversation_id.clone(),
+            sender_id: ActorId::new("human:sender"),
+            content: MessageContent::Text {
+                text: crate::message::FormattedText::plain(id),
+            },
+            reply_to_message_id: None,
+            thread_root_message_id: topic.map(|id| MessageId::new(format!("topic:{id}"))),
+            forward_origin: None,
+            reply_markup: None,
+            reactions: Vec::new(),
+            delivery_state: DeliveryState::Delivered,
+            created_at_ms,
+            edited_at_ms: None,
+            scheduled_at_ms: None,
+            silent: false,
+            protected_content: false,
+            pinned: false,
+            deleted: false,
+        }
+    }
+
+    #[test]
+    fn deleting_last_messages_reconciles_parent_topic_pins_and_reply_drafts_once() {
+        let conversation_id = ConversationId::new("conversation:delete-history");
+        let actor = ActorId::new("human:delete-history");
+        let mut conversation =
+            Conversation::direct(conversation_id.0.clone(), "Messages", vec![], 0);
+        conversation.kind = ConversationKind::Group;
+        conversation.last_message_id = Some("message:root-new".to_string());
+        conversation.pinned_message_ids = vec![
+            "message:root-new".to_string(),
+            "message:topic-new".to_string(),
+            "message:root-old".to_string(),
+        ];
+        let mut community = CommunityState::new(conversation_id.clone());
+        community.topics.insert(
+            "alpha".into(),
+            ForumTopicState {
+                id: "alpha".into(),
+                conversation_id: conversation_id.clone(),
+                title: "Alpha".into(),
+                icon: None,
+                creator_id: actor.clone(),
+                created_at_ms: 0,
+                pinned: false,
+                closed: false,
+                hidden: false,
+                unread_count: 0,
+                last_message_id: Some("message:topic-new".into()),
+            },
+        );
+        community.topics.insert(
+            "beta".into(),
+            ForumTopicState {
+                id: "beta".into(),
+                conversation_id: conversation_id.clone(),
+                title: "Beta".into(),
+                icon: None,
+                creator_id: actor.clone(),
+                created_at_ms: 0,
+                pinned: false,
+                closed: false,
+                hidden: false,
+                unread_count: 0,
+                last_message_id: Some("message:other-topic".into()),
+            },
+        );
+
+        let mut state = MessagingState::default();
+        state.conversations.insert(conversation_id.clone(), conversation);
+        state.communities.insert(conversation_id.clone(), community);
+        let mut messages = BTreeMap::new();
+        for (id, timestamp, topic) in [
+            ("message:root-old", 40, None),
+            ("message:root-new", 50, None),
+            ("message:topic-old", 20, Some("alpha")),
+            ("message:topic-new", 30, Some("alpha")),
+            ("message:other-topic", 15, Some("beta")),
+        ] {
+            let message = test_message(&conversation_id, id, timestamp, topic);
+            messages.insert(message.id.clone(), message);
+        }
+        state.messages.insert(conversation_id.clone(), messages);
+        state.drafts.entry(conversation_id.clone()).or_default().insert(
+            actor.clone(),
+            ConversationDraft {
+                conversation_id: conversation_id.clone(),
+                actor_id: actor.clone(),
+                text: "unfinished root text".into(),
+                reply_to_message_id: Some("message:root-new".into()),
+                updated_at_ms: 55,
+            },
+        );
+        state
+            .topic_drafts
+            .entry(conversation_id.clone())
+            .or_default()
+            .entry(actor.clone())
+            .or_default()
+            .insert(
+                "alpha".into(),
+                TopicDraft {
+                    conversation_id: conversation_id.clone(),
+                    topic_id: "alpha".into(),
+                    actor_id: actor.clone(),
+                    text: "unfinished topic text".into(),
+                    reply_to_message_id: Some("message:topic-new".into()),
+                    updated_at_ms: 56,
+                },
+            );
+        let mut engine = MessagingEngine::from_state(state);
+        let deletion = Event::MessagesDeleted {
+            conversation_id: conversation_id.clone(),
+            message_ids: vec![
+                MessageId::new("message:root-new"),
+                MessageId::new("message:topic-new"),
+            ],
+        };
+        engine.apply(deletion.clone());
+
+        let conversation = &engine.state().conversations[&conversation_id];
+        assert_eq!(conversation.last_message_id.as_deref(), Some("message:root-old"));
+        assert_eq!(conversation.pinned_message_ids, vec!["message:root-old"]);
+        let community = &engine.state().communities[&conversation_id];
+        assert_eq!(
+            community.topics["alpha"].last_message_id.as_deref(),
+            Some("message:topic-old"),
+        );
+        assert_eq!(
+            community.topics["beta"].last_message_id.as_deref(),
+            Some("message:other-topic"),
+        );
+        let draft = &engine.state().drafts[&conversation_id][&actor];
+        assert_eq!(draft.text, "unfinished root text");
+        assert_eq!(draft.reply_to_message_id, None);
+        let topic_draft = &engine.state().topic_drafts[&conversation_id][&actor]["alpha"];
+        assert_eq!(topic_draft.text, "unfinished topic text");
+        assert_eq!(topic_draft.reply_to_message_id, None);
+        assert!(engine.state().messages[&conversation_id][&MessageId::new("message:root-new")].deleted);
+        assert!(engine.state().messages[&conversation_id][&MessageId::new("message:topic-new")].deleted);
+
+        let after_first = engine.state().clone();
+        engine.apply(deletion);
+        assert_eq!(engine.state(), &after_first, "deletion replay must be idempotent");
+        let restored = MessagingEngine::from_state(engine.into_state());
+        assert_eq!(restored.state(), &after_first, "restart cannot resurrect tombstoned cursors");
+    }
+
+    #[test]
+    fn deleting_non_last_message_does_not_reorder_authoritative_cursors() {
+        let conversation_id = ConversationId::new("conversation:delete-non-last");
+        let mut conversation = Conversation::direct(conversation_id.0.clone(), "Messages", vec![], 0);
+        conversation.last_message_id = Some("message:authoritative".into());
+        let mut state = MessagingState::default();
+        state.conversations.insert(conversation_id.clone(), conversation);
+        let mut messages = BTreeMap::new();
+        let old = test_message(&conversation_id, "message:older", 10, None);
+        let authoritative = test_message(&conversation_id, "message:authoritative", 5, None);
+        messages.insert(old.id.clone(), old);
+        messages.insert(authoritative.id.clone(), authoritative);
+        state.messages.insert(conversation_id.clone(), messages);
+        let mut engine = MessagingEngine::from_state(state);
+        engine.apply(Event::MessagesDeleted {
+            conversation_id: conversation_id.clone(),
+            message_ids: vec![MessageId::new("message:older")],
+        });
+        assert_eq!(
+            engine.state().conversations[&conversation_id].last_message_id.as_deref(),
+            Some("message:authoritative"),
+            "unaffected authoritative cursors must not be replaced by local timestamp rank"
+        );
+    }
+
+    #[test]
+    fn deleting_final_message_clears_empty_reply_draft_and_last_cursor() {
+        let conversation_id = ConversationId::new("conversation:delete-final");
+        let actor_id = ActorId::new("human:delete-final");
+        let mut conversation = Conversation::direct(conversation_id.0.clone(), "Messages", vec![], 0);
+        conversation.last_message_id = Some("message:final".into());
+        let message = test_message(&conversation_id, "message:final", 100, None);
+        let mut state = MessagingState::default();
+        state.conversations.insert(conversation_id.clone(), conversation);
+        state.messages.entry(conversation_id.clone()).or_default().insert(message.id.clone(), message);
+        state.drafts.entry(conversation_id.clone()).or_default().insert(
+            actor_id.clone(),
+            ConversationDraft {
+                conversation_id: conversation_id.clone(),
+                actor_id,
+                text: String::new(),
+                reply_to_message_id: Some("message:final".into()),
+                updated_at_ms: 101,
+            },
+        );
+        let mut engine = MessagingEngine::from_state(state);
+        engine.apply(Event::MessagesDeleted {
+            conversation_id: conversation_id.clone(),
+            message_ids: vec![MessageId::new("message:final")],
+        });
+        assert!(engine.state().conversations[&conversation_id].last_message_id.is_none());
+        assert!(!engine.state().drafts.contains_key(&conversation_id));
     }
 }
