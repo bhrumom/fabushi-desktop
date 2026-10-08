@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 16033,
-    "unread_minimum": 15848,
+    "unread_minimum": 15842,
     "omitted_known": 0,
-    "note": "Live 22b352e recursive census is 16,120. 272 exact entries are read-complete; 87 are explicitly unknown-closed; unknown 16,033, unread 15,848, omitted 0. The deterministic recorded prefix is fully read through order 272; applicable implementation/verification gaps remain open."
+    "note": "Live 22b352e recursive census is 16,120. 278 exact entries are read-complete; 87 are explicitly unknown-closed; unknown 16,033, unread 15,842, omitted 0. The deterministic prefix is fully read through order 278."
   },
   "latest_recursive_evidence": {
     "run_id": 37596744991,
@@ -43,7 +43,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live 22b352e authority is exact for the recorded deterministic prefix. 272 full-read entries are credited; unread_minimum is 15,848, unknown remains 16,033, omitted remains 0. Orders 245-272 include exact Premium build-source/runtime chains, group-call recording illustrations, round-video/theme-preview art, ForumTopic identity art, TTL media art, and conservative consumer-open findings for mac_setup/verified assets.",
+  "note": "Live 22b352e authority is exact through order 278. Orders 273-275 decompose the external Bot WebView shell and its security/lifecycle bridge; 276-277 cover embedded Day theme/accent responsibilities; 278 covers the custom-shortcut seed and canonical shortcut manager. unknown=16,033, unread=15,842, omitted=0.",
   "rebaseline": {
     "from_commit": "6ec5014a92c4580841a043c440d65e8fc605ff78",
     "to_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db",
@@ -60,10 +60,10 @@
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
     "upstream_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db",
-    "deterministic_prefix_closed": 117,
+    "deterministic_prefix_closed": 123,
     "development_only_non_applicable": 66,
     "unknown_closed": 87,
     "omitted": 0,
-    "read_through": 272
+    "read_through": 278
   }
 }
