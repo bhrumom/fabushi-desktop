@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import {
@@ -442,4 +443,14 @@ test("assistant math cache shares renders, isolates loaders, and retries load fa
   await assert.rejects(() => cache.load(healingLoader, "y", false));
   assert.equal(await cache.load(healingLoader, "y", false), "<span>I:y</span>");
   assert.equal(attempts, 2);
+});
+
+
+test("transcript rich links remain behind the canonical URL owner", () => {
+  const source = readFileSync(new URL("./conversation/workspace/transcript.tsx", import.meta.url), "utf8");
+  assert.match(source, /openExternal\?\: TranscriptExternalLinkOpener/);
+  assert.match(source, /event\.preventDefault\(\); openExternal\(href\);/);
+  assert.match(source, /messageUrlCards\.openExternal\(url\)/);
+  assert.doesNotMatch(source, /assistant-link-[\s\S]{0,500}target="_blank"/);
+  assert.match(source, /href == null \|\| openExternal == null \? current/);
 });
