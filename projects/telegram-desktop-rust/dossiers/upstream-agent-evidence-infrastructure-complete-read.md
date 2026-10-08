@@ -393,3 +393,54 @@ Evidence/disposition: complete source read plus the blob identity above. Final c
 - full-read recursive entries: `70 -> 73`
 
 The next deterministic unread entry is `.agents/skills/dependency-watch/agents/openai.yaml`.
+
+## Entry 14 — dependency-watch interface metadata
+
+Path: `.agents/skills/dependency-watch/agents/openai.yaml`  
+Blob: `a61c118c41e3b50d6bc4bde12dc6d4c1b3756b5d`  
+Read status: complete.
+
+Responsibility: interface metadata naming Dependency Watch and its default audit prompt.
+
+Owner: development/release-evidence tooling metadata only.
+
+Production entrypoint: none.
+
+Evidence/disposition: complete source read and exact blob identity. No Fabushi product UI/runtime responsibility is derived from this metadata; final machine-readable non-applicable closure is still required before `unknown` decreases.
+
+## Entry 15 — patched-fork dependency review reference
+
+Path: `.agents/skills/dependency-watch/references/forks.md`  
+Blob: `29a7aa587ae26118a0611a2e4037a69141a3ffde`  
+Read status: complete.
+
+Responsibility: release/security evidence rules for distinguishing Telegram's pinned fork revision, the fork's current upstream, and the original project upstream; reconstructing comparable import revisions; reviewing nested gitlinks/patch sets; proving reachability of missing security fixes; and classifying each candidate as missing, already backported, not applicable, or unresolved before proposing an update/backport.
+
+Owner: development/release-evidence dependency auditing. The tg_owt/tg_angle mappings are evidence inputs, not new Fabushi product UI or runtime capabilities.
+
+Production entrypoint: none.
+
+Evidence/disposition: complete source read plus blob identity. Final machine-readable development/release-evidence disposition remains required for `unknown` closure.
+
+## Entry 16 — release trust assessment reference
+
+Path: `.agents/skills/dependency-watch/references/release-trust.md`  
+Blob: `81a68395f9ad54ed651a84464a933ed7e57c9d32`  
+Read status: complete.
+
+Responsibility: release-adoption evidence policy requiring immutable source identities, signer/attestation checks when available, regression/security review proportional to the change, explicit unknowns, and separate Update/Backport/Hold/Skip/Track decisions. It also records the XZ 5.6.0/5.6.1 incident as a scoped trust case rather than a blanket ban.
+
+Owner: development/release-evidence infrastructure only.
+
+Production entrypoint: none.
+
+Evidence/disposition: complete source read plus blob identity. It contributes release-evidence policy but does not create a shipping Fabushi UI/runtime responsibility; machine-readable closure remains pending.
+
+## Updated coverage accounting after entries 14–16
+
+- `unread: 15,739 -> 15,736`
+- `unknown: 15,812` unchanged
+- `omitted: 0` unchanged
+- full-read recursive entries: `73 -> 76`
+
+The next deterministic unread entry is `.agents/skills/dependency-watch/scripts/watch.py`.
