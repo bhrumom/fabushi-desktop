@@ -8919,7 +8919,7 @@
         "MediaRef",
         "SearchIndex",
         "MediaCache",
-        "Event::ConversationChildDestroyed"
+        "ConversationChildDestroyed"
       ],
       "target_language": "Rust",
       "language_rationale": "This is non-UI message/resource/search state and lifecycle; existing canonical Rust owners already express the target architecture.",
@@ -9133,11 +9133,12 @@
         "native/mahayana-messaging/src/engine.rs"
       ],
       "fabushi_target_symbols": [
-        "SearchIndex::index_message",
-        "SearchIndex::remove_message",
+        "SearchIndex",
+        "index_message",
+        "remove_message",
         "content_matches_scope",
         "MediaCache",
-        "Event::ConversationChildDestroyed"
+        "ConversationChildDestroyed"
       ],
       "target_language": "Rust",
       "language_rationale": "Derived index/resource lifecycle is canonical Rust state.",
