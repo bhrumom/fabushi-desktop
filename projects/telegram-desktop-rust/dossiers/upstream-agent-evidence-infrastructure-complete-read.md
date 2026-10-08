@@ -534,3 +534,42 @@ Evidence/disposition: complete source read and exact blob identity. Any adopted 
 
 The next deterministic unread entry is
 `.agents/skills/perform-task/references/phase-prompts.md`.
+
+
+## Entry 22 — perform-task phase prompt library
+
+Path: `.agents/skills/perform-task/references/phase-prompts.md`  
+Blob: `84f6d5b82d7a59223b8c1277da1b6a960f6a2f8a`  
+Read status: complete.
+
+Responsibility: define the upstream AI task performer's phase-specific orchestration and leaf-worker contracts, artifact-based completion checks, context/plan/assessment prompts, implementation/build ownership, independent general and specialist review lenses, focused re-review/convergence rules, test-flaw recovery, platform-specific normalization, and durable phase-result logging. It explicitly preserves task boundaries and rejects unsupported success, scope expansion, or missing artifacts.
+
+Owner: upstream autonomous-development workflow/prompt infrastructure. It is not a Telegram end-user product capability and must not create a Fabushi shipping runtime/UI owner.
+
+Production entrypoint: none.
+
+Evidence/disposition: complete source read plus exact blob identity. Equivalent engineering practices, where adopted, belong to canonical Fabushi CI/review/release evidence; explicit machine-readable non-applicable/development-infrastructure closure is still required before unknown can decrease.
+
+## Entry 23 — perform-task authoritative pipeline
+
+Path: `.agents/skills/perform-task/references/pipeline.md`  
+Blob: `0f2e9fd94365321053453dd80ac3d585f4baf498`  
+Read status: complete.
+
+Responsibility: specify the end-to-end state machine for one upstream AI development task, including exact workspace/task ownership, source-lineage and task-base refs, bounded implementation attempts, build verification, complete-diff review plus independent lenses, evidence-design and adaptive test campaigns, exact-path overlay/process/account safety, platform-specific evidence handling, clean/buildable final-state requirements, split-required and blocked publication semantics, and canonical task-state publication without false approval.
+
+Owner: upstream development task execution/review/test/publication infrastructure. It does not define a shipping Telegram product surface and must not be mirrored into Fabushi ProductShell, Host, Coordinator, updater runtime, or UI.
+
+Production entrypoint: none. Its only entrypoints are development/test/release workflow operations.
+
+Evidence/disposition: complete source read and exact blob identity. Applicable quality properties map to existing Fabushi GitHub Actions/E2E/release-acceptance owners; final machine-readable closure is still required, so unknown is unchanged.
+
+## Updated coverage accounting after entries 22–23
+
+- `unread: 15,731 -> 15,729`
+- `unknown: 15,812` unchanged
+- `omitted: 0` unchanged
+- full-read recursive entries: `81 -> 83`
+
+The next deterministic unread entry is
+`.agents/skills/process-inbox/SKILL.md`.
