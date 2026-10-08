@@ -105,10 +105,10 @@ These rows are additive to the AC coverage plan. A row at `IMPLEMENTED` is not a
 ### TDRP-R9-IV-ARTICLE-TEXT-LINK-001 oracle
 
 - `ORA-TDRP-IV-ARTICLE-TEXT-001`: typed rich-text links keep open target, copy payload and contextual label distinct while remaining derived from canonical transcript content and the shipping desktop external-open boundary.
-- `INV-TDRP-IV-LINK-TYPED-001`: HTTP(S) and Email may project as external actions, but unsupported script/file/relative targets cannot silently acquire external-open authority. Mailto query data is not copied as the email address; decoded address text is exposed through the existing message-menu `Copy Email` affordance.
+- `INV-TDRP-IV-LINK-TYPED-001`: HTTP(S) and Email may project as external actions, but unsupported script/file/relative targets cannot silently acquire external-open authority. Mailto query data is not copied as the email address; decoded address text is exposed through the existing message-menu `Copy Email` affordance. Partial/custom rendered labels disclose the canonical target only when label and target are not equivalent, while bare targets avoid redundant tooltip text.
 - Current bounded case: `CONTRACT-TDRP-IV-PREPARED-LINK-EXTERNAL-COPY-001`, with the shipping external-open path continuing through `INT-TDRP-FABUSHI-ACCOUNT-EXTERNAL-OPEN-001`.
 - Dossier: `projects/telegram-desktop-rust/dossiers/iv-markdown-article-text-complete-read.md`.
-- Current verdict: `MAPPED`; External/Email projection is implemented, while exact-head execution, CustomUrl tooltip/display, Anchor, footnote/backlink, LocalFile, rejected-relative/toggle/RichPageButton semantics and packaged interaction evidence remain pending.
+- Current verdict: `MAPPED`; External/Email projection plus partial/custom-label target disclosure is implemented, while exact-head execution, broader CustomUrl/InstantView entity-shape coverage, Anchor, footnote/backlink, LocalFile, rejected-relative/toggle/RichPageButton semantics and packaged interaction evidence remain pending.
 
 ### TDRP-R9-IV-ARTICLE-CONTRACT-001 oracle
 
