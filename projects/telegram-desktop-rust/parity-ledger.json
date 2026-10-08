@@ -4074,11 +4074,12 @@
       ],
       "fabushi_target_symbols": [
         "SandButton",
-        "WidgetOptionAction",
         "normalizeLinkUrl",
         "projectRichMessageActionAffordance",
         "projectTranscriptInlineCopyTarget",
-        "WidgetChoice"
+        "WidgetChoice",
+        "RichMessageAction",
+        "projectRichMessageAction"
       ],
       "command_event_contracts": [
         "Transcript button action -> existing typed action/native boundary",
