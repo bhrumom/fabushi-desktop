@@ -908,6 +908,126 @@ jobs:
             printf '%s\n' "accepted_upstream=$upstream_sha"
             git -C "$work" grep -n -E 'large_(away|lockedchat|messages|quickreply)|live_location_long|markup_webview|new_(thread|topic)|paid_(approve|decline|edit)|reply_type_(channel|group|user)|summary_(arrows|stars)|text_to_file|voice_to_text' -- Telegram/SourceFiles || true
           } > artifacts/tdrp-authority/source-consumer-trace-601-700.txt
+          printf '%s\n' "accepted_upstream=$upstream_sha" > artifacts/tdrp-authority/source-binary-evidence-701-800.txt
+          while IFS='|' read -r order path expected_blob; do
+            actual_blob="$(git -C "$work" hash-object "$path")"
+            test "$actual_blob" = "$expected_blob"
+            size="$(wc -c < "$work/$path" | tr -d '[:space:]')"
+            kind="$(file -b "$work/$path")"
+            printf '%s|%s|%s|%s|%s\n' "$order" "$path" "$actual_blob" "$size" "$kind" >> artifacts/tdrp-authority/source-binary-evidence-701-800.txt
+          done <<'EOF'
+701|Telegram/Resources/icons/chat/voice_to_text_collapse.png|752f8be2fe586084ec7603eb6b350fde6bdaaf80
+702|Telegram/Resources/icons/chat/voice_to_text_collapse@2x.png|da161b7338abc86fd51d5136f9067dbf53c37205
+703|Telegram/Resources/icons/chat/voice_to_text_collapse@3x.png|204ffcbac71506127d6a373b1c055f0438a66038
+704|Telegram/Resources/icons/color_slider_arrow.png|f874974a3b871b86f1ca83b6b7a44f329f6de3c7
+705|Telegram/Resources/icons/color_slider_arrow@2x.png|cf8a23dc7b7b2a90c653963b1fcf3746ba0a8ba5
+706|Telegram/Resources/icons/color_slider_arrow@3x.png|a138e9575eb892b6f1871efefa06c3938aede643
+707|Telegram/Resources/icons/color_slider_arrow_vertical.png|1de79ef0887fe74c6b2f75487f861a05198616f3
+708|Telegram/Resources/icons/color_slider_arrow_vertical@2x.png|001b70d184c0f336d6be7176e864588c7a4be122
+709|Telegram/Resources/icons/color_slider_arrow_vertical@3x.png|709206ef51c33ed8d10d6a0c78987b6357013ea1
+710|Telegram/Resources/icons/community/requests_hidden.svg|3ff470ba87159161169fe43b82932110c82f72f5
+711|Telegram/Resources/icons/community/requests_members.svg|3bda14e0599a5157413460c9ceded2a4fa6bf68f
+712|Telegram/Resources/icons/connecting_body.png|293c1e8d20599c74ba2517cb07c11546c90870d6
+713|Telegram/Resources/icons/connecting_body@2x.png|d5a9ac629bb74ee7b41027b6ea467909d1271c1e
+714|Telegram/Resources/icons/connecting_body@3x.png|7131bf7411704c1fbae4f6de1b21f58493fa9964
+715|Telegram/Resources/icons/connecting_body_shadow.png|713f78630eace05b448b57d3aab823e461e37cbb
+716|Telegram/Resources/icons/connecting_body_shadow@2x.png|7cc19ea5c131714d3cc3e3f51c7d3bceb74032c1
+717|Telegram/Resources/icons/connecting_body_shadow@3x.png|b5e7dbee0e92f117b7c385ef71217a0086199dcf
+718|Telegram/Resources/icons/connecting_left.png|a292c9bace2450dbd606cfa3baae3e5a74c375d2
+719|Telegram/Resources/icons/connecting_left@2x.png|d1d8e5e508d14978764a1c3e307e1fbfe5a1ccaf
+720|Telegram/Resources/icons/connecting_left@3x.png|a2e7964d68f9cc1b79e96bbf5459e4f9eb5ea97e
+721|Telegram/Resources/icons/connecting_left_shadow.png|521df42c7b181022f7c2ca4cc82ede3118531389
+722|Telegram/Resources/icons/connecting_left_shadow@2x.png|d6fa4c87e6bd131313a4d7d98f0a2fd0b9557f47
+723|Telegram/Resources/icons/connecting_left_shadow@3x.png|19151f98f71409c3add044f7267945408b314129
+724|Telegram/Resources/icons/connecting_right.png|a57b9a55940c24cd816839ea80ff1a0676827b0c
+725|Telegram/Resources/icons/connecting_right@2x.png|f38785766913b9057c9651d2d213192890697b0f
+726|Telegram/Resources/icons/connecting_right@3x.png|cb40c007c10b04070fd1959cbff48d539207f729
+727|Telegram/Resources/icons/connecting_right_shadow.png|e5738cbb40fec842819fcaf9ddb55a5742390608
+728|Telegram/Resources/icons/connecting_right_shadow@2x.png|efc009fec3d69e9573ef76cb00d9c87a2d0c5412
+729|Telegram/Resources/icons/connecting_right_shadow@3x.png|e4a43e6793e131d3a52d757f0f432b84a2f49ad1
+730|Telegram/Resources/icons/contacts_alphabet.png|0e7e3c44ab7fc617f1e10f63baf823c387617c56
+731|Telegram/Resources/icons/contacts_alphabet@2x.png|8b81881f38a710d01d5167ad265b9e35af7ded12
+732|Telegram/Resources/icons/contacts_alphabet@3x.png|930728caadbadd3927bf7c0edd417e378a90a3be
+733|Telegram/Resources/icons/contacts_online.png|86079b2b7f1982e214a7266cffd549ec11729de9
+734|Telegram/Resources/icons/contacts_online@2x.png|e059f3e9dc772d05b1688bee9e5dfcc2b311872b
+735|Telegram/Resources/icons/contacts_online@3x.png|ed58ef9f00ffeb94263233590ef22e07aed3b844
+736|Telegram/Resources/icons/dialogs/avatar_hidden.png|e032148c8ad27daa74cf34e8a36426fde980e569
+737|Telegram/Resources/icons/dialogs/avatar_hidden@2x.png|ef143054e1659b1b3f36a5573a3eda115f1b8ee3
+738|Telegram/Resources/icons/dialogs/avatar_hidden@3x.png|f6ef6b733b92c3d03febd6e582f0ed83919f97f4
+739|Telegram/Resources/icons/dialogs/avatar_notes.png|740d389103c94030286c9b255737ee4a125ae381
+740|Telegram/Resources/icons/dialogs/avatar_notes@2x.png|98dc7c89cfd385ca6b5f66116761e014afe93e10
+741|Telegram/Resources/icons/dialogs/avatar_notes@3x.png|735961bd9030bb3f1358d1c19008fa60f37489e3
+742|Telegram/Resources/icons/dialogs/dialogs_bot.png|1cc7b96f58cbcd19b51172c0920cd5c26f86f697
+743|Telegram/Resources/icons/dialogs/dialogs_bot@2x.png|72c543fe5417eb17ef96b5678bac48726593623e
+744|Telegram/Resources/icons/dialogs/dialogs_bot@3x.png|df065a3d3fe72501557de380b2228b5eb1705f62
+745|Telegram/Resources/icons/dialogs/dialogs_calendar.png|5114466a1d5714bc3f1f903978db75ad8d543f56
+746|Telegram/Resources/icons/dialogs/dialogs_calendar@2x.png|4e9c9468193a652a0ecdae6a8fd4a1e73c8d6909
+747|Telegram/Resources/icons/dialogs/dialogs_calendar@3x.png|de54df8012a1d5146ac72ea4d512e3daaf7f5235
+748|Telegram/Resources/icons/dialogs/dialogs_cancel_search.png|c52c80cd75383dec8dd05fa7335f0c3a5110babb
+749|Telegram/Resources/icons/dialogs/dialogs_cancel_search@2x.png|7557a51cae2d7be7cb1b6ee9227ce899112dafc1
+750|Telegram/Resources/icons/dialogs/dialogs_cancel_search@3x.png|4a2a700ccf4ce01389c7526ede697e57eb457a68
+751|Telegram/Resources/icons/dialogs/dialogs_channel.png|4bebdc3590c51790e0a00d5eab8b06a04a244dbc
+752|Telegram/Resources/icons/dialogs/dialogs_channel@2x.png|32476163cd7ba209149c9ccf47abe42d988dab47
+753|Telegram/Resources/icons/dialogs/dialogs_channel@3x.png|995afdc0cc9ae09e6a3a4212b4ac86ba1d0a5321
+754|Telegram/Resources/icons/dialogs/dialogs_chat.png|733b510a1cfe4b587cd99962783359d81e298886
+755|Telegram/Resources/icons/dialogs/dialogs_chat@2x.png|9541c39632c35f06d87e79f135aaf977dfebd723
+756|Telegram/Resources/icons/dialogs/dialogs_chat@3x.png|7ab5802ed592b34c1f55d4e917c3bfd1235df719
+757|Telegram/Resources/icons/dialogs/dialogs_chatlist_call_incoming.svg|9ad2396ee1b9cb6b636ea7cefa04f88a29f6bf91
+758|Telegram/Resources/icons/dialogs/dialogs_chatlist_call_outgoing.svg|f14e02d9a9e394e32a662a8617ad9a0c74e64cdc
+759|Telegram/Resources/icons/dialogs/dialogs_chatlist_mention.svg|7eaf976ae69e7b17d236162c182db73f5a5291d5
+760|Telegram/Resources/icons/dialogs/dialogs_chatlist_poll.svg|95226d86f3a72635d9b8d05b990e901a449a863e
+761|Telegram/Resources/icons/dialogs/dialogs_chatlist_reaction.svg|901a7a9825dd5920c8d969529caeb4fd378b9a1d
+762|Telegram/Resources/icons/dialogs/dialogs_chatlist_video_call_incoming.svg|8054846c3bf1cd315a7d65d90fa3ea0375bd2546
+763|Telegram/Resources/icons/dialogs/dialogs_chatlist_video_call_outgoing.svg|ed65b228caf49114a3f88b165d36aaec5f3951d1
+764|Telegram/Resources/icons/dialogs/dialogs_downloads.png|fd23ff3c81582f44dfbaddef5e4ad4b39cccfc55
+765|Telegram/Resources/icons/dialogs/dialogs_downloads@2x.png|e52d981fcf165bc037e6b783f5949e00d959664e
+766|Telegram/Resources/icons/dialogs/dialogs_downloads@3x.png|24b4d8af1da42a25e155698bdfe5afb543d24e63
+767|Telegram/Resources/icons/dialogs/dialogs_forum.png|3b589bf06f0657eb19325c7ffbbc651dcf98af38
+768|Telegram/Resources/icons/dialogs/dialogs_forum@2x.png|e0b170f748ca0b12caee2e338b642a0d0da84313
+769|Telegram/Resources/icons/dialogs/dialogs_forum@3x.png|43cf0b718af4c3862bd4c61326680bc574851f71
+770|Telegram/Resources/icons/dialogs/dialogs_lock_off.png|2459e11373947bac31650a2acdc80cd38c85aebf
+771|Telegram/Resources/icons/dialogs/dialogs_lock_off@2x.png|33b77eb3fa06701d9ae8fef05941249fb820001f
+772|Telegram/Resources/icons/dialogs/dialogs_lock_off@3x.png|7653aa43105e854c1ab445eac2b0d15039750021
+773|Telegram/Resources/icons/dialogs/dialogs_lock_on.png|8209991f3dacb1838126588c14e08b1bd481d120
+774|Telegram/Resources/icons/dialogs/dialogs_lock_on@2x.png|c4e3d6b2532b70644477c6aa11ae93e3c4f872e1
+775|Telegram/Resources/icons/dialogs/dialogs_lock_on@3x.png|67c7d7c71763a280ed477ec333ff05b99937072a
+776|Telegram/Resources/icons/dialogs/dialogs_mention.png|3b2937241f9b93618b39d8ada3d7ffc0118c5a86
+777|Telegram/Resources/icons/dialogs/dialogs_mention@2x.png|6f11148a89cbd74531fa52f1b45e3703f1e17114
+778|Telegram/Resources/icons/dialogs/dialogs_mention@3x.png|dc1ea2e710e47496f19ddd1ad1d9631137b8c5d1
+779|Telegram/Resources/icons/dialogs/dialogs_menu.png|869a9026cc0f8b577360ec52ccfbfd032b082373
+780|Telegram/Resources/icons/dialogs/dialogs_menu@2x.png|c6146dbc33e2a1b6624cd16b29128e5a53cc23b7
+781|Telegram/Resources/icons/dialogs/dialogs_menu@3x.png|ab4ee2319c8b8886607448a0885991e852facc3a
+782|Telegram/Resources/icons/dialogs/dialogs_menu_unread.png|159d06953eea26608b3dd81fb0e9620d4cee346c
+783|Telegram/Resources/icons/dialogs/dialogs_menu_unread@2x.png|f483f3caacf32e4960b69457665331e9ac189760
+784|Telegram/Resources/icons/dialogs/dialogs_menu_unread@3x.png|d6879e8c946acf2ea5c12f3b2b1cf7d6a8f66338
+785|Telegram/Resources/icons/dialogs/dialogs_menu_unread_dot.png|171bc48022aabed3a32ca161961bc30c69147bf7
+786|Telegram/Resources/icons/dialogs/dialogs_menu_unread_dot@2x.png|c1182f2cee3bb28d62cc40c92c954977721912a4
+787|Telegram/Resources/icons/dialogs/dialogs_menu_unread_dot@3x.png|9a33ddf96e3ed275cb694abc868971b3b606b4c4
+788|Telegram/Resources/icons/dialogs/dialogs_mini_play.png|55aa117fb786e60de6355034e5f1e7a423c3542d
+789|Telegram/Resources/icons/dialogs/dialogs_mini_play@2x.png|06bda3c64bfc708e831551e5e7b099bb404fbb5e
+790|Telegram/Resources/icons/dialogs/dialogs_mini_play@3x.png|eea0894ceb4583794670705fcff9345956c12db1
+791|Telegram/Resources/icons/dialogs/dialogs_mute.png|3b37e1172dbf7af5b1d5c4c77a7c572911d04e72
+792|Telegram/Resources/icons/dialogs/dialogs_mute@2x.png|96681eb66f571f9946a535d1ed2fc112955cf334
+793|Telegram/Resources/icons/dialogs/dialogs_mute@3x.png|a246b7e6a5c0234034e0d4bb903bdbec36fa3ea8
+794|Telegram/Resources/icons/dialogs/dialogs_pinned.png|c4a328921cdec9f1e2cd4cf49e5ab3769639dbcf
+795|Telegram/Resources/icons/dialogs/dialogs_pinned@2x.png|9a71788846630cda45296d1f9a91d67b57c3da69
+796|Telegram/Resources/icons/dialogs/dialogs_pinned@3x.png|f37f4d6970a85d64ad6f9b455ec2f202e4ced78c
+797|Telegram/Resources/icons/dialogs/dialogs_pinned_shadow.png|19f8e0b158d6312eae7f165313329d23b4648e2a
+798|Telegram/Resources/icons/dialogs/dialogs_pinned_shadow@2x.png|ac695b71d3dc4ce95e688e0854fcd44d68b8a600
+799|Telegram/Resources/icons/dialogs/dialogs_pinned_shadow@3x.png|b05f0f35f9ef59e9ae309f7f7a17e9bb53b14b63
+800|Telegram/Resources/icons/dialogs/dialogs_premium.png|199597443f6d782a06b85a6e5ab661c87d98a085
+          EOF
+          {
+            printf '%s\n' "accepted_upstream=$upstream_sha"
+            for symbol in voice_to_text_collapse color_slider_arrow color_slider_arrow_vertical requests_hidden requests_members connecting_body connecting_body_shadow connecting_left connecting_left_shadow connecting_right connecting_right_shadow contacts_alphabet contacts_online avatar_hidden avatar_notes dialogs_bot dialogs_calendar dialogs_cancel_search dialogs_channel dialogs_chat dialogs_chatlist_call_incoming dialogs_chatlist_call_outgoing dialogs_chatlist_mention dialogs_chatlist_poll dialogs_chatlist_reaction dialogs_chatlist_video_call_incoming dialogs_chatlist_video_call_outgoing dialogs_downloads dialogs_forum dialogs_lock_off dialogs_lock_on dialogs_mention dialogs_menu dialogs_menu_unread dialogs_menu_unread_dot dialogs_mini_play dialogs_mute dialogs_pinned dialogs_pinned_shadow dialogs_premium; do
+              printf 'symbol=%s\n' "$symbol"
+              git -C "$work" grep -n -F "$symbol" -- Telegram/SourceFiles Telegram/Resources ':!Telegram/Resources/icons/chat/' ':!Telegram/Resources/icons/community/' ':!Telegram/Resources/icons/dialogs/' ':!Telegram/Resources/icons/color_slider_arrow.png' ':!Telegram/Resources/icons/color_slider_arrow@2x.png' ':!Telegram/Resources/icons/color_slider_arrow@3x.png' ':!Telegram/Resources/icons/color_slider_arrow_vertical.png' ':!Telegram/Resources/icons/color_slider_arrow_vertical@2x.png' ':!Telegram/Resources/icons/color_slider_arrow_vertical@3x.png' ':!Telegram/Resources/icons/connecting_body.png' ':!Telegram/Resources/icons/connecting_body@2x.png' ':!Telegram/Resources/icons/connecting_body@3x.png' ':!Telegram/Resources/icons/connecting_body_shadow.png' ':!Telegram/Resources/icons/connecting_body_shadow@2x.png' ':!Telegram/Resources/icons/connecting_body_shadow@3x.png' ':!Telegram/Resources/icons/connecting_left.png' ':!Telegram/Resources/icons/connecting_left@2x.png' ':!Telegram/Resources/icons/connecting_left@3x.png' ':!Telegram/Resources/icons/connecting_left_shadow.png' ':!Telegram/Resources/icons/connecting_left_shadow@2x.png' ':!Telegram/Resources/icons/connecting_left_shadow@3x.png' ':!Telegram/Resources/icons/connecting_right.png' ':!Telegram/Resources/icons/connecting_right@2x.png' ':!Telegram/Resources/icons/connecting_right@3x.png' ':!Telegram/Resources/icons/connecting_right_shadow.png' ':!Telegram/Resources/icons/connecting_right_shadow@2x.png' ':!Telegram/Resources/icons/connecting_right_shadow@3x.png' ':!Telegram/Resources/icons/contacts_alphabet.png' ':!Telegram/Resources/icons/contacts_alphabet@2x.png' ':!Telegram/Resources/icons/contacts_alphabet@3x.png' ':!Telegram/Resources/icons/contacts_online.png' ':!Telegram/Resources/icons/contacts_online@2x.png' ':!Telegram/Resources/icons/contacts_online@3x.png' || true
+            done
+          } > artifacts/tdrp-authority/source-consumer-reachability-701-800.txt
+          {
+            printf '%s\n' "accepted_upstream=$upstream_sha"
+            git -C "$work" grep -n -E 'voice_to_text_collapse|color_slider_arrow|requests_(hidden|members)|connecting_(body|left|right)|contacts_(alphabet|online)|avatar_(hidden|notes)|dialogs_(bot|calendar|cancel_search|channel|chat|chatlist_|downloads|forum|lock_|mention|menu|mini_play|mute|pinned|premium)' -- Telegram/SourceFiles || true
+          } > artifacts/tdrp-authority/source-consumer-trace-701-800.txt
           {
             printf '%s\n' "accepted_upstream=$upstream_sha"
             for symbol in input_liked input_record input_record_filled input_video; do
