@@ -1,5 +1,5 @@
 import { getSchema, type JSONContent } from "@tiptap/core";
-import { normalizeLinkUrl } from "../cards/transcript-card/url-card";
+import { normalizeLinkUrl, projectTranscriptExternalLink } from "../cards/transcript-card/url-card";
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import "./transcript-utility-parity.css";
@@ -14,7 +14,7 @@ import { TranscriptNoticeCard } from "../cards/notice/view";
 import { TranscriptCardRootEntry } from "../cards/transcript-card/root";
 import { TimelineEventRootEntry } from "../cards/timeline-event-resolver";
 import type { TranscriptCardRootMountContract } from "../cards/transcript-card/mount-contract";
-import { TranscriptCardInteractionProvider, type TranscriptCardInteractionContext, type TranscriptMessageReactionSlotProps, type RenderTranscriptMessageReactionActions } from "../cards/transcript-card/message-actions";
+import { TranscriptCardInteractionProvider, projectTranscriptInlineCopyTarget, type TranscriptCardInteractionContext, type TranscriptInlineCopyProjection, type TranscriptMessageReactionSlotProps, type RenderTranscriptMessageReactionActions } from "../cards/transcript-card/message-actions";
 import { projectTranscriptAdjacency } from "./transcript-adjacency";
 import type { LocalToolPermissionStore } from "../../permissions/local-tool/store";
 import type { ResolveLocalToolPermissionInput } from "../../permissions/local-tool/view";
@@ -166,12 +166,17 @@ function MessageActionAnchor({ entry, isReadOnly, threadRootId, threadSummary, o
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [reactionMenuOpen, setReactionMenuOpen] = useState(false);
+  const [inlineCopy, setInlineCopy] = useState<TranscriptInlineCopyProjection | null>(null);
   const reactionActions = renderReactionActions?.((open) => {
     setReactionMenuOpen(open);
-    if (open) setMenuOpen(false);
+    if (open) {
+      setMenuOpen(false);
+      setInlineCopy(null);
+    }
   });
   const closeMenu = (restoreFocus: boolean) => {
     setMenuOpen(false);
+    setInlineCopy(null);
     if (restoreFocus) triggerRef.current?.focus();
   };
 
@@ -195,7 +200,13 @@ function MessageActionAnchor({ entry, isReadOnly, threadRootId, threadSummary, o
   }, [menuOpen]);
 
   const copy = () => {
+    const projection = inlineCopy;
     closeMenu(true);
+    if (projection != null) {
+      if (typeof navigator === "undefined" || navigator.clipboard == null) return;
+      void navigator.clipboard.writeText(projection.text).catch(() => undefined);
+      return;
+    }
     if (entry.sendMessageText?.streaming === true && entry.sendMessageText.message.content.length === 0) return;
     if (onCopy != null) {
       void Promise.resolve(onCopy(entry)).catch(() => undefined);
@@ -207,8 +218,10 @@ function MessageActionAnchor({ entry, isReadOnly, threadRootId, threadSummary, o
       ref={anchorRef}
       className={menuOpen || reactionMenuOpen ? "sand-message-action-anchor sand-message-action-anchor--menu-open" : "sand-message-action-anchor"}
       onContextMenu={(event) => {
-        if (isMessageContextTargetExcluded(event.target)) return;
+        const projectedInlineCopy = projectTranscriptInlineCopyTarget(event.target);
+        if (projectedInlineCopy == null && isMessageContextTargetExcluded(event.target)) return;
         event.preventDefault();
+        setInlineCopy(projectedInlineCopy);
         setReactionMenuOpen(false);
         setMenuOpen(true);
       }}
@@ -218,7 +231,7 @@ function MessageActionAnchor({ entry, isReadOnly, threadRootId, threadSummary, o
       <div aria-label={messageActionLabel(entry)} className="sand-message-hover-actions" role="toolbar">
         {reactionActions}
         {!isReadOnly && isThreadActionVisible && onReply != null ? <button aria-label={replyActionLabel(entry)} className="sand-message-hover-actions__button" onClick={() => onReply(entry)} type="button"><span aria-hidden="true" data-icon-name={replyActionIconName(entry)} /></button> : null}
-        <button aria-expanded={menuOpen} aria-haspopup="menu" aria-label="More message actions" className="sand-message-hover-actions__button" onClick={() => { setReactionMenuOpen(false); setMenuOpen((open) => !open); }} ref={triggerRef} type="button">
+        <button aria-expanded={menuOpen} aria-haspopup="menu" aria-label="More message actions" className="sand-message-hover-actions__button" onClick={() => { setInlineCopy(null); setReactionMenuOpen(false); setMenuOpen((open) => !open); }} ref={triggerRef} type="button">
           <span aria-hidden="true" data-icon-name="dots-3-horizontal" style={{ fontFamily: "cursor-icons" }}>{String.fromCodePoint(messageActionIconCodePoint("dots-3-horizontal"))}</span>
         </button>
         {menuOpen ? <div aria-label="More message actions" role="menu" style={{ position: "absolute", right: 0, bottom: "34px", display: "grid", minWidth: "150px", padding: "4px", background: "#20231f", border: "1px solid #343832", borderRadius: "8px", boxShadow: "0 12px 28px rgba(0, 0, 0, .35)" }}>
@@ -226,7 +239,7 @@ function MessageActionAnchor({ entry, isReadOnly, threadRootId, threadSummary, o
           {!isReadOnly && isThreadActionVisible && onStartThread != null ? <button className="sand-message-hover-actions__button" onClick={() => { onStartThread(entry); closeMenu(true); }} role="menuitem" style={{ width: "100%", border: 0, borderRadius: "5px", textAlign: "left" }} type="button"><span aria-hidden="true" data-icon-name="chat-bubbles" />Start a thread</button> : null}
           {/* @evidence recovered/frontend/app/assets/index-UbX-y3il.js#byteOffset=6395536 (immutable Copy item is conditional on injected onCopy; UTF-8; SHA256 80464803b50f478598080bdc1b91da3996c6b74168e2351ea26f620f2ec62ba5) */}
           {!isReadOnly && onForward != null ? <button className="sand-message-hover-actions__button" onClick={() => { onForward(entry); closeMenu(false); }} role="menuitem" style={{ width: "100%", border: 0, borderRadius: "5px", textAlign: "left" }} type="button"><span aria-hidden="true" data-icon-name="arrow-u-up-right" />Forward</button> : null}
-          {onCopy == null ? null : <button className="sand-message-hover-actions__button" onClick={copy} role="menuitem" style={{ width: "100%", border: 0, borderRadius: "5px", textAlign: "left" }} type="button"><span aria-hidden="true" data-icon-name="copy" style={{ fontFamily: "cursor-icons" }}>{String.fromCodePoint(messageActionIconCodePoint("copy"))}</span>Copy</button>}
+          {inlineCopy == null && onCopy == null ? null : <button className="sand-message-hover-actions__button" onClick={copy} role="menuitem" style={{ width: "100%", border: 0, borderRadius: "5px", textAlign: "left" }} type="button"><span aria-hidden="true" data-icon-name="copy" style={{ fontFamily: "cursor-icons" }}>{String.fromCodePoint(messageActionIconCodePoint("copy"))}</span>{inlineCopy?.label ?? "Copy"}</button>}
         </div> : null}
       </div>
     </div>
@@ -295,7 +308,7 @@ function RetainedHorizontalScrollRegion({ children, className, label, ownerId, r
 
 function renderAssistantInlineText(text: string, openExternal?: TranscriptExternalLinkOpener): ReactNode[] {
   const nodes: ReactNode[] = [];
-  const assistantInlinePattern = /\\\(([^\\\n]*?)\\\)|\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s<>"']+)|(\*\*|__)(?=\S)([^\n]*?\S)\5|(\*|_)(?=\S)([^\n]*?\S)\7|~~(?=\S)([^\n]*?\S)~~|`([^`\n]+)`/giu;
+  const assistantInlinePattern = /\\\(([^\\\n]*?)\\\)|\[([^\]\n]+)\]\(((?:https?:\/\/|mailto:)[^\s)]+)\)|(https?:\/\/[^\s<>"']+)|(\*\*|__)(?=\S)([^\n]*?\S)\5|(\*|_)(?=\S)([^\n]*?\S)\7|~~(?=\S)([^\n]*?\S)~~|`([^`\n]+)`/giu;
   let cursor = 0;
   let match: RegExpExecArray | null;
   while ((match = assistantInlinePattern.exec(text)) != null) {
@@ -316,12 +329,13 @@ function renderAssistantInlineText(text: string, openExternal?: TranscriptExtern
       } else {
         const trailing = markdownLabel == null ? rawUrl.match(/[),.!?;:\]}]+$/u)?.[0] ?? "" : "";
         const href = rawUrl.slice(0, rawUrl.length - trailing.length);
-        if (!isHttpUrl(href)) {
+        const external = projectTranscriptExternalLink(href);
+        if (external == null) {
           nodes.push(match[0]);
         } else {
           nodes.push(openExternal == null
-            ? (markdownLabel ?? href)
-            : <a className="sand-l1v4ol sand-krqix3 sand-1sur9pj" href={href} key={`assistant-link-${match.index}`} onClick={(event) => { event.preventDefault(); if (!transcriptSelectionBlocksActivation()) openExternal(href); }} rel="noopener noreferrer">{markdownLabel ?? href}</a>);
+            ? (markdownLabel ?? external.copyText)
+            : <a className="sand-l1v4ol sand-krqix3 sand-1sur9pj" data-transcript-copy-label={external.copyLabel} data-transcript-copy-text={external.copyText} href={external.href} key={`assistant-link-${match.index}`} onClick={(event) => { event.preventDefault(); if (!transcriptSelectionBlocksActivation()) openExternal(external.href); }} rel="noopener noreferrer">{markdownLabel ?? external.copyText}</a>);
           if (trailing.length > 0) nodes.push(trailing);
         }
       }
@@ -597,8 +611,8 @@ function applyRichTextMarks(node: ProseMirrorNode, content: ReactNode, openExter
       case "underline": return <u key={key}>{current}</u>;
       case "code": return <code key={key}>{current}</code>;
       case "link": {
-        const href = normalizeLinkUrl(mark.attrs.href);
-        return href == null || openExternal == null ? current : <a href={href} key={key} onClick={(event) => { event.preventDefault(); if (!transcriptSelectionBlocksActivation()) openExternal(href); }}>{current}</a>;
+        const external = projectTranscriptExternalLink(mark.attrs.href);
+        return external == null || openExternal == null ? current : <a data-transcript-copy-label={external.copyLabel} data-transcript-copy-text={external.copyText} href={external.href} key={key} onClick={(event) => { event.preventDefault(); if (!transcriptSelectionBlocksActivation()) openExternal(external.href); }}>{current}</a>;
       }
       default: return current;
     }
