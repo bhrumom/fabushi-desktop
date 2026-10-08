@@ -1,5 +1,5 @@
 import type { ToolResultCardSnapshot } from "../tool-results/model";
-import { formatTranscriptToolCallName } from "./tool-call-label";
+import { formatTranscriptToolCallName } from "./tool-call-label.ts";
 
 export type FindableTranscriptEntry =
   | {

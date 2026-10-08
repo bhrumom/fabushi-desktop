@@ -313,6 +313,7 @@ test("CONTRACT-TDRP-IV-ARTICLE-HIDDEN-REVEAL-001 find navigation expands hidden 
   assert.match(controllerSource, /entry\.kind === "thinking"/);
   assert.match(controllerSource, /entry\.kind === "tool-call"/);
   assert.match(controllerSource, /toolResultSearchText\(toolCall\.toolResult\)/);
+  assert.match(controllerSource, /from "\.\/tool-call-label\.ts"/);
 });
 
 test("routine history formats status and relative/zoned timestamps", () => {
