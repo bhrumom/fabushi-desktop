@@ -3687,6 +3687,37 @@ impl MessagingEngine {
                     {
                         conversation.pinned_message_ids.retain(|pinned| pinned != &id.0);
                     }
+                    // A retired message must not remain the selected reply
+                    // target of an actor's parent or topic composer. Preserve
+                    // text and unrelated targets; remove now-empty legacy
+                    // draft projections, exactly as DraftChanged does. The
+                    // authoritative child state is reconciled above.
+                    if let Some(by_actor) = self.state.drafts.get_mut(&conversation_id) {
+                        by_actor.retain(|_, draft| {
+                            if draft.reply_to_message_id.as_deref() == Some(id.0.as_str()) {
+                                draft.reply_to_message_id = None;
+                            }
+                            !draft.text.trim().is_empty() || draft.reply_to_message_id.is_some()
+                        });
+                        if by_actor.is_empty() {
+                            self.state.drafts.remove(&conversation_id);
+                        }
+                    }
+                    if let Some(by_actor) = self.state.topic_drafts.get_mut(&conversation_id) {
+                        by_actor.retain(|_, by_topic| {
+                            by_topic.retain(|_, draft| {
+                                if draft.reply_to_message_id.as_deref() == Some(id.0.as_str()) {
+                                    draft.reply_to_message_id = None;
+                                }
+                                !draft.text.trim().is_empty()
+                                    || draft.reply_to_message_id.is_some()
+                            });
+                            !by_topic.is_empty()
+                        });
+                        if by_actor.is_empty() {
+                            self.state.topic_drafts.remove(&conversation_id);
+                        }
+                    }
                     let remove_poll_bucket = self
                         .state
                         .poll_votes
@@ -4338,6 +4369,136 @@ mod recent_open_history_tests {
                 .get(&parent)
                 .and_then(|messages| messages.get(&message_id))
                 .is_some_and(|message| message.deleted)
+        );
+    }
+
+    #[test]
+    fn deleted_message_clears_legacy_reply_targets_without_erasing_draft_text_or_other_scopes() {
+        let parent = ConversationId::new("conversation:history-parent");
+        let other = ConversationId::new("conversation:history-other");
+        let deleted = MessageId::new("message:history-deleted");
+        let surviving = MessageId::new("message:history-surviving");
+        let author = ActorId::new("human:history-author");
+        let secondary = ActorId::new("human:history-secondary");
+        let mut state = MessagingState::default();
+
+        state.drafts.insert(
+            parent.clone(),
+            BTreeMap::from([
+                (
+                    author.clone(),
+                    ConversationDraft {
+                        conversation_id: parent.clone(),
+                        actor_id: author.clone(),
+                        text: "keep this draft".into(),
+                        reply_to_message_id: Some(deleted.0.clone()),
+                        updated_at_ms: 20,
+                    },
+                ),
+                (
+                    secondary.clone(),
+                    ConversationDraft {
+                        conversation_id: parent.clone(),
+                        actor_id: secondary.clone(),
+                        text: "".into(),
+                        reply_to_message_id: Some(deleted.0.clone()),
+                        updated_at_ms: 21,
+                    },
+                ),
+            ]),
+        );
+        state.drafts.insert(
+            other.clone(),
+            BTreeMap::from([(
+                author.clone(),
+                ConversationDraft {
+                    conversation_id: other.clone(),
+                    actor_id: author.clone(),
+                    text: "another conversation".into(),
+                    reply_to_message_id: Some(deleted.0.clone()),
+                    updated_at_ms: 22,
+                },
+            )]),
+        );
+        state.topic_drafts.insert(
+            parent.clone(),
+            BTreeMap::from([(
+                author.clone(),
+                BTreeMap::from([
+                    (
+                        "topic:a".into(),
+                        TopicDraft {
+                            conversation_id: parent.clone(),
+                            topic_id: "topic:a".into(),
+                            actor_id: author.clone(),
+                            text: "topic body".into(),
+                            reply_to_message_id: Some(deleted.0.clone()),
+                            updated_at_ms: 23,
+                        },
+                    ),
+                    (
+                        "topic:b".into(),
+                        TopicDraft {
+                            conversation_id: parent.clone(),
+                            topic_id: "topic:b".into(),
+                            actor_id: author.clone(),
+                            text: "unrelated".into(),
+                            reply_to_message_id: Some(surviving.0.clone()),
+                            updated_at_ms: 24,
+                        },
+                    ),
+                ]),
+            )]),
+        );
+        state.topic_drafts.insert(
+            other.clone(),
+            BTreeMap::from([(
+                author.clone(),
+                BTreeMap::from([(
+                    "topic:elsewhere".into(),
+                    TopicDraft {
+                        conversation_id: other.clone(),
+                        topic_id: "topic:elsewhere".into(),
+                        actor_id: author.clone(),
+                        text: "keep".into(),
+                        reply_to_message_id: Some(deleted.0.clone()),
+                        updated_at_ms: 25,
+                    },
+                )]),
+            )]),
+        );
+
+        let mut engine = MessagingEngine::from_state(state);
+        let removal = Event::MessagesDeleted {
+            conversation_id: parent.clone(),
+            message_ids: vec![deleted.clone()],
+        };
+        engine.apply(removal.clone());
+        // Event replay must be idempotent even if an older snapshot no longer
+        // retains the deleted message's body.
+        engine.apply(removal);
+        let state = engine.state();
+        let draft = &state.drafts[&parent][&author];
+        assert_eq!(draft.text, "keep this draft");
+        assert_eq!(draft.updated_at_ms, 20);
+        assert!(draft.reply_to_message_id.is_none());
+        assert!(!state.drafts[&parent].contains_key(&secondary));
+        assert_eq!(
+            state.drafts[&other][&author].reply_to_message_id.as_deref(),
+            Some(deleted.0.as_str())
+        );
+        let topics = &state.topic_drafts[&parent][&author];
+        assert_eq!(topics["topic:a"].text, "topic body");
+        assert!(topics["topic:a"].reply_to_message_id.is_none());
+        assert_eq!(
+            topics["topic:b"].reply_to_message_id.as_deref(),
+            Some(surviving.0.as_str())
+        );
+        assert_eq!(
+            state.topic_drafts[&other][&author]["topic:elsewhere"]
+                .reply_to_message_id
+                .as_deref(),
+            Some(deleted.0.as_str())
         );
     }
 
