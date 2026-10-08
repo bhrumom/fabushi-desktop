@@ -81,6 +81,42 @@ export function normalizeLinkUrl(value: unknown): string | null {
   }
 }
 
+export type TranscriptExternalCopyLabel = "Copy Link" | "Copy Email";
+
+export interface TranscriptExternalLinkProjection {
+  readonly href: string;
+  readonly copyText: string;
+  readonly copyLabel: TranscriptExternalCopyLabel;
+}
+
+function normalizedMailtoAddress(value: string): string | null {
+  if (!/^mailto:/iu.test(value)) return null;
+  try {
+    const parsed = new URL(value);
+    if (parsed.protocol !== "mailto:") return null;
+    let address = parsed.pathname;
+    try {
+      address = decodeURIComponent(address);
+    } catch {
+      return null;
+    }
+    while (address.startsWith("/")) address = address.slice(1);
+    address = address.trim();
+    return address.length > 0 ? address : null;
+  } catch {
+    return null;
+  }
+}
+
+export function projectTranscriptExternalLink(value: unknown): TranscriptExternalLinkProjection | null {
+  if (typeof value !== "string" || value.trim().length === 0) return null;
+  const web = normalizeLinkUrl(value);
+  if (web != null) return { href: web, copyText: web, copyLabel: "Copy Link" };
+  const email = normalizedMailtoAddress(value);
+  if (email == null) return null;
+  return { href: `mailto:${email}`, copyText: email, copyLabel: "Copy Email" };
+}
+
 export type RichMessageActionKind = "open-url" | "authorize-url" | "copy-text";
 
 export interface RichMessageAction {
