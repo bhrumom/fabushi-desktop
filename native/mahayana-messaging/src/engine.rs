@@ -4633,9 +4633,9 @@ mod recent_open_history_tests {
         engine.apply(delete_a_new.clone());
         engine.apply(delete_a_new);
         let topics = &engine.state().communities[&conversation_id].topics;
-        assert_eq!(
-            topics["a"].last_message_id.as_deref(),
-            Some(a_old.0.as_str())
+        assert!(
+            topics["a"].last_message_id.is_none(),
+            "topic A has no surviving messages after both a-old and a-new are retired"
         );
         assert_eq!(
             topics["b"].last_message_id.as_deref(),
