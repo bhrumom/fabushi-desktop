@@ -87,6 +87,7 @@ export interface TranscriptExternalLinkProjection {
   readonly href: string;
   readonly copyText: string;
   readonly copyLabel: TranscriptExternalCopyLabel;
+  readonly tooltip: string | null;
 }
 
 function normalizedMailtoAddress(value: string): string | null {
@@ -108,13 +109,23 @@ function normalizedMailtoAddress(value: string): string | null {
   }
 }
 
-export function projectTranscriptExternalLink(value: unknown): TranscriptExternalLinkProjection | null {
+export function projectTranscriptExternalLink(value: unknown, renderedText?: string): TranscriptExternalLinkProjection | null {
   if (typeof value !== "string" || value.trim().length === 0) return null;
   const web = normalizeLinkUrl(value);
-  if (web != null) return { href: web, copyText: web, copyLabel: "Copy Link" };
+  if (web != null) {
+    const rendered = renderedText?.trim();
+    const tooltip = rendered == null || rendered.length === 0 || normalizeLinkUrl(rendered) === web ? null : web;
+    return { href: web, copyText: web, copyLabel: "Copy Link", tooltip };
+  }
   const email = normalizedMailtoAddress(value);
   if (email == null) return null;
-  return { href: `mailto:${email}`, copyText: email, copyLabel: "Copy Email" };
+  const rendered = renderedText?.trim();
+  return {
+    href: `mailto:${email}`,
+    copyText: email,
+    copyLabel: "Copy Email",
+    tooltip: rendered == null || rendered.length === 0 || rendered === email ? null : email,
+  };
 }
 
 export type RichMessageActionKind = "open-url" | "authorize-url" | "copy-text";
