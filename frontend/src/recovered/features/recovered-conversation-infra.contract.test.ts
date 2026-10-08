@@ -20,7 +20,7 @@ import { createAssistantMathMarkupCache, type KatexRuntime } from "./conversatio
 import { resolveWithSingleRetry } from "./conversation/workspace/media-runtime.ts";
 import { accumulateWheelZoomSteps, normalizeWheelZoomDelta } from "./conversation/workspace/media-zoom.ts";
 import { DERIVED_MEDIA_PRELOAD_ROOT_MARGIN, DERIVED_MEDIA_THUMBNAIL_ROOT_MARGIN, isVisibilityBoundDerivedMedia, observeDerivedMediaVisibility, shouldResolveDerivedMedia, shouldResolveDerivedThumbnail } from "./conversation/workspace/media-visibility.ts";
-import { beginHorizontalScrollPointer, captureHorizontalScroll, clampHorizontalScrollOffset, restoreHorizontalScrollOffset, updateHorizontalScrollPointer } from "./conversation/workspace/horizontal-scroll-state.ts";
+import { beginHorizontalScrollPointer, captureHorizontalScroll, clampHorizontalScrollOffset, normalizeHorizontalScrollWheelDelta, restoreHorizontalScrollOffset, updateHorizontalScrollPointer, updateHorizontalScrollWheelLock } from "./conversation/workspace/horizontal-scroll-state.ts";
 import {
   areAssistantProjectionCandidatesCompatible,
   reconcileAssistantContentProjection,
@@ -738,6 +738,53 @@ test("UNIT-TDRP-IV-ARTICLE-HORIZONTAL-POINTER-LIFECYCLE-001 horizontal pointer i
   const mismatched = updateHorizontalScrollPointer(initial, 99, 200, 200);
   assert.equal(mismatched.decision, "ignored");
   assert.equal(mismatched.gesture, initial);
+});
+
+test("UNIT-TDRP-IV-ARTICLE-WHEEL-DIRECTION-LOCK-001 wheel gestures keep their first resolved axis until idle settlement", () => {
+  const first = updateHorizontalScrollWheelLock(null, 18, 4, 100);
+  assert.equal(first.axis, "horizontal");
+  assert.deepEqual(first.lock, { axis: "horizontal", expiresAtMs: 260 });
+
+  const jitter = updateHorizontalScrollWheelLock(first.lock, 1, 24, 180);
+  assert.equal(jitter.axis, "horizontal");
+  assert.deepEqual(jitter.lock, { axis: "horizontal", expiresAtMs: 340 });
+
+  const settled = updateHorizontalScrollWheelLock(jitter.lock, 1, 24, 501);
+  assert.equal(settled.axis, "vertical");
+  assert.deepEqual(settled.lock, { axis: "vertical", expiresAtMs: 661 });
+
+  assert.deepEqual(updateHorizontalScrollWheelLock(null, 0, 0, 700), { axis: null, lock: null });
+});
+
+test("UNIT-TDRP-IV-ARTICLE-WHEEL-DELTA-NORMALIZATION-001 wheel line and page units project into pixel-space scroll deltas", () => {
+  assert.deepEqual(normalizeHorizontalScrollWheelDelta(2, -3, 0, 640), { x: 2, y: -3 });
+  assert.deepEqual(normalizeHorizontalScrollWheelDelta(2, -3, 1, 640), { x: 32, y: -48 });
+  assert.deepEqual(normalizeHorizontalScrollWheelDelta(0.5, -1, 2, 640), { x: 320, y: -640 });
+});
+
+test("CONTRACT-TDRP-IV-VIEW-STATIC-DATE-WORK-001 canonical transcript timestamps require no background formatted-date timer", () => {
+  const transcript = readFileSync(new URL("./conversation/workspace/transcript.tsx", import.meta.url), "utf8");
+  const timeline = readFileSync(new URL("./conversation/cards/timeline-event.tsx", import.meta.url), "utf8");
+  const permission = readFileSync(new URL("./conversation/cards/permission-request/view.tsx", import.meta.url), "utf8");
+
+  assert.match(transcript, /new Date\(entry\.timestampMs\)\.toLocaleString\(\)/);
+  assert.match(timeline, /new Intl\.DateTimeFormat\([^\n]+hour:\s*"numeric"[\s\S]{0,120}minute:\s*"2-digit"/);
+  assert.match(permission, /data-timestamp-ms=\{timestampMs\}/);
+
+  for (const source of [transcript, timeline, permission]) {
+    assert.doesNotMatch(source, /\bsetInterval\b/);
+    assert.doesNotMatch(source, /\bRelativeTimeFormat\b/);
+  }
+});
+
+test("CONTRACT-TDRP-IV-ARTICLE-WHEEL-DIRECTION-LOCK-001 rich-content overflow consumes only horizontally locked wheel gestures", () => {
+  const source = readFileSync(new URL("./conversation/workspace/transcript.tsx", import.meta.url), "utf8");
+  assert.match(source, /if \(event\.ctrlKey\) \{\s*wheelLockRef\.current = null;\s*return;/);
+  assert.match(source, /normalizeHorizontalScrollWheelDelta\([\s\S]{0,220}event\.deltaMode/);
+  assert.match(source, /updateHorizontalScrollWheelLock\([\s\S]{0,220}event\.timeStamp/);
+  assert.match(source, /if \(update\.axis !== "horizontal"[\s\S]{0,180}return;/);
+  assert.match(source, /event\.currentTarget\.scrollLeft \+ delta\.x/);
+  assert.match(source, /event\.preventDefault\(\)/);
 });
 
 test("CONTRACT-TDRP-IV-ARTICLE-HORIZONTAL-POINTER-BALANCE-001 rich-content regions balance touch-like pointer ownership", () => {
