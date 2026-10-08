@@ -3643,6 +3643,7 @@ impl MessagingEngine {
                 conversation_id,
                 message_ids,
             } => {
+                let deleted_ids = message_ids.iter().cloned().collect::<BTreeSet<_>>();
                 for id in message_ids {
                     let message = self
                         .state
@@ -3731,39 +3732,55 @@ impl MessagingEngine {
                     }
                 }
 
-                // History deletion is authoritative for the Conversation summary too.
-                // Never leave last_message_id pointing at a tombstoned message. Recompute
-                // once after the whole batch so multi-delete ordering cannot affect the
-                // result, and use the same stable (created_at, id) ordering for replay.
-                let latest_surviving = self
+                // History deletion is authoritative for the Conversation summary too,
+                // but deleting an older message must not rewrite unrelated summary state or
+                // roll back a later non-message updated_at timestamp. Recompute only when
+                // this exact batch tombstoned the current last pointer.
+                let recompute_conversation_last = self
                     .state
-                    .messages
+                    .conversations
                     .get(&conversation_id)
-                    .and_then(|messages| {
-                        messages
-                            .values()
-                            .filter(|message| !message.deleted)
-                            .max_by(|left, right| {
-                                (left.created_at_ms, &left.id)
-                                    .cmp(&(right.created_at_ms, &right.id))
-                            })
-                            .map(|message| (message.id.0.clone(), message.created_at_ms))
-                    });
-                if let Some(conversation) = self.state.conversations.get_mut(&conversation_id) {
-                    conversation.last_message_id =
-                        latest_surviving.as_ref().map(|(id, _)| id.clone());
-                    if let Some((_, created_at_ms)) = latest_surviving {
-                        conversation.updated_at_ms = created_at_ms;
+                    .and_then(|conversation| conversation.last_message_id.as_deref())
+                    .is_some_and(|last| deleted_ids.iter().any(|id| id.0 == last));
+                if recompute_conversation_last {
+                    let latest_surviving = self
+                        .state
+                        .messages
+                        .get(&conversation_id)
+                        .and_then(|messages| {
+                            messages
+                                .values()
+                                .filter(|message| !message.deleted)
+                                .max_by(|left, right| {
+                                    (left.created_at_ms, &left.id)
+                                        .cmp(&(right.created_at_ms, &right.id))
+                                })
+                                .map(|message| (message.id.0.clone(), message.created_at_ms))
+                        });
+                    if let Some(conversation) =
+                        self.state.conversations.get_mut(&conversation_id)
+                    {
+                        conversation.last_message_id =
+                            latest_surviving.as_ref().map(|(id, _)| id.clone());
+                        if let Some((_, created_at_ms)) = latest_surviving {
+                            conversation.updated_at_ms = created_at_ms;
+                        }
                     }
                 }
 
-                // ForumTopicState is a derived summary of the same canonical
-                // message truth. Rebuild every materialized topic summary after
-                // a deletion batch so a removed last message cannot survive in
-                // the topic header and multi-delete replay remains deterministic.
+                // ForumTopicState is the analogous derived summary. Touch only topics
+                // whose current last pointer was removed by this batch; unrelated topic
+                // summaries remain byte-for-byte stable.
                 if let Some(community) = self.state.communities.get_mut(&conversation_id) {
                     let messages = self.state.messages.get(&conversation_id);
                     for topic in community.topics.values_mut() {
+                        let recompute_topic_last = topic
+                            .last_message_id
+                            .as_deref()
+                            .is_some_and(|last| deleted_ids.iter().any(|id| id.0 == last));
+                        if !recompute_topic_last {
+                            continue;
+                        }
                         topic.last_message_id = messages.and_then(|messages| {
                             messages
                                 .values()
@@ -4479,6 +4496,28 @@ mod recent_open_history_tests {
         );
 
         let mut engine = MessagingEngine::from_state(state);
+        engine
+            .state
+            .conversations
+            .get_mut(&conversation_id)
+            .expect("conversation")
+            .updated_at_ms = 99;
+        let delete_old_non_last = Event::MessagesDeleted {
+            conversation_id: conversation_id.clone(),
+            message_ids: vec![oldest.clone()],
+        };
+        engine.apply(delete_old_non_last.clone());
+        engine.apply(delete_old_non_last);
+        let conversation = &engine.state().conversations[&conversation_id];
+        assert_eq!(
+            conversation.last_message_id.as_deref(),
+            Some(newest.0.as_str())
+        );
+        assert_eq!(
+            conversation.updated_at_ms, 99,
+            "deleting an older message must preserve later non-message activity"
+        );
+
         let delete_newest = Event::MessagesDeleted {
             conversation_id: conversation_id.clone(),
             message_ids: vec![newest.clone()],
@@ -4503,22 +4542,9 @@ mod recent_open_history_tests {
         engine.apply(delete_tied.clone());
         engine.apply(delete_tied);
         let conversation = &engine.state().conversations[&conversation_id];
-        assert_eq!(
-            conversation.last_message_id.as_deref(),
-            Some(oldest.0.as_str())
-        );
-        assert_eq!(conversation.updated_at_ms, 10);
-
-        let delete_last = Event::MessagesDeleted {
-            conversation_id: conversation_id.clone(),
-            message_ids: vec![oldest],
-        };
-        engine.apply(delete_last.clone());
-        engine.apply(delete_last);
-        let conversation = &engine.state().conversations[&conversation_id];
         assert!(conversation.last_message_id.is_none());
         // Empty-history deletion must not manufacture a new timestamp.
-        assert_eq!(conversation.updated_at_ms, 10);
+        assert_eq!(conversation.updated_at_ms, 20);
     }
 
     #[test]
@@ -4584,6 +4610,22 @@ mod recent_open_history_tests {
         );
         let mut engine = MessagingEngine::from_state(state);
 
+        let delete_a_old = Event::MessagesDeleted {
+            conversation_id: conversation_id.clone(),
+            message_ids: vec![a_old.clone()],
+        };
+        engine.apply(delete_a_old.clone());
+        engine.apply(delete_a_old);
+        let topics = &engine.state().communities[&conversation_id].topics;
+        assert_eq!(
+            topics["a"].last_message_id.as_deref(),
+            Some(a_new.0.as_str())
+        );
+        assert_eq!(
+            topics["b"].last_message_id.as_deref(),
+            Some(b_only.0.as_str())
+        );
+
         let delete_a_new = Event::MessagesDeleted {
             conversation_id: conversation_id.clone(),
             message_ids: vec![a_new],
@@ -4602,7 +4644,7 @@ mod recent_open_history_tests {
 
         let delete_remaining = Event::MessagesDeleted {
             conversation_id: conversation_id.clone(),
-            message_ids: vec![a_old, b_only],
+            message_ids: vec![b_only],
         };
         engine.apply(delete_remaining.clone());
         engine.apply(delete_remaining);
