@@ -30,11 +30,19 @@ export interface TranscriptCardScope {
   agentId: string | null;
 }
 
+export type WidgetOptionActionKind = "open-url" | "authorize-url" | "copy-text";
+
+export interface WidgetOptionAction {
+  kind: WidgetOptionActionKind;
+  data: string;
+}
+
 export interface WidgetOption {
   label: string;
   value?: string;
   description?: string;
   style?: "default" | "primary" | "danger";
+  action?: WidgetOptionAction;
 }
 
 export interface WidgetPrompt {
@@ -240,6 +248,13 @@ function stringArray(value: unknown): readonly string[] | null {
   return value;
 }
 
+function projectWidgetOptionAction(value: unknown): WidgetOptionAction | undefined | null {
+  if (value === undefined) return undefined;
+  if (!isRecord(value) || !nonEmptyString(value.data)) return null;
+  if (value.kind !== "open-url" && value.kind !== "authorize-url" && value.kind !== "copy-text") return null;
+  return { kind: value.kind, data: value.data };
+}
+
 function projectWidget(value: Record<string, unknown>): WidgetCardMessage | null {
   if (!isRecord(value.widget)) return null;
   const widget = value.widget;
@@ -249,11 +264,14 @@ function projectWidget(value: Record<string, unknown>): WidgetCardMessage | null
     if (!isRecord(optionValue) || !nonEmptyString(optionValue.label)) return null;
     const style = optionValue.style;
     if (style !== undefined && style !== "default" && style !== "primary" && style !== "danger") return null;
+    const action = projectWidgetOptionAction(optionValue.action);
+    if (action === null) return null;
     options.push({
       label: optionValue.label,
       ...(optionalString(optionValue.value) == null ? {} : { value: optionalString(optionValue.value) }),
       ...(optionalString(optionValue.description) == null ? {} : { description: optionalString(optionValue.description) }),
       ...(style === undefined ? {} : { style }),
+      ...(action === undefined ? {} : { action }),
     });
   }
   return {
