@@ -49,3 +49,29 @@ Open platform delta: current head has no equivalent complete Windows/Linux signe
 - fully read/decomposed through entry: `54`
 
 The next deterministic entry is `.github/workflows/cant-reproduce.yml` at blob `8e20e07349b5b43277f5371a4e931066bece4186`.
+
+## Entries 55–72 — remaining GitHub workflows
+
+All workflow sources through `.github/workflows/winget.yml` are now fully read and exact-blob dispositioned in `inventory/source-dispositions.json`.
+
+Closed repository/community/infrastructure-only entries: 55–59, 61, 64–65, 67–70. macOS build entries 62–63 are closed by an explicitly stronger canonical replacement: Fabushi `.github/workflows/release-macos-main.yml` binds exact source, packages, Developer-ID signs, notarizes/staples, verifies updater metadata, installs the signed candidate and runs real packaged acceptance.
+
+Still applicable/open:
+- entry 54 `canary.yml`: cross-platform signed release/update channel and publication;
+- entry 60 `linux.yml`: full Linux desktop + Updater build qualification;
+- entry 66 `snap.yml`: Linux distribution package artifact;
+- entry 71 `win.yml`: Windows x86/x64/ARM64 and build-generator qualification;
+- entry 72 `winget.yml`: stable/beta Windows release distribution.
+
+Current Fabushi exact source has three-platform updater contract tests, but repository search found no Linux package workflow, Windows full-package workflow, Snap/AppImage or WinGet publisher. These entries therefore remain open rather than being converted into false development-only dispositions.
+
+Accounting after entry 72:
+- full-read: `132`
+- unread: `15,680`
+- unknown: `15,746`
+- omitted: `0`
+- read/decomposed through: `72`
+- unknown closed among first 72: `66`
+
+The next deterministic entry is `.gitignore` at blob `320c160d093a0a36ceb3f6437500d01a63d5ed00`.
+

@@ -13,10 +13,10 @@
     "recursive_non_directory_entries": 15812,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 15759,
-    "unread_minimum": 15698,
+    "unknown_minimum": 15746,
+    "unread_minimum": 15680,
     "omitted_known": 0,
-    "note": "Live aac515c recursive census is 15,812. 114 exact entries are read-complete; unknown 15,759, unread 15,698, omitted 0. Deterministic entries 1-53 have closed machine-readable dispositions; entry 54 remains open because Fabushi lacks complete equivalent Windows/Linux signed packaging and cross-platform update publication evidence."
+    "note": "Live aac515c recursive census is 15,812. 132 exact entries are read-complete; unknown 15,746, unread 15,680, omitted 0. Entries 1-72 are fully read/decomposed. Open applicable responsibilities in this prefix are canary release/update, Linux build/package, Snap, Windows multi-arch build/package and WinGet distribution."
   },
   "latest_recursive_evidence": {
     "run_id": 37596744991,
@@ -43,7 +43,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Accepted aac515c authority is exact. 114 full-read entries are now credited; unread_minimum is 15,698, unknown is 15,759, omitted remains 0. Machine-readable entries 1-53 are closed; entry 54 (.github/workflows/canary.yml) is fully read/decomposed but remains applicable-mapped-incomplete.",
+  "note": "Accepted aac515c authority is exact. 132 full-read entries are now credited; unread_minimum is 15,680, unknown remains 15,746, omitted remains 0. Machine-readable unknown closure remains non-contiguous after entry 53 because release/build/distribution responsibilities at entries 54, 60, 66, 71 and 72 are applicable and incomplete.",
   "rebaseline": {
     "from_commit": "d346b42a1d30ef60dc989b6e5191bb8e571f6bd5",
     "to_commit": "aac515c5408015231a273c80ab4c4b33815e63ab",
@@ -78,9 +78,9 @@
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
     "upstream_commit": "aac515c5408015231a273c80ab4c4b33815e63ab",
     "deterministic_prefix_closed": 53,
-    "development_only_non_applicable": 53,
-    "unknown_closed": 53,
+    "development_only_non_applicable": 62,
+    "unknown_closed": 66,
     "omitted": 0,
-    "read_through": 54
+    "read_through": 72
   }
 }
