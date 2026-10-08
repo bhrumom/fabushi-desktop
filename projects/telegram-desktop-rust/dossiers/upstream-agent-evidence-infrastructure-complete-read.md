@@ -342,3 +342,54 @@ Closure disposition required: explicit non-applicable source disposition.
 
 The next deterministic unread entry is
 `.agents/skills/continue/references/consolidate-pending-tasks.md`.
+
+## Entry 11 — consolidate pending AI tasks reference
+
+Path: `.agents/skills/continue/references/consolidate-pending-tasks.md`  
+Blob: `fa1cfad533496eb18f301f89ac778b500a95a2ba`  
+Read status: complete.
+
+Responsibility: scheduler-owned queue compaction for compatible unfinished AI tasks. It inventories unfinished state, enforces project/frozen-batch boundaries, simulates dependency rewrites, preserves acceptance criteria and supplied inputs, retires replaced task ids through durable aliases, records a consolidation receipt, rechecks races, and publishes atomically through the workspace helper.
+
+Owner: upstream development-task scheduler / queue-maintenance infrastructure. There is no Fabushi Desktop shipping ProductShell, Coordinator, Host, or UI runtime owner.
+
+Production entrypoint: none.
+
+Evidence/disposition: complete source read plus the blob identity above. This is development orchestration and requires an explicit non-applicable machine-readable closure before `unknown` can decrease.
+
+## Entry 12 — split-required task routing reference
+
+Path: `.agents/skills/continue/references/split-required-task.md`  
+Blob: `552ad09b2fa022b7df94481746a51167305bf846`  
+Read status: complete.
+
+Responsibility: scheduler-owned decomposition of a published `split-required` task into the smallest independently shippable and testable replacement tasks. It preserves retained implementation through one coherent carrier when present, preserves dependencies and acceptance oracles, rewrites live dependents/project navigation, records a split receipt, validates the graph and retained-work seal, and publishes through `workspace.py split-publish`.
+
+Owner: upstream development-task routing infrastructure; not a Telegram end-user capability and not a Fabushi Desktop shipping UI/runtime responsibility.
+
+Production entrypoint: none.
+
+Evidence/disposition: complete source read plus the blob identity above. An explicit non-applicable machine-readable disposition is still required before `unknown` can decrease.
+
+## Entry 13 — dependency-watch skill
+
+Path: `.agents/skills/dependency-watch/SKILL.md`  
+Blob: `482b3a8d0c939d4bb7bd32ab146e0cc988d29fd8`  
+Read status: complete.
+
+Responsibility: release/security evidence workflow that snapshots exact `origin/dev`, recursively inventories consumed dependencies and gitlinks, checks official releases and security advisories, distinguishes shipped/system/build-only dependencies, evaluates fork/backport trust, persists findings, and fails closed when coverage is partial. It explicitly does not bump dependencies, build Telegram, create queue records, commit, push, open PRs, or apply backports.
+
+Owner: development/release-evidence infrastructure only; it must not be invented as a Fabushi product UI capability.
+
+Production entrypoint: none.
+
+Evidence/disposition: complete source read plus the blob identity above. Final closure is an explicit development/release-evidence disposition; until that machine-readable closure exists, `unknown` remains unchanged.
+
+## Updated coverage accounting after entries 11–13
+
+- `unread: 15,742 -> 15,739`
+- `unknown: 15,812` unchanged
+- `omitted: 0` unchanged
+- full-read recursive entries: `70 -> 73`
+
+The next deterministic unread entry is `.agents/skills/dependency-watch/agents/openai.yaml`.
