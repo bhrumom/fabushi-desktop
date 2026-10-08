@@ -762,6 +762,21 @@ test("UNIT-TDRP-IV-ARTICLE-WHEEL-DELTA-NORMALIZATION-001 wheel line and page uni
   assert.deepEqual(normalizeHorizontalScrollWheelDelta(0.5, -1, 2, 640), { x: 320, y: -640 });
 });
 
+test("CONTRACT-TDRP-IV-VIEW-STATIC-DATE-WORK-001 canonical transcript timestamps require no background formatted-date timer", () => {
+  const transcript = readFileSync(new URL("./conversation/workspace/transcript.tsx", import.meta.url), "utf8");
+  const timeline = readFileSync(new URL("./conversation/cards/timeline-event.tsx", import.meta.url), "utf8");
+  const permission = readFileSync(new URL("./conversation/cards/permission-request/view.tsx", import.meta.url), "utf8");
+
+  assert.match(transcript, /new Date\(entry\.timestampMs\)\.toLocaleString\(\)/);
+  assert.match(timeline, /new Intl\.DateTimeFormat\([^\n]+hour:\s*"numeric"[\s\S]{0,120}minute:\s*"2-digit"/);
+  assert.match(permission, /data-timestamp-ms=\{timestampMs\}/);
+
+  for (const source of [transcript, timeline, permission]) {
+    assert.doesNotMatch(source, /\bsetInterval\b/);
+    assert.doesNotMatch(source, /\bRelativeTimeFormat\b/);
+  }
+});
+
 test("CONTRACT-TDRP-IV-ARTICLE-WHEEL-DIRECTION-LOCK-001 rich-content overflow consumes only horizontally locked wheel gestures", () => {
   const source = readFileSync(new URL("./conversation/workspace/transcript.tsx", import.meta.url), "utf8");
   assert.match(source, /if \(event\.ctrlKey\) \{\s*wheelLockRef\.current = null;\s*return;/);
