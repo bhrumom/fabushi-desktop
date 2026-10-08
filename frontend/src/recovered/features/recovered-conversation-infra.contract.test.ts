@@ -13,8 +13,7 @@ import {
   createTranscriptFeedFanout,
   type TranscriptClientEventSource,
 } from "./conversation/cards/transcript-card/transcript-feed-source.ts";
-import { projectTranscriptCardEntry } from "./conversation/cards/transcript-card/protocol.ts";
-import { projectRichMessageActionAffordance } from "./conversation/cards/transcript-card/url-card.ts";
+import { projectRichMessageAction, projectRichMessageActionAffordance } from "./conversation/cards/transcript-card/url-card.ts";
 import { createWidgetInteractionAdapter } from "./conversation/cards/transcript-card/widget-interactions.ts";
 import { createAssistantMathMarkupCache, type KatexRuntime } from "./conversation/workspace/math.tsx";
 import {
@@ -311,41 +310,20 @@ test("forward recipient keyboard policy preserves picker boundaries and submit s
 
 
 test("rich widget button actions project fail-closed URL/copy semantics", () => {
-  const entry = projectTranscriptCardEntry({
-    kind: "send-message",
-    id: "rich-actions",
-    message: {
-      type: "widget",
-      widget: {
-        prompt: "Choose an action",
-        options: [
-          { label: "Docs", action: { kind: "open-url", data: "https://example.com/docs?q=1" } },
-          { label: "Authorize", action: { kind: "authorize-url", data: "https://example.com/auth?token=opaque" } },
-          { label: "Copy code", action: { kind: "copy-text", data: "ABC-123" } },
-        ],
-      },
-    },
+  assert.deepEqual(projectRichMessageAction({ kind: "open-url", data: "https://example.com/docs?q=1" }), {
+    kind: "open-url",
+    data: "https://example.com/docs?q=1",
   });
-  assert.ok(entry);
-  assert.equal(entry.message.type, "widget");
-  if (entry.message.type !== "widget") throw new Error("expected widget projection");
-  assert.deepEqual(entry.message.widget.options.map((option) => option.action?.kind), [
-    "open-url",
-    "authorize-url",
-    "copy-text",
-  ]);
-
-  assert.equal(projectTranscriptCardEntry({
-    kind: "send-message",
-    id: "bad-action",
-    message: {
-      type: "widget",
-      widget: {
-        prompt: "Unsafe",
-        options: [{ label: "Unknown", action: { kind: "run-script", data: "opaque" } }],
-      },
-    },
-  }), null);
+  assert.deepEqual(projectRichMessageAction({ kind: "authorize-url", data: "https://example.com/auth?token=opaque" }), {
+    kind: "authorize-url",
+    data: "https://example.com/auth?token=opaque",
+  });
+  assert.deepEqual(projectRichMessageAction({ kind: "copy-text", data: "ABC-123" }), {
+    kind: "copy-text",
+    data: "ABC-123",
+  });
+  assert.equal(projectRichMessageAction({ kind: "run-script", data: "opaque" }), null);
+  assert.equal(projectRichMessageAction({ kind: "open-url", data: "   " }), null);
 
   assert.deepEqual(
     projectRichMessageActionAffordance({ kind: "open-url", data: "https://example.com/docs?q=1" }),
@@ -377,7 +355,6 @@ test("rich widget button actions project fail-closed URL/copy semantics", () => 
     null,
   );
 });
-
 
 test("widget action lifecycle fences duplicate and stale rich-button settlement", async () => {
   let resolveResponse!: (value: { accepted: boolean }) => void;
