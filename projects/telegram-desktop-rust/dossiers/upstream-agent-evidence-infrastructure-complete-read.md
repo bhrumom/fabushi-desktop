@@ -109,3 +109,100 @@ This complete read advances only:
 No production responsibility, release gate, or acceptance state is declared
 verified by this read alone. The next deterministic unread entry is the fourth
 entry in `upstream-recursive-inventory.json`.
+
+
+## Entry 4 — ELF execution-copy verifier implementation
+
+Path: `.agents/shared/evidence/elf_identity.py`  
+Blob: `70dc54620651e8c6fd9cce6966c9964b1a6c90d7`  
+Read status: complete, 1,451 lines.
+
+Source symbols:
+`ElfFile`, `parse_elf`, `qualify_load_mappings`,
+`validate_program_headers`, `validate_sections`,
+`classify_sections`, `compare_nonloaded`,
+`compare_static_symbols`, `compare_program_payloads`,
+`compare_elf_headers`, `build_report`, `compare_elf`, `main`.
+
+Responsibility:
+- acquire each ELF through one read-only/no-follow/nonblocking descriptor and
+  fail closed on observable path/descriptor mutation;
+- enforce the bounded ELF64 little-endian x86-64 profile and reject unsupported
+  program/section/reference/symbol encodings before large I/O;
+- derive a 4096-byte LOAD exposure model, including writable BSS zero-fill,
+  fully-backed page constraints and independent non-LOAD payload coverage;
+- classify allocated, retained, removable debug and private static-bookkeeping
+  sections without granting a name-only exemption;
+- compare loader-visible bytes and retained content exactly while permitting
+  only the three explicitly modelled ELF section-header bookkeeping fields;
+- stream static symbol/name comparison under explicit aggregate budgets and
+  preserve resolved semantic identities across repacking;
+- emit both exact whole-file SHA-256 identities and the directional structural
+  relationship report, with scope explicitly excluding authenticity/startup/
+  linker equivalence.
+
+Capability classification: Linux build/release evidence implementation, not a
+shipping user-facing capability.
+
+Existing-owner assessment: if Fabushi adopts this evidence property, it belongs
+to the canonical GitHub Actions packaging/release evidence owner. It must not
+be imported into Host, Coordinator, messaging, updater runtime, or renderer.
+
+Production entrypoint: none. Release-evidence entrypoint is the CI invocation
+of the verifier against an acquired original/copy pair.
+
+Required closure evidence: either an exact Fabushi CI/release mapping with
+same-head artifact provenance and independent release acceptance, or an
+explicit non-applicable-with-equivalent-evidence disposition. Reading this
+source does not itself verify Fabushi packaging.
+
+## Entry 5 — ELF verifier qualification suite
+
+Path: `.agents/shared/evidence/elf_identity_test.py`  
+Blob: `a75a29225b6eb70f255848e30026d02523d808f3`  
+Read status: complete, 1,578 lines.
+
+Source symbols:
+`fixture`, `page_fixture`, `FixtureCase`,
+`ElfComparisonTests`, `ElfMappingTests`, `ElfMalformedTests`,
+`ElfAcquisitionTests`, `_command_owner_probe`, `CommandOwnerTests`,
+`ElfToolchainTests`.
+
+Responsibility:
+- build literal ABI fixtures independent of the production parser and exercise
+  exact positive/paired-negative structural controls;
+- verify all protected program/header/section/symbol fields, qualified debug
+  removal and bookkeeping repacking semantics;
+- execute page-level prefix/tail/BSS runtime oracles and reject unsupported
+  mapping aliases/partial backing/overlap;
+- prove numerical bounds, streaming/no-name-cache behavior, pre-I/O refusal,
+  descriptor lifetime/read-only flags and deterministic mutation detection;
+- own helper subprocess groups so timeout, cancellation, launch failure and
+  cleanup cannot leak compiler-like descendants or kill unrelated sentinels;
+- qualify against a genuine debug/strip/readelf toolchain pair in ordinary and
+  optimized Python and against sparse metadata beyond 4 GiB.
+
+Capability classification: qualification tests for release-evidence tooling,
+not a shipping product feature.
+
+Existing-owner assessment: canonical Fabushi CI/release qualification is the
+only valid target if this responsibility is applicable. The test suite must
+not create a second application runtime or product-test owner.
+
+Production entrypoint: none; CI qualification only.
+
+Required closure evidence: current-head GitHub Actions evidence from the chosen
+release-evidence owner, including artifact/provenance if adopted. No local test
+execution is credited.
+
+## Updated coverage accounting
+
+After entries 4 and 5:
+- `unread: 15,749 -> 15,747`
+- `unknown: 15,812` unchanged
+- `omitted: 0` unchanged
+- full-read recursive entries: `63 -> 65`
+
+The next deterministic unread entry is
+`.agents/shared/phase-effort.md`. No product responsibility is declared
+verified by these two reads alone.
