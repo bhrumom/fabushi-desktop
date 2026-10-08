@@ -147,8 +147,9 @@ export class OfficialMcpService {
     if (!object(message.result)) throw new Error("Invalid MCP result.");
     return message.result;
   }
-  private async request(id: string, method: string, params: unknown) {
-    const snap = await this.snapshot(id), token = snap.install.token;
+  private async request(id: string, method: string, params: unknown,
+    expected?: Awaited<ReturnType<OfficialMcpService["snapshot"]>>) {
+    const snap = expected ?? await this.snapshot(id), token = snap.install.token;
     if (!token) throw new AuthRequired("Provider authorization required.");
     const controller = new AbortController(); this.pending.add(controller);
     const timeout = setTimeout(() => controller.abort(), TIMEOUT);
@@ -174,7 +175,7 @@ export class OfficialMcpService {
     const snap = await this.snapshot(id);
     const tools: RemoteTool[] = []; const seen = new Set<string>(); let cursor: string | undefined;
     for (let page = 0; page < 64; page++) {
-      const result = await this.request(id, "tools/list", cursor ? { cursor } : {});
+      const result = await this.request(id, "tools/list", cursor ? { cursor } : {}, snap);
       await this.fence(snap);
       if (!Array.isArray(result.tools)) throw new Error("Invalid MCP tool inventory.");
       for (const tool of result.tools) {
@@ -251,7 +252,7 @@ export class OfficialMcpService {
       if (snap.install.disabledTools.includes(name)) throw new Error("Connector tool is disabled.");
       if (!(await this.tools(id)).some(tool => tool.name === name)) throw new Error("Unknown connector tool.");
       await this.fence(snap);
-      const result = await this.request(id, "tools/call", { name, arguments: args ?? {} });
+      const result = await this.request(id, "tools/call", { name, arguments: args ?? {} }, snap);
       await this.fence(snap);
       if (!Array.isArray(result.content)) throw new Error("Invalid MCP tool output.");
       const content = result.content.map((item: unknown) => generatedMcpResultFactory.textItem(
