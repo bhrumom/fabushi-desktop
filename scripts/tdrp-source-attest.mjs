@@ -10,14 +10,20 @@ const outDir = 'artifacts/tdrp-authority';
 fs.mkdirSync(outDir, { recursive: true });
 
 function run(cmd, args) {
-  return execFileSync(cmd, args, { encoding: 'utf8' }).trimEnd();
+  return execFileSync(cmd, args, { encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 }).trimEnd();
 }
 function symbolFor(sourcePath) {
   return path.basename(sourcePath).replace(/@(?:2x|3x)(?=\.)/, '').replace(/\.[^.]+$/, '');
 }
-function grepSymbol(symbol) {
+function consumerToken(sourcePath) {
+  const marker = 'Telegram/Resources/icons/';
+  const relative = sourcePath.includes(marker) ? sourcePath.split(marker, 2)[1] : path.basename(sourcePath);
+  const normalized = relative.replace(/@(?:2x|3x)(?=\.)/, '').replace(/\.[^.]+$/, '');
+  return '\"' + normalized;
+}
+function grepConsumerToken(token) {
   try {
-    return run('git', ['-C', work, 'grep', '-n', '-F', symbol, '--', 'Telegram/SourceFiles']);
+    return run('git', ['-C', work, 'grep', '-n', '-F', token, '--', 'Telegram/SourceFiles']);
   } catch (error) {
     if (error?.status === 1) return '';
     throw error;
@@ -43,7 +49,7 @@ for (const name of manifests) {
   const binary = ['accepted_upstream=' + accepted];
   const reachability = ['accepted_upstream=' + accepted];
   const trace = ['accepted_upstream=' + accepted];
-  const seenSymbols = new Set();
+  const seenConsumers = new Map();
 
   for (const entry of manifest.entries) {
     const actual = run('git', ['-C', work, 'hash-object', entry.path]);
@@ -54,10 +60,13 @@ for (const name of manifests) {
     binary.push([entry.order, entry.path, actual, size, kind].join('|'));
 
     const symbol = entry.consumer_symbol || symbolFor(entry.path);
-    if (!seenSymbols.has(symbol)) {
-      seenSymbols.add(symbol);
-      const hits = grepSymbol(symbol);
+    const token = entry.consumer_token || consumerToken(entry.path);
+    const consumerKey = symbol + '\u0000' + token;
+    if (!seenConsumers.has(consumerKey)) {
+      seenConsumers.set(consumerKey, true);
+      const hits = grepConsumerToken(token);
       reachability.push('symbol=' + symbol);
+      reachability.push('token=' + token);
       if (hits) {
         reachability.push(hits);
         trace.push(hits);
@@ -68,5 +77,5 @@ for (const name of manifests) {
   fs.writeFileSync(path.join(outDir, 'source-binary-evidence-' + range + '.txt'), binary.join('\n') + '\n');
   fs.writeFileSync(path.join(outDir, 'source-consumer-reachability-' + range + '.txt'), reachability.join('\n') + '\n');
   fs.writeFileSync(path.join(outDir, 'source-consumer-trace-' + range + '.txt'), trace.join('\n') + '\n');
-  console.log('attested source range ' + range + ' entries=' + manifest.entries.length + ' symbols=' + seenSymbols.size);
+  console.log('attested source range ' + range + ' entries=' + manifest.entries.length + ' consumers=' + seenConsumers.size);
 }
