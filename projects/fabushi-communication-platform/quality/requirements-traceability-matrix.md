@@ -306,3 +306,13 @@ Dossier: `projects/telegram-desktop-rust/dossiers/resource-call-ai-icons-431-500
 
 Dossier: `projects/telegram-desktop-rust/dossiers/resource-composer-chat-501-600-complete-read.md`.
 
+### TDRP Revision 9 build provenance snapshot resolution
+
+| requirement | evidence | verdict |
+| --- | --- | --- |
+| TDRP-R9-PROVENANCE-CCACHE-001 | signed v4.13.6 tag -> c6f36725… + release asset sha256:508b2a… | SNAPSHOT RESOLVED; SHIPPING URL/DIGEST VERIFICATION OPEN |
+| TDRP-R9-PROVENANCE-XZ-001 | verified v5.8.4 tag -> d3e650e6… | SNAPSHOT RESOLVED; TAG-BASED ACQUISITION OPEN |
+| TDRP-R9-PROVENANCE-OPENAL-001 | coreaudio_device_uid -> c2eab43d… | SNAPSHOT RESOLVED; MOVABLE BRANCH ACQUISITION OPEN |
+
+Dossier: `projects/telegram-desktop-rust/dossiers/build-provenance-resolution-ccache-xz-openal.md`.
+

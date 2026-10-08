@@ -13,7 +13,7 @@
     "candidate_lines_total": 325,
     "immutable_commit_pin_occurrences_classified": 0,
     "candidate_lines_pending_classification": 0,
-    "note": "All 325 live candidates from the current Revision 9 scanner are explicitly dispositioned by exact source path+line and bound to the accepted upstream source blob plus scanner artifact. Third-party immutability/provenance remains separately fail-closed where references are tags, package-manager resolution, bare URLs/clones, or otherwise not immutable; recursive/build reachability closure therefore remains open.",
+    "note": "All 325 live candidates are explicitly dispositioned against immutable accepted source blobs. Third-party immutability remains fail-closed. ccache v4.13.6, XZ v5.8.4, and OpenAL coreaudio_device_uid now have exact external snapshot/digest resolution evidence, but their accepted build references remain tag/branch/URL based and are not counted as immutable shipping acquisition closure. Package-manager resolution, bare downloads/clones, mutable action refs, and other unresolved inputs keep recursive/build authority closure open.",
     "candidate_lines_classified": 325,
     "disposition_closure_status": "complete-current-325-candidate-classification",
     "recursive_authority_closure_status": "open",
@@ -2471,5 +2471,38 @@
       "root_candidate_policy_status": "complete-for-current-xkbcommon-authority",
       "note": "Closes acquisition-pattern candidates for xkbcommon-1.6.0; keyboard mapping/runtime behavior remains in semantic scope."
     }
-  }
+  },
+  "external_immutable_resolutions": [
+    {
+      "dependency": "ccache linux x86_64 glibc release archive",
+      "build_source_path": ".github/workflows/linux.yml",
+      "mutable_reference": "https://github.com/ccache/ccache/releases/download/v4.13.6/ccache-4.13.6-linux-x86_64-glibc.tar.xz",
+      "tag_object": "100d636a986eb3039880a10ac70869ac187eeee6",
+      "resolved_commit": "c6f36725ddaa247678ff130cf4349055962ac072",
+      "tag_signature_verified": true,
+      "release_asset_id": 411999981,
+      "release_asset_digest": "sha256:508b2a1217dc6e04a23e967c7b95a0fb45d8a7e16fde9e180919698f2e2be060",
+      "release_asset_size": 1308196,
+      "status": "resolved-snapshot-evidence-source-still-mutable-by-url",
+      "note": "Observed release payload is bound to a GitHub-reported SHA-256 and signed tag->commit. The accepted workflow still consumes a tag-based release URL and does not yet verify this digest, so immutable shipping acquisition closure remains open."
+    },
+    {
+      "dependency": "XZ Utils v5.8.4",
+      "build_source_path": "Telegram build prepare/Docker/Snap accepted paths",
+      "mutable_reference": "v5.8.4",
+      "tag_object": "9151b328e76bbc468aa64f85c741886b6227cec1",
+      "resolved_commit": "d3e650e63c110e830fd5391e7f8b45df0b91d3da",
+      "tag_signature_verified": true,
+      "status": "resolved-signed-tag-snapshot-source-tag-still-mutable",
+      "note": "Verified annotated tag resolves to an exact commit. Accepted build source remains tag-based, so this is snapshot evidence rather than immutable acquisition closure."
+    },
+    {
+      "dependency": "telegramdesktop/openal-soft macOS coreaudio_device_uid branch",
+      "build_source_path": "Telegram/build/prepare/prepare.py",
+      "mutable_reference": "coreaudio_device_uid",
+      "resolved_commit": "c2eab43d72890c58d4b51d5d98eafb9f011e1c89",
+      "status": "resolved-branch-snapshot-source-branch-still-mutable",
+      "note": "Current branch ref resolves to this exact commit and the snapshot is already represented in recursive build reachability. The accepted build source still names a movable branch; closure remains open until the acquisition is pinned or verifies an immutable identity."
+    }
+  ]
 }
