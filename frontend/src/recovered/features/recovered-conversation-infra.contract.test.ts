@@ -15,7 +15,7 @@ import {
 } from "./conversation/cards/transcript-card/transcript-feed-source.ts";
 import { projectRichMessageAction, projectRichMessageActionAffordance } from "./conversation/cards/transcript-card/url-card.ts";
 import { createWidgetInteractionAdapter } from "./conversation/cards/transcript-card/widget-interactions.ts";
-import { createAssistantMathMarkupCache, type KatexRuntime } from "./conversation/workspace/math.tsx";
+import { createAssistantMathMarkupCache, type KatexRuntime } from "./conversation/workspace/math-runtime.ts";
 import {
   createHiddenChatsMutationController,
 } from "./hidden-chats/overlay/mutation-controller.ts";
