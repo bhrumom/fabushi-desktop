@@ -206,3 +206,90 @@ After entries 4 and 5:
 The next deterministic unread entry is
 `.agents/shared/phase-effort.md`. No product responsibility is declared
 verified by these two reads alone.
+
+
+## Entry 6 — workflow phase effort policy
+
+Path: `.agents/shared/phase-effort.md`  
+Blob: `0055f7c56e94cccd12747a67f8d2196d3e064b22`  
+Read status: complete, 63 lines.
+
+Responsibility: select model/reasoning effort for upstream autonomous-development
+phases, escalate diagnosis/implementation/review to high reasoning, and preserve
+phase artifacts when complexity changes.
+
+Capability classification: development-agent policy only. No Fabushi Desktop
+shipping owner, UI, runtime, network service or platform product dependency.
+
+Closure disposition required: explicit non-applicable source disposition; do
+not mirror it into ProductShell/Host/Coordinator.
+
+## Entry 7 — compact project-context policy
+
+Path: `.agents/shared/project-context.md`  
+Blob: `53c8657eb7949a5a2fba7e7adc8d1073f3079ead`  
+Read status: complete, 64 lines.
+
+Responsibility: keep durable project overview, current-task context and task
+navigation separate; read historical context selectively; treat optional
+project amendments as narrow post-approval proposals rather than replacement
+documents.
+
+Capability classification: upstream development/project-management policy,
+not an end-user product responsibility.
+
+Closure disposition required: explicit non-applicable source disposition.
+
+## Entry 8 — adaptive evidence loop protocol
+
+Path: `.agents/shared/test-loop.md`  
+Blob: `c5d1c921e314de1baa7242ada09c2c7c1aaacbdf`  
+Read status: complete, 845 lines.
+
+Source sections/symbol-equivalents:
+`State machine`, `Evidence instruments`, `Recovery and convergence`,
+`Assessment`, `Test account`, `Design evidence`, `Visual contract`,
+`Telegram overlay mechanics`, `Telegram build & run discipline`,
+`Crashes & assertions`, `Hangs & freezes`, `Telegram runtime assessment`,
+`Test report`.
+
+Responsibility:
+- drive a bounded evidence state machine distinguishing APPROVED, TEST_FLAW,
+  IMPL_BUG and genuinely unrecoverable evidence;
+- choose the most direct causal instrument per claim and preserve positive
+  evidence across focused recovery;
+- guard Telegram portable test-account state, exact-path process ownership and
+  non-destructive account behavior;
+- define measurable visual/layout contracts and in-binary overlay/capture
+  mechanics rather than existence-only or screenshot-inference gates;
+- classify crashes/hangs from concrete diagnostics and prevent time/run caps
+  from becoming false approval or false blockers;
+- retain exact command/artifact/log evidence and require every acceptance check
+  to pass against an independent oracle.
+
+Capability classification: upstream development/test infrastructure. Some
+quality properties overlap Fabushi release acceptance conceptually, but this
+document is not a shipping Desktop capability and must not be copied into
+runtime owners.
+
+Existing-owner assessment: any applicable quality responsibility belongs to
+Fabushi's canonical GitHub Actions/E2E/visual/a11y/performance/release-evidence
+pipeline. It does not justify a Telegram-named parallel harness or runtime
+surface.
+
+Production entrypoint: none. Evidence entrypoints are CI/test workflows only.
+
+Required closure evidence: map any adopted quality property to the existing
+Fabushi test/release owner and current-head artifacts; otherwise record
+non-applicable source disposition. The upstream protocol itself is not
+production evidence.
+
+## Updated coverage accounting after entries 6–8
+
+- `unread: 15,747 -> 15,744`
+- `unknown: 15,812` unchanged
+- `omitted: 0` unchanged
+- full-read recursive entries: `65 -> 68`
+
+The next deterministic unread entry is
+`.agents/skills/continue/SKILL.md`. Entries 9+ have not been credited.
