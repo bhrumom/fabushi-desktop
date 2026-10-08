@@ -25,12 +25,13 @@ import { LinkCardView } from "../cards/transcript-card/views";
 import { projectTranscriptMessageCard } from "../message-card-seam";
 import PermissionRequestLeaf from "../cards/permission-request/view";
 import { ToolResultCard } from "../tool-results/view";
-import type { FindInChatTranscriptHandle } from "./find-in-chat-controller";
+import { includeFindInChatDisclosure, type FindInChatDisclosureKind, type FindInChatTranscriptHandle } from "./find-in-chat-controller";
 import type { SendMessageTextImage } from "../cards/transcript-card/send-message-text";
 import { ThreadAffordance } from "../cards/transcript-card/thread-affordance";
 import type { TranscriptThreadSummary } from "../cards/transcript-card/thread-summary-controller";
 import { captureHorizontalScroll, clampHorizontalScrollOffset, restoreHorizontalScrollOffset, type HorizontalScrollSnapshot } from "./horizontal-scroll-state";
 import { reconcileAssistantContentProjection, type AssistantProjectionCandidate, type AssistantProjectionState } from "./assistant-content-projection";
+import { formatTranscriptToolCallName } from "./tool-call-label";
 
 function transcriptIds(id: string, hasTimestamp: boolean) {
   const base = `sand-conversation-entry-${encodeURIComponent(id)}`;
@@ -679,13 +680,6 @@ export function AssistantMessageContent({ text, images, channel, isSourceTrusted
   })}{images == null ? null : <SendMessageTextImages images={images} />}{channel == null ? null : <span className="sand-channel-tag" title={`Sent to ${channel}`}>{channel}</span>}</div>;
 }
 
-function formatToolName(name: string): string {
-  const withoutSuffix = name.endsWith("ToolCall") ? name.slice(0, -8) : name;
-  if (withoutSuffix.length === 0) return name;
-  const spaced = withoutSuffix.replace(/([a-z0-9])([A-Z])/g, "$1 $2");
-  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
-}
-
 function toolCallPreview(summary?: string): string {
   const trimmed = summary?.trim() ?? "";
   return trimmed.length === 0 ? "" : trimmed.split(/\r?\n/, 1)[0] ?? "";
@@ -712,11 +706,11 @@ export function TranscriptToolCallRow({ entry, expanded, onToggle }: { entry: Tr
   const iconName = toolCallIconName(entry.status);
   const iconClassName = failed ? "sand-outline-item__icon sand-2lah0s sand-pmgbkh" : "sand-outline-item__icon sand-2lah0s sand-4b2ntj";
   return (
-    <div className="sand-outline-item" data-kind="tool-call" data-status={entry.status} role="listitem">
+    <div className="sand-outline-item" data-entry-id={entry.id} data-kind="tool-call" data-status={entry.status} role="listitem">
       <button aria-controls={expanded ? detailId : undefined} aria-expanded={expanded} className="sand-outline-item__row" onClick={() => onToggle(entry.id)} type="button">
         <span aria-hidden="true" className={iconClassName} data-active={pending || undefined} data-failed={failed || undefined} data-icon-name={iconName} style={pending ? { animation: "sand-outline-item-spin .9s linear infinite" } : undefined}>{String.fromCodePoint(outlineIconCodePoint(iconName))}</span>
-        <span className="sand-outline-item__label">{formatToolName(entry.name)}</span>
-        {preview.length > 0 ? <span className="sand-outline-item__preview">{preview}</span> : null}
+        <span className="sand-outline-item__label">{formatTranscriptToolCallName(entry.name)}</span>
+        {preview.length > 0 && !expanded ? <span className="sand-outline-item__preview">{preview}</span> : null}
         <span aria-hidden="true" className="sand-outline-item__chevron" style={{ transform: expanded ? "rotate(45deg)" : "rotate(-45deg)" }} />
       </button>
       {expanded ? (
@@ -737,11 +731,11 @@ export function TranscriptThinkingRow({ entry, expanded, onToggle }: { entry: Tr
   const detailId = `sand-conversation-thinking-detail-${encodeURIComponent(entry.id)}`;
   const preview = toolCallPreview(entry.text);
   return (
-    <div className="sand-outline-item" data-kind="thinking" role="listitem">
+    <div className="sand-outline-item" data-entry-id={entry.id} data-kind="thinking" role="listitem">
       <button aria-controls={expanded ? detailId : undefined} aria-expanded={expanded} className="sand-outline-item__row" onClick={() => onToggle(entry.id)} type="button">
         <span aria-hidden="true" className="sand-outline-item__icon sand-2lah0s sand-kbann2" data-icon-name="thinking-medium">{String.fromCodePoint(outlineIconCodePoint("thinking-medium"))}</span>
         <span className="sand-outline-item__label">Thinking</span>
-        {preview.length > 0 ? <span className="sand-outline-item__preview">{preview}</span> : null}
+        {preview.length > 0 && !expanded ? <span className="sand-outline-item__preview">{preview}</span> : null}
         <span aria-hidden="true" className="sand-outline-item__chevron" style={{ transform: expanded ? "rotate(45deg)" : "rotate(-45deg)" }} />
       </button>
       {expanded ? <div className="sand-outline-item__detail" id={detailId}><div className="sand-outline-item__detail-section"><pre className="sand-outline-item__detail-text">{entry.text}</pre></div></div> : null}
@@ -753,6 +747,7 @@ export function ConversationTranscript({ entries, hasOlder = false, isLoadingOld
   const transcriptRef = useRef<HTMLDivElement | null>(null);
   const olderLoadInFlightRef = useRef(false);
   const viewCommitListenersRef = useRef(new Set<() => void>());
+  const revealFindEntryRef = useRef<(entryId: string, kind: FindInChatDisclosureKind) => void>(() => {});
   const handleRef = useRef<FindInChatTranscriptHandle | null>(null);
   if (handleRef.current == null) {
     handleRef.current = {
@@ -762,6 +757,10 @@ export function ConversationTranscript({ entries, hasOlder = false, isLoadingOld
         const row = [...transcript.querySelectorAll<HTMLElement>("[data-entry-id], [data-row-key]")]
           .find((candidate) => (candidate.getAttribute("data-entry-id") ?? candidate.getAttribute("data-row-key")) === entryId);
         if (row == null) return false;
+        const disclosureKind = row.dataset.kind;
+        if (disclosureKind === "thinking" || disclosureKind === "tool-call") {
+          revealFindEntryRef.current(entryId, disclosureKind);
+        }
         row.scrollIntoView({ block: "center" });
         return true;
       },
@@ -812,6 +811,22 @@ export function ConversationTranscript({ entries, hasOlder = false, isLoadingOld
   }, [hasOlder, isLoadingOlder, loadOlder]);
   const [expandedToolCalls, setExpandedToolCalls] = useState<ReadonlySet<string>>(() => new Set());
   const [expandedThinking, setExpandedThinking] = useState<ReadonlySet<string>>(() => new Set());
+  useLayoutEffect(() => {
+    revealFindEntryRef.current = (entryId, kind) => {
+      if (kind === "thinking") {
+        setExpandedThinking((current) => includeFindInChatDisclosure(current, entryId));
+        return;
+      }
+      setExpandedToolCalls((current) => includeFindInChatDisclosure(current, entryId));
+    };
+    return () => {
+      revealFindEntryRef.current = () => {};
+    };
+  }, []);
+  useLayoutEffect(() => {
+    if (transcriptHandleRef == null) return;
+    for (const listener of [...viewCommitListenersRef.current]) listener();
+  }, [expandedThinking, expandedToolCalls, transcriptHandleRef]);
   const toggleToolCall = (id: string) => {
     setExpandedToolCalls((current) => {
       const next = new Set(current);

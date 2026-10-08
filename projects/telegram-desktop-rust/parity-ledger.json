@@ -5918,7 +5918,8 @@
         "frontend/src/recovered/features/conversation/workspace/find-in-chat-controller.ts",
         "frontend/src/production/ProductionRenderer.tsx",
         "frontend/src/recovered/features/conversation/workspace/horizontal-scroll-state.ts",
-        "frontend/src/recovered/features/conversation/cards/transcript-card/views/send-message-text.tsx"
+        "frontend/src/recovered/features/conversation/cards/transcript-card/views/send-message-text.tsx",
+        "frontend/src/recovered/features/conversation/workspace/tool-call-label.ts"
       ],
       "fabushi_target_symbols": [
         "ConversationTranscript",
@@ -5928,7 +5929,13 @@
         "captureHorizontalScroll",
         "restoreHorizontalScrollOffset",
         "clampHorizontalScrollOffset",
-        "SendMessageTextTranscriptCard"
+        "SendMessageTextTranscriptCard",
+        "findInChatSearchText",
+        "includeFindInChatDisclosure",
+        "formatTranscriptToolCallName",
+        "TranscriptThinkingRow",
+        "TranscriptToolCallRow",
+        "scrollToEntryWithoutHighlight"
       ],
       "target_language": "TypeScript/React",
       "language_rationale": "Applicable behavior is transcript rich-content projection, lifecycle, search/navigation and interaction; existing canonical renderer owners are TypeScript/React while durable resource/domain truth remains behind typed existing contracts.",
@@ -5952,8 +5959,8 @@
       "implementation_status": "mapped",
       "coverage_disposition": "fabushi-ui-replacement",
       "blockers": [
-        "Current PR implements canonical URL/selection arbitration and canonical-message/structural-owner horizontal-scroll capture, compatible restore/clamp and incompatible-owner reset; exact-head GitHub Actions evidence remains required.",
-        "Structural drag/drop, hidden-ancestor expansion, full anchor reveal, visible-range equivalence, touch/scrollbar ownership, packaged a11y/temporal evidence and independent acceptance remain open."
+        "Current PR implements canonical URL/selection arbitration, owner-keyed horizontal-scroll continuity, and find-in-chat navigation for collapsed thinking/tool-call details: the canonical controller indexes only expanded-presentation text, the canonical transcript disclosure sets reveal the owning row, and the existing view-commit subscription reapplies highlights; exact-head GitHub Actions evidence remains required.",
+        "Structural drag/drop, quote/details ancestor expansion beyond canonical outline rows, full anchor reveal after relayout, visible-range equivalence, touch/scrollbar ownership, packaged a11y/temporal evidence and independent acceptance remain open."
       ],
       "production_entrypoints": [
         "ProductShell -> ConversationWorkspace -> ConversationTranscript -> existing Search/Math/Resource/URL/action owners"
@@ -5962,7 +5969,9 @@
         "main:3bc92400826cc4ca7ac665b467708e22261edc61",
         "path:frontend/src/recovered/features/conversation/workspace/transcript.tsx",
         "path:frontend/src/production/ProductionRenderer.tsx",
-        "path:frontend/src/recovered/features/conversation/cards/transcript-card/views/send-message-text.tsx"
+        "path:frontend/src/recovered/features/conversation/cards/transcript-card/views/send-message-text.tsx",
+        "path:frontend/src/recovered/features/conversation/workspace/find-in-chat-controller.ts",
+        "path:frontend/src/recovered/features/conversation/workspace/tool-call-label.ts"
       ],
       "test_evidence": [
         "path:frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts"
@@ -6090,16 +6099,19 @@
         "INV-TDRP-IV-ARTICLE-SCROLL-001",
         "INV-TDRP-IV-ARTICLE-DROP-001",
         "INV-TDRP-IV-ARTICLE-HIT-001",
+        "INV-TDRP-IV-ARTICLE-REVEAL-001",
         "INV-TDRP-IV-ARTICLE-VISIBLE-001",
         "INV-TDRP-IV-ARTICLE-RUNTIME-001",
         "INV-TDRP-IV-ARTICLE-HEAVY-001"
       ],
       "unit_case_ids": [
-        "UNIT-TDRP-IV-ARTICLE-SCROLL-CLAMP-001"
+        "UNIT-TDRP-IV-ARTICLE-SCROLL-CLAMP-001",
+        "UNIT-TDRP-IV-ARTICLE-HIDDEN-SEARCH-001"
       ],
       "property_state_case_ids": [],
       "contract_case_ids": [
-        "CONTRACT-TDRP-IV-ARTICLE-SCROLL-CONTINUITY-001"
+        "CONTRACT-TDRP-IV-ARTICLE-SCROLL-CONTINUITY-001",
+        "CONTRACT-TDRP-IV-ARTICLE-HIDDEN-REVEAL-001"
       ],
       "integration_case_ids": [],
       "functional_e2e_case_ids": [],
@@ -6136,7 +6148,7 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior mapped from accepted telegramdesktop/tdesktop d346 exact blobs; Qt/C++ presentation is not retained and legal/source provenance remains recorded.",
       "reviewer": null,
-      "notes": "Read-complete; current PR keeps external activation behind the canonical URL owner, blocks activation during text selection, and restores code/table horizontal offset only when canonical message and structural owner identity remain compatible. Broader typed hit, drop, ancestor expansion, reveal and visible-range semantics remain mapped-open."
+      "notes": "Read-complete; current PR keeps external activation behind the canonical URL owner, preserves compatible code/table scroll state, and extends the existing FindInChatController/ConversationTranscript composition rather than creating a second article search owner. Thinking/tool-call labels, hidden detail text and the visible ToolResultCard projection enter one ordered search corpus; navigation expands the existing disclosure set, stable data-entry-id rows become highlight owners, preview duplication disappears while expanded, and view-commit listeners recalculate ranges after disclosure. Broader typed hit, drag/drop, quote/details ancestor expansion, relayout reveal and visible-range semantics remain mapped-open."
     },
     {
       "source_repository": "telegramdesktop/tdesktop",

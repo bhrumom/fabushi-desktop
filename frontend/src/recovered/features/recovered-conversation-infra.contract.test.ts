@@ -31,7 +31,9 @@ import {
 import {
   createFindInChatController,
   findInChatSearchText,
+  includeFindInChatDisclosure,
 } from "./conversation/workspace/find-in-chat-controller.ts";
+import { formatTranscriptToolCallName } from "./conversation/workspace/tool-call-label.ts";
 import {
   formatRoutineRunTimestamp,
   presentRoutineRunHistory,
@@ -229,6 +231,87 @@ test("find-in-chat searches visible text, wraps navigation and resets on scope",
   assert.equal(controller.getSnapshot().query, "");
   assert.equal(controller.getSnapshot().matches.length, 0);
   controller.dispose();
+});
+
+test("UNIT-TDRP-IV-ARTICLE-HIDDEN-SEARCH-001 hidden transcript details share the expanded presentation search corpus", () => {
+  assert.equal(formatTranscriptToolCallName("ReadFileToolCall"), "Read File");
+  assert.equal(formatTranscriptToolCallName("ToolCall"), "ToolCall");
+
+  const thinkingText = findInChatSearchText({
+    id: "thinking-1",
+    kind: "thinking",
+    text: "First line\nHidden needle",
+  });
+  assert.equal(thinkingText, "Thinking\nFirst line\nHidden needle");
+
+  const toolText = findInChatSearchText({
+    id: "tool-1",
+    kind: "tool-call",
+    name: "ReadFileToolCall",
+    summary: "Outer hidden needle",
+    toolResult: {
+      kind: "file-edit",
+      toolCallId: "tool-1",
+      status: "success",
+      path: "/tmp/example.ts",
+      command: null,
+      workingDirectory: "/tmp",
+      summary: "Result hidden needle",
+      output: "Not rendered while summary is present",
+      diff: "@@ hidden needle diff",
+      isStreaming: false,
+      isBackground: false,
+    },
+  });
+  assert.equal(toolText, [
+    "Read File",
+    "Outer hidden needle",
+    "/tmp/example.ts",
+    "success",
+    "/tmp",
+    "Result hidden needle",
+    "@@ hidden needle diff",
+  ].join("\n"));
+  assert.equal(toolText.includes("Not rendered while summary is present"), false);
+
+  const controller = createFindInChatController();
+  controller.replaceEntries([
+    { id: "thinking-1", kind: "thinking", text: "Hidden needle twice: hidden needle" },
+    {
+      id: "tool-1",
+      kind: "tool-call",
+      name: "ReadFileToolCall",
+      summary: "Hidden needle",
+    },
+  ]);
+  controller.setQuery("hidden needle");
+  assert.deepEqual(controller.getSnapshot().matches, [
+    { entryId: "thinking-1", occurrence: 0 },
+    { entryId: "thinking-1", occurrence: 1 },
+    { entryId: "tool-1", occurrence: 0 },
+  ]);
+  controller.dispose();
+
+  const existing = new Set(["thinking-1"]);
+  assert.equal(includeFindInChatDisclosure(existing, "thinking-1"), existing);
+  const revealed = includeFindInChatDisclosure(existing, "tool-1");
+  assert.notEqual(revealed, existing);
+  assert.deepEqual([...revealed], ["thinking-1", "tool-1"]);
+});
+
+test("CONTRACT-TDRP-IV-ARTICLE-HIDDEN-REVEAL-001 find navigation expands hidden transcript owners before highlight refresh", () => {
+  const transcriptSource = readFileSync(new URL("./conversation/workspace/transcript.tsx", import.meta.url), "utf8");
+  const controllerSource = readFileSync(new URL("./conversation/workspace/find-in-chat-controller.ts", import.meta.url), "utf8");
+  assert.match(transcriptSource, /data-entry-id=\{entry\.id\} data-kind="tool-call"/);
+  assert.match(transcriptSource, /data-entry-id=\{entry\.id\} data-kind="thinking"/);
+  assert.match(transcriptSource, /revealFindEntryRef\.current\(entryId, disclosureKind\)/);
+  assert.match(transcriptSource, /setExpandedThinking\(\(current\) => includeFindInChatDisclosure\(current, entryId\)\)/);
+  assert.match(transcriptSource, /setExpandedToolCalls\(\(current\) => includeFindInChatDisclosure\(current, entryId\)\)/);
+  assert.match(transcriptSource, /\[expandedThinking, expandedToolCalls, transcriptHandleRef\]/);
+  assert.match(transcriptSource, /preview\.length > 0 && !expanded/);
+  assert.match(controllerSource, /entry\.kind === "thinking"/);
+  assert.match(controllerSource, /entry\.kind === "tool-call"/);
+  assert.match(controllerSource, /toolResultSearchText\(toolCall\.toolResult\)/);
 });
 
 test("routine history formats status and relative/zoned timestamps", () => {
