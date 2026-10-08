@@ -102,7 +102,7 @@ export function checkRecursiveInventory({
   assert(counts.githubNested === githubNestedComponents.reduce((n,p) => n + p.entries, 0), 'GitHub nested source group sum drift');
   const total = counts.root + counts.direct + counts.githubNested + counts.gitlab + counts.cppgirChild;
   assert(total === entries.length && total === observed.total_recursive_non_directory_entries, 'actual recursive total does not match component census');
-  assert(total === lock.coverage.recursive_source_entries_total && total === inventoryIndex.inventory.recursive_non_directory_entries && total === ledger.coverage.source_entries_total, 'live recursive total differs from lock/inventory/ledger');
+  assert(total === lock.coverage.recursive_source_entries_total && total === inventoryIndex.inventory.recursive_non_directory_entries && total === ledger.coverage.source_entries_total, 'actual recursive total differs from lock/inventory/ledger');
   for (const [a,b,c,d,label] of [
     [lock.coverage.unknown_minimum,inventoryIndex.inventory.unknown_minimum,ledger.coverage.unknown,total,'unknown'],
     [lock.coverage.unread_minimum,inventoryIndex.inventory.unread_minimum,ledger.coverage.unread,total,'unread'],
