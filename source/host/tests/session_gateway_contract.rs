@@ -1342,6 +1342,8 @@ fn shipping_human_send_recovers_ambiguous_dispatch_after_restart_without_reuploa
                 "path": attachment_path.to_string_lossy(),
                 "name": "resume.pdf"
             })],
+            false,
+            None,
         )
         .expect_err("lost response must remain unsettled");
     assert!(!first_error.is_empty());
