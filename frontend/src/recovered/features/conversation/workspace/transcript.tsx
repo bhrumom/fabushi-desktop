@@ -251,7 +251,9 @@ function isHttpUrl(value: string): boolean {
   }
 }
 
-function renderAssistantInlineText(text: string): ReactNode[] {
+type TranscriptExternalLinkOpener = (url: string) => void;
+
+function renderAssistantInlineText(text: string, openExternal?: TranscriptExternalLinkOpener): ReactNode[] {
   const nodes: ReactNode[] = [];
   const assistantInlinePattern = /\\\(([^\\\n]*?)\\\)|\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s<>"']+)|(\*\*|__)(?=\S)([^\n]*?\S)\5|(\*|_)(?=\S)([^\n]*?\S)\7|~~(?=\S)([^\n]*?\S)~~|`([^`\n]+)`/giu;
   let cursor = 0;
@@ -264,9 +266,9 @@ function renderAssistantInlineText(text: string): ReactNode[] {
       const markdownLabel = match[2];
       const rawUrl = match[3] ?? match[4] ?? "";
       if (match[5] != null) {
-        nodes.push(<strong className="sand-dj266r sand-at24cr" key={`assistant-strong-${match.index}`}>{renderAssistantInlineText(match[6] ?? "")}</strong>);
+        nodes.push(<strong className="sand-dj266r sand-at24cr" key={`assistant-strong-${match.index}`}>{renderAssistantInlineText(match[6] ?? "", openExternal)}</strong>);
       } else if (match[7] != null) {
-        nodes.push(<em className="sand-dj266r sand-at24cr" key={`assistant-emphasis-${match.index}`}>{renderAssistantInlineText(match[8] ?? "")}</em>);
+        nodes.push(<em className="sand-dj266r sand-at24cr" key={`assistant-emphasis-${match.index}`}>{renderAssistantInlineText(match[8] ?? "", openExternal)}</em>);
       } else if (match[9] != null) {
         nodes.push(<s className="sand-dj266r sand-at24cr" key={`assistant-strikethrough-${match.index}`}>{renderAssistantInlineText(match[9])}</s>);
       } else if (match[10] != null) {
@@ -277,7 +279,9 @@ function renderAssistantInlineText(text: string): ReactNode[] {
         if (!isHttpUrl(href)) {
           nodes.push(match[0]);
         } else {
-          nodes.push(<a className="sand-l1v4ol sand-krqix3 sand-1sur9pj" href={href} key={`assistant-link-${match.index}`} rel="noopener noreferrer" target="_blank">{markdownLabel ?? href}</a>);
+          nodes.push(openExternal == null
+            ? (markdownLabel ?? href)
+            : <a className="sand-l1v4ol sand-krqix3 sand-1sur9pj" href={href} key={`assistant-link-${match.index}`} onClick={(event) => { event.preventDefault(); openExternal(href); }} rel="noopener noreferrer">{markdownLabel ?? href}</a>);
           if (trailing.length > 0) nodes.push(trailing);
         }
       }
@@ -401,12 +405,12 @@ function assistantTextBlocks(text: string): AssistantTextBlock[] {
   return blocks;
 }
 
-function AssistantTextBlock({ block }: { block: AssistantTextBlock }) {
+function AssistantTextBlock({ block, openExternal }: { block: AssistantTextBlock; openExternal?: TranscriptExternalLinkOpener }) {
   if (block.kind === "math") return <AssistantMath displayMode expression={block.expression} />;
-  if (block.kind === "paragraph") return block.text.length > 0 ? <p>{renderAssistantInlineText(block.text)}</p> : null;
-  if (block.kind === "blockquote") return <blockquote className="sand-dj266r sand-at24cr sand-rxpjvj sand-8fiw5y sand-yumdvf sand-1t7ytsu sand-4n2izg sand-19aaqeu"><p>{renderAssistantInlineText(block.text)}</p></blockquote>;
+  if (block.kind === "paragraph") return block.text.length > 0 ? <p>{renderAssistantInlineText(block.text, openExternal)}</p> : null;
+  if (block.kind === "blockquote") return <blockquote className="sand-dj266r sand-at24cr sand-rxpjvj sand-8fiw5y sand-yumdvf sand-1t7ytsu sand-4n2izg sand-19aaqeu"><p>{renderAssistantInlineText(block.text, openExternal)}</p></blockquote>;
   if (block.kind === "horizontal-rule") return <hr className="sand-dj266r sand-at24cr sand-178xt8z sand-13fuv20 sand-1aeic0j sand-11pwa6s sand-1sy0etr sand-1b16gh4" />;
-  if (block.kind === "table") return <table className="sand-dj266r sand-at24cr sand-1mwwwfo sand-1wm8ruf"><thead className="sand-dj266r sand-at24cr"><tr className="sand-dj266r sand-at24cr">{block.headers.map((header, index) => <th className="sand-dj266r sand-at24cr sand-y3jwiz sand-13e3tqs sand-17fyfba sand-dpxx8g sand-16dsc37 sand-xzm5a7" key={`header-${index}`}>{renderAssistantInlineText(header)}</th>)}</tr></thead><tbody className="sand-dj266r sand-at24cr">{block.rows.map((row, rowIndex) => <tr className="sand-dj266r sand-at24cr" key={`row-${rowIndex}`}>{row.map((cell, cellIndex) => <td className="sand-dj266r sand-at24cr sand-y3jwiz sand-13e3tqs sand-so031l sand-1q0q8m5 sand-17fyfba sand-dpxx8g sand-16dsc37" key={`cell-${rowIndex}-${cellIndex}`}>{renderAssistantInlineText(cell)}</td>)}</tr>)}</tbody></table>;
+  if (block.kind === "table") return <table className="sand-dj266r sand-at24cr sand-1mwwwfo sand-1wm8ruf"><thead className="sand-dj266r sand-at24cr"><tr className="sand-dj266r sand-at24cr">{block.headers.map((header, index) => <th className="sand-dj266r sand-at24cr sand-y3jwiz sand-13e3tqs sand-17fyfba sand-dpxx8g sand-16dsc37 sand-xzm5a7" key={`header-${index}`}>{renderAssistantInlineText(header, openExternal)}</th>)}</tr></thead><tbody className="sand-dj266r sand-at24cr">{block.rows.map((row, rowIndex) => <tr className="sand-dj266r sand-at24cr" key={`row-${rowIndex}`}>{row.map((cell, cellIndex) => <td className="sand-dj266r sand-at24cr sand-y3jwiz sand-13e3tqs sand-so031l sand-1q0q8m5 sand-17fyfba sand-dpxx8g sand-16dsc37" key={`cell-${rowIndex}-${cellIndex}`}>{renderAssistantInlineText(cell, openExternal)}</td>)}</tr>)}</tbody></table>;
   if (block.kind === "heading") {
     const Heading = block.level === 1 ? "h1" : block.level === 2 ? "h2" : "h3";
     const className = block.level === 1
@@ -414,13 +418,13 @@ function AssistantTextBlock({ block }: { block: AssistantTextBlock }) {
       : block.level === 2
         ? "sand-dj266r sand-at24cr sand-1heor9g sand-xzm5a7 sand-1ja60sm sand-1b5m78i"
         : "sand-dj266r sand-at24cr sand-1heor9g sand-xzm5a7 sand-1ja60sm sand-140imcn";
-    return <Heading className={className}>{renderAssistantInlineText(block.text)}</Heading>;
+    return <Heading className={className}>{renderAssistantInlineText(block.text, openExternal)}</Heading>;
   }
   const List = block.ordered ? "ol" : "ul";
   const className = block.ordered
     ? "sand-dj266r sand-at24cr sand-92arao sand-1ja60sm sand-43c9pm sand-3yw8vx"
     : "sand-dj266r sand-at24cr sand-92arao sand-1ja60sm sand-43c9pm sand-taz4m5";
-  return <List className={className} start={block.ordered ? block.start : undefined}>{block.items.map((item, index) => <li className="sand-dj266r sand-at24cr sand-eaf4i8 sand-kwbhjd" key={`${block.ordered ? "ordered" : "unordered"}-${index}`}>{item.task ? <span aria-checked={item.checked === true} aria-disabled="true" className={item.checked === true ? "sand-markdown-checkbox sand-3nfvp2 sand-6s0dn4 sand-l56j7k sand-1kky2od sand-lup9mm sand-2lah0s sand-9f619 sand-mkeg23 sand-1y0btm7 sand-1qugcng sand-12oqio5 sand-1ua6jya sand-wbqysy sand-523cq2 sand-9r1u3d sand-1nyy9xd sand-70xvah" : "sand-markdown-checkbox sand-3nfvp2 sand-6s0dn4 sand-l56j7k sand-1kky2od sand-lup9mm sand-2lah0s sand-9f619 sand-mkeg23 sand-1y0btm7 sand-1qugcng sand-12oqio5 sand-1ua6jya sand-wbqysy sand-523cq2"} role="checkbox" /> : null}{item.task ? " " : null}{renderAssistantInlineText(item.text)}</li>)}</List>;
+  return <List className={className} start={block.ordered ? block.start : undefined}>{block.items.map((item, index) => <li className="sand-dj266r sand-at24cr sand-eaf4i8 sand-kwbhjd" key={`${block.ordered ? "ordered" : "unordered"}-${index}`}>{item.task ? <span aria-checked={item.checked === true} aria-disabled="true" className={item.checked === true ? "sand-markdown-checkbox sand-3nfvp2 sand-6s0dn4 sand-l56j7k sand-1kky2od sand-lup9mm sand-2lah0s sand-9f619 sand-mkeg23 sand-1y0btm7 sand-1qugcng sand-12oqio5 sand-1ua6jya sand-wbqysy sand-523cq2 sand-9r1u3d sand-1nyy9xd sand-70xvah" : "sand-markdown-checkbox sand-3nfvp2 sand-6s0dn4 sand-l56j7k sand-1kky2od sand-lup9mm sand-2lah0s sand-9f619 sand-mkeg23 sand-1y0btm7 sand-1qugcng sand-12oqio5 sand-1ua6jya sand-wbqysy sand-523cq2"} role="checkbox" /> : null}{item.task ? " " : null}{renderAssistantInlineText(item.text, openExternal)}</li>)}</List>;
 }
 
 function assistantContentBlocks(text: string): AssistantContentBlock[] {
@@ -470,13 +474,13 @@ function SendMessageTextImages({ images }: { images: readonly SendMessageTextIma
 const readOnlyRichTextExtensions = createPromptEditorExtensions("", undefined);
 const readOnlyRichTextSchema = getSchema(readOnlyRichTextExtensions);
 
-function richTextNodeChildren(node: ProseMirrorNode): ReactNode[] {
+function richTextNodeChildren(node: ProseMirrorNode, openExternal?: TranscriptExternalLinkOpener): ReactNode[] {
   const children: ReactNode[] = [];
-  node.forEach((child, _offset, index) => children.push(renderRichTextNode(child, `${node.type.name}-${index}`)));
+  node.forEach((child, _offset, index) => children.push(renderRichTextNode(child, `${node.type.name}-${index}`, openExternal)));
   return children;
 }
 
-function applyRichTextMarks(node: ProseMirrorNode, content: ReactNode): ReactNode {
+function applyRichTextMarks(node: ProseMirrorNode, content: ReactNode, openExternal?: TranscriptExternalLinkOpener): ReactNode {
   return node.marks.reduceRight((current, mark, index) => {
     const key = `${node.type.name}-mark-${index}`;
     switch (mark.type.name) {
@@ -487,16 +491,16 @@ function applyRichTextMarks(node: ProseMirrorNode, content: ReactNode): ReactNod
       case "code": return <code key={key}>{current}</code>;
       case "link": {
         const href = normalizeLinkUrl(mark.attrs.href);
-        return href == null ? current : <a href={href} key={key}>{current}</a>;
+        return href == null || openExternal == null ? current : <a href={href} key={key} onClick={(event) => { event.preventDefault(); openExternal(href); }}>{current}</a>;
       }
       default: return current;
     }
   }, content);
 }
 
-function renderRichTextNode(node: ProseMirrorNode, key: string): ReactNode {
-  if (node.isText) return applyRichTextMarks(node, node.text ?? "");
-  const children = richTextNodeChildren(node);
+function renderRichTextNode(node: ProseMirrorNode, key: string, openExternal?: TranscriptExternalLinkOpener): ReactNode {
+  if (node.isText) return applyRichTextMarks(node, node.text ?? "", openExternal);
+  const children = richTextNodeChildren(node, openExternal);
   switch (node.type.name) {
     case "doc": return <Fragment key={key}>{children}</Fragment>;
     case "paragraph": return <p key={key}>{children}</p>;
@@ -522,32 +526,32 @@ function renderRichTextNode(node: ProseMirrorNode, key: string): ReactNode {
   }
 }
 
-function readOnlyRichTextContent(value: string): ReactNode | null {
+function readOnlyRichTextContent(value: string, openExternal?: TranscriptExternalLinkOpener): ReactNode | null {
   try {
     const parsed: unknown = JSON.parse(value);
     if (typeof parsed !== "object" || parsed == null || (parsed as { type?: unknown }).type !== "doc") return null;
     const document = readOnlyRichTextSchema.nodeFromJSON(parsed as JSONContent);
-    return readRichTextDocument(document);
+    return readRichTextDocument(document, openExternal);
   } catch {
     // Immutable BPn falls back to the plain content when persisted rich text is malformed.
     return null;
   }
 }
 
-function readRichTextDocument(document: ProseMirrorNode): ReactNode {
-  return renderRichTextNode(document, "rich-text-document");
+function readRichTextDocument(document: ProseMirrorNode, openExternal?: TranscriptExternalLinkOpener): ReactNode {
+  return renderRichTextNode(document, "rich-text-document", openExternal);
 }
 
-function UserMessageContent({ text, richText }: { text: string; richText?: string }) {
-  const content = richText == null || richText.length === 0 ? null : readOnlyRichTextContent(richText);
+function UserMessageContent({ text, richText, openExternal }: { text: string; richText?: string; openExternal?: TranscriptExternalLinkOpener }) {
+  const content = richText == null || richText.length === 0 ? null : readOnlyRichTextContent(richText, openExternal);
   if (content != null) return <div className="sand-message-prose">{content}</div>;
   return <div className="sand-message-prose">{text ? <p>{text}</p> : null}</div>;
 }
 
-export function AssistantMessageContent({ text, images, channel, isSourceTrusted, isStreaming = false }: { text: string; images?: readonly SendMessageTextImage[]; channel?: string | null; isSourceTrusted?: boolean; isStreaming?: boolean }) {
+export function AssistantMessageContent({ text, images, channel, isSourceTrusted, isStreaming = false, openExternal }: { text: string; images?: readonly SendMessageTextImage[]; channel?: string | null; isSourceTrusted?: boolean; isStreaming?: boolean; openExternal?: TranscriptExternalLinkOpener }) {
   return <div className="sand-message-prose" data-source-trusted={isSourceTrusted || undefined}>{isStreaming && text.length === 0 ? <StreamingMessage /> : assistantContentBlocks(text).flatMap((block, index) => block.kind === "code"
     ? [<AssistantCodeBlock code={block.code} key={`code-${index}`} language={block.language} />]
-    : assistantTextBlocks(block.text).map((textBlock, textIndex) => <AssistantTextBlock block={textBlock} key={`text-${index}-${textIndex}`} />))}{images == null ? null : <SendMessageTextImages images={images} />}{channel == null ? null : <span className="sand-channel-tag" title={`Sent to ${channel}`}>{channel}</span>}</div>;
+    : assistantTextBlocks(block.text).map((textBlock, textIndex) => <AssistantTextBlock block={textBlock} key={`text-${index}-${textIndex}`} openExternal={openExternal} />))}{images == null ? null : <SendMessageTextImages images={images} />}{channel == null ? null : <span className="sand-channel-tag" title={`Sent to ${channel}`}>{channel}</span>}</div>;
 }
 
 function formatToolName(name: string): string {
@@ -789,7 +793,7 @@ export function ConversationTranscript({ entries, hasOlder = false, isLoadingOld
                   targetId={entry.replyToId ?? ""}
                   timestampMs={referencedEntry != null && "timestampMs" in referencedEntry ? referencedEntry.timestampMs : undefined}
                 /> : null}
-                {messageLink != null && messageUrlCards != null ? <LinkCardView isGroupStart={messageAdjacency.isGroupStart} provider={messageUrlCards} url={messageLink} /> : entry.isStreaming && entry.role === "assistant" && !entry.text ? <StreamingMessage /> : entry.role === "assistant" ? <AssistantMessageContent channel={entry.channel} images={entry.images} isSourceTrusted={entry.isSourceTrusted} isStreaming={entry.isStreaming} text={entry.text} /> : <UserMessageContent richText={entry.richText} text={entry.text} />}
+                {messageLink != null && messageUrlCards != null ? <LinkCardView isGroupStart={messageAdjacency.isGroupStart} provider={messageUrlCards} url={messageLink} /> : entry.isStreaming && entry.role === "assistant" && !entry.text ? <StreamingMessage /> : entry.role === "assistant" ? <AssistantMessageContent channel={entry.channel} images={entry.images} isSourceTrusted={entry.isSourceTrusted} isStreaming={entry.isStreaming} openExternal={messageUrlCards == null ? undefined : (url) => { void messageUrlCards.openExternal(url); }} text={entry.text} /> : <UserMessageContent openExternal={messageUrlCards == null ? undefined : (url) => { void messageUrlCards.openExternal(url); }} richText={entry.richText} text={entry.text} />}
                 {renderMessageReactionPills?.(reactionPillProps)}
                 {entry.attachments?.length ? <TranscriptAttachmentGallery adjacency={messageAdjacency} attachments={entry.attachments} downloadAttachment={downloadAttachment} readAttachmentBytes={readAttachmentBytes} resolveMedia={resolveAttachmentMedia} role={entry.role} /> : null}
                 {entry.delivery === "queued" && entry.composedAtMs == null ? <QueuedSendNotice entry={entry} isTransportDown={isTransportDown} onCancel={onCancelQueuedSend} /> : null}
