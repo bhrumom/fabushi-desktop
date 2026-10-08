@@ -14,7 +14,7 @@ import {
   createTranscriptFeedFanout,
   type TranscriptClientEventSource,
 } from "./conversation/cards/transcript-card/transcript-feed-source.ts";
-import { projectRichMessageAction, projectRichMessageActionAffordance } from "./conversation/cards/transcript-card/url-card.ts";
+import { projectRichMessageAction, projectRichMessageActionAffordance, projectTranscriptExternalLink } from "./conversation/cards/transcript-card/url-card.ts";
 import { createWidgetInteractionAdapter } from "./conversation/cards/transcript-card/widget-interactions.ts";
 import { createAssistantMathMarkupCache, type KatexRuntime } from "./conversation/workspace/math-runtime.ts";
 import { resolveWithSingleRetry } from "./conversation/workspace/media-runtime.ts";
@@ -450,6 +450,34 @@ test("rich widget button actions project fail-closed URL/copy semantics", () => 
   );
 });
 
+test("CONTRACT-TDRP-IV-PREPARED-LINK-EXTERNAL-COPY-001 transcript external links separate open target from typed copy payload", () => {
+  assert.deepEqual(projectTranscriptExternalLink("https://example.com/docs?q=1"), {
+    href: "https://example.com/docs?q=1",
+    copyText: "https://example.com/docs?q=1",
+    copyLabel: "Copy Link",
+  });
+  assert.deepEqual(projectTranscriptExternalLink("mailto:reader%2Bnotes@example.com?subject=Ignored"), {
+    href: "mailto:reader+notes@example.com",
+    copyText: "reader+notes@example.com",
+    copyLabel: "Copy Email",
+  });
+  assert.equal(projectTranscriptExternalLink("javascript:alert(1)"), null);
+  assert.equal(projectTranscriptExternalLink("file:///tmp/secret.md"), null);
+  assert.equal(projectTranscriptExternalLink("../relative.md"), null);
+  assert.equal(projectTranscriptExternalLink("mailto:%ZZ"), null);
+
+  const transcript = readFileSync(new URL("./conversation/workspace/transcript.tsx", import.meta.url), "utf8");
+  const actions = readFileSync(new URL("./conversation/cards/transcript-card/message-actions.tsx", import.meta.url), "utf8");
+  assert.match(transcript, /projectTranscriptExternalLink\(mark\.attrs\.href\)/);
+  assert.match(transcript, /data-transcript-copy-label=\{external\.copyLabel\}/);
+  assert.match(transcript, /data-transcript-copy-text=\{external\.copyText\}/);
+  assert.match(transcript, /projectTranscriptInlineCopyTarget\(event\.target\)/);
+  assert.match(transcript, /inlineCopy\?\.label \?\? "Copy"/);
+  assert.match(transcript, /\(\(\?:https\?:\\\/\\\/\|mailto:\)\[\^\\s\)\]\+\)/);
+  assert.match(actions, /"Copy Link" \| "Copy Email" \| "Copy Text"/);
+  assert.match(actions, /label !== "Copy Link" && label !== "Copy Email" && label !== "Copy Text"/);
+});
+
 test("widget action lifecycle fences duplicate and stale rich-button settlement", async () => {
   let resolveResponse!: (value: { accepted: boolean }) => void;
   const response = new Promise<{ accepted: boolean }>((resolve) => { resolveResponse = resolve; });
@@ -542,10 +570,10 @@ test("assistant math cache shares renders, isolates loaders, and retries load fa
 test("transcript rich links remain behind the canonical URL owner", () => {
   const source = readFileSync(new URL("./conversation/workspace/transcript.tsx", import.meta.url), "utf8");
   assert.match(source, /openExternal\?\: TranscriptExternalLinkOpener/);
-  assert.match(source, /event\.preventDefault\(\); if \(!transcriptSelectionBlocksActivation\(\)\) openExternal\(href\);/);
+  assert.match(source, /event\.preventDefault\(\); if \(!transcriptSelectionBlocksActivation\(\)\) openExternal\(external\.href\);/);
   assert.match(source, /messageUrlCards\.openExternal\(url\)/);
-  assert.doesNotMatch(source, /assistant-link-[\s\S]{0,500}target="_blank"/);
-  assert.match(source, /href == null \|\| openExternal == null \? current/);
+  assert.doesNotMatch(source, /assistant-link-[\s\S]{0,700}target="_blank"/);
+  assert.match(source, /external == null \|\| openExternal == null \? current/);
   assert.match(source, /selection != null && !selection\.isCollapsed && selection\.toString\(\)\.length > 0/);
 });
 
