@@ -1,6 +1,7 @@
 use mahayana_host_runtime::gateway_protocol::{
-    FABUSHI_GATEWAY_COMPAT_COMMANDS, GATEWAY_PREPARE_UPGRADE_PATH, GROK_GATEWAY_COMMANDS,
-    is_grok_gateway_command, parse_command_args, slim_command_result, slim_event,
+    FABUSHI_GATEWAY_COMPAT_COMMANDS, FABUSHI_HOST_GATEWAY_METHODS, GATEWAY_PREPARE_UPGRADE_PATH,
+    GROK_GATEWAY_COMMANDS, is_grok_gateway_command, parse_command_args, slim_command_result,
+    slim_event,
 };
 use serde_json::json;
 
@@ -20,12 +21,26 @@ fn gateway_protocol_keeps_frozen_command_inventory_and_upgrade_path() {
     assert_eq!(GROK_GATEWAY_COMMANDS.len(), 122);
     assert!(GROK_GATEWAY_COMMANDS.contains(&"listRoutedMcpTools"));
     assert!(GROK_GATEWAY_COMMANDS.contains(&"executeRoutedMcpTool"));
+    assert!(!GROK_GATEWAY_COMMANDS.contains(&"listStories"));
+    assert_eq!(
+        FABUSHI_HOST_GATEWAY_METHODS,
+        &[
+            "getStoryStealthStatus",
+            "activateStoryStealth",
+            "listStories",
+            "viewStory",
+            "reactStory",
+            "deleteStory",
+        ]
+    );
     assert_eq!(FABUSHI_GATEWAY_COMPAT_COMMANDS, &["resumeAfterRecreate"]);
     assert!(is_grok_gateway_command("sendPrompt"));
     assert!(is_grok_gateway_command("requestWebAuthnCeremony"));
     assert!(is_grok_gateway_command("resumeAfterRecreate"));
     assert!(is_grok_gateway_command("listRoutedMcpTools"));
     assert!(is_grok_gateway_command("executeRoutedMcpTool"));
+    assert!(is_grok_gateway_command("listStories"));
+    assert!(is_grok_gateway_command("activateStoryStealth"));
     assert!(!is_grok_gateway_command("feature.auth.status"));
     assert!(!is_grok_gateway_command("not-a-grok-command"));
     assert_eq!(GATEWAY_PREPARE_UPGRADE_PATH, "/prepare-upgrade");
