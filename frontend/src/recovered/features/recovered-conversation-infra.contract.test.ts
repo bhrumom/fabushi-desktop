@@ -455,3 +455,15 @@ test("transcript rich links remain behind the canonical URL owner", () => {
   assert.match(source, /href == null \|\| openExternal == null \? current/);
   assert.match(source, /selection != null && !selection\.isCollapsed && selection\.toString\(\)\.length > 0/);
 });
+
+
+test("media replacement retires stale pointer ownership before the new resource settles", () => {
+  const source = readFileSync(new URL("./conversation/workspace/media-viewer.tsx", import.meta.url), "utf8");
+  const replacementStart = source.indexOf("setMedia(null);");
+  const resolverStart = source.indexOf("void resolveMedia(current.path)", replacementStart);
+  assert.ok(replacementStart >= 0 && resolverStart > replacementStart);
+  const replacementBlock = source.slice(replacementStart, resolverStart);
+  assert.match(replacementBlock, /setTransform\(\{ scale: MIN_ZOOM, x: 0, y: 0 \}\);/);
+  assert.match(replacementBlock, /pointerRef\.current = \{ id: null, startX: 0, startY: 0, originX: 0, originY: 0, moved: false \};/);
+  assert.match(source, /if \(pointer\.id !== event\.pointerId\) return;/);
+});
