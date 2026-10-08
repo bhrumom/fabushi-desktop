@@ -15,6 +15,7 @@ import {
 } from "./conversation/cards/transcript-card/transcript-feed-source.ts";
 import { projectTranscriptCardEntry } from "./conversation/cards/transcript-card/protocol.ts";
 import { projectRichMessageActionAffordance } from "./conversation/cards/transcript-card/url-card.ts";
+import { createWidgetInteractionAdapter } from "./conversation/cards/transcript-card/widget-interactions.ts";
 import {
   createHiddenChatsMutationController,
 } from "./hidden-chats/overlay/mutation-controller.ts";
@@ -374,4 +375,41 @@ test("rich widget button actions project fail-closed URL/copy semantics", () => 
     projectRichMessageActionAffordance({ kind: "open-url", data: "javascript:alert(1)" }).normalizedUrl,
     null,
   );
+});
+
+
+test("widget action lifecycle fences duplicate and stale rich-button settlement", async () => {
+  let resolveResponse!: (value: { accepted: boolean }) => void;
+  const response = new Promise<{ accepted: boolean }>((resolve) => { resolveResponse = resolve; });
+  const adapter = createWidgetInteractionAdapter({
+    scope: { accountSlot: "slot-1", agentId: "agent-1" },
+    transport: {
+      respondToWidget: async () => response,
+      dismissWidget: async () => ({ accepted: true }),
+    },
+  });
+  adapter.replaceEntries([{
+    kind: "send-message",
+    id: "widget-1",
+    message: {
+      type: "widget",
+      widget: {
+        prompt: "Choose",
+        options: [{ label: "Open", action: { kind: "open-url", data: "https://example.com" } }],
+      },
+    },
+  }]);
+
+  const pending = adapter.respond("widget-1", "Open");
+  assert.equal(adapter.getSnapshot("widget-1").state, "pending");
+  assert.deepEqual(await adapter.respond("widget-1", "Open"), { kind: "ignored", reason: "settled" });
+
+  adapter.setScope({ accountSlot: "slot-1", agentId: "agent-2" });
+  resolveResponse({ accepted: true });
+  const stale = await pending;
+  assert.equal(stale.kind, "stale");
+  assert.equal(adapter.getSnapshot("widget-1").state, "idle");
+
+  adapter.dispose();
+  assert.deepEqual(await adapter.dismiss("widget-1"), { kind: "ignored", reason: "unavailable" });
 });
