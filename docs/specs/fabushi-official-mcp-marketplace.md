@@ -23,7 +23,7 @@ Do not rebuild Google/GitHub APIs, impersonate provider publishers, weaken accou
 - FMCP-008: all executable verification runs in GitHub Actions. No local build/test/lint/generator.
 
 ## 5. Current state
-source/shared/node/mcp/mcp-marketplace.ts reads Dashboard catalog; desktop-mcp-manager.ts owns the production manager and routed tool facade. frontend PluginsDesktopSurface loads catalog, effective plugins and server state together. The existing encrypted SandUserSecretsStore supports dedicated store paths and account scopes. OAuth applications/Google preview entitlement have not been confirmed.
+source/shared/node/mcp/mcp-marketplace.ts reads Dashboard catalog; desktop-mcp-manager.ts owns the production manager and routed tool facade. frontend PluginsDesktopSurface loads catalog, effective plugins and server state together. The existing encrypted SandUserSecretsStore supports dedicated store paths and account scopes. The user confirmed on 2026-10-08 that OAuth applications have not yet been configured. Google preview entitlement has not been confirmed.
 
 ## 6. Target state
 Existing Plugins entry displays the Fabushi official catalog. Install configures a real remote connector; actual authorization and MCP discovery determine status/tool count. The directory remains available during foreign Dashboard failures. Normal OAuth login will be activated only after registered application configuration and live acceptance.
@@ -70,6 +70,18 @@ https://github.com/github/github-mcp-server/blob/main/docs/host-integration.md
 ## 17. Spec compliance
 | Requirement / AC | Status | Evidence / reason |
 | --- | --- | --- |
-| AC-1..3 | blocked | implementation/Actions pending |
-| AC-4 | blocked | Fabushi OAuth registration and Google preview configuration not confirmed |
-| AC-5 | blocked | integration/release evidence pending |
+| AC-1..3 | implemented; live acceptance pending | Head 1e800e28dac6c194213bda0cec57adecbd9c1a57: provider protocol/lifecycle fixtures and production compile/build gates pass; no live provider authorization claimed |
+| AC-4 | blocked | User confirmed OAuth applications are not configured; Google preview entitlement and packaged-product OAuth evidence remain outstanding |
+| AC-5 | blocked | Reviewable draft PR #49; integration/release intentionally pending OAuth/live acceptance |
+
+## 18. Implementation evidence
+- Draft delivery: https://github.com/bhrumom/fabushi-desktop/pull/49
+- Provider contracts: https://github.com/bhrumom/fabushi-desktop/actions/runs/37759000207 (10 protocol/lifecycle fixture tests; no real provider account calls).
+- Production Electron/renderer, architecture and runtime checks: https://github.com/bhrumom/fabushi-desktop/actions/runs/37759000216; renderer job 113250536920 passes all steps, including strict architecture inventory and production bundling.
+- Canonical source changes remain confined to existing Plugins and Coordinator/Host facade. The semantic-adaptations registry records the five changed frozen boundaries with behavior and test evidence.
+
+## 19. Remaining setup and live acceptance
+1. Register Fabushi's GitHub OAuth App/GitHub App and Google Cloud OAuth client under the product owner's accounts, with selected redirect URLs. Do not put client secrets or user access tokens into source or email.
+2. Obtain/confirm Google Workspace MCP Developer Preview access and enable each required API and MCP API in the qualified project. Google Chat additionally requires its Chat app configuration.
+3. Implement registered-client OAuth callback, state/PKCE as appropriate, encrypted token refresh/revocation and expiry/re-auth in the existing native auth edge; the interim ACCESS_TOKEN field is not a replacement for this acceptance item.
+4. Run fresh packaged-product sign-in, discovery, read/write permission, disable, disconnect, expiry and account-switch acceptance against real GitHub and Google accounts in the approved cloud environment. Retain exact-head Actions evidence before integration/release.
