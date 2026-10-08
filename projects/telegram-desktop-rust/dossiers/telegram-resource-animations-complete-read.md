@@ -17,3 +17,22 @@ Accounting after entry 89:
 - unread: `15,663`
 - unknown: `15,730`
 - omitted: `0`
+
+## Entries 90–98 — blocked/cake/call/camera/change-number and chat animation resources
+
+All nine exact TGS blobs were gzip-decompressed in a streaming read (no persistent build/checkout artifact) and their Lottie metadata was inspected. Consumer searches identified the production references listed in `inventory/source-dispositions.json`.
+
+- 90 `blocked_peers_empty.tgs`: blocked-peers/report empty-state illustration.
+- 91 `cake.tgs`: birthday suggestion local TGS sticker.
+- 92 `call_rate.tgs`: call-rating star/burst feedback.
+- 93 `camera_outline.tgs`: edit-contact photo/avatar affordance.
+- 94 `change_number.tgs`: Settings change-number animation.
+- 95 `chat/sparkles_emoji.tgs`: Compose AI decorative custom emoji.
+- 96 `chat/video_to_voice.tgs`: record-mode video-to-voice transition.
+- 97 `chat/voice_to_video.tgs`: record-mode voice-to-video transition.
+- 98 `chat/white_flag_emoji.tgs`: Compose AI neutral-style custom emoji.
+
+These entries are read/decomposed but intentionally remain implementation-open until the referenced production consumers reach their own deterministic full-read turn. Thus unread falls while unknown does not.
+
+Accounting: full-read `158`, unread `15,654`, unknown `15,730`, omitted `0`.
+
