@@ -164,6 +164,117 @@ fn production_gateway_reads_transcript_pages_and_counts_agents_without_compat_ho
 }
 
 #[test]
+fn production_gateway_forward_revalidates_recipient_authority_before_destination_mutation() {
+    let root = temp_root("share-forward-revalidation");
+    let agents = root.join("agents");
+    let memory = Arc::new(
+        mahayana_host_runtime::extensions::memory::memory_service::MemoryService::new(
+            agents.clone(),
+        ),
+    );
+    let runtime = Arc::new(
+        ProductionSessionWorkers::with_agents_root_identity_and_dependencies(
+            &agents,
+            500,
+            Some("human-local".into()),
+            Arc::new(|| None),
+            memory,
+        ),
+    );
+
+    let source = dispatch(
+        &runtime,
+        "createHumanConversation",
+        json!({
+            "localHumanId": "human-local",
+            "peerHumanId": "human-source",
+            "title": "Source"
+        }),
+    );
+    let source_id = source["id"].as_str().expect("source conversation id").to_string();
+    let destination = dispatch(
+        &runtime,
+        "createHumanConversation",
+        json!({
+            "localHumanId": "human-local",
+            "peerHumanId": "human-beta",
+            "title": "Beta"
+        }),
+    );
+    let destination_id = destination["id"]
+        .as_str()
+        .expect("destination conversation id")
+        .to_string();
+
+    let source_entry = dispatch(
+        &runtime,
+        "sendHumanMessage",
+        json!({
+            "conversationId": source_id,
+            "senderId": "human-local",
+            "text": "forward through gateway",
+            "clientNonce": "gateway-forward-source",
+            "composedAtMs": 10
+        }),
+    );
+    let source_entry_id = source_entry["id"]
+        .as_str()
+        .expect("source entry id")
+        .to_string();
+
+    let visible = dispatch(
+        &runtime,
+        "searchHumanRecipients",
+        json!({
+            "sourceConversationId": source_id,
+            "sourceEntryId": source_entry_id,
+            "query": "beta",
+            "limit": 50
+        }),
+    );
+    assert_eq!(visible.as_array().map(Vec::len), Some(1));
+    assert_eq!(visible[0]["id"], destination_id);
+
+    let destination_owner = runtime
+        .open_human_conversation_db_owner(&destination_id)
+        .expect("destination database owner");
+    let before = destination_owner
+        .get_transcript_entries()
+        .expect("destination transcript before revocation");
+    assert!(destination_owner
+        .set_metadata("participantIds", json!(["human-beta"]))
+        .expect("revoke local participant authority"));
+
+    let settlement = dispatch(
+        &runtime,
+        "forwardHumanMessage",
+        json!({
+            "sourceConversationId": source_id,
+            "sourceEntryId": source_entry_id,
+            "destinationConversationIds": [destination_id],
+            "clientNonce": "gateway-forward-after-revocation",
+            "dropSenderNames": false,
+            "dropCaptions": false
+        }),
+    );
+    assert_eq!(settlement["destinations"][0]["status"], "failed");
+    assert!(settlement["destinations"][0]["error"]
+        .as_str()
+        .is_some_and(|error| error.contains("no longer authorized")));
+
+    let after = destination_owner
+        .get_transcript_entries()
+        .expect("destination transcript after rejected gateway forward");
+    assert_eq!(
+        after, before,
+        "gateway submit-time authorization must fail before any destination transcript mutation"
+    );
+
+    runtime.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
 fn production_gateway_composes_channel_metadata_and_secrets() {
     let root = temp_root("channels");
     let agents = root.join("agents");
