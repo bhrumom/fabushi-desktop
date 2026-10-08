@@ -4,19 +4,19 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "aac515c5408015231a273c80ab4c4b33815e63ab",
-    "tree": "cf3a60d601c2d063903e620602b7e5913d3b0654",
+    "commit": "6ec5014a92c4580841a043c440d65e8fc605ff78",
+    "tree": "3648fc1500284f31d0557db20f9bb6742b25b2af",
     "baseline_identity_accepted": false
   },
   "inventory": {
-    "root_non_directory_entries": 6363,
-    "recursive_non_directory_entries": 15812,
+    "root_non_directory_entries": 6648,
+    "recursive_non_directory_entries": 16120,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 15730,
-    "unread_minimum": 15566,
+    "unknown_minimum": 16033,
+    "unread_minimum": 15930,
     "omitted_known": 0,
-    "note": "Live aac515c recursive census is 15,812. 246 exact entries are read-complete; unknown 15,730, unread 15,566, omitted 0. Animation resources through toast/forward.tgs are fully read/decomposed; production-consumer implementation evidence remains open."
+    "note": "Live 6ec5014 recursive census is 16,120. 190 exact entries are read-complete; 87 are explicitly unknown-closed; unknown 16,033, unread 15,930, omitted 0. Deterministic read-through stops before unread order 134 gram.tgs."
   },
   "latest_recursive_evidence": {
     "run_id": 37596744991,
@@ -33,7 +33,7 @@
     ],
     "evidence_status": "historical-only",
     "upstream_commit": "f23c37857220eb84f8559f0901ea26fb304b564b",
-    "superseded_by_upstream_commit": "aac515c5408015231a273c80ab4c4b33815e63ab"
+    "superseded_by_upstream_commit": "6ec5014a92c4580841a043c440d65e8fc605ff78"
   },
   "closure_rules": {
     "executable_runner": "github-actions",
@@ -45,42 +45,30 @@
   },
   "note": "Accepted aac515c authority is exact. 246 full-read entries are now credited; unread_minimum is 15,566, unknown remains 15,730, omitted remains 0. Entries 167-186 are decompressed/read; exact toast/statistics consumers are recorded while swipe-action registry/load ownership remains explicitly open.",
   "rebaseline": {
-    "from_commit": "d346b42a1d30ef60dc989b6e5191bb8e571f6bd5",
-    "to_commit": "aac515c5408015231a273c80ab4c4b33815e63ab",
-    "ahead_by": 2,
-    "changed_paths": 13,
-    "unchanged_story_blob_rebind": [
-      "Telegram/SourceFiles/media/stories/media_stories_slider.h@37dbca0504c3423a14665c5b692f2dc2699d5469",
-      "Telegram/SourceFiles/media/stories/media_stories_slider.cpp@bdb547186edc53fbfd64dd1434f861a27fb3be0d",
-      "Telegram/SourceFiles/media/stories/media_stories_view.h@0f3e59e99503aa4924937ac715eccdbcd0966fa3",
-      "Telegram/SourceFiles/media/stories/media_stories_view.cpp@8fe4a5de24fd67abe0b64da0a45ec4e0fd901b30",
-      "Telegram/SourceFiles/media/stories/media_stories_stealth.h@649cfa1eb5abcad11706741753bb70232fe43c7a",
-      "Telegram/SourceFiles/media/stories/media_stories_stealth.cpp@8bd47aaf5b5b454a6f2ac0b4641b285646d4a9b3"
-    ],
+    "from_commit": "68d1365911fb2c680dd8c7519782b4dbc7f02b7e",
+    "to_commit": "6ec5014a92c4580841a043c440d65e8fc605ff78",
+    "ahead_by": 4,
+    "changed_paths": 9,
     "changed_authority_paths": [
-      ".agents/skills/dependency-watch/SKILL.md",
-      ".agents/skills/dependency-watch/agents/openai.yaml",
-      ".agents/skills/dependency-watch/references/forks.md",
-      ".agents/skills/dependency-watch/references/release-trust.md",
-      ".agents/skills/dependency-watch/scripts/watch.py",
-      ".agents/skills/dependency-watch/scripts/watch_test.py",
-      "Telegram/CMakeLists.txt",
-      "Telegram/SourceFiles/_other/updater.h",
-      "Telegram/SourceFiles/_other/updater_win.cpp",
-      "Telegram/SourceFiles/core/update_checker.cpp",
-      "Telegram/SourceFiles/platform/win/launcher_win.cpp",
-      "Telegram/SourceFiles/tests/test_updater_win.cpp",
-      "Telegram/cmake/test_updater_win.cmake"
+      "Telegram/SourceFiles/history/view/history_view_message.cpp",
+      "Telegram/SourceFiles/ui/chat/attach/attach_bot_webview.cpp",
+      "Telegram/SourceFiles/ui/chat/attach/attach_bot_webview.h",
+      "Telegram/SourceFiles/wallet/wallet_content.cpp",
+      "Telegram/build/docker/centos_env/Dockerfile",
+      "Telegram/build/prepare/prepare.py",
+      "Telegram/cmake/telegram_apple_swift_runtime.cmake",
+      "Telegram/lib_webview",
+      "snap/snapcraft.yaml"
     ],
     "current_head_source_authority_evidence": "pending-new-head"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
-    "upstream_commit": "aac515c5408015231a273c80ab4c4b33815e63ab",
-    "deterministic_prefix_closed": 53,
-    "development_only_non_applicable": 62,
-    "unknown_closed": 82,
+    "upstream_commit": "6ec5014a92c4580841a043c440d65e8fc605ff78",
+    "deterministic_prefix_closed": 57,
+    "development_only_non_applicable": 66,
+    "unknown_closed": 87,
     "omitted": 0,
-    "read_through": 186
+    "read_through": 133
   }
 }

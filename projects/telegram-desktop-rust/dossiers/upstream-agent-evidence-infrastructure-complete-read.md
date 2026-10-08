@@ -2,7 +2,7 @@
 
 Status: read-complete / responsibility closure open  
 Project: TDRP-001 Revision 9  
-Accepted upstream: `telegramdesktop/tdesktop@aac515c5408015231a273c80ab4c4b33815e63ab`
+Accepted upstream: `telegramdesktop/tdesktop@6ec5014a92c4580841a043c440d65e8fc605ff78`
 
 ## Exact source identity
 

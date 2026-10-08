@@ -1,6 +1,6 @@
 # Root repository metadata — complete source read
 
-Accepted upstream: `telegramdesktop/tdesktop@aac515c5408015231a273c80ab4c4b33815e63ab`
+Accepted upstream: `telegramdesktop/tdesktop@6ec5014a92c4580841a043c440d65e8fc605ff78`
 
 Entries 73–87 are fully read and exact-blob dispositioned in `projects/telegram-desktop-rust/inventory/source-dispositions.json`: `.gitignore`, `.gitmodules`, complete `.grok/**`, `AGENTS.md`, `CLAUDE.md`, root `CMakeLists.txt`, `GROK.md`, `LEGAL`, `LICENSE`, `README.md`, and `REVIEW.md`.
 

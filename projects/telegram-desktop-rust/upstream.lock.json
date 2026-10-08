@@ -8,29 +8,29 @@
     "repository": "telegramdesktop/tdesktop",
     "url": "https://github.com/telegramdesktop/tdesktop",
     "discovery_ref": "refs/heads/dev",
-    "commit": "aac515c5408015231a273c80ab4c4b33815e63ab",
-    "tree": "cf3a60d601c2d063903e620602b7e5913d3b0654",
-    "committed_at": "2026-10-08T15:15:22Z",
+    "commit": "6ec5014a92c4580841a043c440d65e8fc605ff78",
+    "tree": "3648fc1500284f31d0557db20f9bb6742b25b2af",
+    "committed_at": "2026-10-08T19:19:49Z",
     "accepted": true
   },
   "previous_historical_baseline": {
-    "commit": "d346b42a1d30ef60dc989b6e5191bb8e571f6bd5",
-    "tree": "5db05afa460bb030ac36316beb6496df03742c59",
+    "commit": "68d1365911fb2c680dd8c7519782b4dbc7f02b7e",
+    "tree": "c484608066bd71d6189462046924a11b65df0a68",
     "evidence_status": "historical-only",
-    "reason": "Revision 9 live dev authority advanced two commits to aac515c5408015231a273c80ab4c4b33815e63ab; all d346b42a1d30ef60dc989b6e5191bb8e571f6bd5 source-authority runs are diagnostic/historical only."
+    "reason": "Revision 9 live dev authority advanced four commits to 6ec5014a92c4580841a043c440d65e8fc605ff78; all 68d1365911fb2c680dd8c7519782b4dbc7f02b7e source-authority evidence is historical-only."
   },
   "observed_root_inventory": {
     "tree_truncated": false,
-    "entry_count": 6641,
-    "blob_count": 6328,
-    "direct_gitlink_count": 35,
-    "sourcefiles_blob_count": 3012,
-    "resource_blob_count": 3073,
-    "root_non_directory_count": 6363
+    "entry_count": 6937,
+    "blob_count": 6612,
+    "direct_gitlink_count": 36,
+    "sourcefiles_blob_count": 3249,
+    "resource_blob_count": 3112,
+    "root_non_directory_count": 6648
   },
   "delta_from_previous_baseline": {
-    "ahead_by": 2,
-    "changed_paths": 13
+    "ahead_by": 4,
+    "changed_paths": 9
   },
   "direct_gitlinks": [
     {
@@ -139,6 +139,11 @@
       "commit": "c87183a77d67f7d37e3d2d1b7eaac5e7c695e4f0"
     },
     {
+      "path": "Telegram/ThirdParty/zxcvbn",
+      "repository": "tsyrogit/zxcvbn-c",
+      "commit": "ab51000506afc1a450557a3608646bc04ba951fa"
+    },
+    {
       "path": "Telegram/codegen",
       "repository": "desktop-app/codegen",
       "commit": "dbd1d53137cd581cfdbeebe93bcaf54abf55ec74"
@@ -151,12 +156,12 @@
     {
       "path": "Telegram/lib_crl",
       "repository": "desktop-app/lib_crl",
-      "commit": "7a165302fed408c84b2d1c2513e35a21a141da44"
+      "commit": "de724667d7bdfbf906f78fc405af1ee9f7723d49"
     },
     {
       "path": "Telegram/lib_lottie",
       "repository": "desktop-app/lib_lottie",
-      "commit": "7d00b5048aff8dd93c0a9721abf50006d20682be"
+      "commit": "fbb922c30b7c30ba17ad5fd4fcb989eadd620062"
     },
     {
       "path": "Telegram/lib_qr",
@@ -191,7 +196,7 @@
     {
       "path": "Telegram/lib_ui",
       "repository": "desktop-app/lib_ui",
-      "commit": "a0f588b7522d6f3bfac4c19b5824a4e325295020"
+      "commit": "24310a3196c6632f58101a3ec1c553c4565bc9be"
     },
     {
       "path": "Telegram/lib_webrtc",
@@ -201,12 +206,12 @@
     {
       "path": "Telegram/lib_webview",
       "repository": "desktop-app/lib_webview",
-      "commit": "427d2470a41d8678ee9a95b4291a078e15a5e549"
+      "commit": "d6e2e0b8b171a104cd7b63bd351f056563e964b0"
     },
     {
       "path": "cmake",
       "repository": "desktop-app/cmake_helpers",
-      "commit": "7a6abdae76f14d0ebb5a8d0500d7adc6d6c1e489"
+      "commit": "12cdedd007b6b3c36df2349dae1996384e535ede"
     }
   ],
   "known_nested_gitlinks": [
@@ -223,7 +228,7 @@
       "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae"
     },
     {
-      "parent": "desktop-app/cmake_helpers@7a6abdae76f14d0ebb5a8d0500d7adc6d6c1e489",
+      "parent": "desktop-app/cmake_helpers@12cdedd007b6b3c36df2349dae1996384e535ede",
       "path": "external/glib/cppgir",
       "repository": "gitlab.com/mnauw/cppgir",
       "commit": "47cf94f83b54cda59018135601e19d7fb0c77776"
@@ -256,12 +261,12 @@
     "pointer_scan_required_in_github_actions": true
   },
   "coverage": {
-    "root_source_entries_total": 6363,
-    "recursive_source_entries_total": 15812,
-    "unknown_minimum": 15730,
-    "unread_minimum": 15646,
+    "root_source_entries_total": 6648,
+    "recursive_source_entries_total": 16120,
+    "unknown_minimum": 16033,
+    "unread_minimum": 15930,
     "omitted_known": 0,
-    "note": "Accepted telegramdesktop/tdesktop@aac515c5408015231a273c80ab4c4b33815e63ab root tree cf3a60d601c2d063903e620602b7e5913d3b0654. 166 exact entries are read-complete; unknown 15,730, unread 15,646, omitted 0. Entries 89-106 are applicable visual resources with production-consumer evidence still open."
+    "note": "Accepted telegramdesktop/tdesktop@6ec5014a92c4580841a043c440d65e8fc605ff78 root tree 3648fc1500284f31d0557db20f9bb6742b25b2af. Live root census is 6,937 entries / 6,648 non-directory / 6,612 blobs / 36 direct gitlinks; recursive denominator is 16,120. 190 exact entries are read-complete, 87 are explicitly unknown-closed, so unknown=16,033, unread=15,930, omitted=0. Earliest unread deterministic entry is order 134."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -275,7 +280,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Live upstream baseline is aac515c5408015231a273c80ab4c4b33815e63ab; current-head Revision 9 source-authority evidence is required. Full source closure remains open until unknown=0, unread=0, omitted=0 and every recursive/build authority and responsibility is verified."
+    "note": "Live upstream baseline is 6ec5014a92c4580841a043c440d65e8fc605ff78; current-head Revision 9 source-authority evidence is required. Full source closure remains open until unknown=0, unread=0, omitted=0 and every recursive/build authority and responsibility is verified."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",
@@ -289,7 +294,7 @@
     "artifact_digest": "sha256:2282fdfe4cdc4835240a503092b107ae6037749e1d615978a34a36829f9affca",
     "upstream_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
     "recursive_non_directory_entries": 15788,
-    "superseded_by_upstream_commit": "aac515c5408015231a273c80ab4c4b33815e63ab"
+    "superseded_by_upstream_commit": "6ec5014a92c4580841a043c440d65e8fc605ff78"
   },
   "recursive_inventory_evidence": {
     "status": "historical-only",
@@ -304,16 +309,16 @@
     "upstream_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
     "recursive_non_directory_entries": 15788,
     "source_closure_ready": false,
-    "superseded_by_upstream_commit": "aac515c5408015231a273c80ab4c4b33815e63ab"
+    "superseded_by_upstream_commit": "6ec5014a92c4580841a043c440d65e8fc605ff78"
   },
   "build_time_acquisition_inventory": {
     "path": "projects/telegram-desktop-rust/inventory/build-time-acquisitions.json",
-    "candidate_lines_total": 320,
-    "immutable_commit_pin_occurrences_classified": 17,
-    "candidate_lines_pending_classification": 0,
+    "candidate_lines_total": 4003,
+    "immutable_commit_pin_occurrences_classified": 0,
+    "candidate_lines_pending_classification": 4003,
     "closure_status": "open",
-    "candidate_lines_classified": 320,
-    "disposition_closure_status": "complete",
+    "candidate_lines_classified": 0,
+    "disposition_closure_status": "open",
     "recursive_authority_closure_status": "open",
     "recursive_child_input_occurrences_recorded": 11,
     "recursive_child_unique_repositories_recorded": 9,
@@ -335,8 +340,8 @@
     "evidence_head_sha": "7ba34245b2246a58d9f4641652e423bbd3ec5a47",
     "artifact_id": 11526586095,
     "artifact_digest": "sha256:584b0f72307008ea17317ae238b7895f10050ffda18c50325d1bcd7fd97ce257",
-    "evidence_status": "historical-artifact-current-census-rebound",
-    "root_non_directory_entries": 6363,
+    "evidence_status": "pending-current-head-actions",
+    "root_non_directory_entries": 6648,
     "direct_component_counts": [
       {
         "mount": "Telegram/ThirdParty/GSL",
@@ -465,6 +470,12 @@
         "entries": 100
       },
       {
+        "mount": "Telegram/ThirdParty/zxcvbn",
+        "repository": "tsyrogit/zxcvbn-c",
+        "commit": "ab51000506afc1a450557a3608646bc04ba951fa",
+        "entries": 18
+      },
+      {
         "mount": "Telegram/codegen",
         "repository": "desktop-app/codegen",
         "commit": "dbd1d53137cd581cfdbeebe93bcaf54abf55ec74",
@@ -479,13 +490,13 @@
       {
         "mount": "Telegram/lib_crl",
         "repository": "desktop-app/lib_crl",
-        "commit": "7a165302fed408c84b2d1c2513e35a21a141da44",
-        "entries": 48
+        "commit": "de724667d7bdfbf906f78fc405af1ee9f7723d49",
+        "entries": 51
       },
       {
         "mount": "Telegram/lib_lottie",
         "repository": "desktop-app/lib_lottie",
-        "commit": "7d00b5048aff8dd93c0a9721abf50006d20682be",
+        "commit": "fbb922c30b7c30ba17ad5fd4fcb989eadd620062",
         "entries": 33
       },
       {
@@ -527,7 +538,7 @@
       {
         "mount": "Telegram/lib_ui",
         "repository": "desktop-app/lib_ui",
-        "commit": "a0f588b7522d6f3bfac4c19b5824a4e325295020",
+        "commit": "24310a3196c6632f58101a3ec1c553c4565bc9be",
         "entries": 432
       },
       {
@@ -539,14 +550,14 @@
       {
         "mount": "Telegram/lib_webview",
         "repository": "desktop-app/lib_webview",
-        "commit": "427d2470a41d8678ee9a95b4291a078e15a5e549",
+        "commit": "d6e2e0b8b171a104cd7b63bd351f056563e964b0",
         "entries": 32
       },
       {
         "mount": "cmake",
         "repository": "desktop-app/cmake_helpers",
-        "commit": "7a6abdae76f14d0ebb5a8d0500d7adc6d6c1e489",
-        "entries": 99
+        "commit": "12cdedd007b6b3c36df2349dae1996384e535ede",
+        "entries": 101
       }
     ],
     "github_nested_component_counts": [
@@ -577,17 +588,17 @@
       "commit": "95b9cb015fa17baa749c2b396b335906e1596a9e",
       "entries": 43
     },
-    "total_recursive_non_directory_entries": 15812,
-    "superseded_by_upstream_commit": "aac515c5408015231a273c80ab4c4b33815e63ab",
-    "current_census_status": "pending-current-head-authority-artifact",
-    "current_upstream_commit": "aac515c5408015231a273c80ab4c4b33815e63ab"
+    "total_recursive_non_directory_entries": 16120,
+    "superseded_by_upstream_commit": "6ec5014a92c4580841a043c440d65e8fc605ff78",
+    "current_census_status": "live-tree-and-exact-delta-recomputed",
+    "current_upstream_commit": "6ec5014a92c4580841a043c440d65e8fc605ff78"
   },
   "source_disposition_evidence": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
-    "upstream_commit": "aac515c5408015231a273c80ab4c4b33815e63ab",
-    "deterministic_prefix_closed": 53,
-    "unknown_closed": 82,
+    "upstream_commit": "6ec5014a92c4580841a043c440d65e8fc605ff78",
+    "deterministic_prefix_closed": 57,
+    "unknown_closed": 87,
     "omitted": 0,
-    "read_through": 106
+    "read_through": 133
   }
 }
