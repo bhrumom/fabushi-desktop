@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15812,
-    "unread_minimum": 15744,
+    "unread_minimum": 15742,
     "omitted_known": 0,
-    "note": "Live aac515c recursive census is 15,812: 6,363 root; 35 unchanged direct gitlinks contribute 6,771; GitHub nested 2,531; GitLab cppgir 104; expected-lite child 43. Sixty-eight exact recursive entries are now read-complete; unknown 15,812, unread 15,744, omitted 0. The first eight deterministic recursive entries are fully read in projects/telegram-desktop-rust/dossiers/upstream-agent-evidence-infrastructure-complete-read.md; they remain unknown until final machine-readable source disposition. Production completeness remains open."
+    "note": "Live aac515c recursive census is 15,812. Seventy exact recursive entries are now read-complete; unknown 15,812, unread 15,742, omitted 0. The first ten deterministic recursive entries are fully read in projects/telegram-desktop-rust/dossiers/upstream-agent-evidence-infrastructure-complete-read.md; they remain unknown until final machine-readable source disposition. Production completeness remains open."
   },
   "latest_recursive_evidence": {
     "run_id": 37596744991,
@@ -43,7 +43,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Accepted aac515c authority is exact. Sixty-eight full-read entries are now credited; unread_minimum is 15,744, unknown remains 15,812, omitted remains 0. Current-head source authority and production completeness remain open.",
+  "note": "Accepted aac515c authority is exact. Seventy full-read entries are now credited; unread_minimum is 15,742, unknown remains 15,812, omitted remains 0. Current-head source authority and production completeness remain open.",
   "rebaseline": {
     "from_commit": "d346b42a1d30ef60dc989b6e5191bb8e571f6bd5",
     "to_commit": "aac515c5408015231a273c80ab4c4b33815e63ab",
