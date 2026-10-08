@@ -61,7 +61,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live 22b352e authority is exact through order 1,000. 901-1000 have exact binary/type and accepted-tree consumer evidence; no consumer-open entries occur in this range. unread_minimum is 15,120, unknown=16,033, omitted=0. Folder-type channels continues at 1001.",
+  "note": "Live 22b352e authority is exact through order 1,000. 901-1000 have exact binary/type and accepted-tree consumer evidence; no consumer-open entries occur in this range. unread_minimum is 15,120, unknown remains 16,033, omitted remains 0. Folder-type channels continues at 1001.",
   "rebaseline": {
     "from_commit": "6ec5014a92c4580841a043c440d65e8fc605ff78",
     "to_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db",
