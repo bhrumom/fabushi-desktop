@@ -258,10 +258,10 @@
   "coverage": {
     "root_source_entries_total": 6363,
     "recursive_source_entries_total": 15812,
-    "unknown_minimum": 15768,
-    "unread_minimum": 15708,
+    "unknown_minimum": 15759,
+    "unread_minimum": 15698,
     "omitted_known": 0,
-    "note": "Accepted telegramdesktop/tdesktop@aac515c5408015231a273c80ab4c4b33815e63ab root tree cf3a60d601c2d063903e620602b7e5913d3b0654. The corrected recursive census remains 15,812. 104 exact entries are now read-complete; the first forty-four deterministic recursive entries have explicit machine-readable development-only/non-applicable dispositions. Unknown is 15,768, unread is 15,708, omitted 0. Current-head source-authority evidence and full source/production closure are still required."
+    "note": "Accepted telegramdesktop/tdesktop@aac515c5408015231a273c80ab4c4b33815e63ab root tree cf3a60d601c2d063903e620602b7e5913d3b0654. 114 exact entries are read-complete. Entries 1-53 have explicit closed machine-readable dispositions; entry 54 canary.yml is fully decomposed but remains applicable-mapped-incomplete. Unknown 15,759, unread 15,698, omitted 0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -585,8 +585,9 @@
   "source_disposition_evidence": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
     "upstream_commit": "aac515c5408015231a273c80ab4c4b33815e63ab",
-    "deterministic_prefix_closed": 44,
-    "unknown_closed": 44,
-    "omitted": 0
+    "deterministic_prefix_closed": 53,
+    "unknown_closed": 53,
+    "omitted": 0,
+    "read_through": 54
   }
 }

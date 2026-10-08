@@ -13,10 +13,10 @@
     "recursive_non_directory_entries": 15812,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 15768,
-    "unread_minimum": 15708,
+    "unknown_minimum": 15759,
+    "unread_minimum": 15698,
     "omitted_known": 0,
-    "note": "Live aac515c recursive census is 15,812. 104 exact recursive entries are now read-complete; unknown 15,768, unread 15,708, omitted 0. The first forty-four deterministic recursive entries are fully read and explicitly dispositioned in projects/telegram-desktop-rust/inventory/source-dispositions.json. Production completeness remains open."
+    "note": "Live aac515c recursive census is 15,812. 114 exact entries are read-complete; unknown 15,759, unread 15,698, omitted 0. Deterministic entries 1-53 have closed machine-readable dispositions; entry 54 remains open because Fabushi lacks complete equivalent Windows/Linux signed packaging and cross-platform update publication evidence."
   },
   "latest_recursive_evidence": {
     "run_id": 37596744991,
@@ -43,7 +43,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Accepted aac515c authority is exact. 104 full-read entries are now credited; unread_minimum is 15,708, unknown remains 15,768, omitted remains 0. The first forty-four deterministic entries have explicit machine-readable dispositions; current-head source authority and production completeness remain open.",
+  "note": "Accepted aac515c authority is exact. 114 full-read entries are now credited; unread_minimum is 15,698, unknown is 15,759, omitted remains 0. Machine-readable entries 1-53 are closed; entry 54 (.github/workflows/canary.yml) is fully read/decomposed but remains applicable-mapped-incomplete.",
   "rebaseline": {
     "from_commit": "d346b42a1d30ef60dc989b6e5191bb8e571f6bd5",
     "to_commit": "aac515c5408015231a273c80ab4c4b33815e63ab",
@@ -77,9 +77,10 @@
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
     "upstream_commit": "aac515c5408015231a273c80ab4c4b33815e63ab",
-    "deterministic_prefix_closed": 44,
-    "development_only_non_applicable": 44,
-    "unknown_closed": 44,
-    "omitted": 0
+    "deterministic_prefix_closed": 53,
+    "development_only_non_applicable": 53,
+    "unknown_closed": 53,
+    "omitted": 0,
+    "read_through": 54
   }
 }

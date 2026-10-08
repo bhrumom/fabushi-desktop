@@ -6,8 +6,8 @@
   "target_commit": "3bc92400826cc4ca7ac665b467708e22261edc61",
   "coverage": {
     "source_entries_total": 15812,
-    "unknown": 15768,
-    "unread": 15708,
+    "unknown": 15759,
+    "unread": 15698,
     "omitted": 0,
     "responsibilities_total": 54,
     "unmapped_responsibilities": 0
@@ -13154,9 +13154,10 @@
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
-    "deterministic_prefix_closed": 44,
-    "development_only_non_applicable": 44,
-    "unknown_closed": 44,
-    "omitted": 0
+    "deterministic_prefix_closed": 53,
+    "development_only_non_applicable": 53,
+    "unknown_closed": 53,
+    "omitted": 0,
+    "read_through": 54
   }
 }
