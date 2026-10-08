@@ -5,6 +5,7 @@ import type { AttachmentBytesResult, AttachmentMedia } from "../../../contracts/
 import { attachmentBasename, formatAttachmentBytes, inferAttachmentKind, type AttachmentKind, type DraftAttachment } from "./model";
 import { PdfAttachmentViewer, type PdfBytesResolver } from "./pdf-viewer";
 import type { TranscriptAdjacency } from "./transcript-adjacency";
+import { resolveWithSingleRetry } from "./media-runtime";
 
 // @evidence src/app/dist/renderer/assets/view-DPSBrvyV.js#byteOffset=0 (user-attachment media/file leaf)
 // @evidence src/app/dist/renderer/assets/view-DPSBrvyV.js#SHA256=5bf28224da62a9042885e9da60e3fce82ed544846f470241ed6bcf4e12e64040
@@ -61,7 +62,7 @@ function MediaThumbnail({ source, resolveMedia }: { source: string; resolveMedia
     let active = true;
     setMedia(null);
     setState("loading");
-    void resolveMedia(source).then((next) => {
+    void resolveWithSingleRetry(resolveMedia, source).then((next) => {
       if (!active) return;
       if (next?.kind === "image" || next?.kind === "video") {
         setMedia(next);
@@ -97,7 +98,7 @@ function MediaViewer({ attachments, startIndex, resolveMedia, onClose, restoreFo
     setFailed(false);
     setTransform({ scale: MIN_ZOOM, x: 0, y: 0 });
     pointerRef.current = { id: null, startX: 0, startY: 0, originX: 0, originY: 0, moved: false };
-    void resolveMedia(current.path).then((next) => {
+    void resolveWithSingleRetry(resolveMedia, current.path).then((next) => {
       if (!active) return;
       if (next?.kind === "image" || next?.kind === "video") {
         setMedia(next);
@@ -222,7 +223,7 @@ function AttachmentItem({ attachment, adjacency, mediaAttachments, resolveMedia,
       return () => { active = false; };
     }
     setLoading(true);
-    void resolveMedia(attachment.path).then((next) => { if (active) { setMedia(next); setLoading(false); } }).catch(() => { if (active) { setMedia(null); setLoading(false); } });
+    void resolveWithSingleRetry(resolveMedia, attachment.path).then((next) => { if (active) { setMedia(next); setLoading(false); } }).catch(() => { if (active) { setMedia(null); setLoading(false); } });
     return () => { active = false; };
   }, [attachment.path, kind, resolveMedia]);
   const mediaIndex = mediaAttachments.findIndex((candidate) => candidate.path === attachment.path);
