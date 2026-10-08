@@ -88,6 +88,12 @@ export interface RichMessageAction {
   readonly data: string;
 }
 
+export function projectRichMessageAction(value: unknown): RichMessageAction | null {
+  if (!isRecord(value) || typeof value.data !== "string" || value.data.trim().length === 0) return null;
+  if (value.kind !== "open-url" && value.kind !== "authorize-url" && value.kind !== "copy-text") return null;
+  return { kind: value.kind, data: value.data };
+}
+
 export interface RichMessageActionAffordance {
   readonly tooltip: string;
   readonly copyText: string;
