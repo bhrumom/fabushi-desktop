@@ -49,3 +49,10 @@ No entry receives implementation credit before its referenced production source 
 All 20 exact TGS blobs were streamed from telegramdesktop/tdesktop@aac515c5408015231a273c80ab4c4b33815e63ab, gzip-decompressed and structurally inspected without a persistent checkout or build artifact. QRC inclusion was confirmed for each. Exact production consumers were traced for cocoon translation UI, collectible phone/username info and internal routes, star-gift craft progress/failure, diamond currency/stake UI, dice/slot local sticker generation, discussion-link management, direct-message management, and topics/forum management.
 
 No resource receives Fabushi implementation credit merely because its asset was read: each row remains implementation-open until the referenced production source reaches deterministic full-read order and its canonical Fabushi owner, UI/UX, failure states and focused tests are bound. Accounting: full-read `186`, unread `15,626`, unknown `15,730`, omitted `0`.
+
+
+## Entries 127–146 — topics layouts, business/security empties and photo-editor tools
+
+Twenty more exact TGS blobs were streamed and gzip-decompressed without persistent checkout/build artifacts. Exact consumer references were proven for topics list/tabs, filters, business greeting/working-hours/location, hello status, local passcode, forbidden media, gift/profile empty state, dialogs/search empty states, passkeys and phone visuals. Palette plus the five photo-editor tool assets remain explicitly consumer-open where focused exact-name search did not prove the shipping loader; they are not closed by inference.
+
+Accounting: full-read `206`, unread `15,606`, unknown `15,730`, omitted `0`. No new resource row receives production implementation credit before its referenced consumer is fully read and mapped to Fabushi.
