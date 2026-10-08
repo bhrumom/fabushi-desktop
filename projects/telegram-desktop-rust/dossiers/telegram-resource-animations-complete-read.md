@@ -56,3 +56,10 @@ No resource receives Fabushi implementation credit merely because its asset was 
 Twenty more exact TGS blobs were streamed and gzip-decompressed without persistent checkout/build artifacts. Exact consumer references were proven for topics list/tabs, filters, business greeting/working-hours/location, hello status, local passcode, forbidden media, gift/profile empty state, dialogs/search empty states, passkeys and phone visuals. Palette plus the five photo-editor tool assets remain explicitly consumer-open where focused exact-name search did not prove the shipping loader; they are not closed by inference.
 
 Accounting: full-read `206`, unread `15,606`, unknown `15,730`, omitted `0`. No new resource row receives production implementation credit before its referenced consumer is fully read and mapped to Fabushi.
+
+
+## Entries 147–166 — profile transitions, RTMP/search/privacy, star reactions and statistics
+
+Twenty exact TGS blobs were streamed and gzip-decompressed without persistent checkout/build artifacts. Exact consumers were proven for profile mute/unmute, RTMP, search empty state, privacy/premium last-seen/read-time, business away-message sleep, star-referral link and statistics visuals. The photo-editor text-align asset, photo suggestion, robot, chat-automation and star-reaction segment loaders remain explicitly consumer-open because focused basename searches did not prove their shipping composition sites.
+
+Accounting: full-read `226`, unread `15,586`, unknown `15,730`, omitted `0`. No applicable resource is marked implemented or unknown-closed solely from asset semantics.
