@@ -3756,6 +3756,33 @@ impl MessagingEngine {
                         conversation.updated_at_ms = created_at_ms;
                     }
                 }
+
+                // ForumTopicState is a derived summary of the same canonical
+                // message truth. Rebuild every materialized topic summary after
+                // a deletion batch so a removed last message cannot survive in
+                // the topic header and multi-delete replay remains deterministic.
+                if let Some(community) = self.state.communities.get_mut(&conversation_id) {
+                    let messages = self.state.messages.get(&conversation_id);
+                    for topic in community.topics.values_mut() {
+                        topic.last_message_id = messages.and_then(|messages| {
+                            messages
+                                .values()
+                                .filter(|message| !message.deleted)
+                                .filter(|message| {
+                                    message
+                                        .thread_root_message_id
+                                        .as_ref()
+                                        .and_then(topic_id_from_root)
+                                        == Some(topic.id.as_str())
+                                })
+                                .max_by(|left, right| {
+                                    (left.created_at_ms, &left.id)
+                                        .cmp(&(right.created_at_ms, &right.id))
+                                })
+                                .map(|message| message.id.0.clone())
+                        });
+                    }
+                }
             }
             Event::ConversationRead {
                 conversation_id,
@@ -4492,6 +4519,96 @@ mod recent_open_history_tests {
         assert!(conversation.last_message_id.is_none());
         // Empty-history deletion must not manufacture a new timestamp.
         assert_eq!(conversation.updated_at_ms, 10);
+    }
+
+    #[test]
+    fn deleted_messages_recompute_forum_topic_last_message_without_cross_topic_leakage() {
+        let conversation_id = ConversationId::new("conversation:history-topic-summary");
+        let sender = ActorId::new("human:history-topic-sender");
+        let mut community = CommunityState::new(conversation_id.clone());
+        for (id, last_message_id) in [
+            ("a", Some("message:a-new".to_string())),
+            ("b", Some("message:b-only".to_string())),
+        ] {
+            community.topics.insert(
+                id.into(),
+                ForumTopicState {
+                    id: id.into(),
+                    conversation_id: conversation_id.clone(),
+                    title: format!("Topic {id}"),
+                    icon: None,
+                    creator_id: sender.clone(),
+                    created_at_ms: 1,
+                    pinned: false,
+                    closed: false,
+                    hidden: false,
+                    unread_count: 0,
+                    last_message_id,
+                },
+            );
+        }
+
+        let make_message = |id: &str, topic: &str, created_at_ms: i64| Message {
+            id: MessageId::new(id),
+            conversation_id: conversation_id.clone(),
+            sender_id: sender.clone(),
+            content: MessageContent::Text {
+                text: crate::message::FormattedText::plain(id),
+            },
+            reply_to_message_id: None,
+            thread_root_message_id: Some(MessageId::new(format!("topic:{topic}"))),
+            forward_origin: None,
+            reply_markup: None,
+            reactions: Vec::new(),
+            delivery_state: DeliveryState::Delivered,
+            created_at_ms,
+            edited_at_ms: None,
+            scheduled_at_ms: None,
+            silent: false,
+            protected_content: false,
+            pinned: false,
+            deleted: false,
+        };
+        let a_old = MessageId::new("message:a-old");
+        let a_new = MessageId::new("message:a-new");
+        let b_only = MessageId::new("message:b-only");
+        let mut state = MessagingState::default();
+        state.communities.insert(conversation_id.clone(), community);
+        state.messages.insert(
+            conversation_id.clone(),
+            BTreeMap::from([
+                (a_old.clone(), make_message(&a_old.0, "a", 10)),
+                (a_new.clone(), make_message(&a_new.0, "a", 20)),
+                (b_only.clone(), make_message(&b_only.0, "b", 30)),
+            ]),
+        );
+        let mut engine = MessagingEngine::from_state(state);
+
+        let delete_a_new = Event::MessagesDeleted {
+            conversation_id: conversation_id.clone(),
+            message_ids: vec![a_new],
+        };
+        engine.apply(delete_a_new.clone());
+        engine.apply(delete_a_new);
+        let topics = &engine.state().communities[&conversation_id].topics;
+        assert_eq!(
+            topics["a"].last_message_id.as_deref(),
+            Some(a_old.0.as_str())
+        );
+        assert_eq!(
+            topics["b"].last_message_id.as_deref(),
+            Some(b_only.0.as_str())
+        );
+
+        let delete_remaining = Event::MessagesDeleted {
+            conversation_id: conversation_id.clone(),
+            message_ids: vec![a_old, b_only],
+        };
+        engine.apply(delete_remaining.clone());
+        engine.apply(delete_remaining);
+        let topics = &engine.state().communities[&conversation_id].topics;
+        assert!(topics["a"].last_message_id.is_none());
+        assert!(topics["b"].last_message_id.is_none());
     }
 
     #[test]
