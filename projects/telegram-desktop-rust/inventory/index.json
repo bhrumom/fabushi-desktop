@@ -43,7 +43,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Accepted d346 authority remains exact. Complete reads now additionally include history_view_draft_options.{h,cpp}, data_changes.{h,cpp}, and data_types.h. These reads establish typed staged reply/forward/link option semantics, exact Topic/SavedSublist draft identity, synchronous destruction delivery before object retirement, coalesced ordinary update delivery, ForwardDraft value/options contracts, and shared Message/Resource value semantics. Fabushi maps them to existing canonical Conversation/Message/Composer/MessagingEngine/Search/Resource owners; production parity remains open. unread_minimum is 15,730; unknown remains 15,788; omitted remains 0.",
+  "note": "Accepted d346 authority remains exact. Complete reads additionally include history_view_draft_options.{h,cpp}, data_changes.{h,cpp}, and data_types.h. These reads establish typed staged reply/forward/link option semantics, exact Topic/SavedSublist draft identity, synchronous destruction delivery before object retirement, coalesced ordinary update delivery, ForwardDraft value/options contracts, and shared Message/Resource value semantics. Fabushi maps them to existing canonical Conversation/Message/Composer/MessagingEngine/Search/Resource owners; production parity remains open. The corrected recursive census is 15,804 entries; the 60 previously credited full-read entries remain unchanged, so unknown_minimum remains 15,804, unread_minimum remains 15,744, and omitted_known remains 0.",
   "rebaseline": {
     "from_commit": "e1ed57a44e7c14e0cbb91bcf0f7ec3e408786a39",
     "to_commit": "d346b42a1d30ef60dc989b6e5191bb8e571f6bd5",
