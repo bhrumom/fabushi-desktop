@@ -51,6 +51,7 @@ export function StoryCapabilitySurface({ client, enabled, resolveMedia, onOpenOw
   const [resolvedMediaKind, setResolvedMediaKind] = useState<"image" | "video" | null>(null);
   const [mediaResolving, setMediaResolving] = useState(false);
   const requestGenerationRef = useRef(0);
+  const reactionGenerationRef = useRef(0);
   const mediaGenerationRef = useRef(0);
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
@@ -95,6 +96,7 @@ export function StoryCapabilitySurface({ client, enabled, resolveMedia, onOpenOw
   useEffect(() => {
     if (!enabled) {
       requestGenerationRef.current += 1;
+      reactionGenerationRef.current += 1;
       setStories([]);
       setSelectedIndex(null);
       setStatus("idle");
@@ -109,6 +111,7 @@ export function StoryCapabilitySurface({ client, enabled, resolveMedia, onOpenOw
 
   const close = useCallback(() => {
     requestGenerationRef.current += 1;
+    reactionGenerationRef.current += 1;
     mediaGenerationRef.current += 1;
     setSelectedIndex(null);
     setPaused(false);
@@ -128,6 +131,7 @@ export function StoryCapabilitySurface({ client, enabled, resolveMedia, onOpenOw
     if (target == null) return;
     const boundedIndex = Math.max(0, Math.min(index, stories.length - 1));
     const generation = ++requestGenerationRef.current;
+    reactionGenerationRef.current += 1;
     mediaGenerationRef.current += 1;
     setSelectedIndex(boundedIndex);
     setPaused(false);
@@ -235,14 +239,15 @@ export function StoryCapabilitySurface({ client, enabled, resolveMedia, onOpenOw
 
   const react = useCallback(async (nextReaction: string | null) => {
     if (client == null || selectedStory == null) return;
-    const generation = requestGenerationRef.current;
+    const requestGeneration = requestGenerationRef.current;
+    const reactionGeneration = ++reactionGenerationRef.current;
     try {
       const updated = await client.reactStory({ storyId: selectedStory.id, reaction: nextReaction });
-      if (generation !== requestGenerationRef.current) return;
+      if (requestGeneration !== requestGenerationRef.current || reactionGeneration !== reactionGenerationRef.current) return;
       replaceStory(updated);
       setReaction(nextReaction);
     } catch (error) {
-      if (generation !== requestGenerationRef.current) return;
+      if (requestGeneration !== requestGenerationRef.current || reactionGeneration !== reactionGenerationRef.current) return;
       setErrorMessage(error instanceof Error ? error.message : "Story reaction failed");
     }
   }, [client, replaceStory, selectedStory]);
@@ -374,14 +379,17 @@ export function StoryCapabilitySurface({ client, enabled, resolveMedia, onOpenOw
             : mediaIsVideo ? <video
                 aria-label="Story video"
                 controls={false}
-                onEnded={() => act("next")}
+                key={selectedStory.id}
+                onEnded={(event) => {
+                  if (event.currentTarget === videoRef.current) act("next");
+                }}
                 onLoadedMetadata={(event) => {
-                  const generation = ++mediaGenerationRef.current;
-                  if (generation !== mediaGenerationRef.current) return;
+                  if (event.currentTarget !== videoRef.current) return;
                   const video = event.currentTarget;
                   setProgress(video.duration > 0 ? video.currentTime / video.duration : 0);
                 }}
                 onTimeUpdate={(event) => {
+                  if (event.currentTarget !== videoRef.current) return;
                   const video = event.currentTarget;
                   setProgress(video.duration > 0 ? Math.max(0, Math.min(1, video.currentTime / video.duration)) : 0);
                 }}

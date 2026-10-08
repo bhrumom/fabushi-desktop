@@ -31,6 +31,10 @@ test("CONTRACT-TDRP-STORY-ACTION-LIFECYCLE-001 shares viewer actions and fences 
   assert.match(surface, /const playbackPaused = paused \|\| pointerPressed \|\| menuOpen/);
   assert.match(surface, /aria-label="Story media navigation"/);
   assert.match(surface, /requestGenerationRef/);
+  assert.match(surface, /reactionGenerationRef/);
+  assert.match(surface, /reactionGeneration !== reactionGenerationRef\.current/);
+  assert.match(surface, /event\.currentTarget !== videoRef\.current/);
+  assert.match(surface, /key=\{selectedStory\.id\}/);
   assert.match(surface, /mediaGenerationRef/);
 });
 
