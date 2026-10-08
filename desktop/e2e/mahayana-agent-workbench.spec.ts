@@ -806,7 +806,7 @@ test('Mahayana renders one Hermes-style assistant turn instead of a completion W
 });
 
 
-test('Human reply, attachment, reaction, and search stay on the shipping conversation contracts', async () => {
+test('Human reply, attachment, reaction, and search stay on the shipping conversation contracts', async ({}, testInfo) => {
   e2eHumanMessages = [];
   e2eHumanMessageSequence = 1;
   e2eHumanResourceSequence = 1;
@@ -860,6 +860,38 @@ test('Human reply, attachment, reaction, and search stay on the shipping convers
     expect(e2eHumanMessages[1]?.attachments.map((attachment) => attachment.name)).toEqual([attachmentName]);
     const uploadedResource = [...e2eHumanResources.values()].find((resource) => resource.name === attachmentName);
     expect(uploadedResource?.bytes.equals(attachmentBytes)).toBe(true);
+
+    const mediaAttachmentName = 'phase1-human-preview.png';
+    const mediaAttachmentBytes = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Zl/0AAAAASUVORK5CYII=', 'base64');
+    await page.locator('input.sand-prompt-file-input').setInputFiles({
+      name: mediaAttachmentName,
+      mimeType: 'image/png',
+      buffer: mediaAttachmentBytes,
+    });
+    const mediaText = 'Human media preview window chrome evidence.';
+    await prompt.pressSequentially(mediaText);
+    await page.getByRole('button', { name: 'Send message' }).click();
+    const mediaTurn = page.getByRole('article').filter({ hasText: mediaText }).last();
+    await expect(mediaTurn).toBeVisible({ timeout: 10_000 });
+    await expect(mediaTurn).not.toHaveAttribute('data-pending', { timeout: 15_000 });
+    const previewTrigger = mediaTurn.getByRole('button', { name: 'Media preview' });
+    await expect(previewTrigger).toBeVisible({ timeout: 10_000 });
+    await previewTrigger.focus();
+    await previewTrigger.click();
+    const mediaDialog = page.getByRole('dialog', { name: 'Media preview' });
+    await expect(mediaDialog).toBeVisible();
+    const closeMedia = mediaDialog.getByRole('button', { name: 'Close media preview' });
+    await expect(closeMedia).toBeVisible();
+    await expect(closeMedia).toHaveClass(/sand-kit-icon-button/u);
+    await closeMedia.focus();
+    await expect(closeMedia).toBeFocused();
+    await testInfo.attach('media-viewer-canonical-window-chrome', {
+      body: await mediaDialog.screenshot(),
+      contentType: 'image/png',
+    });
+    await closeMedia.click();
+    await expect(mediaDialog).toHaveCount(0);
+    await expect(previewTrigger).toBeFocused();
 
     await replyTurn.hover();
     await replyTurn.getByRole('button', { name: 'Add reaction' }).click();
