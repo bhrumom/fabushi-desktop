@@ -1028,6 +1028,128 @@ jobs:
             printf '%s\n' "accepted_upstream=$upstream_sha"
             git -C "$work" grep -n -E 'voice_to_text_collapse|color_slider_arrow|requests_(hidden|members)|connecting_(body|left|right)|contacts_(alphabet|online)|avatar_(hidden|notes)|dialogs_(bot|calendar|cancel_search|channel|chat|chatlist_|downloads|forum|lock_|mention|menu|mini_play|mute|pinned|premium)' -- Telegram/SourceFiles || true
           } > artifacts/tdrp-authority/source-consumer-trace-701-800.txt
+          printf '%s\n' "accepted_upstream=$upstream_sha" > artifacts/tdrp-authority/source-binary-evidence-801-900.txt
+          while IFS='|' read -r order path expected_blob; do
+            actual_blob="$(git -C "$work" hash-object "$path")"
+            test "$actual_blob" = "$expected_blob"
+            size="$(wc -c < "$work/$path" | tr -d '[:space:]')"
+            kind="$(file -b "$work/$path")"
+            printf '%s|%s|%s|%s|%s\n' "$order" "$path" "$actual_blob" "$size" "$kind" >> artifacts/tdrp-authority/source-binary-evidence-801-900.txt
+          done <<'EOF'
+          801|Telegram/Resources/icons/dialogs/dialogs_premium@2x.png|7caa2f465ec06db2245f12f6a649ba8db7d8570f
+          802|Telegram/Resources/icons/dialogs/dialogs_premium@3x.png|7996adc28a28a346e1fc8562f1a2bba8a86d2376
+          803|Telegram/Resources/icons/dialogs/dialogs_reaction.png|25ac8ccd1ed2e9a4e46fc8052944ede609236c0b
+          804|Telegram/Resources/icons/dialogs/dialogs_reaction@2x.png|cc22d2386e3e1b041ca8b70aea74ed1116d2ab6d
+          805|Telegram/Resources/icons/dialogs/dialogs_reaction@3x.png|a93e9a58c81f77877fdb7082bc313f5c1a8874c0
+          806|Telegram/Resources/icons/dialogs/dialogs_received.png|c018233dadebf4bfc2ca5fae6cba298172be1a3b
+          807|Telegram/Resources/icons/dialogs/dialogs_received@2x.png|bf0411ec81ff8ad4d32b991bc223b42fd343d1b2
+          808|Telegram/Resources/icons/dialogs/dialogs_received@3x.png|78d2fa0efb79a9d199283fa99cd4f13fea0c57b6
+          809|Telegram/Resources/icons/dialogs/dialogs_search_from.png|16e7443c52b86fb09adf54c1ca2674d71c1877ce
+          810|Telegram/Resources/icons/dialogs/dialogs_search_from@2x.png|123a2fd702fb05533fc7092e04479083ed15a5cf
+          811|Telegram/Resources/icons/dialogs/dialogs_search_from@3x.png|6d74aa7baa72fa968c2870429cc0e8143db64458
+          812|Telegram/Resources/icons/dialogs/dialogs_sending.png|f18e1ad3fb747ceeb86643eaaa7652be3ffa9c1e
+          813|Telegram/Resources/icons/dialogs/dialogs_sending@2x.png|3d566ca04ddd3876880b16d31540d1b92bc0b82d
+          814|Telegram/Resources/icons/dialogs/dialogs_sending@3x.png|f453e457e2078af80d5a6e2a937a9d03f621a022
+          815|Telegram/Resources/icons/dialogs/dialogs_sent.png|c56f23ad6289463d59c11c3cf0036a25e7e59121
+          816|Telegram/Resources/icons/dialogs/dialogs_sent@2x.png|32536874ef0220c5cbc60ffbae7166bdd147a772
+          817|Telegram/Resources/icons/dialogs/dialogs_sent@3x.png|6a798bbf8a0a7295b275eeff2d3c65e079132b49
+          818|Telegram/Resources/icons/dialogs/dialogs_topic_arrow.png|a998c1ad136804e824e02d9bf76c8e718dc7ae8f
+          819|Telegram/Resources/icons/dialogs/dialogs_topic_arrow@2x.png|16b43d5ff09e7c05aec54bcf9b391e46034436dd
+          820|Telegram/Resources/icons/dialogs/dialogs_topic_arrow@3x.png|f8e31f59eb2570e5e105efccc267ab0fa5c639ce
+          821|Telegram/Resources/icons/dialogs/dialogs_unread_media_dot.svg|d0da6ff5fc4420333438dc6f1bedf665cc473b0f
+          822|Telegram/Resources/icons/dialogs/dialogs_verified_check.png|dc9c4b0da56a227546edea33f29e58c9bbb50340
+          823|Telegram/Resources/icons/dialogs/dialogs_verified_check@2x.png|677770111ab2e3e0cb55a932ecf0063b050ad9f5
+          824|Telegram/Resources/icons/dialogs/dialogs_verified_check@3x.png|ceffe4197bddda9f2262c02946ebcddc6205932f
+          825|Telegram/Resources/icons/dialogs/dialogs_verified_star.png|24adac8ca8bfc2db62959259fcda762279565dea
+          826|Telegram/Resources/icons/dialogs/dialogs_verified_star@2x.png|98d33bd2282aa5db5868d70288f9efeacea799d1
+          827|Telegram/Resources/icons/dialogs/dialogs_verified_star@3x.png|55734f48e6a56bdf98c73f485653e8741fd34dc4
+          828|Telegram/Resources/icons/dialogs/inaccessible_userpic.png|0ea974ff22412b4f6f10e55644ec1767421717d5
+          829|Telegram/Resources/icons/dialogs/inaccessible_userpic@2x.png|38fa1308ac4acfbfa9f13254dd1534314c9adc1c
+          830|Telegram/Resources/icons/dialogs/inaccessible_userpic@3x.png|454ad39511c50aa6dffc2c10da78be839f315df1
+          831|Telegram/Resources/icons/dialogs/mini_arrow.png|81b5076f827ef74585664faf1b2e176364678659
+          832|Telegram/Resources/icons/dialogs/mini_arrow@2x.png|6e1e87682fb5735fbb0b6f2af22859c6eb292d89
+          833|Telegram/Resources/icons/dialogs/mini_arrow@3x.png|36fd0e0c35be42c3103e5c91bfd32d2c3ca7f0a6
+          834|Telegram/Resources/icons/dialogs/mini_tag_lock.png|cb1e4d76a2e8381f0093385b79bac0f6fefea32d
+          835|Telegram/Resources/icons/dialogs/mini_tag_lock@2x.png|cc875b7fa7ff9fe58b51c02edbe5f6bfc45f5819
+          836|Telegram/Resources/icons/dialogs/mini_tag_lock@3x.png|68254340d43a20b6444ff3f20e8a31f2cd7907d6
+          837|Telegram/Resources/icons/emoji/emoji_activities.png|c4ac15d3d3e268de5e2cdeb798cd7f1f441c72d0
+          838|Telegram/Resources/icons/emoji/emoji_activities@2x.png|21f705376224d3e0ee962ab5a8d9cd24864ce122
+          839|Telegram/Resources/icons/emoji/emoji_activities@3x.png|530cabe633ab4a1ff55efe89f4e1e5094a0f051d
+          840|Telegram/Resources/icons/emoji/emoji_back.png|31c82fc34d148bafa9a3bf1aedabf32b65ce015d
+          841|Telegram/Resources/icons/emoji/emoji_back@2x.png|ff0e0f5562dc82ab97d8c39ad6cce65a04718cf7
+          842|Telegram/Resources/icons/emoji/emoji_back@3x.png|b45d24e3b43ebc1c4200496069ad76a2cae3a4c8
+          843|Telegram/Resources/icons/emoji/emoji_delete.png|864252d7fc535cbcd8f7a9c814f9d1fb5ca3f73f
+          844|Telegram/Resources/icons/emoji/emoji_delete@2x.png|6283a9eba0b6a2f2d50458a5b489cf8a67a97f4e
+          845|Telegram/Resources/icons/emoji/emoji_delete@3x.png|06ea8e8d3a1691a971c779f4ec0aa843e9391212
+          846|Telegram/Resources/icons/emoji/emoji_delete_bg.png|251e7cd2e9a5364c3ca00392097af36df3d408d6
+          847|Telegram/Resources/icons/emoji/emoji_delete_bg@2x.png|2c4f0a08aae01433f80b7ce828bccaa093ea00be
+          848|Telegram/Resources/icons/emoji/emoji_delete_bg@3x.png|f4242b19eea15e047c932b64ad45f54e4bef9485
+          849|Telegram/Resources/icons/emoji/emoji_food.png|245bd448d5f04ccf6a9ce9e00a8adc29562c20d8
+          850|Telegram/Resources/icons/emoji/emoji_food@2x.png|d65918c909748a9bb88add7172425194749255a4
+          851|Telegram/Resources/icons/emoji/emoji_food@3x.png|6072c340eb68e5ca574d65522c33bfd84c61c2f3
+          852|Telegram/Resources/icons/emoji/emoji_love.png|0119168655dba456c5d7de7d7866fe7f45ecf132
+          853|Telegram/Resources/icons/emoji/emoji_love@2x.png|1bf0d31ca3e4448493d31ae8c8e2a76ca722c033
+          854|Telegram/Resources/icons/emoji/emoji_love@3x.png|098a421560f83d636617ad41de71ea973a3db23f
+          855|Telegram/Resources/icons/emoji/emoji_nature.png|4848d3d4c6bdf49b8c611fe62b240f990916fb27
+          856|Telegram/Resources/icons/emoji/emoji_nature@2x.png|e2927607bf18467324d3865993b3cf81f5b5961a
+          857|Telegram/Resources/icons/emoji/emoji_nature@3x.png|f72fbe8fec91f44da136a59741d7126ed5f08b95
+          858|Telegram/Resources/icons/emoji/emoji_objects.png|733db2699b8060e9d62b6504deec155d76963380
+          859|Telegram/Resources/icons/emoji/emoji_objects@2x.png|5a16634914a1066b5c6bfbcdda3c0c854e3a5316
+          860|Telegram/Resources/icons/emoji/emoji_objects@3x.png|12525379e02d360692872119e6286a690d3252e3
+          861|Telegram/Resources/icons/emoji/emoji_recent.png|f260f7cb6554137dfb2751421547eb93c53f24e1
+          862|Telegram/Resources/icons/emoji/emoji_recent@2x.png|a61bef009e4899ff4751788733241af7e2a1bf11
+          863|Telegram/Resources/icons/emoji/emoji_recent@3x.png|2b10fc362a2177397e11884df733d2956e125755
+          864|Telegram/Resources/icons/emoji/emoji_search_input.png|8ee7bdce94690bc648ded0b4340c4af1f430ac62
+          865|Telegram/Resources/icons/emoji/emoji_search_input@2x.png|9b7798f00898ff845406e208ce55e5f651d78b6a
+          866|Telegram/Resources/icons/emoji/emoji_search_input@3x.png|af792f172bcf0a82008f790a536d4544454870b1
+          867|Telegram/Resources/icons/emoji/emoji_settings.png|5ae663fd4c68485b4dc1e29e92e68f09d2b18c3a
+          868|Telegram/Resources/icons/emoji/emoji_settings@2x.png|eb081d4c661fa3e63c932ec8ac04350dc0037682
+          869|Telegram/Resources/icons/emoji/emoji_settings@3x.png|2fcaf619bdda62e1dd0c07a57770c5d4b257da63
+          870|Telegram/Resources/icons/emoji/emoji_skin.png|776617ebe0876ca903e94dc039be94f5c414645b
+          871|Telegram/Resources/icons/emoji/emoji_skin@2x.png|a53f5c18e7f74a7db59f0177ed66ff71e630c4a9
+          872|Telegram/Resources/icons/emoji/emoji_skin@3x.png|fd756d0a9f83770326f55c12aa1963d5f69244e0
+          873|Telegram/Resources/icons/emoji/emoji_smile.png|3b868e80bcd9e8a24fa92cf541149b224a8575f3
+          874|Telegram/Resources/icons/emoji/emoji_smile@2x.png|d6edb73478ec3dad98be6e76607110cd0517633d
+          875|Telegram/Resources/icons/emoji/emoji_smile@3x.png|3d198a5e3684769949fc6710919f0050c9bde273
+          876|Telegram/Resources/icons/emoji/emoji_travel.png|824d92d0f303b2b98f0e3a8fcbd382c58d8e4585
+          877|Telegram/Resources/icons/emoji/emoji_travel@2x.png|2cbf8fbaec6e1477151d4fdbce4bbbfed3b68505
+          878|Telegram/Resources/icons/emoji/emoji_travel@3x.png|b2b8f9007a46513f2c9d1081b1b05c5366dceef1
+          879|Telegram/Resources/icons/emoji/premium_lock.png|0498a400ee86ee36f1d55f23ba10793fb139301a
+          880|Telegram/Resources/icons/emoji/premium_lock@2x.png|78390b73412af99160de7e8a7d0f0b02ebaa1208
+          881|Telegram/Resources/icons/emoji/premium_lock@3x.png|81b8e06001552db2ce124c540eb70a75d26d0ea0
+          882|Telegram/Resources/icons/emoji/stickers_premium.png|f2fc24545c7312ba25336924c6c943f4d0f82604
+          883|Telegram/Resources/icons/emoji/stickers_premium@2x.png|71b77efe222c832bcd91451973ac7b95211a5809
+          884|Telegram/Resources/icons/emoji/stickers_premium@3x.png|9676bc9c55304955ae1a7e4f7a1fcd32f212a75b
+          885|Telegram/Resources/icons/emoji_empty.png|585818d88bb65ab980d97e7fdffaf84191b7af54
+          886|Telegram/Resources/icons/emoji_empty@2x.png|69bebad76eb7c834660ab85b7b27730606dfa9de
+          887|Telegram/Resources/icons/emoji_empty@3x.png|f52bf552bc0924a123d250397b85049bf938dc5d
+          888|Telegram/Resources/icons/fast_comments.png|9d6b299d869100582cbed9a23eefb841c4827d1c
+          889|Telegram/Resources/icons/fast_comments@2x.png|5d7be460c62e3a09f47bcdf6f98c986718fe0c84
+          890|Telegram/Resources/icons/fast_comments@3x.png|e31abfcab0e9aa2037637369de98af6fe9815930
+          891|Telegram/Resources/icons/fast_share.png|59c7ce6231f488a67d90051225b7db710781722d
+          892|Telegram/Resources/icons/fast_share@2x.png|3e59bb28372328e8d8479cb22f235d5f335daee8
+          893|Telegram/Resources/icons/fast_share@3x.png|d82e28594936ff6453d3876f9a9181c9707b6381
+          894|Telegram/Resources/icons/fast_to_original.png|450dbd4a9e2304356374db52fe7988bca4e4635b
+          895|Telegram/Resources/icons/fast_to_original@2x.png|101beffc5d0b954ff1a21b8566a2768d61912916
+          896|Telegram/Resources/icons/fast_to_original@3x.png|bc6bceea9c6e8abde4cb5709154cf37d79bdd250
+          897|Telegram/Resources/icons/filled_go_to_message.png|19ad56f87621e2af205a71d539f7fa94ca293e46
+          898|Telegram/Resources/icons/filled_go_to_message@2x.png|fdc4724522bb53f9526e4bc8ad2c9b4d4435dea1
+          899|Telegram/Resources/icons/filled_go_to_message@3x.png|0a6bde9b8641498007ff4a03546ef6671ceb6c3b
+          900|Telegram/Resources/icons/folders/folder_existing_chats.png|e54a10425911300ae4738dcd3daa509860f1edb6
+          EOF
+          {
+            printf '%s\n' "accepted_upstream=$upstream_sha"
+            for symbol in dialogs_premium dialogs_reaction dialogs_received dialogs_search_from dialogs_sending dialogs_sent dialogs_topic_arrow dialogs_unread_media_dot dialogs_verified_check dialogs_verified_star inaccessible_userpic mini_arrow mini_tag_lock emoji_activities emoji_back emoji_delete emoji_delete_bg emoji_food emoji_love emoji_nature emoji_objects emoji_recent emoji_search_input emoji_settings emoji_skin emoji_smile emoji_travel premium_lock stickers_premium emoji_empty fast_comments fast_share fast_to_original filled_go_to_message folder_existing_chats; do
+              printf 'symbol=%s\n' "$symbol"
+              git -C "$work" grep -n -F "$symbol" -- Telegram/SourceFiles || true
+            done
+          } > artifacts/tdrp-authority/source-consumer-reachability-801-900.txt
+          {
+            printf '%s\n' "accepted_upstream=$upstream_sha"
+            for symbol in dialogs_premium dialogs_reaction dialogs_received dialogs_search_from dialogs_sending dialogs_sent dialogs_topic_arrow dialogs_unread_media_dot dialogs_verified_check dialogs_verified_star inaccessible_userpic mini_arrow mini_tag_lock emoji_activities emoji_back emoji_delete emoji_delete_bg emoji_food emoji_love emoji_nature emoji_objects emoji_recent emoji_search_input emoji_settings emoji_skin emoji_smile emoji_travel premium_lock stickers_premium emoji_empty fast_comments fast_share fast_to_original filled_go_to_message folder_existing_chats; do
+              git -C "$work" grep -n -F "$symbol" -- Telegram/SourceFiles || true
+            done
+          } > artifacts/tdrp-authority/source-consumer-trace-801-900.txt
           {
             printf '%s\n' "accepted_upstream=$upstream_sha"
             for symbol in input_liked input_record input_record_filled input_video; do
