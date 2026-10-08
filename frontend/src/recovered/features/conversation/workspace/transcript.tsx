@@ -797,6 +797,20 @@ export function ConversationTranscript({ entries, hasOlder = false, isLoadingOld
     for (const listener of [...viewCommitListenersRef.current]) listener();
   }, [entries, transcriptHandleRef]);
   useEffect(() => {
+    const retirePointerActivationIntent = () => {
+      pointerActivationIntentRef.current = null;
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== "visible") retirePointerActivationIntent();
+    };
+    window.addEventListener("blur", retirePointerActivationIntent);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      window.removeEventListener("blur", retirePointerActivationIntent);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
+  useEffect(() => {
     const transcript = transcriptRef.current;
     if (transcript == null || !hasOlder || loadOlder == null) return;
     let active = true;
@@ -864,10 +878,21 @@ export function ConversationTranscript({ entries, hasOlder = false, isLoadingOld
       aria-label="Conversation transcript"
       aria-live="off"
       className="sand-virtual-transcript"
+      onBlurCapture={(event) => {
+        const next = event.relatedTarget;
+        if (next instanceof Node && transcriptRef.current?.contains(next)) return;
+        pointerActivationIntentRef.current = null;
+      }}
       onClickCapture={(event) => {
         if (event.detail === 0) return;
         const target = event.target instanceof Element ? event.target.closest<HTMLElement>("a[href], button") : null;
         if (target == null || !transcriptRef.current?.contains(target)) return;
+        if (transcriptSelectionBlocksActivation()) {
+          pointerActivationIntentRef.current = null;
+          event.preventDefault();
+          event.stopPropagation();
+          return;
+        }
         const intent = pointerActivationIntentRef.current;
         pointerActivationIntentRef.current = null;
         if (intent?.revision === pointerActivationRevisionRef.current && intent.target === target) return;

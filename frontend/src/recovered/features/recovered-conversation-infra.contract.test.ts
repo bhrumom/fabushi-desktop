@@ -604,9 +604,13 @@ test("CONTRACT-TDRP-IV-VIEW-POINTER-ACTIVATION-FENCE-001 content replacement inv
   assert.match(source, /pointerActivationIntentRef = useRef<\{ revision: number; target: HTMLElement; pointerId: number; startX: number; startY: number \} \| null>\(null\)/);
   assert.match(source, /pointerActivationRevisionRef\.current \+= 1;[\s\S]{0,100}pointerActivationIntentRef\.current = null;[\s\S]{0,220}\}, \[entries, transcriptHandleRef\]\);/);
   assert.match(source, /onPointerDownCapture=\{\(event\) => \{[\s\S]{0,700}revision: pointerActivationRevisionRef\.current, target/);
+  assert.match(source, /window\.addEventListener\("blur", retirePointerActivationIntent\)/);
+  assert.match(source, /document\.addEventListener\("visibilitychange", handleVisibilityChange\)/);
+  assert.match(source, /document\.visibilityState !== "visible"[\s\S]{0,120}retirePointerActivationIntent\(\)/);
+  assert.match(source, /onBlurCapture=\{\(event\) => \{[\s\S]{0,220}transcriptRef\.current\?\.contains\(next\)[\s\S]{0,120}pointerActivationIntentRef\.current = null/);
   assert.match(source, /onPointerCancelCapture=\{\(\) => \{[\s\S]{0,120}pointerActivationIntentRef\.current = null/);
   assert.match(source, /onPointerLeave=\{\(\) => \{[\s\S]{0,120}pointerActivationIntentRef\.current = null/);
-  assert.match(source, /onClickCapture=\{\(event\) => \{[\s\S]{0,120}event\.detail === 0[\s\S]{0,650}intent\?\.revision === pointerActivationRevisionRef\.current && intent\.target === target[\s\S]{0,220}event\.preventDefault\(\);[\s\S]{0,80}event\.stopPropagation\(\);/);
+  assert.match(source, /onClickCapture=\{\(event\) => \{[\s\S]{0,120}event\.detail === 0[\s\S]{0,420}transcriptSelectionBlocksActivation\(\)[\s\S]{0,260}pointerActivationIntentRef\.current = null[\s\S]{0,180}event\.preventDefault\(\);[\s\S]{0,100}event\.stopPropagation\(\);[\s\S]{0,520}intent\?\.revision === pointerActivationRevisionRef\.current && intent\.target === target/);
   assert.match(source, /closest<HTMLElement>\("a\[href\], button"\)/);
   assert.match(source, /TRANSCRIPT_POINTER_ACTIVATION_DRAG_THRESHOLD = 4/);
   assert.match(source, /onPointerMoveCapture=\{\(event\) => \{[\s\S]{0,260}intent\.pointerId !== event\.pointerId[\s\S]{0,360}Math\.hypot\(event\.clientX - intent\.startX, event\.clientY - intent\.startY\) > TRANSCRIPT_POINTER_ACTIVATION_DRAG_THRESHOLD[\s\S]{0,180}pointerActivationIntentRef\.current = null/);
