@@ -574,6 +574,8 @@ test("CONTRACT-TDRP-IV-VIEW-MEDIA-POINTER-RELEASE-001 media replacement releases
   assert.match(replacementBlock, /pointerRef\.current = \{ id: null, startX: 0, startY: 0, originX: 0, originY: 0, moved: false \};/);
   assert.match(source, /useEffect\(\(\) => \(\) => \{[\s\S]{0,360}releasePointerCapture\(activePointerId\)[\s\S]{0,160}pointerRef\.current\.id = null/);
   assert.match(source, /event\.target\.closest\("button, a\[href\], input, select, textarea, \[role='button'\]"\) != null\) return;/);
+  assert.match(source, /onLostPointerCapture=\{onLostPointerCapture\}/);
+  assert.match(source, /const onLostPointerCapture = \(event: React\.PointerEvent<HTMLDivElement>\) => \{[\s\S]{0,140}pointerRef\.current\.id === event\.pointerId[\s\S]{0,80}pointerRef\.current\.id = null/);
   assert.match(source, /ref=\{viewerRef\} role="dialog"/);
   assert.match(source, /if \(pointer\.id !== event\.pointerId\) return;/);
 });
