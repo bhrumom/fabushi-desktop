@@ -37,6 +37,14 @@ The existing Agent composer store is therefore not accepted as the sole product 
 
 This contract explains why clearing `ConversationChildRuntimeState::draft_text` is insufficient to claim the SavedMessages deletion sequence complete. The later `History::_forwardDrafts` store is a separate message-id/options draft keyed through the same typed draft identity and must be cleared independently.
 
+## Traceability anchors
+
+- Requirement: `TDRP-R9-DRAFT-IDENTITY-CONTRACT-001`
+- Oracle: `ORA-TDRP-R9-DRAFT-IDENTITY-CONTRACT-001`
+- Invariant: `INV-TDRP-R9-DRAFT-IDENTITY-CONTRACT-001-IDENTITY`
+- Release gates: `G-FILE`, `G-TRACEABILITY`, `G-PERSISTENCE`, `G-EVIDENCE`
+- Coverage status: mapped/open; no production or verification credit is claimed.
+
 ## Accounting
 
 This exact accepted blob is the only new unread closure in this commit:
