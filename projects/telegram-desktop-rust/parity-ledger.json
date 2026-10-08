@@ -7,9 +7,9 @@
   "coverage": {
     "source_entries_total": 15788,
     "unknown": 15788,
-    "unread": 15739,
+    "unread": 15737,
     "omitted": 0,
-    "responsibilities_total": 43,
+    "responsibilities_total": 45,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -10083,6 +10083,607 @@
             "composerDraftPersistenceKey"
           ],
           "responsibility_scope": "account-scoped composer recovery persistence with stale-write fencing"
+        }
+      ]
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "d346b42a1d30ef60dc989b6e5191bb8e571f6bd5",
+      "source_path": "Telegram/SourceFiles/window/notifications_manager.h",
+      "source_blob_sha": "cd36b671795afa49b282b1609380cf7e5c3473ed",
+      "source_kind": "source",
+      "module_id": "tdesktop.window.notifications",
+      "responsibility_id": "TDRP-R9-NOTIFICATION-MANAGER-CONTRACT-001",
+      "source_symbols": [
+        "ManagerType",
+        "ChangeType",
+        "ActivateOptions",
+        "System",
+        "SkipState",
+        "NotificationInHistoryKey",
+        "Timing",
+        "SentNotificationId",
+        "Manager",
+        "ContextId",
+        "NotificationId",
+        "NotificationFields",
+        "DisplayOptions",
+        "NativeManager",
+        "DummyManager",
+        "WrapFromScheduled",
+        "NotificationDisplayRect"
+      ],
+      "capability_ids": [
+        "CAP-NOTIFICATIONS",
+        "CAP-CONVERSATION-LIFECYCLE"
+      ],
+      "dependency_ids": [
+        "Conversation",
+        "Message",
+        "Identity",
+        "Permissions",
+        "PlatformNotifications",
+        "Settings"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/notifications-manager-complete-read.md",
+      "behavior_contract": "Defines the single desktop notification system/manager contract: manager selection, scheduling/clear scopes, settings/sound hooks, exact session+peer+topic+SavedSublist context identity, native activation/reply/actions, privacy display options, and native/dummy adapter boundary.",
+      "state_machine": "typed draft scope + payload -> validate identity -> create/update/clear canonical draft -> persist/sync as appropriate -> reload/compatibility decode -> project into one canonical composer; invalid mixed topic/SavedSublist keys fail closed.",
+      "side_effects": [
+        "Draft persistence/update projection",
+        "Cloud draft apply/clear",
+        "Composer cursor/webpage/reply continuity",
+        "Backward serialized-key decoding"
+      ],
+      "failure_cases": [
+        "Topic and SavedSublist draft identities collide",
+        "Renderer-only draft survives after authoritative clear",
+        "Old serialized draft key is misdecoded",
+        "Scheduled/business/edit draft overwrites normal local draft",
+        "Cloud/local scope confusion resurrects stale content"
+      ],
+      "ui_disposition": "Reuse canonical Fabushi conversation/workspace routing and settings. Native notification presentation is a platform adapter, not a second product root.",
+      "non_ui_responsibilities": [
+        "Typed draft identity/scope",
+        "Draft payload equality/null semantics",
+        "Persistence and restart",
+        "Cloud/local reconciliation",
+        "Backward key compatibility",
+        "SavedSublist monoforum draft isolation"
+      ],
+      "platform_delta": "Qt/native notification manager abstractions map to the existing Rust NotificationPolicy plus the existing Electron ProductionNotificationsService/SandOsNotificationManager binding. Human/Topic/SavedSublist messaging events must extend those owners rather than introduce a source-shaped notification subsystem.",
+      "existing_owner_candidates": [
+        "native/mahayana-messaging/src/notification.rs",
+        "source/electron-main/main-production-services.ts",
+        "source/electron-main/notifications/os-notification-manager.ts",
+        "source/electron-main/production-binding-providers.ts",
+        "source/shared/os-notification.ts"
+      ],
+      "existing_owner": "Canonical NotificationPolicy + shipping Electron notifications service/platform adapter",
+      "rejected_existing_owners": [
+        "New TelegramNotification/System owner: duplicates canonical policy/platform ownership",
+        "Agent-only notification feed as complete messaging owner: current shipping feed does not carry Human/Topic/SavedSublist lifecycle"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "native/mahayana-messaging/src/notification.rs",
+        "source/electron-main/main-production-services.ts",
+        "source/electron-main/notifications/os-notification-manager.ts",
+        "source/electron-main/production-binding-providers.ts"
+      ],
+      "fabushi_target_symbols": [
+        "NotificationPolicy",
+        "NotificationCandidate",
+        "NotificationDecision",
+        "ConversationNotificationRule",
+        "ProductionNotificationsService",
+        "SandOsNotificationManager",
+        "createProductionNotificationsBinding"
+      ],
+      "target_language": "Rust + TypeScript",
+      "language_rationale": "Policy/state belongs to the existing Rust messaging owner; Electron owns the thin native OS notification adapter and production binding.",
+      "command_event_contracts": [
+        "SetDraft -> DraftChanged",
+        "SetTopicDraft -> TopicDraftChanged",
+        "SetConversationChildDraft -> ConversationChildDraftChanged",
+        "Composer draft persistence is account-scoped and generation-fenced"
+      ],
+      "state_owner": "NotificationPolicy for canonical delivery/privacy policy; existing ProductionNotificationsService/SandOsNotificationManager for platform notification instances",
+      "lifecycle_owner": "Canonical Conversation/message lifecycle plus the existing Electron notification service",
+      "persistence_and_restart": "Conversation notification policy is canonical state; transient OS notification queues/instances must be rebuilt/cleared from canonical messaging state. Human messaging notification restart evidence remains open.",
+      "concurrency_and_cancellation": "Queue/timer/grouping work must be stale-safe and teardown-safe; destroy/account reset must cancel pending delivery before later callbacks can surface stale content.",
+      "security_boundary": "Permission/privacy/mute/lock-screen redaction is evaluated before OS payload exposure; native actions must revalidate canonical conversation/message authority.",
+      "network_service_dependencies": [
+        "Fabushi messaging/update service for authoritative Human/Topic/SavedSublist events",
+        "SavedSublist authoritative relation/membership feed"
+      ],
+      "service_owner": "Fabushi messaging/sync service + existing desktop notification adapter",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Shipping ProductionNotificationsService currently consumes Agent feed only; Human/Topic/SavedSublist event feed is absent",
+        "OS notification instances are not yet keyed/clearable by canonical Human Conversation/Topic/SavedSublist identity",
+        "Native reply/action path is not yet composed with canonical Human messaging revalidation",
+        "SavedSublist authoritative server relation/membership feed remains required for trusted child identity"
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [],
+      "target_commit": "93f0b50116d97d72b9a3ba175759e63fb4273c26",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi messaging state -> NotificationPolicy -> ProductionNotificationsService -> native OS notification adapter",
+      "composition_slot": "Canonical messaging notification policy / platform projection",
+      "capability_component": "Notification",
+      "variation_axes": [
+        "Human direct",
+        "Group",
+        "Channel",
+        "Topic",
+        "SavedSublist",
+        "Agent",
+        "reaction/poll/action",
+        "muted/privacy/lock state"
+      ],
+      "shared_owner_contracts": [
+        "Canonical Conversation identity",
+        "Canonical Message identity",
+        "Canonical permissions",
+        "Canonical account/session",
+        "Canonical settings"
+      ],
+      "duplicate_root_check": "No Telegram/source-shaped Notification root is introduced; existing policy and platform adapter owners are extended.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Platform notification projection",
+      "primary_navigation_target": "Messages",
+      "collection_surface": "ConversationList",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Notification delivery/clear/activation/reply/action",
+      "detail_section": "Settings/account notification controls",
+      "capability_surface": "OS notification + canonical Conversation routing",
+      "route_contract": "Notification activation routes to the same canonical ConversationWorkspace/typed child destination.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "No search result is exposed by this responsibility.",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Platform notification surface is outside responsive layout; activation returns to canonical workspace.",
+      "accessibility_contract": "OS notification accessibility is delegated to the native platform adapter; in-app destination retains canonical a11y.",
+      "keyboard_contract": "Notification activation/reply must not bypass canonical composer/send policy.",
+      "state_continuity_contract": "Destroy/account reset/reload cannot surface stale queued notifications or route to revoked child identity.",
+      "ui_acceptance_scenarios": [
+        "Muted/private content does not leak",
+        "Destroyed child clears pending/native notification",
+        "Activation opens canonical destination",
+        "Native reply revalidates authority"
+      ],
+      "design_system_version": "FBCP Revision 7 live Fabushi design system",
+      "semantic_token_usage": [
+        "No new in-app visual language"
+      ],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [
+        "ConversationWorkspace",
+        "Composer",
+        "Settings"
+      ],
+      "screen_pattern_id": "ConversationWorkspace",
+      "screen_slots": [
+        "transcript",
+        "composer"
+      ],
+      "visual_state_matrix": [
+        "notification allowed",
+        "suppressed",
+        "redacted",
+        "cleared",
+        "activated"
+      ],
+      "density_contract": "Existing workspace density unchanged.",
+      "icon_asset_contract": "Native platform/app icon only; no Telegram branding.",
+      "avatar_contract": "Canonical participant/conversation avatar only when policy allows.",
+      "content_copy_keys": [],
+      "motion_contract": "Native platform behavior; existing application motion on activation.",
+      "reduced_motion_contract": "Existing reduced-motion contract after activation.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-NOTIFICATION-MANAGER-CONTRACT-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-R9-NOTIFICATION-MANAGER-CONTRACT-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-R9-NOTIFICATION-MANAGER-CONTRACT-001-CANONICAL"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-NOTIFICATION",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "GitHub Actions only"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "not-run",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Source-informed mapping from accepted telegramdesktop/tdesktop Telegram/SourceFiles/window/notifications_manager.h@cd36b671795afa49b282b1609380cf7e5c3473ed.",
+      "reviewer": null,
+      "notes": "Exact accepted 484-line header read complete. It establishes notification identity and owner boundaries, including monoforumPeerId/SavedSublist context. Fabushi mapping is existing-owner-first and remains mapped/open because Human/Topic/SavedSublist shipping notification composition is not yet implemented.",
+      "fabushi_target_bindings": [
+        {
+          "path": "native/mahayana-messaging/src/notification.rs",
+          "symbols": [
+            "NotificationPolicy",
+            "NotificationCandidate",
+            "NotificationDecision",
+            "ConversationNotificationRule"
+          ],
+          "responsibility_scope": "canonical source-neutral notification policy, privacy, mute, quiet-hours, and delivery decision contract"
+        },
+        {
+          "path": "source/electron-main/main-production-services.ts",
+          "symbols": [
+            "ProductionNotificationsService"
+          ],
+          "responsibility_scope": "single shipping desktop notification service boundary and account-reset lifecycle"
+        },
+        {
+          "path": "source/electron-main/notifications/os-notification-manager.ts",
+          "symbols": [
+            "SandOsNotificationManager"
+          ],
+          "responsibility_scope": "native OS notification instance lifecycle and activation/focus projection"
+        },
+        {
+          "path": "source/electron-main/production-binding-providers.ts",
+          "symbols": [
+            "createProductionNotificationsBinding"
+          ],
+          "responsibility_scope": "production composition binding for the one native notification service"
+        }
+      ]
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "d346b42a1d30ef60dc989b6e5191bb8e571f6bd5",
+      "source_path": "Telegram/SourceFiles/window/notifications_manager.cpp",
+      "source_blob_sha": "e5b9eb949e180667952172d338cbcf3e552798d8",
+      "source_kind": "source",
+      "module_id": "tdesktop.window.notifications",
+      "responsibility_id": "TDRP-R9-NOTIFICATION-MANAGER-LIFECYCLE-001",
+      "source_symbols": [
+        "System::System",
+        "System::createManager",
+        "System::setManager",
+        "System::skipSentNotification",
+        "System::skipNotification",
+        "System::computeSkipState",
+        "System::countTiming",
+        "System::registerThread",
+        "System::schedule",
+        "System::clearAll",
+        "System::clearFromTopic",
+        "System::clearFromSublist",
+        "System::clearForThreadIf",
+        "System::clearFromHistory",
+        "System::clearFromSession",
+        "System::clearIncomingFromHistory",
+        "System::clearIncomingFromTopic",
+        "System::clearIncomingFromSublist",
+        "System::clearFromItem",
+        "System::clearAllFast",
+        "System::checkDelayed",
+        "System::showGrouped",
+        "System::showNext",
+        "System::lookupSoundBytes",
+        "System::lookupSound",
+        "System::ensureSoundCreated",
+        "System::updateAll",
+        "System::volumeSupported",
+        "Manager::getNotificationOptions",
+        "Manager::notificationActivated",
+        "Manager::openNotificationMessage",
+        "Manager::notificationReplied",
+        "Manager::notificationActionActivated",
+        "NativeManager::doShowNotification",
+        "NativeManager::forceHideDetails"
+      ],
+      "capability_ids": [
+        "CAP-NOTIFICATIONS",
+        "CAP-CONVERSATION-LIFECYCLE"
+      ],
+      "dependency_ids": [
+        "Conversation",
+        "Message",
+        "Identity",
+        "Permissions",
+        "PlatformNotifications",
+        "Settings"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/notifications-manager-complete-read.md",
+      "behavior_contract": "Implements notification policy and temporal lifecycle: mute/block/privacy gating, reaction/poll dedupe, cross-device delay, queue/waiter/timer grouping, topic/SavedSublist destruction cleanup, clear scopes, sound/bounce, lock-screen redaction, activation routing, typed draft/reply context, callback actions, and native payload construction.",
+      "state_machine": "typed draft scope + payload -> validate identity -> create/update/clear canonical draft -> persist/sync as appropriate -> reload/compatibility decode -> project into one canonical composer; invalid mixed topic/SavedSublist keys fail closed.",
+      "side_effects": [
+        "Draft persistence/update projection",
+        "Cloud draft apply/clear",
+        "Composer cursor/webpage/reply continuity",
+        "Backward serialized-key decoding"
+      ],
+      "failure_cases": [
+        "Topic and SavedSublist draft identities collide",
+        "Renderer-only draft survives after authoritative clear",
+        "Old serialized draft key is misdecoded",
+        "Scheduled/business/edit draft overwrites normal local draft",
+        "Cloud/local scope confusion resurrects stale content"
+      ],
+      "ui_disposition": "Reuse canonical Fabushi conversation/workspace routing and settings. Native notification presentation is a platform adapter, not a second product root.",
+      "non_ui_responsibilities": [
+        "Typed draft identity/scope",
+        "Draft payload equality/null semantics",
+        "Persistence and restart",
+        "Cloud/local reconciliation",
+        "Backward key compatibility",
+        "SavedSublist monoforum draft isolation"
+      ],
+      "platform_delta": "Qt/native notification manager abstractions map to the existing Rust NotificationPolicy plus the existing Electron ProductionNotificationsService/SandOsNotificationManager binding. Human/Topic/SavedSublist messaging events must extend those owners rather than introduce a source-shaped notification subsystem.",
+      "existing_owner_candidates": [
+        "native/mahayana-messaging/src/notification.rs",
+        "source/electron-main/main-production-services.ts",
+        "source/electron-main/notifications/os-notification-manager.ts",
+        "source/electron-main/production-binding-providers.ts",
+        "source/shared/os-notification.ts"
+      ],
+      "existing_owner": "Canonical NotificationPolicy + shipping Electron notifications service/platform adapter",
+      "rejected_existing_owners": [
+        "New TelegramNotification/System owner: duplicates canonical policy/platform ownership",
+        "Agent-only notification feed as complete messaging owner: current shipping feed does not carry Human/Topic/SavedSublist lifecycle"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "native/mahayana-messaging/src/notification.rs",
+        "source/electron-main/main-production-services.ts",
+        "source/electron-main/notifications/os-notification-manager.ts",
+        "source/electron-main/production-binding-providers.ts",
+        "source/shared/os-notification.ts"
+      ],
+      "fabushi_target_symbols": [
+        "NotificationPolicy",
+        "NotificationCandidate",
+        "NotificationDecision",
+        "ProductionNotificationsService",
+        "SandOsNotificationManager",
+        "createProductionNotificationsBinding",
+        "SandOsNotificationDecider"
+      ],
+      "target_language": "Rust + TypeScript",
+      "language_rationale": "Policy/state belongs to the existing Rust messaging owner; Electron owns the thin native OS notification adapter and production binding.",
+      "command_event_contracts": [
+        "SetDraft -> DraftChanged",
+        "SetTopicDraft -> TopicDraftChanged",
+        "SetConversationChildDraft -> ConversationChildDraftChanged",
+        "Composer draft persistence is account-scoped and generation-fenced"
+      ],
+      "state_owner": "NotificationPolicy for canonical delivery/privacy policy; existing ProductionNotificationsService/SandOsNotificationManager for platform notification instances",
+      "lifecycle_owner": "Canonical Conversation/message lifecycle plus the existing Electron notification service",
+      "persistence_and_restart": "Conversation notification policy is canonical state; transient OS notification queues/instances must be rebuilt/cleared from canonical messaging state. Human messaging notification restart evidence remains open.",
+      "concurrency_and_cancellation": "Queue/timer/grouping work must be stale-safe and teardown-safe; destroy/account reset must cancel pending delivery before later callbacks can surface stale content.",
+      "security_boundary": "Permission/privacy/mute/lock-screen redaction is evaluated before OS payload exposure; native actions must revalidate canonical conversation/message authority.",
+      "network_service_dependencies": [
+        "Fabushi messaging/update service for authoritative Human/Topic/SavedSublist events",
+        "SavedSublist authoritative relation/membership feed"
+      ],
+      "service_owner": "Fabushi messaging/sync service + existing desktop notification adapter",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Shipping ProductionNotificationsService currently consumes Agent feed only; Human/Topic/SavedSublist event feed is absent",
+        "OS notification instances are not yet keyed/clearable by canonical Human Conversation/Topic/SavedSublist identity",
+        "Native reply/action path is not yet composed with canonical Human messaging revalidation",
+        "SavedSublist authoritative server relation/membership feed remains required for trusted child identity"
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [],
+      "target_commit": "93f0b50116d97d72b9a3ba175759e63fb4273c26",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi messaging state -> NotificationPolicy -> ProductionNotificationsService -> native OS notification adapter",
+      "composition_slot": "Canonical messaging notification policy / platform projection",
+      "capability_component": "Notification",
+      "variation_axes": [
+        "Human direct",
+        "Group",
+        "Channel",
+        "Topic",
+        "SavedSublist",
+        "Agent",
+        "reaction/poll/action",
+        "muted/privacy/lock state"
+      ],
+      "shared_owner_contracts": [
+        "Canonical Conversation identity",
+        "Canonical Message identity",
+        "Canonical permissions",
+        "Canonical account/session",
+        "Canonical settings"
+      ],
+      "duplicate_root_check": "No Telegram/source-shaped Notification root is introduced; existing policy and platform adapter owners are extended.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Platform notification projection",
+      "primary_navigation_target": "Messages",
+      "collection_surface": "ConversationList",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Notification delivery/clear/activation/reply/action",
+      "detail_section": "Settings/account notification controls",
+      "capability_surface": "OS notification + canonical Conversation routing",
+      "route_contract": "Notification activation routes to the same canonical ConversationWorkspace/typed child destination.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "No search result is exposed by this responsibility.",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Platform notification surface is outside responsive layout; activation returns to canonical workspace.",
+      "accessibility_contract": "OS notification accessibility is delegated to the native platform adapter; in-app destination retains canonical a11y.",
+      "keyboard_contract": "Notification activation/reply must not bypass canonical composer/send policy.",
+      "state_continuity_contract": "Destroy/account reset/reload cannot surface stale queued notifications or route to revoked child identity.",
+      "ui_acceptance_scenarios": [
+        "Muted/private content does not leak",
+        "Destroyed child clears pending/native notification",
+        "Activation opens canonical destination",
+        "Native reply revalidates authority"
+      ],
+      "design_system_version": "FBCP Revision 7 live Fabushi design system",
+      "semantic_token_usage": [
+        "No new in-app visual language"
+      ],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [
+        "ConversationWorkspace",
+        "Composer",
+        "Settings"
+      ],
+      "screen_pattern_id": "ConversationWorkspace",
+      "screen_slots": [
+        "transcript",
+        "composer"
+      ],
+      "visual_state_matrix": [
+        "notification allowed",
+        "suppressed",
+        "redacted",
+        "cleared",
+        "activated"
+      ],
+      "density_contract": "Existing workspace density unchanged.",
+      "icon_asset_contract": "Native platform/app icon only; no Telegram branding.",
+      "avatar_contract": "Canonical participant/conversation avatar only when policy allows.",
+      "content_copy_keys": [],
+      "motion_contract": "Native platform behavior; existing application motion on activation.",
+      "reduced_motion_contract": "Existing reduced-motion contract after activation.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-NOTIFICATION-MANAGER-LIFECYCLE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-R9-NOTIFICATION-MANAGER-LIFECYCLE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-R9-NOTIFICATION-MANAGER-LIFECYCLE-001-CANONICAL"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-NOTIFICATION",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "GitHub Actions only"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "not-run",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Source-informed mapping from accepted telegramdesktop/tdesktop Telegram/SourceFiles/window/notifications_manager.cpp@e5b9eb949e180667952172d338cbcf3e552798d8.",
+      "reviewer": null,
+      "notes": "Exact accepted 1700-line implementation read complete. SavedSublist destruction is explicitly observed and clearFromSublist removes manager/native notification state plus queued maps/waiters/watch state before timer rescheduling. Current Fabushi Agent-only OS notification feed does not satisfy this Human messaging lifecycle.",
+      "fabushi_target_bindings": [
+        {
+          "path": "native/mahayana-messaging/src/notification.rs",
+          "symbols": [
+            "NotificationPolicy",
+            "NotificationCandidate",
+            "NotificationDecision"
+          ],
+          "responsibility_scope": "runtime policy decision input/output used before platform payload exposure"
+        },
+        {
+          "path": "source/electron-main/main-production-services.ts",
+          "symbols": [
+            "ProductionNotificationsService"
+          ],
+          "responsibility_scope": "runtime notification event/clear/reset service contract to be extended for canonical messaging"
+        },
+        {
+          "path": "source/electron-main/notifications/os-notification-manager.ts",
+          "symbols": [
+            "SandOsNotificationManager"
+          ],
+          "responsibility_scope": "runtime native notification show/close/reset ownership and click projection"
+        },
+        {
+          "path": "source/electron-main/production-binding-providers.ts",
+          "symbols": [
+            "createProductionNotificationsBinding"
+          ],
+          "responsibility_scope": "runtime production wiring joining canonical events to the existing platform adapter"
+        },
+        {
+          "path": "source/shared/os-notification.ts",
+          "symbols": [
+            "SandOsNotificationDecider"
+          ],
+          "responsibility_scope": "existing notification transition/throttle machinery whose Agent-only scope cannot be mistaken for complete messaging semantics"
         }
       ]
     }
