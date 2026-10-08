@@ -110,6 +110,7 @@ function MediaViewer({ attachments, startIndex, resolveMedia, onClose, restoreFo
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
   const [transform, setTransform] = useState<Transform>({ scale: MIN_ZOOM, x: 0, y: 0 });
+  const viewerRef = useRef<HTMLDivElement | null>(null);
   const pointerRef = useRef<{ id: number | null; startX: number; startY: number; originX: number; originY: number; moved: boolean }>({ id: null, startX: 0, startY: 0, originX: 0, originY: 0, moved: false });
   const current = attachments[index] ?? attachments[0];
   const total = attachments.length;
@@ -122,6 +123,11 @@ function MediaViewer({ attachments, startIndex, resolveMedia, onClose, restoreFo
     setLoading(true);
     setFailed(false);
     setTransform({ scale: MIN_ZOOM, x: 0, y: 0 });
+    const activePointerId = pointerRef.current.id;
+    const viewer = viewerRef.current;
+    if (activePointerId != null && viewer?.hasPointerCapture(activePointerId)) {
+      viewer.releasePointerCapture(activePointerId);
+    }
     pointerRef.current = { id: null, startX: 0, startY: 0, originX: 0, originY: 0, moved: false };
     void resolveWithSingleRetry(resolveMedia, current.path).then((next) => {
       if (!active) return;
@@ -170,6 +176,15 @@ function MediaViewer({ attachments, startIndex, resolveMedia, onClose, restoreFo
     };
   }, [onClose, restoreFocus, total]);
 
+  useEffect(() => () => {
+    const activePointerId = pointerRef.current.id;
+    const viewer = viewerRef.current;
+    if (activePointerId != null && viewer?.hasPointerCapture(activePointerId)) {
+      viewer.releasePointerCapture(activePointerId);
+    }
+    pointerRef.current.id = null;
+  }, []);
+
   const fit = () => setTransform({ scale: MIN_ZOOM, x: 0, y: 0 });
   const zoom = (factor: number) => setTransform((currentTransform) => ({ ...currentTransform, scale: clamp(currentTransform.scale * factor, MIN_ZOOM, MAX_ZOOM) }));
 
@@ -180,6 +195,7 @@ function MediaViewer({ attachments, startIndex, resolveMedia, onClose, restoreFo
   };
   const onPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     if (event.button !== 0 || transform.scale <= MIN_ZOOM) return;
+    if (event.target instanceof Element && event.target.closest("button, a[href], input, select, textarea, [role='button']") != null) return;
     const currentTransform = transform;
     pointerRef.current = { id: event.pointerId, startX: event.clientX, startY: event.clientY, originX: currentTransform.x, originY: currentTransform.y, moved: false };
     event.currentTarget.setPointerCapture(event.pointerId);
@@ -209,7 +225,7 @@ function MediaViewer({ attachments, startIndex, resolveMedia, onClose, restoreFo
         : <img alt={caption.length > 0 ? caption : "Media preview"} className="sand-media-viewer__image" draggable={false} onDoubleClick={fit} onError={() => setFailed(true)} src={source} style={{ transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})` }} />;
 
   return createPortal(
-    <div aria-label={title} aria-modal="true" className="sand-media-viewer" onClick={(event) => { if (event.target === event.currentTarget) onClose(); }} onPointerCancel={onPointerUp} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} role="dialog">
+    <div aria-label={title} aria-modal="true" className="sand-media-viewer" onClick={(event) => { if (event.target === event.currentTarget) onClose(); }} onPointerCancel={onPointerUp} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} ref={viewerRef} role="dialog">
       <div className="sand-media-viewer__top-bar"><button aria-label="Close media preview" className="sand-media-viewer__close" onClick={onClose} type="button">×</button></div>
       <div className="sand-media-viewer__column">
         <div className="sand-media-viewer__media-cell" onDoubleClick={fit} onWheel={onWheel}>
