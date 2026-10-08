@@ -20,7 +20,7 @@ import { createAssistantMathMarkupCache, type KatexRuntime } from "./conversatio
 import { resolveWithSingleRetry } from "./conversation/workspace/media-runtime.ts";
 import { accumulateWheelZoomSteps, normalizeWheelZoomDelta } from "./conversation/workspace/media-zoom.ts";
 import { DERIVED_MEDIA_PRELOAD_ROOT_MARGIN, DERIVED_MEDIA_THUMBNAIL_ROOT_MARGIN, isVisibilityBoundDerivedMedia, observeDerivedMediaVisibility, shouldResolveDerivedMedia, shouldResolveDerivedThumbnail } from "./conversation/workspace/media-visibility.ts";
-import { captureHorizontalScroll, clampHorizontalScrollOffset, restoreHorizontalScrollOffset } from "./conversation/workspace/horizontal-scroll-state.ts";
+import { beginHorizontalScrollPointer, captureHorizontalScroll, clampHorizontalScrollOffset, restoreHorizontalScrollOffset, updateHorizontalScrollPointer } from "./conversation/workspace/horizontal-scroll-state.ts";
 import {
   areAssistantProjectionCandidatesCompatible,
   reconcileAssistantContentProjection,
@@ -711,6 +711,46 @@ test("UNIT-TDRP-IV-ARTICLE-SCROLL-CLAMP-001 rich-content horizontal scroll resto
   assert.deepEqual(captureHorizontalScroll("owner", -12), { ownerId: "owner", offset: 0 });
   assert.equal(clampHorizontalScrollOffset(Number.POSITIVE_INFINITY, 600, 500), 0);
   assert.equal(clampHorizontalScrollOffset(20, 100, 200), 0);
+});
+
+test("UNIT-TDRP-IV-ARTICLE-HORIZONTAL-POINTER-LIFECYCLE-001 horizontal pointer intent commits only after directional arbitration", () => {
+  const initial = beginHorizontalScrollPointer(7, 100, 20);
+  assert.deepEqual(initial, { pointerId: 7, startX: 100, startY: 20, lastX: 100, lastY: 20, active: false });
+
+  const pending = updateHorizontalScrollPointer(initial, 7, 102, 21);
+  assert.equal(pending.decision, "pending");
+  assert.equal(pending.deltaX, 0);
+  assert.equal(pending.gesture?.active, false);
+
+  const horizontal = updateHorizontalScrollPointer(pending.gesture, 7, 110, 22);
+  assert.equal(horizontal.decision, "horizontal");
+  assert.equal(horizontal.deltaX, -10);
+  assert.equal(horizontal.gesture?.active, true);
+
+  const continued = updateHorizontalScrollPointer(horizontal.gesture, 7, 116, 22);
+  assert.equal(continued.decision, "horizontal");
+  assert.equal(continued.deltaX, -6);
+
+  const vertical = updateHorizontalScrollPointer(beginHorizontalScrollPointer(8, 20, 20), 8, 22, 32);
+  assert.equal(vertical.decision, "vertical");
+  assert.equal(vertical.gesture, null);
+
+  const mismatched = updateHorizontalScrollPointer(initial, 99, 200, 200);
+  assert.equal(mismatched.decision, "ignored");
+  assert.equal(mismatched.gesture, initial);
+});
+
+test("CONTRACT-TDRP-IV-ARTICLE-HORIZONTAL-POINTER-BALANCE-001 rich-content regions balance touch-like pointer ownership", () => {
+  const source = readFileSync(new URL("./conversation/workspace/transcript.tsx", import.meta.url), "utf8");
+  const css = readFileSync(new URL("./conversation/workspace/view.css", import.meta.url), "utf8");
+  assert.match(source, /beginHorizontalScrollPointer\(event\.pointerId, event\.clientX, event\.clientY\)/);
+  assert.match(source, /updateHorizontalScrollPointer\(pointerGestureRef\.current, event\.pointerId, event\.clientX, event\.clientY\)/);
+  assert.match(source, /setPointerCapture\(event\.pointerId\)/);
+  assert.match(source, /releasePointerCapture\(gesture\.pointerId\)/);
+  assert.match(source, /onPointerCancel=\{\(event\) => retirePointerGesture\(event\.pointerId\)\}/);
+  assert.match(source, /onPointerUp=\{\(event\) => retirePointerGesture\(event\.pointerId\)\}/);
+  assert.match(source, /onLostPointerCapture=\{\(event\) => retirePointerGesture\(event\.pointerId\)\}/);
+  assert.match(css, /touch-action:\s*pan-y/);
 });
 
 test("CONTRACT-TDRP-IV-ARTICLE-SCROLL-CONTINUITY-001 assistant code and table scroll regions bind to canonical message identity", () => {
