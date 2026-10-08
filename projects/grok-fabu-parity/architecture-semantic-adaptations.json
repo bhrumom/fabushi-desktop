@@ -308,17 +308,18 @@
       "referencePath": "frontend/src/recovered/features/conversation/workspace/media-viewer.tsx",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "ec95108e504e081b926fb0162353cd7c9134ab76",
+      "targetBlobSha": "f3ec67a9a808e62160979dc23fa9c78dd212a0cb",
       "behavioralEvidence": [
         "frontend/src/recovered/features/conversation/workspace/media-viewer.tsx",
-        "frontend/src/recovered/features/conversation/workspace/transcript.tsx"
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "frontend/src/recovered/features/conversation/workspace/media-runtime.ts"
       ],
       "testEvidence": [
         "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts",
         ".github/workflows/rust-desktop-runtime.yml",
         ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "rationale": "Preserves the recovered canonical MediaViewer and its existing async resource fencing while tightening replacement lifecycle ownership: changing the current media identity now retires the prior pointer/drag owner at the same boundary that resets media/loading/transform state. Late pointermove/pointerup events from the replaced resource therefore fail the existing pointer-id guard and cannot pan the new media. No second media/resource store or Telegram/IV interaction owner is introduced."
+      "rationale": "Preserves the recovered canonical MediaViewer and its existing async resource fencing while tightening replacement lifecycle ownership: changing the current media identity now retires the prior pointer/drag owner at the same boundary that resets media/loading/transform state. Late pointermove/pointerup events from the replaced resource therefore fail the existing pointer-id guard and cannot pan the new media. No second media/resource store or Telegram/IV interaction owner is introduced. Missing resource resolution is also delegated to a shared React-free bounded helper used by thumbnail, full viewer and attachment-card paths: a null or transient failure receives at most one retry, while a second null settles missing and a second exception fails. This preserves the accepted bounded-recovery rule without an unbounded render/retry loop."
     },
     {
       "referencePath": "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
