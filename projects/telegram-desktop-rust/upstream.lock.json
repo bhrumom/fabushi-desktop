@@ -259,9 +259,9 @@
     "root_source_entries_total": 6355,
     "recursive_source_entries_total": 15788,
     "unknown_minimum": 15788,
-    "unread_minimum": 15735,
+    "unread_minimum": 15730,
     "omitted_known": 0,
-    "note": "Revision 9 live authority remains telegramdesktop/tdesktop@d346b42a1d30ef60dc989b6e5191bb8e571f6bd5 with root tree 5db05afa460bb030ac36316beb6496df03742c59. Accepted complete reads now additionally include history/view/controls/history_view_forward_panel.h@4e01059c1b0f0703f99817b8ec6028133ffd3728 (108 lines) and history_view_forward_panel.cpp@ea88a830e327705ff29c67514fea5b2215844831 (524 lines). They establish destination-scoped forward staging, source/destination lifecycle convergence, sender/caption option normalization, typed Topic/SavedSublist draft-reply clearing, link-preview option mutation, and premium/rich-message forward-author restrictions. These map to canonical Conversation/Message/Composer/MessagingEngine owners and remain mapped-open; no production or verification credit is claimed. Source semantic closure remains open: unknown 15,788, unread_minimum 15,735, omitted 0."
+    "note": "Revision 9 live authority remains telegramdesktop/tdesktop@d346b42a1d30ef60dc989b6e5191bb8e571f6bd5 with root tree 5db05afa460bb030ac36316beb6496df03742c59. Accepted complete reads now additionally include history_view_forward_panel.{h,cpp}, data_drafts.h, notifications_manager.{h,cpp}, history_view_draft_options.{h,cpp}, data_changes.{h,cpp}, and data_types.h at their exact accepted blobs. The newest reads establish typed staged reply/forward/link options, exact Topic/SavedSublist draft identity, realtime-before-coalesced change delivery with synchronous destruction retirement, ForwardDraft values/options, and shared Message/Resource value contracts. They map to canonical Conversation/Message/Composer/MessagingEngine/Search/Resource owners and remain mapped-open; no production or verification credit is claimed. Source semantic closure remains open: unknown 15,788, unread_minimum 15,730, omitted 0."
   },
   "acceptance": {
     "baseline_ready": false,
