@@ -506,7 +506,7 @@ test("media missing-resource recovery is bounded to one retry", async () => {
 });
 
 
-test("rich-content horizontal scroll restores only compatible owners", () => {
+test("UNIT-TDRP-IV-ARTICLE-SCROLL-CLAMP-001 rich-content horizontal scroll restores only compatible owners", () => {
   const snapshot = captureHorizontalScroll("message-1:code:0:typescript", 240);
   assert.deepEqual(snapshot, { ownerId: "message-1:code:0:typescript", offset: 240 });
   assert.equal(restoreHorizontalScrollOffset(snapshot, snapshot.ownerId, 1_000, 400), 240);
@@ -517,7 +517,7 @@ test("rich-content horizontal scroll restores only compatible owners", () => {
   assert.equal(clampHorizontalScrollOffset(20, 100, 200), 0);
 });
 
-test("assistant code and table scroll regions bind to canonical message identity", () => {
+test("CONTRACT-TDRP-IV-ARTICLE-SCROLL-CONTINUITY-001 assistant code and table scroll regions bind to canonical message identity", () => {
   const source = readFileSync(new URL("./conversation/workspace/transcript.tsx", import.meta.url), "utf8");
   assert.match(source, /<AssistantMessageContent[\s\S]{0,700}ownerId=\{entry\.id\}[\s\S]{0,200}text=\{entry\.text\}/);
   assert.match(source, /const tableOwnerId = `\$\{ownerId\}:table:\$\{JSON\.stringify\(block\.headers\)\}`;/);

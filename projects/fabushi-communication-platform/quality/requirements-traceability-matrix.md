@@ -86,6 +86,34 @@ These rows are additive to the AC coverage plan. A row at `IMPLEMENTED` is not a
 | TDRP-R9-DATA-CHANGES-CONTRACT-001 | high | ORA-TDRP-R9-DATA-CHANGES-CONTRACT-001 | INV-TDRP-R9-DATA-CHANGES-CONTRACT-001-CANONICAL | pending | pending | pending destruction/cleanup integration and temporal coverage | pending canonical Conversation/Composer projection coverage | pending resource/security cleanup coverage | pending Bot + messaging regression | evidence:pending-current-head | pending-independent-review | MAPPED |
 | TDRP-R9-DATA-CHANGES-LIFECYCLE-001 | high | ORA-TDRP-R9-DATA-CHANGES-LIFECYCLE-001 | INV-TDRP-R9-DATA-CHANGES-LIFECYCLE-001-CANONICAL | pending | pending | pending realtime/coalesced/destroyed sequencing coverage | pending child lifecycle projection coverage | pending stale-event/resource cleanup coverage | pending Bot + messaging regression | evidence:pending-current-head | pending-independent-review | MAPPED |
 | TDRP-R9-DATA-TYPES-VALUE-CONTRACT-001 | high | ORA-TDRP-R9-DATA-TYPES-VALUE-CONTRACT-001 | INV-TDRP-R9-DATA-TYPES-VALUE-CONTRACT-001-CANONICAL | pending | pending | pending forward/message value-contract integration coverage | pending Composer/Conversation projection coverage | pending resource/cache/security applicability coverage | pending Bot + messaging regression | evidence:pending-current-head | pending-independent-review | MAPPED |
+| TDRP-R9-IV-ARTICLE-CONTRACT-001 | high | ORA-TDRP-IV-ARTICLE-001 | INV-TDRP-IV-ARTICLE-SCROLL-001; INV-TDRP-IV-ARTICLE-RUNTIME-001 | UNIT-TDRP-IV-ARTICLE-SCROLL-CLAMP-001 | CONTRACT-TDRP-IV-ARTICLE-SCROLL-CONTINUITY-001 | pending full article replacement/reload temporal coverage | pending packaged keyboard/a11y/visual matrix | pending UI performance/soak and security review | pending Bot + transcript regression breadth | workflow:pending-current-head | pending-independent-review | MAPPED |
+| TDRP-R9-IV-ARTICLE-CONTENT-LIFECYCLE-001 | high | ORA-TDRP-IV-ARTICLE-001 | INV-TDRP-IV-ARTICLE-PATCH-001; INV-TDRP-IV-ARTICLE-SCROLL-001; INV-TDRP-IV-ARTICLE-RUNTIME-001 | UNIT-TDRP-IV-ARTICLE-SCROLL-CLAMP-001 | CONTRACT-TDRP-IV-ARTICLE-SCROLL-CONTINUITY-001 | pending arbitrary replacement/reload temporal coverage | pending packaged keyboard/a11y/visual matrix | pending UI performance/soak and security review | pending Bot + transcript regression breadth | workflow:pending-current-head | pending-independent-review | MAPPED |
+| TDRP-R9-IV-ARTICLE-INTERACTION-001 | high | ORA-TDRP-IV-ARTICLE-001 | INV-TDRP-IV-ARTICLE-SCROLL-001; INV-TDRP-IV-ARTICLE-HIT-001; INV-TDRP-IV-ARTICLE-RUNTIME-001 | UNIT-TDRP-IV-ARTICLE-SCROLL-CLAMP-001 | CONTRACT-TDRP-IV-ARTICLE-SCROLL-CONTINUITY-001 | pending pointer/touch/reload temporal coverage | pending packaged keyboard/a11y/visual matrix | pending UI performance/soak and security review | pending Bot + transcript regression breadth | workflow:pending-current-head | pending-independent-review | MAPPED |
+
+### TDRP-R9-IV-ARTICLE-CONTRACT-001 oracle
+
+- `ORA-TDRP-IV-ARTICLE-001`: rich-content projection remains under the canonical transcript/message identity; derived horizontal-scroll state never becomes a second article or message owner.
+- `INV-TDRP-IV-ARTICLE-SCROLL-001`: code/table horizontal scroll restores only for a compatible canonical message plus structural owner and clamps to current geometry.
+- Current cases: `UNIT-TDRP-IV-ARTICLE-SCROLL-CLAMP-001` and `CONTRACT-TDRP-IV-ARTICLE-SCROLL-CONTINUITY-001`.
+- Dossier: `projects/telegram-desktop-rust/dossiers/iv-markdown-article-complete-read.md`.
+- Current verdict: `MAPPED`; the bounded scroll contract slice is present, while exact-head execution and the full article contract remain pending.
+
+### TDRP-R9-IV-ARTICLE-CONTENT-LIFECYCLE-001 oracle
+
+- `ORA-TDRP-IV-ARTICLE-001`: compatible derived state may be reused only while its canonical message plus structural owner remains compatible through content revision.
+- `INV-TDRP-IV-ARTICLE-SCROLL-001`: code/table horizontal scroll is captured before content revision, restored only for the same owner identity, clamped to current geometry, and reset on owner mismatch.
+- `INV-TDRP-IV-ARTICLE-RUNTIME-001`: scroll geometry remains derived component state rather than canonical message truth and is released with the owning transcript region.
+- Current cases: `UNIT-TDRP-IV-ARTICLE-SCROLL-CLAMP-001` and `CONTRACT-TDRP-IV-ARTICLE-SCROLL-CONTINUITY-001`.
+- Dossier: `projects/telegram-desktop-rust/dossiers/iv-markdown-article-complete-read.md`.
+- Current verdict: `MAPPED`; the bounded code/table lifecycle slice is present, while exact-head execution and the broader article lifecycle remain pending.
+
+### TDRP-R9-IV-ARTICLE-INTERACTION-001 oracle
+
+- `ORA-TDRP-IV-ARTICLE-001`: code/table overflow interaction remains in `ConversationTranscript` and resolves against canonical message plus structural block identity.
+- `INV-TDRP-IV-ARTICLE-HIT-001`: the scroll region does not acquire message, URL, media or service capability; those actions stay delegated to existing typed owners.
+- Current cases: `UNIT-TDRP-IV-ARTICLE-SCROLL-CLAMP-001` and `CONTRACT-TDRP-IV-ARTICLE-SCROLL-CONTINUITY-001`; packaged keyboard/a11y evidence remains pending.
+- Dossier: `projects/telegram-desktop-rust/dossiers/iv-markdown-article-complete-read.md`.
+- Current verdict: `MAPPED`; the bounded interaction slice is present, while pointer/touch breadth, packaged evidence and independent acceptance remain pending.
 
 ### TDRP-R9-HISTORY-STATE-CONTRACT-001 oracle
 

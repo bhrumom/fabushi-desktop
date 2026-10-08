@@ -5463,9 +5463,13 @@
         "INV-TDRP-IV-ARTICLE-RUNTIME-001",
         "INV-TDRP-IV-ARTICLE-HEAVY-001"
       ],
-      "unit_case_ids": [],
+      "unit_case_ids": [
+        "UNIT-TDRP-IV-ARTICLE-SCROLL-CLAMP-001"
+      ],
       "property_state_case_ids": [],
-      "contract_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-IV-ARTICLE-SCROLL-CONTINUITY-001"
+      ],
       "integration_case_ids": [],
       "functional_e2e_case_ids": [],
       "temporal_case_ids": [],
@@ -5753,9 +5757,13 @@
         "INV-TDRP-IV-ARTICLE-RUNTIME-001",
         "INV-TDRP-IV-ARTICLE-HEAVY-001"
       ],
-      "unit_case_ids": [],
+      "unit_case_ids": [
+        "UNIT-TDRP-IV-ARTICLE-SCROLL-CLAMP-001"
+      ],
       "property_state_case_ids": [],
-      "contract_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-IV-ARTICLE-SCROLL-CONTINUITY-001"
+      ],
       "integration_case_ids": [],
       "functional_e2e_case_ids": [],
       "temporal_case_ids": [],
@@ -5910,7 +5918,9 @@
         "path:frontend/src/recovered/features/conversation/workspace/transcript.tsx",
         "path:frontend/src/production/ProductionRenderer.tsx"
       ],
-      "test_evidence": [],
+      "test_evidence": [
+        "path:frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts"
+      ],
       "target_commit": "3bc92400826cc4ca7ac665b467708e22261edc61",
       "workflow_run": null,
       "run_attempt": null,
@@ -6038,9 +6048,13 @@
         "INV-TDRP-IV-ARTICLE-RUNTIME-001",
         "INV-TDRP-IV-ARTICLE-HEAVY-001"
       ],
-      "unit_case_ids": [],
+      "unit_case_ids": [
+        "UNIT-TDRP-IV-ARTICLE-SCROLL-CLAMP-001"
+      ],
       "property_state_case_ids": [],
-      "contract_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-IV-ARTICLE-SCROLL-CONTINUITY-001"
+      ],
       "integration_case_ids": [],
       "functional_e2e_case_ids": [],
       "temporal_case_ids": [],
