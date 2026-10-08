@@ -2913,3 +2913,221 @@ impl<S: MessagingStateStore> MessagingService<S> {
         Ok(())
     }
 }
+
+
+#[cfg(test)]
+mod history_search_lifecycle_tests {
+    use super::*;
+    use crate::actor::{Actor, Participant, ParticipantRole};
+    use crate::conversation::Conversation;
+    use crate::message::{
+        DeliveryState, FormattedText, MediaRef, Message, MessageContent, TextEntity,
+        TextEntityKind,
+    };
+    use crate::search::SearchScope;
+    use crate::store::MemoryStateStore;
+    use std::collections::BTreeMap;
+
+    fn participant(actor_id: &ActorId) -> Participant {
+        Participant {
+            actor_id: actor_id.clone(),
+            role: ParticipantRole::Member,
+            joined_at_ms: 1,
+            muted_until_ms: None,
+        }
+    }
+
+    fn message(
+        id: &str,
+        conversation_id: &ConversationId,
+        sender_id: &ActorId,
+        content: MessageContent,
+    ) -> Message {
+        Message {
+            id: MessageId::new(id),
+            conversation_id: conversation_id.clone(),
+            sender_id: sender_id.clone(),
+            content,
+            reply_to_message_id: None,
+            thread_root_message_id: None,
+            forward_origin: None,
+            reply_markup: None,
+            reactions: Vec::new(),
+            delivery_state: DeliveryState::Delivered,
+            created_at_ms: 10,
+            edited_at_ms: None,
+            scheduled_at_ms: None,
+            silent: false,
+            protected_content: false,
+            pinned: false,
+            deleted: false,
+        }
+    }
+
+    fn search_ids(
+        service: &MessagingService<MemoryStateStore>,
+        actor_id: &ActorId,
+        scope: SearchScope,
+    ) -> Vec<String> {
+        let envelope = service.search_envelope(
+            actor_id,
+            SearchQuery {
+                text: "retiretoken".into(),
+                scope,
+                conversation_id: None,
+                sender_id: None,
+                from_ms: None,
+                to_ms: None,
+                limit: 20,
+            },
+            30,
+        );
+        match envelope.event {
+            ServerEvent::SearchResults { results, .. } => {
+                results.into_iter().map(|result| result.id).collect()
+            }
+            other => panic!("expected search results, got {other:?}"),
+        }
+    }
+
+    fn media_ref(id: &str, name: &str) -> MediaRef {
+        MediaRef {
+            id: id.into(),
+            file_name: Some(name.into()),
+            mime_type: Some("application/octet-stream".into()),
+            size_bytes: Some(32),
+            width: None,
+            height: None,
+            duration_ms: None,
+            thumbnail_id: None,
+            local_path: None,
+            remote_url: None,
+            content_hash: None,
+        }
+    }
+
+    #[test]
+    fn deleted_messages_stay_out_of_shipping_search_after_restart() {
+        let viewer = ActorId::new("human:history-search-viewer");
+        let sender = ActorId::new("human:history-search-sender");
+        let conversation_id = ConversationId::new("conversation:history-search");
+        let photo_id = MessageId::new("message:history-search-photo");
+        let file_id = MessageId::new("message:history-search-file");
+        let link_id = MessageId::new("message:history-search-link");
+
+        let mut state = crate::engine::MessagingState::default();
+        state
+            .actors
+            .insert(viewer.clone(), Actor::human(viewer.0.clone(), "Viewer"));
+        state
+            .actors
+            .insert(sender.clone(), Actor::human(sender.0.clone(), "Sender"));
+        state.conversations.insert(
+            conversation_id.clone(),
+            Conversation::direct(
+                conversation_id.0.clone(),
+                "History Search",
+                vec![participant(&viewer), participant(&sender)],
+                1,
+            ),
+        );
+
+        state.messages.insert(
+            conversation_id.clone(),
+            BTreeMap::from([
+                (
+                    photo_id.clone(),
+                    message(
+                        &photo_id.0,
+                        &conversation_id,
+                        &sender,
+                        MessageContent::Photo {
+                            media: media_ref("media:history-photo", "history.jpg"),
+                            caption: FormattedText::plain("retiretoken photo"),
+                            spoiler: false,
+                        },
+                    ),
+                ),
+                (
+                    file_id.clone(),
+                    message(
+                        &file_id.0,
+                        &conversation_id,
+                        &sender,
+                        MessageContent::Document {
+                            media: media_ref("media:history-file", "history.bin"),
+                            caption: FormattedText::plain("retiretoken file"),
+                        },
+                    ),
+                ),
+                (
+                    link_id.clone(),
+                    message(
+                        &link_id.0,
+                        &conversation_id,
+                        &sender,
+                        MessageContent::Text {
+                            text: FormattedText {
+                                text: "https://retiretoken.example".into(),
+                                entities: vec![TextEntity {
+                                    offset_utf16: 0,
+                                    length_utf16: 27,
+                                    kind: TextEntityKind::Url,
+                                }],
+                            },
+                        },
+                    ),
+                ),
+            ]),
+        );
+
+        let mut service = MessagingService {
+            engine: MessagingEngine::from_state(state),
+            store: MemoryStateStore::default(),
+            blob_store: None,
+            cursor: 0,
+        };
+
+        assert_eq!(search_ids(&service, &viewer, SearchScope::Global).len(), 3);
+        assert_eq!(
+            search_ids(&service, &viewer, SearchScope::Media),
+            vec![photo_id.0.clone()]
+        );
+        assert_eq!(
+            search_ids(&service, &viewer, SearchScope::Files),
+            vec![file_id.0.clone()]
+        );
+        assert_eq!(
+            search_ids(&service, &viewer, SearchScope::Links),
+            vec![link_id.0.clone()]
+        );
+
+        let deletion = Event::MessagesDeleted {
+            conversation_id: conversation_id.clone(),
+            message_ids: vec![photo_id.clone(), file_id.clone(), link_id.clone()],
+        };
+        service.engine.apply(deletion.clone());
+        service.engine.apply(deletion);
+
+        for scope in [
+            SearchScope::Global,
+            SearchScope::Media,
+            SearchScope::Files,
+            SearchScope::Links,
+        ] {
+            assert!(search_ids(&service, &viewer, scope).is_empty());
+        }
+
+        service.persist(40).expect("persist deleted canonical state");
+        let reloaded =
+            MessagingService::load(service.store.clone()).expect("reload deleted canonical state");
+        for scope in [
+            SearchScope::Global,
+            SearchScope::Media,
+            SearchScope::Files,
+            SearchScope::Links,
+        ] {
+            assert!(search_ids(&reloaded, &viewer, scope).is_empty());
+        }
+    }
+}
