@@ -4,19 +4,19 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "d346b42a1d30ef60dc989b6e5191bb8e571f6bd5",
-    "tree": "5db05afa460bb030ac36316beb6496df03742c59",
+    "commit": "aac515c5408015231a273c80ab4c4b33815e63ab",
+    "tree": "cf3a60d601c2d063903e620602b7e5913d3b0654",
     "baseline_identity_accepted": false
   },
   "inventory": {
-    "root_non_directory_entries": 6355,
-    "recursive_non_directory_entries": 15804,
+    "root_non_directory_entries": 6363,
+    "recursive_non_directory_entries": 15812,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 15804,
-    "unread_minimum": 15744,
+    "unknown_minimum": 15812,
+    "unread_minimum": 15752,
     "omitted_known": 0,
-    "note": "Accepted d346 recursive census corrected from 15,788 to 15,804 using GitHub Actions run 37722053430 source-authority job 113131801648: root 6,355; 35 direct gitlink mounts 6,771; GitHub nested 2,531; GitLab cppgir 104; expected-lite 43. xxHash has 100 entries (+16 from stale denominator). Exactly the same previously documented 60 full-read source entries remain credited; unknown 15,804, unread 15,744, omitted 0. Production completeness remains open."
+    "note": "Live aac515c recursive census is 15,812: 6,363 root; 35 unchanged direct gitlinks contribute 6,771; GitHub nested 2,531; GitLab cppgir 104; expected-lite child 43. The live root gained 8 non-directory entries since d346b42. Exactly the same 60 full-read source entries remain credited; unknown 15,812, unread 15,752, omitted 0. Production completeness remains open."
   },
   "latest_recursive_evidence": {
     "run_id": 37596744991,
@@ -43,12 +43,12 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Accepted d346 authority remains exact. Complete reads additionally include history_view_draft_options.{h,cpp}, data_changes.{h,cpp}, and data_types.h. These reads establish typed staged reply/forward/link option semantics, exact Topic/SavedSublist draft identity, synchronous destruction delivery before object retirement, coalesced ordinary update delivery, ForwardDraft value/options contracts, and shared Message/Resource value semantics. Fabushi maps them to existing canonical Conversation/Message/Composer/MessagingEngine/Search/Resource owners; production parity remains open. The corrected recursive census is 15,804 entries; the 60 previously credited full-read entries remain unchanged; unread_minimum is 15,744; unknown remains 15,804; omitted remains 0.",
+  "note": "Accepted aac515c authority is exact. The upstream delta from d346b42 adds dependency-watch tooling and Windows updater/test changes without touching the six already-read Story source blobs or any direct gitlink pin. The 60 previously credited full-read entries remain unchanged; corrected recursive census is 15,812 entries, unread_minimum 15,752, unknown 15,812, omitted 0. Current-head source authority and production completeness remain open.",
   "rebaseline": {
-    "from_commit": "e1ed57a44e7c14e0cbb91bcf0f7ec3e408786a39",
-    "to_commit": "d346b42a1d30ef60dc989b6e5191bb8e571f6bd5",
-    "ahead_by": 1,
-    "changed_paths": 8,
+    "from_commit": "d346b42a1d30ef60dc989b6e5191bb8e571f6bd5",
+    "to_commit": "aac515c5408015231a273c80ab4c4b33815e63ab",
+    "ahead_by": 2,
+    "changed_paths": 13,
     "unchanged_story_blob_rebind": [
       "Telegram/SourceFiles/media/stories/media_stories_slider.h@37dbca0504c3423a14665c5b692f2dc2699d5469",
       "Telegram/SourceFiles/media/stories/media_stories_slider.cpp@bdb547186edc53fbfd64dd1434f861a27fb3be0d",
@@ -58,14 +58,19 @@
       "Telegram/SourceFiles/media/stories/media_stories_stealth.cpp@8bd47aaf5b5b454a6f2ac0b4641b285646d4a9b3"
     ],
     "changed_authority_paths": [
-      "Telegram/SourceFiles/iv/markdown/iv_markdown_article.cpp",
-      "Telegram/SourceFiles/iv/markdown/iv_markdown_article.h",
-      "Telegram/SourceFiles/iv/markdown/iv_markdown_article_text.cpp",
-      "Telegram/SourceFiles/iv/markdown/iv_markdown_article_text.h",
-      "Telegram/SourceFiles/iv/markdown/iv_markdown_button_row.cpp",
-      "Telegram/SourceFiles/iv/markdown/iv_markdown_button_row.h",
-      "Telegram/SourceFiles/iv/markdown/iv_markdown_view_widget.cpp",
-      "Telegram/lib_ui"
+      ".agents/skills/dependency-watch/SKILL.md",
+      ".agents/skills/dependency-watch/agents/openai.yaml",
+      ".agents/skills/dependency-watch/references/forks.md",
+      ".agents/skills/dependency-watch/references/release-trust.md",
+      ".agents/skills/dependency-watch/scripts/watch.py",
+      ".agents/skills/dependency-watch/scripts/watch_test.py",
+      "Telegram/CMakeLists.txt",
+      "Telegram/SourceFiles/_other/updater.h",
+      "Telegram/SourceFiles/_other/updater_win.cpp",
+      "Telegram/SourceFiles/core/update_checker.cpp",
+      "Telegram/SourceFiles/platform/win/launcher_win.cpp",
+      "Telegram/SourceFiles/tests/test_updater_win.cpp",
+      "Telegram/cmake/test_updater_win.cmake"
     ],
     "current_head_source_authority_evidence": "pending-new-head"
   }

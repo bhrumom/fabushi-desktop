@@ -8,29 +8,29 @@
     "repository": "telegramdesktop/tdesktop",
     "url": "https://github.com/telegramdesktop/tdesktop",
     "discovery_ref": "refs/heads/dev",
-    "commit": "d346b42a1d30ef60dc989b6e5191bb8e571f6bd5",
-    "tree": "5db05afa460bb030ac36316beb6496df03742c59",
-    "committed_at": "2026-10-07T20:02:22Z",
+    "commit": "aac515c5408015231a273c80ab4c4b33815e63ab",
+    "tree": "cf3a60d601c2d063903e620602b7e5913d3b0654",
+    "committed_at": "2026-10-08T15:15:22Z",
     "accepted": true
   },
   "previous_historical_baseline": {
-    "commit": "e1ed57a44e7c14e0cbb91bcf0f7ec3e408786a39",
-    "tree": "a692d0cb658e9e9df3309f0e21a035421a93f6bb",
+    "commit": "d346b42a1d30ef60dc989b6e5191bb8e571f6bd5",
+    "tree": "5db05afa460bb030ac36316beb6496df03742c59",
     "evidence_status": "historical-only",
-    "reason": "Revision 9 live dev authority advanced one commit to d346b42a1d30ef60dc989b6e5191bb8e571f6bd5; all e1ed57a44e7c14e0cbb91bcf0f7ec3e408786a39 source-authority runs are diagnostic/historical only."
+    "reason": "Revision 9 live dev authority advanced two commits to aac515c5408015231a273c80ab4c4b33815e63ab; all d346b42a1d30ef60dc989b6e5191bb8e571f6bd5 source-authority runs are diagnostic/historical only."
   },
   "observed_root_inventory": {
     "tree_truncated": false,
-    "entry_count": 6629,
-    "blob_count": 6320,
+    "entry_count": 6641,
+    "blob_count": 6328,
     "direct_gitlink_count": 35,
-    "sourcefiles_blob_count": 3011,
+    "sourcefiles_blob_count": 3012,
     "resource_blob_count": 3073,
-    "root_non_directory_count": 6355
+    "root_non_directory_count": 6363
   },
   "delta_from_previous_baseline": {
-    "ahead_by": 1,
-    "changed_paths": 8
+    "ahead_by": 2,
+    "changed_paths": 13
   },
   "direct_gitlinks": [
     {
@@ -256,12 +256,12 @@
     "pointer_scan_required_in_github_actions": true
   },
   "coverage": {
-    "root_source_entries_total": 6355,
-    "recursive_source_entries_total": 15804,
-    "unknown_minimum": 15804,
-    "unread_minimum": 15744,
+    "root_source_entries_total": 6363,
+    "recursive_source_entries_total": 15812,
+    "unknown_minimum": 15812,
+    "unread_minimum": 15752,
     "omitted_known": 0,
-    "note": "Accepted telegramdesktop/tdesktop@d346b42a1d30ef60dc989b6e5191bb8e571f6bd5 root tree 5db05afa460bb030ac36316beb6496df03742c59. GitHub Actions 37722053430 job 113131801648 actually counted 15,804 recursive non-directory entries: 6,355 root + 6,771 direct-gitlink + 2,531 GitHub-nested + 104 GitLab cppgir + 43 cppgir child. The 16-entry correction comes from xxHash (100 current entries). The 60 previously accounted full-read entries are unchanged: unknown 15,804, unread 15,744, omitted 0. Current-head rerun and full source/production closure are still required."
+    "note": "Accepted telegramdesktop/tdesktop@aac515c5408015231a273c80ab4c4b33815e63ab root tree cf3a60d601c2d063903e620602b7e5913d3b0654. The live root gained 8 non-directory entries over d346b42a1d30ef60dc989b6e5191bb8e571f6bd5; all 35 direct gitlink pins are unchanged, so the corrected recursive census is 15,812 = 6,363 root + 6,771 direct-gitlink + 2,531 GitHub-nested + 104 GitLab cppgir + 43 cppgir child. The same 60 full-read entries remain credited: unknown 15,812, unread 15,752, omitted 0. Current-head source-authority evidence and full source/production closure are still required."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -275,7 +275,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Live upstream baseline is d346b42a1d30ef60dc989b6e5191bb8e571f6bd5; current-head Revision 9 source-authority evidence is required. Full source closure remains open until unknown=0, unread=0, omitted=0 and every recursive/build authority and responsibility is verified."
+    "note": "Live upstream baseline is aac515c5408015231a273c80ab4c4b33815e63ab; current-head Revision 9 source-authority evidence is required. Full source closure remains open until unknown=0, unread=0, omitted=0 and every recursive/build authority and responsibility is verified."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",
@@ -289,7 +289,7 @@
     "artifact_digest": "sha256:2282fdfe4cdc4835240a503092b107ae6037749e1d615978a34a36829f9affca",
     "upstream_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
     "recursive_non_directory_entries": 15788,
-    "superseded_by_upstream_commit": "d346b42a1d30ef60dc989b6e5191bb8e571f6bd5"
+    "superseded_by_upstream_commit": "aac515c5408015231a273c80ab4c4b33815e63ab"
   },
   "recursive_inventory_evidence": {
     "status": "historical-only",
@@ -304,7 +304,7 @@
     "upstream_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
     "recursive_non_directory_entries": 15788,
     "source_closure_ready": false,
-    "superseded_by_upstream_commit": "d346b42a1d30ef60dc989b6e5191bb8e571f6bd5"
+    "superseded_by_upstream_commit": "aac515c5408015231a273c80ab4c4b33815e63ab"
   },
   "build_time_acquisition_inventory": {
     "path": "projects/telegram-desktop-rust/inventory/build-time-acquisitions.json",
@@ -335,7 +335,7 @@
     "evidence_head_sha": "7ba34245b2246a58d9f4641652e423bbd3ec5a47",
     "artifact_id": 11526586095,
     "artifact_digest": "sha256:584b0f72307008ea17317ae238b7895f10050ffda18c50325d1bcd7fd97ce257",
-    "evidence_status": "historical-census-to-be-revalidated-at-new-head",
+    "evidence_status": "historical-only",
     "root_non_directory_entries": 6355,
     "direct_component_counts": [
       {
@@ -577,6 +577,7 @@
       "commit": "95b9cb015fa17baa749c2b396b335906e1596a9e",
       "entries": 43
     },
-    "total_recursive_non_directory_entries": 15804
+    "total_recursive_non_directory_entries": 15804,
+    "superseded_by_upstream_commit": "aac515c5408015231a273c80ab4c4b33815e63ab"
   }
 }

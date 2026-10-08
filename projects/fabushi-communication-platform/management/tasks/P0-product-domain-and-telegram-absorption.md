@@ -13,7 +13,7 @@ Execution: all executable verification only GitHub Actions
 
 重新读取 main、PR #20 状态和 current canonical exact HEAD。PR #20 在本次规范读取时已合并；不能继续从历史 open/draft 认知开始，也不能回退到旧实现分支。既有 Bot 架构/验收硬门继续有效。
 
-重新读取 tdesktop discovery HEAD。当前 accepted discovery HEAD 为 `d346b42a1d30ef60dc989b6e5191bb8e571f6bd5`（root tree `5db05afa460bb030ac36316beb6496df03742c59`；相对上一 accepted `72b3b71c3d6e450e5ef94a3112dd750a0168aa0b` 前进 16 commits；在 e1ed 基础上新增变化为 7 个 IV/Markdown source paths 与 lib_ui gitlink；既有 xxHash/build-time rebaseline 仍须与新 root/child authority 一起由 current-head Actions 重取证），更早研究基线为 `33261535a0e747f125e0ed25486f01e556330677`。在 GitHub Actions 中建立完整 root tree、递归 gitlinks、外部依赖/补丁/资源/工具链一致 baseline，更新现有 lock/inventory/ledger/dossiers，记录旧→新差异。`baseline_ready` 不得在递归/外部来源未闭合时为 true。
+重新读取 tdesktop discovery HEAD。当前 accepted discovery HEAD 为 `aac515c5408015231a273c80ab4c4b33815e63ab`（root tree `cf3a60d601c2d063903e620602b7e5913d3b0654`；相对上一 accepted `d346b42a1d30ef60dc989b6e5191bb8e571f6bd5` 前进 2 commits，新增 dependency-watch tooling 与 Windows updater/test changes；35 个 direct gitlink pins 不变；既有 recursive/build-time authority 仍须由 current-head Actions 重取证），更早研究基线为 `33261535a0e747f125e0ed25486f01e556330677`。在 GitHub Actions 中建立完整 root tree、递归 gitlinks、外部依赖/补丁/资源/工具链一致 baseline，更新现有 lock/inventory/ledger/dossiers，记录旧→新差异。`baseline_ready` 不得在递归/外部来源未闭合时为 true。
 
 ## B. Inventory all files and understand all modules
 
