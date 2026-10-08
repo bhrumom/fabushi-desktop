@@ -225,6 +225,9 @@ impl<S: MessagingStateStore> MessagingService<S> {
             ClientCommand::WalletStatus => {
                 Ok(vec![self.wallet_status_envelope(&actor_id, server_time_ms)])
             }
+            ClientCommand::ListStories { limit } => {
+                Ok(vec![self.stories_snapshot_envelope(&actor_id, limit, server_time_ms)])
+            }
             ClientCommand::Sync { cursor, limit } => {
                 self.mark_direct_messages_delivered(&actor_id, server_time_ms)?;
                 self.sync_response(&actor_id, cursor.as_deref(), limit, server_time_ms)
@@ -1354,6 +1357,33 @@ impl<S: MessagingStateStore> MessagingService<S> {
         }
     }
 
+    fn stories_snapshot_envelope(
+        &self,
+        actor_id: &ActorId,
+        limit: u32,
+        server_time_ms: i64,
+    ) -> ServerEnvelope {
+        let max_items = usize::try_from(limit.max(1)).unwrap_or(usize::MAX);
+        let stories = self
+            .engine
+            .state()
+            .stories
+            .values()
+            .filter(|story| {
+                (story.pinned_to_profile || story.expires_at_ms > server_time_ms)
+                    && story.is_visible_to(actor_id, false, false)
+            })
+            .take(max_items)
+            .cloned()
+            .collect();
+        ServerEnvelope {
+            protocol_version: FABUSHI_MESSAGING_PROTOCOL_VERSION,
+            cursor: Some(self.cursor.to_string()),
+            server_time_ms,
+            event: ServerEvent::StoriesSnapshot { stories },
+        }
+    }
+
     fn sync_response(
         &self,
         actor_id: &ActorId,
@@ -2253,7 +2283,7 @@ impl<S: MessagingStateStore> MessagingService<S> {
                 request_id,
                 refunded_at_ms: now_ms,
             }],
-            ClientCommand::WalletStatus => Vec::new(),
+            ClientCommand::WalletStatus | ClientCommand::ListStories { .. } => Vec::new(),
             ClientCommand::PublishStory { story } => vec![Command::PublishStory {
                 actor_id: actor_id.clone(),
                 story,
