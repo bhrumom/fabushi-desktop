@@ -13,7 +13,7 @@
     "candidate_lines_total": 325,
     "immutable_commit_pin_occurrences_classified": 0,
     "candidate_lines_pending_classification": 0,
-    "note": "All 325 live candidates are explicitly dispositioned against immutable accepted source blobs. Third-party immutability remains fail-closed. ccache v4.13.6, XZ v5.8.4, and OpenAL coreaudio_device_uid now have exact external snapshot/digest resolution evidence, but their accepted build references remain tag/branch/URL based and are not counted as immutable shipping acquisition closure. Package-manager resolution, bare downloads/clones, mutable action refs, and other unresolved inputs keep recursive/build authority closure open.",
+    "note": "All 325 live candidates are explicitly dispositioned against immutable accepted source blobs. GitHub Actions run 37854668389 additionally resolves all 88 observed top-level uses: occurrences (27 unique refs, including 15 mutable tag/branch refs) to exact commits and records the observed transitive action children with zero unresolved action-metadata children. Overall recursive/build authority remains open: accepted workflows still name mutable action refs, and package-manager resolution, bare downloads/clones, mutable non-Action refs, generated/resources/locales/packaging/updater/tooling/docs/licenses inputs are not all immutably closed.",
     "candidate_lines_classified": 325,
     "disposition_closure_status": "complete-current-325-candidate-classification",
     "recursive_authority_closure_status": "open",
@@ -2504,5 +2504,953 @@
       "status": "resolved-branch-snapshot-source-branch-still-mutable",
       "note": "Current branch ref resolves to this exact commit and the snapshot is already represented in recursive build reachability. The accepted build source still names a movable branch; closure remains open until the acquisition is pinned or verifies an immutable identity."
     }
-  ]
+  ],
+  "github_action_ref_resolutions": {
+    "status": "snapshot-resolved-observed-action-graph-shipping-mutable-refs-still-open",
+    "accepted_upstream": "22b352e866d0402505c07fa4ed21d75d7e4fb3db",
+    "evidence": {
+      "runner": "github-actions",
+      "run_id": 37854668389,
+      "run_attempt": 1,
+      "job_id": 113576044767,
+      "validation_head_sha": "1983e056a9b31ab4f515eae2d0355609a6d51be4",
+      "artifact_id": 11583228458,
+      "artifact_digest": "sha256:1d65039b863e36fdd08c241fd44d9d0fa04801b24c811c2bd20cd734fc81d5c8",
+      "artifact_member": "build-time-github-action-ref-resolutions.json"
+    },
+    "top_level_occurrences": 88,
+    "unique_top_level_refs": 27,
+    "mutable_top_level_unique_refs": 15,
+    "mutable_top_level_refs": [
+      "Eden-CI/msvc-dev-cmd@master",
+      "actions/cache@v6",
+      "actions/checkout@v7",
+      "actions/deploy-pages@v5",
+      "actions/setup-python@v7",
+      "actions/stale@v11",
+      "actions/upload-artifact@v7",
+      "actions/upload-pages-artifact@v5",
+      "desktop-app/action_code_updater@master",
+      "desktop-app/action_issue_closer@master",
+      "dessant/lock-threads@v6",
+      "docker/build-push-action@v7",
+      "docker/setup-buildx-action@v4",
+      "lee-dohm/no-response@v0.5.0",
+      "telegramdesktop/winget-releaser@main"
+    ],
+    "resolutions": [
+      {
+        "source_path": ".github/workflows/canary-bot-api.yml",
+        "source_line": 43,
+        "raw": "uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "repository": "actions/checkout",
+        "action_path": "",
+        "ref": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "resolved_commit": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary-bot-api.yml",
+        "source_line": 46,
+        "raw": "uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f",
+        "repository": "docker/login-action",
+        "action_path": "",
+        "ref": "dbcb813823bdd20940b903addbd779551569679f",
+        "resolved_commit": "dbcb813823bdd20940b903addbd779551569679f",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary-bot-api.yml",
+        "source_line": 54,
+        "raw": "uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a",
+        "repository": "docker/build-push-action",
+        "action_path": "",
+        "ref": "53b7df96c91f9c12dcc8a07bcb9ccacbed38856a",
+        "resolved_commit": "53b7df96c91f9c12dcc8a07bcb9ccacbed38856a",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 1001,
+        "raw": "uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+        "repository": "actions/download-artifact",
+        "action_path": "",
+        "ref": "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+        "resolved_commit": "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 1007,
+        "raw": "uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+        "repository": "actions/download-artifact",
+        "action_path": "",
+        "ref": "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+        "resolved_commit": "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 1121,
+        "raw": "uses: azure/login@7ddb5af1ef8758cf1353cf3b42f940aee27ba21c",
+        "repository": "azure/login",
+        "action_path": "",
+        "ref": "7ddb5af1ef8758cf1353cf3b42f940aee27ba21c",
+        "resolved_commit": "7ddb5af1ef8758cf1353cf3b42f940aee27ba21c",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 1184,
+        "raw": "- uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "repository": "actions/upload-artifact",
+        "action_path": "",
+        "ref": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "resolved_commit": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 1191,
+        "raw": "- uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "repository": "actions/upload-artifact",
+        "action_path": "",
+        "ref": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "resolved_commit": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 1213,
+        "raw": "uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "repository": "actions/checkout",
+        "action_path": "",
+        "ref": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "resolved_commit": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 1269,
+        "raw": "uses: jlumbroso/free-disk-space@ceedf095f4ec1a097402bc6bd80831f2e1a6fde6",
+        "repository": "jlumbroso/free-disk-space",
+        "action_path": "",
+        "ref": "ceedf095f4ec1a097402bc6bd80831f2e1a6fde6",
+        "resolved_commit": "ceedf095f4ec1a097402bc6bd80831f2e1a6fde6",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 1278,
+        "raw": "uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e",
+        "repository": "docker/setup-buildx-action",
+        "action_path": "",
+        "ref": "37fe631027851001ddb9b187196cc803df7f5f0e",
+        "resolved_commit": "37fe631027851001ddb9b187196cc803df7f5f0e",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 1286,
+        "raw": "uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "repository": "actions/cache",
+        "action_path": "restore",
+        "ref": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "resolved_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 1295,
+        "raw": "uses: reproducible-containers/buildkit-cache-dance@5422eac04292c961a382e0f584ea0f03ad9da723",
+        "repository": "reproducible-containers/buildkit-cache-dance",
+        "action_path": "",
+        "ref": "5422eac04292c961a382e0f584ea0f03ad9da723",
+        "resolved_commit": "5422eac04292c961a382e0f584ea0f03ad9da723",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 1303,
+        "raw": "uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a",
+        "repository": "docker/build-push-action",
+        "action_path": "",
+        "ref": "53b7df96c91f9c12dcc8a07bcb9ccacbed38856a",
+        "resolved_commit": "53b7df96c91f9c12dcc8a07bcb9ccacbed38856a",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 1327,
+        "raw": "uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "repository": "actions/cache",
+        "action_path": "save",
+        "ref": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "resolved_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 1398,
+        "raw": "uses: azure/login@7ddb5af1ef8758cf1353cf3b42f940aee27ba21c",
+        "repository": "azure/login",
+        "action_path": "",
+        "ref": "7ddb5af1ef8758cf1353cf3b42f940aee27ba21c",
+        "resolved_commit": "7ddb5af1ef8758cf1353cf3b42f940aee27ba21c",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 1444,
+        "raw": "- uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "repository": "actions/upload-artifact",
+        "action_path": "",
+        "ref": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "resolved_commit": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 1451,
+        "raw": "- uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "repository": "actions/upload-artifact",
+        "action_path": "",
+        "ref": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "resolved_commit": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 1492,
+        "raw": "uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "repository": "actions/checkout",
+        "action_path": "",
+        "ref": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "resolved_commit": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 1497,
+        "raw": "uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+        "repository": "actions/download-artifact",
+        "action_path": "",
+        "ref": "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+        "resolved_commit": "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 1503,
+        "raw": "uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+        "repository": "actions/download-artifact",
+        "action_path": "",
+        "ref": "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+        "resolved_commit": "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 154,
+        "raw": "uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "repository": "actions/checkout",
+        "action_path": "",
+        "ref": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "resolved_commit": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 1581,
+        "raw": "uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "repository": "actions/checkout",
+        "action_path": "",
+        "ref": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "resolved_commit": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 1586,
+        "raw": "uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+        "repository": "actions/download-artifact",
+        "action_path": "",
+        "ref": "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+        "resolved_commit": "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 1592,
+        "raw": "uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+        "repository": "actions/download-artifact",
+        "action_path": "",
+        "ref": "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+        "resolved_commit": "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 1669,
+        "raw": "uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "repository": "actions/checkout",
+        "action_path": "",
+        "ref": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "resolved_commit": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 1674,
+        "raw": "uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+        "repository": "actions/download-artifact",
+        "action_path": "",
+        "ref": "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+        "resolved_commit": "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 1680,
+        "raw": "uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+        "repository": "actions/download-artifact",
+        "action_path": "",
+        "ref": "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+        "resolved_commit": "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 366,
+        "raw": "uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "repository": "actions/checkout",
+        "action_path": "",
+        "ref": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "resolved_commit": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 477,
+        "raw": "- uses: Eden-CI/msvc-dev-cmd@1bd71f95d6f3d1b2b3395b335cc63bcdc90cf223",
+        "repository": "Eden-CI/msvc-dev-cmd",
+        "action_path": "",
+        "ref": "1bd71f95d6f3d1b2b3395b335cc63bcdc90cf223",
+        "resolved_commit": "1bd71f95d6f3d1b2b3395b335cc63bcdc90cf223",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 509,
+        "raw": "uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "repository": "actions/cache",
+        "action_path": "restore",
+        "ref": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "resolved_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 517,
+        "raw": "uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "repository": "actions/cache",
+        "action_path": "restore",
+        "ref": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "resolved_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 530,
+        "raw": "uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "repository": "actions/cache",
+        "action_path": "restore",
+        "ref": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "resolved_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 578,
+        "raw": "uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "repository": "actions/cache",
+        "action_path": "save",
+        "ref": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "resolved_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 585,
+        "raw": "uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "repository": "actions/cache",
+        "action_path": "save",
+        "ref": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "resolved_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 597,
+        "raw": "uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "repository": "actions/cache",
+        "action_path": "save",
+        "ref": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "resolved_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 677,
+        "raw": "uses: azure/login@7ddb5af1ef8758cf1353cf3b42f940aee27ba21c",
+        "repository": "azure/login",
+        "action_path": "",
+        "ref": "7ddb5af1ef8758cf1353cf3b42f940aee27ba21c",
+        "resolved_commit": "7ddb5af1ef8758cf1353cf3b42f940aee27ba21c",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 732,
+        "raw": "- uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "repository": "actions/upload-artifact",
+        "action_path": "",
+        "ref": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "resolved_commit": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 742,
+        "raw": "- uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "repository": "actions/upload-artifact",
+        "action_path": "",
+        "ref": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "resolved_commit": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 775,
+        "raw": "uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "repository": "actions/checkout",
+        "action_path": "",
+        "ref": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "resolved_commit": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 831,
+        "raw": "uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "repository": "actions/cache",
+        "action_path": "restore",
+        "ref": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "resolved_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 871,
+        "raw": "uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "repository": "actions/cache",
+        "action_path": "save",
+        "ref": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "resolved_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 948,
+        "raw": "- uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "repository": "actions/upload-artifact",
+        "action_path": "",
+        "ref": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "resolved_commit": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 979,
+        "raw": "uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "repository": "actions/checkout",
+        "action_path": "",
+        "ref": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "resolved_commit": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/cant-reproduce.yml",
+        "source_line": 11,
+        "raw": "- uses: lee-dohm/no-response@v0.5.0",
+        "repository": "lee-dohm/no-response",
+        "action_path": "",
+        "ref": "v0.5.0",
+        "resolved_commit": "9bb0a4b5e6a45046f00353d5de7d90fb8bd773bb",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/changelog.yml",
+        "source_line": 22,
+        "raw": "- uses: actions/checkout@v7",
+        "repository": "actions/checkout",
+        "action_path": "",
+        "ref": "v7",
+        "resolved_commit": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/changelog.yml",
+        "source_line": 24,
+        "raw": "- uses: actions/setup-python@v7",
+        "repository": "actions/setup-python",
+        "action_path": "",
+        "ref": "v7",
+        "resolved_commit": "5fda3b95a4ea91299a34e894583c3862153e4b97",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/changelog.yml",
+        "source_line": 32,
+        "raw": "uses: actions/upload-pages-artifact@v5",
+        "repository": "actions/upload-pages-artifact",
+        "action_path": "",
+        "ref": "v5",
+        "resolved_commit": "fc324d3547104276b827a68afc52ff2a11cc49c9",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/changelog.yml",
+        "source_line": 45,
+        "raw": "uses: actions/deploy-pages@v5",
+        "repository": "actions/deploy-pages",
+        "action_path": "",
+        "ref": "v5",
+        "resolved_commit": "368f82528645a54fb793d4d04e342629a3f51346",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/copyright_year_updater.yml",
+        "source_line": 14,
+        "raw": "- uses: desktop-app/action_code_updater@master",
+        "repository": "desktop-app/action_code_updater",
+        "action_path": "",
+        "ref": "master",
+        "resolved_commit": "0a8d3ebb437e5c77cf5d066d4a54cc93d34b534a",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/docker.yml",
+        "source_line": 20,
+        "raw": "uses: actions/checkout@v7",
+        "repository": "actions/checkout",
+        "action_path": "",
+        "ref": "v7",
+        "resolved_commit": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/docker.yml",
+        "source_line": 31,
+        "raw": "uses: jlumbroso/free-disk-space@ceedf095f4ec1a097402bc6bd80831f2e1a6fde6",
+        "repository": "jlumbroso/free-disk-space",
+        "action_path": "",
+        "ref": "ceedf095f4ec1a097402bc6bd80831f2e1a6fde6",
+        "resolved_commit": "ceedf095f4ec1a097402bc6bd80831f2e1a6fde6",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/issue_closer.yml",
+        "source_line": 12,
+        "raw": "uses: desktop-app/action_issue_closer@master",
+        "repository": "desktop-app/action_issue_closer",
+        "action_path": "",
+        "ref": "master",
+        "resolved_commit": "b2fc72db6cc262c8e84e10740c44296ec4be2e02",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/linux.yml",
+        "source_line": 102,
+        "raw": "uses: reproducible-containers/buildkit-cache-dance@5422eac04292c961a382e0f584ea0f03ad9da723",
+        "repository": "reproducible-containers/buildkit-cache-dance",
+        "action_path": "",
+        "ref": "5422eac04292c961a382e0f584ea0f03ad9da723",
+        "resolved_commit": "5422eac04292c961a382e0f584ea0f03ad9da723",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/linux.yml",
+        "source_line": 110,
+        "raw": "uses: docker/build-push-action@v7",
+        "repository": "docker/build-push-action",
+        "action_path": "",
+        "ref": "v7",
+        "resolved_commit": "c3c9e263c25d99ce0380d002d59b67737d91b0dc",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/linux.yml",
+        "source_line": 126,
+        "raw": "uses: actions/cache/restore@v6",
+        "repository": "actions/cache",
+        "action_path": "restore",
+        "ref": "v6",
+        "resolved_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/linux.yml",
+        "source_line": 184,
+        "raw": "uses: actions/cache/save@v6",
+        "repository": "actions/cache",
+        "action_path": "save",
+        "ref": "v6",
+        "resolved_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/linux.yml",
+        "source_line": 209,
+        "raw": "- uses: actions/upload-artifact@v7",
+        "repository": "actions/upload-artifact",
+        "action_path": "",
+        "ref": "v7",
+        "resolved_commit": "cf430e030ddbb5b0abf93d22962f4752f3646cd9",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/linux.yml",
+        "source_line": 65,
+        "raw": "uses: actions/checkout@v7",
+        "repository": "actions/checkout",
+        "action_path": "",
+        "ref": "v7",
+        "resolved_commit": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/linux.yml",
+        "source_line": 83,
+        "raw": "uses: jlumbroso/free-disk-space@ceedf095f4ec1a097402bc6bd80831f2e1a6fde6",
+        "repository": "jlumbroso/free-disk-space",
+        "action_path": "",
+        "ref": "ceedf095f4ec1a097402bc6bd80831f2e1a6fde6",
+        "resolved_commit": "ceedf095f4ec1a097402bc6bd80831f2e1a6fde6",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/linux.yml",
+        "source_line": 89,
+        "raw": "uses: docker/setup-buildx-action@v4",
+        "repository": "docker/setup-buildx-action",
+        "action_path": "",
+        "ref": "v4",
+        "resolved_commit": "f87e5991a6d7451dcb8d9637bfbc97413f497069",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/linux.yml",
+        "source_line": 93,
+        "raw": "uses: actions/cache@v6",
+        "repository": "actions/cache",
+        "action_path": "",
+        "ref": "v6",
+        "resolved_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/lock.yml",
+        "source_line": 11,
+        "raw": "- uses: dessant/lock-threads@v6",
+        "repository": "dessant/lock-threads",
+        "action_path": "",
+        "ref": "v6",
+        "resolved_commit": "89ae32b08ed1a541efecbab17912962a5e38981c",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/mac.yml",
+        "source_line": 132,
+        "raw": "- uses: actions/upload-artifact@v7",
+        "repository": "actions/upload-artifact",
+        "action_path": "",
+        "ref": "v7",
+        "resolved_commit": "cf430e030ddbb5b0abf93d22962f4752f3646cd9",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/mac.yml",
+        "source_line": 63,
+        "raw": "uses: actions/checkout@v7",
+        "repository": "actions/checkout",
+        "action_path": "",
+        "ref": "v7",
+        "resolved_commit": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/mac.yml",
+        "source_line": 85,
+        "raw": "uses: actions/cache@v6",
+        "repository": "actions/cache",
+        "action_path": "",
+        "ref": "v6",
+        "resolved_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/mac_packaged.yml",
+        "source_line": 103,
+        "raw": "uses: actions/cache@v6",
+        "repository": "actions/cache",
+        "action_path": "",
+        "ref": "v6",
+        "resolved_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/mac_packaged.yml",
+        "source_line": 121,
+        "raw": "uses: actions/cache@v6",
+        "repository": "actions/cache",
+        "action_path": "",
+        "ref": "v6",
+        "resolved_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/mac_packaged.yml",
+        "source_line": 139,
+        "raw": "uses: actions/cache@v6",
+        "repository": "actions/cache",
+        "action_path": "",
+        "ref": "v6",
+        "resolved_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/mac_packaged.yml",
+        "source_line": 184,
+        "raw": "- uses: actions/upload-artifact@v7",
+        "repository": "actions/upload-artifact",
+        "action_path": "",
+        "ref": "v7",
+        "resolved_commit": "cf430e030ddbb5b0abf93d22962f4752f3646cd9",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/mac_packaged.yml",
+        "source_line": 71,
+        "raw": "uses: actions/checkout@v7",
+        "repository": "actions/checkout",
+        "action_path": "",
+        "ref": "v7",
+        "resolved_commit": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/master_updater.yml",
+        "source_line": 11,
+        "raw": "- uses: desktop-app/action_code_updater@master",
+        "repository": "desktop-app/action_code_updater",
+        "action_path": "",
+        "ref": "master",
+        "resolved_commit": "0a8d3ebb437e5c77cf5d066d4a54cc93d34b534a",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/needs-user-action.yml",
+        "source_line": 13,
+        "raw": "- uses: lee-dohm/no-response@v0.5.0",
+        "repository": "lee-dohm/no-response",
+        "action_path": "",
+        "ref": "v0.5.0",
+        "resolved_commit": "9bb0a4b5e6a45046f00353d5de7d90fb8bd773bb",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/snap.yml",
+        "source_line": 54,
+        "raw": "uses: actions/checkout@v7",
+        "repository": "actions/checkout",
+        "action_path": "",
+        "ref": "v7",
+        "resolved_commit": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/snap.yml",
+        "source_line": 68,
+        "raw": "uses: samueldr/more-space-action@97048bd0df83fb05b5257887bdbaffc848887673",
+        "repository": "samueldr/more-space-action",
+        "action_path": "",
+        "ref": "97048bd0df83fb05b5257887bdbaffc848887673",
+        "resolved_commit": "97048bd0df83fb05b5257887bdbaffc848887673",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/snap.yml",
+        "source_line": 86,
+        "raw": "- uses: actions/upload-artifact@v7",
+        "repository": "actions/upload-artifact",
+        "action_path": "",
+        "ref": "v7",
+        "resolved_commit": "cf430e030ddbb5b0abf93d22962f4752f3646cd9",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/stale.yml",
+        "source_line": 10,
+        "raw": "- uses: actions/stale@v11",
+        "repository": "actions/stale",
+        "action_path": "",
+        "ref": "v11",
+        "resolved_commit": "4391f3da665fdf50b6810c1a66712fb9ba21aa93",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/unused_styles_updater.yml",
+        "source_line": 14,
+        "raw": "- uses: desktop-app/action_code_updater@master",
+        "repository": "desktop-app/action_code_updater",
+        "action_path": "",
+        "ref": "master",
+        "resolved_commit": "0a8d3ebb437e5c77cf5d066d4a54cc93d34b534a",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/user_agent_updater.yml",
+        "source_line": 14,
+        "raw": "- uses: desktop-app/action_code_updater@master",
+        "repository": "desktop-app/action_code_updater",
+        "action_path": "",
+        "ref": "master",
+        "resolved_commit": "0a8d3ebb437e5c77cf5d066d4a54cc93d34b534a",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/waiting-for-answer.yml",
+        "source_line": 13,
+        "raw": "- uses: lee-dohm/no-response@v0.5.0",
+        "repository": "lee-dohm/no-response",
+        "action_path": "",
+        "ref": "v0.5.0",
+        "resolved_commit": "9bb0a4b5e6a45046f00353d5de7d90fb8bd773bb",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/win.yml",
+        "source_line": 122,
+        "raw": "- uses: Eden-CI/msvc-dev-cmd@master",
+        "repository": "Eden-CI/msvc-dev-cmd",
+        "action_path": "",
+        "ref": "master",
+        "resolved_commit": "1bd71f95d6f3d1b2b3395b335cc63bcdc90cf223",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/win.yml",
+        "source_line": 136,
+        "raw": "uses: actions/cache@v6",
+        "repository": "actions/cache",
+        "action_path": "",
+        "ref": "v6",
+        "resolved_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/win.yml",
+        "source_line": 144,
+        "raw": "uses: actions/cache@v6",
+        "repository": "actions/cache",
+        "action_path": "",
+        "ref": "v6",
+        "resolved_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/win.yml",
+        "source_line": 157,
+        "raw": "uses: actions/cache@v6",
+        "repository": "actions/cache",
+        "action_path": "",
+        "ref": "v6",
+        "resolved_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/win.yml",
+        "source_line": 247,
+        "raw": "- uses: actions/upload-artifact@v7",
+        "repository": "actions/upload-artifact",
+        "action_path": "",
+        "ref": "v7",
+        "resolved_commit": "cf430e030ddbb5b0abf93d22962f4752f3646cd9",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/win.yml",
+        "source_line": 86,
+        "raw": "uses: actions/checkout@v7",
+        "repository": "actions/checkout",
+        "action_path": "",
+        "ref": "v7",
+        "resolved_commit": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/winget.yml",
+        "source_line": 10,
+        "raw": "uses: telegramdesktop/winget-releaser@main",
+        "repository": "telegramdesktop/winget-releaser",
+        "action_path": "",
+        "ref": "main",
+        "resolved_commit": "4ffc7888bffd451b357355dc214d43bb9f23917e",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/winget.yml",
+        "source_line": 16,
+        "raw": "uses: telegramdesktop/winget-releaser@main",
+        "repository": "telegramdesktop/winget-releaser",
+        "action_path": "",
+        "ref": "main",
+        "resolved_commit": "4ffc7888bffd451b357355dc214d43bb9f23917e",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      }
+    ],
+    "transitive": [
+      {
+        "repository": "actions/upload-pages-artifact",
+        "commit": "fc324d3547104276b827a68afc52ff2a11cc49c9",
+        "action_path": "",
+        "depth": 0,
+        "parent": ".github/workflows/changelog.yml:32",
+        "metadata_path": "action.yml",
+        "metadata_blob_sha": "82713b4cbb35ccf98dfa8f2e0deedc5e83b6d845",
+        "child_spec": "actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f",
+        "child_repository": "actions/upload-artifact",
+        "child_ref": "bbbca2ddaa5d8feaa63e36b76fdaad77386f024f",
+        "child_resolved_commit": "bbbca2ddaa5d8feaa63e36b76fdaad77386f024f",
+        "child_reference_kind": "immutable-commit"
+      },
+      {
+        "repository": "telegramdesktop/winget-releaser",
+        "commit": "4ffc7888bffd451b357355dc214d43bb9f23917e",
+        "action_path": "",
+        "depth": 0,
+        "parent": ".github/workflows/winget.yml:10",
+        "metadata_path": "action.yml",
+        "metadata_blob_sha": "a6de3aab26491d01a7a459c3fcaca8b6d5bce393",
+        "child_spec": "cargo-bins/cargo-binstall@main",
+        "child_repository": "cargo-bins/cargo-binstall",
+        "child_ref": "main",
+        "child_resolved_commit": "c06f6a0003f7c6165a00c89d1697731c9e8a5c72",
+        "child_reference_kind": "mutable-ref-resolved-snapshot"
+      }
+    ],
+    "unresolved": [],
+    "note": "Every observed GitHub Action uses: occurrence is now bound to an exact commit snapshot and the observed composite-action child graph is recursively recorded. This does not close overall build provenance: accepted Telegram workflows still name mutable tags/branches, and non-Action package-manager, bare clone/download, generated/resource/locales/packaging/updater/tooling inputs remain separately fail-closed."
+  }
 }
