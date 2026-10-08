@@ -3589,11 +3589,12 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     setNotice(null);
   };
 
+  const localDateTimeInputValue = (date: Date) =>
+    new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
+
   const openScheduleComposer = () => {
     if (!activeIsHuman) return;
-    const date = new Date(Date.now() + 5 * 60_000);
-    const local = new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
-    setScheduleComposerValue(local);
+    setScheduleComposerValue(localDateTimeInputValue(new Date(Date.now() + 5 * 60_000)));
     setScheduleComposerOpen(true);
   };
 
@@ -4293,7 +4294,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         <form onSubmit={(event) => { event.preventDefault(); submitScheduledComposer(); }}>
           <header><div><h2>Schedule message</h2><p>The server will keep this message private from the recipient until its due time.</p></div></header>
           <div className="sand-schedule-message-dialog__body">
-            <SandTextField autoFocus id="scheduled-message-at" label="Deliver at" min={new Date(Date.now() + 60_000).toISOString().slice(0, 16)} onChange={(event) => setScheduleComposerValue(event.currentTarget.value)} required type="datetime-local" value={scheduleComposerValue} />
+            <SandTextField autoFocus id="scheduled-message-at" label="Deliver at" min={localDateTimeInputValue(new Date(Date.now() + 60_000))} onChange={(event) => setScheduleComposerValue(event.currentTarget.value)} required type="datetime-local" value={scheduleComposerValue} />
           </div>
           <footer>
             <SandButton onClick={() => setScheduleComposerOpen(false)} size="sm" type="button" variant="secondary">Cancel</SandButton>

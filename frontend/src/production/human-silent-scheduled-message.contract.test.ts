@@ -21,6 +21,7 @@ describe("canonical Human silent and scheduled transport", () => {
     expect(renderer).toContain("composerSubmissionQueue.submit(submission)");
     expect(renderer).toContain("clearDraftIfMatches");
     expect(renderer).toContain("removeStashIfMatches");
+    expect(renderer).toContain("localDateTimeInputValue");
   });
 
   it("keeps Host durability and canonical server payload in one owner", () => {
@@ -33,6 +34,8 @@ describe("canonical Human silent and scheduled transport", () => {
     expect(production).toContain('"delivery": if remote.delivery_state.as_deref() == Some("scheduled") { "scheduled" } else { "sent" }');
     expect(production).toContain("remote.silent != silent");
     expect(production).toContain("remote.scheduled_at_ms != scheduled_at_ms");
+    expect(production).toContain("self.materialize_remote_human_message(&owner, remote)?");
+    expect(production).toContain("scheduled -> delivered");
     expect(transport).toContain("scheduled_at_ms: Option<i64>");
     expect(transport).toContain("silent: bool");
   });

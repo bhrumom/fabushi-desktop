@@ -2222,6 +2222,11 @@ impl ProductionSessionWorkers {
             for (index, remote) in page.iter().enumerate().rev() {
                 let remote_id = fabushi_identity_text(&remote.id)?;
                 if known_remote_ids.contains(&remote_id) {
+                    // The overlap row is not immutable: read receipts, reactions,
+                    // and scheduled -> delivered can advance under the same remote id.
+                    // Refresh it through the single durable transcript owner before
+                    // using it as the bounded-history stop marker.
+                    self.materialize_remote_human_message(&owner, remote)?;
                     overlap_at = Some(index);
                     break;
                 }
