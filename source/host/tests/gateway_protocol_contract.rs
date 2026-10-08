@@ -3,6 +3,7 @@ use mahayana_host_runtime::gateway_protocol::{
     GROK_GATEWAY_COMMANDS, is_grok_gateway_command, parse_command_args, slim_command_result,
     slim_event,
 };
+use mahayana_host_runtime::host_gateway_api::{HostGatewayOwner, host_gateway_owner};
 use serde_json::json;
 
 #[test]
@@ -33,6 +34,13 @@ fn gateway_protocol_keeps_frozen_command_inventory_and_upgrade_path() {
             "deleteStory",
         ]
     );
+    for method in FABUSHI_HOST_GATEWAY_METHODS {
+        assert_eq!(
+            host_gateway_owner(method),
+            Some(HostGatewayOwner::Stories),
+            "{method} must remain owned by the canonical Stories gateway owner"
+        );
+    }
     assert_eq!(FABUSHI_GATEWAY_COMPAT_COMMANDS, &["resumeAfterRecreate"]);
     assert!(is_grok_gateway_command("sendPrompt"));
     assert!(is_grok_gateway_command("requestWebAuthnCeremony"));
