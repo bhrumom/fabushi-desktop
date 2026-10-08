@@ -29,7 +29,7 @@ import { includeFindInChatDisclosure, type FindInChatDisclosureKind, type FindIn
 import type { SendMessageTextImage } from "../cards/transcript-card/send-message-text";
 import { ThreadAffordance } from "../cards/transcript-card/thread-affordance";
 import type { TranscriptThreadSummary } from "../cards/transcript-card/thread-summary-controller";
-import { beginHorizontalScrollPointer, captureHorizontalScroll, clampHorizontalScrollOffset, restoreHorizontalScrollOffset, updateHorizontalScrollPointer, type HorizontalScrollPointerGesture, type HorizontalScrollSnapshot } from "./horizontal-scroll-state";
+import { beginHorizontalScrollPointer, captureHorizontalScroll, clampHorizontalScrollOffset, restoreHorizontalScrollOffset, updateHorizontalScrollPointer, updateHorizontalScrollWheelLock, type HorizontalScrollPointerGesture, type HorizontalScrollSnapshot, type HorizontalScrollWheelLock } from "./horizontal-scroll-state";
 import { reconcileAssistantContentProjection, type AssistantProjectionCandidate, type AssistantProjectionState } from "./assistant-content-projection";
 import { formatTranscriptToolCallName } from "./tool-call-label";
 import { copyTranscriptCodeText } from "./code-copy";
@@ -275,6 +275,7 @@ function RetainedHorizontalScrollRegion({ children, className, label, ownerId, r
   const regionRef = useRef<HTMLDivElement | null>(null);
   const snapshotRef = useRef<HorizontalScrollSnapshot | null>(null);
   const pointerGestureRef = useRef<HorizontalScrollPointerGesture | null>(null);
+  const wheelLockRef = useRef<HorizontalScrollWheelLock | null>(null);
 
   const retirePointerGesture = (pointerId?: number) => {
     const gesture = pointerGestureRef.current;
@@ -288,6 +289,7 @@ function RetainedHorizontalScrollRegion({ children, className, label, ownerId, r
     const region = regionRef.current;
     if (region == null) return undefined;
     region.scrollLeft = restoreHorizontalScrollOffset(snapshotRef.current, ownerId, region.scrollWidth, region.clientWidth);
+    wheelLockRef.current = null;
     retirePointerGesture();
     return () => {
       const current = regionRef.current;
@@ -309,6 +311,26 @@ function RetainedHorizontalScrollRegion({ children, className, label, ownerId, r
   return <div
     aria-label={label}
     className={className}
+    onWheel={(event) => {
+      if (event.ctrlKey) {
+        wheelLockRef.current = null;
+        return;
+      }
+      const update = updateHorizontalScrollWheelLock(
+        wheelLockRef.current,
+        event.deltaX,
+        event.deltaY,
+        event.timeStamp,
+      );
+      wheelLockRef.current = update.lock;
+      if (update.axis !== "horizontal" || event.currentTarget.scrollWidth <= event.currentTarget.clientWidth) return;
+      event.currentTarget.scrollLeft = clampHorizontalScrollOffset(
+        event.currentTarget.scrollLeft + event.deltaX,
+        event.currentTarget.scrollWidth,
+        event.currentTarget.clientWidth,
+      );
+      event.preventDefault();
+    }}
     onPointerCancel={(event) => retirePointerGesture(event.pointerId)}
     onLostPointerCapture={(event) => retirePointerGesture(event.pointerId)}
     onPointerDown={(event) => {
