@@ -461,7 +461,7 @@ test("transcript rich links remain behind the canonical URL owner", () => {
 test("media replacement retires stale pointer ownership before the new resource settles", () => {
   const source = readFileSync(new URL("./conversation/workspace/media-viewer.tsx", import.meta.url), "utf8");
   const replacementStart = source.indexOf("setMedia(null);");
-  const resolverStart = source.indexOf("void resolveMedia(current.path)", replacementStart);
+  const resolverStart = source.indexOf("void resolveWithSingleRetry(resolveMedia, current.path)", replacementStart);
   assert.ok(replacementStart >= 0 && resolverStart > replacementStart);
   const replacementBlock = source.slice(replacementStart, resolverStart);
   assert.match(replacementBlock, /setTransform\(\{ scale: MIN_ZOOM, x: 0, y: 0 \}\);/);
