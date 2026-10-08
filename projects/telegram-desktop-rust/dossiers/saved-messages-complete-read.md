@@ -100,14 +100,41 @@ Status: open; current code intentionally fails closed.
 
 ## Direct dependency: RecentPeers
 
-The accepted header/cpp split two responsibilities that must not be conflated:
+### TDRP-R9-RECENT-PEERS-CONTRACT-001
 
-- Ordinary recent participant/conversation suggestions use stable identity bump/remove/clear semantics. Their serialized projection is capped at **48** entries. Empty/malformed data or any per-entry decode failure clears the whole projection rather than retaining a partially trusted prefix.
-- Recent-open Thread history is a separate weak projection capped at **32** live entries. Push prunes dead weak references, moves an existing identity to the front without duplication, evicts the oldest when full, and `chatOpenRemove` removes the exact Topic/SavedSublist/Thread. Cached userpic state is presentation projection only.
-- `RecentPeers::serialize` serializes the ordinary `_list`, not `_opens`; this read therefore does **not** justify inventing durable recent-open persistence.
-- In Fabushi, ordinary suggestions map to canonical Search + existing persistence; recent-open history maps to canonical Conversation/typed-child navigation lifecycle. Neither can mint SavedSublist parent access or message membership.
+Source authority: `Telegram/SourceFiles/data/components/recent_peers.h@5d8b1187d8db1138003cc406d86cbdec6626468a`.
 
-Current implementation remains incomplete: `ConversationChildDestroyed` removes canonical child runtime state, but the bounded recent-open projection/removal, ordinary recent-suggestion persistence/recovery, shared-media/resource cleanup and full cross-owner destruction composition still require production wiring and exact-head evidence.
+This header separates two canonical responsibilities instead of defining a source-specific runtime:
+
+- ordinary recent participant/conversation suggestions expose stable-identity list/bump/remove/clear/update semantics and map to the existing canonical Search + Participant/Conversation owners;
+- recent-open Thread history is a distinct weak-lifecycle navigation projection with exact remove semantics and maps to existing canonical Conversation/ConversationChild navigation owners.
+
+This responsibility remains `mapped/open`: the exact accepted header is read-complete, but Search persistence/recovery and complete recent-open shipping composition still require production wiring/evidence. It does not create or prove SavedSublist membership authority.
+
+Traceability:
+- requirement: `TDRP-R9-RECENT-PEERS-CONTRACT-001`
+- oracle: `ORA-TDRP-R9-RECENT-PEERS-CONTRACT-001`
+- invariant: `INV-TDRP-R9-RECENT-PEERS-CONTRACT-001-CANONICAL`
+
+### TDRP-R9-RECENT-PEERS-LIFECYCLE-001
+
+Source authority: `Telegram/SourceFiles/data/components/recent_peers.cpp@bf676e4407fcfa4bf93b2bf7e468b8f61c6ffd05`.
+
+The implementation proves two different lifecycle/state contracts that must remain separate:
+
+- ordinary recent suggestions serialize at most **48** identities; empty/malformed input or any per-entry decode failure clears the whole projection instead of retaining a partially trusted prefix;
+- recent-open history is a separate weak projection capped at **32** live Thread identities; push prunes dead entries, dedupes/moves an existing identity to the front, evicts the oldest when full, and exact removal removes the destroyed Topic/SavedSublist/Thread;
+- `RecentPeers::serialize` serializes ordinary `_list`, not recent-open `_opens`; Fabushi therefore keeps recent-open as runtime-only canonical Conversation navigation state rather than inventing persistent authority;
+- cached userpic state is projection-only and never grants identity, access, parent relation, or SavedSublist membership.
+
+Fabushi current production wiring on this PR uses the existing `MessagingEngine` owner: active child selection moves the typed destination to the front of an actor-scoped runtime history, the history is capped at 32, exact child destruction removes it, parent-access revocation removes matching SavedSublist recent destinations, and restoring `MessagingState` starts with an empty recent-open history. Complete cross-owner SavedMessages deletion is still open.
+
+Traceability:
+- requirement: `TDRP-R9-RECENT-PEERS-LIFECYCLE-001`
+- oracle: `ORA-TDRP-R9-RECENT-PEERS-LIFECYCLE-001`
+- invariant: `INV-TDRP-R9-RECENT-PEERS-LIFECYCLE-001-CANONICAL`
+
+The ordinary 48-entry recent Search projection and the 32-entry recent-open navigation projection are not interchangeable. Neither may mint SavedSublist parent access or message membership.
 
 ## Required shipping closure
 
