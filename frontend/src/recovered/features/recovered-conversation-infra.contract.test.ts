@@ -16,6 +16,7 @@ import {
 import { projectTranscriptCardEntry } from "./conversation/cards/transcript-card/protocol.ts";
 import { projectRichMessageActionAffordance } from "./conversation/cards/transcript-card/url-card.ts";
 import { createWidgetInteractionAdapter } from "./conversation/cards/transcript-card/widget-interactions.ts";
+import { createAssistantMathMarkupCache, type KatexRuntime } from "./conversation/workspace/math.tsx";
 import {
   createHiddenChatsMutationController,
 } from "./hidden-chats/overlay/mutation-controller.ts";
@@ -412,4 +413,56 @@ test("widget action lifecycle fences duplicate and stale rich-button settlement"
 
   adapter.dispose();
   assert.deepEqual(await adapter.dismiss("widget-1"), { kind: "ignored", reason: "unavailable" });
+});
+
+
+test("assistant math cache shares renders, isolates loaders, and retries load failure", async () => {
+  const cache = createAssistantMathMarkupCache();
+  let loadsA = 0;
+  let rendersA = 0;
+  const runtimeA: KatexRuntime = {
+    renderToString(expression, options) {
+      rendersA += 1;
+      return `<span>${options.displayMode ? "D" : "I"}:${expression}</span>`;
+    },
+  };
+  const loaderA = async () => {
+    loadsA += 1;
+    return runtimeA;
+  };
+
+  const [first, second] = await Promise.all([
+    cache.load(loaderA, "x^2", false),
+    cache.load(loaderA, "x^2", false),
+  ]);
+  assert.equal(first, "<span>I:x^2</span>");
+  assert.equal(second, first);
+  assert.equal(loadsA, 1);
+  assert.equal(rendersA, 1);
+
+  await cache.load(loaderA, "x^2", true);
+  assert.equal(loadsA, 2);
+  assert.equal(rendersA, 2);
+
+  let loadsB = 0;
+  const loaderB = async () => {
+    loadsB += 1;
+    return runtimeA;
+  };
+  await cache.load(loaderB, "x^2", false);
+  assert.equal(loadsB, 1);
+
+  cache.invalidate(loaderA);
+  await cache.load(loaderA, "x^2", false);
+  assert.equal(loadsA, 3);
+
+  let attempts = 0;
+  const healingLoader = async () => {
+    attempts += 1;
+    if (attempts === 1) throw new Error("temporary chunk failure");
+    return runtimeA;
+  };
+  await assert.rejects(() => cache.load(healingLoader, "y", false));
+  assert.equal(await cache.load(healingLoader, "y", false), "<span>I:y</span>");
+  assert.equal(attempts, 2);
 });
