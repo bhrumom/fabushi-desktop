@@ -104,3 +104,42 @@ export function updateHorizontalScrollPointer(
     decision: "horizontal",
   };
 }
+
+
+export type HorizontalScrollWheelAxis = "horizontal" | "vertical";
+
+export interface HorizontalScrollWheelLock {
+  readonly axis: HorizontalScrollWheelAxis;
+  readonly expiresAtMs: number;
+}
+
+export interface HorizontalScrollWheelUpdate {
+  readonly lock: HorizontalScrollWheelLock | null;
+  readonly axis: HorizontalScrollWheelAxis | null;
+}
+
+export function updateHorizontalScrollWheelLock(
+  lock: HorizontalScrollWheelLock | null,
+  deltaX: number,
+  deltaY: number,
+  nowMs: number,
+  idleWindowMs = 160,
+): HorizontalScrollWheelUpdate {
+  const x = Number.isFinite(deltaX) ? deltaX : 0;
+  const y = Number.isFinite(deltaY) ? deltaY : 0;
+  const now = Number.isFinite(nowMs) ? nowMs : 0;
+  const idle = Number.isFinite(idleWindowMs) && idleWindowMs > 0 ? idleWindowMs : 160;
+  const live = lock != null && now <= lock.expiresAtMs ? lock : null;
+  if (live != null) {
+    return {
+      axis: live.axis,
+      lock: { axis: live.axis, expiresAtMs: now + idle },
+    };
+  }
+  if (x === 0 && y === 0) return { axis: null, lock: null };
+  const axis: HorizontalScrollWheelAxis = Math.abs(x) > Math.abs(y) ? "horizontal" : "vertical";
+  return {
+    axis,
+    lock: { axis, expiresAtMs: now + idle },
+  };
+}
