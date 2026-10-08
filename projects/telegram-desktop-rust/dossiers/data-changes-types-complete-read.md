@@ -55,3 +55,16 @@ These three exact accepted blobs receive read credit only now:
 - unknown: 15788 unchanged
 - unread: 15733 -> 15730
 - omitted: 0
+
+
+## Traceability and sibling-row audit
+
+The three rows sourced from this dossier are deliberately `mapped/open`; none is claimed implemented or verified:
+
+- `TDRP-R9-DATA-CHANGES-CONTRACT-001` -> `ORA-TDRP-R9-DATA-CHANGES-CONTRACT-001` -> `INV-TDRP-R9-DATA-CHANGES-CONTRACT-001-CANONICAL`. Current exact target bindings are `native/mahayana-messaging/src/engine.rs#MessagingEngine` for typed mutation/destruction sequencing and `native/mahayana-messaging/src/conversation.rs#ConversationChildRuntimeState` for typed Topic/SavedSublist draft/unread child state.
+- `TDRP-R9-DATA-CHANGES-LIFECYCLE-001` -> `ORA-TDRP-R9-DATA-CHANGES-LIFECYCLE-001` -> `INV-TDRP-R9-DATA-CHANGES-LIFECYCLE-001-CANONICAL`. Current exact target binding is `native/mahayana-messaging/src/engine.rs#MessagingEngine` for realtime/coalesced/destruction lifecycle sequencing.
+- `TDRP-R9-DATA-TYPES-VALUE-CONTRACT-001` -> `ORA-TDRP-R9-DATA-TYPES-VALUE-CONTRACT-001` -> `INV-TDRP-R9-DATA-TYPES-VALUE-CONTRACT-001-CANONICAL`. Current exact target bindings are the same existing `MessagingEngine` command semantics and `ConversationChildRuntimeState` destination-scoped child state.
+
+Audit result: `SearchIndex` is a real existing downstream owner, but this dossier's rows do not yet claim a Search target binding or Search implementation evidence. The current media module exposes `MediaTransferQueue`, not a symbol named `MediaCache`; therefore no nonexistent `MediaCache` target symbol is registered merely to satisfy traceability. Search projection removal and resource/cache cleanup remain explicit open downstream responsibilities. Their future rows must bind the real owning path/symbol and add executable tests/evidence before status can advance.
+
+Current test/evidence state for all three rows remains pending/empty by design. The authoritative SavedSublist relation/membership feed remains blocked/fail-closed and is not replaced by client inference, generic relations, fixtures, or mocks.
