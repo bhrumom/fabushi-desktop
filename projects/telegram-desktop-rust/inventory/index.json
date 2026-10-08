@@ -13,18 +13,18 @@
     "recursive_non_directory_entries": 16120,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16033,
-    "unread_minimum": 14620,
+    "unknown_minimum": 15991,
+    "unread_minimum": 14583,
     "omitted_known": 0,
-    "note": "Live 22b352e recursive census is 16,120. 1,500 exact entries are read-complete; 87 are explicitly unknown-closed; unknown 16,033, unread 14,620, omitted 0. Orders 1017-1025 now bind folders_unmuted/folders_unread/folders_work raster resources to exact ui/filter_icons.style consumers; this closes only source reachability, while canonical production/visual/a11y/release evidence remains open."
+    "note": "Live 22b352e recursive census is 16,120. 1,537 exact entries are read-complete; 129 are explicitly unknown-closed; unknown 15,991, unread 14,583, omitted 0. Orders 1496-1537 atomically close the canonical MediaViewer detached-window-chrome platform replacement; Telegram raster/title artwork is not imported."
   },
   "latest_recursive_evidence": {
-    "run_id": 37856862858,
+    "run_id": 37860154455,
     "run_attempt": 1,
-    "job_id": 113583254143,
-    "head_sha": "9864475c9f3997b60383b68772ab6de65979244b",
-    "artifact_id": 11584661832,
-    "artifact_digest": "sha256:b282792a51f3fb2f6d66cd00bad76c575f07147a1cdbfeffcf669fd9cf4bfc50",
+    "job_id": 113594053543,
+    "head_sha": "930a4d4e8894c1589f184cfd5b9410bf104f53d2",
+    "artifact_id": 11585542841,
+    "artifact_digest": "sha256:fdaf778a364adfc3b9c71d4c511abad0842e7130bfecdaf63d122a019de05716",
     "artifact_files": [
       "upstream-root-inventory.json",
       "upstream-recursive-inventory.json",
@@ -60,7 +60,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live 22b352e authority is exact through order 1,500. Orders 1017-1025 have corrected exact consumer accounting from parent-head artifact 11584661832; orders 1201-1500 retain exact binary/type and resource-path-token evidence. unread_minimum is 14,620, unknown remains 16,033, omitted remains 0.",
+  "note": "Live 22b352e authority is exact through order 1,537. Orders 1496-1537 are one verified media-view detached-window-chrome platform replacement on implementation HEAD 930a4d4e8894c1589f184cfd5b9410bf104f53d2; unread_minimum is 14,583, unknown is 15,991, omitted remains 0.",
   "rebaseline": {
     "from_commit": "6ec5014a92c4580841a043c440d65e8fc605ff78",
     "to_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db",
@@ -79,8 +79,8 @@
     "upstream_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db",
     "deterministic_prefix_closed": 123,
     "development_only_non_applicable": 66,
-    "unknown_closed": 87,
+    "unknown_closed": 129,
     "omitted": 0,
-    "read_through": 1500
+    "read_through": 1537
   }
 }

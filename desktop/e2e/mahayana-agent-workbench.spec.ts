@@ -234,7 +234,20 @@ async function ensureE2eAuthBackend(): Promise<string> {
         }
         response.setHeader('content-type', 'application/json');
         response.statusCode = 200;
-        response.end(JSON.stringify({ success: true, data: { friends: [] } }));
+        response.end(JSON.stringify({ success: true, data: { friends: [{
+          id: 'friend-human-parity-peer-e2e',
+          userId: 'human-parity-peer-e2e',
+          username: 'human-parity-peer-e2e',
+          displayName: 'Human Parity Peer',
+          avatarUrl: null,
+          status: 'accepted',
+        }] } }));
+        return;
+      }
+      if (requestUrl.pathname === '/api/social/calls' && request.method === 'GET') {
+        response.setHeader('content-type', 'application/json');
+        response.statusCode = 200;
+        response.end(JSON.stringify({ success: true, calls: [] }));
         return;
       }
       if (requestUrl.pathname === '/api/social/message-resources' && request.method === 'POST') {
@@ -820,14 +833,13 @@ test('Human reply, attachment, reaction, and search stay on the shipping convers
     app = await launchDesktopApp(appDataDir);
     let page = await app.firstWindow();
     await completeBrowserLogin(page);
-    await openMahayanaConversation(page);
-    await page.getByRole('button', { name: 'New Human chat', exact: true }).click();
-    const dialog = page.getByRole('dialog', { name: 'New Human chat' });
-    await dialog.getByRole('textbox', { name: 'Human identity' }).fill('human-parity-peer-e2e');
-    await dialog.getByRole('textbox', { name: 'Conversation title' }).fill('Human Parity Peer');
-    await dialog.getByRole('button', { name: 'Create', exact: true }).click();
+    const humanPeer = page.getByRole('region', { name: 'Agent list' })
+      .getByRole('button', { name: 'Human Parity Peer', exact: true });
+    await expect(humanPeer).toBeVisible({ timeout: 15_000 });
+    await humanPeer.click();
 
     const prompt = page.getByRole('textbox', { name: 'Prompt' });
+    await expect(prompt).toHaveAttribute('contenteditable', 'true', { timeout: 15_000 });
     const rootText = 'Human parity root for reply search.';
     await prompt.pressSequentially(rootText);
     await page.getByRole('button', { name: 'Send message' }).click();
