@@ -4425,7 +4425,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
           opening the selected agent's routines pane. */}
       {/* onOpenRoutine={(agentId) => void openAgent(agentId)} */}
       <CommandPalette
-        agents={agents}
+        agents={[...humanConversations, ...agents]}
         commands={paletteCommands}
         routines={routineSnapshot.value}
         routineStatus={routineSnapshot.status}
