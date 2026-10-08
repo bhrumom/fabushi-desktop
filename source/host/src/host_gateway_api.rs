@@ -42,7 +42,7 @@ macro_rules! define_host_gateway_registry {
             $($method),+
         ];
 
-        pub fn host_gateway_owner(method: &str) -> Option<HostGatewayOwner> {
+        fn frozen_host_gateway_owner(method: &str) -> Option<HostGatewayOwner> {
             match method {
                 $($method => Some(HostGatewayOwner::$owner),)+
                 _ => None,
@@ -174,13 +174,31 @@ define_host_gateway_registry!(
     ("requestWebAuthnCeremony", WebAuthn),
     ("setBoxSecrets", Secrets),
     ("getBoxSecretsStatus", Secrets),
-    ("getStoryStealthStatus", Stories),
-    ("activateStoryStealth", Stories),
-    ("listStories", Stories),
-    ("viewStory", Stories),
-    ("reactStory", Stories),
-    ("deleteStory", Stories),
 );
+
+/// Fabushi-owned Host gateway methods that extend the frozen Grok 0.18 surface.
+/// Keep these source-neutral capabilities outside `FROZEN_HOST_GATEWAY_METHODS`
+/// so upstream parity evidence cannot silently absorb product-owned extensions.
+pub const FABUSHI_HOST_GATEWAY_METHODS: &[&str] = &[
+    "getStoryStealthStatus",
+    "activateStoryStealth",
+    "listStories",
+    "viewStory",
+    "reactStory",
+    "deleteStory",
+];
+
+pub fn host_gateway_owner(method: &str) -> Option<HostGatewayOwner> {
+    match method {
+        "getStoryStealthStatus"
+        | "activateStoryStealth"
+        | "listStories"
+        | "viewStory"
+        | "reactStory"
+        | "deleteStory" => Some(HostGatewayOwner::Stories),
+        _ => frozen_host_gateway_owner(method),
+    }
+}
 
 pub fn is_sand_agent_purpose(value: &str) -> bool {
     matches!(value, "disk-saver" | "plugin-auth")
