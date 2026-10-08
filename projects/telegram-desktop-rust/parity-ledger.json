@@ -2471,9 +2471,12 @@
       ],
       "production_evidence": [
         "main:3bc92400826cc4ca7ac665b467708e22261edc61",
-        "path:native/mahayana-messaging/src/story.rs"
+        "path:native/mahayana-messaging/src/story.rs",
+        "path:native/mahayana-messaging/src/story.rs#StoryProgressState"
       ],
-      "test_evidence": [],
+      "test_evidence": [
+        "path:native/mahayana-messaging/src/story.rs#progress_tests"
+      ],
       "target_commit": "3bc92400826cc4ca7ac665b467708e22261edc61",
       "workflow_run": null,
       "run_attempt": null,
@@ -2572,7 +2575,9 @@
       ],
       "oracle_ids": [],
       "invariant_ids": [],
-      "unit_case_ids": [],
+      "unit_case_ids": [
+        "TDRP-R9-STORY-PROGRESS-UNIT-001"
+      ],
       "property_state_case_ids": [],
       "contract_case_ids": [],
       "integration_case_ids": [],
@@ -2637,11 +2642,10 @@
       "platform_delta": "Qt widget API becomes typed ProductShell Story capability props/actions.",
       "existing_owner": "Canonical Story owner + ProductShell capability projection",
       "fabushi_target_paths": [
-        "native/mahayana-messaging/src/story.rs",
-        "frontend/src/production/ProductionRenderer.tsx"
+        "native/mahayana-messaging/src/story.rs"
       ],
       "fabushi_target_symbols": [
-        "StoryId"
+        "StoryProgressState"
       ],
       "command_event_contracts": [
         "Story selection/playback state -> one progress projection"
@@ -2650,7 +2654,16 @@
       "production_entrypoints": [
         "ProductShell -> typed Story capability surface -> canonical Story/Resource owner"
       ],
-      "notes": "Read-complete and mapped only; no shipping Story viewer/progress surface is claimed implemented."
+      "notes": "Read-complete and mapped only; no shipping Story viewer/progress surface is claimed implemented. Partial production implementation now exists in the canonical Rust Story owner: StoryProgressState covers non-persistent index/total normalization, per-show progress reset, and bounded active playback progress. Shipping ProductShell viewer/bridge composition and exact-head Actions evidence remain open, so this row stays mapped.",
+      "fabushi_target_bindings": [
+        {
+          "path": "native/mahayana-messaging/src/story.rs",
+          "symbols": [
+            "StoryProgressState"
+          ],
+          "responsibility_scope": "typed non-persistent Story progress capability contract"
+        }
+      ]
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
@@ -2695,9 +2708,12 @@
       ],
       "production_evidence": [
         "main:3bc92400826cc4ca7ac665b467708e22261edc61",
-        "path:native/mahayana-messaging/src/story.rs"
+        "path:native/mahayana-messaging/src/story.rs",
+        "path:native/mahayana-messaging/src/story.rs#StoryProgressState"
       ],
-      "test_evidence": [],
+      "test_evidence": [
+        "path:native/mahayana-messaging/src/story.rs#progress_tests"
+      ],
       "target_commit": "3bc92400826cc4ca7ac665b467708e22261edc61",
       "workflow_run": null,
       "run_attempt": null,
@@ -2796,7 +2812,9 @@
       ],
       "oracle_ids": [],
       "invariant_ids": [],
-      "unit_case_ids": [],
+      "unit_case_ids": [
+        "TDRP-R9-STORY-PROGRESS-UNIT-001"
+      ],
       "property_state_case_ids": [],
       "contract_case_ids": [],
       "integration_case_ids": [],
@@ -2864,11 +2882,10 @@
       "platform_delta": "Responsive segment layout belongs to Fabushi capability component.",
       "existing_owner": "Canonical Story owner + Resource/media playback + ProductShell projection",
       "fabushi_target_paths": [
-        "native/mahayana-messaging/src/story.rs",
-        "frontend/src/production/ProductionRenderer.tsx"
+        "native/mahayana-messaging/src/story.rs"
       ],
       "fabushi_target_symbols": [
-        "StoryView"
+        "StoryProgressState"
       ],
       "command_event_contracts": [
         "Story changed -> reset progress",
@@ -2878,7 +2895,16 @@
       "production_entrypoints": [
         "ProductShell -> Story capability surface -> Resource playback state"
       ],
-      "notes": "Read-complete and mapped only; responsive/progress behavior needs production code and exact-head tests."
+      "notes": "Read-complete and mapped only; responsive/progress behavior needs production code and exact-head tests. Partial production implementation now exists in the canonical Rust Story owner: StoryProgressState covers non-persistent index/total normalization, per-show progress reset, and bounded active playback progress. Shipping ProductShell viewer/bridge composition and exact-head Actions evidence remain open, so this row stays mapped.",
+      "fabushi_target_bindings": [
+        {
+          "path": "native/mahayana-messaging/src/story.rs",
+          "symbols": [
+            "StoryProgressState"
+          ],
+          "responsibility_scope": "bounded index/total normalization and per-show playback reset state machine"
+        }
+      ]
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
@@ -5056,8 +5082,8 @@
       "implementation_status": "mapped",
       "coverage_disposition": "fabushi-ui-replacement",
       "blockers": [
-        "Current branch implements canonical HTTP(S) action routing, typed copy projection, selection-vs-link activation fencing, media replacement pointer retirement, bounded media recovery, deterministic Control-wheel zoom, touch-like horizontal pointer balancing, and browser wheel-burst direction locking with delta-unit normalization; exact-head GitHub Actions evidence remains required.",
-        "Mouse scrollbar/content-drag packaged temporal evidence, broader touch/zoom/reflow continuity, hidden-window timer quiescence, packaged a11y/performance evidence and independent acceptance remain open."
+        "Current branch implements canonical HTTP(S) action routing, typed copy projection, selection-vs-link activation fencing, media replacement pointer retirement, bounded media recovery, deterministic Control-wheel zoom, touch-like horizontal pointer balancing, browser wheel-burst direction locking with delta-unit normalization, and an explicit static-timestamp replacement proving no formatted-date background timer is applicable; exact-head GitHub Actions evidence remains required.",
+        "Mouse scrollbar/content-drag packaged temporal evidence, broader touch/zoom/reflow continuity, packaged a11y/performance evidence and independent acceptance remain open."
       ],
       "production_entrypoints": [
         "ProductShell -> ConversationWorkspace -> ConversationTranscript -> existing FindInChat/URL/Resource/action owners"
@@ -5236,7 +5262,7 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior mapped from accepted telegramdesktop/tdesktop d346 exact blob; Qt widget/painter code is not retained and legal/source provenance remains recorded.",
       "reviewer": null,
-      "notes": "Read-complete and mapped-open. Existing canonical ConversationTranscript/Resource/URL owners now also adapt the accepted Qt wheel phase lock to Web wheel bursts: first-axis wins until an idle settlement window, line/page units normalize before scroll projection, vertical remains native, horizontal alone is consumed, and Control-wheel retires the scroll lock for the zoom owner. This does not claim mouse-scrollbar packaged behavior, hidden timer quiescence, broader media gestures, or independent acceptance."
+      "notes": "Read-complete and mapped-open. The accepted formatted-date visibility scheduler is not copied because the current canonical transcript has no time-relative formatted-date work: ordinary message timestamps are absolute local strings, timeline events render fixed hour/minute text, and retired permission leaves only retain timestamp metadata. CONTRACT-TDRP-IV-VIEW-STATIC-DATE-WORK-001 guards those owners against a repeating interval/RelativeTimeFormat; any future relative-time UI must add a visibility-bounded lifecycle. Other packaged temporal/a11y evidence remains open."
     },
     {
       "source_repository": "telegramdesktop/tdesktop",

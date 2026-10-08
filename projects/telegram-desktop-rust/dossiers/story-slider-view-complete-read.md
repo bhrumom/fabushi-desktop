@@ -3,7 +3,7 @@
 Authority: TDRP-001 Revision 9  
 Accepted upstream: `telegramdesktop/tdesktop@d346b42a1d30ef60dc989b6e5191bb8e571f6bd5`  
 Fabushi mapping baseline: `bhrumom/fabushi-desktop@3bc92400826cc4ca7ac665b467708e22261edc61`  
-Status: read-complete / provenance-rebound at d346b42a1d30ef60dc989b6e5191bb8e571f6bd5 / mapped-open / not implemented / not verified
+Status: read-complete / provenance-rebound at d346b42a1d30ef60dc989b6e5191bb8e571f6bd5 / mapped-open / progress-state partially implemented / not verified
 
 ### Rebaseline provenance
 
@@ -35,6 +35,8 @@ The product responsibility is not the Qt painter. The transferable contract is:
 - static/story-image presentation may render local progress while video-stream projection may be owned by the video playback surface.
 
 This must map to the canonical Story/Resource playback truth and a typed Story capability component. It must not create a second Story state store or source-specific slider owner.
+
+Current Fabushi implementation adds `StoryProgressState` inside the existing `native/mahayana-messaging/src/story.rs` owner. It is intentionally non-persistent: `show()` resets progress on every projection, normalizes `total` to at least one, clamps `index`, and `update_playback()` bounds finite progress to `[0,1]`. Inline Rust unit tests cover out-of-range index, zero total, repeated-show reset, finite bounds, and non-finite fail-closed behavior. ProductShell viewer/bridge composition is still absent and is not claimed by this partial implementation.
 
 ### ST-VIEW-01 — Story capability-surface lifecycle and navigation
 
@@ -83,4 +85,4 @@ At minimum, future implementation must add exact-head GitHub Actions evidence fo
 
 No row from these four files is marked implemented or verified by this dossier.
 
-Coverage after these four complete reads: `unread=15,757`, `unknown=15,788`, `omitted=0`, `baseline_ready=false`, `acceptance.accepted=false`.
+Current accepted recursive accounting remains `unread=15,744`, `unknown=15,804`, `omitted=0`, `baseline_ready=false`, `acceptance.accepted=false`. These four complete reads are already included in that durable accounting.
