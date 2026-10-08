@@ -18,6 +18,7 @@ use crate::miniapp::{
     MiniAppSession,
 };
 use crate::payment::{CustomerInfo, Invoice, Money, PaymentOrder, PaymentStatus};
+use crate::search::RecentSearchSuggestion;
 use crate::story::{Story, StoryError, StoryId};
 use crate::wallet::{LedgerEntry, WalletAccountId, WalletError, WalletLedger};
 use serde::{Deserialize, Serialize};
@@ -593,6 +594,9 @@ pub enum Event {
 #[serde(default, rename_all = "camelCase")]
 pub struct MessagingState {
     pub actors: BTreeMap<ActorId, Actor>,
+    /// Account-local search suggestions. Unlike recent-open child history, this
+    /// projection is intentionally persisted with the canonical messaging snapshot.
+    pub recent_search_suggestions: BTreeMap<ActorId, Vec<RecentSearchSuggestion>>,
     pub conversations: BTreeMap<ConversationId, Conversation>,
     pub folders: BTreeMap<String, ConversationFolder>,
     pub messages: BTreeMap<ConversationId, BTreeMap<MessageId, Message>>,
@@ -782,6 +786,7 @@ pub enum EngineError {
     MiniAppHostActionRequired,
 }
 
+const MAX_RECENT_SEARCH_SUGGESTIONS: usize = 48;
 const MAX_RECENT_OPEN_DESTINATIONS: usize = 32;
 
 #[derive(Debug, Clone, Default)]
@@ -934,7 +939,35 @@ impl MessagingEngine {
     pub fn new() -> Self {
         Self::default()
     }
-    pub fn from_state(state: MessagingState) -> Self {
+    pub fn from_state(mut state: MessagingState) -> Self {
+        // Persisted recent suggestions are a local projection, never authority.
+        // Fail closed for the whole actor-scoped list if recovery finds an
+        // impossible bound, duplicate identity, or target that no longer exists.
+        let actor_ids = state.actors.keys().cloned().collect::<BTreeSet<_>>();
+        let conversation_ids = state
+            .conversations
+            .keys()
+            .cloned()
+            .collect::<BTreeSet<_>>();
+        state.recent_search_suggestions.retain(|actor_id, suggestions| {
+            if !actor_ids.contains(actor_id) {
+                return false;
+            }
+            let unique = suggestions.iter().cloned().collect::<BTreeSet<_>>();
+            let targets_exist = suggestions.iter().all(|suggestion| match suggestion {
+                RecentSearchSuggestion::Actor { actor_id } => actor_ids.contains(actor_id),
+                RecentSearchSuggestion::Conversation { conversation_id } => {
+                    conversation_ids.contains(conversation_id)
+                }
+            });
+            if suggestions.len() > MAX_RECENT_SEARCH_SUGGESTIONS
+                || unique.len() != suggestions.len()
+                || !targets_exist
+            {
+                suggestions.clear();
+            }
+            !suggestions.is_empty()
+        });
         Self {
             state,
             recent_open_destinations: BTreeMap::new(),
@@ -954,6 +987,74 @@ impl MessagingEngine {
     }
     pub fn into_state(self) -> MessagingState {
         self.state
+    }
+
+    pub fn recent_search_suggestions(
+        &self,
+        actor_id: &ActorId,
+    ) -> &[RecentSearchSuggestion] {
+        self.state
+            .recent_search_suggestions
+            .get(actor_id)
+            .map(Vec::as_slice)
+            .unwrap_or(&[])
+    }
+
+    pub fn bump_recent_search_suggestion(
+        &mut self,
+        actor_id: &ActorId,
+        suggestion: RecentSearchSuggestion,
+    ) -> Result<(), EngineError> {
+        self.require_actor(actor_id)?;
+        match &suggestion {
+            RecentSearchSuggestion::Actor { actor_id: target } => {
+                self.require_actor(target)?;
+            }
+            RecentSearchSuggestion::Conversation { conversation_id } => {
+                self.require_conversation(conversation_id)?;
+            }
+        }
+        let recent = self
+            .state
+            .recent_search_suggestions
+            .entry(actor_id.clone())
+            .or_default();
+        if recent.first() == Some(&suggestion) {
+            return Ok(());
+        }
+        recent.retain(|item| item != &suggestion);
+        recent.insert(0, suggestion);
+        recent.truncate(MAX_RECENT_SEARCH_SUGGESTIONS);
+        Ok(())
+    }
+
+    pub fn remove_recent_search_suggestion(
+        &mut self,
+        actor_id: &ActorId,
+        suggestion: &RecentSearchSuggestion,
+    ) -> Result<(), EngineError> {
+        self.require_actor(actor_id)?;
+        let remove_actor = self
+            .state
+            .recent_search_suggestions
+            .get_mut(actor_id)
+            .is_some_and(|recent| {
+                recent.retain(|item| item != suggestion);
+                recent.is_empty()
+            });
+        if remove_actor {
+            self.state.recent_search_suggestions.remove(actor_id);
+        }
+        Ok(())
+    }
+
+    pub fn clear_recent_search_suggestions(
+        &mut self,
+        actor_id: &ActorId,
+    ) -> Result<(), EngineError> {
+        self.require_actor(actor_id)?;
+        self.state.recent_search_suggestions.remove(actor_id);
+        Ok(())
     }
 
     fn note_destination_opened(
