@@ -356,6 +356,7 @@ export interface PluginsDesktopSnapshot {
   catalog: McpCatalogEntry[];
   effectivePlugins: EffectivePlugin[];
   serverState: McpServerState;
+  warnings?: string[];
 }
 
 export function pluginBrowserItemsFromDesktop(
@@ -526,16 +527,26 @@ export function createPluginsDesktopController(bridge: DesktopBridge): PluginsDe
 }
 
 export async function loadPluginsDesktopSnapshot(bridge: DesktopBridge): Promise<PluginsDesktopSnapshot> {
-  const [catalog, effectivePlugins, serverState] = await Promise.all([
+  const [catalogResult, effectiveResult, serverResult] = await Promise.allSettled([
     bridge.mcp.catalog(),
     bridge.mcp.effectivePlugins(),
     bridge.mcp.list()
   ]);
+  if (catalogResult.status === "rejected") throw catalogResult.reason;
+  const catalog = catalogResult.value;
+  const effectivePlugins = effectiveResult.status === "fulfilled" ? effectiveResult.value : [];
+  const serverState = serverResult.status === "fulfilled" ? serverResult.value : { servers: [] };
+  const warnings = [
+    ...(serverState.warnings ?? []),
+    ...(effectiveResult.status === "rejected" ? ["已安装插件暂时无法加载，安装状态尚未确认。请稍后重试。"] : []),
+    ...(serverResult.status === "rejected" ? ["连接器状态暂时无法加载。官方目录仍可浏览，请稍后重试。"] : []),
+  ];
   return {
     items: pluginBrowserItemsFromDesktop(catalog, effectivePlugins, serverState),
     catalog,
     effectivePlugins,
-    serverState
+    serverState,
+    warnings
   };
 }
 
@@ -580,3 +591,4 @@ export async function authenticatePluginBrowserServer(
   if (result.status === "started") await bridge.openExternal(result.authorizationUrl);
   return result;
 }
+

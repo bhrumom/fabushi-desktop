@@ -193,6 +193,7 @@ export interface McpServerSummary {
 
 export interface McpServerState {
   servers: McpServerSummary[];
+  warnings?: string[];
 }
 
 export interface PluginVariableField {
@@ -592,3 +593,4 @@ export function requireDesktopBridge(value: unknown): DesktopBridge {
   }
   return value;
 }
+

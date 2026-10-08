@@ -23,6 +23,9 @@ import {
 import { pinMcpDiagnosticsReporter } from "../../shared/node/mcp/mcp-diagnostics.js";
 import { SandMcpManager } from "../../shared/node/mcp/mcp-manager.js";
 import { createMcpToolsDiscovery } from "../../shared/node/mcp/tools-discovery.js";
+import { OfficialMcpService, type OfficialMcpPorts } from "./official-mcp-service.js";
+import { officialMcpCatalogPlugins } from "../../shared/node/mcp/fabushi-official-catalog.js";
+import { marketplacePluginToView } from "../../shared/node/mcp/mcp-marketplace.js";
 
 export interface DesktopMcpManagerFacade {
   listServers(): Promise<unknown>;
@@ -57,6 +60,7 @@ export interface DesktopMcpManagerFacade {
 }
 
 export interface DesktopMcpManagerOptions {
+  readonly officialMcp?: OfficialMcpPorts;
   readonly settingsStore: unknown;
   readonly onAccountScopeApplied: () => void;
   readonly getAccessToken: (args: { backendUrl: string }) => Promise<string>;
@@ -87,6 +91,21 @@ function generatedBackendClient(credentials: Pick<AccountMcpDependencies, "getAc
 /** Artifact anchor: electron-main/main.cjs:497780, `async function createSandDesktopMcpManager(options)`. */
 export async function createSandDesktopMcpManager(options: DesktopMcpManagerOptions): Promise<DesktopMcpManagerFacade> {
   pinMcpDiagnosticsReporter(options.onMcpDiagnostic ?? null);
+  const official = options.officialMcp == null ? undefined : new OfficialMcpService(options.officialMcp);
+  const warnings = new Set<string>();
+  async function legacy<T>(operation: () => Promise<T>, fallback: T): Promise<T> {
+    try { return await operation(); }
+    catch (error) {
+      if (!official) throw error;
+      warnings.add("部分已安装或团队连接器暂时无法加载。官方目录仍可浏览，请稍后重试。");
+      options.onMcpDiagnostic?.({ leg: "legacy-mcp-partial-load", errorClass: "unavailable" });
+      return fallback;
+    }
+  }
+  const record = (value: unknown): Record<string, any> => {
+    if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("Invalid MCP request.");
+    return value as Record<string, any>;
+  };
   const accountMcpDeps: AccountMcpDependencies = {
     getAccessToken: async (request) => await options.getAccessToken({ backendUrl: request?.backendUrl ?? getSandInferenceBackendUrl() }),
     getMachineId: async () => await options.getMachineId(),
@@ -172,27 +191,75 @@ export async function createSandDesktopMcpManager(options: DesktopMcpManagerOpti
     void backfillUserPluginInstalls(accountMcpDeps).catch((error: unknown) => reportDesktopEdgeFailure("mcp-manager", "install-backfill", error));
   };
   return {
-    listServers: () => {
+    listServers: async () => {
       kickInstallBackfillOnce();
-      return manager.listServers();
+      warnings.clear();
+      const state = await legacy(() => manager.listServers(), { servers: [] });
+      const native = await official?.servers() ?? [];
+      return { ...state, servers: [...state.servers, ...native], warnings: [...warnings] };
     },
-    listEffectivePlugins: () => manager.listEffectivePlugins(),
-    getCatalog: (getAccessToken, options) => manager.getCatalog(getAccessToken, options),
+    listEffectivePlugins: async () => [
+      ...await legacy(() => manager.listEffectivePlugins(), []),
+      ...(await official?.effective() ?? []),
+    ],
+    getCatalog: async (getAccessToken, args) => {
+      const native = official ? officialMcpCatalogPlugins().map(marketplacePluginToView) : [];
+      const other = await legacy(() => manager.getCatalog(getAccessToken, args), []);
+      return [...native, ...(other as unknown[])];
+    },
     resolvePluginLogo: (url) => manager.resolvePluginLogo(url),
-    installEntry: (request, getAccessToken) => manager.installEntry(request, getAccessToken),
-    updatePluginInstall: (request, getAccessToken) => manager.updatePluginInstall(request, getAccessToken),
+    installEntry: async (request, getAccessToken) => {
+      const input = record(request);
+      if (!official?.owns(input.entryId)) return manager.installEntry(request, getAccessToken);
+      await official.install(input.entryId, input.values);
+      return { servers: await official.servers() };
+    },
+    updatePluginInstall: async (request, getAccessToken) => {
+      const input = record(request);
+      if (!official?.owns(input.pluginId)) return manager.updatePluginInstall(request, getAccessToken);
+      await official.install(input.pluginId, input.values);
+      return { servers: await official.servers() };
+    },
     addServer: (request) => manager.addServer(request),
-    removeServer: (serverId) => manager.removeServer(serverId),
-    reloadServers: () => manager.reloadServers(),
-    uninstallPlugin: (pluginId) => manager.uninstallPlugin(pluginId),
-    authenticateServer: (serverId, accountKey, requestingAgentId, forceReauth, trigger) => manager.authenticateServer(serverId, accountKey, requestingAgentId ?? null, forceReauth === true, trigger ?? null),
-    logoutAccount: (args) => manager.logoutAccount(args.serverId, args.accountKey),
-    renameAccount: (args) => manager.renameAccount(args.serverId, args.accountKey, args.newAccountKey),
-    removeAccount: (args) => manager.removeAccount(args.serverId, args.accountKey),
-    setServerCustomInstructions: (request) => manager.setServerCustomInstructions(request),
-    listServerTools: (serverId) => manager.listServerTools(serverId),
-    listRoutedTools: async () => routedToolsSnapshot.length > 0 ? routedToolsSnapshot : await warmRoutedTools(),
-    executeRoutedTool: (request) => discovery.executeTool(
+    removeServer: async (serverId) => {
+      if (!official?.owns(serverId)) return manager.removeServer(serverId);
+      await official.remove(serverId); return { removed: true, state: { servers: await official.servers() } };
+    },
+    reloadServers: async () => {
+      const state = await legacy(() => manager.reloadServers(), { servers: [] });
+      return { ...state, servers: [...state.servers, ...(await official?.servers() ?? [])], warnings: [...warnings] };
+    },
+    uninstallPlugin: async (pluginId) => {
+      if (!official?.owns(pluginId)) return manager.uninstallPlugin(pluginId);
+      await official.remove(pluginId); return { removed: true, state: { servers: await official.servers() } };
+    },
+    authenticateServer: (serverId, accountKey, requestingAgentId, forceReauth, trigger) =>
+      official?.owns(serverId) ? official.authenticate(serverId, accountKey)
+        : manager.authenticateServer(serverId, accountKey, requestingAgentId ?? null, forceReauth === true, trigger ?? null),
+    logoutAccount: async (args) => {
+      if (!official?.owns(args.serverId)) return manager.logoutAccount(args.serverId, args.accountKey);
+      await official.disconnect(args.serverId); return { servers: await official.servers() };
+    },
+    renameAccount: (args) => {
+      if (official?.owns(args.serverId)) throw new Error("官方连接器多账号 OAuth 配置尚未完成。");
+      return manager.renameAccount(args.serverId, args.accountKey, args.newAccountKey);
+    },
+    removeAccount: async (args) => {
+      if (!official?.owns(args.serverId)) return manager.removeAccount(args.serverId, args.accountKey);
+      await official.disconnect(args.serverId); return { servers: await official.servers() };
+    },
+    setServerCustomInstructions: (request) => {
+      const input = record(request);
+      return official?.owns(input.serverId) ? official.setInstructions(input.serverId, input.instructions) : manager.setServerCustomInstructions(request);
+    },
+    listServerTools: (serverId) => official?.owns(serverId) ? official.toolSummaries(serverId) : manager.listServerTools(serverId),
+    listRoutedTools: async () => [
+      ...await legacy(async () => routedToolsSnapshot.length > 0 ? routedToolsSnapshot : await warmRoutedTools(), []),
+      ...(await official?.routedTools() ?? []),
+    ],
+    executeRoutedTool: (request) => official?.owns(request.providerIdentifier)
+      ? official.execute(request.providerIdentifier, request.toolName, request.args)
+      : discovery.executeTool(
       undefined,
       {
         providerIdentifier: request.providerIdentifier,
@@ -203,9 +270,13 @@ export async function createSandDesktopMcpManager(options: DesktopMcpManagerOpti
       },
       request.agentId == null ? undefined : { agentId: request.agentId },
     ),
-    toggleMcpToolDisabled: (request) => manager.toggleMcpToolDisabled(request),
+    toggleMcpToolDisabled: (request) => {
+      const input = record(request);
+      return official?.owns(input.serverId) ? official.toggle(input.serverId, input.toolName) : manager.toggleMcpToolDisabled(request);
+    },
     setAuthCompletionObserver: (observer) => manager.setAuthCompletionObserver(observer),
     noteAuthCompletedElsewhere: (serverId, accountKey) => manager.noteAuthCompletedElsewhere(serverId, accountKey),
-    dispose: () => manager.dispose(),
+    dispose: () => { official?.dispose(); return manager.dispose(); },
   };
 }
+
