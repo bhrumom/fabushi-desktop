@@ -8,6 +8,7 @@ import type { TranscriptAdjacency } from "./transcript-adjacency";
 import { resolveWithSingleRetry } from "./media-runtime";
 import { accumulateWheelZoomSteps, normalizeWheelZoomDelta } from "./media-zoom";
 import { DERIVED_MEDIA_PRELOAD_ROOT_MARGIN, DERIVED_MEDIA_THUMBNAIL_ROOT_MARGIN, isVisibilityBoundDerivedMedia, observeDerivedMediaVisibility, shouldResolveDerivedMedia, shouldResolveDerivedThumbnail } from "./media-visibility";
+import { SandIconButton } from "../../../ui/sand-kit-primitives";
 
 // @evidence src/app/dist/renderer/assets/view-DPSBrvyV.js#byteOffset=0 (user-attachment media/file leaf)
 // @evidence src/app/dist/renderer/assets/view-DPSBrvyV.js#SHA256=5bf28224da62a9042885e9da60e3fce82ed544846f470241ed6bcf4e12e64040
@@ -239,7 +240,7 @@ function MediaViewer({ attachments, startIndex, resolveMedia, onClose, restoreFo
 
   return createPortal(
     <div aria-label={title} aria-modal="true" className="sand-media-viewer" onClick={(event) => { if (event.target === event.currentTarget) onClose(); }} onLostPointerCapture={onLostPointerCapture} onPointerCancel={onPointerUp} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} ref={viewerRef} role="dialog">
-      <div className="sand-media-viewer__top-bar"><button aria-label="Close media preview" className="sand-media-viewer__close" onClick={onClose} type="button">×</button></div>
+      <div className="sand-media-viewer__top-bar"><SandIconButton aria-label="Close media preview" className="sand-media-viewer__close" icon="close" label="Close media preview" onClick={onClose} size="sm" type="button" variant="ghost" /></div>
       <div className="sand-media-viewer__column">
         <div className="sand-media-viewer__media-cell" onDoubleClick={fit} onWheel={onWheel}>
           {total > 1 ? <button aria-label="Previous media" className="sand-media-viewer__nav" onClick={() => setIndex((value) => (value - 1 + total) % total)} style={{ left: "18px" }} type="button">‹</button> : null}

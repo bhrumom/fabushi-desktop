@@ -680,13 +680,18 @@ test("CONTRACT-TDRP-MEDIAVIEW-WINDOW-CHROME-REPLACEMENT-001 media preview replac
   const styles = readFileSync(new URL("./conversation/workspace/view.css", import.meta.url), "utf8");
   assert.match(source, /aria-modal="true"/);
   assert.match(source, /ref=\{viewerRef\} role="dialog"/);
-  assert.match(source, /aria-label="Close media preview"[\s\S]{0,180}onClick=\{onClose\}/);
+  assert.match(source, /import \{ SandIconButton \} from "\.\.\/\.\.\/\.\.\/ui\/sand-kit-primitives"/);
+  assert.match(source, /<SandIconButton aria-label="Close media preview"[\s\S]{0,240}icon="close"[\s\S]{0,240}onClick=\{onClose\}[\s\S]{0,160}variant="ghost"/);
   assert.match(source, /event\.key === "Escape"[\s\S]{0,160}onClose\(\)/);
   assert.match(source, /const previousOverflow = document\.body\.style\.overflow;[\s\S]{0,140}document\.body\.style\.overflow = "hidden"/);
   assert.match(source, /document\.body\.style\.overflow = previousOverflow;[\s\S]{0,100}restoreFocus\(\)/);
   assert.doesNotMatch(source, /BrowserWindow|window\.(?:minimize|maximize|unmaximize|restore)\s*\(/);
   assert.match(styles, /\.sand-media-viewer \{ position: fixed; inset: 0;[\s\S]{0,180}overflow: hidden;/);
-  assert.match(styles, /\.sand-media-viewer__close:hover, \.sand-media-viewer__close:focus-visible/);
+  assert.match(styles, /\.sand-media-viewer__close \{ pointer-events: auto; \}/);
+  const closeRule = styles.match(/\.sand-media-viewer__close \{[^}]*\}/)?.[0] ?? "";
+  assert.doesNotMatch(closeRule, /#[0-9a-f]{3,8}|color\s*:|background\s*:|border\s*:|outline\s*:/i);
+  const primitiveStyles = readFileSync(new URL("../../ui/sand-kit-primitives.css", import.meta.url), "utf8");
+  assert.match(primitiveStyles, /\.sand-kit-icon-button:focus-visible[\s\S]{0,120}var\(--cursor-stroke-focused\)/);
   assert.match(styles, /\.sand-media-viewer__image \{[\s\S]{0,100}max-width: 92vw;[\s\S]{0,100}max-height: calc\(100vh - 145px\)/);
 });
 
