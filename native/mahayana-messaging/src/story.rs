@@ -168,12 +168,22 @@ impl Story {
         &mut self,
         actor_id: &ActorId,
         reaction: Option<String>,
+        reacted_at_ms: i64,
     ) -> Result<(), StoryError> {
-        let view = self
-            .views
-            .get_mut(actor_id)
-            .ok_or_else(|| StoryError::ViewerNotFound(actor_id.clone()))?;
-        view.reaction = reaction;
+        if !self.views.contains_key(actor_id) {
+            if reaction.is_none() {
+                return Ok(());
+            }
+            // A stealth view remains anonymous until the viewer performs an
+            // identity-bearing action. Upstream Story reactions are sent
+            // independently and owner-side StoryView entries carry user_id +
+            // reaction, so an explicit reaction establishes named attribution
+            // without rewriting the earlier anonymous view.
+            self.record_view(actor_id.clone(), reacted_at_ms)?;
+        }
+        if let Some(view) = self.views.get_mut(actor_id) {
+            view.reaction = reaction;
+        }
         Ok(())
     }
 }

@@ -289,6 +289,7 @@ pub enum Command {
         actor_id: ActorId,
         story_id: StoryId,
         reaction: Option<String>,
+        reacted_at_ms: i64,
     },
     UpdateCommunity {
         actor_id: ActorId,
@@ -2757,6 +2758,7 @@ impl MessagingEngine {
                 actor_id,
                 story_id,
                 reaction,
+                reacted_at_ms,
             } => {
                 let mut story = self
                     .state
@@ -2767,7 +2769,7 @@ impl MessagingEngine {
                 if !story.is_visible_to(&actor_id, false, false) {
                     return Err(EngineError::StoryPermissionDenied(story_id));
                 }
-                story.react(&actor_id, reaction)?;
+                story.react(&actor_id, reaction, reacted_at_ms)?;
                 Ok(vec![Event::StoryChanged { story }])
             }
             Command::UpdateCommunity {

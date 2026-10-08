@@ -2349,6 +2349,7 @@ impl<S: MessagingStateStore> MessagingService<S> {
                 actor_id: actor_id.clone(),
                 story_id,
                 reaction,
+                reacted_at_ms: now_ms,
             }],
             ClientCommand::UpdateCommunity { community } => vec![Command::UpdateCommunity {
                 actor_id: actor_id.clone(),

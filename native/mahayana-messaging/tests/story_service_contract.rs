@@ -246,6 +246,30 @@ fn story_stealth_requires_entitlement_fences_duplicates_persists_and_anonymizes_
         .unwrap();
     assert!(!canonical.views.contains_key(&ActorId::new("human:viewer")));
     assert!(canonical.anonymous_view_count >= 2);
+    let anonymous_count_before_reaction = canonical.anonymous_view_count;
+
+    service
+        .handle(
+            ClientEnvelope::new(
+                context("human:viewer", "reaction:stealth"),
+                ClientCommand::ReactStory {
+                    story_id: StoryId("story:contract:1".into()),
+                    reaction: Some("❤".into()),
+                },
+            ),
+            410,
+        )
+        .unwrap();
+    let canonical = service
+        .engine()
+        .state()
+        .stories
+        .get(&StoryId("story:contract:1".into()))
+        .unwrap();
+    let named_reaction = canonical.views.get(&ActorId::new("human:viewer")).unwrap();
+    assert_eq!(named_reaction.viewed_at_ms, 410);
+    assert_eq!(named_reaction.reaction.as_deref(), Some("❤"));
+    assert_eq!(canonical.anonymous_view_count, anonymous_count_before_reaction);
 
     let store = service.into_store();
     let mut restored = MessagingService::load(store).unwrap();
