@@ -178,7 +178,7 @@ test("Windows updater handoff waits for the exact parent identity before NSIS ap
   assert.match(script, /WaitForExit\(\$graceMs\)/);
   assert.match(script, /\$currentCreated -eq \$parentCreated/);
   assert.match(script, /Stop-Process -Id \$parentId -Force/);
-  assert.match(script, /C:\\\\Fabushi''s Updates\\\\fabushi setup\.exe/);
+  assert.match(script, /C:\\Fabushi''s Updates\\fabushi setup\.exe/);
   assert.match(script, /--force-run/);
 
   const spawned: Array<{ command: string; args: readonly string[] }> = [];
@@ -198,7 +198,7 @@ test("Windows updater handoff waits for the exact parent identity before NSIS ap
   ]);
   const handoff = spawned[0]?.args.at(-1) ?? "";
   assert.match(handoff, /\$parentId = 777/);
-  assert.match(handoff, /Start-Process -FilePath 'C:\\\\updates\\\\fabushi\.exe'/);
+  assert.match(handoff, /Start-Process -FilePath 'C:\\updates\\fabushi\.exe'/);
 });
 
 test("provider guards and unavailable 1Password sink fail closed", async () => {
