@@ -30,6 +30,13 @@ pub struct SearchQuery {
     pub limit: u32,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", rename_all_fields = "camelCase", tag = "kind")]
+pub enum RecentSearchSuggestion {
+    Actor { actor_id: ActorId },
+    Conversation { conversation_id: ConversationId },
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum RecipientContentKind {
