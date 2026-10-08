@@ -383,7 +383,7 @@
     },
     {
       "referencePath": "frontend/src/recovered/features/conversation/workspace/find-in-chat-controller.ts",
-      "expectedBaseParityMode": "reference-copy",
+      "expectedBaseParityMode": "unlocked-semantic",
       "parityMode": "typescript-port",
       "targetBlobSha": "1ee521109a7de57da49800a133ea169115e7bae2",
       "behavioralEvidence": [
