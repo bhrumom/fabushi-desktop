@@ -359,6 +359,23 @@
       "rationale": "Preserves the frozen Grok composer as the single shipping Composer while adapting only the source-neutral ComposeStash affordance. The existing canonical Composer renders the stash exchange action with the existing IconButton primitive, exposes Ctrl/Cmd+Shift+Y through the same keyboard owner, and disables exchange whenever the composer is disabled or voice capture/transcription is busy. ProductionRenderer supplies the scoped exchange callback and ComposerDraftStateStore owns the keyed transient stash/atomic swap, so this module does not become a second draft owner. Focused recovered-conversation infrastructure tests cover atomic exchange, prepared-attachment/rich-text/reply preservation, restore revalidation, child-scope cleanup, persistence exclusion, and lifecycle clearing. The same canonical Composer now exposes saved-draft actions through the existing SandMenu primitives: Send saved draft submits the captured stash through the existing ComposerSubmissionQueue and Coordinator/Host send route without displacing the live draft, while Remove saved draft clears only the matching transient slot and retains attachment files referenced by an already queued stash send."
     },
     {
+      "referencePath": "frontend/src/recovered/features/conversation/workspace/submission.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "c24953be3520d0d9982132b351626bc2245139bd",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/conversation/workspace/submission.ts",
+        "frontend/src/production/ProductionRenderer.tsx",
+        "frontend/src/recovered/features/conversation/workspace/draft-state.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Preserves the frozen Grok ComposerSubmission payload and queue semantics while adding one renderer-local draftOrigin discriminator needed by ComposeStash settlement. draftOrigin is consumed only by ProductionRenderer failure/success cleanup so a failed saved-draft send keeps the transient stash and an ordinary composer failure still recovers its draft; the existing submission execute callback destructures only the canonical transport fields, so draftOrigin is never forwarded to the Coordinator or Host payload and cannot become transport truth. This is a semantic TypeScript port rather than a frozen-reference edit, and the existing queue/focused composer tests plus exact-head architecture gate remain authoritative."
+    },
+    {
       "referencePath": "frontend/src/recovered/features/conversation/workspace/math.tsx",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
