@@ -32,7 +32,11 @@ export interface ComposerDraftPersistence {
 }
 
 export interface ComposerDraftEnvelope {
-  agents: Record<string, ComposerDraftSnapshot & { readonly draftId: string | null }>;
+  agents: Record<string, {
+    readonly draft: ComposerDraft | null;
+    readonly draftId: string | null;
+    readonly recovery: ComposerDraft | null;
+  }>;
 }
 
 export interface ComposerDraftStateStore {
