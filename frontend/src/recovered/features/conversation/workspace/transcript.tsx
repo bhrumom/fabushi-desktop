@@ -29,7 +29,7 @@ import { includeFindInChatDisclosure, type FindInChatDisclosureKind, type FindIn
 import type { SendMessageTextImage } from "../cards/transcript-card/send-message-text";
 import { ThreadAffordance } from "../cards/transcript-card/thread-affordance";
 import type { TranscriptThreadSummary } from "../cards/transcript-card/thread-summary-controller";
-import { captureHorizontalScroll, clampHorizontalScrollOffset, restoreHorizontalScrollOffset, type HorizontalScrollSnapshot } from "./horizontal-scroll-state";
+import { beginHorizontalScrollPointer, captureHorizontalScroll, clampHorizontalScrollOffset, restoreHorizontalScrollOffset, updateHorizontalScrollPointer, type HorizontalScrollPointerGesture, type HorizontalScrollSnapshot } from "./horizontal-scroll-state";
 import { reconcileAssistantContentProjection, type AssistantProjectionCandidate, type AssistantProjectionState } from "./assistant-content-projection";
 import { formatTranscriptToolCallName } from "./tool-call-label";
 import { copyTranscriptCodeText } from "./code-copy";
@@ -274,14 +274,25 @@ function transcriptSelectionBlocksActivation(): boolean {
 function RetainedHorizontalScrollRegion({ children, className, label, ownerId, revision }: { children: ReactNode; className: string; label: string; ownerId: string; revision: string }) {
   const regionRef = useRef<HTMLDivElement | null>(null);
   const snapshotRef = useRef<HorizontalScrollSnapshot | null>(null);
+  const pointerGestureRef = useRef<HorizontalScrollPointerGesture | null>(null);
+
+  const retirePointerGesture = (pointerId?: number) => {
+    const gesture = pointerGestureRef.current;
+    if (gesture == null || (pointerId != null && gesture.pointerId !== pointerId)) return;
+    const region = regionRef.current;
+    if (gesture.active && region?.hasPointerCapture(gesture.pointerId)) region.releasePointerCapture(gesture.pointerId);
+    pointerGestureRef.current = null;
+  };
 
   useLayoutEffect(() => {
     const region = regionRef.current;
     if (region == null) return undefined;
     region.scrollLeft = restoreHorizontalScrollOffset(snapshotRef.current, ownerId, region.scrollWidth, region.clientWidth);
+    retirePointerGesture();
     return () => {
       const current = regionRef.current;
       if (current != null) snapshotRef.current = captureHorizontalScroll(ownerId, current.scrollLeft);
+      retirePointerGesture();
     };
   }, [ownerId, revision]);
 
@@ -295,7 +306,32 @@ function RetainedHorizontalScrollRegion({ children, className, label, ownerId, r
     return () => observer.disconnect();
   }, [ownerId]);
 
-  return <div aria-label={label} className={className} ref={regionRef} role="region" tabIndex={0}>{children}</div>;
+  return <div
+    aria-label={label}
+    className={className}
+    onPointerCancel={(event) => retirePointerGesture(event.pointerId)}
+    onLostPointerCapture={(event) => retirePointerGesture(event.pointerId)}
+    onPointerDown={(event) => {
+      if (event.button !== 0 || event.pointerType === "mouse" || event.currentTarget.scrollWidth <= event.currentTarget.clientWidth) return;
+      pointerGestureRef.current = beginHorizontalScrollPointer(event.pointerId, event.clientX, event.clientY);
+    }}
+    onPointerMove={(event) => {
+      const update = updateHorizontalScrollPointer(pointerGestureRef.current, event.pointerId, event.clientX, event.clientY);
+      pointerGestureRef.current = update.gesture;
+      if (update.decision !== "horizontal" || update.gesture == null) return;
+      if (!event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.setPointerCapture(event.pointerId);
+      event.currentTarget.scrollLeft = clampHorizontalScrollOffset(
+        event.currentTarget.scrollLeft + update.deltaX,
+        event.currentTarget.scrollWidth,
+        event.currentTarget.clientWidth,
+      );
+      event.preventDefault();
+    }}
+    onPointerUp={(event) => retirePointerGesture(event.pointerId)}
+    ref={regionRef}
+    role="region"
+    tabIndex={0}
+  >{children}</div>;
 }
 
 function renderAssistantInlineText(text: string, openExternal?: TranscriptExternalLinkOpener): ReactNode[] {

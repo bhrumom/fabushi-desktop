@@ -148,6 +148,8 @@ html[data-platform="darwin"] .sand-agents-sidebar__new-actions {
 .sand-code-figure { position: relative; margin: 10px 0; }
 .sand-code-scroll { max-width: 100%; overflow-x: auto; }
 .fabushi-rich-content-scroll-region { max-width: 100%; overflow-x: auto; }
+.sand-code-scroll,
+.fabushi-rich-content-scroll-region { touch-action: pan-y; }
 .sand-code-scroll:focus-visible,
 .fabushi-rich-content-scroll-region:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
 .sand-code-block { margin: 0; padding: 11px 12px; color: #d9ded4; background: #1a1d19; border: 1px solid #343932; border-radius: 8px; font: 11px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace; }
