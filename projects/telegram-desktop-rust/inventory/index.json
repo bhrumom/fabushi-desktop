@@ -43,7 +43,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live 22b352e authority is exact for the recorded deterministic prefix. 212 full-read entries are now credited; unread_minimum is 15,908, unknown remains 16,033, omitted remains 0. Orders 196-212 were decomposed by actual shipping consumers rather than filename inference.",
+  "note": "Live 22b352e authority is exact for the recorded deterministic prefix. 224 full-read entries are now credited; unread_minimum is 15,896, unknown remains 16,033, omitted remains 0. Orders 213-224 were decomposed from exact resource blobs, QRC packaging, real shipping consumers, and explicit asset-rights/provenance review rather than filename inference.",
   "rebaseline": {
     "from_commit": "6ec5014a92c4580841a043c440d65e8fc605ff78",
     "to_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db",
