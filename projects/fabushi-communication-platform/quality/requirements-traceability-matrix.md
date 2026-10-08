@@ -285,3 +285,14 @@ This row remains `IMPLEMENTED`, not `VERIFIED`, because shipping recipient-picke
 - Current two-party call support is not accepted as evidence for group-call completion.
 - Dossier: `projects/telegram-desktop-rust/dossiers/resource-calls-369-430-complete-read.md`.
 
+### TDRP Revision 9 source-read requirements 431-500
+
+| requirement_id | risk | invariant | evidence | production status |
+| --- | --- | --- | --- | --- |
+| TDRP-R9-CALL-GROUP-ASSETS-431-497 | critical | all participant/media/group-call UI derives from the single canonical Human call domain | run 37849072863 / job 113557467926 / artifact 11580952146 + dossier | PARTIAL; canonical server remains 1:1, group responsibilities open |
+| TDRP-R9-CALL-DIALOGS-USER-432-434 | medium | do not infer product responsibility from an unproven asset filename | same artifact + negative named-consumer search | SOURCE READ; CONSUMER REACHABILITY OPEN |
+| TDRP-R9-PAID-CROWN-435 | high | visual crown never owns entitlement/payment truth | same artifact + premium/paid-reaction consumer mapping | MAPPED; production evidence open |
+| TDRP-R9-AI-COMPOSE-ASSETS-498-500 | high | AI capability remains with canonical Composer/AI runtime owners | same artifact + chat/settings/editor consumer mapping | MAPPED; visual/a11y evidence open |
+
+Dossier: `projects/telegram-desktop-rust/dossiers/resource-call-ai-icons-431-500-complete-read.md`.
+
