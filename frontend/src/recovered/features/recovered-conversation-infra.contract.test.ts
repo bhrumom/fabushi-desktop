@@ -678,7 +678,8 @@ test("CONTRACT-TDRP-IV-VIEW-POINTER-ACTIVATION-FENCE-001 content replacement inv
 test("CONTRACT-TDRP-MEDIAVIEW-WINDOW-CHROME-REPLACEMENT-001 media preview replaces detached OS window chrome with one accessible in-app dialog", () => {
   const source = readFileSync(new URL("./conversation/workspace/media-viewer.tsx", import.meta.url), "utf8");
   const styles = readFileSync(new URL("./conversation/workspace/view.css", import.meta.url), "utf8");
-  assert.match(source, /aria-modal="true"[\s\S]{0,260}role="dialog"/);
+  assert.match(source, /aria-modal="true"/);
+  assert.match(source, /ref=\{viewerRef\} role="dialog"/);
   assert.match(source, /aria-label="Close media preview"[\s\S]{0,180}onClick=\{onClose\}/);
   assert.match(source, /event\.key === "Escape"[\s\S]{0,160}onClose\(\)/);
   assert.match(source, /const previousOverflow = document\.body\.style\.overflow;[\s\S]{0,140}document\.body\.style\.overflow = "hidden"/);
