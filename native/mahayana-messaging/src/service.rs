@@ -13,7 +13,7 @@ use crate::message::{
     PresenceSendTrigger,
 };
 use crate::payment::{Entitlement, Money};
-use crate::story::{StoryStealthState, STORY_STEALTH_PRODUCT_ID};
+use crate::story::STORY_STEALTH_PRODUCT_ID;
 use crate::protocol::{
     ClientCommand, ClientEnvelope, ServerEnvelope, ServerEvent, FABUSHI_MESSAGING_PROTOCOL_VERSION,
 };
@@ -2903,7 +2903,9 @@ impl<S: MessagingStateStore> MessagingService<S> {
                     audience.insert(session.actor_id.clone());
                 }
             }
-            ServerEvent::StoriesSnapshot { .. }
+            ServerEvent::StoryStealthStatus { .. }
+            | ServerEvent::StoryStealthChanged { .. }
+            | ServerEvent::StoriesSnapshot { .. }
             | ServerEvent::SyncBatch { .. }
             | ServerEvent::SearchResults { .. }
             | ServerEvent::FolderChanged { .. }
