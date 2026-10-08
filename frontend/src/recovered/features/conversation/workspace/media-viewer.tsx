@@ -96,6 +96,7 @@ function MediaViewer({ attachments, startIndex, resolveMedia, onClose, restoreFo
     setLoading(true);
     setFailed(false);
     setTransform({ scale: MIN_ZOOM, x: 0, y: 0 });
+    pointerRef.current = { id: null, startX: 0, startY: 0, originX: 0, originY: 0, moved: false };
     void resolveMedia(current.path).then((next) => {
       if (!active) return;
       if (next?.kind === "image" || next?.kind === "video") {
