@@ -213,6 +213,9 @@ function MediaViewer({ attachments, startIndex, resolveMedia, onClose, restoreFo
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
     pointerRef.current.id = null;
   };
+  const onLostPointerCapture = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (pointerRef.current.id === event.pointerId) pointerRef.current.id = null;
+  };
 
   if (current == null || typeof document === "undefined") return null;
   const source = mediaSource(media);
@@ -225,7 +228,7 @@ function MediaViewer({ attachments, startIndex, resolveMedia, onClose, restoreFo
         : <img alt={caption.length > 0 ? caption : "Media preview"} className="sand-media-viewer__image" draggable={false} onDoubleClick={fit} onError={() => setFailed(true)} src={source} style={{ transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})` }} />;
 
   return createPortal(
-    <div aria-label={title} aria-modal="true" className="sand-media-viewer" onClick={(event) => { if (event.target === event.currentTarget) onClose(); }} onPointerCancel={onPointerUp} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} ref={viewerRef} role="dialog">
+    <div aria-label={title} aria-modal="true" className="sand-media-viewer" onClick={(event) => { if (event.target === event.currentTarget) onClose(); }} onLostPointerCapture={onLostPointerCapture} onPointerCancel={onPointerUp} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} ref={viewerRef} role="dialog">
       <div className="sand-media-viewer__top-bar"><button aria-label="Close media preview" className="sand-media-viewer__close" onClick={onClose} type="button">×</button></div>
       <div className="sand-media-viewer__column">
         <div className="sand-media-viewer__media-cell" onDoubleClick={fit} onWheel={onWheel}>
