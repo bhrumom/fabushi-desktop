@@ -487,7 +487,7 @@ test("CONTRACT-TDRP-IV-PREPARED-LINK-EXTERNAL-COPY-001 transcript external links
 
   const transcript = readFileSync(new URL("./conversation/workspace/transcript.tsx", import.meta.url), "utf8");
   const actions = readFileSync(new URL("./conversation/cards/transcript-card/message-actions.tsx", import.meta.url), "utf8");
-  assert.match(transcript, /projectTranscriptExternalLink\(mark\.attrs\.href\)/);
+  assert.match(transcript, /projectTranscriptExternalLink\(mark\.attrs\.href, node\.text \?\? undefined\)/);
   assert.match(transcript, /data-transcript-copy-label=\{external\.copyLabel\}/);
   assert.match(transcript, /data-transcript-copy-text=\{external\.copyText\}/);
   assert.match(transcript, /title=\{external\.tooltip \?\? undefined\}/);

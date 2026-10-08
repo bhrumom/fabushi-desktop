@@ -4,8 +4,8 @@ export interface TranscriptCodeClipboard {
 
 /**
  * Capability-minimal code-copy boundary. Only the immutable code payload and
- * the clipboard writer cross this helper; session/window/controller context
- * is intentionally absent.
+ * the clipboard writer cross this helper; no ambient privileged state is
+ * accepted.
  */
 export async function copyTranscriptCodeText(
   code: string,
