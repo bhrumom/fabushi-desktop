@@ -16,6 +16,7 @@ use crate::miniapp::{
     MiniAppGrant, MiniAppManifest, MiniAppRequest, MiniAppResponse, MiniAppSession,
 };
 use crate::payment::{CustomerInfo, Invoice, PaymentOrder};
+use crate::story::StoryStealthState;
 use crate::search::{RecipientSearchRequirements, SearchQuery, SearchResult};
 use crate::story::{Story, StoryId};
 use crate::wallet::{LedgerEntry, WalletAccount};
@@ -265,6 +266,10 @@ pub enum ClientCommand {
         request_id: String,
     },
     WalletStatus,
+    StoryStealthStatus,
+    ActivateStoryStealth {
+        request_id: String,
+    },
     ListStories {
         limit: u32,
     },
@@ -483,6 +488,13 @@ pub enum ServerEvent {
     WalletStatus {
         account: Option<WalletAccount>,
         recent_entries: Vec<LedgerEntry>,
+    },
+    StoryStealthStatus {
+        state: StoryStealthState,
+        entitled: bool,
+    },
+    StoryStealthChanged {
+        state: StoryStealthState,
     },
     StoriesSnapshot {
         stories: Vec<Story>,

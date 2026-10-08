@@ -17,8 +17,11 @@ use crate::miniapp::{
     MiniAppGrant, MiniAppManifest, MiniAppPermission, MiniAppRequest, MiniAppResponse,
     MiniAppSession,
 };
-use crate::payment::{CustomerInfo, Invoice, Money, PaymentOrder, PaymentStatus};
-use crate::story::{Story, StoryError, StoryId};
+use crate::payment::{CustomerInfo, Entitlement, Invoice, Money, PaymentOrder, PaymentStatus};
+use crate::story::{
+    Story, StoryError, StoryId, StoryStealthState, STORY_STEALTH_ACTIVE_MS,
+    STORY_STEALTH_COOLDOWN_MS, STORY_STEALTH_PRODUCT_ID, STORY_STEALTH_RETROACTIVE_MS,
+};
 use crate::wallet::{LedgerEntry, WalletAccountId, WalletError, WalletLedger};
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
@@ -260,6 +263,14 @@ pub enum Command {
         amount: Money,
         reference: Option<String>,
         settled_at_ms: i64,
+    },
+    ReconcileEntitlement {
+        entitlement: Entitlement,
+    },
+    ActivateStoryStealth {
+        actor_id: ActorId,
+        request_id: String,
+        activated_at_ms: i64,
     },
     PublishStory {
         actor_id: ActorId,
@@ -559,6 +570,13 @@ pub enum Event {
         wallet: WalletLedger,
         entry: LedgerEntry,
     },
+    EntitlementReconciled {
+        entitlement: Entitlement,
+    },
+    StoryStealthChanged {
+        actor_id: ActorId,
+        state: StoryStealthState,
+    },
     StoryChanged {
         story: Story,
     },
@@ -616,6 +634,8 @@ pub struct MessagingState {
     pub invoices: BTreeMap<String, Invoice>,
     pub orders: BTreeMap<String, PaymentOrder>,
     pub wallet: WalletLedger,
+    pub entitlements: BTreeMap<String, Entitlement>,
+    pub story_stealth: BTreeMap<ActorId, StoryStealthState>,
     pub stories: BTreeMap<StoryId, Story>,
     pub communities: BTreeMap<ConversationId, CommunityState>,
     pub bots: BotRegistry,
@@ -712,6 +732,12 @@ pub enum EngineError {
     StoryNotFound(StoryId),
     #[error("only the story owner may modify story {0:?}")]
     StoryPermissionDenied(StoryId),
+    #[error("Story stealth requires an active entitlement")]
+    StoryStealthEntitlementRequired,
+    #[error("Story stealth activation request is invalid")]
+    InvalidStoryStealthRequest,
+    #[error("Story stealth cooldown is active until {retry_at_ms}")]
+    StoryStealthCooldown { retry_at_ms: i64 },
     #[error(transparent)]
     Story(#[from] StoryError),
     #[error("community {0:?} does not exist")]
@@ -2609,6 +2635,75 @@ impl MessagingEngine {
                     wallet.credit(request_id, &account_id, amount, reference, settled_at_ms)?;
                 Ok(vec![Event::WalletChanged { wallet, entry }])
             }
+            Command::ReconcileEntitlement { entitlement } => {
+                self.require_actor(&entitlement.owner_id)?;
+                if entitlement.id.trim().is_empty()
+                    || entitlement.product_id.trim().is_empty()
+                    || entitlement.starts_at_ms < 0
+                    || entitlement.expires_at_ms.is_some_and(|value| value <= entitlement.starts_at_ms)
+                {
+                    return Err(EngineError::InvalidStoryStealthRequest);
+                }
+                Ok(vec![Event::EntitlementReconciled { entitlement }])
+            }
+            Command::ActivateStoryStealth {
+                actor_id,
+                request_id,
+                activated_at_ms,
+            } => {
+                self.require_actor(&actor_id)?;
+                if request_id.trim().is_empty() {
+                    return Err(EngineError::InvalidStoryStealthRequest);
+                }
+                let current = self
+                    .state
+                    .story_stealth
+                    .get(&actor_id)
+                    .cloned()
+                    .unwrap_or_default();
+                if current.last_activation_request_id.as_deref() == Some(request_id.as_str())
+                    || current.enabled_at(activated_at_ms)
+                {
+                    return Ok(vec![Event::StoryStealthChanged {
+                        actor_id,
+                        state: current,
+                    }]);
+                }
+                if current.cooling_down_at(activated_at_ms) {
+                    return Err(EngineError::StoryStealthCooldown {
+                        retry_at_ms: current.cooldown_till_ms,
+                    });
+                }
+                let entitled = self.state.entitlements.values().any(|entitlement| {
+                    entitlement.is_active_for(
+                        &actor_id,
+                        STORY_STEALTH_PRODUCT_ID,
+                        activated_at_ms,
+                    )
+                });
+                if !entitled {
+                    return Err(EngineError::StoryStealthEntitlementRequired);
+                }
+                let state = StoryStealthState {
+                    enabled_till_ms: activated_at_ms.saturating_add(STORY_STEALTH_ACTIVE_MS),
+                    cooldown_till_ms: activated_at_ms.saturating_add(STORY_STEALTH_COOLDOWN_MS),
+                    last_activation_request_id: Some(request_id),
+                };
+                let since_ms = activated_at_ms.saturating_sub(STORY_STEALTH_RETROACTIVE_MS);
+                let mut events = self
+                    .state
+                    .stories
+                    .values()
+                    .filter_map(|story| {
+                        let mut story = story.clone();
+                        story
+                            .anonymize_recent_view(&actor_id, since_ms)
+                            .then_some(Event::StoryChanged { story })
+                    })
+                    .collect::<Vec<_>>();
+                events.push(Event::StoryStealthChanged { actor_id, state });
+                Ok(events)
+            }
             Command::PublishStory { actor_id, story } => {
                 self.require_actor(&actor_id)?;
                 if story.owner_id != actor_id
@@ -2646,7 +2741,16 @@ impl MessagingEngine {
                 if !story.is_visible_to(&actor_id, false, false) {
                     return Err(EngineError::StoryPermissionDenied(story_id));
                 }
-                story.record_view(actor_id, viewed_at_ms)?;
+                if self
+                    .state
+                    .story_stealth
+                    .get(&actor_id)
+                    .is_some_and(|state| state.enabled_at(viewed_at_ms))
+                {
+                    story.record_anonymous_view(viewed_at_ms)?;
+                } else {
+                    story.record_view(actor_id, viewed_at_ms)?;
+                }
                 Ok(vec![Event::StoryChanged { story }])
             }
             Command::ReactStory {
@@ -4119,6 +4223,12 @@ impl MessagingEngine {
             }
             Event::WalletChanged { wallet, .. } => {
                 self.state.wallet = wallet;
+            }
+            Event::EntitlementReconciled { entitlement } => {
+                self.state.entitlements.insert(entitlement.id.clone(), entitlement);
+            }
+            Event::StoryStealthChanged { actor_id, state } => {
+                self.state.story_stealth.insert(actor_id, state);
             }
             Event::StoryChanged { story } => {
                 self.state.stories.insert(story.id.clone(), story);

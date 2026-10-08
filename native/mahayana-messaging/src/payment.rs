@@ -155,3 +155,13 @@ pub struct Entitlement {
     pub expires_at_ms: Option<i64>,
     pub revoked_at_ms: Option<i64>,
 }
+
+impl Entitlement {
+    pub fn is_active_for(&self, owner_id: &ActorId, product_id: &str, now_ms: i64) -> bool {
+        &self.owner_id == owner_id
+            && self.product_id == product_id
+            && self.starts_at_ms <= now_ms
+            && self.expires_at_ms.is_none_or(|expires_at_ms| expires_at_ms > now_ms)
+            && self.revoked_at_ms.is_none_or(|revoked_at_ms| revoked_at_ms > now_ms)
+    }
+}

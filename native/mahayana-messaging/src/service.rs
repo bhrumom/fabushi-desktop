@@ -12,7 +12,8 @@ use crate::message::{
     ClientMessageId, DeliveryState, Message, MessageContent, MessageId, PendingPresenceSend,
     PresenceSendTrigger,
 };
-use crate::payment::Money;
+use crate::payment::{Entitlement, Money};
+use crate::story::{StoryStealthState, STORY_STEALTH_PRODUCT_ID};
 use crate::protocol::{
     ClientCommand, ClientEnvelope, ServerEnvelope, ServerEvent, FABUSHI_MESSAGING_PROTOCOL_VERSION,
 };
@@ -163,6 +164,18 @@ impl<S: MessagingStateStore> MessagingService<S> {
         self.persist(server_time_ms)
     }
 
+    pub fn reconcile_entitlement(
+        &mut self,
+        entitlement: Entitlement,
+        server_time_ms: i64,
+    ) -> Result<(), MessagingServiceError> {
+        let events = self.engine.execute(Command::ReconcileEntitlement { entitlement })?;
+        self.cursor = self
+            .cursor
+            .saturating_add(u64::try_from(events.len()).unwrap_or(u64::MAX));
+        self.persist(server_time_ms)
+    }
+
     pub fn into_store(self) -> S {
         self.store
     }
@@ -224,6 +237,9 @@ impl<S: MessagingStateStore> MessagingService<S> {
             }
             ClientCommand::WalletStatus => {
                 Ok(vec![self.wallet_status_envelope(&actor_id, server_time_ms)])
+            }
+            ClientCommand::StoryStealthStatus => {
+                Ok(vec![self.story_stealth_status_envelope(&actor_id, server_time_ms)])
             }
             ClientCommand::ListStories { limit } => {
                 Ok(vec![self.stories_snapshot_envelope(&actor_id, limit, server_time_ms)])
@@ -1357,6 +1373,29 @@ impl<S: MessagingStateStore> MessagingService<S> {
         }
     }
 
+    fn story_stealth_status_envelope(
+        &self,
+        actor_id: &ActorId,
+        server_time_ms: i64,
+    ) -> ServerEnvelope {
+        let state = self
+            .engine
+            .state()
+            .story_stealth
+            .get(actor_id)
+            .cloned()
+            .unwrap_or_default();
+        let entitled = self.engine.state().entitlements.values().any(|entitlement| {
+            entitlement.is_active_for(actor_id, STORY_STEALTH_PRODUCT_ID, server_time_ms)
+        });
+        ServerEnvelope {
+            protocol_version: FABUSHI_MESSAGING_PROTOCOL_VERSION,
+            cursor: Some(self.cursor.to_string()),
+            server_time_ms,
+            event: ServerEvent::StoryStealthStatus { state, entitled },
+        }
+    }
+
     fn stories_snapshot_envelope(
         &self,
         actor_id: &ActorId,
@@ -2283,7 +2322,16 @@ impl<S: MessagingStateStore> MessagingService<S> {
                 request_id,
                 refunded_at_ms: now_ms,
             }],
-            ClientCommand::WalletStatus | ClientCommand::ListStories { .. } => Vec::new(),
+            ClientCommand::WalletStatus
+            | ClientCommand::StoryStealthStatus
+            | ClientCommand::ListStories { .. } => Vec::new(),
+            ClientCommand::ActivateStoryStealth { request_id } => {
+                vec![Command::ActivateStoryStealth {
+                    actor_id: actor_id.clone(),
+                    request_id,
+                    activated_at_ms: now_ms,
+                }]
+            }
             ClientCommand::PublishStory { story } => vec![Command::PublishStory {
                 actor_id: actor_id.clone(),
                 story,
@@ -2622,6 +2670,13 @@ impl<S: MessagingStateStore> MessagingService<S> {
             Event::InvoiceCreated { invoice } => ServerEvent::InvoiceChanged { invoice },
             Event::OrderUpserted { order } => ServerEvent::OrderChanged { order },
             Event::WalletChanged { .. } => return None,
+            Event::EntitlementReconciled { .. } => return None,
+            Event::StoryStealthChanged { actor_id: changed_actor_id, state } => {
+                if &changed_actor_id != actor_id {
+                    return None;
+                }
+                ServerEvent::StoryStealthChanged { state }
+            }
             Event::StoryChanged { story } => ServerEvent::StoryChanged { story },
             Event::StoryDeleted { story_id } => ServerEvent::StoryDeleted { story_id },
             Event::CommunityChanged { community } => ServerEvent::CommunityChanged {

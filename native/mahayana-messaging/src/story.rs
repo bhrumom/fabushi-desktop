@@ -25,6 +25,29 @@ pub struct StoryPrivacy {
     pub excluded_actor_ids: BTreeSet<ActorId>,
 }
 
+pub const STORY_STEALTH_PRODUCT_ID: &str = "story-stealth";
+pub const STORY_STEALTH_ACTIVE_MS: i64 = 25 * 60 * 1000;
+pub const STORY_STEALTH_COOLDOWN_MS: i64 = 3 * 60 * 60 * 1000;
+pub const STORY_STEALTH_RETROACTIVE_MS: i64 = 5 * 60 * 1000;
+
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct StoryStealthState {
+    pub enabled_till_ms: i64,
+    pub cooldown_till_ms: i64,
+    pub last_activation_request_id: Option<String>,
+}
+
+impl StoryStealthState {
+    pub fn enabled_at(&self, now_ms: i64) -> bool {
+        self.enabled_till_ms > now_ms
+    }
+
+    pub fn cooling_down_at(&self, now_ms: i64) -> bool {
+        self.cooldown_till_ms > now_ms
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StoryView {
@@ -77,6 +100,8 @@ pub struct Story {
     pub protected_content: bool,
     pub allow_replies: bool,
     pub views: BTreeMap<ActorId, StoryView>,
+    #[serde(default)]
+    pub anonymous_view_count: u64,
 }
 
 impl Story {
@@ -117,6 +142,26 @@ impl Story {
                 forwarded: false,
             });
         Ok(())
+    }
+
+    pub fn record_anonymous_view(&mut self, viewed_at_ms: i64) -> Result<(), StoryError> {
+        if viewed_at_ms > self.expires_at_ms && !self.pinned_to_profile {
+            return Err(StoryError::Expired(self.id.clone()));
+        }
+        self.anonymous_view_count = self.anonymous_view_count.saturating_add(1);
+        Ok(())
+    }
+
+    pub fn anonymize_recent_view(&mut self, actor_id: &ActorId, since_ms: i64) -> bool {
+        let should_remove = self
+            .views
+            .get(actor_id)
+            .is_some_and(|view| view.viewed_at_ms >= since_ms);
+        if should_remove {
+            self.views.remove(actor_id);
+            self.anonymous_view_count = self.anonymous_view_count.saturating_add(1);
+        }
+        should_remove
     }
 
     pub fn react(
