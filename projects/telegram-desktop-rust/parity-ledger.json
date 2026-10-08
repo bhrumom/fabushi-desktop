@@ -5056,8 +5056,8 @@
       "implementation_status": "mapped",
       "coverage_disposition": "fabushi-ui-replacement",
       "blockers": [
-        "Current branch implements canonical HTTP(S) action routing, typed copy projection, selection-vs-link activation fencing, media replacement pointer retirement, bounded media recovery, deterministic Control-wheel zoom, touch-like horizontal pointer balancing, and browser wheel-burst direction locking with delta-unit normalization; exact-head GitHub Actions evidence remains required.",
-        "Mouse scrollbar/content-drag packaged temporal evidence, broader touch/zoom/reflow continuity, hidden-window timer quiescence, packaged a11y/performance evidence and independent acceptance remain open."
+        "Current branch implements canonical HTTP(S) action routing, typed copy projection, selection-vs-link activation fencing, media replacement pointer retirement, bounded media recovery, deterministic Control-wheel zoom, touch-like horizontal pointer balancing, browser wheel-burst direction locking with delta-unit normalization, and an explicit static-timestamp replacement proving no formatted-date background timer is applicable; exact-head GitHub Actions evidence remains required.",
+        "Mouse scrollbar/content-drag packaged temporal evidence, broader touch/zoom/reflow continuity, packaged a11y/performance evidence and independent acceptance remain open."
       ],
       "production_entrypoints": [
         "ProductShell -> ConversationWorkspace -> ConversationTranscript -> existing FindInChat/URL/Resource/action owners"
@@ -5236,7 +5236,7 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior mapped from accepted telegramdesktop/tdesktop d346 exact blob; Qt widget/painter code is not retained and legal/source provenance remains recorded.",
       "reviewer": null,
-      "notes": "Read-complete and mapped-open. Existing canonical ConversationTranscript/Resource/URL owners now also adapt the accepted Qt wheel phase lock to Web wheel bursts: first-axis wins until an idle settlement window, line/page units normalize before scroll projection, vertical remains native, horizontal alone is consumed, and Control-wheel retires the scroll lock for the zoom owner. This does not claim mouse-scrollbar packaged behavior, hidden timer quiescence, broader media gestures, or independent acceptance."
+      "notes": "Read-complete and mapped-open. The accepted formatted-date visibility scheduler is not copied because the current canonical transcript has no time-relative formatted-date work: ordinary message timestamps are absolute local strings, timeline events render fixed hour/minute text, and retired permission leaves only retain timestamp metadata. CONTRACT-TDRP-IV-VIEW-STATIC-DATE-WORK-001 guards those owners against a repeating interval/RelativeTimeFormat; any future relative-time UI must add a visibility-bounded lifecycle. Other packaged temporal/a11y evidence remains open."
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
