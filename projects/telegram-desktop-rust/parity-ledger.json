@@ -2642,11 +2642,9 @@
       "platform_delta": "Qt widget API becomes typed ProductShell Story capability props/actions.",
       "existing_owner": "Canonical Story owner + ProductShell capability projection",
       "fabushi_target_paths": [
-        "native/mahayana-messaging/src/story.rs",
-        "frontend/src/production/ProductionRenderer.tsx"
+        "native/mahayana-messaging/src/story.rs"
       ],
       "fabushi_target_symbols": [
-        "StoryId",
         "StoryProgressState"
       ],
       "command_event_contracts": [
@@ -2656,7 +2654,16 @@
       "production_entrypoints": [
         "ProductShell -> typed Story capability surface -> canonical Story/Resource owner"
       ],
-      "notes": "Read-complete and mapped only; no shipping Story viewer/progress surface is claimed implemented. Partial production implementation now exists in the canonical Rust Story owner: StoryProgressState covers non-persistent index/total normalization, per-show progress reset, and bounded active playback progress. Shipping ProductShell viewer/bridge composition and exact-head Actions evidence remain open, so this row stays mapped."
+      "notes": "Read-complete and mapped only; no shipping Story viewer/progress surface is claimed implemented. Partial production implementation now exists in the canonical Rust Story owner: StoryProgressState covers non-persistent index/total normalization, per-show progress reset, and bounded active playback progress. Shipping ProductShell viewer/bridge composition and exact-head Actions evidence remain open, so this row stays mapped.",
+      "fabushi_target_bindings": [
+        {
+          "path": "native/mahayana-messaging/src/story.rs",
+          "symbols": [
+            "StoryProgressState"
+          ],
+          "responsibility_scope": "typed non-persistent Story progress capability contract"
+        }
+      ]
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
@@ -2875,11 +2882,9 @@
       "platform_delta": "Responsive segment layout belongs to Fabushi capability component.",
       "existing_owner": "Canonical Story owner + Resource/media playback + ProductShell projection",
       "fabushi_target_paths": [
-        "native/mahayana-messaging/src/story.rs",
-        "frontend/src/production/ProductionRenderer.tsx"
+        "native/mahayana-messaging/src/story.rs"
       ],
       "fabushi_target_symbols": [
-        "StoryView",
         "StoryProgressState"
       ],
       "command_event_contracts": [
@@ -2890,7 +2895,16 @@
       "production_entrypoints": [
         "ProductShell -> Story capability surface -> Resource playback state"
       ],
-      "notes": "Read-complete and mapped only; responsive/progress behavior needs production code and exact-head tests. Partial production implementation now exists in the canonical Rust Story owner: StoryProgressState covers non-persistent index/total normalization, per-show progress reset, and bounded active playback progress. Shipping ProductShell viewer/bridge composition and exact-head Actions evidence remain open, so this row stays mapped."
+      "notes": "Read-complete and mapped only; responsive/progress behavior needs production code and exact-head tests. Partial production implementation now exists in the canonical Rust Story owner: StoryProgressState covers non-persistent index/total normalization, per-show progress reset, and bounded active playback progress. Shipping ProductShell viewer/bridge composition and exact-head Actions evidence remain open, so this row stays mapped.",
+      "fabushi_target_bindings": [
+        {
+          "path": "native/mahayana-messaging/src/story.rs",
+          "symbols": [
+            "StoryProgressState"
+          ],
+          "responsibility_scope": "bounded index/total normalization and per-show playback reset state machine"
+        }
+      ]
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
