@@ -10915,35 +10915,18 @@
       "notes": "Full accepted header read. Mapped/open only; no implementation or verification credit.",
       "fabushi_target_bindings": [
         {
-          "path": "native/mahayana-messaging/src/notification.rs",
+          "path": "native/mahayana-messaging/src/conversation.rs",
           "symbols": [
-            "NotificationPolicy",
-            "NotificationCandidate",
-            "NotificationDecision",
-            "ConversationNotificationRule"
+            "ConversationChildRuntimeState"
           ],
-          "responsibility_scope": "canonical source-neutral notification policy, privacy, mute, quiet-hours, and delivery decision contract"
+          "responsibility_scope": "canonical typed child identity, destination-scoped draft/forward staging state, and exact child lifecycle"
         },
         {
-          "path": "source/electron-main/main-production-services.ts",
+          "path": "native/mahayana-messaging/src/engine.rs",
           "symbols": [
-            "ProductionNotificationsService"
+            "MessagingEngine"
           ],
-          "responsibility_scope": "single shipping desktop notification service boundary and account-reset lifecycle"
-        },
-        {
-          "path": "source/electron-main/notifications/os-notification-manager.ts",
-          "symbols": [
-            "SandOsNotificationManager"
-          ],
-          "responsibility_scope": "native OS notification instance lifecycle and activation/focus projection"
-        },
-        {
-          "path": "source/electron-main/production-binding-providers.ts",
-          "symbols": [
-            "createProductionNotificationsBinding"
-          ],
-          "responsibility_scope": "production composition binding for the one native notification service"
+          "responsibility_scope": "canonical message/child lifecycle, authorization, source-message removal convergence, and state mutation boundary"
         }
       ]
     },
@@ -11180,35 +11163,18 @@
       "notes": "Full accepted implementation read. Mapped/open only; no implementation or verification credit.",
       "fabushi_target_bindings": [
         {
-          "path": "native/mahayana-messaging/src/notification.rs",
+          "path": "native/mahayana-messaging/src/conversation.rs",
           "symbols": [
-            "NotificationPolicy",
-            "NotificationCandidate",
-            "NotificationDecision",
-            "ConversationNotificationRule"
+            "ConversationChildRuntimeState"
           ],
-          "responsibility_scope": "canonical source-neutral notification policy, privacy, mute, quiet-hours, and delivery decision contract"
+          "responsibility_scope": "canonical typed child identity, destination-scoped draft/forward staging state, and exact child lifecycle"
         },
         {
-          "path": "source/electron-main/main-production-services.ts",
+          "path": "native/mahayana-messaging/src/engine.rs",
           "symbols": [
-            "ProductionNotificationsService"
+            "MessagingEngine"
           ],
-          "responsibility_scope": "single shipping desktop notification service boundary and account-reset lifecycle"
-        },
-        {
-          "path": "source/electron-main/notifications/os-notification-manager.ts",
-          "symbols": [
-            "SandOsNotificationManager"
-          ],
-          "responsibility_scope": "native OS notification instance lifecycle and activation/focus projection"
-        },
-        {
-          "path": "source/electron-main/production-binding-providers.ts",
-          "symbols": [
-            "createProductionNotificationsBinding"
-          ],
-          "responsibility_scope": "production composition binding for the one native notification service"
+          "responsibility_scope": "canonical message/child lifecycle, authorization, source-message removal convergence, and state mutation boundary"
         }
       ]
     }
