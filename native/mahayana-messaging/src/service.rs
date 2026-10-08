@@ -17,8 +17,8 @@ use crate::protocol::{
     ClientCommand, ClientEnvelope, ServerEnvelope, ServerEvent, FABUSHI_MESSAGING_PROTOCOL_VERSION,
 };
 use crate::search::{
-    recipient_search_authorized, RecipientAuthorizationInput, RecipientSearchRequirements,
-    SearchIndex, SearchQuery, SearchResultKind,
+    recipient_search_authorized, RecentSearchSuggestion, RecipientAuthorizationInput,
+    RecipientSearchRequirements, SearchIndex, SearchQuery, SearchResultKind,
 };
 use crate::settlement::{SettlementError, SettlementVerifier, SignedSettlement};
 use crate::store::{JournalEntry, MessagingSnapshot, MessagingStateStore, StoreError};
@@ -241,6 +241,35 @@ impl<S: MessagingStateStore> MessagingService<S> {
                 requirements,
                 server_time_ms,
             )]),
+            ClientCommand::ListRecentSearchSuggestions => Ok(vec![
+                self.recent_search_suggestions_envelope(&actor_id, server_time_ms),
+            ]),
+            ClientCommand::BumpRecentSearchSuggestion { suggestion } => {
+                self.engine
+                    .bump_recent_search_suggestion(&actor_id, suggestion)?;
+                self.persist(server_time_ms)?;
+                Ok(vec![self.recent_search_suggestions_envelope(
+                    &actor_id,
+                    server_time_ms,
+                )])
+            }
+            ClientCommand::RemoveRecentSearchSuggestion { suggestion } => {
+                self.engine
+                    .remove_recent_search_suggestion(&actor_id, &suggestion)?;
+                self.persist(server_time_ms)?;
+                Ok(vec![self.recent_search_suggestions_envelope(
+                    &actor_id,
+                    server_time_ms,
+                )])
+            }
+            ClientCommand::ClearRecentSearchSuggestions => {
+                self.engine.clear_recent_search_suggestions(&actor_id)?;
+                self.persist(server_time_ms)?;
+                Ok(vec![self.recent_search_suggestions_envelope(
+                    &actor_id,
+                    server_time_ms,
+                )])
+            }
             ClientCommand::ListCommunityMembers {
                 conversation_id,
                 cursor,
@@ -469,6 +498,21 @@ impl<S: MessagingStateStore> MessagingService<S> {
             cursor: Some(self.cursor.to_string()),
             server_time_ms,
             event: ServerEvent::SearchResults { query, results },
+        }
+    }
+
+    fn recent_search_suggestions_envelope(
+        &self,
+        actor_id: &ActorId,
+        server_time_ms: i64,
+    ) -> ServerEnvelope {
+        ServerEnvelope {
+            protocol_version: FABUSHI_MESSAGING_PROTOCOL_VERSION,
+            cursor: Some(self.cursor.to_string()),
+            server_time_ms,
+            event: ServerEvent::RecentSearchSuggestions {
+                suggestions: self.engine.recent_search_suggestions(actor_id).to_vec(),
+            },
         }
     }
 
@@ -2228,6 +2272,10 @@ impl<S: MessagingStateStore> MessagingService<S> {
             }],
             ClientCommand::Search { .. }
             | ClientCommand::SearchRecipients { .. }
+            | ClientCommand::ListRecentSearchSuggestions
+            | ClientCommand::BumpRecentSearchSuggestion { .. }
+            | ClientCommand::RemoveRecentSearchSuggestion { .. }
+            | ClientCommand::ClearRecentSearchSuggestions
             | ClientCommand::ListCommunityMembers { .. }
             | ClientCommand::ListCommunityAuditLog { .. }
             | ClientCommand::StartTyping { .. }
@@ -2820,6 +2868,7 @@ impl<S: MessagingStateStore> MessagingService<S> {
             }
             ServerEvent::SyncBatch { .. }
             | ServerEvent::SearchResults { .. }
+            | ServerEvent::RecentSearchSuggestions { .. }
             | ServerEvent::FolderChanged { .. }
             | ServerEvent::FolderDeleted { .. }
             | ServerEvent::BlobUploadChanged { .. }
