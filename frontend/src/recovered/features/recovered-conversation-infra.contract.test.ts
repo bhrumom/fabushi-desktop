@@ -13,6 +13,8 @@ import {
   createTranscriptFeedFanout,
   type TranscriptClientEventSource,
 } from "./conversation/cards/transcript-card/transcript-feed-source.ts";
+import { projectTranscriptCardEntry } from "./conversation/cards/transcript-card/protocol.ts";
+import { projectRichMessageActionAffordance } from "./conversation/cards/transcript-card/url-card.ts";
 import {
   createHiddenChatsMutationController,
 } from "./hidden-chats/overlay/mutation-controller.ts";
@@ -303,4 +305,73 @@ test("forward recipient keyboard policy preserves picker boundaries and submit s
   assert.equal(isForwardToggleShortcut({ key: "Enter", ctrlKey: false, metaKey: false }), true);
   assert.equal(isForwardToggleShortcut({ key: " ", ctrlKey: false, metaKey: false }), true);
   assert.equal(isForwardToggleShortcut({ key: "Enter", ctrlKey: true, metaKey: false }), false);
+});
+
+
+test("rich widget button actions project fail-closed URL/copy semantics", () => {
+  const entry = projectTranscriptCardEntry({
+    kind: "send-message",
+    id: "rich-actions",
+    message: {
+      type: "widget",
+      widget: {
+        prompt: "Choose an action",
+        options: [
+          { label: "Docs", action: { kind: "open-url", data: "https://example.com/docs?q=1" } },
+          { label: "Authorize", action: { kind: "authorize-url", data: "https://example.com/auth?token=opaque" } },
+          { label: "Copy code", action: { kind: "copy-text", data: "ABC-123" } },
+        ],
+      },
+    },
+  });
+  assert.ok(entry);
+  assert.equal(entry.message.type, "widget");
+  if (entry.message.type !== "widget") throw new Error("expected widget projection");
+  assert.deepEqual(entry.message.widget.options.map((option) => option.action?.kind), [
+    "open-url",
+    "authorize-url",
+    "copy-text",
+  ]);
+
+  assert.equal(projectTranscriptCardEntry({
+    kind: "send-message",
+    id: "bad-action",
+    message: {
+      type: "widget",
+      widget: {
+        prompt: "Unsafe",
+        options: [{ label: "Unknown", action: { kind: "run-script", data: "opaque" } }],
+      },
+    },
+  }), null);
+
+  assert.deepEqual(
+    projectRichMessageActionAffordance({ kind: "open-url", data: "https://example.com/docs?q=1" }),
+    {
+      tooltip: "https://example.com/docs?q=1",
+      copyText: "https://example.com/docs?q=1",
+      copyLabel: "Copy Link",
+      normalizedUrl: "https://example.com/docs?q=1",
+    },
+  );
+  assert.equal(
+    projectRichMessageActionAffordance(
+      { kind: "authorize-url", data: "https://example.com/auth" },
+      "Long authorization label",
+    ).tooltip,
+    "Long authorization label\n\nhttps://example.com/auth",
+  );
+  assert.deepEqual(
+    projectRichMessageActionAffordance({ kind: "copy-text", data: "ABC-123" }),
+    {
+      tooltip: "Copy text:\nABC-123",
+      copyText: "ABC-123",
+      copyLabel: "Copy Text",
+      normalizedUrl: null,
+    },
+  );
+  assert.equal(
+    projectRichMessageActionAffordance({ kind: "open-url", data: "javascript:alert(1)" }).normalizedUrl,
+    null,
+  );
 });
