@@ -4,13 +4,13 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "aac515c5408015231a273c80ab4c4b33815e63ab",
-    "tree": "cf3a60d601c2d063903e620602b7e5913d3b0654"
+    "commit": "1e66d5874c973b9b573492796cbb641152c03f3c",
+    "tree": "31a2760ffdad4a93535b6f5e48f4b397630e4c17"
   },
   "deterministic_recursive_prefix": {
     "first_order": 1,
-    "last_order": 186,
-    "entries": 186
+    "last_order": 188,
+    "entries": 188
   },
   "semantics": {
     "development_only_non_applicable_is_not_omission": true,
@@ -1847,10 +1847,10 @@
     {
       "recursive_order": 88,
       "source_path": "Telegram/CMakeLists.txt",
-      "source_blob_sha": "23997fd6503cd46389c2c13803a83b45b40c21f7",
+      "source_blob_sha": "5e03826790eb25e7d3b5c2a13927c28d6a157b30",
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "responsibility": "Compose the shipping Telegram executable and updater/tooling build graph: enumerate production modules/resources, link protocol/media/UI/security dependencies, generate update keys/tests and Windows MIDL, select platform-specific sources, bundle macOS resources/entitlements/Crashpad, generate Linux portal/notification D-Bus bindings, configure platform link semantics, construct Updater/Packer/StartupTask, and install Linux desktop/AppStream/icons/service metadata.",
+      "responsibility": "Canonical TDesktop build/source composition, re-read at live 1e66d587 authority; adds compose-stash and editor audio/video/message timeline sources",
       "upstream_owner": "top-level Telegram shipping build composition",
       "state_machine": "configure build options/platform/store variant -> compose Telegram source/resource graph and libraries -> generate code/resources/update keys/tests -> select platform integrations -> build Telegram plus conditional Updater/Packer/StartupTask -> bundle/install platform resources",
       "side_effects": "determines the exact shipping source/resource/link/install composition and auxiliary updater binaries",
@@ -1859,7 +1859,7 @@
       "fabushi_canonical_owner": "Fabushi canonical Electron/npm renderer composition + Rust Host/Coordinator build + platform packaging/updater workflows",
       "fabushi_target": "package/build configuration, source/host Cargo composition, frontend production composition, .github/workflows release/runtime gates",
       "platform_differences": "Telegram C++/Qt uses MIDL, mac bundle/entitlements/Crashpad, Linux typed D-Bus and GNUInstallDirs, Windows delay-load and helper executables. Fabushi must preserve applicable effects in Electron/Rust/native adapters rather than copy CMake topology.",
-      "production_evidence": "Complete 2,672-line exact-source read. Fabushi already has canonical Electron/Rust build owners and macOS packaged release; unresolved Windows/Linux packaging/distribution gaps remain independently open at source-disposition entries 54, 60, 66, 71 and 72.",
+      "production_evidence": "Exact new CMake blob re-read at Revision 9 rebaseline; canonical Fabushi build composition remains mapped while new sources stay in deterministic semantic scope.",
       "test_evidence": "Current exact-head Actions must re-prove renderer/Rust/updater/platform gates; concrete feature/build evidence remains attached to each downstream production owner.",
       "disposition": "applicable-build-composition-mapped-to-canonical-stack",
       "unknown_closed": true,
@@ -3106,6 +3106,27 @@
     },
     {
       "recursive_order": 148,
+      "source_path": "Telegram/Resources/animations/photo_editor/trim_shortest.tgs",
+      "source_blob_sha": "6629b133957248f2eeaa48bad5b11df46c8bb730",
+      "read_complete": false,
+      "responsibility_decomposition_complete": false,
+      "responsibility": "New live-upstream animation resource; exact semantic responsibility pending deterministic full read",
+      "upstream_owner": "upstream bundled animation resource",
+      "state_machine": "pending exact read",
+      "side_effects": "pending exact read",
+      "failure_cases": "pending exact read",
+      "ui_disposition": "pending exact read; no Fabushi UI/implementation credit",
+      "fabushi_canonical_owner": "pending exact read",
+      "fabushi_target": "pending exact read",
+      "platform_differences": "pending exact read",
+      "production_evidence": "none; new path discovered by live Revision 9 exact-tree rebaseline",
+      "test_evidence": "none; unread",
+      "disposition": "unread-new-upstream-path",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 149,
       "source_path": "Telegram/Resources/animations/photo_suggest_icon.tgs",
       "source_blob_sha": "d05f5648e180a83a3ab5a9e6df37230d0a2f9320",
       "read_complete": true,
@@ -3126,7 +3147,7 @@
       "production_evidence": "Exact TGS read: SUGGEST MAIN, 85 frames with picture/camera/mountain/plus layers. QRC inclusion confirmed; focused exact-name scan did not prove the shipping loader."
     },
     {
-      "recursive_order": 149,
+      "recursive_order": 150,
       "source_path": "Telegram/Resources/animations/profile/profile_muting.tgs",
       "source_blob_sha": "bdae1b5f90aff1d21d50dc6264bda73c946f7e7d",
       "read_complete": true,
@@ -3147,7 +3168,7 @@
       "production_evidence": "Exact TGS read: Mute, 37 frames; exact profile_muting consumer identified."
     },
     {
-      "recursive_order": 150,
+      "recursive_order": 151,
       "source_path": "Telegram/Resources/animations/profile/profile_unmuting.tgs",
       "source_blob_sha": "a1dd834d6c7f79ba66100f0adcb34e8cd7f74d0b",
       "read_complete": true,
@@ -3168,7 +3189,7 @@
       "production_evidence": "Exact TGS read: Unmute, 57 frames; exact profile_unmuting consumer identified."
     },
     {
-      "recursive_order": 151,
+      "recursive_order": 152,
       "source_path": "Telegram/Resources/animations/robot.tgs",
       "source_blob_sha": "0076344f4c799f30199f553d5402e5f8b8c1daf8",
       "read_complete": true,
@@ -3189,7 +3210,7 @@
       "production_evidence": "Exact TGS read: comp 1, 180 frames with eyes/body/nose/mouth layers. QRC inclusion confirmed; focused exact-name scan did not prove the shipping loader."
     },
     {
-      "recursive_order": 152,
+      "recursive_order": 153,
       "source_path": "Telegram/Resources/animations/rtmp.tgs",
       "source_blob_sha": "53917fd1a0b775a11ef1d206e6a5618328d3781e",
       "read_complete": true,
@@ -3210,7 +3231,7 @@
       "production_evidence": "Exact TGS read: _033_STREAM_OUT, 180 frames; exact .name = rtmp consumer identified."
     },
     {
-      "recursive_order": 153,
+      "recursive_order": 154,
       "source_path": "Telegram/Resources/animations/search.tgs",
       "source_blob_sha": "db635fb57e75535b8902407baef878325790f0fd",
       "read_complete": true,
@@ -3231,7 +3252,7 @@
       "production_evidence": "Exact TGS read: Magnification glass - right, 180 frames; exact chat-search empty-state asset consumer identified. Other search vocabulary is not treated as asset evidence."
     },
     {
-      "recursive_order": 154,
+      "recursive_order": 155,
       "source_path": "Telegram/Resources/animations/settings/chat_automation.tgs",
       "source_blob_sha": "703ceb2e61ed848ca65cebb48d7560e937b36e2e",
       "read_complete": true,
@@ -3252,7 +3273,7 @@
       "production_evidence": "Exact TGS read: _118_SRCH_AI, frames 60..240. QRC inclusion confirmed; focused exact-name scan did not prove the shipping loader."
     },
     {
-      "recursive_order": 155,
+      "recursive_order": 156,
       "source_path": "Telegram/Resources/animations/show_or_premium_lastseen.tgs",
       "source_blob_sha": "1048f5806edd28cc7ba6e4990555c7cf4f4192a5",
       "read_complete": true,
@@ -3273,7 +3294,7 @@
       "production_evidence": "Exact TGS read: LastSeen, 180 frames; exact show_or_premium_lastseen consumer identified."
     },
     {
-      "recursive_order": 156,
+      "recursive_order": 157,
       "source_path": "Telegram/Resources/animations/show_or_premium_readtime.tgs",
       "source_blob_sha": "ac3ea3f758ea58240aeb46fd4a386c540b1b186b",
       "read_complete": true,
@@ -3294,7 +3315,7 @@
       "production_evidence": "Exact TGS read: ReadTime, 180 frames; exact show_or_premium_readtime consumer identified."
     },
     {
-      "recursive_order": 157,
+      "recursive_order": 158,
       "source_path": "Telegram/Resources/animations/sleep.tgs",
       "source_blob_sha": "b766d6e438e6d7158becd5d07b24b47225d47154",
       "read_complete": true,
@@ -3315,7 +3336,7 @@
       "production_evidence": "Exact TGS read: !!!!!!!zzz, 180 frames; exact .lottie = sleep consumer identified."
     },
     {
-      "recursive_order": 158,
+      "recursive_order": 159,
       "source_path": "Telegram/Resources/animations/star_reaction/appear.tgs",
       "source_blob_sha": "e47d5492eb8b5b27037efe0f3a6fdb4c95997761",
       "read_complete": true,
@@ -3336,7 +3357,7 @@
       "production_evidence": "Exact TGS read: Prem Star Appear 4, 43 frames. QRC inclusion confirmed; focused basename scan did not prove the shipping composition site."
     },
     {
-      "recursive_order": 159,
+      "recursive_order": 160,
       "source_path": "Telegram/Resources/animations/star_reaction/center.tgs",
       "source_blob_sha": "61f1538549f2aa06807dbf5c7d89f2b8f15ccef6",
       "read_complete": true,
@@ -3357,7 +3378,7 @@
       "production_evidence": "Exact TGS read: Prem Star Move 5, 125 frames. QRC inclusion confirmed; shipping composition site remains open."
     },
     {
-      "recursive_order": 160,
+      "recursive_order": 161,
       "source_path": "Telegram/Resources/animations/star_reaction/effect1.tgs",
       "source_blob_sha": "f31897de51b445d2be1e18d1bbdcfea0df7385a4",
       "read_complete": true,
@@ -3378,7 +3399,7 @@
       "production_evidence": "Exact TGS read: Reaction +, frames 60..150. QRC inclusion confirmed; shipping composition site remains open."
     },
     {
-      "recursive_order": 161,
+      "recursive_order": 162,
       "source_path": "Telegram/Resources/animations/star_reaction/effect2.tgs",
       "source_blob_sha": "2bbeb3b7adf1fbdfb47893a3e3bf9ec01bfd014c",
       "read_complete": true,
@@ -3399,7 +3420,7 @@
       "production_evidence": "Exact TGS read: REACTION MAIN, 83 frames. QRC inclusion confirmed; shipping composition site remains open."
     },
     {
-      "recursive_order": 162,
+      "recursive_order": 163,
       "source_path": "Telegram/Resources/animations/star_reaction/effect3.tgs",
       "source_blob_sha": "983b41b7bd12522f5f14fd43c7eb74547bf26b93",
       "read_complete": true,
@@ -3420,7 +3441,7 @@
       "production_evidence": "Exact TGS read: REACTION PREM STAR, frames 9..94. QRC inclusion confirmed; shipping composition site remains open."
     },
     {
-      "recursive_order": 163,
+      "recursive_order": 164,
       "source_path": "Telegram/Resources/animations/star_reaction/select.tgs",
       "source_blob_sha": "cf8fc6758006c33e9a700cc66ffcbe00050ed4e9",
       "read_complete": true,
@@ -3441,7 +3462,7 @@
       "production_evidence": "Exact TGS read: Prem Star Move 3, 121 frames. QRC inclusion confirmed; shipping composition site remains open."
     },
     {
-      "recursive_order": 164,
+      "recursive_order": 165,
       "source_path": "Telegram/Resources/animations/star_reaction/toast.tgs",
       "source_blob_sha": "abfb9602c9b4a9cd1f9e99630c117e55d662c1f4",
       "read_complete": true,
@@ -3462,7 +3483,7 @@
       "production_evidence": "Exact TGS read: Prem Star Move 2, 109 frames. QRC inclusion confirmed; shipping composition site remains open."
     },
     {
-      "recursive_order": 165,
+      "recursive_order": 166,
       "source_path": "Telegram/Resources/animations/starref_link.tgs",
       "source_blob_sha": "ea63004526014288770fd237d0d4403c57cf49e3",
       "read_complete": true,
@@ -3483,7 +3504,7 @@
       "production_evidence": "Exact TGS read: e_link, 120 frames; exact starref_link consumers identified."
     },
     {
-      "recursive_order": 166,
+      "recursive_order": 167,
       "source_path": "Telegram/Resources/animations/stats.tgs",
       "source_blob_sha": "4966041cefc4591626e00ce5bb219918097bdcf7",
       "read_complete": true,
@@ -3504,7 +3525,7 @@
       "production_evidence": "Exact TGS read: 14_GRAPH, 180 frames; exact stats asset consumers identified."
     },
     {
-      "recursive_order": 167,
+      "recursive_order": 168,
       "source_path": "Telegram/Resources/animations/stats_boosts.tgs",
       "source_blob_sha": "10ba08cf203eeb0cd71a0385f6653bafd79b550e",
       "read_complete": true,
@@ -3525,7 +3546,7 @@
       "production_evidence": "Exact TGS read: light precomp, 180 frames; exact stats_boosts consumer identified."
     },
     {
-      "recursive_order": 168,
+      "recursive_order": 169,
       "source_path": "Telegram/Resources/animations/stats_earn.tgs",
       "source_blob_sha": "d66fa990a543d0c187cdd61b2a380fc6f2a66a0a",
       "read_complete": true,
@@ -3546,7 +3567,7 @@
       "production_evidence": "Exact TGS read: comp 1, 180 frames; exact stats_earn consumer identified."
     },
     {
-      "recursive_order": 169,
+      "recursive_order": 170,
       "source_path": "Telegram/Resources/animations/stop.tgs",
       "source_blob_sha": "70ace96393b53c8b80dc3f0cac2a01b985fea6d0",
       "read_complete": true,
@@ -3567,7 +3588,28 @@
       "production_evidence": "Exact TGS read: Raised Hand, 90 frames; exact .name = stop consumer identified."
     },
     {
-      "recursive_order": 170,
+      "recursive_order": 171,
+      "source_path": "Telegram/Resources/animations/sun_outline.tgs",
+      "source_blob_sha": "b21ef4c1f4f97eaf9b3f06b5a840ab121afb1b3b",
+      "read_complete": false,
+      "responsibility_decomposition_complete": false,
+      "responsibility": "New live-upstream animation resource; exact semantic responsibility pending deterministic full read",
+      "upstream_owner": "upstream bundled animation resource",
+      "state_machine": "pending exact read",
+      "side_effects": "pending exact read",
+      "failure_cases": "pending exact read",
+      "ui_disposition": "pending exact read; no Fabushi UI/implementation credit",
+      "fabushi_canonical_owner": "pending exact read",
+      "fabushi_target": "pending exact read",
+      "platform_differences": "pending exact read",
+      "production_evidence": "none; new path discovered by live Revision 9 exact-tree rebaseline",
+      "test_evidence": "none; unread",
+      "disposition": "unread-new-upstream-path",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 172,
       "source_path": "Telegram/Resources/animations/swipe_action/archive.tgs",
       "source_blob_sha": "73e049e69c344c5da84187d48ff2dc1b55cf534c",
       "read_complete": true,
@@ -3588,7 +3630,7 @@
       "production_evidence": "Exact TGS read: icArchive, 50 frames. QRC inclusion confirmed; focused source scan did not prove the runtime path builder/registry."
     },
     {
-      "recursive_order": 171,
+      "recursive_order": 173,
       "source_path": "Telegram/Resources/animations/swipe_action/delete.tgs",
       "source_blob_sha": "daa3a01626fc0d4c084ebb6a878d68c3270a0a05",
       "read_complete": true,
@@ -3609,7 +3651,7 @@
       "production_evidence": "Exact TGS read: Comp 1, 38 frames. QRC inclusion confirmed; loader remains open."
     },
     {
-      "recursive_order": 172,
+      "recursive_order": 174,
       "source_path": "Telegram/Resources/animations/swipe_action/disabled.tgs",
       "source_blob_sha": "a4fb31cb257a14c35435758851a3d025af9900e4",
       "read_complete": true,
@@ -3630,7 +3672,7 @@
       "production_evidence": "Exact TGS read: Comp 1, 30 frames. QRC inclusion confirmed; unrelated disabled strings are not counted as asset consumers."
     },
     {
-      "recursive_order": 173,
+      "recursive_order": 175,
       "source_path": "Telegram/Resources/animations/swipe_action/mute.tgs",
       "source_blob_sha": "97d7bbf68c6e7f072da78d9af63c706aea8703c6",
       "read_complete": true,
@@ -3651,7 +3693,7 @@
       "production_evidence": "Exact TGS read: Comp 1, 35 frames. QRC inclusion confirmed; generic mute vocabulary is not treated as loader evidence."
     },
     {
-      "recursive_order": 174,
+      "recursive_order": 176,
       "source_path": "Telegram/Resources/animations/swipe_action/pin.tgs",
       "source_blob_sha": "5fbeedbc4fb7a0727d4bc080c5efa94bd42a7119",
       "read_complete": true,
@@ -3672,7 +3714,7 @@
       "production_evidence": "Exact TGS read: Comp 1, 31 frames. QRC inclusion confirmed; loader remains open."
     },
     {
-      "recursive_order": 175,
+      "recursive_order": 177,
       "source_path": "Telegram/Resources/animations/swipe_action/read.tgs",
       "source_blob_sha": "59b258677c082b49dd013be8624c0000c5c7a25f",
       "read_complete": true,
@@ -3693,7 +3735,7 @@
       "production_evidence": "Exact TGS read: Read 2, 35 frames. QRC inclusion confirmed; reaction id 'read' references are not counted as asset loader evidence."
     },
     {
-      "recursive_order": 176,
+      "recursive_order": 178,
       "source_path": "Telegram/Resources/animations/swipe_action/unarchive.tgs",
       "source_blob_sha": "f8a4f2108fd675f5d45cde343f1664cc72e38011",
       "read_complete": true,
@@ -3714,7 +3756,7 @@
       "production_evidence": "Exact TGS read: icUnArchive, 50 frames. QRC inclusion confirmed; loader remains open."
     },
     {
-      "recursive_order": 177,
+      "recursive_order": 179,
       "source_path": "Telegram/Resources/animations/swipe_action/ungroup.tgs",
       "source_blob_sha": "0fbe54688cb4aa5b8fda6e89acd3091375425d28",
       "read_complete": true,
@@ -3735,7 +3777,7 @@
       "production_evidence": "Exact TGS read: UNGROUP, 29 frames. QRC inclusion confirmed; loader remains open."
     },
     {
-      "recursive_order": 178,
+      "recursive_order": 180,
       "source_path": "Telegram/Resources/animations/swipe_action/unmute.tgs",
       "source_blob_sha": "563749f53fe9dbe02ea1433e8ff4d51b4693bf11",
       "read_complete": true,
@@ -3756,7 +3798,7 @@
       "production_evidence": "Exact TGS read: unmute, 35 frames. QRC inclusion confirmed; loader remains open."
     },
     {
-      "recursive_order": 179,
+      "recursive_order": 181,
       "source_path": "Telegram/Resources/animations/swipe_action/unpin.tgs",
       "source_blob_sha": "8e96e36ec92ef4846ceab0feefda76bcf1250f72",
       "read_complete": true,
@@ -3777,7 +3819,7 @@
       "production_evidence": "Exact TGS read: Comp 1, 48 frames. QRC inclusion confirmed; loader remains open."
     },
     {
-      "recursive_order": 180,
+      "recursive_order": 182,
       "source_path": "Telegram/Resources/animations/swipe_action/unread.tgs",
       "source_blob_sha": "97ce96a05f58bca90c77b71064a6148bf00279bc",
       "read_complete": true,
@@ -3798,7 +3840,7 @@
       "production_evidence": "Exact TGS read: Unread, 36 frames. QRC inclusion confirmed; generic unread keywords are not loader evidence."
     },
     {
-      "recursive_order": 181,
+      "recursive_order": 183,
       "source_path": "Telegram/Resources/animations/toast/chats_archived.tgs",
       "source_blob_sha": "7fc3e57802c11cca826cb380b3c202a3a224f8b8",
       "read_complete": true,
@@ -3819,7 +3861,7 @@
       "production_evidence": "Exact TGS read: icArchived, 45 frames; exact toast/chats_archived consumer identified."
     },
     {
-      "recursive_order": 182,
+      "recursive_order": 184,
       "source_path": "Telegram/Resources/animations/toast/chats_filter_in.tgs",
       "source_blob_sha": "aba04090d0b62de97d445cf0b17a9a24bd28ee5a",
       "read_complete": true,
@@ -3840,7 +3882,7 @@
       "production_evidence": "Exact TGS read: Folder New 1, 57 frames; exact toast/chats_filter_in consumer identified."
     },
     {
-      "recursive_order": 183,
+      "recursive_order": 185,
       "source_path": "Telegram/Resources/animations/toast/contact_check.tgs",
       "source_blob_sha": "c8f62a39a37758c5bea4698368c7f8bc0e60103f",
       "read_complete": true,
@@ -3861,7 +3903,7 @@
       "production_evidence": "Exact TGS read: Lamp 3, 45 frames; exact toast/contact_check consumers identified."
     },
     {
-      "recursive_order": 184,
+      "recursive_order": 186,
       "source_path": "Telegram/Resources/animations/toast/copy.tgs",
       "source_blob_sha": "152af85f798597f5fc01decb909865c286b3122f",
       "read_complete": true,
@@ -3882,7 +3924,7 @@
       "production_evidence": "Exact TGS read: Comp 1, 61 frames; numerous exact iconLottie toast/copy consumers identified."
     },
     {
-      "recursive_order": 185,
+      "recursive_order": 187,
       "source_path": "Telegram/Resources/animations/toast/delete.tgs",
       "source_blob_sha": "7925f503f0d8bccbdda0df881cfab0228b16d220",
       "read_complete": true,
@@ -3903,7 +3945,7 @@
       "production_evidence": "Exact TGS read: Delete, 66 frames; exact toast/delete consumer identified."
     },
     {
-      "recursive_order": 186,
+      "recursive_order": 188,
       "source_path": "Telegram/Resources/animations/toast/forward.tgs",
       "source_blob_sha": "6c2e4d5d14c4d740edf8405793e4238d838f687e",
       "read_complete": true,
