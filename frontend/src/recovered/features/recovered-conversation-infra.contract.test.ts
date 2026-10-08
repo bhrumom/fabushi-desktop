@@ -455,22 +455,41 @@ test("CONTRACT-TDRP-IV-PREPARED-LINK-EXTERNAL-COPY-001 transcript external links
     href: "https://example.com/docs?q=1",
     copyText: "https://example.com/docs?q=1",
     copyLabel: "Copy Link",
+    tooltip: null,
   });
   assert.deepEqual(projectTranscriptExternalLink("mailto:reader%2Bnotes@example.com?subject=Ignored"), {
     href: "mailto:reader+notes@example.com",
     copyText: "reader+notes@example.com",
     copyLabel: "Copy Email",
+    tooltip: null,
   });
   assert.equal(projectTranscriptExternalLink("javascript:alert(1)"), null);
   assert.equal(projectTranscriptExternalLink("file:///tmp/secret.md"), null);
   assert.equal(projectTranscriptExternalLink("../relative.md"), null);
   assert.equal(projectTranscriptExternalLink("mailto:%ZZ"), null);
+  assert.equal(
+    projectTranscriptExternalLink("https://example.com/docs", "Documentation").tooltip,
+    "https://example.com/docs",
+  );
+  assert.equal(
+    projectTranscriptExternalLink("https://example.com/docs", "https://example.com/docs").tooltip,
+    null,
+  );
+  assert.equal(
+    projectTranscriptExternalLink("mailto:reader@example.com", "Contact us").tooltip,
+    "reader@example.com",
+  );
+  assert.equal(
+    projectTranscriptExternalLink("mailto:reader@example.com", "reader@example.com").tooltip,
+    null,
+  );
 
   const transcript = readFileSync(new URL("./conversation/workspace/transcript.tsx", import.meta.url), "utf8");
   const actions = readFileSync(new URL("./conversation/cards/transcript-card/message-actions.tsx", import.meta.url), "utf8");
   assert.match(transcript, /projectTranscriptExternalLink\(mark\.attrs\.href\)/);
   assert.match(transcript, /data-transcript-copy-label=\{external\.copyLabel\}/);
   assert.match(transcript, /data-transcript-copy-text=\{external\.copyText\}/);
+  assert.match(transcript, /title=\{external\.tooltip \?\? undefined\}/);
   assert.match(transcript, /projectTranscriptInlineCopyTarget\(event\.target\)/);
   assert.match(transcript, /inlineCopy\?\.label \?\? "Copy"/);
   assert.match(transcript, /\(\(\?:https\?:\\\/\\\/\|mailto:\)\[\^\\s\)\]\+\)/);
