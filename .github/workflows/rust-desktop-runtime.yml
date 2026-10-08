@@ -425,6 +425,82 @@ jobs:
             echo "::error::build-time acquisition candidate drift: discovered $actual_count, inventory expects $expected_count"
             exit 1
           fi
+          GH_TOKEN="${{ github.token }}" node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const token=process.env.GH_TOKEN;
+          const headers={Authorization:'Bearer '+token,'User-Agent':'fabushi-tdrp-r9-provenance','X-GitHub-Api-Version':'2022-11-28'};
+          const source=fs.readFileSync('artifacts/tdrp-authority/build-time-acquisition-candidates.txt','utf8').split(/\n/).filter(Boolean);
+          const sha40=/^[0-9a-f]{40}$/i;
+          const top=[];
+          for (const row of source) {
+            const m=row.match(/^([^:]+):(\d+):(.*?uses:\s*([^\s#]+))/);
+            if (!m) continue;
+            const spec=m[4];
+            if (spec.startsWith('./') || spec.startsWith('docker://')) continue;
+            const at=spec.lastIndexOf('@');
+            if (at<1) continue;
+            const target=spec.slice(0,at), ref=spec.slice(at+1);
+            const parts=target.split('/');
+            if (parts.length<2) continue;
+            top.push({source_path:m[1],source_line:Number(m[2]),raw:m[3].trim(),repository:parts[0]+'/'+parts[1],action_path:parts.slice(2).join('/'),ref});
+          }
+          const cache=new Map();
+          async function api(path) {
+            const r=await fetch('https://api.github.com/'+path,{headers:{...headers,Accept:'application/vnd.github+json'}});
+            if(!r.ok) throw new Error(path+' -> '+r.status+' '+await r.text());
+            return r.json();
+          }
+          async function resolve(repo,ref) {
+            const key=repo+'@'+ref;
+            if(cache.has(key)) return cache.get(key);
+            const obj=await api('repos/'+repo+'/commits/'+encodeURIComponent(ref));
+            const out={repository:repo,ref,resolved_commit:obj.sha,reference_kind:sha40.test(ref)?'immutable-commit':'mutable-ref-resolved-snapshot'};
+            cache.set(key,out); return out;
+          }
+          async function actionText(repo,commit,actionPath) {
+            for (const name of ['action.yml','action.yaml']) {
+              const path=(actionPath?actionPath.replace(/\/$/,'')+'/':'')+name;
+              const url='repos/'+repo+'/contents/'+path+'?ref='+commit;
+              const r=await fetch('https://api.github.com/'+url,{headers});
+              if(r.status===404) continue;
+              if(!r.ok) throw new Error(url+' -> '+r.status);
+              const obj=await r.json();
+              if(obj?.content) return {path,text:Buffer.from(obj.content,'base64').toString('utf8'),blob_sha:obj.sha};
+            }
+            return null;
+          }
+          const resolutions=[],transitive=[],unresolved=[],queue=[],seen=new Set();
+          for (const item of top) {
+            const resolved=await resolve(item.repository,item.ref);
+            resolutions.push({...item,...resolved});
+            queue.push({repository:item.repository,commit:resolved.resolved_commit,action_path:item.action_path,depth:0,parent:item.source_path+':'+item.source_line});
+          }
+          while(queue.length) {
+            const cur=queue.shift();
+            const key=cur.repository+'@'+cur.commit+'/'+cur.action_path;
+            if(seen.has(key) || cur.depth>4) continue;
+            seen.add(key);
+            const meta=await actionText(cur.repository,cur.commit,cur.action_path);
+            if(!meta) { unresolved.push({...cur,reason:'action-metadata-not-found'}); continue; }
+            for (const line of meta.text.split(/\n/)) {
+              const m=line.match(/uses:\s*([^\s#]+)/);
+              if(!m) continue;
+              const spec=m[1];
+              if(spec.startsWith('docker://')) { unresolved.push({...cur,metadata_path:meta.path,child_spec:spec,reason:'container-image-input-requires-separate-digest-resolution'}); continue; }
+              if(spec.startsWith('./')) { transitive.push({...cur,metadata_path:meta.path,child_spec:spec,kind:'local-action-same-commit'}); queue.push({repository:cur.repository,commit:cur.commit,action_path:(cur.action_path?cur.action_path+'/':'')+spec.slice(2),depth:cur.depth+1,parent:key}); continue; }
+              const at=spec.lastIndexOf('@');
+              const parts=at>0?spec.slice(0,at).split('/'):[];
+              if(parts.length<2) { unresolved.push({...cur,metadata_path:meta.path,child_spec:spec,reason:'dynamic-or-unparseable-action-ref'}); continue; }
+              const repo=parts[0]+'/'+parts[1], ref=spec.slice(at+1), actionPath=parts.slice(2).join('/');
+              const child=await resolve(repo,ref);
+              transitive.push({...cur,metadata_path:meta.path,metadata_blob_sha:meta.blob_sha,child_spec:spec,child_repository:repo,child_ref:ref,child_resolved_commit:child.resolved_commit,child_reference_kind:child.reference_kind});
+              queue.push({repository:repo,commit:child.resolved_commit,action_path:actionPath,depth:cur.depth+1,parent:key});
+            }
+          }
+          const out={accepted_upstream:process.env.TDRP_UPSTREAM_SHA||null,top_level_occurrences:resolutions.length,unique_top_level_refs:[...new Set(resolutions.map(x=>x.repository+'@'+x.ref))].length,resolutions,transitive,unresolved};
+          fs.writeFileSync('artifacts/tdrp-authority/build-time-github-action-ref-resolutions.json',JSON.stringify(out,null,2)+'\n');
+          console.log('github action provenance: top-level='+out.top_level_occurrences+' unique='+out.unique_top_level_refs+' transitive='+transitive.length+' unresolved='+unresolved.length);
+          NODE
           printf '%s\n' "accepted_upstream=$upstream_sha" > artifacts/tdrp-authority/source-binary-evidence-245-335.txt
           while IFS='|' read -r order path expected_blob; do
             actual_blob="$(git -C "$work" hash-object "$path")"
@@ -1150,6 +1226,128 @@ jobs:
               git -C "$work" grep -n -F "$symbol" -- Telegram/SourceFiles || true
             done
           } > artifacts/tdrp-authority/source-consumer-trace-801-900.txt
+          printf '%s\n' "accepted_upstream=$upstream_sha" > artifacts/tdrp-authority/source-binary-evidence-901-1000.txt
+          while IFS='|' read -r order path expected_blob; do
+            actual_blob="$(git -C "$work" hash-object "$path")"
+            test "$actual_blob" = "$expected_blob"
+            size="$(wc -c < "$work/$path" | tr -d '[:space:]')"
+            kind="$(file -b "$work/$path")"
+            printf '%s|%s|%s|%s|%s\n' "$order" "$path" "$actual_blob" "$size" "$kind" >> artifacts/tdrp-authority/source-binary-evidence-901-1000.txt
+          done <<'EOF'
+          901|Telegram/Resources/icons/folders/folder_existing_chats@2x.png|e3a73f7e1fbf9da405d8efc9527eb5ad98e1875c
+          902|Telegram/Resources/icons/folders/folder_existing_chats@3x.png|2b37db754e2f5615b839f1518f866d437ee63da5
+          903|Telegram/Resources/icons/folders/folder_new_chats.png|03c8380d448c5b9f8afa1458deb63944aa84d48f
+          904|Telegram/Resources/icons/folders/folder_new_chats@2x.png|f91df76357aeb853e9f883ef2970c5594c19a916
+          905|Telegram/Resources/icons/folders/folder_new_chats@3x.png|d379a9e4b0dace8fd4f1a55e6c8d122867f2360a
+          906|Telegram/Resources/icons/folders/folders_airplane.png|39e49b399ec915147b8a0f75807aca93353b013f
+          907|Telegram/Resources/icons/folders/folders_airplane@2x.png|d2faec1e251cc102632c1559e203e56b2f2b361d
+          908|Telegram/Resources/icons/folders/folders_airplane@3x.png|c1a3be559d93f2895193d64aabd05336d5a0f392
+          909|Telegram/Resources/icons/folders/folders_all.png|d56a23b18700e8ff513e821cb8b846c1847d002a
+          910|Telegram/Resources/icons/folders/folders_all@2x.png|f1271c31ba2d55462471f11dc518870d60f09729
+          911|Telegram/Resources/icons/folders/folders_all@3x.png|dca5931935e164f2562be7e6d9f9f2e310013913
+          912|Telegram/Resources/icons/folders/folders_book.png|006d2c916934a6fae52192d6d2dd97ee6017a256
+          913|Telegram/Resources/icons/folders/folders_book@2x.png|99b789c42ecf497e3fa2d39f9ab68408e5bb4bb2
+          914|Telegram/Resources/icons/folders/folders_book@3x.png|552ba9e6b43b14f172b2fea3e6a54518205fa897
+          915|Telegram/Resources/icons/folders/folders_bots.png|b1e7622728a44d9ba8e07f8da79976c0e3cb63fc
+          916|Telegram/Resources/icons/folders/folders_bots@2x.png|78822c1ee1149192a801279b4b75d1e28b4cc939
+          917|Telegram/Resources/icons/folders/folders_bots@3x.png|59be79bf2cb19111fc1d8093edfe9f9330d297ef
+          918|Telegram/Resources/icons/folders/folders_cat.png|5956d88869c5749edfbc8fee8e67d37b98a71f92
+          919|Telegram/Resources/icons/folders/folders_cat@2x.png|43e4722b891d6df8ce289b425a0c278c381d0b27
+          920|Telegram/Resources/icons/folders/folders_cat@3x.png|c76dde442713e242b98f039c43f02187c09dc2fb
+          921|Telegram/Resources/icons/folders/folders_channels.png|7299caa89c0c8682d94d74789befb94e1602cef0
+          922|Telegram/Resources/icons/folders/folders_channels@2x.png|bc2aa02afbbf0afb0c7f5526bf86d5459ea62e10
+          923|Telegram/Resources/icons/folders/folders_channels@3x.png|304990052be4882e02470323b4f09ab4bebfd01d
+          924|Telegram/Resources/icons/folders/folders_crown.png|b4262b229aa9b7f6a50e7f9b00cdc291a9bfd20f
+          925|Telegram/Resources/icons/folders/folders_crown@2x.png|720eddf46cd6fcc6f87b62e21399f3c0520f7433
+          926|Telegram/Resources/icons/folders/folders_crown@3x.png|dac1982c97a453030dd4b1641a0a81faa93ab883
+          927|Telegram/Resources/icons/folders/folders_custom.png|a2f87768eaa8a7644581c57b0ac9292213c78ad2
+          928|Telegram/Resources/icons/folders/folders_custom@2x.png|fe97fc1d19e29f88d020efa216c81af755a8a68d
+          929|Telegram/Resources/icons/folders/folders_custom@3x.png|656c7a498bf43df981f1998a005d018743f48e44
+          930|Telegram/Resources/icons/folders/folders_edit.png|18716efd51392a2c815110a745d8202b5e2a0ab6
+          931|Telegram/Resources/icons/folders/folders_edit@2x.png|632c150702bc65259c3a105cd9697226ecd9d9bd
+          932|Telegram/Resources/icons/folders/folders_edit@3x.png|96344e532c2d375f1eac1e865853fb61c2b8f9e5
+          933|Telegram/Resources/icons/folders/folders_favorite.png|bcca10f25d6a299b15bd65278be1ed038bcf655e
+          934|Telegram/Resources/icons/folders/folders_favorite@2x.png|fc4c455307b06741dab955390c6b48644d9ba0a4
+          935|Telegram/Resources/icons/folders/folders_favorite@3x.png|7e76b2e59347b2913996b33de981b19f6446d7ba
+          936|Telegram/Resources/icons/folders/folders_flower.png|20b66148d48ad8ea2315d4feb7a07538998bd4a8
+          937|Telegram/Resources/icons/folders/folders_flower@2x.png|63441079c109bc91fce391236011faf5bc7c2f73
+          938|Telegram/Resources/icons/folders/folders_flower@3x.png|30dcf9e5dff6bfbbe145ddb38da6988f0b892baa
+          939|Telegram/Resources/icons/folders/folders_game.png|ce070bd6eb7c49e3e2672d8a129a7ba1f4096a14
+          940|Telegram/Resources/icons/folders/folders_game@2x.png|732b7587bf2101528a80ec3492a2701e16ab1215
+          941|Telegram/Resources/icons/folders/folders_game@3x.png|ed21601028e597a8e91ffa31b1e349c7cd1d9905
+          942|Telegram/Resources/icons/folders/folders_group.png|79f49b3cf42df46daab0ca25dbcde6a244a42738
+          943|Telegram/Resources/icons/folders/folders_group@2x.png|c052721df292ecc34d2dcaaf103386cb7b60f556
+          944|Telegram/Resources/icons/folders/folders_group@3x.png|a153a8335d036bc90b600472bfa795fa99cda2a0
+          945|Telegram/Resources/icons/folders/folders_home.png|2f96f5b9b8a26cdea46d6dd7adfed56bd6b7e461
+          946|Telegram/Resources/icons/folders/folders_home@2x.png|4084925c5c0b43c2216046e8ff0c71d46681ad0c
+          947|Telegram/Resources/icons/folders/folders_home@3x.png|2d2581df2cc1ba71f0b5ad72355699c3174ad134
+          948|Telegram/Resources/icons/folders/folders_light.png|427e54e4ac7c510826ce2f96ff46482b0c261abc
+          949|Telegram/Resources/icons/folders/folders_light@2x.png|cc3a02d96ee35a015360902cbeca81c3f9a4958f
+          950|Telegram/Resources/icons/folders/folders_light@3x.png|46664bd7c509b2459297061c2e30218ba4ccc35e
+          951|Telegram/Resources/icons/folders/folders_like.png|5e4011e50ee27e047002610ff1eb295ac864f3d4
+          952|Telegram/Resources/icons/folders/folders_like@2x.png|670e020e8ce5c64ee987b03c8b506a4e71dff006
+          953|Telegram/Resources/icons/folders/folders_like@3x.png|7007ab20a9a141aefeff564c804da5c7c3fec33c
+          954|Telegram/Resources/icons/folders/folders_love.png|b14d9384936f8e4b2d6d7ee0fda5ac72316b6c15
+          955|Telegram/Resources/icons/folders/folders_love@2x.png|b297c63b4fd7d9e2229dbec631f85784e0135051
+          956|Telegram/Resources/icons/folders/folders_love@3x.png|489925989d4b6a097a1e38176068e999cf94d660
+          957|Telegram/Resources/icons/folders/folders_mask.png|2ffa33582fd925178b8c9b6461dff6fc79ad62e5
+          958|Telegram/Resources/icons/folders/folders_mask@2x.png|02d1d2e832d0dd0d9b47b4735700864150af201f
+          959|Telegram/Resources/icons/folders/folders_mask@3x.png|3cd81fbe27021fae42144b5d4ccc9b38652a7603
+          960|Telegram/Resources/icons/folders/folders_money.png|44607557b7835edfebcf4686f59f36c84579be27
+          961|Telegram/Resources/icons/folders/folders_money@2x.png|f9c0b7954137b64768545dbb2d0e8c384da93497
+          962|Telegram/Resources/icons/folders/folders_money@3x.png|ad5dd2a53d7d2437a41eeab0464774bbb16a5ecf
+          963|Telegram/Resources/icons/folders/folders_note.png|c53505431838a26cec475c492c47099f0794e7c1
+          964|Telegram/Resources/icons/folders/folders_note@2x.png|71948a212e4a77952e7fc8ef885bc8e1104d9b92
+          965|Telegram/Resources/icons/folders/folders_note@3x.png|8aa935bacce6a8a47a9bbbd6f8cd42d1259be740
+          966|Telegram/Resources/icons/folders/folders_palette.png|4dca73fe85bb8da52b742895947188d4cb573409
+          967|Telegram/Resources/icons/folders/folders_palette@2x.png|4544f0994c777e8425ff2e5da25139d0ffbd273e
+          968|Telegram/Resources/icons/folders/folders_palette@3x.png|431af6466587577d388929dab7399eaa67a24c74
+          969|Telegram/Resources/icons/folders/folders_party.png|97bcb283477f2db73fcf3d3f58559705dda6fcd4
+          970|Telegram/Resources/icons/folders/folders_party@2x.png|ed962e68eb325f3e17d790f00421de04653e0ff7
+          971|Telegram/Resources/icons/folders/folders_party@3x.png|5ce1c36c308c1bd43217b2fa068038a37c4af672
+          972|Telegram/Resources/icons/folders/folders_poo.png|e6900b87051c805ea625241155511134e44d4409
+          973|Telegram/Resources/icons/folders/folders_poo@2x.png|102530c0febb8394f55aa8fa00c1a72516118fc6
+          974|Telegram/Resources/icons/folders/folders_poo@3x.png|45fcd791579b5994bcbed0ca75463dffde3f8bfb
+          975|Telegram/Resources/icons/folders/folders_private.png|33bfc60bd60790d0fa99fd3c5194b6878b6eb0f6
+          976|Telegram/Resources/icons/folders/folders_private@2x.png|d8ad983f35e35c44b1d967421943d7edde62d802
+          977|Telegram/Resources/icons/folders/folders_private@3x.png|a69c13159af1a54abfa211204d01cfde7d85e234
+          978|Telegram/Resources/icons/folders/folders_setup.png|db548b52324640a3870e9a9197c7d216515a38b6
+          979|Telegram/Resources/icons/folders/folders_setup@2x.png|2747415d2aeaa6fe6121b052aa2e15dbdb76552f
+          980|Telegram/Resources/icons/folders/folders_setup@3x.png|fdf16f8c23a9ad1edb19f0f758bc62bead64855e
+          981|Telegram/Resources/icons/folders/folders_sport.png|a73c37bd4e49ddbefd1ca9c3a6cf741d1942ad42
+          982|Telegram/Resources/icons/folders/folders_sport@2x.png|538100c6aba3745b76639f8f825cda59ad017bc4
+          983|Telegram/Resources/icons/folders/folders_sport@3x.png|691e16cf1383f9c59c9881f98d5c157c466f4941
+          984|Telegram/Resources/icons/folders/folders_study.png|b6233dc266cdcce770e805f196c3d808aba7fa2a
+          985|Telegram/Resources/icons/folders/folders_study@2x.png|93a00fc4f23d8c3b07462771092fb16851a17c92
+          986|Telegram/Resources/icons/folders/folders_study@3x.png|2ebdebeec44e24fe403877e25dd43ccedd5b603a
+          987|Telegram/Resources/icons/folders/folders_trade.png|837af196d2aad937a5a773ffa07249cf9bd03735
+          988|Telegram/Resources/icons/folders/folders_trade@2x.png|95bf995eb695ba3952a1d5316912d43603bf32e7
+          989|Telegram/Resources/icons/folders/folders_trade@3x.png|8bd8e5a2f1d6e1563d0a4590215f07ec51c48e21
+          990|Telegram/Resources/icons/folders/folders_travel.png|128933d8d05f7fb5b55148c73523e4f71fdce1c6
+          991|Telegram/Resources/icons/folders/folders_travel@2x.png|04289934385bb4222670f85894f3608689e433f6
+          992|Telegram/Resources/icons/folders/folders_travel@3x.png|caaf29d46a8586814d8b9e14b5c063788aa937bd
+          993|Telegram/Resources/icons/folders/folders_type_archived.png|790d50335ecfb394b84a8e2c2aa962bbd4c80447
+          994|Telegram/Resources/icons/folders/folders_type_archived@2x.png|342c6cb553241caba7d775902402b2f9a936081b
+          995|Telegram/Resources/icons/folders/folders_type_archived@3x.png|f20b8b610b9c50d40e977325df4933a2b6188a65
+          996|Telegram/Resources/icons/folders/folders_type_bots.png|34d2ed00a682157eb7fc616c1e2b70883a965067
+          997|Telegram/Resources/icons/folders/folders_type_bots@2x.png|1f37ff794076b3dba76f95df6c7732d0fae022cc
+          998|Telegram/Resources/icons/folders/folders_type_bots@3x.png|afc773a3c86e54081e136405509a34b1adcc8371
+          999|Telegram/Resources/icons/folders/folders_type_channels.png|e43f400120f77a879dd012d9e4eb922bef651225
+          1000|Telegram/Resources/icons/folders/folders_type_channels@2x.png|cf380475086ec00dbae5abf2464ca481b4aa172c
+          EOF
+          {
+            printf '%s\n' "accepted_upstream=$upstream_sha"
+            for symbol in folder_existing_chats folder_new_chats folders_airplane folders_all folders_book folders_bots folders_cat folders_channels folders_crown folders_custom folders_edit folders_favorite folders_flower folders_game folders_group folders_home folders_light folders_like folders_love folders_mask folders_money folders_note folders_palette folders_party folders_poo folders_private folders_setup folders_sport folders_study folders_trade folders_travel folders_type_archived folders_type_bots folders_type_channels; do
+              printf 'symbol=%s\n' "$symbol"
+              git -C "$work" grep -n -F "$symbol" -- Telegram/SourceFiles || true
+            done
+          } > artifacts/tdrp-authority/source-consumer-reachability-901-1000.txt
+          {
+            printf '%s\n' "accepted_upstream=$upstream_sha"
+            for symbol in folder_existing_chats folder_new_chats folders_airplane folders_all folders_book folders_bots folders_cat folders_channels folders_crown folders_custom folders_edit folders_favorite folders_flower folders_game folders_group folders_home folders_light folders_like folders_love folders_mask folders_money folders_note folders_palette folders_party folders_poo folders_private folders_setup folders_sport folders_study folders_trade folders_travel folders_type_archived folders_type_bots folders_type_channels; do
+              git -C "$work" grep -n -F "$symbol" -- Telegram/SourceFiles || true
+            done
+          } > artifacts/tdrp-authority/source-consumer-trace-901-1000.txt
           {
             printf '%s\n' "accepted_upstream=$upstream_sha"
             for symbol in input_liked input_record input_record_filled input_video; do
