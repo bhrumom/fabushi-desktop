@@ -896,6 +896,36 @@
         },
         "notes": {
           "$ref": "#/$defs/nonEmpty"
+        },
+        "fabushi_target_bindings": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "path",
+              "symbols",
+              "responsibility_scope"
+            ],
+            "properties": {
+              "path": {
+                "$ref": "#/$defs/nonEmpty"
+              },
+              "symbols": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": {
+                  "$ref": "#/$defs/nonEmpty"
+                }
+              },
+              "responsibility_scope": {
+                "$ref": "#/$defs/nonEmpty"
+              }
+            }
+          }
         }
       },
       "allOf": [

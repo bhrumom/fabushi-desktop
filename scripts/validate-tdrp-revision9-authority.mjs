@@ -601,18 +601,59 @@ for (const row of ledger.rows) {
   fail(!/Telegram(Core|Runtime|Provider|Messaging|Search|Contacts|Media|Workspace|ConversationRoot|MessageStore|DraftStore|ReactionStore)/i.test(parallelRootText),'source-named parallel owner/root detected in '+row.responsibility_id);
   fail(Array.isArray(row.fabushi_target_paths) && row.fabushi_target_paths.length>0,'target path missing for '+row.responsibility_id);
   fail(Array.isArray(row.fabushi_target_symbols) && row.fabushi_target_symbols.length>0,'target symbol missing for '+row.responsibility_id);
-  const targetTexts=[];
+  const targetTexts=new Map();
   for (const targetPath of row.fabushi_target_paths) {
     fail(await fs.stat(path.join(root,targetPath)).then(()=>true).catch(()=>false),'target path missing: '+targetPath);
-    targetTexts.push(await read(targetPath));
+    targetTexts.set(targetPath,await read(targetPath));
   }
-  const combinedTarget=targetTexts.join('\n');
-  for (const symbol of row.fabushi_target_symbols) {
-    fail(combinedTarget.includes(symbol),'target symbol '+symbol+' not found for '+row.responsibility_id);
-    const key=row.fabushi_target_paths.join(',')+'#'+symbol;
-    const prior=targetSymbolOwners.get(key);
-    if (prior && prior!==row.responsibility_id) fail(false,'target symbol has multiple responsibility owners without explicit split: '+key);
-    targetSymbolOwners.set(key,row.responsibility_id);
+  const bindings=Array.isArray(row.fabushi_target_bindings) ? row.fabushi_target_bindings : null;
+  if (bindings) {
+    fail(bindings.length>0,'explicit target bindings must not be empty for '+row.responsibility_id);
+    const boundPaths=new Set();
+    const boundSymbols=new Set();
+    for (const binding of bindings) {
+      fail(row.fabushi_target_paths.includes(binding.path),'bound target path is not declared by '+row.responsibility_id+': '+binding.path);
+      fail(!boundPaths.has(binding.path),'target path is bound more than once inside '+row.responsibility_id+': '+binding.path);
+      boundPaths.add(binding.path);
+      const targetText=targetTexts.get(binding.path);
+      fail(typeof targetText==='string','bound target path missing from loaded targets: '+binding.path);
+      fail(typeof binding.responsibility_scope==='string' && binding.responsibility_scope.trim().length>0,'bound target scope missing for '+row.responsibility_id+': '+binding.path);
+      fail(Array.isArray(binding.symbols) && binding.symbols.length>0,'bound target symbols missing for '+row.responsibility_id+': '+binding.path);
+      for (const symbol of binding.symbols) {
+        fail(row.fabushi_target_symbols.includes(symbol),'bound target symbol is not declared by '+row.responsibility_id+': '+symbol);
+        fail(!boundSymbols.has(symbol),'target symbol is ambiguously bound to multiple paths inside '+row.responsibility_id+': '+symbol);
+        boundSymbols.add(symbol);
+        fail(targetText.includes(symbol),'target symbol '+symbol+' not found in owning path '+binding.path+' for '+row.responsibility_id);
+        const key=binding.path+'#'+symbol;
+        const priors=targetSymbolOwners.get(key)||[];
+        for (const prior of priors) {
+          if (prior.responsibility_id===row.responsibility_id) continue;
+          fail(
+            prior.explicit===true
+              && typeof prior.scope==='string'
+              && prior.scope.length>0
+              && prior.scope!==binding.responsibility_scope,
+            'target path symbol has multiple responsibility owners without explicit distinct responsibility_scope split: '+key
+          );
+        }
+        priors.push({responsibility_id:row.responsibility_id,scope:binding.responsibility_scope,explicit:true});
+        targetSymbolOwners.set(key,priors);
+      }
+    }
+    fail(boundPaths.size===row.fabushi_target_paths.length,'not every target path has an exact binding for '+row.responsibility_id);
+    fail(boundSymbols.size===row.fabushi_target_symbols.length,'not every target symbol has an exact owning-path binding for '+row.responsibility_id);
+  } else {
+    const combinedTarget=[...targetTexts.values()].join('\n');
+    for (const symbol of row.fabushi_target_symbols) {
+      fail(combinedTarget.includes(symbol),'target symbol '+symbol+' not found for '+row.responsibility_id);
+      const key=row.fabushi_target_paths.join(',')+'#'+symbol;
+      const priors=targetSymbolOwners.get(key)||[];
+      for (const prior of priors) {
+        if (prior.responsibility_id!==row.responsibility_id) fail(false,'target symbol has multiple responsibility owners without explicit split: '+key);
+      }
+      priors.push({responsibility_id:row.responsibility_id,scope:null,explicit:false});
+      targetSymbolOwners.set(key,priors);
+    }
   }
   const traceText=rtm+'\n'+await read(row.source_analysis_path);
   for (const id of [...row.requirement_ids,...row.oracle_ids,...row.invariant_ids]) fail(traceText.includes(id),'traceability id '+id+' missing from RTM/dossier for '+row.responsibility_id);
@@ -627,6 +668,7 @@ for (const row of ledger.rows) {
     fail(/ProductShell/i.test(row.composition_root),'Search row must compose under ProductShell: '+row.responsibility_id);
   }
 }
+fail(JSON.stringify(schema).includes('"fabushi_target_bindings"'),'schema missing fabushi_target_bindings');
 for (const field of ['source_symbols','responsibility_id','existing_owner','fabushi_target_symbols','production_entrypoints','composition_root','search_scope','design_system_version','requirement_ids','oracle_ids','invariant_ids','test_execution_evidence']) {
   fail(JSON.stringify(schema).includes('"'+field+'"'),'schema missing '+field);
 }

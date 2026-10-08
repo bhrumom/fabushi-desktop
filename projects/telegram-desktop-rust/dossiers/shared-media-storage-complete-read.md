@@ -45,6 +45,26 @@ Traceability: `TDRP-R9-STORAGE-FACADE-DELEGATION-001`, `ORA-TDRP-R9-STORAGE-FACA
 
 Status: mapped/open.
 
+## Exact Fabushi target ownership split
+
+These four rows now bind every target symbol to its actual source-neutral owning file instead of validating symbols against a combined multi-file text blob. Reuse of the same canonical owner symbol across source responsibilities is legal only when each row declares a distinct `responsibility_scope`; the Revision 9 validator checks the symbol in that exact file and rejects unscoped or same-scope duplicates.
+
+| responsibility | owning path | symbol(s) | responsibility scope |
+| --- | --- | --- | --- |
+| `TDRP-R9-SHARED-MEDIA-STORAGE-CONTRACT-001` | `native/mahayana-messaging/src/message.rs` | `MessageContent`, `MediaRef` | canonical message/media-reference truth from which typed projections are derived |
+| same | `native/mahayana-messaging/src/search.rs` | `SearchIndex` | derived Media/Files/Links projection owner; not SavedSublist membership truth |
+| same | `native/mahayana-messaging/src/media_cache.rs` | `MediaCache` | physical materialization/cache lifetime independent from projection unload |
+| same | `native/mahayana-messaging/src/engine.rs` | `ConversationChildDestroyed` | typed child lifecycle signal; cleanup still requires authoritative membership |
+| `TDRP-R9-SHARED-MEDIA-STORAGE-LIFECYCLE-001` | `native/mahayana-messaging/src/search.rs` | `SearchIndex`, `index_message`, `remove_message`, `content_matches_scope` | projection indexing/removal/filter lifecycle |
+| same | `native/mahayana-messaging/src/media_cache.rs` | `MediaCache` | cache-lifetime boundary; projection unload is not byte deletion |
+| same | `native/mahayana-messaging/src/engine.rs` | `ConversationChildDestroyed` | child-destruction trigger for cross-owner cleanup after authoritative membership |
+| `TDRP-R9-STORAGE-FACADE-CONTRACT-001` | `native/mahayana-messaging/src/engine.rs` | `MessagingEngine` | source-neutral orchestration boundary, with no StorageFacade state owner |
+| same | `native/mahayana-messaging/src/search.rs` | `SearchIndex` | canonical projection API reused by storage-facing operations |
+| same | `native/mahayana-messaging/src/media_cache.rs` | `MediaCache` | canonical materialization API reused with no facade-owned cache |
+| `TDRP-R9-STORAGE-FACADE-DELEGATION-001` | `native/mahayana-messaging/src/engine.rs` | `MessagingEngine` | transparent orchestration/delegation composition |
+| same | `native/mahayana-messaging/src/search.rs` | `SearchIndex` | delegated projection mutation/query owner |
+| same | `native/mahayana-messaging/src/media_cache.rs` | `MediaCache` | delegated physical-media cache owner |
+
 ## SavedMessages deletion implication
 
 Accepted `data_saved_messages.cpp` calls `SharedMediaUnloadThread(parentPeer, 0, sublistPeer)` after child destruction. Under Fabushi architecture this means: authoritative child-owned message deletion must remove those messages from canonical search/media projections, while resource bytes remain under their normal reference/cache lifecycle. The current child runtime destroy alone is insufficient evidence of this cross-owner composition.

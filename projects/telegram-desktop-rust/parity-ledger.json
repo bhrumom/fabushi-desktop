@@ -9065,7 +9065,38 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Source-informed mapping from accepted telegramdesktop/tdesktop storage_shared_media.h; no Telegram runtime or presentation retained.",
       "reviewer": null,
-      "notes": "Exact accepted 316-line header read complete. Mapped-open only; global unknown unchanged."
+      "notes": "Exact accepted 316-line header read complete. Mapped-open only; global unknown unchanged. Exact path-to-symbol ownership is recorded in fabushi_target_bindings; shared canonical owner symbols are accepted only with distinct responsibility_scope splits validated against the owning file.",
+      "fabushi_target_bindings": [
+        {
+          "path": "native/mahayana-messaging/src/message.rs",
+          "symbols": [
+            "MessageContent",
+            "MediaRef"
+          ],
+          "responsibility_scope": "canonical message/media-reference truth from which typed shared-media projections are derived"
+        },
+        {
+          "path": "native/mahayana-messaging/src/search.rs",
+          "symbols": [
+            "SearchIndex"
+          ],
+          "responsibility_scope": "derived Media/Files/Links projection owner; projection never establishes SavedSublist membership truth"
+        },
+        {
+          "path": "native/mahayana-messaging/src/media_cache.rs",
+          "symbols": [
+            "MediaCache"
+          ],
+          "responsibility_scope": "physical media materialization/cache lifetime owner, independent from projection unload"
+        },
+        {
+          "path": "native/mahayana-messaging/src/engine.rs",
+          "symbols": [
+            "ConversationChildDestroyed"
+          ],
+          "responsibility_scope": "typed child lifecycle signal that scopes cleanup only after authoritative child membership is known"
+        }
+      ]
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
@@ -9128,7 +9159,6 @@
       "new_owner_adr": null,
       "fabushi_target_paths": [
         "native/mahayana-messaging/src/search.rs",
-        "native/mahayana-messaging/src/message.rs",
         "native/mahayana-messaging/src/media_cache.rs",
         "native/mahayana-messaging/src/engine.rs"
       ],
@@ -9284,7 +9314,33 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Source-informed mapping from accepted telegramdesktop/tdesktop storage_shared_media.cpp; no source cache implementation retained.",
       "reviewer": null,
-      "notes": "Exact accepted 242-line cpp read complete. Mapped-open only."
+      "notes": "Exact accepted 242-line cpp read complete. Mapped-open only. Exact path-to-symbol ownership is recorded in fabushi_target_bindings; shared canonical owner symbols are accepted only with distinct responsibility_scope splits validated against the owning file.",
+      "fabushi_target_bindings": [
+        {
+          "path": "native/mahayana-messaging/src/search.rs",
+          "symbols": [
+            "SearchIndex",
+            "index_message",
+            "remove_message",
+            "content_matches_scope"
+          ],
+          "responsibility_scope": "Media/Files/Links projection indexing, removal, filtering, and rebuild lifecycle"
+        },
+        {
+          "path": "native/mahayana-messaging/src/media_cache.rs",
+          "symbols": [
+            "MediaCache"
+          ],
+          "responsibility_scope": "cache-lifetime boundary proving projection unload does not imply physical media-byte deletion"
+        },
+        {
+          "path": "native/mahayana-messaging/src/engine.rs",
+          "symbols": [
+            "ConversationChildDestroyed"
+          ],
+          "responsibility_scope": "child-destruction lifecycle trigger for cross-owner cleanup after authoritative membership resolution"
+        }
+      ]
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
@@ -9487,7 +9543,30 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Source-informed mapping from accepted telegramdesktop/tdesktop storage_facade.h.",
       "reviewer": null,
-      "notes": "Exact accepted 84-line header read complete. Source facade shape is not copied."
+      "notes": "Exact accepted 84-line header read complete. Source facade shape is not copied. Exact path-to-symbol ownership is recorded in fabushi_target_bindings; shared canonical owner symbols are accepted only with distinct responsibility_scope splits validated against the owning file.",
+      "fabushi_target_bindings": [
+        {
+          "path": "native/mahayana-messaging/src/engine.rs",
+          "symbols": [
+            "MessagingEngine"
+          ],
+          "responsibility_scope": "source-neutral orchestration boundary replacing the source facade without introducing independent StorageFacade state"
+        },
+        {
+          "path": "native/mahayana-messaging/src/search.rs",
+          "symbols": [
+            "SearchIndex"
+          ],
+          "responsibility_scope": "canonical projection API reused by storage-facing shared-media operations"
+        },
+        {
+          "path": "native/mahayana-messaging/src/media_cache.rs",
+          "symbols": [
+            "MediaCache"
+          ],
+          "responsibility_scope": "canonical materialization API reused by storage-facing operations with no facade-owned cache"
+        }
+      ]
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
@@ -9689,7 +9768,30 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Source-informed mapping from accepted telegramdesktop/tdesktop storage_facade.cpp.",
       "reviewer": null,
-      "notes": "Exact accepted 238-line cpp read complete. Delegation responsibility maps to existing composition."
+      "notes": "Exact accepted 238-line cpp read complete. Delegation responsibility maps to existing composition. Exact path-to-symbol ownership is recorded in fabushi_target_bindings; shared canonical owner symbols are accepted only with distinct responsibility_scope splits validated against the owning file.",
+      "fabushi_target_bindings": [
+        {
+          "path": "native/mahayana-messaging/src/engine.rs",
+          "symbols": [
+            "MessagingEngine"
+          ],
+          "responsibility_scope": "transparent orchestration/delegation composition with no second state owner"
+        },
+        {
+          "path": "native/mahayana-messaging/src/search.rs",
+          "symbols": [
+            "SearchIndex"
+          ],
+          "responsibility_scope": "delegated shared-media projection mutation/query owner"
+        },
+        {
+          "path": "native/mahayana-messaging/src/media_cache.rs",
+          "symbols": [
+            "MediaCache"
+          ],
+          "responsibility_scope": "delegated physical-media cache owner"
+        }
+      ]
     }
   ],
   "rebaseline": {
