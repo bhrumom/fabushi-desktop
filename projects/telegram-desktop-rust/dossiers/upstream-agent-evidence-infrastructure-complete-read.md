@@ -293,3 +293,52 @@ production evidence.
 
 The next deterministic unread entry is
 `.agents/skills/continue/SKILL.md`. Entries 9+ have not been credited.
+
+
+## Entry 9 — continue scheduler skill
+
+Path: `.agents/skills/continue/SKILL.md`  
+Blob: `f8eb58c9fdb0f7b19f94aff01d9e3b950e27b285`  
+Read status: complete.
+
+Responsibility:
+- resolve the Telegram AI workspace and fail closed on unsafe dirty/shared state;
+- freeze one startup batch with source-lineage gates and deterministic ownership;
+- resume active/carried/blocked work before starting eligible shared work;
+- delegate exactly one stateful performer at a time and preserve split/recovery state;
+- route discovered/unverified follow-ups without expanding the frozen batch
+  except through explicit routed discoveries;
+- consolidate compatible pending tasks through a separate publication boundary;
+- never convert test flaws, interruption or missing evidence into false completion.
+
+Capability classification: upstream autonomous-development scheduler, not a
+Telegram/Fabushi Desktop shipping capability.
+
+Existing-owner assessment: no production owner. Any similar engineering
+automation remains outside ProductShell, Host, Coordinator and app services.
+
+Closure disposition required: explicit non-applicable source disposition.
+
+## Entry 10 — continue skill OpenAI interface metadata
+
+Path: `.agents/skills/continue/agents/openai.yaml`  
+Blob: `eaf183027de97dafed92234398822d55835fbfc2`  
+Read status: complete, 5 lines.
+
+Responsibility: expose the upstream `continue` automation with display name,
+short description and default prompt.
+
+Capability classification: development-tool UI metadata only; no shipping
+Fabushi Desktop product responsibility.
+
+Closure disposition required: explicit non-applicable source disposition.
+
+## Updated coverage accounting after entries 9–10
+
+- `unread: 15,744 -> 15,742`
+- `unknown: 15,812` unchanged
+- `omitted: 0` unchanged
+- full-read recursive entries: `68 -> 70`
+
+The next deterministic unread entry is
+`.agents/skills/continue/references/consolidate-pending-tasks.md`.
