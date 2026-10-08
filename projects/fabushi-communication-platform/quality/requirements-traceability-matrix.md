@@ -230,3 +230,22 @@ This row remains `IMPLEMENTED`, not `VERIFIED`, until current-head native/Host i
 - Oracle detail: `projects/fabushi-communication-platform/quality/oracles/share-forward-recipient-oracle.md`.
 
 This row remains `IMPLEMENTED`, not `VERIFIED`, because shipping recipient-picker composition and exact-head Electron evidence remain open.
+
+
+### TDRP Revision 9 resource-read requirements 279-338
+
+| requirement_id | risk | oracle_ids | invariant_ids | unit/property | contract/integration | e2e/temporal | ui/visual/a11y | perf/security | regression_ids | evidence_ids | reviewer | verdict |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| TDRP-R9-EMOJI-SET-RESOURCES-001 | high | ORA-TDRP-R9-EMOJI-SET-RESOURCES-001 | INV-TDRP-R9-EMOJI-SINGLE-OWNER-001; INV-TDRP-R9-EMOJI-MESSAGE-IDENTITY-001 | pending | pending canonical emoji owner binding | pending | pending Settings/Appearance + Composer/Transcript evidence | provenance/security pending | pending | run 37842440135 job 113534924423 artifact 11578775634 + dossier resource-emoji-export-279-338-complete-read.md | pending-independent-review | MAPPED-SOURCE-READ-PRODUCTION-OPEN |
+| TDRP-R9-DATA-EXPORT-HTML-RESOURCES-001 | high | ORA-TDRP-R9-DATA-EXPORT-HTML-RESOURCES-001 | INV-TDRP-R9-EXPORT-REPRESENTATION-NOT-TRUTH-001 | pending | pending canonical data-export owner binding | pending | pending exported HTML accessibility/visual evidence | offline-script/link security pending | pending | run 37842440135 job 113534924423 artifact 11578775634 + exact full reads 291/336 + dossier | pending-independent-review | MAPPED-SOURCE-READ-PRODUCTION-OPEN |
+| TDRP-R9-RICH-EXPORT-RESOURCES-001 | high | ORA-TDRP-R9-RICH-EXPORT-RESOURCES-001 | INV-TDRP-R9-RICH-EXPORT-NO-SECOND-RENDERER-001 | pending | pending canonical rich export owner binding | pending | pending rich export/clipboard evidence | escaping/script security pending | pending | exact full reads 337/338 + qrc/iv_rich_message_html_export consumer trace + dossier | pending-independent-review | MAPPED-SOURCE-READ-PRODUCTION-OPEN |
+
+- `ORA-TDRP-R9-EMOJI-SET-RESOURCES-001`: accepted resource bytes 279-290 map to one emoji rendering/set-selection responsibility; set selection must preserve one canonical emoji identity and may not change canonical message text/entity identity.
+- `INV-TDRP-R9-EMOJI-SINGLE-OWNER-001`: Fabushi may not add a Telegram-shaped emoji picker/set root when canonical Composer/Transcript and Settings/Appearance owners can express the responsibility.
+- `INV-TDRP-R9-EMOJI-MESSAGE-IDENTITY-001`: visual-set switching never rewrites persisted message/entity identity.
+- `ORA-TDRP-R9-DATA-EXPORT-HTML-RESOURCES-001`: 291-336 are consumed by export.qrc/export_output_html.cpp to create self-contained offline representation; the export is never canonical live conversation state.
+- `INV-TDRP-R9-EXPORT-REPRESENTATION-NOT-TRUTH-001`: HTML/CSS/JS/image export artifacts cannot become Conversation/Message truth or a second message store.
+- `ORA-TDRP-R9-RICH-EXPORT-RESOURCES-001`: 337-338 are consumed by export_rich.qrc/iv_rich_message_html_export.cpp as escaped, offline rich-content presentation with conditional slideshow JS.
+- `INV-TDRP-R9-RICH-EXPORT-NO-SECOND-RENDERER-001`: rich export may reuse canonical content semantics but cannot become a second live TranscriptEntry renderer/state owner.
+- Dossier: `projects/telegram-desktop-rust/dossiers/resource-emoji-export-279-338-complete-read.md`.
+- These rows grant source-read/traceability credit only. They do not grant Fabushi production, test, release, or independent-acceptance credit.
