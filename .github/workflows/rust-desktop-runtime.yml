@@ -1163,6 +1163,10 @@ jobs:
         run: node scripts/tdrp-build-provenance.mjs
       - name: Attest declared source ranges
         run: node scripts/tdrp-source-attest.mjs
+      - name: Resolve explicit GitHub clone refs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/tdrp-build-git-ref-provenance.mjs
       - name: Validate Revision 9 authority
         env:
           GITHUB_TOKEN: ${{ github.token }}
