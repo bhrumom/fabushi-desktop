@@ -425,17 +425,21 @@ jobs:
             echo "::error::build-time acquisition candidate drift: discovered $actual_count, inventory expects $expected_count"
             exit 1
           fi
-          printf '%s\n' "accepted_upstream=$upstream_sha" > artifacts/tdrp-authority/source-binary-evidence-245-254.txt
+          printf '%s\n' "accepted_upstream=$upstream_sha" > artifacts/tdrp-authority/source-binary-evidence-245-272.txt
           while IFS='|' read -r order path expected_blob; do
             actual_blob="$(git -C "$work" hash-object "$path")"
             test "$actual_blob" = "$expected_blob"
             size="$(wc -c < "$work/$path" | tr -d '[:space:]')"
             kind="$(file -b "$work/$path")"
-            printf '%s|%s|%s|%s|%s\n' "$order" "$path" "$actual_blob" "$size" "$kind" >> artifacts/tdrp-authority/source-binary-evidence-245-254.txt
+            printf '%s|%s|%s|%s|%s\n' "$order" "$path" "$actual_blob" "$size" "$kind" >> artifacts/tdrp-authority/source-binary-evidence-245-272.txt
           done <<'EOF'
           245|Telegram/Resources/art/mac_setup.tiff|71d8354694ced401b149d375e5e912065cb60b49
           246|Telegram/Resources/art/premium/coin_border.png|03a5254f5689472e31b89db6058830eeb1afc581
           254|Telegram/Resources/art/premium/flecks.png|b6695a1690d98bdf18f75b9f991b37a0d1660597
+          260|Telegram/Resources/art/round_placeholder.jpg|cbdc9aee39c6eceacebf68a0459a84a54118502e
+          261|Telegram/Resources/art/themeimage.jpg|d0ffd90d52ec600913864904217004cee1ea6ce9
+          271|Telegram/Resources/art/verified_bg.webp|f08059f45501358a219e991bb3b733eb70cca537
+          272|Telegram/Resources/art/verified_fg.webp|3535123495877e3de02cff29ca7e3d2ef3a70921
           EOF
       - name: Validate Revision 9 authority
         env:
