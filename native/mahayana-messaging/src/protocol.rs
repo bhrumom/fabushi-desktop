@@ -16,7 +16,9 @@ use crate::miniapp::{
     MiniAppGrant, MiniAppManifest, MiniAppRequest, MiniAppResponse, MiniAppSession,
 };
 use crate::payment::{CustomerInfo, Invoice, PaymentOrder};
-use crate::search::{RecipientSearchRequirements, SearchQuery, SearchResult};
+use crate::search::{
+    RecentSearchSuggestion, RecipientSearchRequirements, SearchQuery, SearchResult,
+};
 use crate::story::{Story, StoryId};
 use crate::wallet::{LedgerEntry, WalletAccount};
 use serde::{Deserialize, Serialize};
@@ -70,6 +72,14 @@ pub enum ClientCommand {
         #[serde(default)]
         requirements: RecipientSearchRequirements,
     },
+    ListRecentSearchSuggestions,
+    BumpRecentSearchSuggestion {
+        suggestion: RecentSearchSuggestion,
+    },
+    RemoveRecentSearchSuggestion {
+        suggestion: RecentSearchSuggestion,
+    },
+    ClearRecentSearchSuggestions,
     UpsertProfile {
         actor: Actor,
     },
@@ -399,6 +409,9 @@ pub enum ServerEvent {
     SearchResults {
         query: SearchQuery,
         results: Vec<SearchResult>,
+    },
+    RecentSearchSuggestions {
+        suggestions: Vec<RecentSearchSuggestion>,
     },
     ActorChanged {
         actor: Actor,
