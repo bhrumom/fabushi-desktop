@@ -6,7 +6,7 @@ import type { AttachmentMedia } from "../recovered/contracts/desktop-bridge";
 import { resolveWithSingleRetry } from "../recovered/features/conversation/workspace/media-runtime";
 import { QUICK_REACTION_EMOJIS } from "../recovered/features/conversation/cards/transcript-card/reaction-actions";
 import { ReactionCell } from "../recovered/features/conversation/cards/transcript-card/reaction-picker";
-import { SandButton } from "../recovered/ui/sand-kit-primitives";
+import { SandBadge, SandButton } from "../recovered/ui/sand-kit-primitives";
 import { OverlayDialog } from "../recovered/ui/overlay-primitives";
 
 type StoryAction = "previous" | "next" | "toggle-pause" | "press-start" | "press-end" | "toggle-menu" | "toggle-reaction-menu";
@@ -25,6 +25,16 @@ function storyMediaSource(story: CoordinatorStory): string | null {
 
 function storyIsVideo(story: CoordinatorStory): boolean {
   return story.media.mimeType?.toLowerCase().startsWith("video/") === true;
+}
+
+function storyCanShare(story: CoordinatorStory, nowMs: number): boolean {
+  return story.privacy.kind === "everyone"
+    && !story.protectedContent
+    && (story.pinnedToProfile || story.expiresAtMs > nowMs);
+}
+
+function storyViewCount(story: CoordinatorStory): number {
+  return Object.keys(story.views).length + story.anonymousViewCount;
 }
 
 function formatStoryTimeLeft(deadlineMs: number, nowMs: number): string {
@@ -302,8 +312,11 @@ export function StoryCapabilitySurface({ client, enabled, resolveMedia, onOpenOw
     }
   }, [client, stealth, stealthBusy]);
 
+  const shareAvailable = selectedStory != null && storyCanShare(selectedStory, clockMs);
+  const selectedStoryViewCount = selectedStory == null ? 0 : storyViewCount(selectedStory);
+
   const share = useCallback(async () => {
-    if (selectedStory == null || selectedStory.protectedContent) return;
+    if (selectedStory == null || !storyCanShare(selectedStory, Date.now())) return;
     const source = storyMediaSource(selectedStory);
     const text = selectedStory.caption.text || source || selectedStory.id;
     if (navigator.share != null) {
@@ -447,7 +460,8 @@ export function StoryCapabilitySurface({ client, enabled, resolveMedia, onOpenOw
             size="sm"
             variant="secondary"
           >React</SandButton>
-          <SandButton disabled={selectedStory.protectedContent} onClick={() => void share()} size="sm" variant="secondary">Share</SandButton>
+          {shareAvailable ? <SandButton onClick={() => void share()} size="sm" variant="secondary">Share</SandButton> : null}
+          <SandBadge aria-label={`${selectedStoryViewCount} Story views`}>{selectedStoryViewCount} views</SandBadge>
           <SandButton disabled={onOpenOwner == null} onClick={() => onOpenOwner?.(selectedStory.ownerId)} size="sm" variant="secondary">Profile</SandButton>
           <SandButton
             disabled={stealthBusy || stealth == null || !stealth.entitled || stealthEnabled || stealthCooling}

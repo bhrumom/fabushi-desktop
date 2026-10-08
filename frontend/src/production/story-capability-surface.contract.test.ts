@@ -49,6 +49,22 @@ test("CONTRACT-TDRP-STORY-ACTION-LIFECYCLE-001 shares viewer actions and fences 
   assert.match(surface, /mediaGenerationRef/);
 });
 
+test("CONTRACT-TDRP-STORY-SHARE-VIEWS-001 preserves public share eligibility and canonical view counts", () => {
+  const surface = read("frontend/src/production/StoryCapabilitySurface.tsx");
+  const shared = read("source/shared/rpc/coordinator.ts");
+  assert.match(surface, /story\.privacy\.kind === "everyone"/);
+  assert.match(surface, /!story\.protectedContent/);
+  assert.match(surface, /story\.pinnedToProfile \|\| story\.expiresAtMs > nowMs/);
+  assert.match(surface, /storyCanShare\(selectedStory, Date\.now\(\)\)/);
+  assert.match(surface, /shareAvailable \? <SandButton[\s\S]*?>Share<\/SandButton> : null/);
+  assert.match(surface, /Object\.keys\(story\.views\)\.length \+ story\.anonymousViewCount/);
+  assert.match(surface, /<SandBadge aria-label=\{\`\$\{selectedStoryViewCount\} Story views\`\}/);
+  assert.match(shared, /readonly privacy: CoordinatorStoryPrivacy/);
+  assert.match(shared, /readonly anonymousViewCount: number/);
+  assert.match(shared, /\["everyone", "contacts", "closeFriends", "selected"\]/);
+  assert.match(shared, /Number\.isSafeInteger\(value\.anonymousViewCount\)/);
+});
+
 test("CONTRACT-TDRP-STORY-CANONICAL-ROUTE-001 keeps Story RPC on Coordinator to Host to canonical service", () => {
   const client = read("frontend/src/production/coordinator-client.ts");
   const shared = read("source/shared/rpc/coordinator.ts");

@@ -39,11 +39,18 @@ export interface CoordinatorStoryMedia {
   readonly contentHash?: string | null;
 }
 
+export interface CoordinatorStoryPrivacy {
+  readonly kind: "everyone" | "contacts" | "closeFriends" | "selected";
+  readonly includedActorIds: readonly string[];
+  readonly excludedActorIds: readonly string[];
+}
+
 export interface CoordinatorStory {
   readonly id: string;
   readonly ownerId: string;
   readonly media: CoordinatorStoryMedia;
   readonly caption: { readonly text: string; readonly entities: readonly unknown[] };
+  readonly privacy: CoordinatorStoryPrivacy;
   readonly createdAtMs: number;
   readonly expiresAtMs: number;
   readonly editedAtMs?: number | null;
@@ -51,6 +58,7 @@ export interface CoordinatorStory {
   readonly protectedContent: boolean;
   readonly allowReplies: boolean;
   readonly views: Readonly<Record<string, unknown>>;
+  readonly anonymousViewCount: number;
   readonly canDelete: boolean;
   readonly myReaction?: string | null;
 }
@@ -104,9 +112,16 @@ function isCoordinatorStoryMedia(value: unknown): value is CoordinatorStoryMedia
 export function parseCoordinatorStory(value: unknown): CoordinatorStory | null {
   if (!isRecord(value) || typeof value.id !== "string" || value.id.length === 0 || typeof value.ownerId !== "string" || value.ownerId.length === 0) return null;
   if (!isCoordinatorStoryMedia(value.media) || !isRecord(value.caption) || typeof value.caption.text !== "string" || !Array.isArray(value.caption.entities)) return null;
+  if (!isRecord(value.privacy)
+    || !["everyone", "contacts", "closeFriends", "selected"].includes(String(value.privacy.kind))
+    || !Array.isArray(value.privacy.includedActorIds)
+    || !value.privacy.includedActorIds.every((actorId) => typeof actorId === "string" && actorId.length > 0)
+    || !Array.isArray(value.privacy.excludedActorIds)
+    || !value.privacy.excludedActorIds.every((actorId) => typeof actorId === "string" && actorId.length > 0)) return null;
   if (!isFiniteNumber(value.createdAtMs) || !isFiniteNumber(value.expiresAtMs)) return null;
   if (value.editedAtMs !== undefined && value.editedAtMs !== null && !isFiniteNumber(value.editedAtMs)) return null;
   if (typeof value.pinnedToProfile !== "boolean" || typeof value.protectedContent !== "boolean" || typeof value.allowReplies !== "boolean" || !isRecord(value.views)) return null;
+  if (!Number.isSafeInteger(value.anonymousViewCount) || (value.anonymousViewCount as number) < 0) return null;
   if (typeof value.canDelete !== "boolean" || !isNullableString(value.myReaction)) return null;
   return value as unknown as CoordinatorStory;
 }
