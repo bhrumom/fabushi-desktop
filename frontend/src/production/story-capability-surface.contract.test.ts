@@ -17,7 +17,7 @@ test("CONTRACT-TDRP-STORY-PRODUCT-SHELL-001 mounts one canonical Story capabilit
 
 test("CONTRACT-TDRP-STORY-ACTION-LIFECYCLE-001 shares viewer actions and fences stale async work", () => {
   const surface = read("frontend/src/production/StoryCapabilitySurface.tsx");
-  assert.match(surface, /type StoryAction = "previous" \| "next" \| "toggle-pause" \| "press-start" \| "press-end" \| "toggle-menu"/);
+  assert.match(surface, /type StoryAction = "previous" \| "next" \| "toggle-pause" \| "press-start" \| "press-end" \| "toggle-menu" \| "toggle-reaction-menu"/);
   assert.match(surface, /onClick=\{\(\) => act\("previous"\)\}/);
   assert.match(surface, /onClick=\{\(\) => act\("next"\)\}/);
   assert.match(surface, /onClick=\{\(\) => act\("toggle-pause"\)\}/);
@@ -28,7 +28,11 @@ test("CONTRACT-TDRP-STORY-ACTION-LIFECYCLE-001 shares viewer actions and fences 
   assert.match(surface, /onPointerCancel=\{\(\) => act\("press-end"\)\}/);
   assert.match(surface, /onPointerUp=\{\(event\) => \{[\s\S]*?act\("press-end"\)[\s\S]*?act\("previous"\)[\s\S]*?act\("next"\)[\s\S]*?act\("toggle-pause"\)/);
   assert.match(surface, /onClick=\{\(\) => act\("toggle-menu"\)\}/);
-  assert.match(surface, /const playbackPaused = paused \|\| pointerPressed \|\| menuOpen/);
+  assert.match(surface, /onClick=\{\(\) => act\("toggle-reaction-menu"\)\}/);
+  assert.match(surface, /const playbackPaused = paused \|\| pointerPressed \|\| menuOpen \|\| reactionMenuOpen/);
+  assert.match(surface, /QUICK_REACTION_EMOJIS\.map/);
+  assert.match(surface, /<ReactionCell/);
+  assert.match(surface, /aria-label="Story reactions"/);
   assert.match(surface, /aria-label="Story media navigation"/);
   assert.match(surface, /aria-label="Story caption"/);
   assert.match(surface, /WebkitLineClamp: 2/);

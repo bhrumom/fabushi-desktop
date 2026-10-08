@@ -4,10 +4,12 @@ import type { CoordinatorStory, CoordinatorStoryStealthStatus } from "../../../s
 import type { ProductionCoordinatorClient } from "./coordinator-client";
 import type { AttachmentMedia } from "../recovered/contracts/desktop-bridge";
 import { resolveWithSingleRetry } from "../recovered/features/conversation/workspace/media-runtime";
+import { QUICK_REACTION_EMOJIS } from "../recovered/features/conversation/cards/transcript-card/reaction-actions";
+import { ReactionCell } from "../recovered/features/conversation/cards/transcript-card/reaction-picker";
 import { SandButton } from "../recovered/ui/sand-kit-primitives";
 import { OverlayDialog } from "../recovered/ui/overlay-primitives";
 
-type StoryAction = "previous" | "next" | "toggle-pause" | "press-start" | "press-end" | "toggle-menu";
+type StoryAction = "previous" | "next" | "toggle-pause" | "press-start" | "press-end" | "toggle-menu" | "toggle-reaction-menu";
 
 export interface StoryCapabilitySurfaceProps {
   readonly client: ProductionCoordinatorClient | null;
@@ -42,6 +44,7 @@ export function StoryCapabilitySurface({ client, enabled, resolveMedia, onOpenOw
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [reactionMenuOpen, setReactionMenuOpen] = useState(false);
   const [captionExpanded, setCaptionExpanded] = useState(false);
   const [pointerPressed, setPointerPressed] = useState(false);
   const [reaction, setReaction] = useState<string | null>(null);
@@ -57,7 +60,7 @@ export function StoryCapabilitySurface({ client, enabled, resolveMedia, onOpenOw
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   const selectedStory = selectedIndex == null ? null : stories[selectedIndex] ?? null;
-  const playbackPaused = paused || pointerPressed || menuOpen;
+  const playbackPaused = paused || pointerPressed || menuOpen || reactionMenuOpen;
 
   useEffect(() => {
     if (stealth == null) return undefined;
@@ -103,6 +106,7 @@ export function StoryCapabilitySurface({ client, enabled, resolveMedia, onOpenOw
       setStatus("idle");
       setErrorMessage(null);
       setCaptionExpanded(false);
+      setReactionMenuOpen(false);
       setStealth(null);
       setStealthBusy(false);
       setPointerPressed(false);
@@ -120,6 +124,7 @@ export function StoryCapabilitySurface({ client, enabled, resolveMedia, onOpenOw
     setPointerPressed(false);
     setProgress(0);
     setMenuOpen(false);
+    setReactionMenuOpen(false);
     setCaptionExpanded(false);
     setReaction(null);
   }, []);
@@ -141,6 +146,7 @@ export function StoryCapabilitySurface({ client, enabled, resolveMedia, onOpenOw
     setPointerPressed(false);
     setProgress(0);
     setMenuOpen(false);
+    setReactionMenuOpen(false);
     setCaptionExpanded(false);
     setReaction(null);
     try {
@@ -168,7 +174,13 @@ export function StoryCapabilitySurface({ client, enabled, resolveMedia, onOpenOw
       return;
     }
     if (action === "toggle-menu") {
+      setReactionMenuOpen(false);
       setMenuOpen((value) => !value);
+      return;
+    }
+    if (action === "toggle-reaction-menu") {
+      setMenuOpen(false);
+      setReactionMenuOpen((value) => !value);
       return;
     }
     const delta = action === "previous" ? -1 : 1;
@@ -427,7 +439,13 @@ export function StoryCapabilitySurface({ client, enabled, resolveMedia, onOpenOw
         </div> : null}
         <div aria-label="Story actions" style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
           <SandButton onClick={() => act("toggle-menu")} size="sm" variant="secondary">Menu</SandButton>
-          <SandButton aria-pressed={reaction === "❤"} onClick={() => void react(reaction === "❤" ? null : "❤")} size="sm" variant="secondary">React</SandButton>
+          <SandButton
+            aria-expanded={reactionMenuOpen}
+            aria-haspopup="menu"
+            onClick={() => act("toggle-reaction-menu")}
+            size="sm"
+            variant="secondary"
+          >React</SandButton>
           <SandButton disabled={selectedStory.protectedContent} onClick={() => void share()} size="sm" variant="secondary">Share</SandButton>
           <SandButton disabled={onOpenOwner == null} onClick={() => onOpenOwner?.(selectedStory.ownerId)} size="sm" variant="secondary">Profile</SandButton>
           <SandButton
@@ -440,6 +458,17 @@ export function StoryCapabilitySurface({ client, enabled, resolveMedia, onOpenOw
           </SandButton>
           <span aria-label="Story reply availability" role="status">{selectedStory.allowReplies ? "Replies enabled" : "Replies disabled"}</span>
         </div>
+        {reactionMenuOpen ? <div aria-label="Story reactions" role="menu" style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 8 }}>
+          {QUICK_REACTION_EMOJIS.map((emoji) => <ReactionCell
+            emoji={emoji}
+            isReacted={reaction === emoji}
+            key={emoji}
+            onReact={() => {
+              void react(reaction === emoji ? null : emoji);
+              setReactionMenuOpen(false);
+            }}
+          />)}
+        </div> : null}
         {menuOpen ? <div aria-label="Story menu" role="menu" style={{ display: "flex", gap: 8, marginTop: 8 }}>
           <SandButton onClick={() => void remove()} size="sm" variant="secondary">Delete</SandButton>
           <SandButton onClick={close} size="sm" variant="secondary">Close</SandButton>
