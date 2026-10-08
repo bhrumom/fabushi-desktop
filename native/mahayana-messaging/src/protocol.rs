@@ -265,6 +265,9 @@ pub enum ClientCommand {
         request_id: String,
     },
     WalletStatus,
+    ListStories {
+        limit: u32,
+    },
     PublishStory {
         story: Story,
     },
@@ -480,6 +483,9 @@ pub enum ServerEvent {
     WalletStatus {
         account: Option<WalletAccount>,
         recent_entries: Vec<LedgerEntry>,
+    },
+    StoriesSnapshot {
+        stories: Vec<Story>,
     },
     StoryChanged {
         story: Story,
