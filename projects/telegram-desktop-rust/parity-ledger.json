@@ -13240,6 +13240,7 @@
         "ProductShell -> ProductionRenderer -> ConversationComposer -> exchangeComposerStash -> ComposerDraftStateStore.exchangeDraft"
       ],
       "production_evidence": [
+        "commit:2e8cd87fbaac9427b0e9a8cf424ac1dabb44f346",
         "path:frontend/src/recovered/features/conversation/workspace/draft-state.ts#exchangeDraft",
         "path:frontend/src/recovered/features/conversation/workspace/composer.tsx#ConversationComposer",
         "path:frontend/src/production/ProductionRenderer.tsx#exchangeComposerStash"
@@ -13248,7 +13249,7 @@
         "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts#composer stash atomically exchanges rich drafts and prepared attachments per scope",
         "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts#composer stash revalidates before restore and child-scope cleanup removes draft plus stash"
       ],
-      "target_commit": "644f5042815d0a8e3454d8108b64e0047544430d",
+      "target_commit": "2e8cd87fbaac9427b0e9a8cf424ac1dabb44f346",
       "workflow_run": null,
       "run_attempt": null,
       "job": null,
