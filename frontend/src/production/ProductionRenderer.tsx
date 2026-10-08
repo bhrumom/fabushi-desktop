@@ -4095,7 +4095,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
           />
         </div>
         <div style={{ display: "flex", flexDirection: "column", minHeight: 0, minWidth: 0, width: "100%" }}>
-          <StoryCapabilitySurface client={client} enabled={account?.kind === "logged-in" && transport === "connected"} onOpenOwner={openSidebarProfile} />
+          <StoryCapabilitySurface client={client} enabled={account?.kind === "logged-in" && transport === "connected"} resolveMedia={resolveAttachmentMedia} onOpenOwner={openSidebarProfile} />
           {workspaceRoute === "org-chart" ? <main className="sand-chat-stage"><Suspense fallback={null}><OrgChartWorkspaceView
           agents={orgChartAgents}
           onClose={() => setWorkspaceRoute(null)}

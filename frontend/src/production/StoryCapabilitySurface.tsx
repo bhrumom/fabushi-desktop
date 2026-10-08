@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { CoordinatorStory, CoordinatorStoryStealthStatus } from "../../../source/shared/rpc/coordinator";
 import type { ProductionCoordinatorClient } from "./coordinator-client";
+import type { AttachmentMedia } from "../recovered/contracts/desktop-bridge";
+import { resolveWithSingleRetry } from "../recovered/features/conversation/workspace/media-runtime";
 import { SandButton } from "../recovered/ui/sand-kit-primitives";
 import { OverlayDialog } from "../recovered/ui/overlay-primitives";
 
@@ -10,6 +12,7 @@ type StoryAction = "previous" | "next" | "toggle-pause";
 export interface StoryCapabilitySurfaceProps {
   readonly client: ProductionCoordinatorClient | null;
   readonly enabled: boolean;
+  readonly resolveMedia?: (source: string) => Promise<AttachmentMedia | null>;
   readonly onOpenOwner?: (ownerId: string) => void;
 }
 
@@ -22,7 +25,7 @@ function storyIsVideo(story: CoordinatorStory): boolean {
   return story.media.mimeType?.toLowerCase().startsWith("video/") === true;
 }
 
-export function StoryCapabilitySurface({ client, enabled, onOpenOwner }: StoryCapabilitySurfaceProps) {
+export function StoryCapabilitySurface({ client, enabled, resolveMedia, onOpenOwner }: StoryCapabilitySurfaceProps) {
   const [stories, setStories] = useState<readonly CoordinatorStory[]>([]);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [paused, setPaused] = useState(false);
@@ -33,6 +36,9 @@ export function StoryCapabilitySurface({ client, enabled, onOpenOwner }: StoryCa
   const [reaction, setReaction] = useState<string | null>(null);
   const [stealth, setStealth] = useState<CoordinatorStoryStealthStatus | null>(null);
   const [stealthBusy, setStealthBusy] = useState(false);
+  const [resolvedMediaSource, setResolvedMediaSource] = useState<string | null>(null);
+  const [resolvedMediaKind, setResolvedMediaKind] = useState<"image" | "video" | null>(null);
+  const [mediaResolving, setMediaResolving] = useState(false);
   const requestGenerationRef = useRef(0);
   const mediaGenerationRef = useRef(0);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -130,6 +136,40 @@ export function StoryCapabilitySurface({ client, enabled, onOpenOwner }: StoryCa
   }, [close, open, selectedIndex, stories.length]);
 
   useEffect(() => {
+    const generation = ++mediaGenerationRef.current;
+    setResolvedMediaSource(null);
+    setResolvedMediaKind(null);
+    setMediaResolving(false);
+    if (selectedStory == null) return undefined;
+    const fallback = storyMediaSource(selectedStory);
+    const localPath = selectedStory.media.localPath?.trim();
+    if (resolveMedia == null || localPath == null || localPath.length === 0) {
+      setResolvedMediaSource(fallback);
+      return undefined;
+    }
+    let active = true;
+    setMediaResolving(true);
+    void resolveWithSingleRetry(resolveMedia, localPath).then((media) => {
+      if (!active || generation !== mediaGenerationRef.current) return;
+      if (media?.kind === "image") {
+        setResolvedMediaSource(media.dataUrl);
+        setResolvedMediaKind("image");
+      } else if (media?.kind === "video") {
+        setResolvedMediaSource(media.src);
+        setResolvedMediaKind("video");
+      } else {
+        setResolvedMediaSource(fallback);
+      }
+      setMediaResolving(false);
+    }).catch(() => {
+      if (!active || generation !== mediaGenerationRef.current) return;
+      setResolvedMediaSource(fallback);
+      setMediaResolving(false);
+    });
+    return () => { active = false; };
+  }, [resolveMedia, selectedStory?.id, selectedStory?.media.localPath, selectedStory?.media.remoteUrl]);
+
+  useEffect(() => {
     const video = videoRef.current;
     if (video == null) return;
     if (paused) void video.pause();
@@ -137,7 +177,7 @@ export function StoryCapabilitySurface({ client, enabled, onOpenOwner }: StoryCa
   }, [paused, selectedStory?.id]);
 
   useEffect(() => {
-    if (selectedStory == null || paused || storyIsVideo(selectedStory)) return;
+    if (selectedStory == null || paused || resolvedMediaKind === "video" || (resolvedMediaKind == null && storyIsVideo(selectedStory))) return;
     const generation = mediaGenerationRef.current;
     const timer = window.setInterval(() => {
       if (generation !== mediaGenerationRef.current) return;
@@ -150,7 +190,7 @@ export function StoryCapabilitySurface({ client, enabled, onOpenOwner }: StoryCa
       });
     }, 100);
     return () => window.clearInterval(timer);
-  }, [act, paused, selectedStory]);
+  }, [act, paused, resolvedMediaKind, selectedStory]);
 
   const react = useCallback(async (nextReaction: string | null) => {
     if (client == null || selectedStory == null) return;
@@ -210,7 +250,8 @@ export function StoryCapabilitySurface({ client, enabled, onOpenOwner }: StoryCa
     await navigator.clipboard?.writeText(source ?? text);
   }, [selectedStory]);
 
-  const mediaSource = useMemo(() => selectedStory == null ? null : storyMediaSource(selectedStory), [selectedStory]);
+  const mediaSource = resolvedMediaSource;
+  const mediaIsVideo = selectedStory != null && (resolvedMediaKind === "video" || (resolvedMediaKind == null && storyIsVideo(selectedStory)));
 
   if (!enabled) return null;
 
@@ -259,8 +300,9 @@ export function StoryCapabilitySurface({ client, enabled, onOpenOwner }: StoryCa
           <SandButton onClick={() => act("next")} size="sm" variant="secondary">Next</SandButton>
         </div>
         <div style={{ alignItems: "center", display: "grid", minHeight: 320, placeItems: "center", marginTop: 12 }}>
-          {mediaSource == null ? <div role="status">Story media is not available through the current Resource projection.</div>
-            : storyIsVideo(selectedStory) ? <video
+          {mediaResolving ? <div role="status">Loading Story media…</div>
+            : mediaSource == null ? <div role="status">Story media is not available through the current Resource projection.</div>
+            : mediaIsVideo ? <video
                 aria-label="Story video"
                 controls={false}
                 onEnded={() => act("next")}

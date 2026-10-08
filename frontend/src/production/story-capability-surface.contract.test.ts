@@ -56,3 +56,14 @@ test("CONTRACT-TDRP-STORY-STEALTH-SHIPPING-001 keeps entitlement state server-ow
   assert.match(engine, /anonymize_recent_view/);
   assert.match(engine, /record_anonymous_view/);
 });
+
+test("CONTRACT-TDRP-STORY-RESOURCE-001 reuses canonical attachment media resolution with stale fencing", () => {
+  const renderer = read("frontend/src/production/ProductionRenderer.tsx");
+  const surface = read("frontend/src/production/StoryCapabilitySurface.tsx");
+  assert.match(renderer, /resolveMedia=\{resolveAttachmentMedia\}/);
+  assert.match(surface, /resolveWithSingleRetry\(resolveMedia, localPath\)/);
+  assert.match(surface, /selectedStory\.media\.localPath/);
+  assert.match(surface, /generation !== mediaGenerationRef\.current/);
+  assert.match(surface, /setResolvedMediaSource\(fallback\)/);
+  assert.doesNotMatch(surface, /fetch\(/);
+});
