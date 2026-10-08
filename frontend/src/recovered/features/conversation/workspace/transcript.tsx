@@ -253,6 +253,12 @@ function isHttpUrl(value: string): boolean {
 
 type TranscriptExternalLinkOpener = (url: string) => void;
 
+function transcriptSelectionBlocksActivation(): boolean {
+  if (typeof window === "undefined") return false;
+  const selection = window.getSelection();
+  return selection != null && !selection.isCollapsed && selection.toString().length > 0;
+}
+
 function renderAssistantInlineText(text: string, openExternal?: TranscriptExternalLinkOpener): ReactNode[] {
   const nodes: ReactNode[] = [];
   const assistantInlinePattern = /\\\(([^\\\n]*?)\\\)|\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s<>"']+)|(\*\*|__)(?=\S)([^\n]*?\S)\5|(\*|_)(?=\S)([^\n]*?\S)\7|~~(?=\S)([^\n]*?\S)~~|`([^`\n]+)`/giu;
@@ -281,7 +287,7 @@ function renderAssistantInlineText(text: string, openExternal?: TranscriptExtern
         } else {
           nodes.push(openExternal == null
             ? (markdownLabel ?? href)
-            : <a className="sand-l1v4ol sand-krqix3 sand-1sur9pj" href={href} key={`assistant-link-${match.index}`} onClick={(event) => { event.preventDefault(); openExternal(href); }} rel="noopener noreferrer">{markdownLabel ?? href}</a>);
+            : <a className="sand-l1v4ol sand-krqix3 sand-1sur9pj" href={href} key={`assistant-link-${match.index}`} onClick={(event) => { event.preventDefault(); if (!transcriptSelectionBlocksActivation()) openExternal(href); }} rel="noopener noreferrer">{markdownLabel ?? href}</a>);
           if (trailing.length > 0) nodes.push(trailing);
         }
       }
@@ -491,7 +497,7 @@ function applyRichTextMarks(node: ProseMirrorNode, content: ReactNode, openExter
       case "code": return <code key={key}>{current}</code>;
       case "link": {
         const href = normalizeLinkUrl(mark.attrs.href);
-        return href == null || openExternal == null ? current : <a href={href} key={key} onClick={(event) => { event.preventDefault(); openExternal(href); }}>{current}</a>;
+        return href == null || openExternal == null ? current : <a href={href} key={key} onClick={(event) => { event.preventDefault(); if (!transcriptSelectionBlocksActivation()) openExternal(href); }}>{current}</a>;
       }
       default: return current;
     }
