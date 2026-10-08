@@ -13,10 +13,10 @@
     "recursive_non_directory_entries": 15812,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 15812,
-    "unread_minimum": 15729,
+    "unknown_minimum": 15785,
+    "unread_minimum": 15725,
     "omitted_known": 0,
-    "note": "Live aac515c recursive census is 15,812. Eighty-three exact recursive entries are now read-complete; unknown 15,812, unread 15,729, omitted 0. The first twenty-three deterministic recursive entries are fully read in projects/telegram-desktop-rust/dossiers/upstream-agent-evidence-infrastructure-complete-read.md; they remain unknown until final machine-readable source disposition. Production completeness remains open."
+    "note": "Live aac515c recursive census is 15,812. Eighty-seven exact recursive entries are now read-complete; unknown 15,785, unread 15,725, omitted 0. The first twenty-seven deterministic recursive entries are fully read and explicitly dispositioned in projects/telegram-desktop-rust/inventory/source-dispositions.json. Production completeness remains open."
   },
   "latest_recursive_evidence": {
     "run_id": 37596744991,
@@ -43,7 +43,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Accepted aac515c authority is exact. Eighty-three full-read entries are now credited; unread_minimum is 15,729, unknown remains 15,812, omitted remains 0. Current-head source authority and production completeness remain open.",
+  "note": "Accepted aac515c authority is exact. Eighty-seven full-read entries are now credited; unread_minimum is 15,725, unknown remains 15,785, omitted remains 0. The first twenty-seven deterministic entries have explicit machine-readable development-only/non-applicable dispositions; current-head source authority and production completeness remain open.",
   "rebaseline": {
     "from_commit": "d346b42a1d30ef60dc989b6e5191bb8e571f6bd5",
     "to_commit": "aac515c5408015231a273c80ab4c4b33815e63ab",
@@ -73,5 +73,13 @@
       "Telegram/cmake/test_updater_win.cmake"
     ],
     "current_head_source_authority_evidence": "pending-new-head"
+  },
+  "source_dispositions": {
+    "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+    "upstream_commit": "aac515c5408015231a273c80ab4c4b33815e63ab",
+    "deterministic_prefix_closed": 27,
+    "development_only_non_applicable": 27,
+    "unknown_closed": 27,
+    "omitted": 0
   }
 }

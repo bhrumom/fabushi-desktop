@@ -573,3 +573,111 @@ Evidence/disposition: complete source read and exact blob identity. Applicable q
 
 The next deterministic unread entry is
 `.agents/skills/process-inbox/SKILL.md`.
+
+
+## Entry 24 — process-inbox skill
+
+Path: `.agents/skills/process-inbox/SKILL.md`  
+Blob: `b8432f998199232db3c2db96d4b174ff03755e47`  
+Read status: complete.
+
+Responsibility: route the ignored upstream AI inbox and pasted assets into durable, independently testable task/project records while preserving project lineage, explicit transaction identity, publication ownership, and inbox backup/finalization semantics.
+
+Owner: upstream autonomous-development inbox planner. It does not own a Telegram end-user capability and must not create a Fabushi ProductShell, Host, Coordinator, messaging, updater, or UI runtime surface.
+
+State machine / side effects: prepare or resume one inbox transaction, inspect and route notes, publish scoped task/project/receipt changes, then finalize by clearing only an unchanged inbox or preserve changed input. Side effects are development task records, receipts, backups and git publication only.
+
+Failure cases: dirty or mismatched worktrees, another checkout's active transaction, ambiguous routing, invalid publication scope, publication races, or changed inbox payload. All fail closed without inventing a shipping product path.
+
+UI/non-UI disposition: development-only / non-applicable to shipping UI.
+
+Fabushi canonical owner/target: external development-agent infrastructure only; no shipping target.
+
+Platform differences: none in product semantics; checkout/worktree mechanics are development-only.
+
+Production/test evidence: exact source read. Helper behavior is qualified by `workspace_test.py`; no shipping production implementation is required.
+
+## Entry 25 — process-inbox OpenAI interface metadata
+
+Path: `.agents/skills/process-inbox/agents/openai.yaml`  
+Blob: `b664f98ad4440de7a8074dfe790d80f3d2201546`  
+Read status: complete.
+
+Responsibility: expose the Process AI Inbox development tool's display name, short description and default prompt.
+
+Owner: development-tool interface metadata only.
+
+State machine / side effects / failure cases: no product state machine and no shipping side effect; malformed or missing metadata only affects the development tool surface.
+
+UI/non-UI disposition: development-only / non-applicable to shipping UI.
+
+Fabushi canonical owner/target: external development-agent infrastructure; no shipping target or platform delta.
+
+Production/test evidence: exact blob read; no shipping production/test evidence is applicable.
+
+## Entry 26 — process-inbox workspace helper
+
+Path: `.agents/skills/process-inbox/scripts/workspace.py`  
+Blob: `6f0ec8ef8f5c404f08091efe4ce1853249cd5c48`  
+Read status: complete, 5,088 lines.
+
+Responsibility: implement the upstream AI workspace, task, source-lineage, test-harness and inbox publication machinery. The file owns repository/worktree synchronization; task-state parsing and transitions; queue/start/retry/checkpoint; source lineage and task refs; clean/submodule preparation; exact build-lock recovery; portable test-account setup; test-run completion/crash/death classification; overlays; source commit ownership; evidence fences; finish/split/consolidate publication; inbox transaction prepare/publish/finalize/abort; routing worktrees; and stale-project archive/unarchive.
+
+Owner: upstream development/test/release infrastructure. None of these commands is a Telegram end-user ProductShell/runtime responsibility.
+
+State machine: task `todo -> in-progress -> approved|blocked|split-required`, durable split/superseded resolution, inbox transaction `prepare -> publish -> finalize|abort`, source refs `base/green/run`, and bounded test-run completion/death/hang classification.
+
+Side effects: development git worktrees/refs/commits/pushes; scoped task/project/receipt files; exact-path build/test process cleanup; portable test-account copies; crash evidence movement; overlay patches. These effects are all outside the shipping application runtime.
+
+Failure cases: dirty/wrong worktree, unfinished or absent lineage dependencies, unsafe path ownership, mismatched submodules, ambiguous build lock ownership, missing golden test account, stale/ambiguous crash evidence, false `TEST_COMPLETE` markers, overlay conflicts, invalid split/consolidation graphs, and publication races. The helper consistently fails closed.
+
+UI/non-UI disposition: non-applicable to shipping UI and runtime.
+
+Fabushi canonical owner/target: only existing GitHub Actions, E2E and release-evidence tooling may reuse equivalent quality/safety semantics; no new shipping owner or target is created.
+
+Platform differences: Windows Restart Manager/process recovery and exact build artifact ownership; macOS app-bundle portable-root detection; Unix process lookup. These are development/test mechanics, not product platform responsibilities.
+
+Production/test evidence: exact 5,088-line source read. `workspace_test.py` is the upstream focused qualification. No Fabushi shipping production implementation is required for this source entry.
+
+## Entry 27 — process-inbox workspace helper tests
+
+Path: `.agents/skills/process-inbox/scripts/workspace_test.py`  
+Blob: `68376bc2e7628c867fa849b2a042b19a4ca9e2e0`  
+Read status: complete, 3,876 lines.
+
+Responsibility: qualify `workspace.py` across inbox publication isolation, non-ASCII path handling, durable superseded/split/consolidation graphs, source lineage, worktree/submodule safety, build-lock recovery, portable account lifecycle, exact test-completion parsing, crash/death/timeout evidence, overlay preservation/conflicts, owned source commits, fences, and carried implementation handoff.
+
+Owner: upstream development/test infrastructure tests only.
+
+State machine / side effects: temporary repository/worktree/process fixtures exercise the development helper contracts; no shipping application state is owned.
+
+Failure cases covered: publication leakage, dependency cycles, stale aliases, source-lineage absence, lock overreach, stale crash misclassification, partial overlay replacement, unsafe unowned writes, split carrier mismatch, and evidence contract regression.
+
+UI/non-UI disposition: development-only / non-applicable to shipping UI.
+
+Fabushi canonical owner/target: existing CI/release tooling only if an equivalent helper contract is adopted; no shipping target.
+
+Platform differences: cross-platform development/test fixtures only.
+
+Production/test evidence: exact 3,876-line source read and the upstream unittest suite itself.
+
+## Machine-readable closure for deterministic entries 1–27
+
+All first twenty-seven deterministic recursive entries now have exact blob-bound rows in
+`projects/telegram-desktop-rust/inventory/source-dispositions.json`. Each is explicitly
+classified as development-only and non-applicable to the shipping product. This is not an
+omission: every row records responsibility, upstream owner, state machine, side effects,
+failure cases, UI disposition, canonical Fabushi owner/target, platform differences and
+production/test evidence.
+
+Coverage after this closure:
+
+- `full-read: 83 -> 87`
+- `unread: 15,729 -> 15,725`
+- `unknown: 15,812 -> 15,785`
+- `omitted: 0` unchanged
+- machine-readable deterministic prefix closed: `1..27`
+
+The next deterministic unread entry is
+`.agents/skills/rebase/SKILL.md` at blob
+`412a249b082a59b238af0f4014be49fd27ba87c7`.
