@@ -425,13 +425,13 @@ jobs:
             echo "::error::build-time acquisition candidate drift: discovered $actual_count, inventory expects $expected_count"
             exit 1
           fi
-          printf '%s\n' "accepted_upstream=$upstream_sha" > artifacts/tdrp-authority/source-binary-evidence-245-272.txt
+          printf '%s\n' "accepted_upstream=$upstream_sha" > artifacts/tdrp-authority/source-binary-evidence-245-277.txt
           while IFS='|' read -r order path expected_blob; do
             actual_blob="$(git -C "$work" hash-object "$path")"
             test "$actual_blob" = "$expected_blob"
             size="$(wc -c < "$work/$path" | tr -d '[:space:]')"
             kind="$(file -b "$work/$path")"
-            printf '%s|%s|%s|%s|%s\n' "$order" "$path" "$actual_blob" "$size" "$kind" >> artifacts/tdrp-authority/source-binary-evidence-245-272.txt
+            printf '%s|%s|%s|%s|%s\n' "$order" "$path" "$actual_blob" "$size" "$kind" >> artifacts/tdrp-authority/source-binary-evidence-245-277.txt
           done <<'EOF'
           245|Telegram/Resources/art/mac_setup.tiff|71d8354694ced401b149d375e5e912065cb60b49
           246|Telegram/Resources/art/premium/coin_border.png|03a5254f5689472e31b89db6058830eeb1afc581
@@ -440,6 +440,8 @@ jobs:
           261|Telegram/Resources/art/themeimage.jpg|d0ffd90d52ec600913864904217004cee1ea6ce9
           271|Telegram/Resources/art/verified_bg.webp|f08059f45501358a219e991bb3b733eb70cca537
           272|Telegram/Resources/art/verified_fg.webp|3535123495877e3de02cff29ca7e3d2ef3a70921
+          276|Telegram/Resources/day-blue.tdesktop-theme|ccc3dbdf9dc6d1aed5ae02df7d9430334839900f
+          277|Telegram/Resources/day-custom-base.tdesktop-theme|162d90457d8254d3eefcf772c3ca62545a97508a
           EOF
       - name: Validate Revision 9 authority
         env:
