@@ -499,6 +499,47 @@ jobs:
           334|Telegram/Resources/export_html/images/section_web.png|d82e7fb31ec9ee43583866d9522782430d9211d4
           335|Telegram/Resources/export_html/images/section_web@2x.png|b436884e8dde750e99f5cede0bcb11550cef3a48
           EOF
+          printf '%s\n' "accepted_upstream=$upstream_sha" > artifacts/tdrp-authority/source-binary-evidence-339-370.txt
+          while IFS='|' read -r order path expected_blob; do
+            actual_blob="$(git -C "$work" hash-object "$path")"
+            test "$actual_blob" = "$expected_blob"
+            size="$(wc -c < "$work/$path" | tr -d '[:space:]')"
+            kind="$(file -b "$work/$path")"
+            printf '%s|%s|%s|%s|%s\n' "$order" "$path" "$actual_blob" "$size" "$kind" >> artifacts/tdrp-authority/source-binary-evidence-339-370.txt
+          done <<'EOF'
+          339|Telegram/Resources/icons/archive_userpic.png|a00a7a61b4e6777ba8db41b3548d390a3899e31d
+          340|Telegram/Resources/icons/archive_userpic@2x.png|88767e03935fa4ce629e886cc409ebf680eb2f0a
+          341|Telegram/Resources/icons/archive_userpic@3x.png|d0076e1fe7441a9603bdf6a24a4990a50043d679
+          342|Telegram/Resources/icons/arrows_select.png|6ce5c0f6c4538f4bc5b23380ef8c74ff52b6516d
+          343|Telegram/Resources/icons/arrows_select@2x.png|6db5b158e953070c4bfffa721f0ad7a2906befa8
+          344|Telegram/Resources/icons/arrows_select@3x.png|63bf8a6a44d13edc0110f92d7c890fd1dc7d4848
+          345|Telegram/Resources/icons/boosts/boost_mini2.png|b4884ccc8219eeafd8f74d49f69a2f80234439f3
+          346|Telegram/Resources/icons/boosts/boost_mini2@2x.png|9fb6e01e999deabdc3a38546147dca9f8ff2bdb0
+          347|Telegram/Resources/icons/boosts/boost_mini2@3x.png|16aff7dbe80ce241eca2519a90f0cff05ea59631
+          348|Telegram/Resources/icons/boosts/boost_unclaimed.png|fb093176f775d81894b166cff059cb05aa78bbd8
+          349|Telegram/Resources/icons/boosts/boost_unclaimed@2x.png|30d5bd6bc708a0b76eb36b917e93c8f492a4fe1e
+          350|Telegram/Resources/icons/boosts/boost_unclaimed@3x.png|f63cca1c90887b31db9361f4b92f570dbdc2a87c
+          351|Telegram/Resources/icons/boosts/boost_unknown.png|78f64285205068ca11fa77685063b41088352503
+          352|Telegram/Resources/icons/boosts/boost_unknown@2x.png|ad22dc971e1d3320df4b69ab116419c245f16da5
+          353|Telegram/Resources/icons/boosts/boost_unknown@3x.png|bbf4532a27ff43e74bbbd832645f06699b68dd3f
+          354|Telegram/Resources/icons/boosts/filled_gift.png|123818f74b8d1b7defc9157ceb5241c71876a4cf
+          355|Telegram/Resources/icons/boosts/filled_gift@2x.png|13e5102ed47f9c0095ae86fb9103464086cacf96
+          356|Telegram/Resources/icons/boosts/filled_gift@3x.png|7e3ad4e24fb933f8ae864c17ce1a99d67eedba18
+          357|Telegram/Resources/icons/boosts/mini_gift.png|1008e51240b0885f4d751ca2b8cd8debf1ddebf5
+          358|Telegram/Resources/icons/boosts/mini_gift@2x.png|462d3876453503215953ecbac8a2d423af4b9df8
+          359|Telegram/Resources/icons/boosts/mini_gift@3x.png|8858b4fff5eadb41c06732391e2ca5a73845bd23
+          360|Telegram/Resources/icons/boosts/mini_giveaway.png|79ffc0f1d7c46c2fdb90c4027c4b557d927a0a13
+          361|Telegram/Resources/icons/boosts/mini_giveaway@2x.png|bb5e94a656716224f92d6e22d505d845b91f70a7
+          362|Telegram/Resources/icons/boosts/mini_giveaway@3x.png|c9f853452567557a318fcab434e8590e364a81d5
+          363|Telegram/Resources/icons/bubble_tail.png|b953ce8f62f2eb813ca6336966f929f54533447a
+          364|Telegram/Resources/icons/bubble_tail@2x.png|f946cce57bc9737021c6a557e3dd5ad25e9235a0
+          365|Telegram/Resources/icons/bubble_tail@3x.png|87ce9d59df415193464b055840481764c1fd4f31
+          366|Telegram/Resources/icons/calendar_down.png|f0357feba13acd7ae0f4a2c8f6bbd5d4d41e52b5
+          367|Telegram/Resources/icons/calendar_down@2x.png|f15877eb291c7700b4720bf3a4a7ed9c68b79c7a
+          368|Telegram/Resources/icons/calendar_down@3x.png|06c06e6b00127ec1ded9cc62fcc173ce4f65223e
+          369|Telegram/Resources/icons/calls/call_answer.png|0d79a1750d9451a644e2c6dc0e1c051519fe9396
+          370|Telegram/Resources/icons/calls/call_answer@2x.png|1c573d1519032a6a4e396c261f567f832ac2e6eb
+          EOF
       - name: Validate Revision 9 authority
         env:
           GITHUB_TOKEN: ${{ github.token }}
