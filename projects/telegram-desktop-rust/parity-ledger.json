@@ -10919,14 +10919,14 @@
           "symbols": [
             "ConversationChildRuntimeState"
           ],
-          "responsibility_scope": "canonical typed child identity, destination-scoped draft/forward staging state, and exact child lifecycle"
+          "responsibility_scope": "typed destination-child identity and destination-scoped forward-staging state contract"
         },
         {
           "path": "native/mahayana-messaging/src/engine.rs",
           "symbols": [
             "MessagingEngine"
           ],
-          "responsibility_scope": "canonical message/child lifecycle, authorization, source-message removal convergence, and state mutation boundary"
+          "responsibility_scope": "canonical forward-staging command/mutation boundary and authorization contract"
         }
       ]
     },
@@ -11167,14 +11167,14 @@
           "symbols": [
             "ConversationChildRuntimeState"
           ],
-          "responsibility_scope": "canonical typed child identity, destination-scoped draft/forward staging state, and exact child lifecycle"
+          "responsibility_scope": "destination-child destruction cleanup and stale staged-state retirement lifecycle"
         },
         {
           "path": "native/mahayana-messaging/src/engine.rs",
           "symbols": [
             "MessagingEngine"
           ],
-          "responsibility_scope": "canonical message/child lifecycle, authorization, source-message removal convergence, and state mutation boundary"
+          "responsibility_scope": "source-message removal convergence, child-destroy sequencing, and stale-forward lifecycle fencing"
         }
       ]
     }
