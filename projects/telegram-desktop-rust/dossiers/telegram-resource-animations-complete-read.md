@@ -42,3 +42,10 @@ These eight TGS resources were streamed and gzip-decompressed without persistent
 
 No entry receives implementation credit before its referenced production source is fully read. Accounting: full-read `166`, unread `15,646`, unknown `15,730`, omitted `0`.
 
+
+
+## Entries 107–126 — cocoon, collectibles, craft, dice, discussion and peer-edit animations
+
+All 20 exact TGS blobs were streamed from telegramdesktop/tdesktop@aac515c5408015231a273c80ab4c4b33815e63ab, gzip-decompressed and structurally inspected without a persistent checkout or build artifact. QRC inclusion was confirmed for each. Exact production consumers were traced for cocoon translation UI, collectible phone/username info and internal routes, star-gift craft progress/failure, diamond currency/stake UI, dice/slot local sticker generation, discussion-link management, direct-message management, and topics/forum management.
+
+No resource receives Fabushi implementation credit merely because its asset was read: each row remains implementation-open until the referenced production source reaches deterministic full-read order and its canonical Fabushi owner, UI/UX, failure states and focused tests are bound. Accounting: full-read `186`, unread `15,626`, unknown `15,730`, omitted `0`.

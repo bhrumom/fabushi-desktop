@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15730,
-    "unread_minimum": 15646,
+    "unread_minimum": 15626,
     "omitted_known": 0,
-    "note": "Live aac515c recursive census is 15,812. 166 exact entries are read-complete; unknown 15,730, unread 15,646, omitted 0. Animation resources through cloud_password/validate.tgs are fully read/decomposed."
+    "note": "Live aac515c recursive census is 15,812. 186 exact entries are read-complete; unknown 15,730, unread 15,626, omitted 0. Animation resources through edit_peers/topics.tgs are fully read/decomposed; production-consumer implementation evidence remains open."
   },
   "latest_recursive_evidence": {
     "run_id": 37596744991,
@@ -43,7 +43,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Accepted aac515c authority is exact. 166 full-read entries are now credited; unread_minimum is 15,646, unknown remains 15,730, omitted remains 0. Entries 99-106 are semantically read/decompressed and consumer-attributed where discoverable; production consumer evidence remains open.",
+  "note": "Accepted aac515c authority is exact. 186 full-read entries are now credited; unread_minimum is 15,626, unknown remains 15,730, omitted remains 0. Entries 107-126 are semantically decompressed/read and exact production consumers were identified, but remain unknown-open until those consumers are fully read and Fabushi production/test evidence is bound.",
   "rebaseline": {
     "from_commit": "d346b42a1d30ef60dc989b6e5191bb8e571f6bd5",
     "to_commit": "aac515c5408015231a273c80ab4c4b33815e63ab",
@@ -81,6 +81,6 @@
     "development_only_non_applicable": 62,
     "unknown_closed": 82,
     "omitted": 0,
-    "read_through": 106
+    "read_through": 126
   }
 }
