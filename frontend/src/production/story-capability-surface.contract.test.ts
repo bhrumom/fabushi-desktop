@@ -24,6 +24,8 @@ test("CONTRACT-TDRP-STORY-ACTION-LIFECYCLE-001 shares viewer actions and fences 
   assert.match(surface, /event\.key === "ArrowLeft"[\s\S]*?act\("previous"\)/);
   assert.match(surface, /event\.key === "ArrowRight"[\s\S]*?act\("next"\)/);
   assert.match(surface, /event\.key === " " \|\| event\.key === "k"[\s\S]*?act\("toggle-pause"\)/);
+  assert.match(surface, /onPointerUp=\{\(event\) => \{[\s\S]*?act\("previous"\)[\s\S]*?act\("next"\)[\s\S]*?act\("toggle-pause"\)/);
+  assert.match(surface, /aria-label="Story media navigation"/);
   assert.match(surface, /requestGenerationRef/);
   assert.match(surface, /mediaGenerationRef/);
 });

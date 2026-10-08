@@ -299,7 +299,19 @@ export function StoryCapabilitySurface({ client, enabled, resolveMedia, onOpenOw
           <SandButton onClick={() => act("toggle-pause")} size="sm" variant="secondary">{paused ? "Resume" : "Pause"}</SandButton>
           <SandButton onClick={() => act("next")} size="sm" variant="secondary">Next</SandButton>
         </div>
-        <div style={{ alignItems: "center", display: "grid", minHeight: 320, placeItems: "center", marginTop: 12 }}>
+        <div
+          aria-label="Story media navigation"
+          onPointerUp={(event) => {
+            if (event.button !== 0 || event.pointerType === "mouse" && event.buttons !== 0) return;
+            const bounds = event.currentTarget.getBoundingClientRect();
+            const ratio = bounds.width <= 0 ? 0.5 : (event.clientX - bounds.left) / bounds.width;
+            if (ratio < 0.35) act("previous");
+            else if (ratio > 0.65) act("next");
+            else act("toggle-pause");
+          }}
+          role="group"
+          style={{ alignItems: "center", display: "grid", minHeight: 320, placeItems: "center", marginTop: 12 }}
+        >
           {mediaResolving ? <div role="status">Loading Story media…</div>
             : mediaSource == null ? <div role="status">Story media is not available through the current Resource projection.</div>
             : mediaIsVideo ? <video
