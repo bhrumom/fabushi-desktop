@@ -1,10 +1,13 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, OnceLock};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use sha2::{Digest, Sha256};
 use uuid::Uuid;
+
+use fabushi_messaging_core::{Actor as MessagingActor, ActorId as MessagingActorId, ClientCommand as MessagingClientCommand, ClientEnvelope as MessagingClientEnvelope, FABUSHI_MESSAGING_PROTOCOL_VERSION, FileBlobStore as MessagingFileBlobStore, JsonFileStateStore as MessagingJsonFileStateStore, MessagingService, RequestContext as MessagingRequestContext, ServerEnvelope as MessagingServerEnvelope, ServerEvent as MessagingServerEvent, StoryId as MessagingStoryId};
 
 use crate::agent_isolation::{
     AgentWorkerPool, ProductionAgentStoreWorkerBackend,
@@ -3104,6 +3107,140 @@ impl ProductionSessionWorkers {
             return Err("Human handoff Agent activity metadata was not durably updated".into());
         }
         Ok(entry)
+    }
+
+    fn story_actor_id(&self) -> Result<MessagingActorId, String> {
+        let account_id = self.local_human_id()?;
+        let digest = Sha256::digest(account_id.as_bytes());
+        let fingerprint = digest[..16]
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<String>();
+        Ok(MessagingActorId::new(format!("human:account:{fingerprint}")))
+    }
+
+    fn story_server_time_ms() -> i64 {
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .ok()
+            .and_then(|duration| i64::try_from(duration.as_millis()).ok())
+            .unwrap_or(i64::MAX)
+    }
+
+    fn execute_story_messaging(
+        &self,
+        command: MessagingClientCommand,
+    ) -> Result<Vec<MessagingServerEnvelope>, String> {
+        static STORY_IO_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+        let _guard = STORY_IO_LOCK
+            .get_or_init(|| Mutex::new(()))
+            .lock()
+            .map_err(|_| "canonical Story storage lock is poisoned".to_string())?;
+        let actor_id = self.story_actor_id()?;
+        let device_id = match self.shipping_native_messaging()? {
+            Some(client) => {
+                let identity = client.identity()?;
+                if identity.user_id != self.local_human_id()? {
+                    return Err("Story credential identity does not match active Human identity".into());
+                }
+                identity.device_id
+            }
+            None => "desktop-local".to_string(),
+        };
+        let root = self.agents_root.join("_messaging");
+        let mut service = MessagingService::load_with_blob_store(
+            MessagingJsonFileStateStore::new(root.join("snapshot.json")),
+            MessagingFileBlobStore::new(root.join("blobs")),
+        )
+        .map_err(|error| format!("canonical Story service could not load: {error}"))?;
+        let now_ms = Self::story_server_time_ms();
+        let context = |request_id: String| MessagingRequestContext {
+            request_id,
+            device_id: device_id.clone(),
+            actor_id: actor_id.clone(),
+            session_id: "desktop-story-surface".into(),
+            sent_at_ms: now_ms,
+        };
+        if !service.engine().state().actors.contains_key(&actor_id) {
+            service.handle(
+                MessagingClientEnvelope {
+                    protocol_version: FABUSHI_MESSAGING_PROTOCOL_VERSION,
+                    context: context(format!("story-actor:{}", Uuid::new_v4().simple())),
+                    command: MessagingClientCommand::UpsertProfile {
+                        actor: MessagingActor::human(actor_id.0.clone(), "Fabushi Human"),
+                    },
+                },
+                now_ms,
+            ).map_err(|error| format!("canonical Story actor projection failed: {error}"))?;
+        }
+        service.handle(
+            MessagingClientEnvelope {
+                protocol_version: FABUSHI_MESSAGING_PROTOCOL_VERSION,
+                context: context(format!("story-command:{}", Uuid::new_v4().simple())),
+                command,
+            },
+            now_ms,
+        ).map_err(|error| format!("canonical Story command failed: {error}"))
+    }
+
+    pub fn list_stories(&self, limit: usize) -> Result<Vec<serde_json::Value>, String> {
+        let responses = self.execute_story_messaging(MessagingClientCommand::ListStories {
+            limit: u32::try_from(limit.clamp(1, 500)).unwrap_or(500),
+        })?;
+        let stories = responses.into_iter().find_map(|envelope| match envelope.event {
+            MessagingServerEvent::StoriesSnapshot { stories } => Some(stories),
+            _ => None,
+        }).ok_or_else(|| "canonical Story projection returned no StoriesSnapshot".to_string())?;
+        stories.into_iter()
+            .map(|story| serde_json::to_value(story).map_err(|error| error.to_string()))
+            .collect()
+    }
+
+    pub fn view_story(&self, story_id: &str) -> Result<serde_json::Value, String> {
+        let story_id = story_id.trim();
+        if story_id.is_empty() || story_id.len() > 160 {
+            return Err("viewStory requires a valid Story id".into());
+        }
+        let responses = self.execute_story_messaging(MessagingClientCommand::ViewStory {
+            story_id: MessagingStoryId(story_id.to_string()),
+        })?;
+        responses.into_iter().find_map(|envelope| match envelope.event {
+            MessagingServerEvent::StoryChanged { story } => serde_json::to_value(story).ok(),
+            _ => None,
+        }).ok_or_else(|| "canonical Story view returned no StoryChanged projection".to_string())
+    }
+
+    pub fn react_story(&self, story_id: &str, reaction: Option<&str>) -> Result<serde_json::Value, String> {
+        let story_id = story_id.trim();
+        if story_id.is_empty() || story_id.len() > 160 {
+            return Err("reactStory requires a valid Story id".into());
+        }
+        let reaction = reaction.map(str::trim).filter(|value| !value.is_empty()).map(str::to_string);
+        if reaction.as_ref().is_some_and(|value| value.as_bytes().len() > 32) {
+            return Err("Story reaction exceeds the 32-byte surface limit".into());
+        }
+        let responses = self.execute_story_messaging(MessagingClientCommand::ReactStory {
+            story_id: MessagingStoryId(story_id.to_string()),
+            reaction,
+        })?;
+        responses.into_iter().find_map(|envelope| match envelope.event {
+            MessagingServerEvent::StoryChanged { story } => serde_json::to_value(story).ok(),
+            _ => None,
+        }).ok_or_else(|| "canonical Story reaction returned no StoryChanged projection".to_string())
+    }
+
+    pub fn delete_story(&self, story_id: &str) -> Result<bool, String> {
+        let story_id = story_id.trim();
+        if story_id.is_empty() || story_id.len() > 160 {
+            return Err("deleteStory requires a valid Story id".into());
+        }
+        let responses = self.execute_story_messaging(MessagingClientCommand::DeleteStory {
+            story_id: MessagingStoryId(story_id.to_string()),
+        })?;
+        Ok(responses.into_iter().any(|envelope| matches!(
+            envelope.event,
+            MessagingServerEvent::StoryDeleted { story_id: deleted } if deleted.0 == story_id
+        )))
     }
 
     pub fn toggle_human_message_reaction(

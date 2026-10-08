@@ -288,6 +288,33 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
             .list_agents()
             .and_then(|agents| serde_json::to_value(agents).map_err(|error| error.to_string()))
             .map_err(SessionGatewayError::internal),
+        "listStories" => {
+            let limit = args
+                .get("limit")
+                .and_then(Value::as_u64)
+                .and_then(|value| usize::try_from(value).ok())
+                .unwrap_or(100);
+            session
+                .list_stories(limit)
+                .map(Value::Array)
+                .map_err(SessionGatewayError::internal)
+        },
+        "viewStory" => required_string(args, "storyId").and_then(|story_id| {
+            session.view_story(story_id).map_err(SessionGatewayError::internal)
+        }),
+        "reactStory" => required_string(args, "storyId").and_then(|story_id| {
+            optional_string(args, "reaction").and_then(|reaction| {
+                session
+                    .react_story(story_id, reaction)
+                    .map_err(SessionGatewayError::internal)
+            })
+        }),
+        "deleteStory" => required_string(args, "storyId").and_then(|story_id| {
+            session
+                .delete_story(story_id)
+                .map(|deleted| json!({ "storyId": story_id, "deleted": deleted }))
+                .map_err(SessionGatewayError::internal)
+        }),
         "searchAgents" => optional_string(args, "query").and_then(|query| {
             let limit = args
                 .get("limit")

@@ -30,6 +30,7 @@ pub enum HostGatewayOwner {
     Settings,
     WebAuthn,
     Secrets,
+    Stories,
 }
 
 macro_rules! define_host_gateway_registry {
@@ -173,6 +174,10 @@ define_host_gateway_registry!(
     ("requestWebAuthnCeremony", WebAuthn),
     ("setBoxSecrets", Secrets),
     ("getBoxSecretsStatus", Secrets),
+    ("listStories", Stories),
+    ("viewStory", Stories),
+    ("reactStory", Stories),
+    ("deleteStory", Stories),
 );
 
 pub fn is_sand_agent_purpose(value: &str) -> bool {
