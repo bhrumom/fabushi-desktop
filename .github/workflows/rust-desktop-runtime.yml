@@ -539,6 +539,66 @@ jobs:
           368|Telegram/Resources/icons/calendar_down@3x.png|06c06e6b00127ec1ded9cc62fcc173ce4f65223e
           369|Telegram/Resources/icons/calls/call_answer.png|0d79a1750d9451a644e2c6dc0e1c051519fe9396
           370|Telegram/Resources/icons/calls/call_answer@2x.png|1c573d1519032a6a4e396c261f567f832ac2e6eb
+          371|Telegram/Resources/icons/calls/call_answer@3x.png|b74b73fef73429710b3962b38908ded12d154223
+          372|Telegram/Resources/icons/calls/call_arrow_in.png|76e136a67fd95218008e4841befc0e0d95182b13
+          373|Telegram/Resources/icons/calls/call_arrow_in@2x.png|dd7838ab404bfec53229e97bbb00526b3f3c9580
+          374|Telegram/Resources/icons/calls/call_arrow_in@3x.png|b8eefab968cbcd1972eba27ca931498f0f2aba41
+          375|Telegram/Resources/icons/calls/call_arrow_out.png|815b45a914bb961906e48df252a80d96d036801c
+          376|Telegram/Resources/icons/calls/call_arrow_out@2x.png|5b25ef80a39ad178b9f0ba3806d429fbc06e7441
+          377|Telegram/Resources/icons/calls/call_arrow_out@3x.png|42d56a70005c884504ccb7f94f4b976fc8d4afc0
+          378|Telegram/Resources/icons/calls/call_camera_active.png|3e01106db470d75b10e440af848fc5d2d40fc972
+          379|Telegram/Resources/icons/calls/call_camera_active@2x.png|3692b731e0c0b15d2e3801a060e1acef7abc4995
+          380|Telegram/Resources/icons/calls/call_camera_active@3x.png|01ce4937df9c5031ecd2efd394bb7b0a5a5edf39
+          381|Telegram/Resources/icons/calls/call_camera_muted.png|848cbe12c701ea49085954a5efcfb1e369fb936a
+          382|Telegram/Resources/icons/calls/call_camera_muted@2x.png|012a66561c750f58600e72b92c8d4989580b5b42
+          383|Telegram/Resources/icons/calls/call_camera_muted@3x.png|7dd2aa9dba1cd3335ea84c3e621feb407b1fd2c7
+          384|Telegram/Resources/icons/calls/call_cancel.png|db5452f423f81c452db1975843105dda6bf5cf2e
+          385|Telegram/Resources/icons/calls/call_cancel@2x.png|468337a51051fef56b1c22a2142aaf6a0b6f4fa6
+          386|Telegram/Resources/icons/calls/call_cancel@3x.png|2c9f6fac202d2667f6c78e9ac076c013c4d09b11
+          387|Telegram/Resources/icons/calls/call_discard.png|b46c1c695e357b493b71b6bf6c08dd9a43c3c786
+          388|Telegram/Resources/icons/calls/call_discard@2x.png|0e8d7cf7ec5a2a899d4317a24530ea37e7b323ec
+          389|Telegram/Resources/icons/calls/call_discard@3x.png|f7b2ecc7d77f3ee515ad57cd960b8fcc01512a83
+          390|Telegram/Resources/icons/calls/call_ended.png|e0f5646fc35951e6a029cbcce661e59ab0fb1d48
+          391|Telegram/Resources/icons/calls/call_ended@2x.png|9caa18a4a491e25e4a933df304d9daaa31cfefe9
+          392|Telegram/Resources/icons/calls/call_ended@3x.png|d8a0e74b1561b2d9a88749c01777c2c21ad30b78
+          393|Telegram/Resources/icons/calls/call_group.png|d60c581b1f0651dd8c433cb419244c0cb202110c
+          394|Telegram/Resources/icons/calls/call_group@2x.png|ab1dd6a15046936624428697f3a82f8ea6c90101
+          395|Telegram/Resources/icons/calls/call_group@3x.png|67f363752b4c3639041f07f246f93d1e86258c31
+          396|Telegram/Resources/icons/calls/call_message.png|3fcc4ecda58f03475910b44a3052cc43229d992f
+          397|Telegram/Resources/icons/calls/call_message@2x.png|e6d5f0f8b11ac3f1e438860f0f67adc5b6a6f8fa
+          398|Telegram/Resources/icons/calls/call_message@3x.png|f7e20df4fb52d5cf2071ec62fd277d7fdd456941
+          399|Telegram/Resources/icons/calls/call_rating.png|6e0fdd9aa4eb013634f274cea31fdeb402bb24e6
+          400|Telegram/Resources/icons/calls/call_rating@2x.png|8a93de55d97c01ebb0ad79bf1865dbf72fb1f7a2
+          401|Telegram/Resources/icons/calls/call_rating@3x.png|139169e30cafcfed9fb09d004cad26d4805aeb78
+          402|Telegram/Resources/icons/calls/call_rating_filled.png|a7be4cf5dcdf23d4d20b395fde1f27a31003676d
+          403|Telegram/Resources/icons/calls/call_rating_filled@2x.png|78f2869ea0bc65a0fde4d21a3c21e5164ff69e6b
+          404|Telegram/Resources/icons/calls/call_rating_filled@3x.png|6a51b2abcb15c62957ed9ee9eafe74753339d376
+          405|Telegram/Resources/icons/calls/call_record_active.png|79447233a7ce6a760cec75df6e5d34c7b8e573ba
+          406|Telegram/Resources/icons/calls/call_record_active@2x.png|f21fba1bc9d1168e5d54d96eb1b9915caa11123a
+          407|Telegram/Resources/icons/calls/call_record_active@3x.png|7ab9e8d00178929cea98e2a6b4414978ca83b77d
+          408|Telegram/Resources/icons/calls/call_record_muted.png|ac6b48bf88e4d4c527eddc4fb211d5bb1a6e03b6
+          409|Telegram/Resources/icons/calls/call_record_muted@2x.png|3a8ed3906c93474c6748e30dcba4a272a9dabef8
+          410|Telegram/Resources/icons/calls/call_record_muted@3x.png|62f9f8a6a08368675de2d693095749653e33b2ba
+          411|Telegram/Resources/icons/calls/calls_add_people.png|4e07a92f475276ac0016cb0fdd9620628c2530b5
+          412|Telegram/Resources/icons/calls/calls_add_people@2x.png|bf55e663c391e5d259b779cef68cbd23a7959eac
+          413|Telegram/Resources/icons/calls/calls_add_people@3x.png|c138ad5c24c5370f234f1b3e68cb5c8b366b740c
+          414|Telegram/Resources/icons/calls/calls_more.png|1bb29b885f87bc32a08bc445582c2cb9932b067e
+          415|Telegram/Resources/icons/calls/calls_more@2x.png|d7003fb8299d9d10438aae360a6e6f3ef4ede9d5
+          416|Telegram/Resources/icons/calls/calls_more@3x.png|e400631f4b6172aff697f09676a5f9ee3f0af22f
+          417|Telegram/Resources/icons/calls/calls_mute_tooltip.png|9581af158997180c524ac62bf5a89d70d682017a
+          418|Telegram/Resources/icons/calls/calls_mute_tooltip@2x.png|bcc7d385e5110466180abac587cd2e5d0209fd8f
+          419|Telegram/Resources/icons/calls/calls_mute_tooltip@3x.png|1cbef8aedb8037e269ae8fcbfc80feaa2b3da817
+          420|Telegram/Resources/icons/calls/calls_mute_userpic.png|286780ac118e84ba1a7a5d25df663cc57d7efd02
+          421|Telegram/Resources/icons/calls/calls_mute_userpic@2x.png|d99d673c147ddf4067c681ef448d564acc6c5ce7
+          422|Telegram/Resources/icons/calls/calls_mute_userpic@3x.png|685c39bf3888c96ecfd067967e9185ba8042746a
+          423|Telegram/Resources/icons/calls/calls_present.png|5e0ba09504b4b3ad54acb2133b7cc0c134cabedc
+          424|Telegram/Resources/icons/calls/calls_present@2x.png|5950f1678992509976b881e511bfc8c3c77d9b28
+          425|Telegram/Resources/icons/calls/calls_present@3x.png|ae36d18bda8215391a89748b6d850e1d0df9d7e0
+          426|Telegram/Resources/icons/calls/calls_settings.png|d965e0a0b6cc29da44d2d92cf5df6714da1a4919
+          427|Telegram/Resources/icons/calls/calls_settings@2x.png|57fd5eb9713d1ee4855ba044d5743cea2d5b4847
+          428|Telegram/Resources/icons/calls/calls_settings@3x.png|c9f788eab991b5209e08af7a4ea012b4422f5ebd
+          429|Telegram/Resources/icons/calls/calls_shadow_controls.png|4eb1dcb7081736a2557c0fdc8e35fe6872ff7b72
+          430|Telegram/Resources/icons/calls/calls_shadow_controls@2x.png|43be537a4b06f8af1035d0771ebf6792ec61f52d
           EOF
       - name: Validate Revision 9 authority
         env:
