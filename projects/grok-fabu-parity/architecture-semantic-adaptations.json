@@ -361,7 +361,7 @@
       "referencePath": "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "9d8aad86c2020e4741e1762200f955a52c3af6dc",
+      "targetBlobSha": "7225ed7ea681fff01d78c1d5d08c2e33a42de612",
       "behavioralEvidence": [
         "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
         "frontend/src/recovered/features/conversation/workspace/assistant-content-projection.ts",
