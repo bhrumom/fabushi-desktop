@@ -9,8 +9,8 @@
   },
   "deterministic_recursive_prefix": {
     "first_order": 1,
-    "last_order": 87,
-    "entries": 87
+    "last_order": 88,
+    "entries": 88
   },
   "semantics": {
     "development_only_non_applicable_is_not_omission": true,
@@ -1841,6 +1841,27 @@
       "production_evidence": "exact accepted upstream blob fully read",
       "test_evidence": "shipping evidence belongs to actual mapped production/build owner where applicable",
       "disposition": "development-guidance-non-runtime",
+      "unknown_closed": true,
+      "omitted": false
+    },
+    {
+      "recursive_order": 88,
+      "source_path": "Telegram/CMakeLists.txt",
+      "source_blob_sha": "23997fd6503cd46389c2c13803a83b45b40c21f7",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Compose the shipping Telegram executable and updater/tooling build graph: enumerate production modules/resources, link protocol/media/UI/security dependencies, generate update keys/tests and Windows MIDL, select platform-specific sources, bundle macOS resources/entitlements/Crashpad, generate Linux portal/notification D-Bus bindings, configure platform link semantics, construct Updater/Packer/StartupTask, and install Linux desktop/AppStream/icons/service metadata.",
+      "upstream_owner": "top-level Telegram shipping build composition",
+      "state_machine": "configure build options/platform/store variant -> compose Telegram source/resource graph and libraries -> generate code/resources/update keys/tests -> select platform integrations -> build Telegram plus conditional Updater/Packer/StartupTask -> bundle/install platform resources",
+      "side_effects": "determines the exact shipping source/resource/link/install composition and auxiliary updater binaries",
+      "failure_cases": "missing source/dependency, wrong platform selection, update-key/test omission, bundle/resource/entitlement failure, linker/runtime dependency mismatch, missing updater/packer, invalid Linux desktop integration install",
+      "ui_disposition": "build manifest only; it includes UI source/resources but owns no independent user-facing component",
+      "fabushi_canonical_owner": "Fabushi canonical Electron/npm renderer composition + Rust Host/Coordinator build + platform packaging/updater workflows",
+      "fabushi_target": "package/build configuration, source/host Cargo composition, frontend production composition, .github/workflows release/runtime gates",
+      "platform_differences": "Telegram C++/Qt uses MIDL, mac bundle/entitlements/Crashpad, Linux typed D-Bus and GNUInstallDirs, Windows delay-load and helper executables. Fabushi must preserve applicable effects in Electron/Rust/native adapters rather than copy CMake topology.",
+      "production_evidence": "Complete 2,672-line exact-source read. Fabushi already has canonical Electron/Rust build owners and macOS packaged release; unresolved Windows/Linux packaging/distribution gaps remain independently open at source-disposition entries 54, 60, 66, 71 and 72.",
+      "test_evidence": "Current exact-head Actions must re-prove renderer/Rust/updater/platform gates; concrete feature/build evidence remains attached to each downstream production owner.",
+      "disposition": "applicable-build-composition-mapped-to-canonical-stack",
       "unknown_closed": true,
       "omitted": false
     }
