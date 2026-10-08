@@ -29,7 +29,7 @@ import { includeFindInChatDisclosure, type FindInChatDisclosureKind, type FindIn
 import type { SendMessageTextImage } from "../cards/transcript-card/send-message-text";
 import { ThreadAffordance } from "../cards/transcript-card/thread-affordance";
 import type { TranscriptThreadSummary } from "../cards/transcript-card/thread-summary-controller";
-import { beginHorizontalScrollPointer, captureHorizontalScroll, clampHorizontalScrollOffset, restoreHorizontalScrollOffset, updateHorizontalScrollPointer, updateHorizontalScrollWheelLock, type HorizontalScrollPointerGesture, type HorizontalScrollSnapshot, type HorizontalScrollWheelLock } from "./horizontal-scroll-state";
+import { beginHorizontalScrollPointer, captureHorizontalScroll, clampHorizontalScrollOffset, normalizeHorizontalScrollWheelDelta, restoreHorizontalScrollOffset, updateHorizontalScrollPointer, updateHorizontalScrollWheelLock, type HorizontalScrollPointerGesture, type HorizontalScrollSnapshot, type HorizontalScrollWheelLock } from "./horizontal-scroll-state";
 import { reconcileAssistantContentProjection, type AssistantProjectionCandidate, type AssistantProjectionState } from "./assistant-content-projection";
 import { formatTranscriptToolCallName } from "./tool-call-label";
 import { copyTranscriptCodeText } from "./code-copy";
@@ -316,16 +316,22 @@ function RetainedHorizontalScrollRegion({ children, className, label, ownerId, r
         wheelLockRef.current = null;
         return;
       }
-      const update = updateHorizontalScrollWheelLock(
-        wheelLockRef.current,
+      const delta = normalizeHorizontalScrollWheelDelta(
         event.deltaX,
         event.deltaY,
+        event.deltaMode,
+        event.currentTarget.clientWidth,
+      );
+      const update = updateHorizontalScrollWheelLock(
+        wheelLockRef.current,
+        delta.x,
+        delta.y,
         event.timeStamp,
       );
       wheelLockRef.current = update.lock;
       if (update.axis !== "horizontal" || event.currentTarget.scrollWidth <= event.currentTarget.clientWidth) return;
       event.currentTarget.scrollLeft = clampHorizontalScrollOffset(
-        event.currentTarget.scrollLeft + event.deltaX,
+        event.currentTarget.scrollLeft + delta.x,
         event.currentTarget.scrollWidth,
         event.currentTarget.clientWidth,
       );
