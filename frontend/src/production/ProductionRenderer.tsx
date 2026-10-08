@@ -111,6 +111,7 @@ import { commandPaletteLinksFromConversation, createCommandPaletteLinkMetadataPr
 import { commandPaletteUpdateCommand } from "./command-palette-update-command";
 import { commandPaletteRootCommands, type CommandPaletteComputerUpdateAction, type CommandPaletteInfoSection } from "./command-palette-root-commands";
 import { CoordinatorCallError, createCoordinatorClient, type ProductionCoordinatorClient } from "./coordinator-client";
+import { StoryCapabilitySurface } from "./StoryCapabilitySurface";
 import { HumanCallControls } from "./human-call-media";
 import { UI_TEXT } from "./evidence";
 import { movePinnedAgent, partitionSidebarAgents } from "./sidebar-model";
@@ -4093,7 +4094,9 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
             updatePill={<UpdatePill bridge={bridge} labels={UPDATE_PILL_LABELS} />}
           />
         </div>
-        {workspaceRoute === "org-chart" ? <main className="sand-chat-stage"><Suspense fallback={null}><OrgChartWorkspaceView
+        <div style={{ display: "flex", flexDirection: "column", minHeight: 0, minWidth: 0, width: "100%" }}>
+          <StoryCapabilitySurface client={client} enabled={account?.kind === "logged-in" && transport === "connected"} onOpenOwner={openSidebarProfile} />
+          {workspaceRoute === "org-chart" ? <main className="sand-chat-stage"><Suspense fallback={null}><OrgChartWorkspaceView
           agents={orgChartAgents}
           onClose={() => setWorkspaceRoute(null)}
           onOpenAgent={(agentId) => void openAgent(agentId)}
@@ -4178,6 +4181,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
             <ConversationComposer acceptedSendGeneration={composerClearGeneration} disabled={busy || client == null} draft={draft} editorProviders={activeIsHuman ? undefined : editorProviders} notice={notice} onChange={(value) => composerDraftStore.setDraft(activeAgent.id, value)} onClearReplyTarget={clearReplyTarget} onRemoveAttachment={removeAttachment} onStageFiles={stageFiles} onSubmit={submit} placeholder={`Message ${activeAgent.name}`} replyTarget={replyTarget} scopeKey={`${transcriptAccountSlot ?? "signed-out"}:${activeAgent.id}`} transcribeAudio={transcribeAudio} />
           </div>
         </div>}
+        </div>
       </div>
 
       <ForwardMessageDialog

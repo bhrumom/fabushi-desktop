@@ -292,6 +292,7 @@ jobs:
           frontend/src/recovered/features/access-roster-state.contract.test.ts
           frontend/src/recovered/features/recovered-state-models.contract.test.ts
           frontend/src/recovered/features/recovered-shell-models.contract.test.ts
+          frontend/src/production/story-capability-surface.contract.test.ts
           frontend/src/recovered/contracts/desktop-bridge.contract.test.ts
           frontend/src/recovered/runtime/runtime-foundations.contract.test.ts
       - name: Check Agent workspace architecture boundary
