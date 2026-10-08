@@ -444,3 +444,40 @@ Evidence/disposition: complete source read plus blob identity. It contributes re
 - full-read recursive entries: `73 -> 76`
 
 The next deterministic unread entry is `.agents/skills/dependency-watch/scripts/watch.py`.
+
+## Entry 17 — dependency-watch snapshot implementation
+
+Path: `.agents/skills/dependency-watch/scripts/watch.py`  
+Blob: `231c5a13e8d7e3cd337dbbad08e8f4434a943a38`  
+Read status: complete.
+
+Responsibility: deterministic dependency-evidence snapshotter. It fetches the exact remote `origin/dev` without touching the working tree, requires critical manifests, inventories selected manifest/build sources and gitlinks, rejects unreadable required inputs, persists immutable per-run source copies/candidate lines under git-common-dir state, records skipped inputs, marks the run snapshot-only, and exposes conservative semantic-version comparison.
+
+Owner: upstream dependency/release-evidence tooling. It has no Fabushi ProductShell, Host, Coordinator, or end-user UI runtime owner.
+
+Production entrypoint: none.
+
+Evidence/disposition: complete source read and exact blob identity. Any adoption belongs to release engineering evidence; machine-readable non-applicable/development-evidence closure remains required before `unknown` can decrease.
+
+## Entry 18 — dependency-watch snapshot tests
+
+Path: `.agents/skills/dependency-watch/scripts/watch_test.py`  
+Blob: `d3107c617be3e8780a99bebaeba19a4f235ae6ea`  
+Read status: complete.
+
+Responsibility: focused tests for stable version ordering, exact remote fetch without working-tree mutation, gitlink capture, fail-closed behavior on fetch failure/missing required manifest, explicit unverified marking for offline snapshots, and shared report storage across linked worktrees.
+
+Owner: upstream release-evidence test infrastructure only.
+
+Production entrypoint: none.
+
+Evidence/disposition: complete source read plus blob identity. These tests validate the advisory snapshot tool and do not create a shipping Fabushi feature; final machine-readable closure remains pending.
+
+## Updated coverage accounting after entries 17–18
+
+- `unread: 15,736 -> 15,734`
+- `unknown: 15,812` unchanged
+- `omitted: 0` unchanged
+- full-read recursive entries: `76 -> 78`
+
+The next deterministic unread entry follows `.agents/skills/dependency-watch/scripts/watch_test.py` in the canonical recursive inventory.
