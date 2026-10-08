@@ -519,7 +519,9 @@ test("UNIT-TDRP-IV-ARTICLE-SCROLL-CLAMP-001 rich-content horizontal scroll resto
 
 test("CONTRACT-TDRP-IV-ARTICLE-SCROLL-CONTINUITY-001 assistant code and table scroll regions bind to canonical message identity", () => {
   const source = readFileSync(new URL("./conversation/workspace/transcript.tsx", import.meta.url), "utf8");
+  const sendMessageTextSource = readFileSync(new URL("./conversation/cards/transcript-card/views/send-message-text.tsx", import.meta.url), "utf8");
   assert.match(source, /<AssistantMessageContent[\s\S]{0,700}ownerId=\{entry\.id\}[\s\S]{0,200}text=\{entry\.text\}/);
+  assert.match(sendMessageTextSource, /<AssistantMessageContent[\s\S]{0,400}ownerId=\{entry\.id\}[\s\S]{0,120}text=\{message\.content\}/);
   assert.match(source, /const tableOwnerId = `\$\{ownerId\}:table:\$\{JSON\.stringify\(block\.headers\)\}`;/);
   assert.match(source, /restoreHorizontalScrollOffset\(snapshotRef\.current, ownerId, region\.scrollWidth, region\.clientWidth\)/);
   assert.match(source, /className="sand-code-scroll"/);

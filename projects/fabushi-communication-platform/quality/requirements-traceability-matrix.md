@@ -92,7 +92,7 @@ These rows are additive to the AC coverage plan. A row at `IMPLEMENTED` is not a
 
 ### TDRP-R9-IV-ARTICLE-CONTRACT-001 oracle
 
-- `ORA-TDRP-IV-ARTICLE-001`: rich-content projection remains under the canonical transcript/message identity; derived horizontal-scroll state never becomes a second article or message owner.
+- `ORA-TDRP-IV-ARTICLE-001`: rich-content projection remains under the canonical transcript/message identity; derived horizontal-scroll state never becomes a second article or message owner. Both the ordinary transcript and send-message:text lazy leaf must pass the canonical entry identity.
 - `INV-TDRP-IV-ARTICLE-SCROLL-001`: code/table horizontal scroll restores only for a compatible canonical message plus structural owner and clamps to current geometry.
 - Current cases: `UNIT-TDRP-IV-ARTICLE-SCROLL-CLAMP-001` and `CONTRACT-TDRP-IV-ARTICLE-SCROLL-CONTINUITY-001`.
 - Dossier: `projects/telegram-desktop-rust/dossiers/iv-markdown-article-complete-read.md`.

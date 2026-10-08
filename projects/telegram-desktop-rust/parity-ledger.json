@@ -5289,7 +5289,8 @@
         "frontend/src/recovered/features/conversation/workspace/find-in-chat-controller.ts",
         "frontend/src/recovered/features/conversation/workspace/media-viewer.tsx",
         "frontend/src/recovered/features/conversation/workspace/media-runtime.ts",
-        "frontend/src/recovered/features/conversation/workspace/horizontal-scroll-state.ts"
+        "frontend/src/recovered/features/conversation/workspace/horizontal-scroll-state.ts",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/views/send-message-text.tsx"
       ],
       "fabushi_target_symbols": [
         "ConversationTranscript",
@@ -5298,7 +5299,8 @@
         "MediaViewer",
         "resolveWithSingleRetry",
         "RetainedHorizontalScrollRegion",
-        "restoreHorizontalScrollOffset"
+        "restoreHorizontalScrollOffset",
+        "SendMessageTextTranscriptCard"
       ],
       "target_language": "TypeScript/React",
       "language_rationale": "Applicable behavior is transcript rich-content projection, lifecycle, search/navigation and interaction; existing canonical renderer owners are TypeScript/React while durable resource/domain truth remains behind typed existing contracts.",
@@ -5331,7 +5333,8 @@
       "production_evidence": [
         "main:3bc92400826cc4ca7ac665b467708e22261edc61",
         "path:frontend/src/recovered/features/conversation/workspace/transcript.tsx",
-        "path:frontend/src/production/ProductionRenderer.tsx"
+        "path:frontend/src/production/ProductionRenderer.tsx",
+        "path:frontend/src/recovered/features/conversation/cards/transcript-card/views/send-message-text.tsx"
       ],
       "test_evidence": [
         "path:frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts"
@@ -5581,7 +5584,8 @@
         "frontend/src/recovered/features/conversation/workspace/math.tsx",
         "frontend/src/recovered/features/conversation/workspace/media-viewer.tsx",
         "frontend/src/recovered/features/conversation/workspace/media-runtime.ts",
-        "frontend/src/recovered/features/conversation/workspace/horizontal-scroll-state.ts"
+        "frontend/src/recovered/features/conversation/workspace/horizontal-scroll-state.ts",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/views/send-message-text.tsx"
       ],
       "fabushi_target_symbols": [
         "AssistantMessageContent",
@@ -5592,7 +5596,8 @@
         "RetainedHorizontalScrollRegion",
         "captureHorizontalScroll",
         "restoreHorizontalScrollOffset",
-        "clampHorizontalScrollOffset"
+        "clampHorizontalScrollOffset",
+        "SendMessageTextTranscriptCard"
       ],
       "target_language": "TypeScript/React",
       "language_rationale": "Applicable behavior is transcript rich-content projection, lifecycle, search/navigation and interaction; existing canonical renderer owners are TypeScript/React while durable resource/domain truth remains behind typed existing contracts.",
@@ -5625,7 +5630,8 @@
       "production_evidence": [
         "main:3bc92400826cc4ca7ac665b467708e22261edc61",
         "path:frontend/src/recovered/features/conversation/workspace/transcript.tsx",
-        "path:frontend/src/production/ProductionRenderer.tsx"
+        "path:frontend/src/production/ProductionRenderer.tsx",
+        "path:frontend/src/recovered/features/conversation/cards/transcript-card/views/send-message-text.tsx"
       ],
       "test_evidence": [
         "path:frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts"
@@ -5874,7 +5880,8 @@
         "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
         "frontend/src/recovered/features/conversation/workspace/find-in-chat-controller.ts",
         "frontend/src/production/ProductionRenderer.tsx",
-        "frontend/src/recovered/features/conversation/workspace/horizontal-scroll-state.ts"
+        "frontend/src/recovered/features/conversation/workspace/horizontal-scroll-state.ts",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/views/send-message-text.tsx"
       ],
       "fabushi_target_symbols": [
         "ConversationTranscript",
@@ -5883,7 +5890,8 @@
         "RetainedHorizontalScrollRegion",
         "captureHorizontalScroll",
         "restoreHorizontalScrollOffset",
-        "clampHorizontalScrollOffset"
+        "clampHorizontalScrollOffset",
+        "SendMessageTextTranscriptCard"
       ],
       "target_language": "TypeScript/React",
       "language_rationale": "Applicable behavior is transcript rich-content projection, lifecycle, search/navigation and interaction; existing canonical renderer owners are TypeScript/React while durable resource/domain truth remains behind typed existing contracts.",
@@ -5916,7 +5924,8 @@
       "production_evidence": [
         "main:3bc92400826cc4ca7ac665b467708e22261edc61",
         "path:frontend/src/recovered/features/conversation/workspace/transcript.tsx",
-        "path:frontend/src/production/ProductionRenderer.tsx"
+        "path:frontend/src/production/ProductionRenderer.tsx",
+        "path:frontend/src/recovered/features/conversation/cards/transcript-card/views/send-message-text.tsx"
       ],
       "test_evidence": [
         "path:frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts"

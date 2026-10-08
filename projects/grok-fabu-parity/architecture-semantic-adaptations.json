@@ -257,6 +257,24 @@
       "rationale": "Retains the canonical URL metadata/external-open owner and adds a pure rich-message action projector plus disclosure/copy affordance projection. Exact sender payload remains available for tooltip/copy while only the existing HTTP(S) normalizer can produce an externally openable URL; CopyText never gains navigation authority."
     },
     {
+      "referencePath": "frontend/src/recovered/features/conversation/cards/transcript-card/views/send-message-text.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "301096758db46be4b97a9bd8214602d84c253401",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/conversation/cards/transcript-card/views/send-message-text.tsx",
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "frontend/src/recovered/features/conversation/workspace/horizontal-scroll-state.ts",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/send-message-text.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves the recovered send-message:text lazy leaf while binding AssistantMessageContent horizontal-scroll identity to the canonical TranscriptCard entry. The leaf already uses entry.id for protocol and URL classification; passing that same identity into the canonical transcript projection prevents a second content owner and keeps compatible code/table revisions scoped to the owning message. No new route, store, service capability or source-named public UI API is introduced."
+    },
+    {
       "referencePath": "frontend/src/recovered/features/conversation/cards/transcript-card/views/widget.tsx",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
