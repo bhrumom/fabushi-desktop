@@ -259,9 +259,9 @@
     "root_source_entries_total": 6355,
     "recursive_source_entries_total": 15788,
     "unknown_minimum": 15788,
-    "unread_minimum": 15737,
+    "unread_minimum": 15735,
     "omitted_known": 0,
-    "note": "Revision 9 live authority remains telegramdesktop/tdesktop@d346b42a1d30ef60dc989b6e5191bb8e571f6bd5 with root tree 5db05afa460bb030ac36316beb6496df03742c59. Previously accepted full reads remain read-only accounting credit. The storage shared-media/facade quartet and data/data_drafts.h remain mapped-open. Two additional exact accepted notification files are now full-read and fully decomposed: Telegram/SourceFiles/window/notifications_manager.h@cd36b671795afa49b282b1609380cf7e5c3473ed (484 lines) and notifications_manager.cpp@e5b9eb949e180667952172d338cbcf3e552798d8 (1700 lines). They establish canonical notification manager identity, privacy/mute policy, temporal queue/grouping, topic/SavedSublist destruction clear, native activation/reply/action, sound and platform adapter responsibilities. Fabushi maps them to the existing NotificationPolicy and existing ProductionNotificationsService/SandOsNotificationManager composition. Human/Topic/SavedSublist shipping event and clear composition remains open and receives no implementation/verification credit. Source semantic closure remains open: unknown 15,788, unread_minimum 15,737, omitted 0."
+    "note": "Revision 9 live authority remains telegramdesktop/tdesktop@d346b42a1d30ef60dc989b6e5191bb8e571f6bd5 with root tree 5db05afa460bb030ac36316beb6496df03742c59. Accepted complete reads now additionally include history/view/controls/history_view_forward_panel.h@4e01059c1b0f0703f99817b8ec6028133ffd3728 (108 lines) and history_view_forward_panel.cpp@ea88a830e327705ff29c67514fea5b2215844831 (524 lines). They establish destination-scoped forward staging, source/destination lifecycle convergence, sender/caption option normalization, typed Topic/SavedSublist draft-reply clearing, link-preview option mutation, and premium/rich-message forward-author restrictions. These map to canonical Conversation/Message/Composer/MessagingEngine owners and remain mapped-open; no production or verification credit is claimed. Source semantic closure remains open: unknown 15,788, unread_minimum 15,735, omitted 0."
   },
   "acceptance": {
     "baseline_ready": false,

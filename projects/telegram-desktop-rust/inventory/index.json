@@ -14,7 +14,7 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15788,
-    "unread_minimum": 15737,
+    "unread_minimum": 15735,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -42,7 +42,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Accepted d346 authority remains exact. Read-complete entries include data_saved_messages.{h,cpp}, recent_peers.{h,cpp}, storage_shared_media.{h,cpp}, storage_facade.{h,cpp}, data/data_drafts.h, and window/notifications_manager.{h,cpp}. The shared-media storage/facade reads remain mapped-open; drafts remain mapped-open; notification manager policy/lifecycle maps to the existing NotificationPolicy and ProductionNotificationsService/SandOsNotificationManager composition, while Human/Topic/SavedSublist shipping notification event/clear wiring remains open. These accepted reads reduce unread_minimum to 15,737; unknown remains 15,788; omitted remains 0. Production SavedMessages deletion/search/resource/notification/forward-draft wiring remains open.",
+  "note": "Accepted d346 authority remains exact. Complete reads now include SavedMessages, recent peers, shared-media storage/facade, data_drafts, notifications_manager, and history_view_forward_panel.{h,cpp}. The forward-panel pair proves destination-scoped forward staging, source/destination lifecycle convergence, normalized sender/caption options, typed Topic/SavedSublist reply-draft clearing, link-preview option mutation and premium/rich-message restrictions. Fabushi maps these to canonical Conversation/Message/Composer/MessagingEngine owners; production parity remains open. unread_minimum is 15,735; unknown remains 15,788; omitted remains 0.",
   "rebaseline": {
     "from_commit": "e1ed57a44e7c14e0cbb91bcf0f7ec3e408786a39",
     "to_commit": "d346b42a1d30ef60dc989b6e5191bb8e571f6bd5",
