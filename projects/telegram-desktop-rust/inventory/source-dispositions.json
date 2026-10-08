@@ -4735,52 +4735,6 @@
     },
     {
       "recursive_order": 225,
-      "source_path": "Telegram/Resources/art/icon_green.png",
-      "source_blob_sha": "f12f8d4a9bb1db1390f132d0d0a24c449857d264",
-      "read_complete": true,
-      "responsibility_decomposition_complete": true,
-      "responsibility": "Legacy/alternate green application artwork with no exact current-tree QRC/build/code consumer found",
-      "upstream_owner": "app identity/legacy artwork review",
-      "state_machine": "bundled art blob -> no exact current-tree consumer located -> provenance/legacy-consumer review remains open",
-      "side_effects": "application identity/presentation only; no conversation or network mutation",
-      "failure_cases": "missing/wrong-scale asset, packaging omission, stale shell icon/cache, platform-specific mismatch, inaccessible branding contrast, or unproven trademark/artwork reuse",
-      "ui_disposition": "Preserve Fabushi canonical product identity and platform packaging behavior; do not copy Telegram brand artwork into shipping Fabushi. Settings controls must reuse canonical settings controls.",
-      "fabushi_canonical_owner": "Fabushi canonical product identity / packaging owner",
-      "platform_differences": "Windows ICO/resource + installer, Linux hicolor hierarchy, macOS asset catalog/custom Dock icon have different native packaging/runtime contracts; preserve platform effect rather than source file naming.",
-      "fabushi_target": "existing Fabushi packaging/application identity pipeline; exact current-head production evidence remains open",
-      "production_evidence": "projects/telegram-desktop-rust/dossiers/art-app-identity-responsibilities-225-244-complete-read.md; exact upstream blob and current shipping/build consumer trace complete; Fabushi production evidence open",
-      "test_evidence": "upstream source/build trace complete; Fabushi packaging/install/upgrade/shell identity and a11y/visual evidence pending",
-      "disposition": "consumer-not-found-provenance-review-open",
-      "unknown_closed": false,
-      "omitted": false,
-      "license_and_provenance": "Upstream repository-level GPLv3/LEGAL was found, but no per-file artwork/trademark derivation grant was found; Telegram-branded pixels are not a Fabushi implementation target and direct byte reuse remains rights/provenance-gated.",
-      "source_metadata": "1024x1024 PNG"
-    },
-    {
-      "recursive_order": 226,
-      "source_path": "Telegram/Resources/art/icon_round512@2x.png",
-      "source_blob_sha": "8f7b1098bddd1e7a2b4c11bec121584436c9fb16",
-      "read_complete": true,
-      "responsibility_decomposition_complete": true,
-      "responsibility": "macOS non-App-Store custom round Dock/application icon toggled from Advanced settings",
-      "upstream_owner": "macOS custom application-icon setting",
-      "state_machine": "QRC image -> Advanced/round_icon checkbox -> platform SetCustomAppIcon/ClearCustomAppIcon -> OverrideApplicationIcon -> persisted digest/settings",
-      "side_effects": "changes macOS custom app icon and persists the resulting digest/setting; no messaging/business state",
-      "failure_cases": "missing/wrong-scale asset, packaging omission, stale shell icon/cache, platform-specific mismatch, inaccessible branding contrast, or unproven trademark/artwork reuse",
-      "ui_disposition": "Preserve Fabushi canonical product identity and platform packaging behavior; do not copy Telegram brand artwork into shipping Fabushi. Settings controls must reuse canonical settings controls.",
-      "fabushi_canonical_owner": "Fabushi canonical Settings + platform application-icon owner",
-      "platform_differences": "Windows ICO/resource + installer, Linux hicolor hierarchy, macOS asset catalog/custom Dock icon have different native packaging/runtime contracts; preserve platform effect rather than source file naming.",
-      "fabushi_target": "existing Fabushi packaging/application identity pipeline; exact current-head production evidence remains open",
-      "production_evidence": "projects/telegram-desktop-rust/dossiers/art-app-identity-responsibilities-225-244-complete-read.md; exact upstream blob and current shipping/build consumer trace complete; Fabushi production evidence open",
-      "test_evidence": "upstream source/build trace complete; Fabushi packaging/install/upgrade/shell identity and a11y/visual evidence pending",
-      "disposition": "applicable-macos-custom-app-icon-production-evidence-open",
-      "unknown_closed": false,
-      "omitted": false,
-      "license_and_provenance": "Upstream repository-level GPLv3/LEGAL was found, but no per-file artwork/trademark derivation grant was found; Telegram-branded pixels are not a Fabushi implementation target and direct byte reuse remains rights/provenance-gated.",
-      "source_metadata": "1024x1024 PNG"
-    },
-    {
-      "recursive_order": 227,
       "source_path": "Telegram/Resources/art/icon128.png",
       "source_blob_sha": "fc96863ef6faf4b9e64da9556025ac1846f3742f",
       "read_complete": true,
@@ -4803,7 +4757,7 @@
       "source_metadata": "128x128 PNG"
     },
     {
-      "recursive_order": 228,
+      "recursive_order": 226,
       "source_path": "Telegram/Resources/art/icon128@2x.png",
       "source_blob_sha": "7943dd19df4fbf92c834f3025f77146d8df0de6b",
       "read_complete": true,
@@ -4826,7 +4780,7 @@
       "source_metadata": "256x256 PNG"
     },
     {
-      "recursive_order": 229,
+      "recursive_order": 227,
       "source_path": "Telegram/Resources/art/icon16.png",
       "source_blob_sha": "561369d2b2688cc3799fc2b7a7a2f918d99cc155",
       "read_complete": true,
@@ -4849,7 +4803,7 @@
       "source_metadata": "16x16 PNG"
     },
     {
-      "recursive_order": 230,
+      "recursive_order": 228,
       "source_path": "Telegram/Resources/art/icon16@2x.png",
       "source_blob_sha": "f220a885bbb2c67690387165887bf2739cb34b1f",
       "read_complete": true,
@@ -4872,7 +4826,7 @@
       "source_metadata": "32x32 PNG"
     },
     {
-      "recursive_order": 231,
+      "recursive_order": 229,
       "source_path": "Telegram/Resources/art/icon256.ico",
       "source_blob_sha": "8c71faaf6d5e98adf4db7fc154edc17c63409754",
       "read_complete": true,
@@ -4895,7 +4849,7 @@
       "source_metadata": "Windows ICO, 5 images"
     },
     {
-      "recursive_order": 232,
+      "recursive_order": 230,
       "source_path": "Telegram/Resources/art/icon256.png",
       "source_blob_sha": "8c4abee16dec0836f615df7266b234bc7a0ec033",
       "read_complete": true,
@@ -4918,7 +4872,7 @@
       "source_metadata": "256x256 PNG"
     },
     {
-      "recursive_order": 233,
+      "recursive_order": 231,
       "source_path": "Telegram/Resources/art/icon256@2x.png",
       "source_blob_sha": "d096c2bd0ac1b1eae2d07f534fc6eca4d8bff9ed",
       "read_complete": true,
@@ -4941,7 +4895,7 @@
       "source_metadata": "512x512 PNG"
     },
     {
-      "recursive_order": 234,
+      "recursive_order": 232,
       "source_path": "Telegram/Resources/art/icon32.png",
       "source_blob_sha": "cff636894428e42c4fa5a063e3aa472c4bded8fc",
       "read_complete": true,
@@ -4964,7 +4918,7 @@
       "source_metadata": "32x32 PNG"
     },
     {
-      "recursive_order": 235,
+      "recursive_order": 233,
       "source_path": "Telegram/Resources/art/icon32@2x.png",
       "source_blob_sha": "22b468746a286585529bff4548273f7c358a81ee",
       "read_complete": true,
@@ -4987,7 +4941,7 @@
       "source_metadata": "64x64 PNG"
     },
     {
-      "recursive_order": 236,
+      "recursive_order": 234,
       "source_path": "Telegram/Resources/art/icon48.png",
       "source_blob_sha": "a8299b182123b7b2c11b5956e5f02f50ff6af795",
       "read_complete": true,
@@ -5010,7 +4964,7 @@
       "source_metadata": "48x48 PNG"
     },
     {
-      "recursive_order": 237,
+      "recursive_order": 235,
       "source_path": "Telegram/Resources/art/icon48@2x.png",
       "source_blob_sha": "69b69d86a5e26f95c114dc02e5615e628df647e4",
       "read_complete": true,
@@ -5033,7 +4987,7 @@
       "source_metadata": "96x96 PNG"
     },
     {
-      "recursive_order": 238,
+      "recursive_order": 236,
       "source_path": "Telegram/Resources/art/icon512.png",
       "source_blob_sha": "cdf2fdab5d27694b68cead8a06e435271beb23be",
       "read_complete": true,
@@ -5056,7 +5010,7 @@
       "source_metadata": "512x512 PNG"
     },
     {
-      "recursive_order": 239,
+      "recursive_order": 237,
       "source_path": "Telegram/Resources/art/icon512@2x.png",
       "source_blob_sha": "7c1560fe6312e76a958257e5e894b0912e9ad6f1",
       "read_complete": true,
@@ -5079,7 +5033,7 @@
       "source_metadata": "1024x1024 PNG"
     },
     {
-      "recursive_order": 240,
+      "recursive_order": 238,
       "source_path": "Telegram/Resources/art/icon64.png",
       "source_blob_sha": "b201e31ee0327d581556e8f73033fb41e44ade8f",
       "read_complete": true,
@@ -5102,7 +5056,7 @@
       "source_metadata": "64x64 PNG"
     },
     {
-      "recursive_order": 241,
+      "recursive_order": 239,
       "source_path": "Telegram/Resources/art/icon64@2x.png",
       "source_blob_sha": "61924d136cbf41fd30a19f329a94036c573c106c",
       "read_complete": true,
@@ -5123,6 +5077,52 @@
       "omitted": false,
       "license_and_provenance": "Upstream repository-level GPLv3/LEGAL was found, but no per-file artwork/trademark derivation grant was found; Telegram-branded pixels are not a Fabushi implementation target and direct byte reuse remains rights/provenance-gated.",
       "source_metadata": "128x128 PNG"
+    },
+    {
+      "recursive_order": 240,
+      "source_path": "Telegram/Resources/art/icon_green.png",
+      "source_blob_sha": "f12f8d4a9bb1db1390f132d0d0a24c449857d264",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Legacy/alternate green application artwork with no exact current-tree QRC/build/code consumer found",
+      "upstream_owner": "app identity/legacy artwork review",
+      "state_machine": "bundled art blob -> no exact current-tree consumer located -> provenance/legacy-consumer review remains open",
+      "side_effects": "application identity/presentation only; no conversation or network mutation",
+      "failure_cases": "missing/wrong-scale asset, packaging omission, stale shell icon/cache, platform-specific mismatch, inaccessible branding contrast, or unproven trademark/artwork reuse",
+      "ui_disposition": "Preserve Fabushi canonical product identity and platform packaging behavior; do not copy Telegram brand artwork into shipping Fabushi. Settings controls must reuse canonical settings controls.",
+      "fabushi_canonical_owner": "Fabushi canonical product identity / packaging owner",
+      "platform_differences": "Windows ICO/resource + installer, Linux hicolor hierarchy, macOS asset catalog/custom Dock icon have different native packaging/runtime contracts; preserve platform effect rather than source file naming.",
+      "fabushi_target": "existing Fabushi packaging/application identity pipeline; exact current-head production evidence remains open",
+      "production_evidence": "projects/telegram-desktop-rust/dossiers/art-app-identity-responsibilities-225-244-complete-read.md; exact upstream blob and current shipping/build consumer trace complete; Fabushi production evidence open",
+      "test_evidence": "upstream source/build trace complete; Fabushi packaging/install/upgrade/shell identity and a11y/visual evidence pending",
+      "disposition": "consumer-not-found-provenance-review-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "license_and_provenance": "Upstream repository-level GPLv3/LEGAL was found, but no per-file artwork/trademark derivation grant was found; Telegram-branded pixels are not a Fabushi implementation target and direct byte reuse remains rights/provenance-gated.",
+      "source_metadata": "1024x1024 PNG"
+    },
+    {
+      "recursive_order": 241,
+      "source_path": "Telegram/Resources/art/icon_round512@2x.png",
+      "source_blob_sha": "8f7b1098bddd1e7a2b4c11bec121584436c9fb16",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "macOS non-App-Store custom round Dock/application icon toggled from Advanced settings",
+      "upstream_owner": "macOS custom application-icon setting",
+      "state_machine": "QRC image -> Advanced/round_icon checkbox -> platform SetCustomAppIcon/ClearCustomAppIcon -> OverrideApplicationIcon -> persisted digest/settings",
+      "side_effects": "changes macOS custom app icon and persists the resulting digest/setting; no messaging/business state",
+      "failure_cases": "missing/wrong-scale asset, packaging omission, stale shell icon/cache, platform-specific mismatch, inaccessible branding contrast, or unproven trademark/artwork reuse",
+      "ui_disposition": "Preserve Fabushi canonical product identity and platform packaging behavior; do not copy Telegram brand artwork into shipping Fabushi. Settings controls must reuse canonical settings controls.",
+      "fabushi_canonical_owner": "Fabushi canonical Settings + platform application-icon owner",
+      "platform_differences": "Windows ICO/resource + installer, Linux hicolor hierarchy, macOS asset catalog/custom Dock icon have different native packaging/runtime contracts; preserve platform effect rather than source file naming.",
+      "fabushi_target": "existing Fabushi packaging/application identity pipeline; exact current-head production evidence remains open",
+      "production_evidence": "projects/telegram-desktop-rust/dossiers/art-app-identity-responsibilities-225-244-complete-read.md; exact upstream blob and current shipping/build consumer trace complete; Fabushi production evidence open",
+      "test_evidence": "upstream source/build trace complete; Fabushi packaging/install/upgrade/shell identity and a11y/visual evidence pending",
+      "disposition": "applicable-macos-custom-app-icon-production-evidence-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "license_and_provenance": "Upstream repository-level GPLv3/LEGAL was found, but no per-file artwork/trademark derivation grant was found; Telegram-branded pixels are not a Fabushi implementation target and direct byte reuse remains rights/provenance-gated.",
+      "source_metadata": "1024x1024 PNG"
     },
     {
       "recursive_order": 242,
@@ -5149,11 +5149,11 @@
     },
     {
       "recursive_order": 243,
-      "source_path": "Telegram/Resources/art/logo_256_no_margin.png",
-      "source_blob_sha": "00acff3dd5f8cc71caec7c97f031898efd2d502c",
+      "source_path": "Telegram/Resources/art/logo_256.png",
+      "source_blob_sha": "8c4abee16dec0836f615df7266b234bc7a0ec033",
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "responsibility": "Runtime no-margin application logo exposed by MainWindow LogoNoMargin()",
+      "responsibility": "Runtime application logo exposed by MainWindow Logo() and QRC",
       "upstream_owner": "runtime application/window identity",
       "state_machine": "QRC image -> MainWindow Logo()/LogoNoMargin() -> runtime application/window icon projection",
       "side_effects": "application identity/presentation only; no conversation or network mutation",
@@ -5172,11 +5172,11 @@
     },
     {
       "recursive_order": 244,
-      "source_path": "Telegram/Resources/art/logo_256.png",
-      "source_blob_sha": "8c4abee16dec0836f615df7266b234bc7a0ec033",
+      "source_path": "Telegram/Resources/art/logo_256_no_margin.png",
+      "source_blob_sha": "00acff3dd5f8cc71caec7c97f031898efd2d502c",
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "responsibility": "Runtime application logo exposed by MainWindow Logo() and QRC",
+      "responsibility": "Runtime no-margin application logo exposed by MainWindow LogoNoMargin()",
       "upstream_owner": "runtime application/window identity",
       "state_machine": "QRC image -> MainWindow Logo()/LogoNoMargin() -> runtime application/window icon projection",
       "side_effects": "application identity/presentation only; no conversation or network mutation",
