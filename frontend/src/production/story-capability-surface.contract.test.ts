@@ -11,7 +11,7 @@ test("CONTRACT-TDRP-STORY-PRODUCT-SHELL-001 mounts one canonical Story capabilit
   assert.equal(renderer.match(/<StoryCapabilitySurface\b/g)?.length ?? 0, 1);
   assert.match(
     renderer,
-    /<StoryCapabilitySurface client=\{client\} enabled=\{account\?\.kind === "logged-in" && transport === "connected"\} onOpenOwner=\{openSidebarProfile\} \/>/,
+    /<StoryCapabilitySurface client=\{client\} enabled=\{account\?\.kind === "logged-in" && transport === "connected"\} resolveMedia=\{resolveAttachmentMedia\} onOpenOwner=\{openSidebarProfile\} \/>/,
   );
 });
 
