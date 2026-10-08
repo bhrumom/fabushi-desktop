@@ -335,8 +335,8 @@
     "evidence_head_sha": "7ba34245b2246a58d9f4641652e423bbd3ec5a47",
     "artifact_id": 11526586095,
     "artifact_digest": "sha256:584b0f72307008ea17317ae238b7895f10050ffda18c50325d1bcd7fd97ce257",
-    "evidence_status": "historical-only",
-    "root_non_directory_entries": 6355,
+    "evidence_status": "historical-artifact-current-census-rebound",
+    "root_non_directory_entries": 6363,
     "direct_component_counts": [
       {
         "mount": "Telegram/ThirdParty/GSL",
@@ -577,7 +577,9 @@
       "commit": "95b9cb015fa17baa749c2b396b335906e1596a9e",
       "entries": 43
     },
-    "total_recursive_non_directory_entries": 15804,
-    "superseded_by_upstream_commit": "aac515c5408015231a273c80ab4c4b33815e63ab"
+    "total_recursive_non_directory_entries": 15812,
+    "superseded_by_upstream_commit": "aac515c5408015231a273c80ab4c4b33815e63ab",
+    "current_census_status": "pending-current-head-authority-artifact",
+    "current_upstream_commit": "aac515c5408015231a273c80ab4c4b33815e63ab"
   }
 }
