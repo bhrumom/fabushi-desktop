@@ -1,5 +1,5 @@
 import { getSchema, type JSONContent } from "@tiptap/core";
-import { normalizeLinkUrl, projectTranscriptExternalLink } from "../cards/transcript-card/url-card";
+import { projectTranscriptExternalLink } from "../cards/transcript-card/url-card";
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import "./transcript-utility-parity.css";
@@ -260,15 +260,6 @@ type AssistantTextBlock = { kind: "paragraph"; text: string } | { kind: "heading
 type AssistantRenderableBlock =
   | { kind: "code"; code: string; language: string; ownerId: string; projection: AssistantProjectionCandidate }
   | { kind: "text"; block: AssistantTextBlock; ownerId: string; projection: AssistantProjectionCandidate };
-
-function isHttpUrl(value: string): boolean {
-  try {
-    const protocol = new URL(value).protocol;
-    return protocol === "http:" || protocol === "https:";
-  } catch {
-    return false;
-  }
-}
 
 type TranscriptExternalLinkOpener = (url: string) => void;
 const TRANSCRIPT_POINTER_ACTIVATION_DRAG_THRESHOLD = 4;
