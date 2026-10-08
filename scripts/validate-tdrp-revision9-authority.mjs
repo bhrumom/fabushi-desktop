@@ -786,6 +786,62 @@ for (const row of sourceDispositions.rows) {
 }
 for (let order=1; order<=dispositionPrefix.last_order; order++) fail(dispositionOrders.has(order),'source-dispositions deterministic prefix has a gap at order '+order);
 
+
+const sourceDispositionSummary={
+  path:'projects/telegram-desktop-rust/inventory/source-dispositions.json',
+  upstream_commit:authorityCommit,
+  read_through:dispositionPrefix.last_order,
+  unknown_closed:sourceDispositions.rows.filter(row=>row.unknown_closed===true).length,
+  omitted:sourceDispositions.rows.filter(row=>row.omitted===true).length
+};
+for (const [label,summary] of [
+  ['inventory index',inventoryIndex.source_dispositions],
+  ['parity ledger',ledger.source_dispositions]
+]) {
+  fail(summary?.path===sourceDispositionSummary.path,label+' source-dispositions path drift');
+  fail(summary?.upstream_commit===sourceDispositionSummary.upstream_commit,label+' source-dispositions upstream commit drift');
+  fail(summary?.read_through===sourceDispositionSummary.read_through,label+' source-dispositions read-through drift');
+  fail(summary?.unknown_closed===sourceDispositionSummary.unknown_closed,label+' source-dispositions unknown-closed drift');
+  fail(summary?.omitted===sourceDispositionSummary.omitted,label+' source-dispositions omitted drift');
+}
+for (const key of ['deterministic_prefix_closed','development_only_non_applicable']) {
+  fail(inventoryIndex.source_dispositions?.[key]===ledger.source_dispositions?.[key],'source-dispositions summary drift for '+key);
+}
+
+const reachabilityDir=path.join(root,'artifacts/tdrp-authority');
+const reachabilityBlocks=[];
+try {
+  for (const name of await fs.readdir(reachabilityDir)) {
+    if (!/^source-consumer-reachability-\d+-\d+\.txt$/.test(name)) continue;
+    const lines=(await fs.readFile(path.join(reachabilityDir,name),'utf8')).split(/\r?\n/);
+    let current=null;
+    for (const line of lines) {
+      if (line.startsWith('symbol=')) {
+        current={symbol:line.slice(7),token:null,consumers:[],artifact:name};
+        reachabilityBlocks.push(current);
+      } else if (current && line.startsWith('token=')) {
+        current.token=line.slice(6).replace(/^"/,'').replace(/"$/,'');
+      } else if (current && line.startsWith('Telegram/')) {
+        current.consumers.push(line);
+      }
+    }
+  }
+} catch (error) {
+  if (error?.code!=='ENOENT') throw error;
+}
+if (reachabilityBlocks.length) {
+  for (const row of sourceDispositions.rows) {
+    if (!row.consumer_symbol) continue;
+    const match=/^Telegram\/Resources\/icons\/(.+)\.(?:png|svg)$/i.exec(row.source_path||'');
+    if (!match) continue;
+    const token=match[1].replace(/@(?:2x|3x)$/,'');
+    const proof=reachabilityBlocks.find(block=>block.symbol===row.consumer_symbol && block.token===token && block.consumers.length);
+    if (!proof) continue;
+    fail(row.reachability_status!=='open-no-exact-resource-consumer-proven','exact source consumer evidence contradicts reachability-open disposition at order '+row.recursive_order+': '+row.source_path);
+    fail(Array.isArray(row.consumer_evidence) && row.consumer_evidence.some(line=>proof.consumers.includes(line)),'source-dispositions row lacks exact generated consumer evidence at order '+row.recursive_order+': '+row.source_path);
+  }
+}
+
 const checkedRecursive=checkRecursiveInventory({
   lock, inventoryIndex, ledger, entries:recursiveInventory,
   directComponents:directComponentCounts, githubNestedComponents:githubNestedCounts,

@@ -16,15 +16,15 @@
     "unknown_minimum": 16033,
     "unread_minimum": 14620,
     "omitted_known": 0,
-    "note": "Live 22b352e recursive census is 16,120. 1,500 exact entries are read-complete; 87 are explicitly unknown-closed; unknown 16,033, unread 14,620, omitted 0. Orders 1201-1500 cover profile/info actions, shared-media, Bot inline actions, updater, onboarding, levels/limits, storage/platform/location and media viewer responsibilities; resource-specific reachability remains fail-closed where exact resource-token consumers are absent."
+    "note": "Live 22b352e recursive census is 16,120. 1,500 exact entries are read-complete; 87 are explicitly unknown-closed; unknown 16,033, unread 14,620, omitted 0. Orders 1017-1025 now bind folders_unmuted/folders_unread/folders_work raster resources to exact ui/filter_icons.style consumers; this closes only source reachability, while canonical production/visual/a11y/release evidence remains open."
   },
   "latest_recursive_evidence": {
-    "run_id": 37856138232,
+    "run_id": 37856862858,
     "run_attempt": 1,
-    "job_id": 113580961853,
-    "head_sha": "48dd7f5eedb4838bf9a3bb7164cdd6b37c6dceb0",
-    "artifact_id": 11584172080,
-    "artifact_digest": "sha256:e6a309a9bce1f758ad1ba11b9408ccfb6d9d1142885a756c408e58f4b9db5dc2",
+    "job_id": 113583254143,
+    "head_sha": "9864475c9f3997b60383b68772ab6de65979244b",
+    "artifact_id": 11584661832,
+    "artifact_digest": "sha256:b282792a51f3fb2f6d66cd00bad76c575f07147a1cdbfeffcf669fd9cf4bfc50",
     "artifact_files": [
       "upstream-root-inventory.json",
       "upstream-recursive-inventory.json",
@@ -49,7 +49,7 @@
       "source-consumer-reachability-1401-1500.txt",
       "source-consumer-trace-1401-1500.txt"
     ],
-    "evidence_status": "current-head-source-authority-evidence-for-parent",
+    "evidence_status": "exact-parent-head-source-authority-evidence",
     "upstream_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db"
   },
   "closure_rules": {
@@ -60,7 +60,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live 22b352e authority is exact through order 1,500. Orders 1201-1500 have exact binary/type evidence and resource-path-token consumer evidence. unread_minimum is 14,620, unknown remains 16,033, omitted remains 0.",
+  "note": "Live 22b352e authority is exact through order 1,500. Orders 1017-1025 have corrected exact consumer accounting from parent-head artifact 11584661832; orders 1201-1500 retain exact binary/type and resource-path-token evidence. unread_minimum is 14,620, unknown remains 16,033, omitted remains 0.",
   "rebaseline": {
     "from_commit": "6ec5014a92c4580841a043c440d65e8fc605ff78",
     "to_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db",
