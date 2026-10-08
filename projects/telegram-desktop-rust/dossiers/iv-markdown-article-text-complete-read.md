@@ -30,7 +30,7 @@ The public contract exposes product semantics that must survive the UI rewrite:
 The implementation defines additional behavior and lifecycle:
 
 **Prepared links**
-- Bounded Fabushi implementation: canonical transcript links now project HTTP(S) and explicit `mailto:` through the existing URL/message-action owners. HTTP(S) remains behind the existing metadata/open normalizer; mailto strips query data, decodes the address, opens only through the existing desktop external-open boundary, and exposes exact `Copy Email` text through the existing message context menu. Unsupported script/file/relative targets remain fail-closed. `CONTRACT-TDRP-IV-PREPARED-LINK-EXTERNAL-COPY-001` locks this slice; exact-head execution is pending.
+- Bounded Fabushi implementation: canonical transcript links now project HTTP(S) and explicit `mailto:` through the existing URL/message-action owners. HTTP(S) remains behind the existing metadata/open normalizer; mailto strips query data, decodes the address, opens only through the existing desktop external-open boundary, and exposes exact `Copy Email` text through the existing message context menu. Partial/custom rendered labels disclose the canonical target as a tooltip only when the visible label is not target-equivalent; bare targets avoid redundant tooltip text. Unsupported script/file/relative targets remain fail-closed. `CONTRACT-TDRP-IV-PREPARED-LINK-EXTERNAL-COPY-001` locks this slice; exact-head execution is pending.
 - External and InstantView links normalize a `TextEntity` and distinguish URL, CustomUrl and Email.
 - Copy text/context labels differ for email/link and for anchor/footnote/local-file cases.
 - Rejected-relative/toggle-details/toggle-blockquote/rich-page-button links do not accidentally gain external-copy behavior.
@@ -86,7 +86,7 @@ Qt text engine/painter details are not copied. The mature behavior above is reta
 ## Required future evidence
 
 Before full verification:
-- bounded External/Email projection now has `CONTRACT-TDRP-IV-PREPARED-LINK-EXTERNAL-COPY-001`; complete the remaining link-kind table for CustomUrl display/tooltip, Anchor, footnote/backlink, LocalFile, rejected-relative, toggle kinds and RichPageButton;
+- bounded External/Email projection now has `CONTRACT-TDRP-IV-PREPARED-LINK-EXTERNAL-COPY-001`; complete the remaining link-kind table for Anchor, footnote/backlink, LocalFile, rejected-relative, toggle kinds and RichPageButton, plus broader CustomUrl/InstantView entity-shape coverage;
 - external-open/auth negative cases at the existing desktop/native boundary;
 - long/overlapping/bidi/surrogate/custom-emoji label property cases with bounded work;
 - formula measurement/raster/palette/DPR replacement and failure fallback cases;
@@ -98,4 +98,4 @@ Normative identifiers: `TDRP-MOD-01`, `TDRP-MOD-02`, `TDRP-OWN-01`, `TDRP-COMP-0
 
 ## Current verdict
 
-Read-complete and mapped-open. The bounded External/Email prepared-link slice is implemented through the existing `ConversationTranscript`, `url-card` and canonical message-action menu: HTTP(S) and explicit mailto open remain behind the shipping external-open boundary, mailto copy semantics expose the decoded address with `Copy Email`, and script/file/relative targets fail closed. `CONTRACT-TDRP-IV-PREPARED-LINK-EXTERNAL-COPY-001` traces this slice. Exact-head execution is still pending, and Anchor/footnote/backlink/LocalFile/toggle/RichPageButton, bounded rich-button label work, full formula/media lifecycle, packaged keyboard/a11y/visual and independent review remain open; no verified or complete article-text claim is made.
+Read-complete and mapped-open. The bounded External/Email prepared-link slice is implemented through the existing `ConversationTranscript`, `url-card` and canonical message-action menu: HTTP(S) and explicit mailto open remain behind the shipping external-open boundary, mailto copy semantics expose the decoded address with `Copy Email`, and script/file/relative targets fail closed. `CONTRACT-TDRP-IV-PREPARED-LINK-EXTERNAL-COPY-001` traces this slice. Exact-head execution is still pending, and Anchor/footnote/backlink/LocalFile/toggle/RichPageButton, broader CustomUrl/InstantView entity-shape coverage, bounded rich-button label work, full formula/media lifecycle, packaged keyboard/a11y/visual and independent review remain open; no verified or complete article-text claim is made.
