@@ -5004,13 +5004,19 @@
         "frontend/src/recovered/features/conversation/workspace/find-in-chat-controller.ts",
         "frontend/src/recovered/features/conversation/workspace/media-viewer.tsx",
         "frontend/src/recovered/features/conversation/cards/transcript-card/url-card.ts",
-        "frontend/src/production/ProductionRenderer.tsx"
+        "frontend/src/production/ProductionRenderer.tsx",
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/message-actions.tsx"
       ],
       "fabushi_target_symbols": [
         "createFindInChatController",
         "MediaViewer",
         "extractBareLink",
-        "conversationLinkCandidates"
+        "conversationLinkCandidates",
+        "transcriptSelectionBlocksActivation",
+        "AssistantMessageContent",
+        "UserMessageContent",
+        "projectTranscriptInlineCopyTarget"
       ],
       "target_language": "TypeScript/React",
       "language_rationale": "Applicable behavior is ConversationWorkspace interaction/lifecycle projection and belongs in the existing web renderer owners; durable domain/resource truth remains behind existing typed contracts.",
@@ -5033,7 +5039,8 @@
       "implementation_status": "mapped",
       "coverage_disposition": "fabushi-ui-replacement",
       "blockers": [
-        "Shipping equivalents for selection/toggle/scroll/visibility edge cases and current-head temporal/accessibility evidence remain open."
+        "Current PR implements canonical HTTP(S) action routing, typed copy projection and selection-vs-link activation fencing; exact-head GitHub Actions evidence remains required.",
+        "Content-replacement/media cancellation, touch/horizontal-scroll/zoom continuity, visibility-bounded work, packaged temporal/a11y/performance evidence and independent acceptance remain open."
       ],
       "production_entrypoints": [
         "ProductShell -> ConversationWorkspace -> ConversationTranscript -> existing FindInChat/URL/Resource/action owners"
@@ -5043,7 +5050,9 @@
         "path:frontend/src/recovered/features/conversation/workspace/transcript.tsx",
         "path:frontend/src/production/ProductionRenderer.tsx"
       ],
-      "test_evidence": [],
+      "test_evidence": [
+        "path:frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts"
+      ],
       "target_commit": "3bc92400826cc4ca7ac665b467708e22261edc61",
       "workflow_run": null,
       "run_attempt": null,
@@ -5204,7 +5213,7 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior mapped from accepted telegramdesktop/tdesktop d346 exact blob; Qt widget/painter code is not retained and legal/source provenance remains recorded.",
       "reviewer": null,
-      "notes": "Read-complete and mapped only; no implemented/verified claim."
+      "notes": "Read-complete; current PR now reuses browser text selection plus canonical ConversationTranscript/URL/context-menu owners so a non-empty selection suppresses link dispatch, HTTP(S) activation cannot bypass UrlCardProvider, and rich-action Copy Link/Copy Text remains typed. Broader replacement/touch/scroll/zoom/visibility lifecycle scenarios remain mapped-open."
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
