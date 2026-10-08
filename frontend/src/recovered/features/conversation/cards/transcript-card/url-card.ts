@@ -81,6 +81,46 @@ export function normalizeLinkUrl(value: unknown): string | null {
   }
 }
 
+export type RichMessageActionKind = "open-url" | "authorize-url" | "copy-text";
+
+export interface RichMessageAction {
+  readonly kind: RichMessageActionKind;
+  readonly data: string;
+}
+
+export interface RichMessageActionAffordance {
+  readonly tooltip: string;
+  readonly copyText: string;
+  readonly copyLabel: "Copy Link" | "Copy Text";
+  readonly normalizedUrl: string | null;
+}
+
+/**
+ * Source-neutral projection for rich-message actions. URL actions preserve the
+ * exact encoded payload for disclosure/copy while the canonical URL owner is
+ * the only authority allowed to normalize a URL for opening.
+ */
+export function projectRichMessageActionAffordance(
+  action: RichMessageAction,
+  elidedLabel = "",
+): RichMessageActionAffordance {
+  const normalizedUrl = action.kind === "copy-text" ? null : normalizeLinkUrl(action.data);
+  if (action.kind === "copy-text") {
+    return {
+      tooltip: `Copy text:\n${action.data}`,
+      copyText: action.data,
+      copyLabel: "Copy Text",
+      normalizedUrl,
+    };
+  }
+  return {
+    tooltip: elidedLabel.length > 0 ? `${elidedLabel}\n\n${action.data}` : action.data,
+    copyText: action.data,
+    copyLabel: "Copy Link",
+    normalizedUrl,
+  };
+}
+
 interface RichTextDocument {
   readonly type?: unknown;
   readonly content?: readonly RichTextNode[];
