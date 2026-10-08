@@ -133,7 +133,7 @@
       "referencePath": "source/electron-main/adapters/mcp-oauth.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "d3971acd23678c234734e1ed249fa7d4e4966fe6",
+      "targetBlobSha": "107de38a2ea1106633740689246306a686d9d106",
       "behavioralEvidence": [
         "source/electron-main/adapters/mcp-oauth.ts",
         "source/electron-main/mcp/desktop-mcp-manager.ts",
@@ -151,7 +151,9 @@
         "source/host/src/extensions/mcp/production.rs",
         "source/shared/node/mcp/mcp-discovery-settlement.ts",
         "source/host/src/extensions/telemetry/mcp_discovery_telemetry.rs",
-        "source/host/src/extensions/telemetry/connector_auth_telemetry.rs"
+        "source/host/src/extensions/telemetry/connector_auth_telemetry.rs",
+        "source/electron-main/mcp/official-mcp-service.ts",
+        "source/shared/node/mcp/fabushi-official-catalog.ts"
       ],
       "testEvidence": [
         "source/electron-main/foundations.test.ts",
@@ -168,9 +170,11 @@
         "source/host/tests/mcp_discovery_telemetry_contract.rs",
         "source/host/tests/mcp_discovery_production_wiring_contract.rs",
         "source/host/tests/connector_auth_telemetry_contract.rs",
-        "source/host/tests/connector_auth_production_wiring_contract.rs"
+        "source/host/tests/connector_auth_production_wiring_contract.rs",
+        "source/electron-main/mcp/official-mcp.contract.test.ts",
+        ".github/workflows/official-mcp-marketplace.yml"
       ],
-      "rationale": "Preserves Grok MCP/OAuth composition while keeping SandMcpManager as the single Electron/Coordinator-owned MCP manager and the Mahayana Host as the owner of Plugin Skills lifecycle, cache, authenticated startup, refresh, install/uninstall resync, live-reference cleanup, and Skill Publish. The Cursor Dashboard/marketplace-dependent installed-plugin loader stays as a narrow TypeScript SDK edge in Electron Main and is reached only through the existing allowlisted, correlated Mahayana Coordinator MCP relay. This preserves the frozen Grok process and responsibility boundaries while choosing TypeScript for the Cursor Node SDK edge and Rust for Host lifecycle/state; it does not introduce a second MCP manager or collapse Coordinator/Host/Runner. The approved row-62 MCP discovery failure extension now forwards the frozen success/failure/stale/elapsed settlement through a dedicated reportMcpDiscoveryFailed Coordinator main-data request to the unique HostStructuredLogTelemetry owner; generic MCP diagnostics remain separate."
+      "rationale": "Preserves Grok MCP/OAuth composition while keeping SandMcpManager as the single Electron/Coordinator-owned MCP manager and the Mahayana Host as the owner of Plugin Skills lifecycle, cache, authenticated startup, refresh, install/uninstall resync, live-reference cleanup, and Skill Publish. The Cursor Dashboard/marketplace-dependent installed-plugin loader stays as a narrow TypeScript SDK edge in Electron Main and is reached only through the existing allowlisted, correlated Mahayana Coordinator MCP relay. This preserves the frozen Grok process and responsibility boundaries while choosing TypeScript for the Cursor Node SDK edge and Rust for Host lifecycle/state; it does not introduce a second MCP manager or collapse Coordinator/Host/Runner. The approved row-62 MCP discovery failure extension now forwards the frozen success/failure/stale/elapsed settlement through a dedicated reportMcpDiscoveryFailed Coordinator main-data request to the unique HostStructuredLogTelemetry owner; generic MCP diagnostics remain separate. Compose an account-scoped encrypted provider vault into the existing desktop MCP facade. The Fabushi account token is used only to identify its local scope and is never sent to provider MCP hosts."
     },
     {
       "referencePath": "source/electron-main/attachments/attachment-manager.ts",
@@ -399,7 +403,7 @@
       "referencePath": "source/electron-main/mcp/desktop-mcp-manager.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "7126c5a132a438f7180d0627e6ea8787ecff65ff",
+      "targetBlobSha": "446bd9f18a0b5bbc04ce1bc4f8c1a47f05c59d8b",
       "behavioralEvidence": [
         "source/electron-main/mcp/desktop-mcp-manager.ts",
         "source/shared/node/mcp/mcp-manager.ts",
@@ -408,7 +412,9 @@
         "source/shared/rpc/coordinator-main.ts",
         "source/host/src/extensions/mcp/box_mcp_exec.rs",
         "source/shared/node/mcp/mcp-discovery-settlement.ts",
-        "source/host/src/extensions/telemetry/mcp_discovery_telemetry.rs"
+        "source/host/src/extensions/telemetry/mcp_discovery_telemetry.rs",
+        "source/electron-main/mcp/official-mcp-service.ts",
+        "source/shared/node/mcp/fabushi-official-catalog.ts"
       ],
       "testEvidence": [
         "source/electron-main/foundations.test.ts",
@@ -419,9 +425,11 @@
         "source/shared/node/mcp/mcp-discovery-settlement.contract.test.ts",
         "source/electron-main/mcp/mcp-runtime.contract.test.ts",
         "source/host/tests/mcp_discovery_telemetry_contract.rs",
-        "source/host/tests/mcp_discovery_production_wiring_contract.rs"
+        "source/host/tests/mcp_discovery_production_wiring_contract.rs",
+        "source/electron-main/mcp/official-mcp.contract.test.ts",
+        ".github/workflows/official-mcp-marketplace.yml"
       ],
-      "rationale": "Preserves the Grok SandMcpManager implementation as the single MCP owner while exposing approved Fabushi capabilities through the typed desktop facade: force-refresh catalog options, external-auth completion, and Box MCP server loading/tool discovery/tool execution backed by the existing Coordinator→Host Box path. Manager ownership is not duplicated in Rust Host and the Coordinator/Host/Runner failure boundaries remain independent. The approved row-62 MCP discovery failure extension now forwards the frozen success/failure/stale/elapsed settlement through a dedicated reportMcpDiscoveryFailed Coordinator main-data request to the unique HostStructuredLogTelemetry owner; generic MCP diagnostics remain separate."
+      "rationale": "Preserves the Grok SandMcpManager implementation as the single MCP owner while exposing approved Fabushi capabilities through the typed desktop facade: force-refresh catalog options, external-auth completion, and Box MCP server loading/tool discovery/tool execution backed by the existing Coordinator→Host Box path. Manager ownership is not duplicated in Rust Host and the Coordinator/Host/Runner failure boundaries remain independent. The approved row-62 MCP discovery failure extension now forwards the frozen success/failure/stale/elapsed settlement through a dedicated reportMcpDiscoveryFailed Coordinator main-data request to the unique HostStructuredLogTelemetry owner; generic MCP diagnostics remain separate. Extend the existing MCP facade with the Fabushi-curated fixed-endpoint Google/GitHub provider edge. Catalog and installed official connectors remain visible when the legacy Dashboard refuses foreign-origin account tokens, with explicit degraded-load warnings. Real provider discovery/calls reach the same Coordinator/Host relay; the provider edge owns only scoped credentials, transport and install records. No parallel Agent, Host or marketplace UI is introduced."
     },
     {
       "referencePath": "source/electron-main/mcp/mcp-runtime.ts",
@@ -1187,6 +1195,54 @@
         ".github/workflows/release-macos-main.yml"
       ],
       "rationale": "Preserves the frozen Grok Agent Network interaction model while adapting only its layout lifecycle to the canonical Fabushi workspace. When explicit dimensions are absent, the Agent Network region fills its current workspace, ResizeObserver owns live rendered geometry, layout/pan/zoom all consume that measured geometry, and the non-passive wheel listener is rebound when live layout dimensions change. This removes the recovered fixed 760x500 behavior and the stale-listener dependency bug without creating a second shell, state owner, or Agent runtime. Existing region/button accessibility semantics remain intact; the exact-head recovered-foundations contract locks measurement/listener dependencies, while the real Electron parity journey proves parent-fill geometry, aria-pressed state, wheel zoom behavior, and captures responsive Agent Network screenshot evidence. The release workflow now treats this evidence-locked architecture adaptation as a packaging-affecting input, so the same exact HEAD must re-pass the strict architecture gate before signed/notarized packaged acceptance can exist."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/plugins/overlay/desktop-surface.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "b32ada25490911f59fbb8e3b7de0b77bd1093b56",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/plugins/overlay/desktop-surface.tsx",
+        "source/electron-main/mcp/official-mcp-service.ts",
+        "source/shared/node/mcp/fabushi-official-catalog.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/mcp/official-mcp.contract.test.ts",
+        ".github/workflows/official-mcp-marketplace.yml"
+      ],
+      "rationale": "Preserve the existing Plugins surface and lifecycle controller while publishing partial-load warnings through its existing notice sink. A legacy lookup failure remains visible without hiding the provider directory."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/plugins/overlay/desktop.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "72be7b2c29e032a3f2cf0d4808233c918536fb8a",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/plugins/overlay/desktop.ts",
+        "source/electron-main/mcp/official-mcp-service.ts",
+        "source/shared/node/mcp/fabushi-official-catalog.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/mcp/official-mcp.contract.test.ts",
+        ".github/workflows/official-mcp-marketplace.yml"
+      ],
+      "rationale": "Preserve existing Plugins projection/install/private-skill flows, while independently settling catalog, effective installs and server inventory. Catalog failure remains fatal; unavailable installed/server state produces an explicit warning and leaves available directory data inspectable."
+    },
+    {
+      "referencePath": "source/electron-main/mcp/mcp-desktop.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "e758003d547ebfa448afdb8698241ae6f74c01ea",
+      "behavioralEvidence": [
+        "source/electron-main/mcp/mcp-desktop.ts",
+        "source/electron-main/mcp/official-mcp-service.ts",
+        "source/shared/node/mcp/fabushi-official-catalog.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/mcp/official-mcp.contract.test.ts",
+        ".github/workflows/official-mcp-marketplace.yml"
+      ],
+      "rationale": "Preserve all existing MCP IPC, settings sync and permission boundaries while refreshing the canonical Host MCP tool inventory after a tool-disable toggle. Official connector disabled state is stored in its scoped native vault and enforced again at execution."
     }
   ]
 }
