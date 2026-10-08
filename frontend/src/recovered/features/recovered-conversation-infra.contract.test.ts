@@ -675,6 +675,20 @@ test("CONTRACT-TDRP-IV-VIEW-POINTER-ACTIVATION-FENCE-001 content replacement inv
 });
 
 
+test("CONTRACT-TDRP-MEDIAVIEW-WINDOW-CHROME-REPLACEMENT-001 media preview replaces detached OS window chrome with one accessible in-app dialog", () => {
+  const source = readFileSync(new URL("./conversation/workspace/media-viewer.tsx", import.meta.url), "utf8");
+  const styles = readFileSync(new URL("./conversation/workspace/view.css", import.meta.url), "utf8");
+  assert.match(source, /aria-modal="true"[\s\S]{0,260}role="dialog"/);
+  assert.match(source, /aria-label="Close media preview"[\s\S]{0,180}onClick=\{onClose\}/);
+  assert.match(source, /event\.key === "Escape"[\s\S]{0,160}onClose\(\)/);
+  assert.match(source, /const previousOverflow = document\.body\.style\.overflow;[\s\S]{0,140}document\.body\.style\.overflow = "hidden"/);
+  assert.match(source, /document\.body\.style\.overflow = previousOverflow;[\s\S]{0,100}restoreFocus\(\)/);
+  assert.doesNotMatch(source, /BrowserWindow|window\.(?:minimize|maximize|unmaximize|restore)\s*\(/);
+  assert.match(styles, /\.sand-media-viewer \{ position: fixed; inset: 0;[\s\S]{0,180}overflow: hidden;/);
+  assert.match(styles, /\.sand-media-viewer__close:hover, \.sand-media-viewer__close:focus-visible/);
+  assert.match(styles, /\.sand-media-viewer__image \{[\s\S]{0,100}max-width: 92vw;[\s\S]{0,100}max-height: calc\(100vh - 145px\)/);
+});
+
 test("CONTRACT-TDRP-IV-VIEW-MEDIA-POINTER-RELEASE-001 media replacement releases stale viewer pointer ownership before the new resource settles", () => {
   const source = readFileSync(new URL("./conversation/workspace/media-viewer.tsx", import.meta.url), "utf8");
   const replacementStart = source.indexOf("setMedia(null);");
