@@ -107,7 +107,7 @@ Before implementation/verification, GitHub Actions must cover at minimum:
 - media-runtime replacement and stale media/highlight callback fencing;
 - formula renderer/palette/DPR invalidation;
 - stable search/selection/anchor behavior through relayout;
-- scroll-owner capture/restore/clamp and reveal behavior after layout changes;
+- current-head Actions evidence for canonical-message/structural-owner horizontal-scroll capture, compatible restore/clamp and incompatible-owner reset; broader reveal behavior after layout changes remains open;
 - structural drag/drop self/nested-selection rejection;
 - details/quote ancestor expansion and hidden-text search navigation;
 - heavy-resource unload/reload, missing-media recovery and runtime pruning;
@@ -118,4 +118,4 @@ Normative identifiers: `TDRP-MOD-01`, `TDRP-MOD-02`, `TDRP-OWN-01`, `TDRP-COMP-0
 
 ## Current verdict
 
-Both changed source entries are read-complete and mapped-open. No implementation or verification claim is made.
+Both changed source entries are read-complete and remain mapped-open. The current PR implements one bounded production slice in the canonical ConversationTranscript: assistant code and table scroll regions capture offset before content revision, restore and clamp only when the canonical message plus structural owner identity remains compatible, and reset on owner mismatch. Exact-head GitHub Actions evidence is still required, and partial-leaf fallback, anchor reveal, runtime pruning, heavy-resource lifecycle, visible-range equivalence and packaged acceptance remain open; no verified claim is made.

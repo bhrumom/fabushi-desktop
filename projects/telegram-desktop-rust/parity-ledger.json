@@ -5288,14 +5288,17 @@
         "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
         "frontend/src/recovered/features/conversation/workspace/find-in-chat-controller.ts",
         "frontend/src/recovered/features/conversation/workspace/media-viewer.tsx",
-        "frontend/src/recovered/features/conversation/workspace/media-runtime.ts"
+        "frontend/src/recovered/features/conversation/workspace/media-runtime.ts",
+        "frontend/src/recovered/features/conversation/workspace/horizontal-scroll-state.ts"
       ],
       "fabushi_target_symbols": [
         "ConversationTranscript",
         "createFindInChatController",
         "TranscriptAttachmentGallery",
         "MediaViewer",
-        "resolveWithSingleRetry"
+        "resolveWithSingleRetry",
+        "RetainedHorizontalScrollRegion",
+        "restoreHorizontalScrollOffset"
       ],
       "target_language": "TypeScript/React",
       "language_rationale": "Applicable behavior is transcript rich-content projection, lifecycle, search/navigation and interaction; existing canonical renderer owners are TypeScript/React while durable resource/domain truth remains behind typed existing contracts.",
@@ -5498,7 +5501,7 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior mapped from accepted telegramdesktop/tdesktop d346 exact blobs; Qt/C++ presentation is not retained and legal/source provenance remains recorded.",
       "reviewer": null,
-      "notes": "Read-complete; current PR reuses canonical ConversationTranscript, Math, MediaViewer and URL owners and adds compatibility-safe formula caching, media replacement pointer retirement, bounded one-retry media recovery, typed rich actions and selection-vs-link arbitration. The complete article contract remains mapped-open."
+      "notes": "Read-complete; current PR reuses canonical ConversationTranscript, Math, MediaViewer and URL owners and adds compatibility-safe formula caching, media replacement pointer retirement, bounded one-retry media recovery, typed rich actions, selection-vs-link arbitration, and owner-keyed code/table horizontal-scroll continuity. The complete article contract remains mapped-open."
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
@@ -5573,14 +5576,19 @@
         "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
         "frontend/src/recovered/features/conversation/workspace/math.tsx",
         "frontend/src/recovered/features/conversation/workspace/media-viewer.tsx",
-        "frontend/src/recovered/features/conversation/workspace/media-runtime.ts"
+        "frontend/src/recovered/features/conversation/workspace/media-runtime.ts",
+        "frontend/src/recovered/features/conversation/workspace/horizontal-scroll-state.ts"
       ],
       "fabushi_target_symbols": [
         "AssistantMessageContent",
         "AssistantMath",
         "TranscriptAttachmentGallery",
         "MediaViewer",
-        "resolveWithSingleRetry"
+        "resolveWithSingleRetry",
+        "RetainedHorizontalScrollRegion",
+        "captureHorizontalScroll",
+        "restoreHorizontalScrollOffset",
+        "clampHorizontalScrollOffset"
       ],
       "target_language": "TypeScript/React",
       "language_rationale": "Applicable behavior is transcript rich-content projection, lifecycle, search/navigation and interaction; existing canonical renderer owners are TypeScript/React while durable resource/domain truth remains behind typed existing contracts.",
@@ -5604,8 +5612,8 @@
       "implementation_status": "mapped",
       "coverage_disposition": "fabushi-ui-replacement",
       "blockers": [
-        "Current PR implements shared formula-runtime cache generations, media replacement pointer/resource fencing, and bounded one-retry media recovery; exact-head GitHub Actions evidence remains required.",
-        "Compatible/incompatible partial-content patch fallback, highlight/runtime pruning breadth, heavy-resource unload/reload, visible-range/date retained-layout evidence, packaged temporal/performance evidence and independent acceptance remain open."
+        "Current PR implements formula generation fencing, media replacement/retry, and canonical-message/structural-owner horizontal-scroll capture plus compatible restore/clamp; exact-head GitHub Actions evidence remains required.",
+        "Compatible/incompatible partial-leaf fallback, highlight/runtime pruning breadth, heavy-resource unload/reload, visible-range/date retained-layout evidence, packaged temporal/performance evidence and independent acceptance remain open."
       ],
       "production_entrypoints": [
         "ProductShell -> ConversationWorkspace -> ConversationTranscript -> existing Search/Math/Resource/URL/action owners"
@@ -5783,7 +5791,7 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior mapped from accepted telegramdesktop/tdesktop d346 exact blobs; Qt/C++ presentation is not retained and legal/source provenance remains recorded.",
       "reviewer": null,
-      "notes": "Read-complete; current PR shares AssistantMath work only across compatible loader/expression/display identities with retryable invalidation, canonical MediaViewer replacement retires old pointer ownership while fencing stale media settlement, and thumbnail/viewer/attachment resolution receives exactly one bounded retry. Broader article patch/highlight/runtime/unload/visible-date invariants remain mapped-open."
+      "notes": "Read-complete; current PR shares AssistantMath work only across compatible loader/expression/display identities, fences media replacement and bounded recovery, and retains code/table horizontal offset only for the same canonical message plus compatible structural owner while clamping new geometry. Broader article patch/highlight/runtime/unload/visible-date invariants remain mapped-open."
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
@@ -5857,12 +5865,17 @@
       "fabushi_target_paths": [
         "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
         "frontend/src/recovered/features/conversation/workspace/find-in-chat-controller.ts",
-        "frontend/src/production/ProductionRenderer.tsx"
+        "frontend/src/production/ProductionRenderer.tsx",
+        "frontend/src/recovered/features/conversation/workspace/horizontal-scroll-state.ts"
       ],
       "fabushi_target_symbols": [
         "ConversationTranscript",
         "createFindInChatController",
-        "conversationLinkCandidates"
+        "conversationLinkCandidates",
+        "RetainedHorizontalScrollRegion",
+        "captureHorizontalScroll",
+        "restoreHorizontalScrollOffset",
+        "clampHorizontalScrollOffset"
       ],
       "target_language": "TypeScript/React",
       "language_rationale": "Applicable behavior is transcript rich-content projection, lifecycle, search/navigation and interaction; existing canonical renderer owners are TypeScript/React while durable resource/domain truth remains behind typed existing contracts.",
@@ -5886,7 +5899,8 @@
       "implementation_status": "mapped",
       "coverage_disposition": "fabushi-ui-replacement",
       "blockers": [
-        "Shipping equivalents for the recovered article state/cache/interaction edge cases and exact-head current production evidence remain open."
+        "Current PR implements canonical URL/selection arbitration and canonical-message/structural-owner horizontal-scroll capture, compatible restore/clamp and incompatible-owner reset; exact-head GitHub Actions evidence remains required.",
+        "Structural drag/drop, hidden-ancestor expansion, full anchor reveal, visible-range equivalence, touch/scrollbar ownership, packaged a11y/temporal evidence and independent acceptance remain open."
       ],
       "production_entrypoints": [
         "ProductShell -> ConversationWorkspace -> ConversationTranscript -> existing Search/Math/Resource/URL/action owners"
@@ -6062,7 +6076,7 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior mapped from accepted telegramdesktop/tdesktop d346 exact blobs; Qt/C++ presentation is not retained and legal/source provenance remains recorded.",
       "reviewer": null,
-      "notes": "Read-complete and mapped only; no implemented/verified claim."
+      "notes": "Read-complete; current PR keeps external activation behind the canonical URL owner, blocks activation during text selection, and restores code/table horizontal offset only when canonical message and structural owner identity remain compatible. Broader typed hit, drop, ancestor expansion, reveal and visible-range semantics remain mapped-open."
     },
     {
       "source_repository": "telegramdesktop/tdesktop",

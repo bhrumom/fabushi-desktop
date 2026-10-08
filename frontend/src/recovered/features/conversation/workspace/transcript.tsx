@@ -29,6 +29,7 @@ import type { FindInChatTranscriptHandle } from "./find-in-chat-controller";
 import type { SendMessageTextImage } from "../cards/transcript-card/send-message-text";
 import { ThreadAffordance } from "../cards/transcript-card/thread-affordance";
 import type { TranscriptThreadSummary } from "../cards/transcript-card/thread-summary-controller";
+import { captureHorizontalScroll, clampHorizontalScrollOffset, restoreHorizontalScrollOffset, type HorizontalScrollSnapshot } from "./horizontal-scroll-state";
 
 function transcriptIds(id: string, hasTimestamp: boolean) {
   const base = `sand-conversation-entry-${encodeURIComponent(id)}`;
@@ -259,6 +260,33 @@ function transcriptSelectionBlocksActivation(): boolean {
   return selection != null && !selection.isCollapsed && selection.toString().length > 0;
 }
 
+function RetainedHorizontalScrollRegion({ children, className, label, ownerId, revision }: { children: ReactNode; className: string; label: string; ownerId: string; revision: string }) {
+  const regionRef = useRef<HTMLDivElement | null>(null);
+  const snapshotRef = useRef<HorizontalScrollSnapshot | null>(null);
+
+  useLayoutEffect(() => {
+    const region = regionRef.current;
+    if (region == null) return undefined;
+    region.scrollLeft = restoreHorizontalScrollOffset(snapshotRef.current, ownerId, region.scrollWidth, region.clientWidth);
+    return () => {
+      const current = regionRef.current;
+      if (current != null) snapshotRef.current = captureHorizontalScroll(ownerId, current.scrollLeft);
+    };
+  }, [ownerId, revision]);
+
+  useEffect(() => {
+    const region = regionRef.current;
+    if (region == null || typeof ResizeObserver === "undefined") return undefined;
+    const observer = new ResizeObserver(() => {
+      region.scrollLeft = clampHorizontalScrollOffset(region.scrollLeft, region.scrollWidth, region.clientWidth);
+    });
+    observer.observe(region);
+    return () => observer.disconnect();
+  }, [ownerId]);
+
+  return <div aria-label={label} className={className} ref={regionRef} role="region" tabIndex={0}>{children}</div>;
+}
+
 function renderAssistantInlineText(text: string, openExternal?: TranscriptExternalLinkOpener): ReactNode[] {
   const nodes: ReactNode[] = [];
   const assistantInlinePattern = /\\\(([^\\\n]*?)\\\)|\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s<>"']+)|(\*\*|__)(?=\S)([^\n]*?\S)\5|(\*|_)(?=\S)([^\n]*?\S)\7|~~(?=\S)([^\n]*?\S)~~|`([^`\n]+)`/giu;
@@ -411,12 +439,15 @@ function assistantTextBlocks(text: string): AssistantTextBlock[] {
   return blocks;
 }
 
-function AssistantTextBlock({ block, openExternal }: { block: AssistantTextBlock; openExternal?: TranscriptExternalLinkOpener }) {
+function AssistantTextBlock({ block, openExternal, ownerId }: { block: AssistantTextBlock; openExternal?: TranscriptExternalLinkOpener; ownerId: string }) {
   if (block.kind === "math") return <AssistantMath displayMode expression={block.expression} />;
   if (block.kind === "paragraph") return block.text.length > 0 ? <p>{renderAssistantInlineText(block.text, openExternal)}</p> : null;
   if (block.kind === "blockquote") return <blockquote className="sand-dj266r sand-at24cr sand-rxpjvj sand-8fiw5y sand-yumdvf sand-1t7ytsu sand-4n2izg sand-19aaqeu"><p>{renderAssistantInlineText(block.text, openExternal)}</p></blockquote>;
   if (block.kind === "horizontal-rule") return <hr className="sand-dj266r sand-at24cr sand-178xt8z sand-13fuv20 sand-1aeic0j sand-11pwa6s sand-1sy0etr sand-1b16gh4" />;
-  if (block.kind === "table") return <table className="sand-dj266r sand-at24cr sand-1mwwwfo sand-1wm8ruf"><thead className="sand-dj266r sand-at24cr"><tr className="sand-dj266r sand-at24cr">{block.headers.map((header, index) => <th className="sand-dj266r sand-at24cr sand-y3jwiz sand-13e3tqs sand-17fyfba sand-dpxx8g sand-16dsc37 sand-xzm5a7" key={`header-${index}`}>{renderAssistantInlineText(header, openExternal)}</th>)}</tr></thead><tbody className="sand-dj266r sand-at24cr">{block.rows.map((row, rowIndex) => <tr className="sand-dj266r sand-at24cr" key={`row-${rowIndex}`}>{row.map((cell, cellIndex) => <td className="sand-dj266r sand-at24cr sand-y3jwiz sand-13e3tqs sand-so031l sand-1q0q8m5 sand-17fyfba sand-dpxx8g sand-16dsc37" key={`cell-${rowIndex}-${cellIndex}`}>{renderAssistantInlineText(cell, openExternal)}</td>)}</tr>)}</tbody></table>;
+  if (block.kind === "table") {
+    const tableOwnerId = `${ownerId}:table:${JSON.stringify(block.headers)}`;
+    return <RetainedHorizontalScrollRegion className="fabushi-rich-content-scroll-region" label="Data table" ownerId={tableOwnerId} revision={JSON.stringify(block.rows)}><table className="sand-dj266r sand-at24cr sand-1mwwwfo sand-1wm8ruf"><thead className="sand-dj266r sand-at24cr"><tr className="sand-dj266r sand-at24cr">{block.headers.map((header, headerIndex) => <th className="sand-dj266r sand-at24cr sand-y3jwiz sand-13e3tqs sand-17fyfba sand-dpxx8g sand-16dsc37 sand-xzm5a7" key={`header-${headerIndex}`}>{renderAssistantInlineText(header, openExternal)}</th>)}</tr></thead><tbody className="sand-dj266r sand-at24cr">{block.rows.map((row, rowIndex) => <tr className="sand-dj266r sand-at24cr" key={`row-${rowIndex}`}>{row.map((cell, cellIndex) => <td className="sand-dj266r sand-at24cr sand-y3jwiz sand-13e3tqs sand-so031l sand-1q0q8m5 sand-17fyfba sand-dpxx8g sand-16dsc37" key={`cell-${rowIndex}-${cellIndex}`}>{renderAssistantInlineText(cell, openExternal)}</td>)}</tr>)}</tbody></table></RetainedHorizontalScrollRegion>;
+  }
   if (block.kind === "heading") {
     const Heading = block.level === 1 ? "h1" : block.level === 2 ? "h2" : "h3";
     const className = block.level === 1
@@ -467,8 +498,8 @@ function AssistantCodeCopyButton({ code }: { code: string }) {
   }} type="button"><span aria-hidden="true" data-icon-name={iconName} data-size="base" style={{ fontFamily: "cursor-icons" }}>{String.fromCodePoint(iconCodePoint)}</span></button>;
 }
 
-function AssistantCodeBlock({ code, language }: { code: string; language: string }) {
-  const fallback = <div className="sand-code-figure"><div className="sand-code-scroll"><pre className="sand-code-block"><code className={language.length > 0 ? `language-${language}` : "sand-code-fallback"}>{code}</code></pre></div><AssistantCodeCopyButton code={code} /></div>;
+function AssistantCodeBlock({ code, language, ownerId }: { code: string; language: string; ownerId: string }) {
+  const fallback = <div className="sand-code-figure"><RetainedHorizontalScrollRegion className="sand-code-scroll" label={language.length > 0 ? `${language} code` : "Code block"} ownerId={ownerId} revision={code}><pre className="sand-code-block"><code className={language.length > 0 ? `language-${language}` : "sand-code-fallback"}>{code}</code></pre></RetainedHorizontalScrollRegion><AssistantCodeCopyButton code={code} /></div>;
   return language === "mermaid" ? <MermaidDiagram code={code} fallback={fallback} /> : fallback;
 }
 
@@ -554,10 +585,10 @@ function UserMessageContent({ text, richText, openExternal }: { text: string; ri
   return <div className="sand-message-prose">{text ? <p>{text}</p> : null}</div>;
 }
 
-export function AssistantMessageContent({ text, images, channel, isSourceTrusted, isStreaming = false, openExternal }: { text: string; images?: readonly SendMessageTextImage[]; channel?: string | null; isSourceTrusted?: boolean; isStreaming?: boolean; openExternal?: TranscriptExternalLinkOpener }) {
+export function AssistantMessageContent({ text, images, channel, isSourceTrusted, isStreaming = false, openExternal, ownerId }: { text: string; images?: readonly SendMessageTextImage[]; channel?: string | null; isSourceTrusted?: boolean; isStreaming?: boolean; openExternal?: TranscriptExternalLinkOpener; ownerId: string }) {
   return <div className="sand-message-prose" data-source-trusted={isSourceTrusted || undefined}>{isStreaming && text.length === 0 ? <StreamingMessage /> : assistantContentBlocks(text).flatMap((block, index) => block.kind === "code"
-    ? [<AssistantCodeBlock code={block.code} key={`code-${index}`} language={block.language} />]
-    : assistantTextBlocks(block.text).map((textBlock, textIndex) => <AssistantTextBlock block={textBlock} key={`text-${index}-${textIndex}`} openExternal={openExternal} />))}{images == null ? null : <SendMessageTextImages images={images} />}{channel == null ? null : <span className="sand-channel-tag" title={`Sent to ${channel}`}>{channel}</span>}</div>;
+    ? [<AssistantCodeBlock code={block.code} key={`code-${index}`} language={block.language} ownerId={`${ownerId}:code:${index}:${block.language || "plain"}`} />]
+    : assistantTextBlocks(block.text).map((textBlock, textIndex) => <AssistantTextBlock block={textBlock} key={`text-${index}-${textIndex}`} openExternal={openExternal} ownerId={`${ownerId}:text:${index}:${textIndex}`} />))}{images == null ? null : <SendMessageTextImages images={images} />}{channel == null ? null : <span className="sand-channel-tag" title={`Sent to ${channel}`}>{channel}</span>}</div>;
 }
 
 function formatToolName(name: string): string {
@@ -799,7 +830,7 @@ export function ConversationTranscript({ entries, hasOlder = false, isLoadingOld
                   targetId={entry.replyToId ?? ""}
                   timestampMs={referencedEntry != null && "timestampMs" in referencedEntry ? referencedEntry.timestampMs : undefined}
                 /> : null}
-                {messageLink != null && messageUrlCards != null ? <LinkCardView isGroupStart={messageAdjacency.isGroupStart} provider={messageUrlCards} url={messageLink} /> : entry.isStreaming && entry.role === "assistant" && !entry.text ? <StreamingMessage /> : entry.role === "assistant" ? <AssistantMessageContent channel={entry.channel} images={entry.images} isSourceTrusted={entry.isSourceTrusted} isStreaming={entry.isStreaming} openExternal={messageUrlCards == null ? undefined : (url) => { void messageUrlCards.openExternal(url); }} text={entry.text} /> : <UserMessageContent openExternal={messageUrlCards == null ? undefined : (url) => { void messageUrlCards.openExternal(url); }} richText={entry.richText} text={entry.text} />}
+                {messageLink != null && messageUrlCards != null ? <LinkCardView isGroupStart={messageAdjacency.isGroupStart} provider={messageUrlCards} url={messageLink} /> : entry.isStreaming && entry.role === "assistant" && !entry.text ? <StreamingMessage /> : entry.role === "assistant" ? <AssistantMessageContent channel={entry.channel} images={entry.images} isSourceTrusted={entry.isSourceTrusted} isStreaming={entry.isStreaming} openExternal={messageUrlCards == null ? undefined : (url) => { void messageUrlCards.openExternal(url); }} ownerId={entry.id} text={entry.text} /> : <UserMessageContent openExternal={messageUrlCards == null ? undefined : (url) => { void messageUrlCards.openExternal(url); }} richText={entry.richText} text={entry.text} />}
                 {renderMessageReactionPills?.(reactionPillProps)}
                 {entry.attachments?.length ? <TranscriptAttachmentGallery adjacency={messageAdjacency} attachments={entry.attachments} downloadAttachment={downloadAttachment} readAttachmentBytes={readAttachmentBytes} resolveMedia={resolveAttachmentMedia} role={entry.role} /> : null}
                 {entry.delivery === "queued" && entry.composedAtMs == null ? <QueuedSendNotice entry={entry} isTransportDown={isTransportDown} onCancel={onCancelQueuedSend} /> : null}

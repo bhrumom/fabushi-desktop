@@ -18,6 +18,7 @@ import { projectRichMessageAction, projectRichMessageActionAffordance } from "./
 import { createWidgetInteractionAdapter } from "./conversation/cards/transcript-card/widget-interactions.ts";
 import { createAssistantMathMarkupCache, type KatexRuntime } from "./conversation/workspace/math-runtime.ts";
 import { resolveWithSingleRetry } from "./conversation/workspace/media-runtime.ts";
+import { captureHorizontalScroll, clampHorizontalScrollOffset, restoreHorizontalScrollOffset } from "./conversation/workspace/horizontal-scroll-state.ts";
 import {
   createHiddenChatsMutationController,
 } from "./hidden-chats/overlay/mutation-controller.ts";
@@ -502,4 +503,25 @@ test("media missing-resource recovery is bounded to one retry", async () => {
     throw new Error(`failure-${attempts}`);
   }, "media://broken"), /failure-2/);
   assert.equal(attempts, 2);
+});
+
+
+test("rich-content horizontal scroll restores only compatible owners", () => {
+  const snapshot = captureHorizontalScroll("message-1:code:0:typescript", 240);
+  assert.deepEqual(snapshot, { ownerId: "message-1:code:0:typescript", offset: 240 });
+  assert.equal(restoreHorizontalScrollOffset(snapshot, snapshot.ownerId, 1_000, 400), 240);
+  assert.equal(restoreHorizontalScrollOffset(snapshot, snapshot.ownerId, 500, 400), 100);
+  assert.equal(restoreHorizontalScrollOffset(snapshot, "message-2:code:0:typescript", 1_000, 400), 0);
+  assert.deepEqual(captureHorizontalScroll("owner", -12), { ownerId: "owner", offset: 0 });
+  assert.equal(clampHorizontalScrollOffset(Number.POSITIVE_INFINITY, 600, 500), 0);
+  assert.equal(clampHorizontalScrollOffset(20, 100, 200), 0);
+});
+
+test("assistant code and table scroll regions bind to canonical message identity", () => {
+  const source = readFileSync(new URL("./conversation/workspace/transcript.tsx", import.meta.url), "utf8");
+  assert.match(source, /<AssistantMessageContent[\s\S]{0,700}ownerId=\{entry\.id\}[\s\S]{0,200}text=\{entry\.text\}/);
+  assert.match(source, /const tableOwnerId = `\$\{ownerId\}:table:\$\{JSON\.stringify\(block\.headers\)\}`;/);
+  assert.match(source, /restoreHorizontalScrollOffset\(snapshotRef\.current, ownerId, region\.scrollWidth, region\.clientWidth\)/);
+  assert.match(source, /className="sand-code-scroll"/);
+  assert.match(source, /className="fabushi-rich-content-scroll-region"/);
 });
