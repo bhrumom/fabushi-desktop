@@ -8,6 +8,22 @@ const headers = {
   'X-GitHub-Api-Version': '2022-11-28',
   Accept: 'application/vnd.github+json',
 };
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+async function request(url) {
+  let last;
+  for (let attempt = 1; attempt <= 4; attempt++) {
+    try {
+      const response = await fetch(url, { headers });
+      if (response.ok || (response.status >= 400 && response.status < 500 && response.status !== 429)) return response;
+      last = new Error(url + ' -> ' + response.status + ' ' + await response.text());
+    } catch (error) {
+      last = error;
+    }
+    if (attempt < 4) await sleep(500 * (2 ** (attempt - 1)));
+  }
+  throw new Error('GitHub API request failed after retries: ' + url, { cause: last });
+}
+
 const rows = fs.readFileSync('artifacts/tdrp-authority/build-time-acquisition-candidates.txt','utf8')
   .split(/\n/).filter(Boolean);
 const candidates = [];
@@ -29,7 +45,7 @@ for (const row of rows) {
 }
 
 async function resolve(repository, ref) {
-  const response = await fetch('https://api.github.com/repos/' + repository + '/commits/' + encodeURIComponent(ref), {headers});
+  const response = await request('https://api.github.com/repos/' + repository + '/commits/' + encodeURIComponent(ref));
   if (!response.ok) throw new Error(repository + '@' + ref + ' -> ' + response.status + ' ' + await response.text());
   const object = await response.json();
   return object.sha;

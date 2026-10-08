@@ -13,6 +13,22 @@ const source = fs.readFileSync(candidateFile, 'utf8').split(/\n/).filter(Boolean
 const sha40 = /^[0-9a-f]{40}$/i;
 const top = [];
 
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+async function request(url) {
+  let last;
+  for (let attempt = 1; attempt <= 4; attempt++) {
+    try {
+      const response = await fetch(url, { headers });
+      if (response.ok || (response.status >= 400 && response.status < 500 && response.status !== 429)) return response;
+      last = new Error(url + ' -> ' + response.status + ' ' + await response.text());
+    } catch (error) {
+      last = error;
+    }
+    if (attempt < 4) await sleep(500 * (2 ** (attempt - 1)));
+  }
+  throw new Error('GitHub API request failed after retries: ' + url, { cause: last });
+}
+
 for (const row of source) {
   const match = row.match(/^([^:]+):(\d+):(.*?uses:\s*([^\s#]+))/);
   if (!match) continue;
@@ -36,7 +52,7 @@ for (const row of source) {
 
 const cache = new Map();
 async function api(apiPath) {
-  const response = await fetch('https://api.github.com/' + apiPath, { headers });
+  const response = await request('https://api.github.com/' + apiPath);
   if (!response.ok) throw new Error(apiPath + ' -> ' + response.status + ' ' + await response.text());
   return response.json();
 }
@@ -57,7 +73,7 @@ async function actionText(repository, commit, actionPath) {
   for (const name of ['action.yml', 'action.yaml']) {
     const relative = (actionPath ? actionPath.replace(/\/$/, '') + '/' : '') + name;
     const apiPath = 'repos/' + repository + '/contents/' + relative + '?ref=' + commit;
-    const response = await fetch('https://api.github.com/' + apiPath, { headers });
+    const response = await request('https://api.github.com/' + apiPath);
     if (response.status === 404) continue;
     if (!response.ok) throw new Error(apiPath + ' -> ' + response.status);
     const object = await response.json();
