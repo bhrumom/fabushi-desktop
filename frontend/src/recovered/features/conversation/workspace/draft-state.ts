@@ -16,6 +16,8 @@ export const COMPOSER_DRAFT_SLICE = {
 export interface ComposerDraftSnapshot {
   readonly draft: ComposerDraft | null;
   readonly recovery: ComposerDraft | null;
+  /** Transient keyed exchange slot. It is intentionally not persisted across account restore. */
+  readonly stash: ComposerDraft | null;
 }
 
 export interface ComposerDraftSnapshotStore {
@@ -42,12 +44,16 @@ export interface ComposerDraftStateStore {
   clearDraft(agentKey: string): void;
   recoverDraft(agentKey: string, draft: ComposerDraft): void;
   clearRecovery(agentKey: string): void;
+  canExchangeDraft(agentKey: string): boolean;
+  exchangeDraft(agentKey: string, validate?: (draft: ComposerDraft) => boolean): boolean;
+  removeStash(agentKey: string): boolean;
+  clearScope(agentKey: string): void;
   restore(accountSlot: string | null): Promise<void>;
   reset(): void;
   dispose(): void;
 }
 
-const EMPTY_SNAPSHOT: ComposerDraftSnapshot = { draft: null, recovery: null };
+const EMPTY_SNAPSHOT: ComposerDraftSnapshot = { draft: null, recovery: null, stash: null };
 const EMPTY_RECORD = { draft: null, draftId: null, recovery: null } as const;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -75,7 +81,7 @@ function cloneDraft(draft: ComposerDraft | null): ComposerDraft | null {
 }
 
 function cloneSnapshot(snapshot: ComposerDraftSnapshot): ComposerDraftSnapshot {
-  return { draft: cloneDraft(snapshot.draft), recovery: cloneDraft(snapshot.recovery) };
+  return { draft: cloneDraft(snapshot.draft), recovery: cloneDraft(snapshot.recovery), stash: cloneDraft(snapshot.stash) };
 }
 
 function parseEnvelope(value: string | null):
@@ -133,6 +139,7 @@ export function createComposerDraftPersistence(clientPersistence: AgentDesktopBr
 export function createComposerDraftStateStore(persistence: ComposerDraftPersistence): ComposerDraftStateStore {
   const records = new Map<string, { draft: ComposerDraft | null; draftId: string | null; recovery: ComposerDraft | null }>();
   const snapshots = new Map<string, { snapshot: ComposerDraftSnapshot; listeners: Set<() => void> }>();
+  const stashes = new Map<string, ComposerDraft>();
   let accountSlot: string | null = null;
   let generation = 0;
   let mutationRevision = 0;
@@ -170,7 +177,7 @@ export function createComposerDraftStateStore(persistence: ComposerDraftPersiste
     mutationRevision += 1;
     if (next.draft == null && next.recovery == null) records.delete(agentKey);
     else records.set(agentKey, { draft: cloneDraft(next.draft), draftId: next.draftId, recovery: cloneDraft(next.recovery) });
-    notify(agentKey, { draft: next.draft, recovery: next.recovery });
+    notify(agentKey, { draft: next.draft, recovery: next.recovery, stash: stashes.get(agentKey) ?? null });
     enqueueWrite();
   };
   const isCurrent = (expectedGeneration: number, expectedAccount: string): boolean =>
@@ -236,12 +243,48 @@ export function createComposerDraftStateStore(persistence: ComposerDraftPersiste
       const current = currentRecord(agentKey);
       if (current.recovery != null) replace(agentKey, { draft: current.draft, draftId: current.draftId, recovery: null });
     },
+    canExchangeDraft(agentKey) {
+      if (disposed || agentKey.length === 0) return false;
+      return currentRecord(agentKey).draft != null || stashes.has(agentKey);
+    },
+    exchangeDraft(agentKey, validate) {
+      if (disposed || agentKey.length === 0) return false;
+      const current = currentRecord(agentKey);
+      const stashed = stashes.get(agentKey) ?? null;
+      if (stashed != null && validate != null && !validate(stashed)) return false;
+      if (current.draft == null && stashed == null) return false;
+      if (current.draft == null) stashes.delete(agentKey);
+      else stashes.set(agentKey, cloneDraft(current.draft)!);
+      const nextDraft = cloneDraft(stashed);
+      replace(agentKey, {
+        draft: nextDraft,
+        draftId: nextDraft == null ? null : draftId(),
+        recovery: current.recovery
+      });
+      return true;
+    },
+    removeStash(agentKey) {
+      if (disposed || agentKey.length === 0 || !stashes.delete(agentKey)) return false;
+      const current = currentRecord(agentKey);
+      notify(agentKey, { draft: current.draft, recovery: current.recovery, stash: null });
+      return true;
+    },
+    clearScope(agentKey) {
+      if (disposed || agentKey.length === 0) return;
+      const hadStash = stashes.delete(agentKey);
+      const hadRecord = records.delete(agentKey);
+      if (!hadStash && !hadRecord) return;
+      mutationRevision += 1;
+      notify(agentKey, EMPTY_SNAPSHOT);
+      enqueueWrite();
+    },
     async restore(nextAccountSlot) {
       generation += 1;
       const expectedGeneration = generation;
       const expectedMutationRevision = mutationRevision;
       accountSlot = nextAccountSlot;
       records.clear();
+      stashes.clear();
       for (const agentKey of snapshots.keys()) notify(agentKey, EMPTY_SNAPSHOT);
       if (disposed || nextAccountSlot == null) return;
       await writes;
@@ -260,13 +303,14 @@ export function createComposerDraftStateStore(persistence: ComposerDraftPersiste
       }
       for (const [agentKey, record] of restored) {
         records.set(agentKey, record);
-        notify(agentKey, { draft: record.draft, recovery: record.recovery });
+        notify(agentKey, { draft: record.draft, recovery: record.recovery, stash: null });
       }
     },
     reset() {
       generation += 1;
       accountSlot = null;
       records.clear();
+      stashes.clear();
       for (const agentKey of snapshots.keys()) notify(agentKey, EMPTY_SNAPSHOT);
     },
     dispose() {
@@ -275,6 +319,7 @@ export function createComposerDraftStateStore(persistence: ComposerDraftPersiste
       generation += 1;
       accountSlot = null;
       records.clear();
+      stashes.clear();
       for (const state of snapshots.values()) state.listeners.clear();
       snapshots.clear();
     }

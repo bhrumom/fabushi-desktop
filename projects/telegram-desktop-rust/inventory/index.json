@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 16033,
-    "unread_minimum": 15925,
+    "unread_minimum": 15908,
     "omitted_known": 0,
-    "note": "Live 22b352e recursive census is 16,120. 195 exact entries are read-complete; 87 are explicitly unknown-closed; unknown 16,033, unread 15,925, omitted 0. The current recorded deterministic prefix is read through order 195; source expansion and applicable production closure remain open."
+    "note": "Live 22b352e recursive census is 16,120. 212 exact entries are read-complete; 87 are explicitly unknown-closed; unknown 16,033, unread 15,908, omitted 0. The deterministic recorded prefix is now fully read through order 212; applicable implementation/verification gaps remain open."
   },
   "latest_recursive_evidence": {
     "run_id": 37596744991,
@@ -43,7 +43,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live 22b352e authority is exact for the recorded deterministic prefix. 195 full-read entries are now credited; unread_minimum is 15,925, unknown remains 16,033, omitted remains 0. The recorded prefix through order 195 is fully read; applicable implementation/verification gaps remain open and receive no closure credit.",
+  "note": "Live 22b352e authority is exact for the recorded deterministic prefix. 212 full-read entries are now credited; unread_minimum is 15,908, unknown remains 16,033, omitted remains 0. Orders 196-212 were decomposed by actual shipping consumers rather than filename inference.",
   "rebaseline": {
     "from_commit": "6ec5014a92c4580841a043c440d65e8fc605ff78",
     "to_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db",
@@ -64,6 +64,6 @@
     "development_only_non_applicable": 66,
     "unknown_closed": 87,
     "omitted": 0,
-    "read_through": 195
+    "read_through": 212
   }
 }

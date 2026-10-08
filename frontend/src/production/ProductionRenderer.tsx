@@ -3,7 +3,7 @@ import type { CoordinatorPortBridge, CursorAuthStatus, DesktopAutoReviewInstruct
 import computerEntrypoint from "../recovered/features/computer/overlay/entrypoint";
 import { ConversationComposer } from "../recovered/features/conversation/workspace/composer";
 import { commitComposerAttachments, stageComposerFiles } from "../recovered/features/conversation/workspace/desktop";
-import type { ComposerDraft, ConversationTranscriptEntry, DraftAttachment, TranscriptMessage } from "../recovered/features/conversation/workspace/model";
+import { COMPOSER_ATTACHMENT_LIMIT, type ComposerDraft, type ConversationTranscriptEntry, type DraftAttachment, type TranscriptMessage } from "../recovered/features/conversation/workspace/model";
 import { createComposerDraftPersistence, createComposerDraftStateStore } from "../recovered/features/conversation/workspace/draft-state";
 import { createComposerSubmissionQueue, type ComposerSubmission, type ComposerSubmissionQueue } from "../recovered/features/conversation/workspace/submission";
 import { createSendJournalApprovalLifecycle } from "../recovered/features/conversation/workspace/send-journal-approval-lifecycle";
@@ -434,7 +434,7 @@ function moveAgentsToSidebarSection(sections: readonly SidebarSection[], agentId
       : section.agentIds.filter((agentId) => !moved.has(agentId))
   }));
 }
-const EMPTY_DRAFT_SNAPSHOT = { draft: null, recovery: null } as const;
+const EMPTY_DRAFT_SNAPSHOT = { draft: null, recovery: null, stash: null } as const;
 const readEmptyDraftSnapshot = () => EMPTY_DRAFT_SNAPSHOT;
 const emptyDraftSubscribe = () => () => {};
 const readEmptyAgentSettingsSnapshot = () => null;
@@ -2287,6 +2287,18 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   }, [linkMetadataProvider, paletteLinks]);
   const baseDraft = activeDraftSnapshot.draft ?? activeDraftSnapshot.recovery ?? EMPTY_DRAFT;
   const draft = replyThreadController.applyReplyToDraft(baseDraft);
+  const canExchangeComposerStash = activeAgentId.length > 0 && composerDraftStore.canExchangeDraft(activeAgentId);
+  const exchangeComposerStash = useCallback(() => {
+    const agentId = activeAgentIdRef.current;
+    if (agentId.length === 0) return;
+    const exchanged = composerDraftStore.exchangeDraft(agentId, (candidate) => candidate.attachments.length <= COMPOSER_ATTACHMENT_LIMIT);
+    if (!exchanged) {
+      setNotice("That saved draft cannot be restored because its attachments no longer satisfy composer limits.");
+      return;
+    }
+    replyThreadController.clearReply();
+    setNotice(null);
+  }, [composerDraftStore, replyThreadController]);
   const clearReplyTarget = useCallback(() => {
     replyThreadController.clearReply();
     if (activeAgentId.length > 0 && activeDraftSnapshot.draft != null) {
@@ -4178,7 +4190,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
           </main>
           <div className="sand-chat-input-dock">
             {activeIsHuman ? null : localToolPermissionDock}
-            <ConversationComposer acceptedSendGeneration={composerClearGeneration} disabled={busy || client == null} draft={draft} editorProviders={activeIsHuman ? undefined : editorProviders} notice={notice} onChange={(value) => composerDraftStore.setDraft(activeAgent.id, value)} onClearReplyTarget={clearReplyTarget} onRemoveAttachment={removeAttachment} onStageFiles={stageFiles} onSubmit={submit} placeholder={`Message ${activeAgent.name}`} replyTarget={replyTarget} scopeKey={`${transcriptAccountSlot ?? "signed-out"}:${activeAgent.id}`} transcribeAudio={transcribeAudio} />
+            <ConversationComposer acceptedSendGeneration={composerClearGeneration} canExchangeStash={canExchangeComposerStash} disabled={busy || client == null} draft={draft} editorProviders={activeIsHuman ? undefined : editorProviders} hasStash={activeDraftSnapshot.stash != null} notice={notice} onChange={(value) => composerDraftStore.setDraft(activeAgent.id, value)} onClearReplyTarget={clearReplyTarget} onExchangeStash={exchangeComposerStash} onRemoveAttachment={removeAttachment} onStageFiles={stageFiles} onSubmit={submit} placeholder={`Message ${activeAgent.name}`} replyTarget={replyTarget} scopeKey={`${transcriptAccountSlot ?? "signed-out"}:${activeAgent.id}`} transcribeAudio={transcribeAudio} />
           </div>
         </div>}
         </div>

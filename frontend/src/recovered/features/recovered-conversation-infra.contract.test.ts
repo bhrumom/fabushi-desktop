@@ -384,6 +384,58 @@ test("composer draft restore does not overwrite a staged attachment added while 
 });
 
 
+test("composer stash atomically exchanges rich drafts and prepared attachments per scope", async () => {
+  const writes: unknown[] = [];
+  const persistence: ComposerDraftPersistence = {
+    async read() { return null; },
+    async write(_accountSlot, value) { writes.push(value); },
+    async clear() {},
+  };
+  const store = createComposerDraftStateStore(persistence);
+  await store.restore("account-1");
+  const first = {
+    prompt: "first",
+    richText: "{\"type\":\"doc\",\"content\":[]}",
+    replyToId: "reply-1",
+    attachments: [{ path: "/tmp/a.pdf", name: "a.pdf" }],
+  };
+  const second = {
+    prompt: "second",
+    attachments: [{ path: "/tmp/b.png", name: "b.png" }],
+  };
+  store.setDraft("conversation:topic:child", first);
+  assert.equal(store.exchangeDraft("conversation:topic:child"), true);
+  assert.equal(store.snapshotsFor("conversation:topic:child").get().draft, null);
+  assert.deepEqual(store.snapshotsFor("conversation:topic:child").get().stash, first);
+  store.setDraft("conversation:topic:child", second);
+  assert.equal(store.exchangeDraft("conversation:topic:child"), true);
+  assert.deepEqual(store.snapshotsFor("conversation:topic:child").get().draft, first);
+  assert.deepEqual(store.snapshotsFor("conversation:topic:child").get().stash, second);
+  assert.ok(writes.length > 0, "draft mutations remain owned by the existing persistence store");
+  store.dispose();
+});
+
+test("composer stash revalidates before restore and child-scope cleanup removes draft plus stash", async () => {
+  const persistence: ComposerDraftPersistence = {
+    async read() { return null; },
+    async write() {},
+    async clear() {},
+  };
+  const store = createComposerDraftStateStore(persistence);
+  await store.restore("account-1");
+  const scope = "conversation:topic:child";
+  store.setDraft(scope, { prompt: "stashed", attachments: [{ path: "/tmp/file", name: "file" }] });
+  assert.equal(store.exchangeDraft(scope), true);
+  store.setDraft(scope, { prompt: "current", attachments: [] });
+  assert.equal(store.exchangeDraft(scope, () => false), false, "invalid stash must not displace current composer state");
+  assert.equal(store.snapshotsFor(scope).get().draft?.prompt, "current");
+  assert.equal(store.snapshotsFor(scope).get().stash?.prompt, "stashed");
+  store.clearScope(scope);
+  assert.deepEqual(store.snapshotsFor(scope).get(), { draft: null, recovery: null, stash: null });
+  assert.equal(store.canExchangeDraft(scope), false);
+  store.dispose();
+});
+
 test("forward recipient keyboard policy preserves picker boundaries and submit semantics", () => {
   assert.equal(nextForwardRecipientIndex(0, 0, "ArrowDown"), null);
   assert.equal(nextForwardRecipientIndex(0, 8, "ArrowUp"), 0);
