@@ -127,6 +127,20 @@ export function transcriptReplyActionLabel(entry: TranscriptCardActionEntry): st
   return `Reply to ${bounded.length > 0 ? bounded : "Agent"} message`;
 }
 
+export interface TranscriptInlineCopyProjection {
+  readonly text: string;
+  readonly label: "Copy Link" | "Copy Text";
+}
+
+export function projectTranscriptInlineCopyTarget(target: EventTarget | null): TranscriptInlineCopyProjection | null {
+  if (!(target instanceof Element)) return null;
+  const source = target.closest("[data-transcript-copy-text]");
+  const text = source?.getAttribute("data-transcript-copy-text");
+  const label = source?.getAttribute("data-transcript-copy-label");
+  if (text == null || text.length === 0 || (label !== "Copy Link" && label !== "Copy Text")) return null;
+  return { text, label };
+}
+
 export function isMessageContextTargetExcluded(target: EventTarget | null): boolean {
   if (!(target instanceof Element)) return false;
   if (target.closest('a[href], img, input, textarea, [contenteditable]:not([contenteditable="false"]), [role="textbox"], .sand-attachment__image-button') != null) return true;
@@ -206,17 +220,20 @@ export function TranscriptCardActionAnchor({ entry, children, onCopy, isReadOnly
   const anchorRef = useRef<HTMLElement | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [reactionMenuOpen, setReactionMenuOpen] = useState(false);
+  const [inlineCopy, setInlineCopy] = useState<TranscriptInlineCopyProjection | null>(null);
 
   useEffect(() => {
     if (!menuOpen) return;
     const onPointerDown = (event: globalThis.PointerEvent) => {
       if (!(event.target instanceof Node) || anchorRef.current?.contains(event.target)) return;
       setMenuOpen(false);
+      setInlineCopy(null);
     };
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
       event.preventDefault();
       setMenuOpen(false);
+      setInlineCopy(null);
       restoreTranscriptActionFocus(anchorRef.current);
     };
     document.addEventListener("pointerdown", onPointerDown);
@@ -232,7 +249,8 @@ export function TranscriptCardActionAnchor({ entry, children, onCopy, isReadOnly
   const effectiveReadOnly = isReadOnly ?? context?.isReadOnly ?? false;
   const effectiveThreadRootId = threadRootId ?? context?.threadRootId ?? null;
   const isThreadActionVisible = context != null && !effectiveReadOnly && effectiveThreadRootId == null;
-  const hasContextActions = context != null && (!effectiveReadOnly || isThreadActionVisible || effectiveOnCopy != null);
+  const hasStaticMenuActions = isThreadActionVisible || effectiveOnCopy != null || !effectiveReadOnly;
+  const hasContextActions = context != null && (hasStaticMenuActions || entry.kind === "send-message" && entry.message.type === "widget");
   const hasReactionActions = renderReactionActions != null && !effectiveReadOnly && isDeliveryActionable;
   if (!hasContextActions && !hasReactionActions) return <>{children}</>;
 
@@ -244,7 +262,10 @@ export function TranscriptCardActionAnchor({ entry, children, onCopy, isReadOnly
       isDeliveryActionable,
       onOpenChange: (open) => {
         setReactionMenuOpen(open);
-        if (open) setMenuOpen(false);
+        if (open) {
+          setMenuOpen(false);
+          setInlineCopy(null);
+        }
       },
     })
     : null;
@@ -254,6 +275,13 @@ export function TranscriptCardActionAnchor({ entry, children, onCopy, isReadOnly
   };
   const copy = () => {
     setMenuOpen(false);
+    const projection = inlineCopy;
+    setInlineCopy(null);
+    if (projection != null) {
+      if (typeof navigator === "undefined" || navigator.clipboard == null) return;
+      swallowCopyFailure(() => navigator.clipboard.writeText(projection.text));
+      return;
+    }
     if (effectiveOnCopy != null) swallowCopyFailure(effectiveOnCopy);
   };
   const child = Children.only(children);
@@ -270,12 +298,12 @@ export function TranscriptCardActionAnchor({ entry, children, onCopy, isReadOnly
     <div aria-label={transcriptMessageActionsLabel(entry)} className="sand-message-hover-actions" role="toolbar">
       {reactionActions}
       {isThreadActionVisible ? <button aria-label={transcriptReplyActionLabel(entry)} className="sand-message-hover-actions__button" onClick={() => context.onReply(entry.id)} type="button"><span aria-hidden="true" data-icon-name={messageRole(entry) === "user" ? "arrow-u-up-right" : "arrow-u-up-left"} /></button> : null}
-      {context == null ? null : <button aria-expanded={menuOpen} aria-haspopup="menu" aria-label="More message actions" className="sand-message-hover-actions__button" onClick={() => { rememberFocus(document.activeElement); setReactionMenuOpen(false); setMenuOpen((open) => !open); }} type="button">
+      {context == null || !hasStaticMenuActions ? null : <button aria-expanded={menuOpen} aria-haspopup="menu" aria-label="More message actions" className="sand-message-hover-actions__button" onClick={() => { rememberFocus(document.activeElement); setInlineCopy(null); setReactionMenuOpen(false); setMenuOpen((open) => !open); }} type="button">
         <span aria-hidden="true" data-icon-name="dots-3-horizontal" />
       </button>}
       {menuOpen && context != null ? <div aria-label="More message actions" role="menu">
         {isThreadActionVisible ? <button className="sand-message-hover-actions__button" onClick={() => { context.onThread(entry.id); setMenuOpen(false); }} role="menuitem" type="button"><span aria-hidden="true" data-icon-name="chat-bubbles" />Start a thread</button> : null}
-        {effectiveOnCopy == null ? null : <button className="sand-message-hover-actions__button" onClick={copy} role="menuitem" type="button"><span aria-hidden="true" data-icon-name="copy" />Copy</button>}
+        {inlineCopy == null && effectiveOnCopy == null ? null : <button className="sand-message-hover-actions__button" onClick={copy} role="menuitem" type="button"><span aria-hidden="true" data-icon-name="copy" />{inlineCopy?.label ?? "Copy"}</button>}
       </div> : null}
     </div>
   );
@@ -289,9 +317,11 @@ export function TranscriptCardActionAnchor({ entry, children, onCopy, isReadOnly
     className: actionClassName,
     onContextMenu: (event) => {
       childProps.onContextMenu?.(event);
-      if (isMessageContextTargetExcluded(event.target)) return;
+      const projectedInlineCopy = projectTranscriptInlineCopyTarget(event.target);
+      if (projectedInlineCopy == null && isMessageContextTargetExcluded(event.target)) return;
       event.preventDefault();
       rememberFocus(event.target);
+      setInlineCopy(projectedInlineCopy);
       setReactionMenuOpen(false);
       setMenuOpen(true);
     },
