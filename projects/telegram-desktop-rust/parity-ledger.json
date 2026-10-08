@@ -5011,7 +5011,9 @@
         "frontend/src/production/ProductionRenderer.tsx",
         "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
         "frontend/src/recovered/features/conversation/cards/transcript-card/message-actions.tsx",
-        "frontend/src/recovered/features/conversation/workspace/media-runtime.ts"
+        "frontend/src/recovered/features/conversation/workspace/media-runtime.ts",
+        "frontend/src/recovered/features/conversation/workspace/horizontal-scroll-state.ts",
+        "frontend/src/recovered/features/conversation/workspace/view.css"
       ],
       "fabushi_target_symbols": [
         "createFindInChatController",
@@ -5026,7 +5028,10 @@
         "UserMessageContent",
         "projectTranscriptInlineCopyTarget",
         "TranscriptAttachmentGallery",
-        "resolveWithSingleRetry"
+        "resolveWithSingleRetry",
+        "beginHorizontalScrollPointer",
+        "updateHorizontalScrollPointer",
+        "RetainedHorizontalScrollRegion"
       ],
       "target_language": "TypeScript/React",
       "language_rationale": "Applicable behavior is ConversationWorkspace interaction/lifecycle projection and belongs in the existing web renderer owners; durable domain/resource truth remains behind existing typed contracts.",
@@ -5049,8 +5054,8 @@
       "implementation_status": "mapped",
       "coverage_disposition": "fabushi-ui-replacement",
       "blockers": [
-        "Current PR implements canonical HTTP(S) action routing, typed copy projection, selection-vs-link activation fencing, media replacement pointer retirement and bounded one-retry media recovery; exact-head GitHub Actions evidence remains required.",
-        "Touch/horizontal-scroll/zoom continuity, visibility-bounded work, packaged temporal/a11y/performance evidence and independent acceptance remain open."
+        "Current branch implements canonical HTTP(S) action routing, typed copy projection, selection-vs-link activation fencing, media replacement pointer retirement, bounded media recovery, deterministic Control-wheel zoom, and touch-like horizontal pointer direction/capture balancing; exact-head GitHub Actions evidence remains required.",
+        "Native wheel phase-direction locking, mouse scrollbar/content drag parity, broader touch/zoom/reflow continuity, hidden-window timer quiescence, packaged temporal/a11y/performance evidence and independent acceptance remain open."
       ],
       "production_entrypoints": [
         "ProductShell -> ConversationWorkspace -> ConversationTranscript -> existing FindInChat/URL/Resource/action owners"
@@ -5229,7 +5234,7 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior mapped from accepted telegramdesktop/tdesktop d346 exact blob; Qt widget/painter code is not retained and legal/source provenance remains recorded.",
       "reviewer": null,
-      "notes": "Read-complete; current PR reuses browser text selection plus canonical ConversationTranscript/URL/context-menu/MediaViewer owners so non-empty selection suppresses link dispatch, HTTP(S) activation cannot bypass UrlCardProvider, rich-action copy remains typed, replaced media cannot retain old pointer ownership, and missing media recovery cannot loop unboundedly. The FindInChatBar now owns one generation-fenced highlight refresh runtime: superseding navigation cancels the prior frame, transcript replacement invalidates pending work, callbacks read the latest controller/container, and StrictMode-safe disposal prevents late global Highlight ranges from retaining detached DOM. Broader touch/scroll/zoom/window-visibility scenarios remain mapped-open."
+      "notes": "Read-complete and mapped-open. The existing ConversationTranscript/URL/context-menu/MediaViewer owners now also keep touch-like horizontal scroll intent source-neutral: below-threshold movement stays pending, vertical movement yields to native pan, horizontal movement alone captures the pointer, and up/cancel/lost-capture/replacement retire ownership. This bounded slice does not claim the remaining wheel-phase, mouse-drag, hidden-window, packaged or independent evidence."
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
@@ -5932,7 +5937,8 @@
         "frontend/src/production/ProductionRenderer.tsx",
         "frontend/src/recovered/features/conversation/workspace/horizontal-scroll-state.ts",
         "frontend/src/recovered/features/conversation/cards/transcript-card/views/send-message-text.tsx",
-        "frontend/src/recovered/features/conversation/workspace/tool-call-label.ts"
+        "frontend/src/recovered/features/conversation/workspace/tool-call-label.ts",
+        "frontend/src/recovered/features/conversation/workspace/view.css"
       ],
       "fabushi_target_symbols": [
         "ConversationTranscript",
@@ -5948,7 +5954,9 @@
         "formatTranscriptToolCallName",
         "TranscriptThinkingRow",
         "TranscriptToolCallRow",
-        "scrollToEntryWithoutHighlight"
+        "scrollToEntryWithoutHighlight",
+        "beginHorizontalScrollPointer",
+        "updateHorizontalScrollPointer"
       ],
       "target_language": "TypeScript/React",
       "language_rationale": "Applicable behavior is transcript rich-content projection, lifecycle, search/navigation and interaction; existing canonical renderer owners are TypeScript/React while durable resource/domain truth remains behind typed existing contracts.",
@@ -5972,8 +5980,8 @@
       "implementation_status": "mapped",
       "coverage_disposition": "fabushi-ui-replacement",
       "blockers": [
-        "Current PR implements canonical URL/selection arbitration, owner-keyed horizontal-scroll continuity, and find-in-chat navigation for collapsed thinking/tool-call details: the canonical controller indexes only expanded-presentation text, the canonical transcript disclosure sets reveal the owning row, and the existing view-commit subscription reapplies highlights; exact-head GitHub Actions evidence remains required.",
-        "Structural drag/drop, quote/details ancestor expansion beyond canonical outline rows, full anchor reveal after relayout, visible-range equivalence, touch/scrollbar ownership, packaged a11y/temporal evidence and independent acceptance remain open."
+        "Current branch implements canonical URL/selection arbitration, owner-keyed horizontal-scroll continuity, touch-like horizontal pointer direction/capture balancing, and find-in-chat navigation for collapsed thinking/tool-call details; exact-head GitHub Actions evidence remains required.",
+        "Structural drag/drop, quote/details ancestor expansion beyond canonical outline rows, full anchor reveal after relayout, visible-range equivalence, native wheel-phase/mouse-scrollbar ownership, packaged a11y/temporal evidence and independent acceptance remain open."
       ],
       "production_entrypoints": [
         "ProductShell -> ConversationWorkspace -> ConversationTranscript -> existing Search/Math/Resource/URL/action owners"
@@ -6161,7 +6169,7 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior mapped from accepted telegramdesktop/tdesktop d346 exact blobs; Qt/C++ presentation is not retained and legal/source provenance remains recorded.",
       "reviewer": null,
-      "notes": "Read-complete; current PR keeps external activation behind the canonical URL owner, preserves compatible code/table scroll state, and extends the existing FindInChatController/ConversationTranscript composition rather than creating a second article search owner. Thinking/tool-call labels, hidden detail text and the visible ToolResultCard projection enter one ordered search corpus; navigation expands the existing disclosure set, stable data-entry-id rows become highlight owners, preview duplication disappears while expanded, and view-commit listeners recalculate ranges after disclosure. Broader typed hit, drag/drop, quote/details ancestor expansion, relayout reveal and visible-range semantics remain mapped-open."
+      "notes": "Read-complete and mapped-open. Canonical code/table scroll state remains owner-keyed across compatible revisions, and touch-like pointer scrolling now begins only after horizontal direction wins, captures only the active pointer, clamps against the live region, and retires on up/cancel/lost capture or content replacement. Existing FindInChat and typed action owners remain unchanged; broader edit/drop/reveal/wheel/mouse semantics remain open."
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
