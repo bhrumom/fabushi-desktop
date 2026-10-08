@@ -1,6 +1,6 @@
 # IV Markdown view-widget complete read — d346 baseline
 
-Status: read-complete / mapped-open / bounded Highlight lifecycle slice implemented / not verified
+Status: read-complete / mapped-open / bounded Highlight + pointer-activation lifecycle slices implemented / not verified
 Spec: TDRP-001 Revision 9 / FBCP-001 Revision 7  
 Accepted upstream: `telegramdesktop/tdesktop@d346b42a1d30ef60dc989b6e5191bb8e571f6bd5`  
 Root tree: `5db05afa460bb030ac36316beb6496df03742c59`
@@ -60,7 +60,7 @@ Qt QWidget painting, cursors and platform event classes are replaced by web/desk
 
 GitHub Actions must eventually prove:
 - current-head execution of `UNIT-TDRP-IV-VIEW-HIGHLIGHT-RUNTIME-001` and `CONTRACT-TDRP-IV-VIEW-HIGHLIGHT-DISPOSAL-001`, covering supersede, transcript replacement, unmount cancellation and late-settlement fencing;
-- content replacement during hover/press/media load;
+- transcript anchor pointer intent across content replacement (implemented by `CONTRACT-TDRP-IV-VIEW-POINTER-ACTIVATION-FENCE-001`; exact-head execution pending); non-link hover/press/media/toggle replacement remains open;
 - focus/leave/touch-cancel/drag cancellation;
 - selection versus link/toggle/media activation conflicts;
 - typed copy context and sanitized code-copy context;
@@ -74,4 +74,4 @@ Normative identifiers: `TDRP-MOD-01`, `TDRP-MOD-02`, `TDRP-OWN-01`, `TDRP-COMP-0
 
 ## Current verdict
 
-Read-complete and mapped-open. The current PR implements one bounded slice under the existing `FindInChatBar`: only the latest scheduled Highlight refresh may settle, transcript replacement invalidates pending work, callbacks read the live controller/container, and StrictMode-safe disposal cancels late work before it can retain detached DOM in the global CSS Highlight registry. `UNIT-TDRP-IV-VIEW-HIGHLIGHT-RUNTIME-001` and `CONTRACT-TDRP-IV-VIEW-HIGHLIGHT-DISPOSAL-001` trace this slice. Touch/scroll/zoom, general hidden-window timers, full content-replacement interaction cancellation and packaged temporal/a11y/performance evidence remain open; no verified claim is made.
+Read-complete and mapped-open. The current PR implements bounded lifecycle slices inside existing canonical owners. Under `FindInChatBar`, only the latest scheduled Highlight refresh may settle, transcript replacement invalidates pending work, callbacks read the live controller/container, and StrictMode-safe disposal cancels late work before it can retain detached DOM in the global CSS Highlight registry. In `ConversationTranscript`, primary pointerdown on a transcript anchor captures the current anchor plus entries generation; entries replacement, pointer cancel, and pointer leave retire that intent, and a later pointer click is stopped in capture unless generation and anchor identity still match. Keyboard activation remains available and the existing selection and typed URL-owner checks still arbitrate downstream dispatch. `UNIT-TDRP-IV-VIEW-HIGHLIGHT-RUNTIME-001`, `CONTRACT-TDRP-IV-VIEW-HIGHLIGHT-DISPOSAL-001`, and `CONTRACT-TDRP-IV-VIEW-POINTER-ACTIVATION-FENCE-001` trace these bounded slices. Non-link media/toggle/drag replacement, broader touch/scroll/zoom, general hidden-window timers, and packaged temporal/a11y/performance evidence remain open; no verified claim is made.
