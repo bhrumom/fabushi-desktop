@@ -36,7 +36,7 @@ test("CONTRACT-TDRP-STORY-CANONICAL-ROUTE-001 keeps Story RPC on Coordinator to 
   for (const method of ["listStories", "viewStory", "reactStory", "deleteStory"]) {
     assert.match(client, new RegExp(method));
     assert.match(shared, new RegExp(method));
-    assert.match(gatewayApi, new RegExp("\\(\\\"" + method + "\\", Stories\\\)"));
-    assert.match(gateway, new RegExp("\\"" + method + "\\" =>"));
+    assert.ok(gatewayApi.includes(`("${method}", Stories)`));
+    assert.ok(gateway.includes(`"${method}" =>`));
   }
 });
