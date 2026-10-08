@@ -2,11 +2,16 @@ import type { CoordinatorPortBridge, TransferredCoordinatorPort } from "../recov
 import {
   parseCoordinatorStory,
   parseCoordinatorStoryDeleteResponse,
+  parseCoordinatorStoryStealthState,
+  parseCoordinatorStoryStealthStatus,
   parseCoordinatorStoryListResponse,
   validateCoordinatorReply,
   type CoordinatorAgentThreadRequest,
   type CoordinatorStory,
   type CoordinatorStoryDeleteResponse,
+  type CoordinatorStoryStealthActivateRequest,
+  type CoordinatorStoryStealthState,
+  type CoordinatorStoryStealthStatus,
   type CoordinatorStoryIdRequest,
   type CoordinatorStoryListRequest,
   type CoordinatorStoryReactionRequest,
@@ -40,6 +45,16 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function validateReply(method: string, value: unknown): unknown {
   if (method === "getAgentTranscriptWindow" || method === "getAgentThread") return validateCoordinatorReply(method, value);
+  if (method === "getStoryStealthStatus") {
+    const status = parseCoordinatorStoryStealthStatus(value);
+    if (status == null) throw new Error("getStoryStealthStatus returned a malformed projection");
+    return status;
+  }
+  if (method === "activateStoryStealth") {
+    const state = parseCoordinatorStoryStealthState(value);
+    if (state == null) throw new Error("activateStoryStealth returned a malformed projection");
+    return state;
+  }
   if (method === "listStories") {
     const stories = parseCoordinatorStoryListResponse(value);
     if (stories == null) throw new Error("listStories returned a malformed Story projection");
@@ -76,6 +91,8 @@ export interface ProductionCoordinatorClient {
   call(method: string, args?: unknown): Promise<unknown>;
   getAgentTranscriptWindow(args: CoordinatorTranscriptWindowRequest): Promise<CoordinatorTranscriptWindowResponse>;
   getAgentThread(args: CoordinatorAgentThreadRequest): Promise<CoordinatorAgentThreadResponse>;
+  getStoryStealthStatus(): Promise<CoordinatorStoryStealthStatus>;
+  activateStoryStealth(args: CoordinatorStoryStealthActivateRequest): Promise<CoordinatorStoryStealthState>;
   listStories(args?: CoordinatorStoryListRequest): Promise<readonly CoordinatorStory[]>;
   viewStory(args: CoordinatorStoryIdRequest): Promise<CoordinatorStory>;
   reactStory(args: CoordinatorStoryReactionRequest): Promise<CoordinatorStory>;
@@ -195,6 +212,8 @@ export function createCoordinatorClient(portBridge: CoordinatorPortBridge): Prod
     call,
     getAgentTranscriptWindow: async (args) => await call("getAgentTranscriptWindow", args) as CoordinatorTranscriptWindowResponse,
     getAgentThread: async (args) => await call("getAgentThread", args) as CoordinatorAgentThreadResponse,
+    getStoryStealthStatus: async () => validateReply("getStoryStealthStatus", await call("getStoryStealthStatus")) as CoordinatorStoryStealthStatus,
+    activateStoryStealth: async (args) => validateReply("activateStoryStealth", await call("activateStoryStealth", args)) as CoordinatorStoryStealthState,
     listStories: async (args = {}) => validateReply("listStories", await call("listStories", args)) as readonly CoordinatorStory[],
     viewStory: async (args) => validateReply("viewStory", await call("viewStory", args)) as CoordinatorStory,
     reactStory: async (args) => validateReply("reactStory", await call("reactStory", args)) as CoordinatorStory,

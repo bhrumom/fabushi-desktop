@@ -3183,6 +3183,36 @@ impl ProductionSessionWorkers {
         ).map_err(|error| format!("canonical Story command failed: {error}"))
     }
 
+    pub fn story_stealth_status(&self) -> Result<serde_json::Value, String> {
+        let responses = self.execute_story_messaging(MessagingClientCommand::StoryStealthStatus)?;
+        responses
+            .into_iter()
+            .find_map(|envelope| match envelope.event {
+                MessagingServerEvent::StoryStealthStatus { state, entitled } => {
+                    Some(serde_json::json!({ "state": state, "entitled": entitled }))
+                }
+                _ => None,
+            })
+            .ok_or_else(|| "canonical Story stealth status returned no projection".to_string())
+    }
+
+    pub fn activate_story_stealth(&self, request_id: &str) -> Result<serde_json::Value, String> {
+        let request_id = request_id.trim();
+        if request_id.is_empty() || request_id.len() > 160 {
+            return Err("activateStoryStealth requires a valid requestId".into());
+        }
+        let responses = self.execute_story_messaging(MessagingClientCommand::ActivateStoryStealth {
+            request_id: request_id.to_string(),
+        })?;
+        responses
+            .into_iter()
+            .find_map(|envelope| match envelope.event {
+                MessagingServerEvent::StoryStealthChanged { state } => serde_json::to_value(state).ok(),
+                _ => None,
+            })
+            .ok_or_else(|| "canonical Story stealth activation returned no state projection".to_string())
+    }
+
     pub fn list_stories(&self, limit: usize) -> Result<Vec<serde_json::Value>, String> {
         let responses = self.execute_story_messaging(MessagingClientCommand::ListStories {
             limit: u32::try_from(limit.clamp(1, 500)).unwrap_or(500),

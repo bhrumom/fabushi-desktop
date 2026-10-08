@@ -174,6 +174,8 @@ define_host_gateway_registry!(
     ("requestWebAuthnCeremony", WebAuthn),
     ("setBoxSecrets", Secrets),
     ("getBoxSecretsStatus", Secrets),
+    ("getStoryStealthStatus", Stories),
+    ("activateStoryStealth", Stories),
     ("listStories", Stories),
     ("viewStory", Stories),
     ("reactStory", Stories),

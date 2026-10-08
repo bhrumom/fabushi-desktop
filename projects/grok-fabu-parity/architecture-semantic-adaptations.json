@@ -97,12 +97,16 @@
       "referencePath": "frontend/src/production/coordinator-client.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "06136a7abe4392f5aa58b4edbc2e3fb40660998b",
+      "targetBlobSha": "00293171f5e17a195de5de248d68f6fd3f75fe14",
       "behavioralEvidence": [
         "frontend/src/production/coordinator-client.ts",
         "source/shared/rpc/coordinator.ts",
         "frontend/src/production/StoryCapabilitySurface.tsx",
-        "source/host/src/extensions/session/gateway.rs"
+        "source/host/src/extensions/session/gateway.rs",
+        "native/mahayana-messaging/src/story.rs",
+        "native/mahayana-messaging/src/engine.rs",
+        "native/mahayana-messaging/src/service.rs",
+        "source/host/src/extensions/session/production.rs"
       ],
       "testEvidence": [
         "frontend/src/production/story-capability-surface.contract.test.ts",
@@ -110,7 +114,7 @@
         ".github/workflows/rust-desktop-runtime.yml",
         ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "rationale": "Preserves the frozen Coordinator transport, pending-call settlement, event fanout and failure behavior while adding only typed Story projection/command helpers. Story replies are fail-closed parsed at the existing renderer RPC boundary, and the helpers route through the existing Coordinator/Host gateway to the canonical Rust Story service; the client does not own Story state or create a second transport."
+      "rationale": "Preserves the frozen Coordinator transport, pending-call settlement, event fanout and failure behavior while adding only typed Story projection/command helpers. Story replies are fail-closed parsed at the existing renderer RPC boundary, and the helpers route through the existing Coordinator/Host gateway to the canonical Rust Story service; the client does not own Story state or create a second transport. Story stealth status and activation are typed through the same closed Coordinator path; authoritative entitlement, cooldown and anonymity state remain in the canonical messaging service, and neither Host nor renderer owns a parallel Story state machine."
     },
     {
       "referencePath": "frontend/src/recovered/contracts/surface-notice.ts",
@@ -596,22 +600,27 @@
       "referencePath": "frontend/src/recovered/runtime/coordinator-source.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "4eef307826a304ac5c30e3dc09a7cdabfa9ae7fb",
+      "targetBlobSha": "6aae5968783444c56b0684ede20a13b3a54b14ef",
       "behavioralEvidence": [
         "frontend/src/recovered/runtime/coordinator-source.ts",
         "frontend/src/production/ProductionRenderer.tsx",
         "source/shared/rpc/coordinator.ts",
         "frontend/src/production/coordinator-client.ts",
-        "source/host/src/extensions/session/gateway.rs"
+        "source/host/src/extensions/session/gateway.rs",
+        "native/mahayana-messaging/src/story.rs",
+        "native/mahayana-messaging/src/engine.rs",
+        "native/mahayana-messaging/src/service.rs",
+        "source/host/src/extensions/session/production.rs"
       ],
       "testEvidence": [
         "desktop/e2e/openbot-packaged-acceptance.spec.ts",
         "desktop/e2e/mahayana-agent-workbench.spec.ts",
         ".github/workflows/desktop-chat-parity-ci.yml",
         ".github/workflows/rust-desktop-runtime.yml",
-        "frontend/src/production/story-capability-surface.contract.test.ts"
+        "frontend/src/production/story-capability-surface.contract.test.ts",
+        "native/mahayana-messaging/tests/story_service_contract.rs"
       ],
-      "rationale": "Preserves the frozen Grok 0.18 Coordinator renderer source except for the explicit Fabushi user-interrupt extension required by the shipping Agent product: interruptAgent is admitted through the closed method table, its {agentId, interrupted} reply is fail-closed validated, and telemetry remains owned by the existing send domain. The production renderer exposes the corresponding Stop response control, while signed packaged acceptance verifies cancellation settles and a fresh post-cancel turn completes; no parallel transport, owner, or legacy shell is introduced. The same closed Coordinator renderer method table also admits listStories/viewStory/reactStory/deleteStory, which remain typed at the shared RPC boundary and terminate in the canonical Host Story service; no alternate transport or Story owner is introduced."
+      "rationale": "Preserves the frozen Grok 0.18 Coordinator renderer source except for the explicit Fabushi user-interrupt extension required by the shipping Agent product: interruptAgent is admitted through the closed method table, its {agentId, interrupted} reply is fail-closed validated, and telemetry remains owned by the existing send domain. The production renderer exposes the corresponding Stop response control, while signed packaged acceptance verifies cancellation settles and a fresh post-cancel turn completes; no parallel transport, owner, or legacy shell is introduced. The same closed Coordinator renderer method table also admits listStories/viewStory/reactStory/deleteStory, which remain typed at the shared RPC boundary and terminate in the canonical Host Story service; no alternate transport or Story owner is introduced. Story stealth status and activation are typed through the same closed Coordinator path; authoritative entitlement, cooldown and anonymity state remain in the canonical messaging service, and neither Host nor renderer owns a parallel Story state machine."
     },
     {
       "referencePath": "source/electron-main/account/cursor-auth-wiring.ts",

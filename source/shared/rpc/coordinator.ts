@@ -53,6 +53,19 @@ export interface CoordinatorStory {
   readonly views: Readonly<Record<string, unknown>>;
 }
 
+export interface CoordinatorStoryStealthState {
+  readonly enabledTillMs: number;
+  readonly cooldownTillMs: number;
+  readonly lastActivationRequestId?: string | null;
+}
+
+export interface CoordinatorStoryStealthStatus {
+  readonly state: CoordinatorStoryStealthState;
+  readonly entitled: boolean;
+}
+
+export interface CoordinatorStoryStealthActivateRequest { readonly requestId: string }
+
 export interface CoordinatorStoryListRequest { readonly limit?: number }
 export interface CoordinatorStoryIdRequest { readonly storyId: string }
 export interface CoordinatorStoryReactionRequest extends CoordinatorStoryIdRequest { readonly reaction?: string | null }
@@ -93,6 +106,22 @@ export function parseCoordinatorStory(value: unknown): CoordinatorStory | null {
   if (value.editedAtMs !== undefined && value.editedAtMs !== null && !isFiniteNumber(value.editedAtMs)) return null;
   if (typeof value.pinnedToProfile !== "boolean" || typeof value.protectedContent !== "boolean" || typeof value.allowReplies !== "boolean" || !isRecord(value.views)) return null;
   return value as unknown as CoordinatorStory;
+}
+
+export function parseCoordinatorStoryStealthState(value: unknown): CoordinatorStoryStealthState | null {
+  if (!isRecord(value) || !isFiniteNumber(value.enabledTillMs) || !isFiniteNumber(value.cooldownTillMs)) return null;
+  if (!isNullableString(value.lastActivationRequestId)) return null;
+  return {
+    enabledTillMs: value.enabledTillMs,
+    cooldownTillMs: value.cooldownTillMs,
+    ...(value.lastActivationRequestId === undefined ? {} : { lastActivationRequestId: value.lastActivationRequestId })
+  };
+}
+
+export function parseCoordinatorStoryStealthStatus(value: unknown): CoordinatorStoryStealthStatus | null {
+  if (!isRecord(value) || typeof value.entitled !== "boolean") return null;
+  const state = parseCoordinatorStoryStealthState(value.state);
+  return state == null ? null : { state, entitled: value.entitled };
 }
 
 export function parseCoordinatorStoryListResponse(value: unknown): readonly CoordinatorStory[] | null {
@@ -203,6 +232,8 @@ export const COORDINATOR_METHOD_TABLE = {
   importAgentWorkflowUrl: { args: "object", reply: "import-result" },
   portAgentLocalSkills: { args: "object", reply: "import-result" },
   getConversationOutline: { args: "object", reply: "array" },
+  getStoryStealthStatus: { args: "none", reply: "record" },
+  activateStoryStealth: { args: "object", reply: "record" },
   listStories: { args: "object", reply: "story-array" },
   viewStory: { args: "object", reply: "story" },
   reactStory: { args: "object", reply: "story" },

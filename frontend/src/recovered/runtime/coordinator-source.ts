@@ -523,6 +523,7 @@ export function createStableCoordinatorSource(initial: RawPortCoordinatorSource)
 const TELEMETRY_DOMAIN_BY_METHOD: Record<CoordinatorMethod, string> = {
   getAgentTranscriptWindow: "transcript", getAgentThread: "transcript", getAgentTranscriptTail: "transcript", openAgentTail: "transcript", getConversationOutline: "transcript",
   sendPrompt: "send", interruptAgent: "send", promptAcceptanceStatus: "send", reactToMessage: "send",
+  getStoryStealthStatus: "stories", activateStoryStealth: "stories",
   listStories: "stories", viewStory: "stories", reactStory: "stories", deleteStory: "stories",
   listRoutedMcpTools: "plugins", executeRoutedMcpTool: "plugins",
   respondToWidget: "widgets", dismissWidget: "widgets", submitSecret: "widgets",

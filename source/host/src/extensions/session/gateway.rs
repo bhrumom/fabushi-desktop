@@ -288,6 +288,14 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
             .list_agents()
             .and_then(|agents| serde_json::to_value(agents).map_err(|error| error.to_string()))
             .map_err(SessionGatewayError::internal),
+        "getStoryStealthStatus" => session
+            .story_stealth_status()
+            .map_err(SessionGatewayError::internal),
+        "activateStoryStealth" => required_string(args, "requestId").and_then(|request_id| {
+            session
+                .activate_story_stealth(request_id)
+                .map_err(SessionGatewayError::internal)
+        }),
         "listStories" => {
             let limit = args
                 .get("limit")
