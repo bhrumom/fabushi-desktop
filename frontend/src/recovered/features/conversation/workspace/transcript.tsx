@@ -310,6 +310,7 @@ function RetainedHorizontalScrollRegion({ children, className, label, ownerId, r
     aria-label={label}
     className={className}
     onPointerCancel={(event) => retirePointerGesture(event.pointerId)}
+    onLostPointerCapture={(event) => retirePointerGesture(event.pointerId)}
     onPointerDown={(event) => {
       if (event.button !== 0 || event.pointerType === "mouse" || event.currentTarget.scrollWidth <= event.currentTarget.clientWidth) return;
       pointerGestureRef.current = beginHorizontalScrollPointer(event.pointerId, event.clientX, event.clientY);
