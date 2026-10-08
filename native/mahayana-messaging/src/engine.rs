@@ -4243,6 +4243,105 @@ mod recent_open_history_tests {
     }
 
     #[test]
+    fn deleted_message_cleans_only_authoritative_saved_sublist_membership() {
+        let parent = ConversationId::new("conversation:self");
+        let actor_id = ActorId::new("human:self");
+        let message_id = MessageId::new("message:delete");
+        let mut owned = ConversationChildRuntimeState::new(
+            ConversationDestination::saved_sublist(
+                parent.clone(),
+                ActorId::new("human:owned"),
+            ),
+            actor_id.clone(),
+        )
+        .expect("valid owned child");
+        let mut unrelated = ConversationChildRuntimeState::new(
+            ConversationDestination::saved_sublist(
+                parent.clone(),
+                ActorId::new("human:unrelated"),
+            ),
+            actor_id.clone(),
+        )
+        .expect("valid unrelated child");
+
+        assert!(owned.reconcile_authoritative_message_ids(vec![message_id.0.clone()]));
+        assert!(unrelated.reconcile_authoritative_message_ids(vec![
+            "message:other".into()
+        ]));
+        for child in [&mut owned, &mut unrelated] {
+            assert!(child.pagination.replace_window(
+                child.authoritative_message_ids.clone(),
+                Some(0),
+                Some(0),
+                Some(1),
+            ));
+            child.replace_pending_incoming_notifications(
+                child.authoritative_message_ids.clone(),
+            );
+            child.unread_count = Some(1);
+        }
+
+        let message = Message {
+            id: message_id.clone(),
+            conversation_id: parent.clone(),
+            sender_id: ActorId::new("human:peer"),
+            content: MessageContent::Text {
+                text: crate::message::FormattedText::plain("delete me"),
+            },
+            reply_to_message_id: None,
+            thread_root_message_id: None,
+            forward_origin: None,
+            reply_markup: None,
+            reactions: Vec::new(),
+            delivery_state: DeliveryState::Delivered,
+            created_at_ms: 10,
+            edited_at_ms: None,
+            scheduled_at_ms: None,
+            silent: false,
+            protected_content: false,
+            pinned: false,
+            deleted: false,
+        };
+
+        let mut state = MessagingState::default();
+        state
+            .messages
+            .entry(parent.clone())
+            .or_default()
+            .insert(message_id.clone(), message);
+        state.conversation_child_states = vec![owned, unrelated];
+        let mut engine = MessagingEngine::from_state(state);
+
+        engine.apply(Event::MessagesDeleted {
+            conversation_id: parent.clone(),
+            message_ids: vec![message_id.clone()],
+        });
+
+        let owned = &engine.state().conversation_child_states[0];
+        assert!(owned.authoritative_message_ids.is_empty());
+        assert!(owned.pagination.message_ids.is_empty());
+        assert!(owned.pending_incoming_notification_message_ids.is_empty());
+        assert!(owned.unread_count.is_none());
+
+        let unrelated = &engine.state().conversation_child_states[1];
+        assert_eq!(unrelated.authoritative_message_ids, vec!["message:other"]);
+        assert_eq!(unrelated.pagination.message_ids, vec!["message:other"]);
+        assert_eq!(
+            unrelated.pending_incoming_notification_message_ids,
+            vec!["message:other"]
+        );
+        assert_eq!(unrelated.unread_count, Some(1));
+        assert!(
+            engine
+                .state()
+                .messages
+                .get(&parent)
+                .and_then(|messages| messages.get(&message_id))
+                .is_some_and(|message| message.deleted)
+        );
+    }
+
+    #[test]
     fn recent_open_history_is_runtime_only_across_state_restore() {
         let actor_id = ActorId::new("human:recent-open");
         let destination = ConversationDestination::nested_conversation(
