@@ -5287,6 +5287,7 @@
       "new_owner_adr": null,
       "fabushi_target_paths": [
         "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "frontend/src/recovered/features/conversation/workspace/assistant-content-projection.ts",
         "frontend/src/recovered/features/conversation/workspace/find-in-chat-controller.ts",
         "frontend/src/recovered/features/conversation/workspace/media-viewer.tsx",
         "frontend/src/recovered/features/conversation/workspace/media-runtime.ts",
@@ -5600,6 +5601,7 @@
       "new_owner_adr": null,
       "fabushi_target_paths": [
         "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "frontend/src/recovered/features/conversation/workspace/assistant-content-projection.ts",
         "frontend/src/recovered/features/conversation/workspace/math.tsx",
         "frontend/src/recovered/features/conversation/workspace/media-viewer.tsx",
         "frontend/src/recovered/features/conversation/workspace/media-runtime.ts",
