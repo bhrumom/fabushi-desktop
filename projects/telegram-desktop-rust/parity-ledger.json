@@ -4614,7 +4614,8 @@
       "fabushi_target_paths": [
         "frontend/src/recovered/features/conversation/cards/transcript-card/url-card.ts",
         "frontend/src/recovered/features/conversation/workspace/math.tsx",
-        "frontend/src/recovered/features/conversation/workspace/media-viewer.tsx"
+        "frontend/src/recovered/features/conversation/workspace/media-viewer.tsx",
+        "frontend/src/recovered/features/conversation/workspace/math-runtime.ts"
       ],
       "fabushi_target_symbols": [
         "normalizeLinkUrl",
@@ -4900,7 +4901,8 @@
         "frontend/src/recovered/features/conversation/cards/transcript-card/url-card.ts",
         "frontend/src/recovered/features/conversation/workspace/math.tsx",
         "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
-        "frontend/src/recovered/features/conversation/cards/transcript-card/widget-interactions.ts"
+        "frontend/src/recovered/features/conversation/cards/transcript-card/widget-interactions.ts",
+        "frontend/src/recovered/features/conversation/workspace/math-runtime.ts"
       ],
       "fabushi_target_symbols": [
         "createUrlCardProvider",
