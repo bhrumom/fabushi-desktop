@@ -557,7 +557,7 @@ test("CONTRACT-TDRP-IV-VIEW-POINTER-ACTIVATION-FENCE-001 content replacement inv
   assert.match(source, /pointerActivationRevisionRef\.current \+= 1;[\s\S]{0,100}pointerActivationIntentRef\.current = null;[\s\S]{0,220}\}, \[entries, transcriptHandleRef\]\);/);
   assert.match(source, /onPointerDownCapture=\{\(event\) => \{[\s\S]{0,700}revision: pointerActivationRevisionRef\.current, target/);
   assert.match(source, /onPointerCancelCapture=\{\(\) => \{[\s\S]{0,120}pointerActivationIntentRef\.current = null/);
-  assert.match(source, /onPointerLeaveCapture=\{\(\) => \{[\s\S]{0,120}pointerActivationIntentRef\.current = null/);
+  assert.match(source, /onPointerLeave=\{\(\) => \{[\s\S]{0,120}pointerActivationIntentRef\.current = null/);
   assert.match(source, /onClickCapture=\{\(event\) => \{[\s\S]{0,120}event\.detail === 0[\s\S]{0,650}intent\?\.revision === pointerActivationRevisionRef\.current && intent\.target === target[\s\S]{0,220}event\.preventDefault\(\);[\s\S]{0,80}event\.stopPropagation\(\);/);
   assert.match(source, /closest<HTMLElement>\("a\[href\], button"\)/);
   assert.match(source, /TRANSCRIPT_POINTER_ACTIVATION_DRAG_THRESHOLD = 4/);
