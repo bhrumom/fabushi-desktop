@@ -11737,7 +11737,7 @@
         "native/mahayana-messaging/src/search.rs",
         "native/mahayana-messaging/src/media.rs"
       ],
-      "existing_owner": "Fabushi canonical MessagingEngine + Conversation/Message/Composer owners; SearchIndex/MediaCache own derived projections/resources",
+      "existing_owner": "Current exact mapped owners: canonical MessagingEngine and, where bound, ConversationChildRuntimeState; SearchIndex and resource/media cleanup are downstream open responsibilities and are not claimed as implemented target bindings.",
       "rejected_existing_owners": [
         "New Telegram ForwardPanel owner would duplicate canonical Composer/Conversation state.",
         "ShareBox search/gateway alone cannot own destination-scoped composer staging or reply/draft lifecycle."
@@ -11907,7 +11907,7 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior is source-informed from accepted telegramdesktop/tdesktop Telegram/SourceFiles/data/data_changes.h blob f10c987604b21b84626f5fb0288c180cedac9f2c; no Telegram C++ runtime is retained.",
       "reviewer": null,
-      "notes": "Exact accepted 484-line header read in full; mapped/open only.",
+      "notes": "Exact accepted 484-line header read in full; mapped/open only. Sibling-row audit: requirement/oracle/invariant are registered in RTM+dossier; current target bindings name only real exact-head symbols; Search/resource cleanup remains open with no fabricated test/production evidence.",
       "fabushi_target_bindings": [
         {
           "path": "native/mahayana-messaging/src/engine.rs",
@@ -11985,7 +11985,7 @@
         "native/mahayana-messaging/src/search.rs",
         "native/mahayana-messaging/src/media.rs"
       ],
-      "existing_owner": "Fabushi canonical MessagingEngine + Conversation/Message/Composer owners; SearchIndex/MediaCache own derived projections/resources",
+      "existing_owner": "Current exact mapped owners: canonical MessagingEngine and, where bound, ConversationChildRuntimeState; SearchIndex and resource/media cleanup are downstream open responsibilities and are not claimed as implemented target bindings.",
       "rejected_existing_owners": [
         "New Telegram ForwardPanel owner would duplicate canonical Composer/Conversation state.",
         "ShareBox search/gateway alone cannot own destination-scoped composer staging or reply/draft lifecycle."
@@ -12153,7 +12153,7 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior is source-informed from accepted telegramdesktop/tdesktop Telegram/SourceFiles/data/data_changes.cpp blob 8b5d73c9a8fa037d05cdb299acff3c4a76f29270; no Telegram C++ runtime is retained.",
       "reviewer": null,
-      "notes": "Exact accepted 395-line implementation read in full; mapped/open only.",
+      "notes": "Exact accepted 395-line implementation read in full; mapped/open only. Sibling-row audit: requirement/oracle/invariant are registered in RTM+dossier; current target bindings name only real exact-head symbols; Search/resource cleanup remains open with no fabricated test/production evidence.",
       "fabushi_target_bindings": [
         {
           "path": "native/mahayana-messaging/src/engine.rs",
@@ -12225,7 +12225,7 @@
         "native/mahayana-messaging/src/search.rs",
         "native/mahayana-messaging/src/media.rs"
       ],
-      "existing_owner": "Fabushi canonical MessagingEngine + Conversation/Message/Composer owners; SearchIndex/MediaCache own derived projections/resources",
+      "existing_owner": "Current exact mapped owners: canonical MessagingEngine and, where bound, ConversationChildRuntimeState; SearchIndex and resource/media cleanup are downstream open responsibilities and are not claimed as implemented target bindings.",
       "rejected_existing_owners": [
         "New Telegram ForwardPanel owner would duplicate canonical Composer/Conversation state.",
         "ShareBox search/gateway alone cannot own destination-scoped composer staging or reply/draft lifecycle."
@@ -12395,7 +12395,7 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior is source-informed from accepted telegramdesktop/tdesktop Telegram/SourceFiles/data/data_types.h blob ce41ac4ee1d062ec7b0a2e5a1554fa9ccf0d60b3; no Telegram C++ runtime is retained.",
       "reviewer": null,
-      "notes": "Exact accepted 418-line header read in full; mapped/open only. Resource/cache and message-flag applicability remain broader follow-up implementation work.",
+      "notes": "Exact accepted 418-line header read in full; mapped/open only. Resource/cache and message-flag applicability remain broader follow-up implementation work. Sibling-row audit: requirement/oracle/invariant are registered in RTM+dossier; current target bindings name only real exact-head symbols; Search/resource cleanup remains open with no fabricated test/production evidence.",
       "fabushi_target_bindings": [
         {
           "path": "native/mahayana-messaging/src/engine.rs",
