@@ -18,6 +18,7 @@ import { projectRichMessageAction, projectRichMessageActionAffordance } from "./
 import { createWidgetInteractionAdapter } from "./conversation/cards/transcript-card/widget-interactions.ts";
 import { createAssistantMathMarkupCache, type KatexRuntime } from "./conversation/workspace/math-runtime.ts";
 import { resolveWithSingleRetry } from "./conversation/workspace/media-runtime.ts";
+import { isVisibilityBoundDerivedMedia, shouldResolveDerivedMedia } from "./conversation/workspace/media-visibility.ts";
 import { captureHorizontalScroll, clampHorizontalScrollOffset, restoreHorizontalScrollOffset } from "./conversation/workspace/horizontal-scroll-state.ts";
 import {
   createHiddenChatsMutationController,
@@ -526,4 +527,24 @@ test("CONTRACT-TDRP-IV-ARTICLE-SCROLL-CONTINUITY-001 assistant code and table sc
   assert.match(source, /restoreHorizontalScrollOffset\(snapshotRef\.current, ownerId, region\.scrollWidth, region\.clientWidth\)/);
   assert.match(source, /className="sand-code-scroll"/);
   assert.match(source, /className="fabushi-rich-content-scroll-region"/);
+});
+
+
+test("UNIT-TDRP-IV-ARTICLE-MEDIA-VISIBILITY-001 derived transcript media follows a bounded visibility budget", () => {
+  assert.equal(isVisibilityBoundDerivedMedia("image"), true);
+  assert.equal(isVisibilityBoundDerivedMedia("video"), true);
+  assert.equal(isVisibilityBoundDerivedMedia("audio"), false);
+  assert.equal(shouldResolveDerivedMedia("image", false), false);
+  assert.equal(shouldResolveDerivedMedia("video", true), true);
+  assert.equal(shouldResolveDerivedMedia("audio", false), true);
+});
+
+test("CONTRACT-TDRP-IV-ARTICLE-MEDIA-LIFECYCLE-001 attachment cards release offscreen image and video resources without changing canonical metadata", () => {
+  const source = readFileSync(new URL("./conversation/workspace/media-viewer.tsx", import.meta.url), "utf8");
+  assert.match(source, /typeof IntersectionObserver === "undefined"/);
+  assert.match(source, /rootMargin: DERIVED_MEDIA_PRELOAD_ROOT_MARGIN/);
+  assert.match(source, /const shouldResolve = resolveMedia != null && supportedMediaKind && shouldResolveDerivedMedia\(kind, isNearViewport\);/);
+  assert.match(source, /if \(!shouldResolve \|\| resolveMedia == null\) \{[\s\S]{0,120}setMedia\(null\);[\s\S]{0,120}setLoading\(false\);/);
+  assert.match(source, /<MediaCard[\s\S]{0,400}observe=\{observeMediaCard\}/);
+  assert.match(source, /<MediaViewer attachments=\{mediaAttachments\}/);
 });

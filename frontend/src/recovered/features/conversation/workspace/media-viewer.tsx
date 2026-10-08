@@ -6,6 +6,7 @@ import { attachmentBasename, formatAttachmentBytes, inferAttachmentKind, type At
 import { PdfAttachmentViewer, type PdfBytesResolver } from "./pdf-viewer";
 import type { TranscriptAdjacency } from "./transcript-adjacency";
 import { resolveWithSingleRetry } from "./media-runtime";
+import { DERIVED_MEDIA_PRELOAD_ROOT_MARGIN, isVisibilityBoundDerivedMedia, shouldResolveDerivedMedia } from "./media-visibility";
 
 // @evidence src/app/dist/renderer/assets/view-DPSBrvyV.js#byteOffset=0 (user-attachment media/file leaf)
 // @evidence src/app/dist/renderer/assets/view-DPSBrvyV.js#SHA256=5bf28224da62a9042885e9da60e3fce82ed544846f470241ed6bcf4e12e64040
@@ -47,6 +48,36 @@ function mediaSource(media: AttachmentMedia | null): string | null {
 
 function clamp(value: number, minimum: number, maximum: number): number {
   return Math.min(maximum, Math.max(minimum, value));
+}
+
+function useNearViewport(enabled: boolean): [(element: HTMLElement | null) => void, boolean] {
+  const [element, setElement] = useState<HTMLElement | null>(null);
+  const [isNearViewport, setIsNearViewport] = useState(() => !enabled || typeof IntersectionObserver === "undefined");
+  const bindElement = useCallback((next: HTMLElement | null) => setElement(next), []);
+
+  useEffect(() => {
+    if (!enabled) {
+      setIsNearViewport(true);
+      return undefined;
+    }
+    if (element == null) return undefined;
+    if (typeof IntersectionObserver === "undefined") {
+      setIsNearViewport(true);
+      return undefined;
+    }
+    let active = true;
+    const observer = new IntersectionObserver((entries) => {
+      const entry = entries.find((candidate) => candidate.target === element);
+      if (active && entry != null) setIsNearViewport(entry.isIntersecting);
+    }, { rootMargin: DERIVED_MEDIA_PRELOAD_ROOT_MARGIN });
+    observer.observe(element);
+    return () => {
+      active = false;
+      observer.disconnect();
+    };
+  }, [element, enabled]);
+
+  return [bindElement, isNearViewport];
 }
 
 interface Transform {
@@ -200,37 +231,42 @@ function MediaViewer({ attachments, startIndex, resolveMedia, onClose, restoreFo
   );
 }
 
-function MediaCard({ attachment, kind, media, loading, role, onOpen, onOpenPdf }: { attachment: GalleryAttachment; kind: AttachmentKind; media: AttachmentMedia | null; loading: boolean; role: "user" | "assistant"; onOpen?: (trigger: HTMLButtonElement) => void; onOpenPdf?: (trigger: HTMLButtonElement) => void }) {
+function MediaCard({ attachment, kind, media, loading, observe, role, onOpen, onOpenPdf }: { attachment: GalleryAttachment; kind: AttachmentKind; media: AttachmentMedia | null; loading: boolean; observe: (element: HTMLElement | null) => void; role: "user" | "assistant"; onOpen?: (trigger: HTMLButtonElement) => void; onOpenPdf?: (trigger: HTMLButtonElement) => void }) {
   const label = attachment.name || attachmentBasename(attachment.path);
   const attachmentLabel = role === "assistant" ? "Agent attachment" : "User attachment";
   const userMediaStyle = attachment.sourceKind === "user-attachment" ? { maxWidth: 320 } : undefined;
-  if (media?.kind === "image" && onOpen != null) return <button aria-label="Media preview" className="sand-attachment" data-attachment-label={attachmentLabel} onClick={(event) => onOpen(event.currentTarget)} type="button"><img alt={label} className="sand-attachment__image" draggable={false} height={attachment.height ?? undefined} src={media.dataUrl} style={userMediaStyle} width={attachment.width ?? undefined} /></button>;
-  if (media?.kind === "video" && onOpen != null) return <button aria-label="Media preview" className="sand-attachment" data-attachment-label={attachmentLabel} onClick={(event) => onOpen(event.currentTarget)} type="button"><video aria-label={label} className="sand-attachment__video" height={attachment.height ?? undefined} muted preload="metadata" src={media.src} style={userMediaStyle} width={attachment.width ?? undefined} /></button>;
-  if (media?.kind === "audio") return <audio aria-label={label} className="sand-attachment" data-attachment-label={attachmentLabel} controls preload="metadata" src={media.src} />;
-  if (kind === "pdf" && onOpenPdf != null) return <button aria-label={`Open ${label}`} className="sand-file-attachment-chip sand-message-attachment" data-attachment-label={attachmentLabel} data-kind={kind} onClick={(event) => onOpenPdf(event.currentTarget)} type="button" title={attachment.path}><span aria-hidden="true">▤</span><span><strong>{label}</strong><small>{kind}{attachment.size == null ? "" : ` · ${formatAttachmentBytes(attachment.size)}`}</small></span></button>;
-  if (loading) return <span aria-label="Loading media…" className="sand-attachment" data-attachment-label={attachmentLabel} role="status">Loading media…</span>;
-  return <span aria-label={`Open ${label}`} className="sand-file-attachment-chip sand-message-attachment" data-attachment-label={attachmentLabel} data-kind={kind} role="group" title={attachment.path}><span aria-hidden="true">{kind === "image" ? "▧" : kind === "audio" ? "♪" : kind === "video" ? "▶" : "▤"}</span><span><strong>{label}</strong><small>{kind}{attachment.size == null ? "" : ` · ${formatAttachmentBytes(attachment.size)}`}</small></span></span>;
+  if (media?.kind === "image" && onOpen != null) return <button aria-label="Media preview" className="sand-attachment" data-attachment-label={attachmentLabel} onClick={(event) => onOpen(event.currentTarget)} ref={observe} type="button"><img alt={label} className="sand-attachment__image" draggable={false} height={attachment.height ?? undefined} src={media.dataUrl} style={userMediaStyle} width={attachment.width ?? undefined} /></button>;
+  if (media?.kind === "video" && onOpen != null) return <button aria-label="Media preview" className="sand-attachment" data-attachment-label={attachmentLabel} onClick={(event) => onOpen(event.currentTarget)} ref={observe} type="button"><video aria-label={label} className="sand-attachment__video" height={attachment.height ?? undefined} muted preload="metadata" src={media.src} style={userMediaStyle} width={attachment.width ?? undefined} /></button>;
+  if (media?.kind === "audio") return <audio aria-label={label} className="sand-attachment" data-attachment-label={attachmentLabel} controls preload="metadata" ref={observe} src={media.src} />;
+  if (kind === "pdf" && onOpenPdf != null) return <button aria-label={`Open ${label}`} className="sand-file-attachment-chip sand-message-attachment" data-attachment-label={attachmentLabel} data-kind={kind} onClick={(event) => onOpenPdf(event.currentTarget)} ref={observe} type="button" title={attachment.path}><span aria-hidden="true">▤</span><span><strong>{label}</strong><small>{kind}{attachment.size == null ? "" : ` · ${formatAttachmentBytes(attachment.size)}`}</small></span></button>;
+  if (loading) return <span aria-label="Loading media…" className="sand-attachment" data-attachment-label={attachmentLabel} ref={observe} role="status">Loading media…</span>;
+  return <span aria-label={`Open ${label}`} className="sand-file-attachment-chip sand-message-attachment" data-attachment-label={attachmentLabel} data-kind={kind} ref={observe} role="group" title={attachment.path}><span aria-hidden="true">{kind === "image" ? "▧" : kind === "audio" ? "♪" : kind === "video" ? "▶" : "▤"}</span><span><strong>{label}</strong><small>{kind}{attachment.size == null ? "" : ` · ${formatAttachmentBytes(attachment.size)}`}</small></span></span>;
 }
 
 function AttachmentItem({ attachment, adjacency, mediaAttachments, resolveMedia, readAttachmentBytes, downloadAttachment, role, onOpen, onOpenPdf }: { attachment: GalleryAttachment; adjacency?: TranscriptAdjacency; mediaAttachments: readonly GalleryAttachment[]; resolveMedia?: MediaResolver; readAttachmentBytes?: PdfBytesResolver; downloadAttachment?: (path: string, suggestedName?: string) => Promise<boolean>; role: "user" | "assistant"; onOpen: (index: number, trigger: HTMLButtonElement) => void; onOpenPdf: (attachment: DraftAttachment, trigger: HTMLButtonElement) => void }) {
   const kind = inferAttachmentKind({ mimeType: attachment.mimeType, fileName: attachment.name, urlOrPath: attachment.path });
+  const [observeMediaCard, isNearViewport] = useNearViewport(isVisibilityBoundDerivedMedia(kind));
+  const supportedMediaKind = kind === "image" || kind === "video" || kind === "audio";
+  const shouldResolve = resolveMedia != null && supportedMediaKind && shouldResolveDerivedMedia(kind, isNearViewport);
   const [media, setMedia] = useState<AttachmentMedia | null>(null);
-  const [loading, setLoading] = useState(resolveMedia != null && (kind === "image" || kind === "video" || kind === "audio"));
+  const [loading, setLoading] = useState(shouldResolve);
   useEffect(() => {
     let active = true;
-    if (resolveMedia == null || !["image", "video", "audio"].includes(kind)) {
+    if (!shouldResolve || resolveMedia == null) {
+      setMedia(null);
       setLoading(false);
       return () => { active = false; };
     }
+    setMedia(null);
     setLoading(true);
     void resolveWithSingleRetry(resolveMedia, attachment.path).then((next) => { if (active) { setMedia(next); setLoading(false); } }).catch(() => { if (active) { setMedia(null); setLoading(false); } });
     return () => { active = false; };
-  }, [attachment.path, kind, resolveMedia]);
+  }, [attachment.path, kind, resolveMedia, shouldResolve]);
   const mediaIndex = mediaAttachments.findIndex((candidate) => candidate.path === attachment.path);
   const isUserAttachment = attachment.sourceKind === "user-attachment";
   const isUserFile = isUserAttachment && !isPreviewable(kind);
   const className = isUserFile ? "sand-file-card-wrap sand-78zum5 sand-dt5ytf sand-uk3077 sand-11twubx sand-h8yej3 sand-1vyvmim sand-pvyfi4" : undefined;
-  const card = <MediaCard attachment={attachment} kind={kind} loading={loading} media={media} onOpen={mediaIndex < 0 ? undefined : (trigger) => onOpen(mediaIndex, trigger)} onOpenPdf={kind === "pdf" && readAttachmentBytes != null && downloadAttachment != null ? (trigger) => onOpenPdf(attachment, trigger) : undefined} role={role} />;
+  const card = <MediaCard attachment={attachment} kind={kind} loading={loading} media={media} observe={observeMediaCard} onOpen={mediaIndex < 0 ? undefined : (trigger) => onOpen(mediaIndex, trigger)} onOpenPdf={kind === "pdf" && readAttachmentBytes != null && downloadAttachment != null ? (trigger) => onOpenPdf(attachment, trigger) : undefined} role={role} />;
   if (!isUserAttachment) return card;
   return <div className={className} data-group-start={adjacency?.isGroupStart || undefined} data-role="user" style={{ alignItems: "flex-end", alignSelf: "flex-end", justifyContent: "flex-end", ...(isPreviewable(kind) ? { maxWidth: 320 } : {}) }}>{card}</div>;
 }
