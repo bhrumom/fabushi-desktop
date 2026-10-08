@@ -7,7 +7,7 @@ import { resolveWithSingleRetry } from "../recovered/features/conversation/works
 import { SandButton } from "../recovered/ui/sand-kit-primitives";
 import { OverlayDialog } from "../recovered/ui/overlay-primitives";
 
-type StoryAction = "previous" | "next" | "toggle-pause";
+type StoryAction = "previous" | "next" | "toggle-pause" | "press-start" | "press-end" | "toggle-menu";
 
 export interface StoryCapabilitySurfaceProps {
   readonly client: ProductionCoordinatorClient | null;
@@ -25,6 +25,15 @@ function storyIsVideo(story: CoordinatorStory): boolean {
   return story.media.mimeType?.toLowerCase().startsWith("video/") === true;
 }
 
+function formatStoryTimeLeft(deadlineMs: number, nowMs: number): string {
+  const totalSeconds = Math.max(0, Math.ceil((deadlineMs - nowMs) / 1000));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  if (hours > 0) return `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  return `${minutes}:${String(seconds).padStart(2, "0")}`;
+}
+
 export function StoryCapabilitySurface({ client, enabled, resolveMedia, onOpenOwner }: StoryCapabilitySurfaceProps) {
   const [stories, setStories] = useState<readonly CoordinatorStory[]>([]);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
@@ -33,9 +42,11 @@ export function StoryCapabilitySurface({ client, enabled, resolveMedia, onOpenOw
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [pointerPressed, setPointerPressed] = useState(false);
   const [reaction, setReaction] = useState<string | null>(null);
   const [stealth, setStealth] = useState<CoordinatorStoryStealthStatus | null>(null);
   const [stealthBusy, setStealthBusy] = useState(false);
+  const [clockMs, setClockMs] = useState(() => Date.now());
   const [resolvedMediaSource, setResolvedMediaSource] = useState<string | null>(null);
   const [resolvedMediaKind, setResolvedMediaKind] = useState<"image" | "video" | null>(null);
   const [mediaResolving, setMediaResolving] = useState(false);
@@ -44,6 +55,21 @@ export function StoryCapabilitySurface({ client, enabled, resolveMedia, onOpenOw
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   const selectedStory = selectedIndex == null ? null : stories[selectedIndex] ?? null;
+  const playbackPaused = paused || pointerPressed || menuOpen;
+
+  useEffect(() => {
+    if (stealth == null) return undefined;
+    const deadline = Math.max(stealth.state.enabledTillMs, stealth.state.cooldownTillMs);
+    const initialNow = Date.now();
+    setClockMs(initialNow);
+    if (deadline <= initialNow) return undefined;
+    const timer = window.setInterval(() => {
+      const now = Date.now();
+      setClockMs(now);
+      if (now >= deadline) window.clearInterval(timer);
+    }, 250);
+    return () => window.clearInterval(timer);
+  }, [stealth?.state.cooldownTillMs, stealth?.state.enabledTillMs]);
 
   const refresh = useCallback(async () => {
     if (!enabled || client == null) return;
@@ -75,6 +101,7 @@ export function StoryCapabilitySurface({ client, enabled, resolveMedia, onOpenOw
       setErrorMessage(null);
       setStealth(null);
       setStealthBusy(false);
+      setPointerPressed(false);
       return;
     }
     void refresh();
@@ -85,6 +112,7 @@ export function StoryCapabilitySurface({ client, enabled, resolveMedia, onOpenOw
     mediaGenerationRef.current += 1;
     setSelectedIndex(null);
     setPaused(false);
+    setPointerPressed(false);
     setProgress(0);
     setMenuOpen(false);
     setReaction(null);
@@ -103,6 +131,7 @@ export function StoryCapabilitySurface({ client, enabled, resolveMedia, onOpenOw
     mediaGenerationRef.current += 1;
     setSelectedIndex(boundedIndex);
     setPaused(false);
+    setPointerPressed(false);
     setProgress(0);
     setMenuOpen(false);
     setReaction(null);
@@ -120,6 +149,18 @@ export function StoryCapabilitySurface({ client, enabled, resolveMedia, onOpenOw
     if (selectedIndex == null || stories.length === 0) return;
     if (action === "toggle-pause") {
       setPaused((value) => !value);
+      return;
+    }
+    if (action === "press-start") {
+      setPointerPressed(true);
+      return;
+    }
+    if (action === "press-end") {
+      setPointerPressed(false);
+      return;
+    }
+    if (action === "toggle-menu") {
+      setMenuOpen((value) => !value);
       return;
     }
     const delta = action === "previous" ? -1 : 1;
@@ -172,12 +213,12 @@ export function StoryCapabilitySurface({ client, enabled, resolveMedia, onOpenOw
   useEffect(() => {
     const video = videoRef.current;
     if (video == null) return;
-    if (paused) void video.pause();
+    if (playbackPaused) void video.pause();
     else void video.play().catch(() => {});
-  }, [paused, selectedStory?.id]);
+  }, [playbackPaused, selectedStory?.id]);
 
   useEffect(() => {
-    if (selectedStory == null || paused || resolvedMediaKind === "video" || (resolvedMediaKind == null && storyIsVideo(selectedStory))) return;
+    if (selectedStory == null || playbackPaused || resolvedMediaKind === "video" || (resolvedMediaKind == null && storyIsVideo(selectedStory))) return;
     const generation = mediaGenerationRef.current;
     const timer = window.setInterval(() => {
       if (generation !== mediaGenerationRef.current) return;
@@ -190,7 +231,7 @@ export function StoryCapabilitySurface({ client, enabled, resolveMedia, onOpenOw
       });
     }, 100);
     return () => window.clearInterval(timer);
-  }, [act, paused, resolvedMediaKind, selectedStory]);
+  }, [act, playbackPaused, resolvedMediaKind, selectedStory]);
 
   const react = useCallback(async (nextReaction: string | null) => {
     if (client == null || selectedStory == null) return;
@@ -252,6 +293,17 @@ export function StoryCapabilitySurface({ client, enabled, resolveMedia, onOpenOw
 
   const mediaSource = resolvedMediaSource;
   const mediaIsVideo = selectedStory != null && (resolvedMediaKind === "video" || (resolvedMediaKind == null && storyIsVideo(selectedStory)));
+  const stealthEnabled = stealth != null && stealth.state.enabledTillMs > clockMs;
+  const stealthCooling = stealth != null && !stealthEnabled && stealth.state.cooldownTillMs > clockMs;
+  const stealthLabel = stealth?.entitled === false
+    ? "Anonymous viewing requires entitlement"
+    : stealthBusy
+      ? "Enabling anonymous viewing…"
+      : stealthEnabled
+        ? `Anonymous viewing active · ${formatStoryTimeLeft(stealth.state.enabledTillMs, clockMs)}`
+        : stealthCooling
+          ? `Anonymous viewing available in ${formatStoryTimeLeft(stealth.state.cooldownTillMs, clockMs)}`
+          : "View anonymously";
 
   if (!enabled) return null;
 
@@ -301,8 +353,13 @@ export function StoryCapabilitySurface({ client, enabled, resolveMedia, onOpenOw
         </div>
         <div
           aria-label="Story media navigation"
+          onPointerCancel={() => act("press-end")}
+          onPointerDown={(event) => {
+            if (event.button === 0) act("press-start");
+          }}
           onPointerUp={(event) => {
             if (event.button !== 0 || event.pointerType === "mouse" && event.buttons !== 0) return;
+            act("press-end");
             const bounds = event.currentTarget.getBoundingClientRect();
             const ratio = bounds.width <= 0 ? 0.5 : (event.clientX - bounds.left) / bounds.width;
             if (ratio < 0.35) act("previous");
@@ -344,23 +401,17 @@ export function StoryCapabilitySurface({ client, enabled, resolveMedia, onOpenOw
         </div>
         {selectedStory.caption.text.length > 0 ? <p>{selectedStory.caption.text}</p> : null}
         <div aria-label="Story actions" style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-          <SandButton onClick={() => setMenuOpen((value) => !value)} size="sm" variant="secondary">Menu</SandButton>
+          <SandButton onClick={() => act("toggle-menu")} size="sm" variant="secondary">Menu</SandButton>
           <SandButton aria-pressed={reaction === "❤"} onClick={() => void react(reaction === "❤" ? null : "❤")} size="sm" variant="secondary">React</SandButton>
           <SandButton disabled={selectedStory.protectedContent} onClick={() => void share()} size="sm" variant="secondary">Share</SandButton>
           <SandButton disabled={onOpenOwner == null} onClick={() => onOpenOwner?.(selectedStory.ownerId)} size="sm" variant="secondary">Profile</SandButton>
           <SandButton
-            disabled={stealthBusy || stealth == null || !stealth.entitled || stealth.state.cooldownTillMs > Date.now()}
+            disabled={stealthBusy || stealth == null || !stealth.entitled || stealthEnabled || stealthCooling}
             onClick={() => { void activateStealth(); }}
             size="sm"
             variant="secondary"
           >
-            {stealth?.state.enabledTillMs != null && stealth.state.enabledTillMs > Date.now()
-              ? "Anonymous viewing active"
-              : stealth?.entitled === false
-                ? "Anonymous viewing requires entitlement"
-                : stealth?.state.cooldownTillMs != null && stealth.state.cooldownTillMs > Date.now()
-                  ? "Anonymous viewing cooling down"
-                  : stealthBusy ? "Enabling anonymous viewing…" : "View anonymously"}
+            {stealthLabel}
           </SandButton>
           <span aria-label="Story reply availability" role="status">{selectedStory.allowReplies ? "Replies enabled" : "Replies disabled"}</span>
         </div>

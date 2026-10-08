@@ -17,14 +17,18 @@ test("CONTRACT-TDRP-STORY-PRODUCT-SHELL-001 mounts one canonical Story capabilit
 
 test("CONTRACT-TDRP-STORY-ACTION-LIFECYCLE-001 shares viewer actions and fences stale async work", () => {
   const surface = read("frontend/src/production/StoryCapabilitySurface.tsx");
-  assert.match(surface, /type StoryAction = "previous" \| "next" \| "toggle-pause"/);
+  assert.match(surface, /type StoryAction = "previous" \| "next" \| "toggle-pause" \| "press-start" \| "press-end" \| "toggle-menu"/);
   assert.match(surface, /onClick=\{\(\) => act\("previous"\)\}/);
   assert.match(surface, /onClick=\{\(\) => act\("next"\)\}/);
   assert.match(surface, /onClick=\{\(\) => act\("toggle-pause"\)\}/);
   assert.match(surface, /event\.key === "ArrowLeft"[\s\S]*?act\("previous"\)/);
   assert.match(surface, /event\.key === "ArrowRight"[\s\S]*?act\("next"\)/);
   assert.match(surface, /event\.key === " " \|\| event\.key === "k"[\s\S]*?act\("toggle-pause"\)/);
-  assert.match(surface, /onPointerUp=\{\(event\) => \{[\s\S]*?act\("previous"\)[\s\S]*?act\("next"\)[\s\S]*?act\("toggle-pause"\)/);
+  assert.match(surface, /onPointerDown=\{\(event\) => \{[\s\S]*?act\("press-start"\)/);
+  assert.match(surface, /onPointerCancel=\{\(\) => act\("press-end"\)\}/);
+  assert.match(surface, /onPointerUp=\{\(event\) => \{[\s\S]*?act\("press-end"\)[\s\S]*?act\("previous"\)[\s\S]*?act\("next"\)[\s\S]*?act\("toggle-pause"\)/);
+  assert.match(surface, /onClick=\{\(\) => act\("toggle-menu"\)\}/);
+  assert.match(surface, /const playbackPaused = paused \|\| pointerPressed \|\| menuOpen/);
   assert.match(surface, /aria-label="Story media navigation"/);
   assert.match(surface, /requestGenerationRef/);
   assert.match(surface, /mediaGenerationRef/);
@@ -50,7 +54,10 @@ test("CONTRACT-TDRP-STORY-STEALTH-SHIPPING-001 keeps entitlement state server-ow
   assert.match(surface, /client\.getStoryStealthStatus\(\)/);
   assert.match(surface, /client\.activateStoryStealth\(\{ requestId \}\)/);
   assert.match(surface, /Anonymous viewing requires entitlement/);
-  assert.match(surface, /Anonymous viewing cooling down/);
+  assert.match(surface, /formatStoryTimeLeft/);
+  assert.match(surface, /window\.setInterval\([\s\S]*?250\)/);
+  assert.match(surface, /Anonymous viewing active ·/);
+  assert.match(surface, /Anonymous viewing available in/);
   assert.match(production, /MessagingClientCommand::StoryStealthStatus/);
   assert.match(production, /MessagingClientCommand::ActivateStoryStealth/);
   assert.match(engine, /StoryStealthEntitlementRequired/);
