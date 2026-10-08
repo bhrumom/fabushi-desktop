@@ -325,19 +325,21 @@
       "referencePath": "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "5cf2f33c394f885a37709a01361dc516b0fb4240",
+      "targetBlobSha": "a1d39a038dd7b3bbdcea2b9c0d28cd3238777c70",
       "behavioralEvidence": [
         "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
         "frontend/src/production/ProductionRenderer.tsx",
-        "frontend/src/production/ForwardMessageDialog.tsx"
+        "frontend/src/production/ForwardMessageDialog.tsx",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/url-card.ts"
       ],
       "testEvidence": [
         "desktop/e2e/grok-parity.spec.ts",
         ".github/workflows/desktop-chat-parity-ci.yml",
         ".github/workflows/rust-desktop-runtime.yml",
-        "source/host/src/extensions/session/production.rs"
+        "source/host/src/extensions/session/production.rs",
+        "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts"
       ],
-      "rationale": "Preserves the frozen Grok ConversationTranscript as the single shipping transcript owner while adding one source-neutral message-action seam: an optional onForward callback. MessageActionAnchor exposes Forward only for settled ordinary messages when the shipping Conversation owner supplies that callback, including attachment-bearing messages, while preserving read-only gating, reply/thread/reaction actions, transcript identity, rendering and lifecycle. ProductionRenderer supplies this callback only for canonical Human conversations and execution crosses the existing Coordinator/Host message owner; no Telegram/ShareBox transcript, route, Message store, or renderer-side forward truth is introduced."
+      "rationale": "Preserves the frozen Grok ConversationTranscript as the single shipping transcript owner while adding one source-neutral message-action seam: an optional onForward callback. MessageActionAnchor exposes Forward only for settled ordinary messages when the shipping Conversation owner supplies that callback, including attachment-bearing messages, while preserving read-only gating, reply/thread/reaction actions, transcript identity, rendering and lifecycle. ProductionRenderer supplies this callback only for canonical Human conversations and execution crosses the existing Coordinator/Host message owner; no Telegram/ShareBox transcript, route, Message store, or renderer-side forward truth is introduced. The same canonical transcript owner now also routes HTTP(S) assistant Markdown links and persisted user rich-text links through the existing UrlCardProvider external-open boundary: default browser navigation is prevented, provider absence fails closed to non-clickable content, and unsupported schemes remain rejected by the existing URL normalizer instead of acquiring a second renderer navigation path."
     },
     {
       "referencePath": "frontend/src/recovered/features/org-chart/workspace/graph.tsx",
