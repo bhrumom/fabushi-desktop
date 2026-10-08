@@ -1320,10 +1320,15 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       if (submission.phase === "queued" || submission.phase === "failed" || submission.phase === "sent" || submission.phase === "cancelled") setBusy(false);
     },
     onFailure: (submission, error) => {
-      composerDraftStore.recoverDraft(submission.agentId, {
-        prompt: submission.prompt,
-        attachments: [...submission.attachments]
-      });
+      if (submission.draftOrigin !== "stash") {
+        composerDraftStore.recoverDraft(submission.agentId, {
+          prompt: submission.prompt,
+          attachments: [...submission.attachments],
+          ...(submission.richText == null ? {} : { richText: submission.richText }),
+          ...(submission.replyToId == null ? {} : { replyToId: submission.replyToId }),
+          ...(submission.isFork === undefined ? {} : { isFork: submission.isFork })
+        });
+      }
       setNotice(error instanceof Error ? error.message : String(error));
       }
     });
@@ -3576,6 +3581,63 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     setNotice(null);
   };
 
+  const sendComposerStash = () => {
+    if (activeAgent == null || client == null) return;
+    const stashed = activeDraftSnapshotStore.get().stash;
+    if (stashed == null) return;
+    const clientNonce = makeClientNonce();
+    const enteredAt = Date.now();
+    const prompt = stashed.prompt.trim();
+    const attachments = stashed.attachments.map(({ path, name }) => ({ path, name }));
+    if (prompt.length === 0 && attachments.length === 0) return;
+    const submission: ComposerSubmission = {
+      nonce: clientNonce,
+      agentId: activeAgent.id,
+      prompt,
+      attachments,
+      createdAtMs: enteredAt,
+      draftOrigin: "stash",
+      ...(stashed.richText == null ? {} : { richText: stashed.richText }),
+      ...(stashed.replyToId == null ? {} : { replyToId: stashed.replyToId }),
+      ...(stashed.isFork === undefined ? {} : { isFork: stashed.isFork })
+    };
+    const submissionAccountSlot = acknowledgementScopeRef.current.accountSlot;
+    acknowledgementController.insertOptimistic({
+      accountSlot: submissionAccountSlot,
+      agentId: activeAgent.id,
+      nonce: clientNonce,
+      entries: optimisticAcknowledgementEntries(clientNonce, attachments),
+      phase: transportRef.current === "connected" ? "pending" : "queued"
+    });
+    setEntriesByAgent((current) => ({ ...current, [activeAgent.id]: [...(current[activeAgent.id] ?? []), {
+      kind: "message", id: `pending-${clientNonce}`, role: "user", author: "You", text: prompt, timestampMs: enteredAt, attachments, delivery: "pending", clientNonce,
+      ...(submission.replyToId == null ? {} : { replyToId: submission.replyToId })
+    }] }));
+    const queuedSubmission = composerSubmissionQueue.submit(submission);
+    void queuedSubmission.completion.then((phase) => {
+      if (phase !== "sent" || acknowledgementScopeRef.current.accountSlot !== submissionAccountSlot) return;
+      composerDraftStore.removeStashIfMatches(submission.agentId, stashed);
+    });
+    setNotice(null);
+  };
+
+  const removeComposerStash = async () => {
+    const agentId = activeAgentIdRef.current;
+    if (agentId.length === 0) return;
+    const stashed = composerDraftStore.snapshotsFor(agentId).get().stash;
+    if (stashed == null || !composerDraftStore.removeStashIfMatches(agentId, stashed)) return;
+    const queuedPaths = new Set(
+      composerSubmissionQueue.snapshot()
+        .filter((submission) => submission.agentId === agentId && submission.draftOrigin === "stash")
+        .flatMap((submission) => submission.attachments.map((attachment) => attachment.path))
+    );
+    await Promise.all(stashed.attachments.map(async (attachment) => {
+      if (queuedPaths.has(attachment.path)) return;
+      await removeAttachment(attachment);
+    }));
+    setNotice(null);
+  };
+
   const removeTranscriptMessage = useCallback((entry: TranscriptMessage) => {
     const agentId = activeAgentIdRef.current;
     if (!agentId) return;
@@ -4190,7 +4252,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
           </main>
           <div className="sand-chat-input-dock">
             {activeIsHuman ? null : localToolPermissionDock}
-            <ConversationComposer acceptedSendGeneration={composerClearGeneration} canExchangeStash={canExchangeComposerStash} disabled={busy || client == null} draft={draft} editorProviders={activeIsHuman ? undefined : editorProviders} hasStash={activeDraftSnapshot.stash != null} notice={notice} onChange={(value) => composerDraftStore.setDraft(activeAgent.id, value)} onClearReplyTarget={clearReplyTarget} onExchangeStash={exchangeComposerStash} onRemoveAttachment={removeAttachment} onStageFiles={stageFiles} onSubmit={submit} placeholder={`Message ${activeAgent.name}`} replyTarget={replyTarget} scopeKey={`${transcriptAccountSlot ?? "signed-out"}:${activeAgent.id}`} transcribeAudio={transcribeAudio} />
+            <ConversationComposer acceptedSendGeneration={composerClearGeneration} canExchangeStash={canExchangeComposerStash} disabled={busy || client == null} draft={draft} editorProviders={activeIsHuman ? undefined : editorProviders} hasStash={activeDraftSnapshot.stash != null} notice={notice} onChange={(value) => composerDraftStore.setDraft(activeAgent.id, value)} onClearReplyTarget={clearReplyTarget} onExchangeStash={exchangeComposerStash} onRemoveAttachment={removeAttachment} onRemoveStash={removeComposerStash} onSendStash={sendComposerStash} onStageFiles={stageFiles} onSubmit={submit} placeholder={`Message ${activeAgent.name}`} replyTarget={replyTarget} scopeKey={`${transcriptAccountSlot ?? "signed-out"}:${activeAgent.id}`} transcribeAudio={transcribeAudio} />
           </div>
         </div>}
         </div>

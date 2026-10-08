@@ -411,6 +411,10 @@ test("composer stash atomically exchanges rich drafts and prepared attachments p
   assert.equal(store.exchangeDraft("conversation:topic:child"), true);
   assert.deepEqual(store.snapshotsFor("conversation:topic:child").get().draft, first);
   assert.deepEqual(store.snapshotsFor("conversation:topic:child").get().stash, second);
+  assert.equal(store.removeStashIfMatches("conversation:topic:child", first), false, "stale send completion must not remove a newer stash");
+  assert.deepEqual(store.snapshotsFor("conversation:topic:child").get().stash, second);
+  assert.equal(store.removeStashIfMatches("conversation:topic:child", second), true);
+  assert.equal(store.snapshotsFor("conversation:topic:child").get().stash, null);
   await flush();
   assert.ok(writes.length > 0, "draft mutations remain owned by the existing persistence store");
   store.dispose();

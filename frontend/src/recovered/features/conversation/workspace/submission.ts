@@ -16,6 +16,8 @@ export interface ComposerSubmission {
   createdAtMs: number;
   replyToId?: string;
   isFork?: boolean;
+  /** Renderer-local draft source; never forwarded to Coordinator/Host payloads. */
+  draftOrigin?: "composer" | "stash";
 }
 
 export interface ComposerSubmissionRecord extends ComposerSubmission {

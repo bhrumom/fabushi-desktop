@@ -51,6 +51,7 @@ export interface ComposerDraftStateStore {
   canExchangeDraft(agentKey: string): boolean;
   exchangeDraft(agentKey: string, validate?: (draft: ComposerDraft) => boolean): boolean;
   removeStash(agentKey: string): boolean;
+  removeStashIfMatches(agentKey: string, draft: ComposerDraft): boolean;
   clearScope(agentKey: string): void;
   restore(accountSlot: string | null): Promise<void>;
   reset(): void;
@@ -269,6 +270,15 @@ export function createComposerDraftStateStore(persistence: ComposerDraftPersiste
     },
     removeStash(agentKey) {
       if (disposed || agentKey.length === 0 || !stashes.delete(agentKey)) return false;
+      const current = currentRecord(agentKey);
+      notify(agentKey, { draft: current.draft, recovery: current.recovery, stash: null });
+      return true;
+    },
+    removeStashIfMatches(agentKey, draft) {
+      if (disposed || agentKey.length === 0) return false;
+      const stashed = stashes.get(agentKey);
+      if (stashed == null || !areComposerDraftsEqual(stashed, draft)) return false;
+      stashes.delete(agentKey);
       const current = currentRecord(agentKey);
       notify(agentKey, { draft: current.draft, recovery: current.recovery, stash: null });
       return true;
