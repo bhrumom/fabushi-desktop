@@ -745,6 +745,8 @@ export function TranscriptThinkingRow({ entry, expanded, onToggle }: { entry: Tr
 
 export function ConversationTranscript({ entries, hasOlder = false, isLoadingOlder = false, loadOlder, isAgentRunning = false, renderComputerHandoff, isTransportDown = false, isReadOnly = false, onCancelQueuedSend, onCopyMessage, onDeleteFailedSend, onForward, onReply, onStartThread, renderMessageReactionActions, renderMessageReactionPills, resolveTranscriptCardInteractions, onResendFailedSend, resolveAttachmentMedia, readAttachmentBytes, downloadAttachment, resolveReplyPreview, isReplyTargetInScope, onOpenReply, onOpenAutomation, localToolPermissionStore, resolveLocalToolPermission, transcriptCards, urlCards, threadRootId = null, transcriptHandleRef }: { entries: readonly ConversationTranscriptEntry[]; isAgentRunning?: boolean; isReadOnly?: boolean; renderComputerHandoff?(entry: TranscriptComputerHandoff): ReactNode; resolveAttachmentMedia?: (source: string) => Promise<AttachmentMedia | null>; readAttachmentBytes?: (path: string, maxBytes: number) => Promise<AttachmentBytesResult | null>; downloadAttachment?: (path: string, suggestedName?: string) => Promise<boolean>; resolveReplyPreview?(targetId: string): TranscriptReplyPreview | null; isReplyTargetInScope?(targetId: string): boolean; localToolPermissionStore?: LocalToolPermissionStore; resolveLocalToolPermission?(input: ResolveLocalToolPermissionInput): Promise<unknown>; transcriptCards?: TranscriptCardRootMountContract; resolveTranscriptCardInteractions?: TranscriptCardInteractionContext; urlCards?: UrlCardProvider | null; threadRootId?: string | null; transcriptHandleRef?: { current: FindInChatTranscriptHandle | null } } & ConversationTranscriptActions) {
   const transcriptRef = useRef<HTMLDivElement | null>(null);
+  const pointerActivationRevisionRef = useRef(0);
+  const pointerActivationIntentRef = useRef<{ revision: number; anchor: HTMLAnchorElement } | null>(null);
   const olderLoadInFlightRef = useRef(false);
   const viewCommitListenersRef = useRef(new Set<() => void>());
   const revealFindEntryRef = useRef<(entryId: string, kind: FindInChatDisclosureKind) => void>(() => {});
@@ -780,6 +782,8 @@ export function ConversationTranscript({ entries, hasOlder = false, isLoadingOld
     };
   }, [transcriptHandle, transcriptHandleRef]);
   useLayoutEffect(() => {
+    pointerActivationRevisionRef.current += 1;
+    pointerActivationIntentRef.current = null;
     if (transcriptHandleRef == null) return;
     for (const listener of [...viewCommitListenersRef.current]) listener();
   }, [entries, transcriptHandleRef]);
@@ -847,7 +851,40 @@ export function ConversationTranscript({ entries, hasOlder = false, isLoadingOld
       : (entry) => resolveTranscriptCardInteractions.getThreadSummary(entry.id) != null,
   });
   return (
-    <div aria-label="Conversation transcript" aria-live="off" className="sand-virtual-transcript" ref={transcriptRef} role="log" tabIndex={0}>
+    <div
+      aria-label="Conversation transcript"
+      aria-live="off"
+      className="sand-virtual-transcript"
+      onClickCapture={(event) => {
+        if (event.detail === 0) return;
+        const target = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>("a[href]") : null;
+        if (target == null || !transcriptRef.current?.contains(target)) return;
+        const intent = pointerActivationIntentRef.current;
+        pointerActivationIntentRef.current = null;
+        if (intent?.revision === pointerActivationRevisionRef.current && intent.anchor === target) return;
+        event.preventDefault();
+        event.stopPropagation();
+      }}
+      onPointerCancelCapture={() => {
+        pointerActivationIntentRef.current = null;
+      }}
+      onPointerDownCapture={(event) => {
+        if (!event.isPrimary || event.button !== 0) {
+          pointerActivationIntentRef.current = null;
+          return;
+        }
+        const target = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>("a[href]") : null;
+        pointerActivationIntentRef.current = target != null && transcriptRef.current?.contains(target)
+          ? { revision: pointerActivationRevisionRef.current, anchor: target }
+          : null;
+      }}
+      onPointerLeaveCapture={() => {
+        pointerActivationIntentRef.current = null;
+      }}
+      ref={transcriptRef}
+      role="log"
+      tabIndex={0}
+    >
       {entries.map((entry, index) => {
         if (entry.kind === "time-separator") return <div className="sand-transcript-time-separator" key={entry.id} role="separator">{entry.label}</div>;
         if (entry.kind === "unread-divider") return <div className="sand-unread-divider" key={entry.id} role="separator"><span className="sand-unread-divider__label">{entry.newMessageCount} new {entry.newMessageCount === 1 ? "message" : "messages"}</span></div>;
