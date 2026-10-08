@@ -481,3 +481,56 @@ Evidence/disposition: complete source read plus blob identity. These tests valid
 - full-read recursive entries: `76 -> 78`
 
 The next deterministic unread entry follows `.agents/skills/dependency-watch/scripts/watch_test.py` in the canonical recursive inventory.
+
+
+## Entry 19 — perform-task skill
+
+Path: `.agents/skills/perform-task/SKILL.md`  
+Blob: `3c637c28b7be4771dd79839aea1bbf1c93453674`  
+Read status: complete.
+
+Responsibility: own exactly one upstream AI-development task through deterministic workspace/task resolution, lineage/readiness gates, bounded implementation/review/test convergence, exact-path build and test safety, preserved resumable state, canonical publication, and fail-closed handling of split-required, blocked, already-satisfied, interrupted, or ambiguous states.
+
+Owner: upstream autonomous-development task runner. It is development orchestration and does not create a Fabushi Desktop ProductShell, Host, Coordinator, messaging, updater, or UI runtime responsibility.
+
+Production entrypoint: none.
+
+Evidence/disposition: complete source read plus exact blob identity. Final machine-readable closure should classify it as non-applicable to shipping product runtime while retaining any equivalent engineering quality policy under canonical Fabushi CI/release tooling; unknown remains unchanged until that disposition is recorded.
+
+## Entry 20 — perform-task OpenAI interface metadata
+
+Path: `.agents/skills/perform-task/agents/openai.yaml`  
+Blob: `f238b707da7f39a4293b17d112ddd344dcb8253a`  
+Read status: complete.
+
+Responsibility: expose the upstream Perform AI Task development tool with display name, short description, and default prompt.
+
+Owner: development-tool interface metadata only; no shipping Fabushi Desktop owner.
+
+Production entrypoint: none.
+
+Evidence/disposition: complete source read plus blob identity. Explicit machine-readable non-applicable closure remains required before unknown can decrease.
+
+## Entry 21 — Computer Use testing adapter
+
+Path: `.agents/skills/perform-task/references/computer-use-testing.md`  
+Blob: `b7fc92d604a55975f75047828d476e64667aa259`  
+Read status: complete.
+
+Responsibility: define a bounded UI-test driver policy that prefers deterministic in-binary overlay evidence, uses physical Computer Use only when the interaction itself is under test, binds hybrid actions to exact process identity and prepared test state, fails closed on ambiguity/permission/safety boundaries, provides a locked-macOS overlay override, treats interrupted driver sessions as recoverable test contamination rather than task cancellation, and persists AX/screenshot/overlay evidence with an explicit evidence precedence.
+
+Owner: upstream test/evidence infrastructure. Applicable quality principles map only to Fabushi's canonical GitHub Actions/E2E/packaged temporal/a11y/performance acceptance pipeline; they do not justify a Telegram-derived runtime, UI owner, or second application automation surface.
+
+Production entrypoint: none. Test/release-evidence entrypoints only.
+
+Evidence/disposition: complete source read and exact blob identity. Any adopted interaction/evidence property must close through existing Fabushi test/release owners with same-head evidence; otherwise record non-applicable. Reading alone does not verify a shipping responsibility.
+
+## Updated coverage accounting after entries 19–21
+
+- `unread: 15,734 -> 15,731`
+- `unknown: 15,812` unchanged
+- `omitted: 0` unchanged
+- full-read recursive entries: `78 -> 81`
+
+The next deterministic unread entry is
+`.agents/skills/perform-task/references/phase-prompts.md`.
