@@ -30,6 +30,11 @@ test("CONTRACT-TDRP-STORY-ACTION-LIFECYCLE-001 shares viewer actions and fences 
   assert.match(surface, /onClick=\{\(\) => act\("toggle-menu"\)\}/);
   assert.match(surface, /const playbackPaused = paused \|\| pointerPressed \|\| menuOpen/);
   assert.match(surface, /aria-label="Story media navigation"/);
+  assert.match(surface, /aria-label="Story caption"/);
+  assert.match(surface, /WebkitLineClamp: 2/);
+  assert.match(surface, /aria-expanded=\{captionExpanded\}/);
+  assert.match(surface, /Show full caption/);
+  assert.match(surface, /Collapse caption/);
   assert.match(surface, /requestGenerationRef/);
   assert.match(surface, /reactionGenerationRef/);
   assert.match(surface, /reactionGeneration !== reactionGenerationRef\.current/);

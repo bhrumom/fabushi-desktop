@@ -42,6 +42,7 @@ export function StoryCapabilitySurface({ client, enabled, resolveMedia, onOpenOw
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [captionExpanded, setCaptionExpanded] = useState(false);
   const [pointerPressed, setPointerPressed] = useState(false);
   const [reaction, setReaction] = useState<string | null>(null);
   const [stealth, setStealth] = useState<CoordinatorStoryStealthStatus | null>(null);
@@ -101,6 +102,7 @@ export function StoryCapabilitySurface({ client, enabled, resolveMedia, onOpenOw
       setSelectedIndex(null);
       setStatus("idle");
       setErrorMessage(null);
+      setCaptionExpanded(false);
       setStealth(null);
       setStealthBusy(false);
       setPointerPressed(false);
@@ -118,6 +120,7 @@ export function StoryCapabilitySurface({ client, enabled, resolveMedia, onOpenOw
     setPointerPressed(false);
     setProgress(0);
     setMenuOpen(false);
+    setCaptionExpanded(false);
     setReaction(null);
   }, []);
 
@@ -138,6 +141,7 @@ export function StoryCapabilitySurface({ client, enabled, resolveMedia, onOpenOw
     setPointerPressed(false);
     setProgress(0);
     setMenuOpen(false);
+    setCaptionExpanded(false);
     setReaction(null);
     try {
       const viewed = await client.viewStory({ storyId: target.id });
@@ -407,7 +411,20 @@ export function StoryCapabilitySurface({ client, enabled, resolveMedia, onOpenOw
                 style={{ maxHeight: "60vh", maxWidth: "100%", objectFit: "contain" }}
               />}
         </div>
-        {selectedStory.caption.text.length > 0 ? <p>{selectedStory.caption.text}</p> : null}
+        {selectedStory.caption.text.length > 0 ? <div aria-label="Story caption">
+          <p style={captionExpanded ? undefined : {
+            display: "-webkit-box",
+            overflow: "hidden",
+            WebkitBoxOrient: "vertical",
+            WebkitLineClamp: 2,
+          }}>{selectedStory.caption.text}</p>
+          <SandButton
+            aria-expanded={captionExpanded}
+            onClick={() => setCaptionExpanded((value) => !value)}
+            size="sm"
+            variant="secondary"
+          >{captionExpanded ? "Collapse caption" : "Show full caption"}</SandButton>
+        </div> : null}
         <div aria-label="Story actions" style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
           <SandButton onClick={() => act("toggle-menu")} size="sm" variant="secondary">Menu</SandButton>
           <SandButton aria-pressed={reaction === "❤"} onClick={() => void react(reaction === "❤" ? null : "❤")} size="sm" variant="secondary">React</SandButton>
