@@ -669,6 +669,7 @@ fn stories_communities_and_bot_execution_enforce_actor_permissions() {
         protected_content: true,
         allow_replies: true,
         views: std::collections::BTreeMap::new(),
+        anonymous_view_count: 0,
     };
     engine
         .execute(Command::PublishStory {
