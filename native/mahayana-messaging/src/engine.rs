@@ -3730,6 +3730,32 @@ impl MessagingEngine {
                         self.state.poll_votes.remove(&conversation_id);
                     }
                 }
+
+                // History deletion is authoritative for the Conversation summary too.
+                // Never leave last_message_id pointing at a tombstoned message. Recompute
+                // once after the whole batch so multi-delete ordering cannot affect the
+                // result, and use the same stable (created_at, id) ordering for replay.
+                let latest_surviving = self
+                    .state
+                    .messages
+                    .get(&conversation_id)
+                    .and_then(|messages| {
+                        messages
+                            .values()
+                            .filter(|message| !message.deleted)
+                            .max_by(|left, right| {
+                                (left.created_at_ms, &left.id)
+                                    .cmp(&(right.created_at_ms, &right.id))
+                            })
+                            .map(|message| (message.id.0.clone(), message.created_at_ms))
+                    });
+                if let Some(conversation) = self.state.conversations.get_mut(&conversation_id) {
+                    conversation.last_message_id =
+                        latest_surviving.as_ref().map(|(id, _)| id.clone());
+                    if let Some((_, created_at_ms)) = latest_surviving {
+                        conversation.updated_at_ms = created_at_ms;
+                    }
+                }
             }
             Event::ConversationRead {
                 conversation_id,
@@ -4370,6 +4396,102 @@ mod recent_open_history_tests {
                 .and_then(|messages| messages.get(&message_id))
                 .is_some_and(|message| message.deleted)
         );
+    }
+
+    #[test]
+    fn deleted_messages_recompute_conversation_last_message_from_surviving_truth() {
+        let conversation_id = ConversationId::new("conversation:history-last-message");
+        let sender = ActorId::new("human:history-sender");
+        let mut conversation = Conversation::direct(
+            conversation_id.0.clone(),
+            "History",
+            Vec::new(),
+            1,
+        );
+        conversation.last_message_id = Some("message:newest".into());
+        conversation.updated_at_ms = 30;
+
+        let make_message = |id: &str, created_at_ms: i64| Message {
+            id: MessageId::new(id),
+            conversation_id: conversation_id.clone(),
+            sender_id: sender.clone(),
+            content: MessageContent::Text {
+                text: crate::message::FormattedText::plain(id),
+            },
+            reply_to_message_id: None,
+            thread_root_message_id: None,
+            forward_origin: None,
+            reply_markup: None,
+            reactions: Vec::new(),
+            delivery_state: DeliveryState::Delivered,
+            created_at_ms,
+            edited_at_ms: None,
+            scheduled_at_ms: None,
+            silent: false,
+            protected_content: false,
+            pinned: false,
+            deleted: false,
+        };
+
+        let oldest = MessageId::new("message:oldest");
+        let tie_a = MessageId::new("message:tie-a");
+        let tie_b = MessageId::new("message:tie-b");
+        let newest = MessageId::new("message:newest");
+        let mut state = MessagingState::default();
+        state
+            .conversations
+            .insert(conversation_id.clone(), conversation);
+        state.messages.insert(
+            conversation_id.clone(),
+            BTreeMap::from([
+                (oldest.clone(), make_message(&oldest.0, 10)),
+                (tie_a.clone(), make_message(&tie_a.0, 20)),
+                (tie_b.clone(), make_message(&tie_b.0, 20)),
+                (newest.clone(), make_message(&newest.0, 30)),
+            ]),
+        );
+
+        let mut engine = MessagingEngine::from_state(state);
+        let delete_newest = Event::MessagesDeleted {
+            conversation_id: conversation_id.clone(),
+            message_ids: vec![newest.clone()],
+        };
+        engine.apply(delete_newest.clone());
+        engine.apply(delete_newest);
+
+        let conversation = &engine.state().conversations[&conversation_id];
+        assert_eq!(
+            conversation.last_message_id.as_deref(),
+            Some(tie_b.0.as_str()),
+            "stable id ordering must break equal-timestamp ties"
+        );
+        assert_eq!(conversation.updated_at_ms, 20);
+
+        // Delete the remaining latest pair in reverse lexical order. Recomputing
+        // after the whole batch must converge to the same surviving message.
+        let delete_tied = Event::MessagesDeleted {
+            conversation_id: conversation_id.clone(),
+            message_ids: vec![tie_b.clone(), tie_a.clone()],
+        };
+        engine.apply(delete_tied.clone());
+        engine.apply(delete_tied);
+        let conversation = &engine.state().conversations[&conversation_id];
+        assert_eq!(
+            conversation.last_message_id.as_deref(),
+            Some(oldest.0.as_str())
+        );
+        assert_eq!(conversation.updated_at_ms, 10);
+
+        let delete_last = Event::MessagesDeleted {
+            conversation_id: conversation_id.clone(),
+            message_ids: vec![oldest],
+        };
+        engine.apply(delete_last.clone());
+        engine.apply(delete_last);
+        let conversation = &engine.state().conversations[&conversation_id];
+        assert!(conversation.last_message_id.is_none());
+        // Empty-history deletion must not manufacture a new timestamp.
+        assert_eq!(conversation.updated_at_ms, 10);
     }
 
     #[test]
