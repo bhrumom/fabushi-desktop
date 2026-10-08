@@ -3687,11 +3687,16 @@ impl MessagingEngine {
                     {
                         conversation.pinned_message_ids.retain(|pinned| pinned != &id.0);
                     }
-                    if let Some(by_message) = self.state.poll_votes.get_mut(&conversation_id) {
-                        by_message.remove(&id);
-                        if by_message.is_empty() {
-                            self.state.poll_votes.remove(&conversation_id);
-                        }
+                    let remove_poll_bucket = self
+                        .state
+                        .poll_votes
+                        .get_mut(&conversation_id)
+                        .is_some_and(|by_message| {
+                            by_message.remove(&id);
+                            by_message.is_empty()
+                        });
+                    if remove_poll_bucket {
+                        self.state.poll_votes.remove(&conversation_id);
                     }
                 }
             }
