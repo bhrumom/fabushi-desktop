@@ -14,7 +14,7 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15788,
-    "unread_minimum": 15735,
+    "unread_minimum": 15733,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -42,7 +42,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Accepted d346 authority remains exact. Complete reads now include SavedMessages, recent peers, shared-media storage/facade, data_drafts, notifications_manager, and history_view_forward_panel.{h,cpp}. The forward-panel pair proves destination-scoped forward staging, source/destination lifecycle convergence, normalized sender/caption options, typed Topic/SavedSublist reply-draft clearing, link-preview option mutation and premium/rich-message restrictions. Fabushi maps these to canonical Conversation/Message/Composer/MessagingEngine owners; production parity remains open. unread_minimum is 15,735; unknown remains 15,788; omitted remains 0.",
+  "note": "Accepted d346 authority remains exact. Complete reads now include SavedMessages, recent peers, shared-media storage/facade, data_drafts, notifications_manager, history_view_forward_panel.{h,cpp}, and history_view_draft_options.{h,cpp}. The draft-options pair adds staged reply/forward/link option convergence, source-item removal repair, premium/money-restriction constraints, and typed reply transfer keyed by topicRootId + monoforumPeerId. Fabushi maps these to canonical Conversation/Message/Composer/MessagingEngine and ShareBox/Search owners; production parity remains open. unread_minimum is 15,733; unknown remains 15,788; omitted remains 0.",
   "rebaseline": {
     "from_commit": "e1ed57a44e7c14e0cbb91bcf0f7ec3e408786a39",
     "to_commit": "d346b42a1d30ef60dc989b6e5191bb8e571f6bd5",
