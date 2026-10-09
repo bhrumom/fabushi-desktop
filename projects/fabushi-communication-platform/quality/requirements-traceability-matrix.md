@@ -447,3 +447,18 @@ Wallet background `MouseButtonPress` is swallowed while the top information box 
 | TDRP-R9-SETTINGS-GLOBAL-TTL-001 | ORA-TDRP-SETTINGS-GLOBAL-TTL-5594-5595 | INV-TTL-DEFAULT-SERVER-001; INV-TTL-ELIGIBILITY-001; INV-TTL-BULK-PARTIAL-001; INV-TTL-ACCOUNT-FENCE-001 | Canonical Privacy/Retention + Conversation policy + account messaging service owners | unit + policy/server contract + property eligibility + bulk partial-failure/retry + account/peer stale fencing + keyboard/a11y/light-dark/responsive E2E | mapped-open |
 | TDRP-R9-SETTINGS-INFORMATION-001 | ORA-TDRP-SETTINGS-INFORMATION-5596-5597 | INV-PROFILE-ASYNC-FENCE-001; INV-BIO-DEBOUNCE-FLUSH-001; INV-MULTIACCOUNT-SWITCH-001; INV-ACCOUNT-ORDER-001; INV-PRIVACY-BIRTHDAY-001 | Canonical Identity/Profile + Account/Session + Business/Privacy owners | unit + identity/server contract + debounce/teardown + account-switch/new-window/reorder/logout fault + privacy/security + keyboard/a11y/light-dark/responsive E2E | mapped-open |
 | TDRP-R9-SETTINGS-LOCAL-PASSCODE-001 | ORA-TDRP-SETTINGS-LOCAL-PASSCODE-5598-5599 | INV-PASSCODE-60S-EXPIRY-001; INV-PASSCODE-STALE-INVALIDATE-001; INV-PASSCODE-VAULT-VERIFY-001; INV-PASSCODE-APPLOCK-001; INV-PASSCODE-SYSTEM-UNLOCK-001 | Canonical Local Security/App Lock + Wallet Key Protection + platform unlock owners | unit + crypto/storage contract + stale/external-change + retry/lockout + vault migration/fault + WinHello/TouchID/AppleWatch + keyboard/a11y/security E2E | mapped-open |
+
+
+## TDRP settings local storage + main 5600-5604 — mapped-open requirements
+
+| requirement_id | oracle_ids | invariant_ids | production owner | required evidence | verdict |
+| --- | --- | --- | --- | --- | --- |
+| TDRP-R9-SETTINGS-LOCAL-STORAGE-5600-5602 | ORA-TDRP-LOCAL-STORAGE-5600 | INV-STORAGE-DUALDB-001; INV-STORAGE-CLEAR-IDEMPOTENT-001; INV-STORAGE-QUOTA-COUPLING-001; INV-STORAGE-ACCOUNT-FENCE-001 | Canonical Settings/Storage + Cache/MediaCache policy + filesystem-capacity adapter | unit + storage contract + quota property + partial-clear/restart/account-switch fault + keyboard/focus/a11y/light-dark/responsive/reduced-motion E2E | mapped-open |
+| TDRP-R9-SETTINGS-MAIN-5603-5604 | ORA-TDRP-SETTINGS-MAIN-5603 | INV-SETTINGS-ROUTE-OWNER-001; INV-SETTINGS-ACCOUNT-FENCE-001; INV-SETTINGS-SCALE-RESTART-001; INV-SETTINGS-ASYNC-REFRESH-001 | Canonical Settings shell + Identity/Account + Privacy/Security + Wallet/Business + preferences/platform adapters | unit + route/capability matrix + account-switch/stale-result + profile-upload fault + scale confirm/cancel/restart + support/promo idempotency + keyboard/focus/a11y/light-dark/responsive E2E | mapped-open |
+
+- `INV-STORAGE-DUALDB-001`: normal and big-media cache stats/clearing reconcile as one storage surface without a second policy owner.
+- `INV-STORAGE-CLEAR-IDEMPOTENT-001`: duplicate clears cannot overlap; completion requires actual clearing settlement, not only animation time.
+- `INV-STORAGE-QUOTA-COUPLING-001`: total cache minus media cache remains at least 100 MB whenever policy is accepted.
+- `INV-SETTINGS-ACCOUNT-FENCE-001`: profile, balances, business capability, suggestions and async reload results cannot cross active-account/session lifetime.
+- `INV-SETTINGS-SCALE-RESTART-001`: cancelled preview restores configured state; confirmed restart persists one canonical preference mutation.
+- Dossier: `projects/telegram-desktop-rust/dossiers/settings-local-storage-main-5600-5604-complete-read.md`.
