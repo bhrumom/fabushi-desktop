@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15844,
-    "unread_minimum": 10526,
+    "unread_minimum": 10524,
     "omitted_known": 0,
-    "note": "Live 863cf10d recursive census is 16,123. Deterministic read-through 5,597; unknown 15,844, unread 10,526, omitted 0. Information/profile/account rows remain mapped-open."
+    "note": "Live 863cf10d recursive census is 16,123. Deterministic read-through 5,599; unknown 15,844, unread 10,524, omitted 0. Local passcode/security rows remain mapped-open."
   },
   "latest_recursive_evidence": {
     "run_id": 37872749663,
@@ -46,7 +46,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live authority exact through deterministic order 5,597; unread_minimum is 10,526; unknown remains 15,844; omitted remains 0.",
+  "note": "Live authority exact through deterministic order 5,599; unread_minimum is 10,524; unknown remains 15,844; omitted remains 0.",
   "rebaseline": {
     "from_commit": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
     "to_commit": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
@@ -70,9 +70,9 @@
       "Telegram/SourceFiles/wallet/wallet_content.cpp"
     ],
     "current_head_source_authority_evidence": "Fresh exact-head Source authority evidence required after the 863cf10d rebaseline; predecessor artifacts are historical only.",
-    "current_source_read_through": 5597,
-    "first_unread_order": 5598,
-    "first_unread_path": "Telegram/SourceFiles/settings/sections/settings_local_passcode.cpp"
+    "current_source_read_through": 5599,
+    "first_unread_order": 5600,
+    "first_unread_path": "Telegram/SourceFiles/settings/sections/settings_local_storage.cpp"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -81,6 +81,6 @@
     "development_only_non_applicable": 66,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 5597
+    "read_through": 5599
   }
 }
