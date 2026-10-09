@@ -26,10 +26,10 @@
       "failure_cases": "duplicate player ownership; stale shared stream; off-screen geometry; seek resumes incorrectly; volume/quality drift; PiP teardown leaks power blocker/resources",
       "ui_disposition": "Reuse the one canonical Fabushi MediaViewer and canonical controls. Chromium/Electron owns native media decode/compositor/PiP primitives; no Telegram-specific PiP/player/renderer component is introduced.",
       "fabushi_canonical_owner": "canonical MediaViewer plus Chromium/Electron picture-in-picture/media session boundary",
-      "fabushi_target": "MAPPED OPEN. Native Chromium playback controls and source-replacement/unmount/input fencing are implemented in the canonical MediaViewer. Explicit persisted media preferences, deterministic PiP geometry/ownership, speed/quality policy, buffered/loading projection and packaged PiP/system-media evidence remain open.",
+      "fabushi_target": "MAPPED OPEN. Canonical MediaViewer now persists volume/mute and hashed resumable position while Chromium supplies native playback/PiP primitives. Deterministic PiP geometry, explicit shared-stream ownership/handoff, power-save/system-media integration and packaged cross-platform PiP evidence remain open.",
       "platform_differences": "Qt/OpenGL/QRhi/raster rendering and native window mechanics are platform details. Preserve product state/lifecycle/input/security/accessibility semantics through Electron/Chromium and existing Fabushi owners.",
-      "production_evidence": "projects/telegram-desktop-rust/dossiers/media-view-pip-playback-5165-5177-complete-read.md; frontend/src/recovered/features/conversation/workspace/media-viewer.tsx contains partial playback implementation only.",
-      "test_evidence": "CONTRACT-TDRP-MEDIAVIEW-NATIVE-PLAYBACK-001 covers the current partial playback/input lifecycle; exact-head and later PiP/persistence/progress/packaged evidence remains required.",
+      "production_evidence": "projects/telegram-desktop-rust/dossiers/media-view-pip-playback-5165-5177-complete-read.md; frontend/src/recovered/features/conversation/workspace/media-viewer.tsx contains partial playback implementation only. Production follow-up: frontend/src/recovered/features/conversation/workspace/media-viewer.tsx persists source-neutral volume/mute preferences and hashed per-source resumable playback position with replacement/unmount/pause/ended lifecycle fencing.",
+      "test_evidence": "CONTRACT-TDRP-MEDIAVIEW-NATIVE-PLAYBACK-001 covers the current partial playback/input lifecycle; exact-head and later PiP/persistence/progress/packaged evidence remains required. CONTRACT-TDRP-MEDIAVIEW-PLAYBACK-PERSISTENCE-001 binds hashed-key, restoration, throttled timeupdate, close/replacement and fail-soft storage semantics.",
       "disposition": "mapped-open-media-view-pip-playback",
       "unknown_closed": false,
       "omitted": false,
@@ -47,7 +47,7 @@
         "file_type": "blob",
         "recursive_order": 5165
       },
-      "notes": "Read-complete. No unknown, verification, baseline-ready or release credit is granted by source reading alone."
+      "notes": "Read-complete. No unknown, verification, baseline-ready or release credit is granted by source reading alone. Current production slice also implements volume/mute persistence and resumable playback position; the broader mapped responsibility remains open."
     },
     {
       "recursive_order": 5166,
@@ -62,10 +62,10 @@
       "failure_cases": "duplicate player ownership; stale shared stream; off-screen geometry; seek resumes incorrectly; volume/quality drift; PiP teardown leaks power blocker/resources",
       "ui_disposition": "Reuse the one canonical Fabushi MediaViewer and canonical controls. Chromium/Electron owns native media decode/compositor/PiP primitives; no Telegram-specific PiP/player/renderer component is introduced.",
       "fabushi_canonical_owner": "canonical MediaViewer plus Chromium/Electron picture-in-picture/media session boundary",
-      "fabushi_target": "MAPPED OPEN. Native Chromium playback controls and source-replacement/unmount/input fencing are implemented in the canonical MediaViewer. Explicit persisted media preferences, deterministic PiP geometry/ownership, speed/quality policy, buffered/loading projection and packaged PiP/system-media evidence remain open.",
+      "fabushi_target": "MAPPED OPEN. Canonical MediaViewer now persists volume/mute and hashed resumable position while Chromium supplies native playback/PiP primitives. Deterministic PiP geometry, explicit shared-stream ownership/handoff, power-save/system-media integration and packaged cross-platform PiP evidence remain open.",
       "platform_differences": "Qt/OpenGL/QRhi/raster rendering and native window mechanics are platform details. Preserve product state/lifecycle/input/security/accessibility semantics through Electron/Chromium and existing Fabushi owners.",
-      "production_evidence": "projects/telegram-desktop-rust/dossiers/media-view-pip-playback-5165-5177-complete-read.md; frontend/src/recovered/features/conversation/workspace/media-viewer.tsx contains partial playback implementation only.",
-      "test_evidence": "CONTRACT-TDRP-MEDIAVIEW-NATIVE-PLAYBACK-001 covers the current partial playback/input lifecycle; exact-head and later PiP/persistence/progress/packaged evidence remains required.",
+      "production_evidence": "projects/telegram-desktop-rust/dossiers/media-view-pip-playback-5165-5177-complete-read.md; frontend/src/recovered/features/conversation/workspace/media-viewer.tsx contains partial playback implementation only. Production follow-up: frontend/src/recovered/features/conversation/workspace/media-viewer.tsx persists source-neutral volume/mute preferences and hashed per-source resumable playback position with replacement/unmount/pause/ended lifecycle fencing.",
+      "test_evidence": "CONTRACT-TDRP-MEDIAVIEW-NATIVE-PLAYBACK-001 covers the current partial playback/input lifecycle; exact-head and later PiP/persistence/progress/packaged evidence remains required. CONTRACT-TDRP-MEDIAVIEW-PLAYBACK-PERSISTENCE-001 binds hashed-key, restoration, throttled timeupdate, close/replacement and fail-soft storage semantics.",
       "disposition": "mapped-open-media-view-pip-playback",
       "unknown_closed": false,
       "omitted": false,
@@ -83,7 +83,7 @@
         "file_type": "blob",
         "recursive_order": 5166
       },
-      "notes": "Read-complete. No unknown, verification, baseline-ready or release credit is granted by source reading alone."
+      "notes": "Read-complete. No unknown, verification, baseline-ready or release credit is granted by source reading alone. Current production slice also implements volume/mute persistence and resumable playback position; the broader mapped responsibility remains open."
     },
     {
       "recursive_order": 5167,
@@ -350,10 +350,10 @@
       "failure_cases": "seek state races; controls steal gallery input; loading/buffered progress lies; volume/speed/quality not durable; fullscreen/PiP state diverges",
       "ui_disposition": "Reuse the one canonical Fabushi MediaViewer and canonical controls. Chromium/Electron owns native media decode/compositor/PiP primitives; no Telegram-specific PiP/player/renderer component is introduced.",
       "fabushi_canonical_owner": "canonical MediaViewer playback surface using Chromium media element and source-neutral Fabushi controls where browser controls are insufficient",
-      "fabushi_target": "MAPPED OPEN. Native Chromium playback controls and source-replacement/unmount/input fencing are implemented in the canonical MediaViewer. Explicit persisted media preferences, deterministic PiP geometry/ownership, speed/quality policy, buffered/loading projection and packaged PiP/system-media evidence remain open.",
+      "fabushi_target": "MAPPED OPEN. Canonical MediaViewer now exposes native play/pause/seek/volume/fullscreen/PiP controls and persists volume/mute plus hashed resumable position. Explicit speed/quality/timestamp policy, buffered/loading projection contracts and packaged cross-platform evidence remain open.",
       "platform_differences": "Qt/OpenGL/QRhi/raster rendering and native window mechanics are platform details. Preserve product state/lifecycle/input/security/accessibility semantics through Electron/Chromium and existing Fabushi owners.",
-      "production_evidence": "projects/telegram-desktop-rust/dossiers/media-view-pip-playback-5165-5177-complete-read.md; frontend/src/recovered/features/conversation/workspace/media-viewer.tsx contains partial playback implementation only.",
-      "test_evidence": "CONTRACT-TDRP-MEDIAVIEW-NATIVE-PLAYBACK-001 covers the current partial playback/input lifecycle; exact-head and later PiP/persistence/progress/packaged evidence remains required.",
+      "production_evidence": "projects/telegram-desktop-rust/dossiers/media-view-pip-playback-5165-5177-complete-read.md; frontend/src/recovered/features/conversation/workspace/media-viewer.tsx contains partial playback implementation only. Production follow-up: frontend/src/recovered/features/conversation/workspace/media-viewer.tsx persists source-neutral volume/mute preferences and hashed per-source resumable playback position with replacement/unmount/pause/ended lifecycle fencing.",
+      "test_evidence": "CONTRACT-TDRP-MEDIAVIEW-NATIVE-PLAYBACK-001 covers the current partial playback/input lifecycle; exact-head and later PiP/persistence/progress/packaged evidence remains required. CONTRACT-TDRP-MEDIAVIEW-PLAYBACK-PERSISTENCE-001 binds hashed-key, restoration, throttled timeupdate, close/replacement and fail-soft storage semantics.",
       "disposition": "mapped-open-media-view-pip-playback",
       "unknown_closed": false,
       "omitted": false,
@@ -371,7 +371,7 @@
         "file_type": "blob",
         "recursive_order": 5174
       },
-      "notes": "Read-complete. No unknown, verification, baseline-ready or release credit is granted by source reading alone."
+      "notes": "Read-complete. No unknown, verification, baseline-ready or release credit is granted by source reading alone. Current production slice also implements volume/mute persistence and resumable playback position; the broader mapped responsibility remains open."
     },
     {
       "recursive_order": 5175,
@@ -386,10 +386,10 @@
       "failure_cases": "seek state races; controls steal gallery input; loading/buffered progress lies; volume/speed/quality not durable; fullscreen/PiP state diverges",
       "ui_disposition": "Reuse the one canonical Fabushi MediaViewer and canonical controls. Chromium/Electron owns native media decode/compositor/PiP primitives; no Telegram-specific PiP/player/renderer component is introduced.",
       "fabushi_canonical_owner": "canonical MediaViewer playback state/control contract",
-      "fabushi_target": "MAPPED OPEN. Native Chromium playback controls and source-replacement/unmount/input fencing are implemented in the canonical MediaViewer. Explicit persisted media preferences, deterministic PiP geometry/ownership, speed/quality policy, buffered/loading projection and packaged PiP/system-media evidence remain open.",
+      "fabushi_target": "MAPPED OPEN. Canonical MediaViewer now exposes native play/pause/seek/volume/fullscreen/PiP controls and persists volume/mute plus hashed resumable position. Explicit speed/quality/timestamp policy, buffered/loading projection contracts and packaged cross-platform evidence remain open.",
       "platform_differences": "Qt/OpenGL/QRhi/raster rendering and native window mechanics are platform details. Preserve product state/lifecycle/input/security/accessibility semantics through Electron/Chromium and existing Fabushi owners.",
-      "production_evidence": "projects/telegram-desktop-rust/dossiers/media-view-pip-playback-5165-5177-complete-read.md; frontend/src/recovered/features/conversation/workspace/media-viewer.tsx contains partial playback implementation only.",
-      "test_evidence": "CONTRACT-TDRP-MEDIAVIEW-NATIVE-PLAYBACK-001 covers the current partial playback/input lifecycle; exact-head and later PiP/persistence/progress/packaged evidence remains required.",
+      "production_evidence": "projects/telegram-desktop-rust/dossiers/media-view-pip-playback-5165-5177-complete-read.md; frontend/src/recovered/features/conversation/workspace/media-viewer.tsx contains partial playback implementation only. Production follow-up: frontend/src/recovered/features/conversation/workspace/media-viewer.tsx persists source-neutral volume/mute preferences and hashed per-source resumable playback position with replacement/unmount/pause/ended lifecycle fencing.",
+      "test_evidence": "CONTRACT-TDRP-MEDIAVIEW-NATIVE-PLAYBACK-001 covers the current partial playback/input lifecycle; exact-head and later PiP/persistence/progress/packaged evidence remains required. CONTRACT-TDRP-MEDIAVIEW-PLAYBACK-PERSISTENCE-001 binds hashed-key, restoration, throttled timeupdate, close/replacement and fail-soft storage semantics.",
       "disposition": "mapped-open-media-view-pip-playback",
       "unknown_closed": false,
       "omitted": false,
@@ -407,7 +407,7 @@
         "file_type": "blob",
         "recursive_order": 5175
       },
-      "notes": "Read-complete. No unknown, verification, baseline-ready or release credit is granted by source reading alone."
+      "notes": "Read-complete. No unknown, verification, baseline-ready or release credit is granted by source reading alone. Current production slice also implements volume/mute persistence and resumable playback position; the broader mapped responsibility remains open."
     },
     {
       "recursive_order": 5176,
