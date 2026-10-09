@@ -507,3 +507,14 @@ Dossier: `projects/telegram-desktop-rust/dossiers/settings-privacy-shortcuts-web
 | TDRP-R9-CREDITS-GIFT-5631-5632 | critical | wallet/gift/payment actions use exact account/owner/id and reconcile duplicate/cancel/failure/settlement/restart once | Wallet/Payments/Credits + Gift/Commerce | mapped-open |
 
 Dossier: `projects/telegram-desktop-rust/dossiers/settings-builder-credits-5623-5632-complete-read.md`.
+
+## TDRP Settings experimental/support/navigation/power 5633–5642
+
+| requirement_id | risk | invariant | production owner | verdict |
+| --- | --- | --- | --- | --- |
+| TDRP-R9-EXPERIMENTAL-5633-5634 | high | flags/import/export/restart are environment/security bounded and never bypass canonical policy | Feature Flag/Experiment policy + Settings | mapped-open |
+| TDRP-R9-FAQ-5635-5636 | medium | cancellable locale/account FAQ fetch cannot publish stale suggestions | Help/Support | mapped-open |
+| TDRP-R9-SETTINGS-NAV-5637-5641 | high | responsive Settings layer and keyboard/focus/highlight/search reuse canonical controls and never activate hidden/disabled state | Settings + design system + Notification Settings | mapped-open |
+| TDRP-R9-POWER-5642 | high | OS battery state is an adapter input; one canonical effective power policy controls expensive features and save/cancel | Performance/Power + platform battery adapter | mapped-open |
+
+Dossier: `projects/telegram-desktop-rust/dossiers/settings-experimental-power-5633-5642-complete-read.md`.
