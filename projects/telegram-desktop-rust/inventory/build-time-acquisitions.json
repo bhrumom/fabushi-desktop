@@ -3,7 +3,7 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_repository": "telegramdesktop/tdesktop",
-  "upstream_commit": "36a0c87ca096c48ccf6193aa2c31707fdcafcc7c",
+  "upstream_commit": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
   "discovery": {
     "evidence_run_id": 37837273028,
     "evidence_head_sha": "3929d875d414f522f9b71b7fe6db33b81ccf4451",
@@ -13,7 +13,7 @@
     "candidate_lines_total": 325,
     "immutable_commit_pin_occurrences_classified": 0,
     "candidate_lines_pending_classification": 0,
-    "note": "The 36a0c87 rebaseline changes only Qt/GCC source compatibility, adds perl-Time-Piece to the CentOS package list, and updates cmake_helpers ada library paths. Exact diffs introduce no new download/clone/action/ref candidate lines; the classified 325-line acquisition inventory is retained, while fresh current-head Actions evidence remains required.",
+    "note": "The 3a15bf1f rebaseline changes only proxy popup lifetime safety and WEB proxy confirmation layer composition. Exact diff introduces no new download/clone/action/ref candidate lines; the classified 325-line acquisition inventory is retained, while fresh current-head Actions evidence remains required.",
     "candidate_lines_classified": 325,
     "disposition_closure_status": "complete-current-325-candidate-classification",
     "recursive_authority_closure_status": "open",

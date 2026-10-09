@@ -90,7 +90,28 @@ const inventoryIndex=await readJson('projects/telegram-desktop-rust/inventory/in
 const rtm=await read('projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md');
 const ledger=await readJson('projects/telegram-desktop-rust/parity-ledger.json');
 const acquisitionInventory=await readJson('projects/telegram-desktop-rust/inventory/build-time-acquisitions.json');
-const sourceDispositions=await readJson('projects/telegram-desktop-rust/inventory/source-dispositions.json');
+const sourceDispositionsIndex=await readJson('projects/telegram-desktop-rust/inventory/source-dispositions.json');
+const sourceDispositions=await (async () => {
+  const shards=sourceDispositionsIndex.shards;
+  if (!Array.isArray(shards)) return sourceDispositionsIndex;
+  const rows=[];
+  let expectedOrder=1;
+  for (const shardRef of shards) {
+    fail(typeof shardRef?.path==='string' && shardRef.path.length>0,'source-dispositions shard path missing');
+    const shard=await readJson(shardRef.path);
+    fail(shard.upstream?.commit===sourceDispositionsIndex.upstream?.commit && shard.upstream?.tree===sourceDispositionsIndex.upstream?.tree,'source-dispositions shard authority drift: '+shardRef.path);
+    fail(shard.range?.first_order===expectedOrder,'source-dispositions shard order gap: '+shardRef.path);
+    fail(shard.range?.last_order===shardRef.last_order && shard.range?.first_order===shardRef.first_order,'source-dispositions shard range drift: '+shardRef.path);
+    fail(Array.isArray(shard.rows) && shard.rows.length===shard.range.entries,'source-dispositions shard row count drift: '+shardRef.path);
+    for (const row of shard.rows) {
+      fail(row.recursive_order===expectedOrder,'source-dispositions shard row order drift: '+shardRef.path);
+      rows.push(row);
+      expectedOrder += 1;
+    }
+  }
+  fail(expectedOrder-1===sourceDispositionsIndex.deterministic_recursive_prefix?.last_order,'source-dispositions sharded prefix incomplete');
+  return {...sourceDispositionsIndex,rows};
+})();
 
 fail(lock.project_id==='TDRP-001' && lock.spec_revision===9,'lock is not TDRP Revision 9');
 const authorityCommit=lock.upstream?.commit;

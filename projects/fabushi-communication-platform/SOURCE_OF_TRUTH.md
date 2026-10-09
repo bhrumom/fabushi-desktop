@@ -65,3 +65,5 @@ Revision 3 读取：main `860f03a8553c779fe006c7826f190c3014a571dc`；PR #20 已
 `management/tasks/P0-product-domain-and-telegram-absorption.md`
 
 先做新基线全量差异与 current owner 对照，再按已明确责任推进真实实现。遇到阻塞记录解除条件并推进不依赖该阻塞的下一项，不能放宽 gate。此次只修订文档，未完成模块迁移或 UI 改造；全产品完成以 FBCP-001 AC-01 至 AC-50 全部通过为准。
+
+Current live authority (2026-10-09): `telegramdesktop/tdesktop@3a15bf1fe34b6950916215a11b50eadfce4bbb41` (root tree `b031c2cd84aa0cbbb149a7e5693c41ef14d643f3`), one commit ahead of historical `36a0c87ca096c48ccf6193aa2c31707fdcafcc7c`; changed paths: `Telegram/SourceFiles/boxes/connection_box.cpp`, `Telegram/SourceFiles/core/application.cpp`.

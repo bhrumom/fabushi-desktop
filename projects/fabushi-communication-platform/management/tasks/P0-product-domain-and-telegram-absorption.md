@@ -103,3 +103,5 @@ P0 只在以下均完成时通过：
 - 新 ledger/validator gate 取得 exact-head GitHub Actions 证据。
 
 P0 通过只是实施输入闭合，不是产品已完成。某项 blocked 时继续无依赖阻塞的研究、合同、已批准实现或证据收集；不能伪造 P0/既有 Bot gate 已通过来启动依赖它的工作。需要用户支持先检查相同通知及回复，按指定渠道通知一次，再推进其他内容。
+
+Current live authority (2026-10-09): `telegramdesktop/tdesktop@3a15bf1fe34b6950916215a11b50eadfce4bbb41` (root tree `b031c2cd84aa0cbbb149a7e5693c41ef14d643f3`), one commit ahead of historical `36a0c87ca096c48ccf6193aa2c31707fdcafcc7c`; changed paths: `Telegram/SourceFiles/boxes/connection_box.cpp`, `Telegram/SourceFiles/core/application.cpp`.

@@ -246,3 +246,5 @@ TDRP-001 只有以下同时成立才能 accepted：
 本 Revision 未宣称已逐个阅读全部上游文件、未刷新锁文件/全量账本、未重写产品或运行新 gate。下一任务必须先完成 baseline/ledger/schema/validator 的真实差异审计，再按已有无阻塞 owner 推进实现；旧研究和代码可以复用，但状态必须基于新合同重新证明。
 
 References: https://github.com/telegramdesktop/tdesktop ; upstream README/individual licenses at the accepted exact tree ; FBCP-001 Revision 7 ; current canonical Fabushi/Bot specifications.
+
+Current live authority (2026-10-09): `telegramdesktop/tdesktop@3a15bf1fe34b6950916215a11b50eadfce4bbb41` (root tree `b031c2cd84aa0cbbb149a7e5693c41ef14d643f3`), one commit ahead of historical `36a0c87ca096c48ccf6193aa2c31707fdcafcc7c`; changed paths: `Telegram/SourceFiles/boxes/connection_box.cpp`, `Telegram/SourceFiles/core/application.cpp`.

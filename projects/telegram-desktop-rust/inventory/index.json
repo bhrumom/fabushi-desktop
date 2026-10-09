@@ -4,8 +4,8 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "36a0c87ca096c48ccf6193aa2c31707fdcafcc7c",
-    "tree": "94e009f981d886ee55cd0450f0a5cc9b38305ba8",
+    "commit": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
+    "tree": "b031c2cd84aa0cbbb149a7e5693c41ef14d643f3",
     "baseline_identity_accepted": false
   },
   "inventory": {
@@ -16,7 +16,7 @@
     "unknown_minimum": 15841,
     "unread_minimum": 11120,
     "omitted_known": 0,
-    "note": "Live 36a0c87 recursive census remains 16,120. 5,000 exact entries are read-complete; 279 unknown-closed; unknown 15,841, unread 11,120, omitted 0. Orders 4901-5000 were directly read/decomposed without implementation or release promotion."
+    "note": "Live 3a15bf1f recursive census remains 16,120. 5,000 exact entries are read-complete; 279 unknown-closed; unknown 15,841, unread 11,120, omitted 0. Rebaseline re-read changed orders 3353 and 3692 without implementation or release promotion."
   },
   "latest_recursive_evidence": {
     "run_id": 37872749663,
@@ -46,33 +46,22 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live 36a0c87 authority is exact through order 5,000. unread_minimum is 11,120, unknown remains 15,841, omitted remains 0.",
+  "note": "Live 3a15bf1f authority is exact through order 5,000. unread_minimum is 11,120, unknown remains 15,841, omitted remains 0.",
   "rebaseline": {
-    "from_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db",
-    "to_commit": "36a0c87ca096c48ccf6193aa2c31707fdcafcc7c",
-    "ahead_by": 5,
-    "changed_paths": 5,
+    "from_commit": "36a0c87ca096c48ccf6193aa2c31707fdcafcc7c",
+    "to_commit": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
+    "ahead_by": 1,
+    "changed_paths": 2,
     "changed_authority_paths": [
-      "Telegram/SourceFiles/editor/editor_trim_timeline.cpp",
-      "Telegram/SourceFiles/iv/markdown/iv_markdown_article.cpp",
-      "Telegram/SourceFiles/ui/chat/chat_theme_readability.cpp",
-      "Telegram/build/docker/centos_env/Dockerfile",
-      "cmake"
+      "Telegram/SourceFiles/boxes/connection_box.cpp",
+      "Telegram/SourceFiles/core/application.cpp"
     ],
-    "nested_gitlink_delta": {
-      "path": "cmake",
-      "from_commit": "12cdedd007b6b3c36df2349dae1996384e535ede",
-      "to_commit": "699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
-      "changed_paths": [
-        "external/ada/CMakeLists.txt"
-      ]
-    },
     "current_head_source_authority_evidence": "Pending: post-rebaseline exact-head GitHub Actions Source authority run/artifact required.",
     "current_source_read_through": 5000
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
-    "upstream_commit": "36a0c87ca096c48ccf6193aa2c31707fdcafcc7c",
+    "upstream_commit": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
     "deterministic_prefix_closed": 123,
     "development_only_non_applicable": 66,
     "unknown_closed": 279,
