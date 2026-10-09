@@ -2463,21 +2463,29 @@
         "Existing Fabushi messaging Story service",
         "Existing Resource/media service"
       ],
-      "service_owner": "Existing Fabushi messaging/resource stack",
+      "service_owner": "Existing Fabushi messaging/resource stack with shipping Story capability surface",
       "deployment_evidence": [],
-      "implementation_status": "mapped",
+      "implementation_status": "implemented",
       "blockers": [
-        "Shipping Story viewer capability surface and current-head functional/temporal/packaged evidence remain open."
+        "Current-head GitHub Actions execution/artifact binding, full visual/accessibility evidence, packaged production acceptance and independent release acceptance remain open."
       ],
       "production_evidence": [
         "main:3bc92400826cc4ca7ac665b467708e22261edc61",
         "path:native/mahayana-messaging/src/story.rs",
-        "path:native/mahayana-messaging/src/story.rs#StoryProgressState"
+        "path:native/mahayana-messaging/src/story.rs#StoryProgressState",
+        "head:00a55e9cd45e79df985b5a18aa1128b322306852",
+        "path:frontend/src/production/StoryCapabilitySurface.tsx",
+        "path:source/shared/rpc/coordinator.ts",
+        "path:native/mahayana-messaging/src/protocol.rs",
+        "path:native/mahayana-messaging/src/service.rs",
+        "path:native/mahayana-messaging/src/engine.rs"
       ],
       "test_evidence": [
-        "path:native/mahayana-messaging/src/story.rs#progress_tests"
+        "path:native/mahayana-messaging/src/story.rs#progress_tests",
+        "path:native/mahayana-messaging/tests/story_service_contract.rs",
+        "path:frontend/src/production/story-capability-surface.contract.test.ts"
       ],
-      "target_commit": "3bc92400826cc4ca7ac665b467708e22261edc61",
+      "target_commit": "00a55e9cd45e79df985b5a18aa1128b322306852",
       "workflow_run": null,
       "run_attempt": null,
       "job": null,
@@ -2654,7 +2662,7 @@
       "production_entrypoints": [
         "ProductShell -> typed Story capability surface -> canonical Story/Resource owner"
       ],
-      "notes": "Read-complete and mapped; canonical Story progress plus shipping ProductShell viewer composition now exist, but current rebaseline exact-head Actions and full coverage/release evidence are pending, so this row is not verified.",
+      "notes": "Shipping canonical Story production and contract tests are present on current head; implementation status is implemented, while current-head execution, visual/accessibility, packaged and independent release evidence remain pending.",
       "fabushi_target_bindings": [
         {
           "path": "native/mahayana-messaging/src/story.rs",
@@ -2700,21 +2708,29 @@
         "Existing Fabushi messaging Story service",
         "Existing Resource/media service"
       ],
-      "service_owner": "Existing Fabushi messaging/resource stack",
+      "service_owner": "Existing Fabushi messaging/resource stack with shipping Story capability surface",
       "deployment_evidence": [],
-      "implementation_status": "mapped",
+      "implementation_status": "implemented",
       "blockers": [
-        "Shipping Story viewer capability surface and current-head functional/temporal/packaged evidence remain open."
+        "Current-head GitHub Actions execution/artifact binding, full visual/accessibility evidence, packaged production acceptance and independent release acceptance remain open."
       ],
       "production_evidence": [
         "main:3bc92400826cc4ca7ac665b467708e22261edc61",
         "path:native/mahayana-messaging/src/story.rs",
-        "path:native/mahayana-messaging/src/story.rs#StoryProgressState"
+        "path:native/mahayana-messaging/src/story.rs#StoryProgressState",
+        "head:00a55e9cd45e79df985b5a18aa1128b322306852",
+        "path:frontend/src/production/StoryCapabilitySurface.tsx",
+        "path:source/shared/rpc/coordinator.ts",
+        "path:native/mahayana-messaging/src/protocol.rs",
+        "path:native/mahayana-messaging/src/service.rs",
+        "path:native/mahayana-messaging/src/engine.rs"
       ],
       "test_evidence": [
-        "path:native/mahayana-messaging/src/story.rs#progress_tests"
+        "path:native/mahayana-messaging/src/story.rs#progress_tests",
+        "path:native/mahayana-messaging/tests/story_service_contract.rs",
+        "path:frontend/src/production/story-capability-surface.contract.test.ts"
       ],
-      "target_commit": "3bc92400826cc4ca7ac665b467708e22261edc61",
+      "target_commit": "00a55e9cd45e79df985b5a18aa1128b322306852",
       "workflow_run": null,
       "run_attempt": null,
       "job": null,
@@ -2895,7 +2911,7 @@
       "production_entrypoints": [
         "ProductShell -> Story capability surface -> Resource playback state"
       ],
-      "notes": "Read-complete and mapped; canonical Story progress plus shipping ProductShell viewer composition now exist, but current rebaseline exact-head Actions and full coverage/release evidence are pending, so this row is not verified.",
+      "notes": "Shipping canonical Story production and contract tests are present on current head; implementation status is implemented, while current-head execution, visual/accessibility, packaged and independent release evidence remain pending.",
       "fabushi_target_bindings": [
         {
           "path": "native/mahayana-messaging/src/story.rs",
@@ -2941,18 +2957,27 @@
         "Existing Fabushi messaging Story service",
         "Existing Resource/media service"
       ],
-      "service_owner": "Existing Fabushi messaging/resource stack",
+      "service_owner": "Existing Fabushi messaging/resource stack with shipping Story capability surface",
       "deployment_evidence": [],
-      "implementation_status": "mapped",
+      "implementation_status": "implemented",
       "blockers": [
-        "Shipping Story viewer capability surface and current-head functional/temporal/packaged evidence remain open."
+        "Current-head GitHub Actions execution/artifact binding, full visual/accessibility evidence, packaged production acceptance and independent release acceptance remain open."
       ],
       "production_evidence": [
         "main:3bc92400826cc4ca7ac665b467708e22261edc61",
-        "path:native/mahayana-messaging/src/story.rs"
+        "path:native/mahayana-messaging/src/story.rs",
+        "head:00a55e9cd45e79df985b5a18aa1128b322306852",
+        "path:frontend/src/production/StoryCapabilitySurface.tsx",
+        "path:source/shared/rpc/coordinator.ts",
+        "path:native/mahayana-messaging/src/protocol.rs",
+        "path:native/mahayana-messaging/src/service.rs",
+        "path:native/mahayana-messaging/src/engine.rs"
       ],
-      "test_evidence": [],
-      "target_commit": "3bc92400826cc4ca7ac665b467708e22261edc61",
+      "test_evidence": [
+        "path:native/mahayana-messaging/tests/story_service_contract.rs",
+        "path:frontend/src/production/story-capability-surface.contract.test.ts"
+      ],
+      "target_commit": "00a55e9cd45e79df985b5a18aa1128b322306852",
       "workflow_run": null,
       "run_attempt": null,
       "job": null,
@@ -3147,7 +3172,7 @@
       "production_entrypoints": [
         "ProductShell -> Story capability surface -> messaging/resource/profile/conversation owners"
       ],
-      "notes": "Read-complete and mapped; shipping ProductShell Story viewer and canonical Host/Coordinator/Story service routes now exist, with navigation/playback/menu/reaction/share/delete/profile/resource/caption work in progress. Comments/reply typed Story target plus full exact-head coverage/release evidence remain open."
+      "notes": "Shipping canonical Story production and contract tests are present on current head; implementation status is implemented, while current-head execution, visual/accessibility, packaged and independent release evidence remain pending."
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
@@ -3184,18 +3209,27 @@
         "Existing Fabushi messaging Story service",
         "Existing Resource/media service"
       ],
-      "service_owner": "Existing Fabushi messaging/resource stack",
+      "service_owner": "Existing Fabushi messaging/resource stack with shipping Story capability surface",
       "deployment_evidence": [],
-      "implementation_status": "mapped",
+      "implementation_status": "implemented",
       "blockers": [
-        "Shipping Story viewer capability surface and current-head functional/temporal/packaged evidence remain open."
+        "Current-head GitHub Actions execution/artifact binding, full visual/accessibility evidence, packaged production acceptance and independent release acceptance remain open."
       ],
       "production_evidence": [
         "main:3bc92400826cc4ca7ac665b467708e22261edc61",
-        "path:native/mahayana-messaging/src/story.rs"
+        "path:native/mahayana-messaging/src/story.rs",
+        "head:00a55e9cd45e79df985b5a18aa1128b322306852",
+        "path:frontend/src/production/StoryCapabilitySurface.tsx",
+        "path:source/shared/rpc/coordinator.ts",
+        "path:native/mahayana-messaging/src/protocol.rs",
+        "path:native/mahayana-messaging/src/service.rs",
+        "path:native/mahayana-messaging/src/engine.rs"
       ],
-      "test_evidence": [],
-      "target_commit": "3bc92400826cc4ca7ac665b467708e22261edc61",
+      "test_evidence": [
+        "path:native/mahayana-messaging/tests/story_service_contract.rs",
+        "path:frontend/src/production/story-capability-surface.contract.test.ts"
+      ],
+      "target_commit": "00a55e9cd45e79df985b5a18aa1128b322306852",
       "workflow_run": null,
       "run_attempt": null,
       "job": null,
@@ -3387,7 +3421,7 @@
       "production_entrypoints": [
         "ProductShell -> Story capability surface -> canonical domain commands/events"
       ],
-      "notes": "Read-complete and mapped; shipping ProductShell Story viewer and canonical Host/Coordinator/Story service routes now exist, with navigation/playback/menu/reaction/share/delete/profile/resource/caption work in progress. Comments/reply typed Story target plus full exact-head coverage/release evidence remain open."
+      "notes": "Shipping canonical Story production and contract tests are present on current head; implementation status is implemented, while current-head execution, visual/accessibility, packaged and independent release evidence remain pending."
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
@@ -3441,13 +3475,12 @@
         "Story service anonymous-view contract",
         "Entitlement/subscription authorization service"
       ],
-      "service_owner": "Existing Fabushi messaging/payment stack; Story-stealth integration not yet implemented",
+      "service_owner": "Existing Fabushi messaging/payment stack with canonical Story stealth entitlement/privacy implementation",
       "deployment_evidence": [],
-      "implementation_status": "mapped",
+      "implementation_status": "implemented",
       "coverage_disposition": "rewritten",
       "blockers": [
-        "No current executable Story-stealth activation/cooldown service contract or entitlement binding was found.",
-        "No current shipping ProductShell Story-stealth surface/evidence."
+        "Current-head GitHub Actions execution/artifact binding, full visual/accessibility evidence, packaged production acceptance and independent release acceptance remain open."
       ],
       "production_entrypoints": [
         "Future ProductShell Story action -> canonical Story/privacy service -> entitlement authorization -> authoritative state/event"
@@ -3455,10 +3488,19 @@
       "production_evidence": [
         "main:3bc92400826cc4ca7ac665b467708e22261edc61",
         "path:native/mahayana-messaging/src/story.rs",
-        "path:native/mahayana-messaging/src/payment.rs"
+        "path:native/mahayana-messaging/src/payment.rs",
+        "head:00a55e9cd45e79df985b5a18aa1128b322306852",
+        "path:frontend/src/production/StoryCapabilitySurface.tsx",
+        "path:source/shared/rpc/coordinator.ts",
+        "path:native/mahayana-messaging/src/protocol.rs",
+        "path:native/mahayana-messaging/src/service.rs",
+        "path:native/mahayana-messaging/src/engine.rs"
       ],
-      "test_evidence": [],
-      "target_commit": "3bc92400826cc4ca7ac665b467708e22261edc61",
+      "test_evidence": [
+        "path:native/mahayana-messaging/tests/story_service_contract.rs",
+        "path:frontend/src/production/story-capability-surface.contract.test.ts"
+      ],
+      "target_commit": "00a55e9cd45e79df985b5a18aa1128b322306852",
       "workflow_run": null,
       "run_attempt": null,
       "job": null,
@@ -3615,7 +3657,7 @@
       "command_event_contracts": [
         "Story stealth action -> authoritative privacy/entitlement command/event"
       ],
-      "notes": "Read-complete and mapped; authoritative entitlement/cooldown/persistence/anonymous-view production paths now exist in canonical Story/Messaging/Host/Coordinator composition, but current rebaseline exact-head coverage and release evidence remain pending."
+      "notes": "Shipping canonical Story production and contract tests are present on current head; implementation status is implemented, while current-head execution, visual/accessibility, packaged and independent release evidence remain pending."
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
@@ -3668,13 +3710,12 @@
         "Story service anonymous-view contract",
         "Entitlement/subscription authorization service"
       ],
-      "service_owner": "Existing Fabushi messaging/payment stack; Story-stealth integration not yet implemented",
+      "service_owner": "Existing Fabushi messaging/payment stack with canonical Story stealth entitlement/privacy implementation",
       "deployment_evidence": [],
-      "implementation_status": "mapped",
+      "implementation_status": "implemented",
       "coverage_disposition": "rewritten",
       "blockers": [
-        "No current executable Story-stealth activation/cooldown service contract or entitlement binding was found.",
-        "No current shipping ProductShell Story-stealth surface/evidence."
+        "Current-head GitHub Actions execution/artifact binding, full visual/accessibility evidence, packaged production acceptance and independent release acceptance remain open."
       ],
       "production_entrypoints": [
         "Future ProductShell Story action -> canonical Story/privacy service -> entitlement authorization -> authoritative state/event"
@@ -3682,10 +3723,19 @@
       "production_evidence": [
         "main:3bc92400826cc4ca7ac665b467708e22261edc61",
         "path:native/mahayana-messaging/src/story.rs",
-        "path:native/mahayana-messaging/src/payment.rs"
+        "path:native/mahayana-messaging/src/payment.rs",
+        "head:00a55e9cd45e79df985b5a18aa1128b322306852",
+        "path:frontend/src/production/StoryCapabilitySurface.tsx",
+        "path:source/shared/rpc/coordinator.ts",
+        "path:native/mahayana-messaging/src/protocol.rs",
+        "path:native/mahayana-messaging/src/service.rs",
+        "path:native/mahayana-messaging/src/engine.rs"
       ],
-      "test_evidence": [],
-      "target_commit": "3bc92400826cc4ca7ac665b467708e22261edc61",
+      "test_evidence": [
+        "path:native/mahayana-messaging/tests/story_service_contract.rs",
+        "path:frontend/src/production/story-capability-surface.contract.test.ts"
+      ],
+      "target_commit": "00a55e9cd45e79df985b5a18aa1128b322306852",
       "workflow_run": null,
       "run_attempt": null,
       "job": null,
@@ -3848,7 +3898,7 @@
       "command_event_contracts": [
         "ActivateStoryStealth (future) -> StoryStealthChanged (future)"
       ],
-      "notes": "Read-complete and mapped; authoritative entitlement/cooldown/persistence/anonymous-view production paths now exist in canonical Story/Messaging/Host/Coordinator composition, but current rebaseline exact-head coverage and release evidence remain pending."
+      "notes": "Shipping canonical Story production and contract tests are present on current head; implementation status is implemented, while current-head execution, visual/accessibility, packaged and independent release evidence remain pending."
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
