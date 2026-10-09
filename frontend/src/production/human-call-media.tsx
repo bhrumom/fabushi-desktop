@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { DesktopBridge } from "../recovered/contracts/desktop-bridge";
+import { createInFlightCommandFence } from "../recovered/ui/in-flight-command";
+import { SandButton } from "../recovered/ui/sand-kit-primitives";
 import type { ProductionCoordinatorClient } from "./coordinator-client";
 import type { RendererAgent } from "./model";
 
@@ -144,6 +146,8 @@ export function HumanCallControls({
   const [muted, setMuted] = useState(false);
   const [cameraEnabled, setCameraEnabled] = useState(false);
   const [screenSharing, setScreenSharing] = useState(false);
+  const [mutePending, setMutePending] = useState(false);
+  const [callCommandFence] = useState(() => createInFlightCommandFence());
   const localStreamRef = useRef<MediaStream | null>(null);
   const remoteStreamRef = useRef<MediaStream | null>(null);
   const pcRef = useRef<RTCPeerConnection | null>(null);
@@ -441,14 +445,28 @@ export function HumanCallControls({
   }, [closePeer, publish, transition]);
 
   const toggleMute = useCallback(async () => {
-    const stream = localStreamRef.current;
-    const current = callRef.current;
-    if (stream == null || current == null) return;
-    const next = !muted;
-    for (const track of stream.getAudioTracks()) track.enabled = !next;
-    setMuted(next);
-    await updateMediaState(current, { audio: !next });
-  }, [muted, updateMediaState]);
+    const commandLease = callCommandFence.acquire("toggle-mute");
+    if (commandLease == null) return;
+    setMutePending(true);
+    try {
+      const stream = localStreamRef.current;
+      const current = callRef.current;
+      if (stream == null || current == null) return;
+      const next = !muted;
+      for (const track of stream.getAudioTracks()) track.enabled = !next;
+      setMuted(next);
+      try {
+        await updateMediaState(current, { audio: !next });
+      } catch (error) {
+        for (const track of stream.getAudioTracks()) track.enabled = !muted;
+        setMuted(muted);
+        throw error;
+      }
+    } finally {
+      commandLease.release();
+      setMutePending(false);
+    }
+  }, [callCommandFence, muted, updateMediaState]);
 
   const toggleCamera = useCallback(async () => {
     const stream = localStreamRef.current;
@@ -505,6 +523,10 @@ export function HumanCallControls({
     await updateMediaState(current, { screenShare: true, displaySourceId: source.id });
   }, [bridge.callMedia, screenSharing, updateMediaState]);
 
+  useEffect(() => () => {
+    callCommandFence.dispose();
+  }, [callCommandFence]);
+
   useEffect(() => {
     disposedRef.current = false;
     appliedSignalSeqRef.current = 0;
@@ -537,21 +559,21 @@ export function HumanCallControls({
 
   return <div className="sand-human-call" role="group" aria-label="Human call controls">
     {!active ? <>
-      <button aria-label="Start voice call" onClick={() => void start(false)} type="button">Voice</button>
-      <button aria-label="Start video call" onClick={() => void start(true)} type="button">Video</button>
+      <SandButton aria-label="Start voice call" onClick={() => void start(false)} size="sm" variant="secondary">Voice</SandButton>
+      <SandButton aria-label="Start video call" onClick={() => void start(true)} size="sm" variant="secondary">Video</SandButton>
     </> : null}
     {incoming ? <>
       <span role="status">Incoming call</span>
-      <button aria-label="Accept voice call" onClick={() => void accept(false)} type="button">Accept</button>
-      <button aria-label="Accept video call" onClick={() => void accept(true)} type="button">Accept video</button>
-      <button aria-label="Decline call" onClick={() => void decline()} type="button">Decline</button>
+      <SandButton aria-label="Accept voice call" onClick={() => void accept(false)} size="sm">Accept</SandButton>
+      <SandButton aria-label="Accept video call" onClick={() => void accept(true)} size="sm">Accept video</SandButton>
+      <SandButton aria-label="Decline call" onClick={() => void decline()} sentiment="danger" size="sm" variant="secondary">Decline</SandButton>
     </> : null}
     {active && !incoming ? <>
       <span role="status">{status === "idle" ? call.state : status}</span>
-      <button aria-pressed={muted} onClick={() => void toggleMute().catch((toggleError) => setError(mediaFailure(toggleError)))} type="button">{muted ? "Unmute" : "Mute"}</button>
-      <button aria-pressed={cameraEnabled} onClick={() => void toggleCamera().catch((toggleError) => setError(mediaFailure(toggleError)))} type="button">{cameraEnabled ? "Camera off" : "Camera on"}</button>
-      <button aria-pressed={screenSharing} onClick={() => void toggleScreen().catch((toggleError) => setError(mediaFailure(toggleError)))} type="button">{screenSharing ? "Stop sharing" : "Share screen"}</button>
-      <button aria-label="End call" onClick={() => void hangup()} type="button">End</button>
+      <SandButton aria-pressed={muted} onClick={() => void toggleMute().catch((toggleError) => setError(mediaFailure(toggleError)))} pending={mutePending} size="sm" variant="secondary">{muted ? "Unmute" : "Mute"}</SandButton>
+      <SandButton aria-pressed={cameraEnabled} onClick={() => void toggleCamera().catch((toggleError) => setError(mediaFailure(toggleError)))} size="sm" variant="secondary">{cameraEnabled ? "Camera off" : "Camera on"}</SandButton>
+      <SandButton aria-pressed={screenSharing} onClick={() => void toggleScreen().catch((toggleError) => setError(mediaFailure(toggleError)))} size="sm" variant="secondary">{screenSharing ? "Stop sharing" : "Share screen"}</SandButton>
+      <SandButton aria-label="End call" onClick={() => void hangup()} sentiment="danger" size="sm">End</SandButton>
     </> : null}
     <video aria-label="Local call preview" autoPlay muted playsInline ref={localVideoRef} hidden={!cameraEnabled && !screenSharing} />
     <video aria-label="Remote call video" autoPlay playsInline ref={remoteVideoRef} hidden={!active} />
