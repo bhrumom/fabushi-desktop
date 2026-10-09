@@ -1,0 +1,89 @@
+{
+  "format_version": 2,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+    "tree": "6ac9bbc1b44edcb119b1a724e7b0a321c3b7b8fa"
+  },
+  "range": {
+    "first_order": 5161,
+    "last_order": 5162,
+    "entries": 2
+  },
+  "rows": [
+    {
+      "recursive_order": 5161,
+      "source_path": "Telegram/SourceFiles/media/view/media_view_overlay_rhi.cpp",
+      "source_blob_sha": "fe61046cbc094e7a2cafd7eeba09c42a75284ddf",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "QRhi media-overlay implementation for image/video/story/control/recognition composition, RGBA/YUV420/NV12/native-texture upload, device-pixel scaling, cache invalidation, draw ordering and resource teardown",
+      "upstream_owner": "Media::View::OverlayWidget::RendererRhi implementation",
+      "state_machine": "renderer/device init -> pipeline/resource creation -> current frame/content upload or zero-copy binding -> ordered overlay composition -> source/theme/DPR/device invalidation -> deterministic release",
+      "side_effects": "Fabushi keeps a single canonical MediaViewer. Chromium/Electron owns decoded-frame GPU composition and platform texture lifetime; the renderer surface still releases stale media, preserves control/input ownership and survives source/fullscreen/display changes without a second Telegram renderer.",
+      "failure_cases": "stale frame/texture after source or device-factor change; unsupported/native frame binding failure; YUV/NV12 conversion divergence; resource leak on renderer/device teardown; recognition/control overlay drift",
+      "ui_disposition": "Reuse canonical MediaViewer and canonical controls. Qt QRhi shaders/textures are replaced by Chromium/Electron media/compositor surfaces; no Telegram-named renderer/component is introduced.",
+      "fabushi_canonical_owner": "frontend/src/recovered/features/conversation/workspace/media-viewer.tsx plus Chromium/Electron media compositor",
+      "fabushi_target": "PARTIAL IMPLEMENTATION: canonical MediaViewer exposes Chromium native video playback controls, defers video pointer/wheel ownership to the media element, pauses outgoing video on source replacement/unmount and preserves fullscreen Escape behavior. Low-level QRhi/YUV/native-texture work is platform-replaced by Chromium/Electron; recognition/story/group-call rendering responsibilities remain mapped-open until later source owners and exact-head runtime evidence are closed.",
+      "platform_differences": "Telegram directly owns QRhi resources, shaders, YUV/NV12 textures and macOS native texture cache. Fabushi delegates those low-level responsibilities to Chromium/Electron while retaining application-level lifecycle, a11y, keyboard, error and source-replacement contracts in the one canonical MediaViewer.",
+      "production_evidence": "projects/telegram-desktop-rust/dossiers/media-view-rhi-5161-5162-complete-read.md; frontend/src/recovered/features/conversation/workspace/media-viewer.tsx; partial production implementation pending exact-head GitHub Actions evidence.",
+      "test_evidence": "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts CONTRACT-TDRP-MEDIAVIEW-NATIVE-PLAYBACK-001 plus exact-head renderer/typecheck/Electron E2E; verification pending.",
+      "disposition": "mapped-open-media-view-rendering",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "Media::View::OverlayWidget::RendererRhi",
+      "consumer_evidence": [
+        "Complete direct exact-source read of media_view_overlay_rhi.cpp lines 1-1895 at accepted blob fe61046c; mapped to the canonical MediaViewer + Chromium/Electron compositor boundary."
+      ],
+      "reachability_status": "accepted-tree-source-owner-proven; partial shipping implementation added; exact-head verification and remaining media-view responsibilities open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior is reimplemented through existing Fabushi/Chromium owners rather than source-copied.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-pending-new-head-actions-attestation",
+        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "verified_blob_sha": "fe61046cbc094e7a2cafd7eeba09c42a75284ddf",
+        "byte_size": 54432,
+        "file_type": "blob",
+        "recursive_order": 5161
+      },
+      "notes": "Read-complete. Partial production implementation is real but unknown remains open until the full responsibility and exact-head verification gates close."
+    },
+    {
+      "recursive_order": 5162,
+      "source_path": "Telegram/SourceFiles/media/view/media_view_overlay_rhi.h",
+      "source_blob_sha": "059d22ff5f5bb9b013b79c91c56c9c825062bae1",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "QRhi overlay-renderer ownership contract for pipelines, buffers, textures, frame caches, control atlases, story sibling textures, macOS native texture cache and initialize/render/release lifecycle",
+      "upstream_owner": "Media::View::OverlayWidget::RendererRhi declaration",
+      "state_machine": "owner construction -> renderer initialize -> repeated render with bounded caches/draw slots -> palette/story/device invalidation -> releaseResources/destruction",
+      "side_effects": "Defines the lifetime boundary the Fabushi platform replacement must preserve: one renderer owner, bounded per-frame resources, cache invalidation and deterministic teardown.",
+      "failure_cases": "renderer reinitialized against a new device without release; stale controls/story cache; unbounded per-draw resource growth; native texture cache survives teardown",
+      "ui_disposition": "Keep the existing source-neutral MediaViewer and canonical controls; browser compositor/media-element ownership replaces Qt QRhi declarations and must not become a parallel Telegram runtime.",
+      "fabushi_canonical_owner": "frontend/src/recovered/features/conversation/workspace/media-viewer.tsx plus Chromium/Electron media compositor",
+      "fabushi_target": "PARTIAL IMPLEMENTATION: browser-native video playback/compositor ownership is reachable from canonical MediaViewer and its media-element lifecycle is fenced on replacement/unmount. Remaining renderer-adjacent story/recognition/call semantics stay mapped-open.",
+      "platform_differences": "Qt QRhi object ownership is not copied. Chromium/Electron is the platform renderer; Fabushi owns only product lifecycle/input/accessibility/error semantics around that renderer.",
+      "production_evidence": "projects/telegram-desktop-rust/dossiers/media-view-rhi-5161-5162-complete-read.md; frontend/src/recovered/features/conversation/workspace/media-viewer.tsx; partial production implementation pending exact-head GitHub Actions evidence.",
+      "test_evidence": "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts CONTRACT-TDRP-MEDIAVIEW-NATIVE-PLAYBACK-001 plus exact-head Actions pending.",
+      "disposition": "mapped-open-media-view-rendering",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "Media::View::OverlayWidget::RendererRhi",
+      "consumer_evidence": [
+        "Complete direct exact-source read of media_view_overlay_rhi.h at accepted blob 059d22ff; mapped to canonical MediaViewer + Chromium/Electron compositor lifetime boundary."
+      ],
+      "reachability_status": "accepted-tree-source-owner-proven; partial shipping implementation added; exact-head verification and remaining media-view responsibilities open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented/platform-substituted rather than source-copied.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-pending-new-head-actions-attestation",
+        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "verified_blob_sha": "059d22ff5f5bb9b013b79c91c56c9c825062bae1",
+        "byte_size": 6349,
+        "file_type": "blob",
+        "recursive_order": 5162
+      },
+      "notes": "Read-complete. Partial implementation does not grant unknown closure, baseline-ready, verification or release credit."
+    }
+  ]
+}
