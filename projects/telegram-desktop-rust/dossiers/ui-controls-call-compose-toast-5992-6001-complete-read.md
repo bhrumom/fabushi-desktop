@@ -20,7 +20,7 @@ Orders 6,000-6,001 (`custom_emoji_toast_icon.{cpp,h}`) project a session-resolve
 
 The shipping `frontend/src/production/human-call-media.tsx#HumanCallControls` now reuses canonical `SandButton` for call actions. Mute independently acquires the existing source-neutral in-flight command fence, exposes pending through the canonical Button contract, refuses duplicate entry, restores audio track/UI state when authoritative `updateCallMedia` fails, releases in `finally`, and disposes the fence on teardown.
 
-Focused contract: `frontend/src/production/human-call-controls.contract.test.ts`, wired into the Rust desktop runtime renderer contract job. This does not close broader call animation/scheduled/raised-hand/group-call, compose-AI/large-paste or custom-emoji Toast responsibilities before descendant same-head evidence and remaining behavior are complete.
+Camera and screen-share mutations now also share one source-neutral `video-media` command lease, project canonical Button pending state, restore local track/sender state when authoritative media persistence fails, restore camera on screen-share stop, and stop owned screen capture on failure/decline/hangup/unmount.\n\nFocused contract: `frontend/src/production/human-call-controls.contract.test.ts`, wired into the Rust desktop runtime renderer contract job. This does not close broader call animation/scheduled/raised-hand/group-call, compose-AI/large-paste or custom-emoji Toast responsibilities before descendant same-head evidence and remaining behavior are complete.
 
 ## Accounting
 
