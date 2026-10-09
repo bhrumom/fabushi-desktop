@@ -94,10 +94,20 @@ impl WalletLedger {
         now_ms: i64,
     ) -> Result<LedgerEntry, WalletError> {
         let request_id = request_id.into();
-        if let Some(existing) = self.entry_for_request(&request_id) {
-            return Ok(existing.clone());
-        }
         validate_amount(&amount)?;
+        let currency = normalize_currency(&amount.currency);
+        if let Some(existing) = self.entry_for_request(&request_id) {
+            return same_request(
+                existing,
+                LedgerEntryKind::Credit,
+                None,
+                Some(account_id),
+                &currency,
+                amount.amount_minor,
+                reference.as_deref(),
+                &request_id,
+            );
+        }
         let account = self
             .accounts
             .get_mut(account_id)
@@ -105,7 +115,6 @@ impl WalletLedger {
         if account.frozen {
             return Err(WalletError::AccountFrozen(account_id.clone()));
         }
-        let currency = normalize_currency(&amount.currency);
         let balance = account.balances_minor.entry(currency.clone()).or_default();
         *balance = balance
             .checked_add(amount.amount_minor)
@@ -138,14 +147,23 @@ impl WalletLedger {
         now_ms: i64,
     ) -> Result<LedgerEntry, WalletError> {
         let request_id = request_id.into();
-        if let Some(existing) = self.entry_for_request(&request_id) {
-            return Ok(existing.clone());
-        }
         validate_amount(&amount)?;
         if from_account_id == to_account_id {
             return Err(WalletError::SameAccountTransfer);
         }
         let currency = normalize_currency(&amount.currency);
+        if let Some(existing) = self.entry_for_request(&request_id) {
+            return same_request(
+                existing,
+                LedgerEntryKind::Transfer,
+                Some(from_account_id),
+                Some(to_account_id),
+                &currency,
+                amount.amount_minor,
+                reference.as_deref(),
+                &request_id,
+            );
+        }
         let debit_balance = self
             .accounts
             .get(from_account_id)
@@ -222,8 +240,33 @@ impl WalletLedger {
         now_ms: i64,
     ) -> Result<LedgerEntry, WalletError> {
         let request_id = request_id.into();
+        let expected_reference = format!("refund:{original_entry_id}");
         if let Some(existing) = self.entry_for_request(&request_id) {
-            return Ok(existing.clone());
+            let amount = &existing.amount;
+            return same_request(
+                existing,
+                LedgerEntryKind::Refund,
+                existing.from_account_id.as_ref(),
+                existing.to_account_id.as_ref(),
+                &normalize_currency(&amount.currency),
+                amount.amount_minor,
+                Some(&expected_reference),
+                &request_id,
+            )
+            .and_then(|entry| {
+                let matches_original_direction = self
+                    .entries
+                    .get(original_entry_id)
+                    .is_some_and(|original| {
+                        original.kind == LedgerEntryKind::Transfer
+                            && entry.from_account_id == original.to_account_id
+                            && entry.to_account_id == original.from_account_id
+                            && entry.amount == original.amount
+                    });
+                matches_original_direction
+                    .then_some(entry)
+                    .ok_or_else(|| WalletError::RequestConflict(request_id.clone()))
+            });
         }
         let original = self
             .entries
@@ -246,7 +289,7 @@ impl WalletLedger {
             &original_to,
             &original_from,
             original.amount.clone(),
-            Some(format!("refund:{original_entry_id}")),
+            Some(expected_reference),
             now_ms,
         )?;
         entry.kind = LedgerEntryKind::Refund;
@@ -277,6 +320,29 @@ impl WalletLedger {
         self.request_entries
             .insert(entry.request_id.clone(), entry.id.clone());
         self.entries.insert(entry.id.clone(), entry);
+    }
+}
+
+fn same_request(
+    existing: &LedgerEntry,
+    kind: LedgerEntryKind,
+    from_account_id: Option<&WalletAccountId>,
+    to_account_id: Option<&WalletAccountId>,
+    currency: &str,
+    amount_minor: i64,
+    reference: Option<&str>,
+    request_id: &str,
+) -> Result<LedgerEntry, WalletError> {
+    let matches = existing.kind == kind
+        && existing.from_account_id.as_ref() == from_account_id
+        && existing.to_account_id.as_ref() == to_account_id
+        && existing.amount.currency == currency
+        && existing.amount.amount_minor == amount_minor
+        && existing.reference.as_deref() == reference;
+    if matches {
+        Ok(existing.clone())
+    } else {
+        Err(WalletError::RequestConflict(request_id.to_string()))
     }
 }
 
@@ -318,6 +384,8 @@ pub enum WalletError {
     EntryNotFound(String),
     #[error("wallet ledger entry {0} is not refundable")]
     NotRefundable(String),
+    #[error("wallet request id {0} was already used for a different operation")]
+    RequestConflict(String),
 }
 
 #[cfg(test)]
@@ -329,6 +397,103 @@ mod tests {
             currency: "usd".into(),
             amount_minor,
         }
+    }
+
+    #[test]
+    fn idempotency_key_conflicts_fail_closed() {
+        let buyer = WalletAccountId("wallet:buyer".into());
+        let seller = WalletAccountId("wallet:seller".into());
+        let other = WalletAccountId("wallet:other".into());
+        let mut ledger = WalletLedger::default();
+        for (id, owner) in [
+            (buyer.clone(), "human:buyer"),
+            (seller.clone(), "human:seller"),
+            (other.clone(), "human:other"),
+        ] {
+            ledger.create_account(id, ActorId::new(owner), 1).unwrap();
+        }
+
+        ledger
+            .credit("credit:conflict", &buyer, usd(1_000), Some("seed".into()), 2)
+            .unwrap();
+        assert!(matches!(
+            ledger.credit("credit:conflict", &buyer, usd(999), Some("seed".into()), 3),
+            Err(WalletError::RequestConflict(id)) if id == "credit:conflict"
+        ));
+        assert!(matches!(
+            ledger.credit("credit:conflict", &seller, usd(1_000), Some("seed".into()), 3),
+            Err(WalletError::RequestConflict(id)) if id == "credit:conflict"
+        ));
+        assert!(matches!(
+            ledger.credit("credit:conflict", &buyer, usd(1_000), Some("changed".into()), 3),
+            Err(WalletError::RequestConflict(id)) if id == "credit:conflict"
+        ));
+        assert_eq!(ledger.accounts[&buyer].balance("USD"), 1_000);
+        assert_eq!(ledger.accounts[&seller].balance("USD"), 0);
+
+        let transfer = ledger
+            .transfer(
+                "transfer:conflict",
+                &buyer,
+                &seller,
+                usd(250),
+                Some("invoice:1".into()),
+                4,
+            )
+            .unwrap();
+        let duplicate = ledger
+            .transfer(
+                "transfer:conflict",
+                &buyer,
+                &seller,
+                usd(250),
+                Some("invoice:1".into()),
+                5,
+            )
+            .unwrap();
+        assert_eq!(duplicate.id, transfer.id);
+        assert!(matches!(
+            ledger.transfer(
+                "transfer:conflict",
+                &buyer,
+                &other,
+                usd(250),
+                Some("invoice:1".into()),
+                5,
+            ),
+            Err(WalletError::RequestConflict(id)) if id == "transfer:conflict"
+        ));
+        assert!(matches!(
+            ledger.transfer(
+                "transfer:conflict",
+                &buyer,
+                &seller,
+                usd(251),
+                Some("invoice:1".into()),
+                5,
+            ),
+            Err(WalletError::RequestConflict(id)) if id == "transfer:conflict"
+        ));
+        assert_eq!(ledger.accounts[&buyer].balance("USD"), 750);
+        assert_eq!(ledger.accounts[&seller].balance("USD"), 250);
+        assert_eq!(ledger.accounts[&other].balance("USD"), 0);
+
+        let refund = ledger
+            .refund_transfer("refund:conflict", &transfer.id, 6)
+            .unwrap();
+        let refund_duplicate = ledger
+            .refund_transfer("refund:conflict", &transfer.id, 7)
+            .unwrap();
+        assert_eq!(refund_duplicate.id, refund.id);
+        let unrelated = ledger
+            .credit("credit:unrelated", &buyer, usd(10), None, 8)
+            .unwrap();
+        assert!(matches!(
+            ledger.refund_transfer("refund:conflict", &unrelated.id, 9),
+            Err(WalletError::RequestConflict(id)) if id == "refund:conflict"
+        ));
+        assert_eq!(ledger.accounts[&buyer].balance("USD"), 1_010);
+        assert_eq!(ledger.accounts[&seller].balance("USD"), 0);
     }
 
     #[test]

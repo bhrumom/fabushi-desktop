@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15844,
-    "unread_minimum": 10369,
+    "unread_minimum": 10365,
     "omitted_known": 0,
-    "note": "Live 863cf10d recursive census 16,123. Accepted-tree blob order exact through 5,754; unknown 15,844, unread 10,369, omitted 0. Orders 5,741-5,754 cover user-photo cache, streamed part download and operator/support template/occupation/preload workflows."
+    "note": "Live 863cf10d recursive census 16,123. Accepted-tree blob order exact through 5,758; unknown 15,844, unread 10,365, omitted 0. Orders 5,755-5,758 cover call E2EE key lifecycle, state blocks, verification hash and protocol integration."
   },
   "latest_recursive_evidence": {
     "run_id": 37872749663,
@@ -81,6 +81,6 @@
     "development_only_non_applicable": 66,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 5754
+    "read_through": 5758
   }
 }
