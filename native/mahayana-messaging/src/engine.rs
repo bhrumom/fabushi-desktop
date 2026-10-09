@@ -785,6 +785,8 @@ pub enum EngineError {
     Bot(String),
     #[error("invoice is invalid")]
     InvalidInvoice,
+    #[error("customer information does not satisfy invoice requirements")]
+    InvalidCustomerInfo,
     #[error("invoice {0} does not exist")]
     InvoiceNotFound(String),
     #[error("payment order {0} does not exist")]
@@ -2530,6 +2532,9 @@ impl MessagingEngine {
                     .is_some_and(|expires_at_ms| expires_at_ms <= created_at_ms)
                 {
                     return Err(EngineError::InvoiceExpired(invoice_id));
+                }
+                if !invoice.customer_information_is_valid(customer.as_ref()) {
+                    return Err(EngineError::InvalidCustomerInfo);
                 }
                 if let Some(existing) = self.state.orders.get(&order_id) {
                     if existing.invoice_id == invoice.id && existing.buyer_id == buyer_id {

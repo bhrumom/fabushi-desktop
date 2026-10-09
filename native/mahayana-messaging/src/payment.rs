@@ -87,6 +87,33 @@ impl Invoice {
     }
 }
 
+const MAX_STREET_SIZE_UTF16: usize = 64;
+const MAX_POSTAL_CODE_SIZE_UTF16: usize = 10;
+const MAX_NAME_SIZE_UTF16: usize = 64;
+const MAX_EMAIL_SIZE_UTF16: usize = 128;
+const MAX_PHONE_SIZE_UTF16: usize = 16;
+const MIN_CITY_SIZE_UTF16: usize = 2;
+const MAX_CITY_SIZE_UTF16: usize = 64;
+
+fn utf16_len(value: &str) -> usize {
+    value.encode_utf16().count()
+}
+
+fn bounded_required(value: &str, min: usize, max: usize) -> bool {
+    let len = utf16_len(value);
+    (min..=max).contains(&len)
+}
+
+fn optional_bounded(value: Option<&str>, required: bool, max: usize) -> bool {
+    match value {
+        Some(value) => {
+            let len = utf16_len(value);
+            len <= max && (!required || len > 0)
+        }
+        None => !required,
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ShippingAddress {
@@ -98,6 +125,26 @@ pub struct ShippingAddress {
     pub postal_code: String,
 }
 
+impl ShippingAddress {
+    /// Source-neutral checkout validation. Bounds mirror the accepted payment
+    /// information editor while keeping provider and presentation concerns out
+    /// of the canonical payment domain.
+    pub fn is_valid_for_checkout(&self) -> bool {
+        bounded_required(&self.street_line1, 1, MAX_STREET_SIZE_UTF16)
+            && self
+                .street_line2
+                .as_deref()
+                .is_none_or(|value| utf16_len(value) <= MAX_STREET_SIZE_UTF16)
+            && bounded_required(&self.city, MIN_CITY_SIZE_UTF16, MAX_CITY_SIZE_UTF16)
+            && self.country_code.len() == 2
+            && self
+                .country_code
+                .bytes()
+                .all(|byte| byte.is_ascii_alphabetic())
+            && bounded_required(&self.postal_code, 1, MAX_POSTAL_CODE_SIZE_UTF16)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CustomerInfo {
@@ -105,6 +152,40 @@ pub struct CustomerInfo {
     pub email: Option<String>,
     pub phone: Option<String>,
     pub shipping_address: Option<ShippingAddress>,
+}
+
+impl CustomerInfo {
+    pub fn is_valid_for_invoice(&self, invoice: &Invoice) -> bool {
+        optional_bounded(
+            self.name.as_deref(),
+            invoice.request_name,
+            MAX_NAME_SIZE_UTF16,
+        ) && optional_bounded(
+            self.email.as_deref(),
+            invoice.request_email,
+            MAX_EMAIL_SIZE_UTF16,
+        ) && optional_bounded(
+            self.phone.as_deref(),
+            invoice.request_phone,
+            MAX_PHONE_SIZE_UTF16,
+        ) && match self.shipping_address.as_ref() {
+            Some(address) => address.is_valid_for_checkout(),
+            None => !invoice.request_shipping_address,
+        }
+    }
+}
+
+impl Invoice {
+    pub fn customer_information_is_valid(&self, customer: Option<&CustomerInfo>) -> bool {
+        let requires_customer = self.request_name
+            || self.request_email
+            || self.request_phone
+            || self.request_shipping_address;
+        match customer {
+            Some(customer) => customer.is_valid_for_invoice(self),
+            None => !requires_customer,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
