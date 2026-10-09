@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import {
@@ -188,4 +189,12 @@ test("workspace and expanded picker handoffs fail closed without required owners
     ...handoff,
     scope: { accountSlot: "slot", agentId: null },
   } as never), null);
+});
+
+
+test("reaction picker remains above the sticky composer while open", () => {
+  const css = readFileSync(new URL("./conversation/workspace/view.css", import.meta.url), "utf8");
+  assert.match(css, /\.sand-chat-input-dock\s*\{[^}]*z-index:\s*3;/s);
+  assert.match(css, /\.sand-message-action-anchor--menu-open\s*\{[^}]*z-index:\s*4;/s);
+  assert.match(css, /\.sand-message-hover-actions\s*\{[^}]*z-index:\s*4;/s);
 });
