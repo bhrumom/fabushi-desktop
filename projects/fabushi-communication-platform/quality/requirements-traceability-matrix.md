@@ -391,3 +391,20 @@ Dossier: `projects/telegram-desktop-rust/dossiers/build-provenance-resolution-cc
 - `INV-TDRP-R9-BUSINESS-AUTOMATION-SINGLE-OWNER-001`: settings surfaces may edit automation but cannot own delivery truth or create a second scheduler.
 - `INV-TDRP-R9-DELEGATED-BOT-CAPABILITY-001`: high-impact delegated permissions are explicit capability grants, never inferred from bot selection.
 - Dossier: `projects/telegram-desktop-rust/dossiers/business-settings-5530-5540-complete-read.md`.
+
+
+### TDRP Revision 9 source-read requirements 5541-5571
+
+| requirement | risk | invariant | exact source evidence | production status |
+| --- | --- | --- | --- | --- |
+| TDRP-R9-BUSINESS-QUICK-REPLIES-5541-5547 | critical | templates and recipient scopes have one canonical owner; premium/count/name/message limits and include/exclude invariants fail closed | shard/manifest/dossier | MAPPED-SOURCE-READ-PRODUCTION-GAP |
+| TDRP-R9-BUSINESS-WORKING-HOURS-5548-5549 | critical | normalized non-overlapping day/next-day intervals and timezone identity remain canonical availability state | same | MAPPED-SOURCE-READ-PRODUCTION-GAP |
+| TDRP-R9-ACCOUNT-2SV-5550-5569 | critical | secret/code state is transient and bounded; recovery/reset/cancel-reset/error/invalidation semantics fail closed; other-device password changes revoke current flow | same | MAPPED-SOURCE-READ-PRODUCTION-GAP |
+| TDRP-R9-ACCOUNT-2SV-PRESENTATION-5570-5571 | medium | success visuals are derived design-system presentation and never security truth | same | MAPPED-SOURCE-READ-PRODUCTION-OPEN |
+
+- `INV-TDRP-R9-2SV-TRANSIENT-SECRET-001`: current/new passwords, recovery codes and pending email state must be cleared on invalidation, exit or idle expiry and never appear in logs/evidence.
+- `INV-TDRP-R9-2SV-REMOTE-CHANGE-001`: PASSWORD_HASH_INVALID/SRP_PASSWORD_CHANGED invalidates the entire in-progress security flow rather than permitting retries with stale authority.
+- `INV-TDRP-R9-2SV-RESET-STATE-001`: Recover, pending Reset, ready Reset and CancelReset are distinct observable states and cannot collapse into a single destructive action.
+- `INV-TDRP-R9-BUSINESS-RECIPIENT-SCOPE-001`: all-except and selected-only maintain exact include/exclude/type invariants; settings UI never becomes delivery truth.
+- Dossier: `projects/telegram-desktop-rust/dossiers/business-cloud-password-5541-5571-complete-read.md`.
+- These rows grant source-read/traceability credit only.
