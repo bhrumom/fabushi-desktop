@@ -75,3 +75,43 @@ export interface SandMenuSeparatorProps {
 export function SandMenuSeparator({ orientation = "horizontal" }: SandMenuSeparatorProps): ReactNode {
   return <div aria-orientation={orientation} data-component="menu-separator" role="separator" className="ui-19kq4p1 ui-13fuv20 ui-5dbky9 ui-1rgg60y ui-qzfxv1 ui-105vx2c ui-1buce8w ui-47corl ui-2lah0s" />;
 }
+
+
+export type SandBannerTone = "info" | "warning" | "danger";
+
+export interface SandBannerProps {
+  readonly title: ReactNode;
+  readonly children?: ReactNode;
+  readonly actions?: ReactNode;
+  readonly dismissLabel?: string;
+  readonly onDismiss?: () => void;
+  readonly tone?: SandBannerTone;
+  readonly className?: string;
+  readonly ariaLive?: "off" | "polite" | "assertive";
+}
+
+/**
+ * Canonical persistent status surface. Product/domain policy stays outside the
+ * primitive; the banner only projects semantic tone, content and explicit
+ * dismissal/action intents.
+ */
+export function SandBanner({
+  title,
+  children,
+  actions,
+  dismissLabel = "Dismiss",
+  onDismiss,
+  tone = "info",
+  className,
+  ariaLive = tone === "danger" ? "assertive" : "polite",
+}: SandBannerProps): ReactNode {
+  const classes = ["sand-status-banner", `sand-status-banner--${tone}`, className].filter(Boolean).join(" ");
+  return <section aria-live={ariaLive} className={classes} data-component="banner" data-tone={tone} role={tone === "danger" ? "alert" : "status"}>
+    <div className="sand-status-banner__content">
+      <strong className="sand-status-banner__title">{title}</strong>
+      {children == null ? null : <div className="sand-status-banner__body">{children}</div>}
+    </div>
+    {actions == null ? null : <div className="sand-status-banner__actions">{actions}</div>}
+    {onDismiss == null ? null : <button aria-label={dismissLabel} className="sand-status-banner__dismiss" onClick={onDismiss} type="button">×</button>}
+  </section>;
+}

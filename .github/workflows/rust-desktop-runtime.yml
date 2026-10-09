@@ -328,6 +328,7 @@ jobs:
           frontend/src/recovered/ui/in-flight-command.contract.test.ts
           frontend/src/recovered/ui/sand-tabs-state.contract.test.ts
           frontend/src/recovered/ui/sand-tooltip.contract.test.ts
+          frontend/src/production/platform-obsolescence-policy.contract.test.ts
           frontend/src/production/human-call-controls.contract.test.ts
           frontend/src/recovered/features/recovered-foundations.contract.test.ts
           frontend/src/recovered/features/recovered-runtime-models.contract.test.ts
