@@ -264,9 +264,9 @@
     "root_source_entries_total": 6648,
     "recursive_source_entries_total": 16120,
     "unknown_minimum": 15841,
-    "unread_minimum": 11520,
+    "unread_minimum": 11420,
     "omitted_known": 0,
-    "note": "Accepted telegramdesktop/tdesktop@36a0c87ca096c48ccf6193aa2c31707fdcafcc7c root tree 94e009f981d886ee55cd0450f0a5cc9b38305ba8. Recursive denominator remains 16,120. 4,600 exact entries are read-complete, 279 unknown-closed: unknown=15,841, unread=11,520, omitted=0. Reading does not promote implementation or release state."
+    "note": "Accepted telegramdesktop/tdesktop@36a0c87ca096c48ccf6193aa2c31707fdcafcc7c root tree 94e009f981d886ee55cd0450f0a5cc9b38305ba8. Recursive denominator remains 16,120. 4,700 exact entries are read-complete, 279 unknown-closed: unknown=15,841, unread=11,420, omitted=0. Reading does not promote implementation or release state."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -632,6 +632,6 @@
     "development_only_non_applicable": 66,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 4600
+    "read_through": 4700
   }
 }

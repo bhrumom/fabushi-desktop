@@ -13,7 +13,7 @@ Execution: all executable verification only GitHub Actions
 
 重新读取 main、PR #20 状态和 current canonical exact HEAD。PR #20 在本次规范读取时已合并；不能继续从历史 open/draft 认知开始，也不能回退到旧实现分支。既有 Bot 架构/验收硬门继续有效。
 
-重新读取 tdesktop discovery HEAD。当前 accepted discovery HEAD 为 `22b352e866d0402505c07fa4ed21d75d7e4fb3db`（root tree `94ae09469c816b350f60dc9ada1ff049323be8e7`；相对上一 accepted `d346b42a1d30ef60dc989b6e5191bb8e571f6bd5` 前进 2 commits，新增 dependency-watch tooling 与 Windows updater/test changes；35 个 direct gitlink pins 不变；既有 recursive/build-time authority 仍须由 current-head Actions 重取证），更早研究基线为 `33261535a0e747f125e0ed25486f01e556330677`。在 GitHub Actions 中建立完整 root tree、递归 gitlinks、外部依赖/补丁/资源/工具链一致 baseline，更新现有 lock/inventory/ledger/dossiers，记录旧→新差异。`baseline_ready` 不得在递归/外部来源未闭合时为 true。
+重新读取 tdesktop discovery HEAD。当前 accepted discovery HEAD 为 `36a0c87ca096c48ccf6193aa2c31707fdcafcc7c`（root tree `94e009f981d886ee55cd0450f0a5cc9b38305ba8`；相对上一 accepted `22b352e866d0402505c07fa4ed21d75d7e4fb3db` 前进 5 commits、5 个顶层 authority 路径变化，并将 `cmake` gitlink 更新到 `desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422`；recursive path set 保持 16,120 不变；既有 recursive/build-time authority 仍须由 current-head Actions 重取证），更早研究基线为 `33261535a0e747f125e0ed25486f01e556330677`。在 GitHub Actions 中建立完整 root tree、递归 gitlinks、外部依赖/补丁/资源/工具链一致 baseline，更新现有 lock/inventory/ledger/dossiers，记录旧→新差异。`baseline_ready` 不得在递归/外部来源未闭合时为 true。
 
 ## B. Inventory all files and understand all modules
 

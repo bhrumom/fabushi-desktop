@@ -58,7 +58,7 @@ Repository: `bhrumom/fabushi-desktop`
 
 Revision 3 读取：main `860f03a8553c779fe006c7826f190c3014a571dc`；PR #20 已合并（merge `ee66bacdf47f36af2ae96c0a8a8ec401460426e7`）。每次执行重新读取 live refs，不能继续把 PR #20 当作未合并工作分支。
 
-上游 discovery HEAD 已 rebaseline 到 `22b352e866d0402505c07fa4ed21d75d7e4fb3db`（tree `94ae09469c816b350f60dc9ada1ff049323be8e7`）；`d346b42a1d30ef60dc989b6e5191bb8e571f6bd5` 已降为历史证据；`f23c37857220eb84f8559f0901ea26fb304b564b` 与 `33261535a0e747f125e0ed25486f01e556330677` 均降为历史证据。机器 lock/inventory/ledger/dossiers 已重绑新 identity，但 source completeness 仍 open，旧 Actions 不得证明新 baseline 完整。
+上游 discovery HEAD 已 rebaseline 到 `36a0c87ca096c48ccf6193aa2c31707fdcafcc7c`（tree `94e009f981d886ee55cd0450f0a5cc9b38305ba8`）；`d346b42a1d30ef60dc989b6e5191bb8e571f6bd5` 已降为历史证据；`f23c37857220eb84f8559f0901ea26fb304b564b` 与 `33261535a0e747f125e0ed25486f01e556330677` 均降为历史证据。机器 lock/inventory/ledger/dossiers 已重绑新 identity，但 source completeness 仍 open，旧 Actions 不得证明新 baseline 完整。
 
 ## Next task / completion
 
