@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15846,
-    "unread": 10124,
+    "unread": 10114,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,11 +13478,11 @@
     "to_commit": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
     "ahead_by": 10,
     "changed_paths": 25,
-    "source_read_reconciliation": "18 changed blobs inside prior prefix re-read/reconciled; orders 5831-6001 read/decomposed; read-through=6001, unread=10124, unknown=15846, omitted=0.",
+    "source_read_reconciliation": "18 changed blobs inside prior prefix re-read/reconciled; orders 5831-6011 read/decomposed; read-through=6011, unread=10114, unknown=15846, omitted=0.",
     "source_authority_evidence": "fresh descendant exact-head Actions required",
-    "current_source_read_through": 6001,
-    "first_unread_order": 6002,
-    "first_unread_path": "Telegram/SourceFiles/ui/controls/delete_message_context_action.cpp"
+    "current_source_read_through": 6011,
+    "first_unread_order": 6012,
+    "first_unread_path": "Telegram/SourceFiles/ui/controls/feature_list.cpp"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,7 +13491,7 @@
     "development_only_non_applicable": 69,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 6001
+    "read_through": 6011
   },
   "historical_exact_head_evidence": {
     "status": "historical-only",
