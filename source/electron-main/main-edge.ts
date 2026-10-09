@@ -11,6 +11,7 @@ import { getLocalInferenceCliStatus } from "../shared/node/inference-router-loca
 import { isSandBoxRuntime } from "../shared/box-runtime.js";
 import { getLocalDockerStatus, startLocalDockerBox, stopLocalDockerBox } from "./box/local-docker-host-connector.js";
 import type { DesktopCallMediaPort } from "./call-media.js";
+import { normalizeCommitStagedAttachmentsEdgeRequest, normalizeStageAttachmentEdgeRequest } from "./attachments/attachment-edge-wire.js";
 
 export const MAIN_EDGE_UNSERVED = "main/unserved-method";
 export const MAIN_EDGE_UPDATE_UNAVAILABLE = "main/update-unavailable";
@@ -66,30 +67,6 @@ function invariant(condition: unknown, message: string): asserts condition { if 
 function invoke(target: UnknownRecord, method: string, ...args: unknown[]): unknown { const fn = target[method]; invariant(typeof fn === "function", `Missing main-edge dependency method ${method}.`); return Reflect.apply(fn, target, args); }
 function req(value: unknown): UnknownRecord { return typeof value === "object" && value != null && !Array.isArray(value) ? value as UnknownRecord : {}; }
 
-export function normalizeStageAttachmentEdgeRequest(raw: unknown): { readonly filename: unknown; readonly bytes: unknown } {
-  const request = req(raw);
-  if (request.bytes instanceof Uint8Array) return { filename: request.filename, bytes: request.bytes };
-  if (typeof request.bytesBase64 !== "string") return { filename: request.filename, bytes: undefined };
-  const compact = request.bytesBase64.replace(/\s+/gu, "");
-  if (!/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/u.test(compact)) {
-    return { filename: request.filename, bytes: undefined };
-  }
-  const decoded = Buffer.from(compact, "base64");
-  return { filename: request.filename, bytes: new Uint8Array(decoded.buffer, decoded.byteOffset, decoded.byteLength) };
-}
-
-export function normalizeCommitStagedAttachmentsEdgeRequest(raw: unknown): { readonly paths: unknown; readonly filenames: unknown } {
-  const request = req(raw);
-  if (Array.isArray(request.items)) {
-    return {
-      paths: request.items.map((item) => req(item).path),
-      filenames: request.items.map((item) => req(item).name),
-    };
-  }
-  // Compatibility only: older direct edge callers used parallel arrays. The
-  // shipping preload now owns the canonical item-list wire contract.
-  return { paths: request.paths, filenames: request.filenames };
-}
 function detectTimeZone(): string | null { const value = Intl.DateTimeFormat().resolvedOptions().timeZone; return value.length > 0 ? value : null; }
 const sleep = (milliseconds: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, milliseconds));
 

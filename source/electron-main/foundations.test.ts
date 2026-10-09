@@ -35,7 +35,7 @@ import { createReleaseMetadata } from "./update/release-metadata.js";
 import { SandSettingsStore } from "../shared/node/settings/sand-settings-store.js";
 import { normalizeSandCallMediaPreferences, normalizeSandUiPreferences, resolveSandUiDirection } from "../shared/desktop.js";
 import { createDesktopCallMediaPort } from "./call-media.js";
-import { normalizeCommitStagedAttachmentsEdgeRequest, normalizeStageAttachmentEdgeRequest } from "./main-edge.js";
+import { normalizeCommitStagedAttachmentsEdgeRequest, normalizeStageAttachmentEdgeRequest } from "./attachments/attachment-edge-wire.js";
 
 test("main edge accepts the shipping preload attachment wire contract", () => {
   const staged = normalizeStageAttachmentEdgeRequest({
