@@ -498,3 +498,12 @@ Reading grants source/traceability credit only. Dossier: `projects/telegram-desk
 | TDRP-R9-WEB-AUTH-5621-5622 | critical | terminate-one targets exact server authorization hash; terminate-all/block coupling reconciles once under exact account | Account Authorization + Bot permissions + Blocked Peers | mapped-open |
 
 Dossier: `projects/telegram-desktop-rust/dossiers/settings-privacy-shortcuts-websites-5617-5622-complete-read.md`.
+
+## TDRP Settings infrastructure + Credits/Gift 5623–5632
+
+| requirement_id | risk | invariant | production owner | verdict |
+| --- | --- | --- | --- | --- |
+| TDRP-R9-SETTINGS-BUILDER-5623-5630 | high | one typed Settings definition drives rendered controls, search/index and highlights; no duplicated setting truth; hidden diagnostics are environment/security bounded | Settings + UniversalSearch + design system + support diagnostics | mapped-open |
+| TDRP-R9-CREDITS-GIFT-5631-5632 | critical | wallet/gift/payment actions use exact account/owner/id and reconcile duplicate/cancel/failure/settlement/restart once | Wallet/Payments/Credits + Gift/Commerce | mapped-open |
+
+Dossier: `projects/telegram-desktop-rust/dossiers/settings-builder-credits-5623-5632-complete-read.md`.
