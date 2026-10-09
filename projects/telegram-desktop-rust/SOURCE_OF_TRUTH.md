@@ -93,4 +93,4 @@ release candidate 只有在 independent acceptance 为 ACCEPT、0 open P0/P1/blo
 
 Current live authority (2026-10-09): `telegramdesktop/tdesktop@3a15bf1fe34b6950916215a11b50eadfce4bbb41` (root tree `b031c2cd84aa0cbbb149a7e5693c41ef14d643f3`), one commit ahead of historical `36a0c87ca096c48ccf6193aa2c31707fdcafcc7c`; changed paths: `Telegram/SourceFiles/boxes/connection_box.cpp`, `Telegram/SourceFiles/core/application.cpp`.
 
-Current source accounting: deterministic read-through `5110/16120`; unread `11010`; unknown `15841`; unknown-closed `279`; omitted `0`. Orders 5001-5110 are exact-blob read-complete with mapped-open dispositions only; no implementation, verification, baseline-ready or release credit is granted by this accounting update.
+Current source accounting: deterministic read-through `5120/16120`; unread `11000`; unknown `15841`; unknown-closed `279`; omitted `0`. Orders 5001-5120 are exact-blob read-complete with mapped-open dispositions only; no implementation, verification, baseline-ready or release credit is granted by this accounting update.
