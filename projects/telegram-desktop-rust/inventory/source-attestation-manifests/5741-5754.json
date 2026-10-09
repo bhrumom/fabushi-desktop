@@ -1,0 +1,93 @@
+{
+  "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+  "accepted_tree": "5030985204963cbbd362ced7412d231b04ebd0cc",
+  "deterministic_order_basis": "non-directory/blob rank in accepted recursive tree",
+  "start": 5741,
+  "end": 5754,
+  "entries": [
+    {
+      "order": 5741,
+      "path": "Telegram/SourceFiles/storage/storage_user_photos.cpp",
+      "blob": "232befde40c5edea34286105374058fcc66ab658",
+      "consumer_symbol": "storage_user_photos.cpp"
+    },
+    {
+      "order": 5742,
+      "path": "Telegram/SourceFiles/storage/storage_user_photos.h",
+      "blob": "e5cfa1cb24c3da589cbe130dae15a610b923138e",
+      "consumer_symbol": "storage_user_photos.h"
+    },
+    {
+      "order": 5743,
+      "path": "Telegram/SourceFiles/storage/streamed_file_downloader.cpp",
+      "blob": "46e714c05b985e11aabac4a750d227b5117e4203",
+      "consumer_symbol": "streamed_file_downloader.cpp"
+    },
+    {
+      "order": 5744,
+      "path": "Telegram/SourceFiles/storage/streamed_file_downloader.h",
+      "blob": "25cd818a42997986289ff63a1885e483962c14ad",
+      "consumer_symbol": "streamed_file_downloader.h"
+    },
+    {
+      "order": 5745,
+      "path": "Telegram/SourceFiles/support/support_autocomplete.cpp",
+      "blob": "615e73c41efc7147278d359e048e5e7d0ea94ace",
+      "consumer_symbol": "support_autocomplete.cpp"
+    },
+    {
+      "order": 5746,
+      "path": "Telegram/SourceFiles/support/support_autocomplete.h",
+      "blob": "4a504f84c9fb20255bc917a2269c3ed3e4a21842",
+      "consumer_symbol": "support_autocomplete.h"
+    },
+    {
+      "order": 5747,
+      "path": "Telegram/SourceFiles/support/support_common.cpp",
+      "blob": "797d7353a593e4976184dcdc7fca785906244ccd",
+      "consumer_symbol": "support_common.cpp"
+    },
+    {
+      "order": 5748,
+      "path": "Telegram/SourceFiles/support/support_common.h",
+      "blob": "c7f1b7edd1c3d99c6f0b1c56107c9326df7e0810",
+      "consumer_symbol": "support_common.h"
+    },
+    {
+      "order": 5749,
+      "path": "Telegram/SourceFiles/support/support_helper.cpp",
+      "blob": "ea802971b4626d359c1a3f74baef11b8b6f8384b",
+      "consumer_symbol": "support_helper.cpp"
+    },
+    {
+      "order": 5750,
+      "path": "Telegram/SourceFiles/support/support_helper.h",
+      "blob": "28c92b648086df4f482589fa06f7c844cf2f86e2",
+      "consumer_symbol": "support_helper.h"
+    },
+    {
+      "order": 5751,
+      "path": "Telegram/SourceFiles/support/support_preload.cpp",
+      "blob": "91bf35362669564a8f77e375832e719512661a26",
+      "consumer_symbol": "support_preload.cpp"
+    },
+    {
+      "order": 5752,
+      "path": "Telegram/SourceFiles/support/support_preload.h",
+      "blob": "7557c446769d443049c414d2e3d2f04c9ea93680",
+      "consumer_symbol": "support_preload.h"
+    },
+    {
+      "order": 5753,
+      "path": "Telegram/SourceFiles/support/support_templates.cpp",
+      "blob": "59705e1162e17b4dbfb338855071dcef54d50d5b",
+      "consumer_symbol": "support_templates.cpp"
+    },
+    {
+      "order": 5754,
+      "path": "Telegram/SourceFiles/support/support_templates.h",
+      "blob": "853fd389f9ec0d38214bd0867ac413a2fd7e654f",
+      "consumer_symbol": "support_templates.h"
+    }
+  ]
+}
