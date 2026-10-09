@@ -26,3 +26,15 @@ test("mute command owns duplicate refusal, pending projection, rollback and tear
   assert.ok(source.includes("commandLease.release();"));
   assert.ok(source.includes("callCommandFence.dispose();"));
 });
+
+test("camera and screen commands share video-media ownership with pending and rollback", () => {
+  assert.equal((source.match(/callCommandFence\.acquire\("video-media"\)/g) ?? []).length >= 3, true);
+  assert.ok(source.includes("pending={cameraPending}"));
+  assert.ok(source.includes("pending={screenPending}"));
+  assert.ok(source.includes("existing.enabled = previousEnabled;"));
+  assert.ok(source.includes("stream.removeTrack(track);"));
+  assert.ok(source.includes("const screenStreamRef = useRef<MediaStream | null>(null);"));
+  assert.ok(source.includes("await sender.replaceTrack(camera);"));
+  assert.ok(source.includes("await sender.replaceTrack(screenTrack).catch(() => undefined);"));
+  assert.ok(source.includes("stopStream(screenStreamRef.current);"));
+});
