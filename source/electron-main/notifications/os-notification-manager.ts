@@ -8,9 +8,21 @@ import {
 
 export interface DesktopNotificationPort {
   on(event: "click", listener: () => void): void;
+  on(event: "reply", listener: (event: unknown, reply: string) => void): void;
+  on(event: "action", listener: (event: unknown, index: number) => void): void;
   once(event: "close", listener: () => void): void;
   show(): void;
   close(): void;
+}
+
+export interface DesktopNotificationOptions {
+  readonly title: string;
+  readonly body: string;
+  readonly silent: boolean;
+  readonly urgency: "critical" | "normal";
+  readonly hasReply?: boolean;
+  readonly replyPlaceholder?: string;
+  readonly actions?: readonly { readonly type: "button"; readonly text: string }[];
 }
 
 export interface NotificationWindowPort {
@@ -23,7 +35,12 @@ export interface NotificationWindowPort {
 
 export type DesktopNotificationScope =
   | { readonly kind: "agent"; readonly agentId: string }
-  | { readonly kind: "conversation"; readonly conversationId: string; readonly childId?: string | null };
+  | {
+      readonly kind: "conversation";
+      readonly accountId: string;
+      readonly conversationId: string;
+      readonly childId?: string | null;
+    };
 
 export interface ScopedDesktopNotification {
   readonly scope: DesktopNotificationScope;
@@ -32,12 +49,16 @@ export interface ScopedDesktopNotification {
   readonly silent: boolean;
   readonly urgency: "critical" | "normal";
   readonly onActivate: () => void;
+  readonly onReply?: (reply: string) => void | Promise<void>;
+  readonly replyPlaceholder?: string;
+  readonly onMarkRead?: () => void | Promise<void>;
+  readonly markReadLabel?: string;
 }
 
 function scopeKey(scope: DesktopNotificationScope): string {
   return scope.kind === "agent"
     ? JSON.stringify(["agent", scope.agentId])
-    : JSON.stringify(["conversation", scope.conversationId, scope.childId ?? null]);
+    : JSON.stringify(["conversation", scope.accountId, scope.conversationId, scope.childId ?? null]);
 }
 
 export class SandOsNotificationManager {
@@ -49,8 +70,9 @@ export class SandOsNotificationManager {
   constructor(private readonly deps: {
     readonly getWindow: () => NotificationWindowPort | null;
     readonly isSupported: () => boolean;
-    readonly createNotification: (options: { readonly title: string; readonly body: string; readonly silent: boolean; readonly urgency: "critical" | "normal" }) => DesktopNotificationPort;
+    readonly createNotification: (options: DesktopNotificationOptions) => DesktopNotificationPort;
     readonly openAgent: (agentId: string) => void;
+    readonly reportActionFailure?: (operation: "reply" | "mark-read", error: unknown) => void;
     readonly now?: () => number;
   }) {}
 
@@ -84,6 +106,17 @@ export class SandOsNotificationManager {
       body: input.body,
       silent: input.silent,
       urgency: input.urgency,
+      ...(input.onReply == null
+        ? {}
+        : {
+            hasReply: true,
+            replyPlaceholder: input.replyPlaceholder ?? "Reply",
+          }),
+      ...(input.onMarkRead == null
+        ? {}
+        : {
+            actions: [{ type: "button" as const, text: input.markReadLabel ?? "Mark as Read" }],
+          }),
     });
     const key = scopeKey(input.scope);
     let active = this.activeByScope.get(key);
@@ -96,6 +129,19 @@ export class SandOsNotificationManager {
       this.focusWindow();
       input.onActivate();
     });
+    if (input.onReply != null) {
+      notification.on("reply", (_event, reply) => {
+        const text = reply.trim();
+        if (!text) return;
+        this.runScopedAction(input.scope, "reply", () => input.onReply!(text));
+      });
+    }
+    if (input.onMarkRead != null) {
+      notification.on("action", (_event, index) => {
+        if (index !== 0) return;
+        this.runScopedAction(input.scope, "mark-read", input.onMarkRead!);
+      });
+    }
     notification.once("close", () => {
       const current = this.activeByScope.get(key);
       if (current == null) return;
@@ -148,6 +194,26 @@ export class SandOsNotificationManager {
       urgency: transition.kind === "agent-needs-input" ? "critical" : "normal",
       onActivate: () => this.deps.openAgent(transition.agentId),
     });
+  }
+
+  private runScopedAction(
+    scope: DesktopNotificationScope,
+    operation: "reply" | "mark-read",
+    action: () => void | Promise<void>,
+  ): void {
+    try {
+      const result = action();
+      if (result == null || typeof (result as PromiseLike<void>).then !== "function") {
+        this.clearScope(scope);
+        return;
+      }
+      void Promise.resolve(result).then(
+        () => this.clearScope(scope),
+        (error) => this.deps.reportActionFailure?.(operation, error),
+      );
+    } catch (error) {
+      this.deps.reportActionFailure?.(operation, error);
+    }
   }
 
   private focusWindow(): void {

@@ -682,12 +682,16 @@ test("MAS packaging declares camera and microphone authority for Human calls", (
 });
 
 
-test("OS notification manager retires only the exact canonical scope", () => {
+test("OS notification manager fences exact account/conversation scope and native actions", async () => {
   type FakeNotification = {
     readonly closeCount: { value: number };
+    readonly options: { hasReply?: boolean; actions?: readonly { readonly text: string }[] };
     click(): void;
+    reply(text: string): void;
+    action(index: number): void;
   };
   const created: FakeNotification[] = [];
+  const failures: string[] = [];
   let focusCount = 0;
   let activationCount = 0;
   const manager = new SandOsNotificationManager({
@@ -699,17 +703,26 @@ test("OS notification manager retires only the exact canonical scope", () => {
       focus: () => { focusCount += 1; },
     }),
     isSupported: () => true,
-    createNotification: () => {
+    createNotification: (options) => {
       let click: (() => void) | undefined;
+      let reply: ((event: unknown, text: string) => void) | undefined;
+      let action: ((event: unknown, index: number) => void) | undefined;
       let close: (() => void) | undefined;
       const closeCount = { value: 0 };
       const fake: FakeNotification = {
         closeCount,
+        options,
         click: () => click?.(),
+        reply: (text) => reply?.({}, text),
+        action: (index) => action?.({}, index),
       };
       created.push(fake);
       return {
-        on: (_event, listener) => { click = listener; },
+        on: (event, listener) => {
+          if (event === "click") click = listener as () => void;
+          else if (event === "reply") reply = listener as (event: unknown, text: string) => void;
+          else action = listener as (event: unknown, index: number) => void;
+        },
         once: (_event, listener) => { close = listener; },
         show: () => undefined,
         close: () => {
@@ -719,10 +732,13 @@ test("OS notification manager retires only the exact canonical scope", () => {
       };
     },
     openAgent: () => undefined,
+    reportActionFailure: (operation) => failures.push(operation),
   });
 
-  const topicScope = { kind: "conversation", conversationId: "conversation-1", childId: "topic-7" } as const;
-  const savedScope = { kind: "conversation", conversationId: "conversation-1", childId: "saved-9" } as const;
+  const topicScope = { kind: "conversation", accountId: "account-a", conversationId: "conversation-1", childId: "topic-7" } as const;
+  const otherAccountScope = { kind: "conversation", accountId: "account-b", conversationId: "conversation-1", childId: "topic-7" } as const;
+  let replied = "";
+  let markedRead = 0;
   assert.equal(manager.showScoped({
     scope: topicScope,
     title: "Topic",
@@ -730,24 +746,82 @@ test("OS notification manager retires only the exact canonical scope", () => {
     silent: false,
     urgency: "normal",
     onActivate: () => { activationCount += 1; },
+    onReply: async (text) => { replied = text; },
+    onMarkRead: async () => { markedRead += 1; },
   }), true);
   assert.equal(manager.showScoped({
-    scope: savedScope,
-    title: "Saved",
+    scope: otherAccountScope,
+    title: "Other account",
     body: "Message",
     silent: false,
     urgency: "normal",
     onActivate: () => { activationCount += 1; },
   }), true);
 
-  manager.clearScope(topicScope);
+  assert.equal(created[0]?.options.hasReply, true);
+  assert.equal(created[0]?.options.actions?.[0]?.text, "Mark as Read");
+  created[0]?.reply("  hello from notification  ");
+  await Promise.resolve();
+  await Promise.resolve();
+  assert.equal(replied, "hello from notification");
   assert.equal(created[0]?.closeCount.value, 1);
+  assert.equal(created[1]?.closeCount.value, 0);
+
+  assert.equal(manager.showScoped({
+    scope: topicScope,
+    title: "Topic again",
+    body: "Message",
+    silent: false,
+    urgency: "normal",
+    onActivate: () => undefined,
+    onMarkRead: async () => { markedRead += 1; },
+  }), true);
+  created[2]?.action(0);
+  await Promise.resolve();
+  await Promise.resolve();
+  assert.equal(markedRead, 1);
+  assert.equal(created[2]?.closeCount.value, 1);
   assert.equal(created[1]?.closeCount.value, 0);
 
   created[1]?.click();
   assert.equal(focusCount, 1);
   assert.equal(activationCount, 1);
+  assert.deepEqual(failures, []);
 
   manager.reset();
   assert.equal(created[1]?.closeCount.value, 1);
+});
+
+test("OS notification action failures preserve exact scope for retry", async () => {
+  let action: ((event: unknown, index: number) => void) | undefined;
+  let closeCount = 0;
+  const failures: string[] = [];
+  const manager = new SandOsNotificationManager({
+    getWindow: () => null,
+    isSupported: () => true,
+    createNotification: () => ({
+      on: (event, listener) => {
+        if (event === "action") action = listener as (event: unknown, index: number) => void;
+      },
+      once: () => undefined,
+      show: () => undefined,
+      close: () => { closeCount += 1; },
+    }),
+    openAgent: () => undefined,
+    reportActionFailure: (operation) => failures.push(operation),
+  });
+  manager.showScoped({
+    scope: { kind: "conversation", accountId: "account-a", conversationId: "conversation-1" },
+    title: "Message",
+    body: "Body",
+    silent: false,
+    urgency: "normal",
+    onActivate: () => undefined,
+    onMarkRead: async () => { throw new Error("offline"); },
+  });
+  action?.({}, 0);
+  await Promise.resolve();
+  await Promise.resolve();
+  assert.deepEqual(failures, ["mark-read"]);
+  assert.equal(closeCount, 0);
 });
