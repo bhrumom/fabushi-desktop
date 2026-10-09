@@ -1,0 +1,19 @@
+{
+  "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+  "start": 5596,
+  "end": 5597,
+  "entries": [
+    {
+      "order": 5596,
+      "path": "Telegram/SourceFiles/settings/sections/settings_information.cpp",
+      "blob": "8982b515b5a30600f5565c3b7e81dc5218c96950",
+      "consumer_symbol": "InformationId"
+    },
+    {
+      "order": 5597,
+      "path": "Telegram/SourceFiles/settings/sections/settings_information.h",
+      "blob": "54435faa2f1a8d156d5da3501a9e9b0c13b96bae",
+      "consumer_symbol": "InformationId"
+    }
+  ]
+}
