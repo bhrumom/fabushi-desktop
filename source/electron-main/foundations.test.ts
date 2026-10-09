@@ -36,6 +36,7 @@ import { SandSettingsStore } from "../shared/node/settings/sand-settings-store.j
 import { normalizeSandCallMediaPreferences, normalizeSandUiPreferences, resolveSandUiDirection } from "../shared/desktop.js";
 import { createDesktopCallMediaPort } from "./call-media.js";
 import { normalizeCommitStagedAttachmentsEdgeRequest, normalizeStageAttachmentEdgeRequest } from "./attachments/attachment-edge-wire.js";
+import { createAttachmentEdgePort, type AttachmentEdgeDeps } from "./attachments/attachments.js";
 
 test("main edge accepts the shipping preload attachment wire contract", () => {
   const staged = normalizeStageAttachmentEdgeRequest({
@@ -60,6 +61,36 @@ test("main edge accepts the shipping preload attachment wire contract", () => {
     paths: ["/legacy/a.txt"],
     filenames: ["a.txt"],
   });
+});
+
+test("attachment staging uses the production filesystem owner and Node UUID source", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "fabushi-attachment-stage-"));
+  const failures: Array<{ leg: string; errorClass: string }> = [];
+  try {
+    const edge = createAttachmentEdgePort({
+      byteLimitForName: () => 1024,
+      getStagingDir: () => dir,
+      onEdgeFailure: (failure) => failures.push(failure),
+      now: () => 1_700_000_000_000,
+      randomUUID: () => "00000000-0000-4000-8000-000000000001",
+    } as unknown as AttachmentEdgeDeps);
+    const bytes = new Uint8Array(Buffer.from("Fabushi Human attachment exact-head evidence.", "utf8"));
+    const staged = await edge.stageBytes("phase1-human-reply.txt", bytes);
+    assert.deepEqual(staged, {
+      ok: true,
+      path: join(dir, "1700000000000-00000000-0000-4000-8000-000000000001.txt"),
+    });
+    if (!staged.ok) assert.fail("Expected production attachment staging to succeed.");
+    assert.equal(readFileSync(staged.path, "utf8"), "Fabushi Human attachment exact-head evidence.");
+    assert.deepEqual(failures, []);
+
+    const source = readFileSync(new URL("./attachments/attachments.ts", import.meta.url), "utf8");
+    assert.match(source, /import \{ randomUUID \} from "node:crypto"/);
+    assert.match(source, /\(deps\.randomUUID \?\? randomUUID\)\(\)/);
+    assert.doesNotMatch(source, /crypto\.randomUUID/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test("UI accessibility preferences normalize, persist, and resolve RTL", () => {
