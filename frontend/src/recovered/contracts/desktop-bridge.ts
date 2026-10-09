@@ -8,6 +8,7 @@ export interface ThemeState {
 }
 export type DesktopUiDirection = "auto" | "ltr" | "rtl";
 export interface DesktopUiPreferences { locale: string; direction: DesktopUiDirection; reducedMotion: boolean; highContrast: boolean; textScale: number; }
+export interface DesktopAccessibilityState { screenReader: boolean; }
 export interface DesktopCallMediaPreferences { microphoneId: string | null; cameraId: string | null; }
 
 export type CursorAuthStatus =
@@ -278,6 +279,7 @@ export const DESKTOP_BRIDGE_TOP_LEVEL_KEYS = [
   "transcribeAudio",
   "cursorAccount",
   "experiments",
+  "accessibility",
   "platform",
   "isDev",
   "getWindowState",
@@ -532,6 +534,10 @@ export interface DesktopBridge {
   readonly uiPreferences: {
     get(): Promise<DesktopUiPreferences>;
     set(preferences: DesktopUiPreferences): Promise<DesktopUiPreferences>;
+  };
+  readonly accessibility: {
+    get(): Promise<DesktopAccessibilityState>;
+    onChanged(listener: BridgeListener<DesktopAccessibilityState>): Unsubscribe;
   };
   readonly autoReviewInstructions: {
     get(): Promise<DesktopAutoReviewInstructions>;

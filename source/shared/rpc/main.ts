@@ -30,6 +30,7 @@ export const MAIN_METHOD_TABLE = {
   getTimeZone: { args: "none" },
   setTimeZoneOverride: { args: "object" },
   getUiPreferences: { args: "none" },
+  getAccessibilityState: { args: "none" },
   setUiPreferences: { args: "object" },
   getCallMediaPreferences: { args: "none" },
   setCallMediaPreferences: { args: "object" },

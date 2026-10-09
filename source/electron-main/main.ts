@@ -81,6 +81,7 @@ export interface MainBrowserWindow extends WindowStatePersistenceWindow {
 
 export interface ElectronMainApp {
   readonly isPackaged: boolean;
+  readonly accessibilitySupportEnabled?: boolean;
   disableHardwareAcceleration(): void;
   readonly commandLine: { readonly appendSwitch: (name: string) => void };
   requestSingleInstanceLock(): boolean;
@@ -89,6 +90,7 @@ export interface ElectronMainApp {
   whenReady(): Promise<unknown>;
   on(event: "second-instance", listener: (event: unknown, argv: readonly string[]) => void): void;
   on(event: "open-url", listener: (event: PreventableEvent, url: string) => void): void;
+  on(event: "accessibility-support-changed", listener: (event: unknown, accessibilitySupportEnabled: boolean) => void): void;
   on(event: "activate" | "window-all-closed", listener: () => void): void;
   on(event: "before-quit", listener: (event: PreventableEvent) => void): void;
   on(event: "will-quit", listener: () => void): void;
@@ -254,6 +256,9 @@ export function startElectronMain(deps: ElectronMainDependencies): ElectronMainR
   let isMainWindowCreationReady = false;
   let appIsQuitting = false;
   let services: ElectronMainServices | undefined;
+  deps.app.on("accessibility-support-changed", (_event, accessibilitySupportEnabled) => {
+    services?.mainEdge.emit("accessibility-support-changed", { screenReader: accessibilitySupportEnabled === true });
+  });
   let overlaySession: ReturnType<typeof createWindowsTitleBarOverlaySession> | undefined;
 
   const syncWindowFocused = createWindowFocusSync({

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { DesktopBridge } from "../../contracts/desktop-bridge";
+import type { DesktopAccessibilityState, DesktopBridge } from "../../contracts/desktop-bridge";
 import type { ProductionCoordinatorClient } from "../../../production/coordinator-client";
 import { SandButton, SandIconButton } from "../../ui/sand-kit-primitives";
 import "./notification-host.css";
@@ -17,7 +17,7 @@ export interface RootShellNotificationActionResult {
 }
 
 export interface RootShellNotificationTray {
-  kind: "error";
+  kind: "error" | "info";
   id: string;
   title: string;
   detail?: string;
@@ -83,6 +83,19 @@ export function projectRootShellNotificationTray(value: unknown): RootShellNotif
     ...(Array.isArray(value.actions) ? { actions: value.actions.map(projectRootShellNotificationAction).filter((action): action is RootShellNotificationAction => action != null).slice(0, 3) } : {}),
     ...(typeof value.count === "number" && Number.isFinite(value.count) && value.count > 1 ? { count: value.count } : {})
   };
+}
+
+export const SCREEN_READER_NOTIFICATION_ID = "system:screen-reader-support";
+
+export function projectScreenReaderNotification(state: DesktopAccessibilityState): RootShellNotificationTray | null {
+  return state.screenReader
+    ? {
+        kind: "info",
+        id: SCREEN_READER_NOTIFICATION_ID,
+        title: "Screen reader support is active",
+        detail: "Fabushi is using the desktop accessibility signal for assistive-technology support."
+      }
+    : null;
 }
 
 export function projectRootShellNotificationTrays(value: unknown): RootShellNotificationTray[] {
@@ -198,7 +211,7 @@ export function RootShellNotificationStack({ trays, copiedRequestId, isSandModel
   if (trays.length === 0) return null;
   return <div aria-label="Notifications" className="sand-tray-stack" role="region">
     {trays.length > 1 ? <div className="sand-tray-stack__clear-all"><SandButton onClick={onClear} size="sm" variant="secondary">Clear all</SandButton></div> : null}
-    {trays.map((tray) => <div className="sand-tray" data-kind="error" key={tray.id} role="alert">
+    {trays.map((tray) => <div className="sand-tray" data-kind={tray.kind} key={tray.id} role={tray.kind === "error" ? "alert" : "status"}>
       <div className="sand-tray__leading"><span aria-hidden="true" className="sand-tray__icon" style={{ fontFamily: "cursor-icons" }}>{String.fromCodePoint(0xea6c)}</span></div>
       <div className="sand-tray__body">
         <div className="sand-tray__title-row"><strong className="sand-tray__title">{tray.title}</strong>{tray.count == null ? null : <strong aria-label={`Occurred ${tray.count} times`} className="sand-tray__count">×{tray.count}</strong>}</div>
@@ -240,6 +253,8 @@ export function isSandModelExperimentEnabled(value: unknown): boolean {
 
 export function RootShellNotificationHost({ bridge, client }: { bridge: DesktopBridge; client: ProductionCoordinatorClient | null }) {
   const [trays, setTrays] = useState<RootShellNotificationTray[]>([]);
+  const [screenReader, setScreenReader] = useState(false);
+  const [screenReaderDismissed, setScreenReaderDismissed] = useState(false);
   const [copiedRequestId, setCopiedRequestId] = useState<string | null>(null);
   const [isSandModelExperiment, setIsSandModelExperiment] = useState(() => isSandModelExperimentEnabled(bridge.experiments.initialSnapshot));
 
@@ -257,11 +272,28 @@ export function RootShellNotificationHost({ bridge, client }: { bridge: DesktopB
 
   useEffect(() => bridge.experiments.onChanged((snapshot) => setIsSandModelExperiment(isSandModelExperimentEnabled(snapshot))), [bridge]);
 
+  useEffect(() => {
+    let active = true;
+    const apply = (state: DesktopAccessibilityState) => {
+      if (!active) return;
+      setScreenReader(state.screenReader === true);
+      if (!state.screenReader) setScreenReaderDismissed(false);
+    };
+    void bridge.accessibility.get().then(apply).catch(() => {});
+    const stop = bridge.accessibility.onChanged(apply);
+    return () => { active = false; stop(); };
+  }, [bridge]);
+
   const dismiss = (id: string) => {
+    if (id === SCREEN_READER_NOTIFICATION_ID) {
+      setScreenReaderDismissed(true);
+      return;
+    }
     if (client == null) return;
     void client.call("dismissTray", { id }).catch(() => {});
   };
   const clear = () => {
+    if (screenReader) setScreenReaderDismissed(true);
     if (client == null) return;
     void client.call("clearTrays").catch(() => {});
   };
@@ -281,5 +313,9 @@ export function RootShellNotificationHost({ bridge, client }: { bridge: DesktopB
     void clipboard.writeText(requestId).then(() => setCopiedRequestId(requestId)).catch(() => {});
   };
 
-  return <RootShellNotificationStack copiedRequestId={copiedRequestId} isSandModelExperiment={isSandModelExperiment} onAction={runAction} onClear={clear} onCopyRequestId={copyRequestId} onDismiss={dismiss} trays={trays} />;
+  const screenReaderTray = screenReader && !screenReaderDismissed
+    ? projectScreenReaderNotification({ screenReader })
+    : null;
+  const composedTrays = screenReaderTray == null ? trays : [screenReaderTray, ...trays];
+  return <RootShellNotificationStack copiedRequestId={copiedRequestId} isSandModelExperiment={isSandModelExperiment} onAction={runAction} onClear={clear} onCopyRequestId={copyRequestId} onDismiss={dismiss} trays={composedTrays} />;
 }

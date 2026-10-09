@@ -13,6 +13,7 @@ test("desktop bridge contract exposes the frozen top-level preload surface exact
     "mcp",
     "cursorAccount",
     "experiments",
+    "accessibility",
     "foreverBox",
     "telemetry",
     "localToolPermission",

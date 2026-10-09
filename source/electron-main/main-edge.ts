@@ -59,6 +59,7 @@ export interface MainEdgeDeps {
   readonly ensureTranscriptionManager: () => Promise<UnknownRecord>;
   readonly callMedia?: DesktopCallMediaPort;
   readonly platform: NodeJS.Platform;
+  readonly readAccessibilitySupportEnabled?: () => boolean;
   readonly delay?: (milliseconds: number) => Promise<void>;
   readonly detectTimeZone?: () => string | null | undefined;
 }
@@ -98,6 +99,7 @@ export function createMainEdgeHandlers(deps: MainEdgeDeps): HandlerMap {
     getTimeZone: () => ({ detectedTimeZone: (deps.detectTimeZone ?? detectTimeZone)() ?? null, overrideTimeZone: invoke(deps.settingsStore, "getUserTimeZoneOverride") ?? null }),
     setTimeZoneOverride: (raw) => { const { timeZone } = req(raw); if (timeZone === null) invoke(deps.settingsStore, "setUserTimeZoneOverride", undefined); else if (typeof timeZone === "string" && isValidIanaTimeZone(timeZone)) invoke(deps.settingsStore, "setUserTimeZoneOverride", timeZone); const detected = (deps.detectTimeZone ?? detectTimeZone)(); void deps.syncHostSettingsToBox({ ...(detected == null ? {} : { userTimeZone: detected }), userTimeZoneOverride: invoke(deps.settingsStore, "getUserTimeZoneOverride") ?? "" }); return { detectedTimeZone: (deps.detectTimeZone ?? detectTimeZone)() ?? null, overrideTimeZone: invoke(deps.settingsStore, "getUserTimeZoneOverride") ?? null }; },
     getUiPreferences: () => invoke(deps.settingsStore, "getUiPreferences"),
+    getAccessibilityState: () => ({ screenReader: deps.readAccessibilitySupportEnabled?.() === true }),
     setUiPreferences: (raw) => { const ui=normalizeSandUiPreferences(req(raw).preferences); invoke(deps.settingsStore, "setUiPreferences", ui); return invoke(deps.settingsStore, "getUiPreferences"); },
     getCallMediaPreferences: () => invoke(deps.settingsStore, "getCallMediaPreferences"),
     setCallMediaPreferences: (raw) => { const media=normalizeSandCallMediaPreferences(req(raw).preferences); invoke(deps.settingsStore, "setCallMediaPreferences", media); return invoke(deps.settingsStore, "getCallMediaPreferences"); },

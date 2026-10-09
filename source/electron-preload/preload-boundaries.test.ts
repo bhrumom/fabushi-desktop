@@ -20,6 +20,7 @@ import {
   isMainMethod,
 } from "./main-rpc-runtime.js";
 import {
+  createDesktopPreloadBridge,
   encodeAttachmentBytesForNative,
   normalizeCommittedAttachmentNativeResult,
   normalizeStagedAttachmentNativeResult,
@@ -120,6 +121,34 @@ test("main RPC runtime exposes the frozen shared registry", () => {
   assert.equal(MAIN_RPC_METHOD_TABLE.getWindowState.args, "none");
 });
 
+
+test("accessibility preload bridge uses the trusted main RPC and cleans up the live screen-reader subscription", async () => {
+  const handlers = new Map<string, (payload: unknown) => void>();
+  const stopped: string[] = [];
+  const calls: string[] = [];
+  const mainEdge = {
+    async getAccessibilityState() { calls.push("getAccessibilityState"); return { screenReader: true }; },
+    subscribe(subscriptions: Record<string, (payload: unknown) => void>) {
+      const [event, listener] = Object.entries(subscriptions)[0]!;
+      handlers.set(event, listener);
+      return () => stopped.push(event);
+    }
+  };
+  const bridge = createDesktopPreloadBridge({
+    ipc: { invoke: async () => null, sendSync: () => null, send: () => {}, on: () => {}, off: () => {} },
+    webFrame: { getZoomFactor: () => 1 },
+    mainEdge: mainEdge as never,
+    initialState: { experimentSnapshot: {}, themeState: { preference: "system", resolved: "light" }, egressTunnelEnabled: false, webauthnProxyEnabled: false, egressTunnelStatus: null }
+  });
+  assert.deepEqual(await bridge.accessibility.get(), { screenReader: true });
+  const states: unknown[] = [];
+  const stop = bridge.accessibility.onChanged((state: unknown) => states.push(state));
+  handlers.get("accessibility-support-changed")?.({ screenReader: false });
+  assert.deepEqual(states, [{ screenReader: false }]);
+  stop();
+  assert.deepEqual(stopped, ["accessibility-support-changed"]);
+  assert.deepEqual(calls, ["getAccessibilityState"]);
+});
 
 test("attachment preload bridge normalizes native staging and commit contracts", () => {
   assert.equal(encodeAttachmentBytesForNative(new Uint8Array([65, 66, 67])), "QUJD");

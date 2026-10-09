@@ -22,6 +22,7 @@ type ExistingMainRpcCoreDeps = Pick<MainEdgeWiringDeps,
   | "syncHostSettingsToBox"
   | "broadcast"
   | "platform"
+  | "readAccessibilitySupportEnabled"
   | "avatarImages"
   | "attachments"
   | "cursorAccount"
@@ -192,6 +193,8 @@ function createExistingMainRpcCoreDeps(
   );
   const platform = supplied.platform === undefined ? process.platform : supplied.platform;
   if (typeof platform !== "string") throw new TypeError("Missing Electron production adapter port: mainRpc.platform.");
+  const readAccessibilitySupportEnabled = supplied.readAccessibilitySupportEnabled
+    ?? (() => context.native.app.accessibilitySupportEnabled === true);
   return {
     // MainEdgeDeps models these exact shared-object slots as indexable
     // records; the assertions are erased and preserve the SandSettingsStore
@@ -217,6 +220,7 @@ function createExistingMainRpcCoreDeps(
     syncHostSettingsToBox,
     broadcast,
     platform,
+    readAccessibilitySupportEnabled,
   };
 }
 
@@ -242,6 +246,7 @@ function validateMainRpcDeps(deps: MainEdgeWiringDeps): MainEdgeWiringDeps {
   }
   requireFunction(deps.syncHostSettingsToBox, "mainRpc.syncHostSettingsToBox");
   if (typeof deps.platform !== "string") throw new TypeError("Missing Electron production adapter port: mainRpc.platform.");
+  requireFunction(deps.readAccessibilitySupportEnabled, "mainRpc.readAccessibilitySupportEnabled");
   requireObject(deps.ipcMain, "mainRpc.ipcMain");
   requireFunction(deps.ipcMain.handle, "mainRpc.ipcMain.handle");
   requireFunction(deps.ipcMain.removeHandler, "mainRpc.ipcMain.removeHandler");

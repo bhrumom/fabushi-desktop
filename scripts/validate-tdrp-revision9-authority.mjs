@@ -85,6 +85,7 @@ const schema=await readJson('projects/telegram-desktop-rust/contracts/parity-led
 const spec=await read('docs/specs/telegram-desktop-rust-equivalence-migration.md');
 const fbcSourceOfTruth=await read('projects/fabushi-communication-platform/SOURCE_OF_TRUTH.md');
 const tdrpSourceOfTruth=await read('projects/telegram-desktop-rust/SOURCE_OF_TRUTH.md');
+const tdrpStatus=await read('projects/telegram-desktop-rust/STATUS.md');
 const p0Task=await read('projects/fabushi-communication-platform/management/tasks/P0-product-domain-and-telegram-absorption.md');
 const inventoryIndex=await readJson('projects/telegram-desktop-rust/inventory/index.json');
 const rtm=await read('projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md');
@@ -140,6 +141,37 @@ fail(inventoryIndex.inventory?.recursive_non_directory_entries===lock.coverage.r
 fail(inventoryIndex.inventory?.unknown_minimum===lock.coverage.unknown_minimum,'inventory unknown count disagrees with lock');
 fail(inventoryIndex.inventory?.unread_minimum===lock.coverage.unread_minimum,'inventory unread count disagrees with lock');
 fail(inventoryIndex.inventory?.omitted_known===lock.coverage.omitted_known,'inventory omitted count disagrees with lock');
+const liveReadThrough=inventoryIndex.rebaseline?.current_source_read_through;
+const liveFirstUnreadOrder=inventoryIndex.rebaseline?.first_unread_order;
+const liveFirstUnreadPath=inventoryIndex.rebaseline?.first_unread_path;
+const liveUnread=lock.coverage?.unread_minimum;
+const liveUnknown=lock.coverage?.unknown_minimum;
+const liveOmitted=lock.coverage?.omitted_known;
+const comma=value=>Number(value).toLocaleString('en-US');
+const currentMarker=/<!-- TDRP_CURRENT_SUMMARY read-through=([0-9]+) unread=([0-9]+) unknown=([0-9]+) omitted=([0-9]+) first-unread=([0-9]+) path=([^ ]+) -->/g;
+function validateCurrentSummary(label,document) {
+  const first=document.split(/\n/).find(line=>line.startsWith('Live Revision 9 authority'));
+  fail(typeof first==='string',label+' missing live Revision 9 summary');
+  for (const fragment of [
+    authorityCommit, authorityTree,
+    'read-through='+comma(liveReadThrough),
+    'first unread='+comma(liveFirstUnreadOrder)+' '+liveFirstUnreadPath,
+    'unread='+comma(liveUnread), 'unknown='+comma(liveUnknown), 'omitted='+comma(liveOmitted),
+  ]) fail(first.includes(fragment),label+' live summary drift: '+fragment);
+  const markers=[...document.matchAll(currentMarker)];
+  fail(markers.length===1,label+' must contain exactly one TDRP_CURRENT_SUMMARY marker');
+  const marker=markers[0];
+  fail(Number(marker[1])===liveReadThrough,label+' marker read-through drift');
+  fail(Number(marker[2])===liveUnread,label+' marker unread drift');
+  fail(Number(marker[3])===liveUnknown,label+' marker unknown drift');
+  fail(Number(marker[4])===liveOmitted,label+' marker omitted drift');
+  fail(Number(marker[5])===liveFirstUnreadOrder,label+' marker first-unread order drift');
+  fail(marker[6]===liveFirstUnreadPath,label+' marker first-unread path drift');
+}
+validateCurrentSummary('TDRP STATUS',tdrpStatus);
+validateCurrentSummary('TDRP SOURCE_OF_TRUTH',tdrpSourceOfTruth);
+const expectedCoverageNote='Accepted '+authorityCommit+' tree '+authorityTree+'; exact read-through '+comma(liveReadThrough)+'; unknown='+comma(liveUnknown)+', unread='+comma(liveUnread)+', omitted='+comma(liveOmitted)+'.';
+fail(lock.coverage?.note===expectedCoverageNote,'lock coverage live-summary note drift');
 fail(!lock.coverage?.note?.includes('live authority is now telegramdesktop/tdesktop@e1ed57a44e7c14e0cbb91bcf0f7ec3e408786a39'),'lock coverage note still names historical e1ed57a as live authority');
 fail(schema.properties?.spec_revision?.const===9,'ledger schema is not Revision 9');
 fail(ledger.project_id==='TDRP-001' && ledger.spec_revision===9 && ledger.format_version===3,'ledger instance is not Revision 9');

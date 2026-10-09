@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15846,
-    "unread": 9954,
+    "unread": 9943,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,11 +13478,11 @@
     "to_commit": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
     "ahead_by": 10,
     "changed_paths": 25,
-    "source_read_reconciliation": "18 changed blobs inside prior prefix re-read/reconciled; orders 5831-6171 read/decomposed; read-through=6171/16125, unread=9954, unknown=15846, omitted=0.",
-    "source_authority_evidence": "Accepted Telegram authority 65e23ba7137ea4129b6bc1b2616104a1f59495ef / tree 6b616494f3465324e749a04dcd1c9d508657a998; exact-blob census through order 6171; fresh descendant exact-head Actions required.",
-    "current_source_read_through": 6171,
-    "first_unread_order": 6172,
-    "first_unread_path": "Telegram/SourceFiles/ui/empty_userpic.cpp"
+    "source_read_reconciliation": "18 changed blobs inside prior prefix re-read/reconciled; orders 5831-6182 read/decomposed; read-through=6182/16125, unread=9943, unknown=15846, omitted=0.",
+    "source_authority_evidence": "Accepted Telegram authority 65e23ba7137ea4129b6bc1b2616104a1f59495ef / tree 6b616494f3465324e749a04dcd1c9d508657a998; exact-blob census through order 6182; fresh descendant exact-head Actions required.",
+    "current_source_read_through": 6182,
+    "first_unread_order": 6183,
+    "first_unread_path": "Telegram/SourceFiles/ui/item_text_options.cpp"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 69,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 6171,
-    "first_unread_order": 6172,
-    "first_unread_path": "Telegram/SourceFiles/ui/empty_userpic.cpp"
+    "read_through": 6182,
+    "first_unread_order": 6183,
+    "first_unread_path": "Telegram/SourceFiles/ui/item_text_options.cpp"
   },
   "historical_exact_head_evidence": {
     "status": "historical-only",
