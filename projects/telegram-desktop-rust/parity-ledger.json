@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16123,
     "unknown": 15844,
-    "unread": 10351,
+    "unread": 10350,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13493,11 +13493,11 @@
       "Telegram/SourceFiles/ui/chat/chat.style",
       "Telegram/SourceFiles/wallet/wallet_content.cpp"
     ],
-    "source_read_reconciliation": "Accepted-tree blob order exact through 5,711/16,123; unknown 15,844, unread 10,412, omitted 0. Storage transfer 5702-5711 is read/decomposed and mapped-open to canonical attachment/file-transfer owners; first unread 5712 storage/localimageloader.cpp.",
+    "source_read_reconciliation": "Accepted-tree blob order exact through 5,773/16,123; unknown 15,844, unread 10,350, omitted 0. Orders 5,772-5,773 cover the Windows console-lock professional-test precondition, privacy diagnostics, and public state/gate contract; first unread 5,774 test/test_corner_patch.cpp.",
     "source_authority_evidence": "Deterministic ordering is derived from non-directory/blob rank in accepted recursive tree 5030985204963cbbd362ced7412d231b04ebd0cc. Previous 5623-5642 shard ranges were replaced, not retained as authority.",
-    "current_source_read_through": 5711,
-    "first_unread_order": 5712,
-    "first_unread_path": "Telegram/SourceFiles/storage/localimageloader.cpp"
+    "current_source_read_through": 5773,
+    "first_unread_order": 5774,
+    "first_unread_path": "Telegram/SourceFiles/test/test_corner_patch.cpp"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13506,6 +13506,6 @@
     "development_only_non_applicable": 66,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 5771
+    "read_through": 5773
   }
 }

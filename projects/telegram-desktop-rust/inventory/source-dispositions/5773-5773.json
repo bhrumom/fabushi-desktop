@@ -1,0 +1,50 @@
+{
+  "format_version": 2,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+    "tree": "5030985204963cbbd362ced7412d231b04ebd0cc"
+  },
+  "range": {
+    "first_order": 5773,
+    "last_order": 5773,
+    "entries": 1
+  },
+  "rows": [
+    {
+      "recursive_order": 5773,
+      "source_path": "Telegram/SourceFiles/test/test_console_lock.h",
+      "source_blob_sha": "02a5d6e8ce07d014ebd7577b37f5b32e8d1bbbe9",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Public state and gate contract for the professional Windows console-lock test precondition: four-state classification, fresh non-cached reads, privacy-safe diagnostics, and gating only on a positively locked state.",
+      "upstream_owner": "tdesktop task-test harness / console-lock interface contract",
+      "state_machine": "fresh read request -> NotApplicable|Unlocked|Locked|Unknown -> locked() iff Locked -> text diagnostics -> skip gate only when Locked",
+      "side_effects": "Interface/test-evidence contract only; no product mutation, no clipboard/content capture, no credential access.",
+      "failure_cases": "Unknown API/metadata state must not be promoted to unlocked; NotApplicable must not gate; legacy Windows reversed flags remain unknown at implementation boundary; diagnostics must not expose user/domain/window-station names.",
+      "ui_disposition": "TEST/EVIDENCE ONLY. No Telegram-derived production UI. Reuse Fabushi professional cross-platform test/evidence harness.",
+      "fabushi_canonical_owner": "Canonical cross-platform desktop test precondition/privacy evidence harness",
+      "fabushi_target": "MAPPED OPEN.",
+      "platform_differences": "Windows supplies WTS session metadata through the implementation. Non-Windows is explicit NotApplicable. The public contract must preserve Unknown and never infer unlock from inability to read.",
+      "production_evidence": "Exact accepted header blob read; equivalent Fabushi test-harness state/gate implementation and exact-head evidence remain open.",
+      "test_evidence": "Four-state fixtures; locked() truth table; ConsoleLockGate empty for Unknown/NotApplicable/Unlocked; diagnostics privacy; fresh-read/no-cache behavior; cross-platform N/A.",
+      "disposition": "mapped-open-test-harness",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_evidence": [],
+      "reachability_status": "accepted-tree exact blob responsibility proven; professional test-harness closure open",
+      "license_and_provenance": "tdesktop provenance retained.",
+      "notes": "Reading closes no unknown. This header is the contract companion to order 5,772 implementation and does not create a separate product capability.",
+      "consumer_symbol": "ConsoleLockState / ConsoleLockReading / ConsoleLockText / ConsoleLockGate",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-required",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "verified_blob_sha": "02a5d6e8ce07d014ebd7577b37f5b32e8d1bbbe9",
+        "file_type": "blob",
+        "recursive_order": 5773
+      }
+    }
+  ]
+}
