@@ -13478,11 +13478,11 @@
     "to_commit": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
     "ahead_by": 10,
     "changed_paths": 25,
-    "source_read_reconciliation": "18 changed blobs inside prior prefix re-read/reconciled; orders 5831-6084 read/decomposed; read-through=6084, unread=10041, unknown=15846, omitted=0.",
-    "source_authority_evidence": "55dee111 predecessor source-authority job 114050616674 succeeded with artifact 11648646136; descendant exact-head Actions required.",
-    "current_source_read_through": 6084,
-    "first_unread_order": 6085,
-    "first_unread_path": "Telegram/SourceFiles/ui/effects/drifting_particles.cpp"
+    "source_read_reconciliation": "18 changed blobs inside prior prefix re-read/reconciled; orders 5831-6165 read/decomposed; read-through=6165/16125, unread=9960, unknown=15846, omitted=0.",
+    "source_authority_evidence": "Current accepted Telegram authority 65e23ba7137ea4129b6bc1b2616104a1f59495ef / tree 6b616494f3465324e749a04dcd1c9d508657a998; descendant exact-head Actions required.",
+    "current_source_read_through": 6165,
+    "first_unread_order": 6166,
+    "first_unread_path": "Telegram/SourceFiles/ui/effects/unique_gift_message_bubble.cpp"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,7 +13491,9 @@
     "development_only_non_applicable": 69,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 6084
+    "read_through": 6165,
+    "first_unread_order": 6166,
+    "first_unread_path": "Telegram/SourceFiles/ui/effects/unique_gift_message_bubble.cpp"
   },
   "historical_exact_head_evidence": {
     "status": "historical-only",
