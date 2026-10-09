@@ -1468,7 +1468,7 @@
       "referencePath": "frontend/src/recovered/features/conversation/workspace/model.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "823e18733468e7bbf004ab04e14b0f0762f0434d",
+      "targetBlobSha": "eb9b4499278ac4b7c3f52ad6c872a6c9f2c2c2a7",
       "behavioralEvidence": [
         "frontend/src/recovered/features/conversation/workspace/model.ts",
         "frontend/src/recovered/features/conversation/workspace/submission.ts",
