@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15846,
-    "unread_minimum": 9960,
+    "unread_minimum": 9954,
     "omitted_known": 0,
-    "note": "Live 65e23ba recursive census remains 16,125; exact read-through 6,165; unknown 15,846, unread 9,960, omitted 0. Fresh current-head Actions remain required."
+    "note": "Live 65e23ba recursive census remains 16,125; exact read-through 6,171; unknown 15,846, unread 9,954, omitted 0. Fresh current-head Actions remain required."
   },
   "latest_recursive_evidence": {
     "run_id": 37998467124,
@@ -46,7 +46,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live authority exact through deterministic blob order 6,165; unread_minimum is 9,960; unknown remains 15,846; omitted remains 0. Fresh exact-head source-authority evidence is required.",
+  "note": "Live authority exact through deterministic blob order 6,171; unread_minimum is 9,954; unknown remains 15,846; omitted remains 0. Fresh exact-head source-authority evidence is required.",
   "rebaseline": {
     "from_commit": "b0d1fe5e08c963402b8b71648c70a2bf68e6fab2",
     "to_commit": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
@@ -72,10 +72,10 @@
       5801,
       5803
     ],
-    "current_source_read_through": 6165,
-    "first_unread_order": 6166,
-    "first_unread_path": "Telegram/SourceFiles/ui/effects/unique_gift_message_bubble.cpp",
-    "current_head_source_authority_evidence": "55dee111 source-authority job 114050616674 succeeded with artifact 11648646136; descendant exact-head Actions are required."
+    "current_source_read_through": 6171,
+    "first_unread_order": 6172,
+    "first_unread_path": "Telegram/SourceFiles/ui/empty_userpic.cpp",
+    "current_head_source_authority_evidence": "Accepted source exact-blob census through order 6171; fresh descendant exact-head Actions required."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -84,6 +84,6 @@
     "development_only_non_applicable": 69,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 6165
+    "read_through": 6171
   }
 }
