@@ -1487,7 +1487,7 @@
       ],
       "testEvidence": [
         "source/electron-main/foundations.test.ts",
-        ".github/workflows/desktop-chat-parity.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
       "rationale": "Preserves the frozen Grok attachment staging contract while adapting the shipping Electron main-process owner to use the explicit node:crypto randomUUID authority instead of an implicit global crypto binding. The attachment edge still validates names and byte limits, creates the staging directory, writes bytes to the production staging root, emits structured edge failures, and preserves commit/discard lifecycle semantics. The focused filesystem contract exercises the default Node UUID path, exact staged bytes, and cleanup; required exact-head Electron and Rust workflows provide integration evidence. This is a production-runtime compatibility adaptation, not a second attachment owner."
