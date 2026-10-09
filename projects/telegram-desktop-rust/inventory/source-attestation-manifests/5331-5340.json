@@ -1,0 +1,67 @@
+{
+  "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+  "start": 5331,
+  "end": 5340,
+  "entries": [
+    {
+      "order": 5331,
+      "path": "Telegram/SourceFiles/payments/payments_checkout_process.h",
+      "blob": "fe10b2c0fab4d91dd70195d57da6602f4bd6e1ee",
+      "consumer_symbol": "Payments::CheckoutProcess contract"
+    },
+    {
+      "order": 5332,
+      "path": "Telegram/SourceFiles/payments/payments_form.cpp",
+      "blob": "50b22888d6a4c7f92a5158d9bcf1922528690d41",
+      "consumer_symbol": "Payments::Form"
+    },
+    {
+      "order": 5333,
+      "path": "Telegram/SourceFiles/payments/payments_form.h",
+      "blob": "1fc35c61a7734291c59c5b1e503a8591ed59e582",
+      "consumer_symbol": "Payments::Form contract"
+    },
+    {
+      "order": 5334,
+      "path": "Telegram/SourceFiles/payments/payments_non_panel_process.cpp",
+      "blob": "e9c8cf62562e68ae8574acff63060b3056551baf",
+      "consumer_symbol": "Payments::ProcessCreditsPayment / ProcessCreditsReceipt"
+    },
+    {
+      "order": 5335,
+      "path": "Telegram/SourceFiles/payments/payments_non_panel_process.h",
+      "blob": "3b323d37e976524b73320af11cccbf4adee74b97",
+      "consumer_symbol": "Payments non-panel contract"
+    },
+    {
+      "order": 5336,
+      "path": "Telegram/SourceFiles/payments/payments_reaction_process.cpp",
+      "blob": "d9a2cd5408dac1521af44601e9a0807d7e6fcc2b",
+      "consumer_symbol": "Payments::TryAddingPaidReaction / ShowPaidReactionDetails"
+    },
+    {
+      "order": 5337,
+      "path": "Telegram/SourceFiles/payments/payments_reaction_process.h",
+      "blob": "1071b0dfbbba814266c31527a8296fdaaa051b43",
+      "consumer_symbol": "Payments paid-reaction contract"
+    },
+    {
+      "order": 5338,
+      "path": "Telegram/SourceFiles/payments/smartglocal/smartglocal_api_client.cpp",
+      "blob": "0f577374e84bebc53ce8b001bd7713e5b8f97c1b",
+      "consumer_symbol": "SmartGlocal::APIClient"
+    },
+    {
+      "order": 5339,
+      "path": "Telegram/SourceFiles/payments/smartglocal/smartglocal_api_client.h",
+      "blob": "3166b386dae109a6b216e2fd7085176ff15258f8",
+      "consumer_symbol": "SmartGlocal::APIClient contract"
+    },
+    {
+      "order": 5340,
+      "path": "Telegram/SourceFiles/payments/smartglocal/smartglocal_callbacks.h",
+      "blob": "53cecceb2d5bfd91b2579ab3b75131aea4563a6d",
+      "consumer_symbol": "SmartGlocal::TokenCompletionCallback"
+    }
+  ]
+}
