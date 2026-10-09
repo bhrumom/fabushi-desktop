@@ -1,0 +1,67 @@
+{
+  "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+  "start": 5151,
+  "end": 5160,
+  "entries": [
+    {
+      "order": 5151,
+      "path": "Telegram/SourceFiles/media/view/media_view_group_thumbs.h",
+      "blob": "608fd88a333f91b00c7f871e469a428e73cf47bf",
+      "consumer_symbol": "Media::View::GroupThumbs"
+    },
+    {
+      "order": 5152,
+      "path": "Telegram/SourceFiles/media/view/media_view_metal_texture.h",
+      "blob": "b637e36eb41309ba5dc76fae020f79bbd06d64ce",
+      "consumer_symbol": "Media::View::MetalTextureCache"
+    },
+    {
+      "order": 5153,
+      "path": "Telegram/SourceFiles/media/view/media_view_metal_texture.mm",
+      "blob": "f488cd6eaa6002c8b97d41702838ada742039255",
+      "consumer_symbol": "Media::View::MetalTextureCache::createTexturesFromPixelBuffer"
+    },
+    {
+      "order": 5154,
+      "path": "Telegram/SourceFiles/media/view/media_view_open_common.cpp",
+      "blob": "de40d8e3074efd0d00ab23a84eb123156eb9a6e6",
+      "consumer_symbol": "Media::View::ExtractVideoTimestamp/StripQuoteEntities"
+    },
+    {
+      "order": 5155,
+      "path": "Telegram/SourceFiles/media/view/media_view_open_common.h",
+      "blob": "0676cc9cd19b6a74d66295afcba733d5329103ae",
+      "consumer_symbol": "Media::View::OpenRequest"
+    },
+    {
+      "order": 5156,
+      "path": "Telegram/SourceFiles/media/view/media_view_overlay_opengl.cpp",
+      "blob": "2f80f30f81ee57b44fc4caee841e0c76505639ab",
+      "consumer_symbol": "Media::View::OverlayWidget::RendererGL"
+    },
+    {
+      "order": 5157,
+      "path": "Telegram/SourceFiles/media/view/media_view_overlay_opengl.h",
+      "blob": "680e4448c4cc60f453c80906c55ced4a9f21fe80",
+      "consumer_symbol": "Media::View::OverlayWidget::RendererGL"
+    },
+    {
+      "order": 5158,
+      "path": "Telegram/SourceFiles/media/view/media_view_overlay_raster.cpp",
+      "blob": "96191417734cdb34355dfd79f6e19359bb28c94c",
+      "consumer_symbol": "Media::View::OverlayWidget::RendererSW"
+    },
+    {
+      "order": 5159,
+      "path": "Telegram/SourceFiles/media/view/media_view_overlay_raster.h",
+      "blob": "7a75930cd33226596ea34cd225c6211fa5cec6e6",
+      "consumer_symbol": "Media::View::OverlayWidget::RendererSW"
+    },
+    {
+      "order": 5160,
+      "path": "Telegram/SourceFiles/media/view/media_view_overlay_renderer.h",
+      "blob": "a77a33ef876f896b302ad65420bcc62c64386836",
+      "consumer_symbol": "Media::View::OverlayWidget::Renderer"
+    }
+  ]
+}
