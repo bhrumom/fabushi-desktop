@@ -67,7 +67,7 @@
       "referencePath": "frontend/src/production/ProductionRenderer.tsx",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "cdb9e3f509f0e0edb601e3d3457dcd68f53645b4",
+      "targetBlobSha": "b741e2ddfdca7defad7167f1311e624216d612cf",
       "behavioralEvidence": [
         "frontend/src/production/ProductionRenderer.tsx",
         "frontend/src/recovered/features/account/session/sign-in-status.tsx",
@@ -890,7 +890,7 @@
       "referencePath": "source/electron-main/main-edge.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "86699d3cc73e5cbdac56034ad1f9318c9c0b7ea3",
+      "targetBlobSha": "a78247bfa5ba11f9fbb24dc5ef06b9ac823348fc",
       "behavioralEvidence": [
         "source/electron-main/main-edge.ts",
         "source/shared/node/settings/sand-settings-store.ts",
@@ -1075,7 +1075,7 @@
       "referencePath": "source/electron-preload/preload.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "08815a4808436d6d7ed4e0a0bb3c179c9556b2d2",
+      "targetBlobSha": "6aef532983d7c4ceff96efc054225c42e264ede1",
       "behavioralEvidence": [
         "source/electron-preload/preload.ts",
         "source/electron-preload/runtime/primary.ts",
@@ -1481,7 +1481,7 @@
       "referencePath": "source/electron-main/attachments/attachments.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "fefb411467f153b98aa5b90153e4fd2aa11ee912",
+      "targetBlobSha": "2c1360cc8a84e1b856f677f262b0c579fbce85df",
       "behavioralEvidence": [
         "source/electron-main/attachments/attachments.ts"
       ],
@@ -1491,6 +1491,29 @@
         ".github/workflows/rust-desktop-runtime.yml"
       ],
       "rationale": "Preserves the frozen Grok attachment staging contract while adapting the shipping Electron main-process owner to use the explicit node:crypto randomUUID authority instead of an implicit global crypto binding. The attachment edge still validates names and byte limits, creates the staging directory, writes bytes to the production staging root, emits structured edge failures, and preserves commit/discard lifecycle semantics. The focused filesystem contract exercises the default Node UUID path, exact staged bytes, and cleanup; required exact-head Electron and Rust workflows provide integration evidence. This is a production-runtime compatibility adaptation, not a second attachment owner."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/conversation/workspace/desktop.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "be72d2df7bbd98261e730bc4e782d5d2f6245e35",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/conversation/workspace/desktop.ts",
+        "frontend/src/production/ProductionRenderer.tsx",
+        "frontend/src/recovered/contracts/desktop-bridge.ts",
+        "source/electron-preload/preload.ts",
+        "source/electron-main/main-edge.ts",
+        "source/electron-main/attachments/attachments.ts",
+        "source/host/src/extensions/attachments/attachments_service.rs"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        "source/host/tests/attachments_service_contract.rs",
+        "desktop/e2e/mahayana-agent-workbench.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "The recovered composer staging helper remains structurally derived from the frozen Grok workspace module, but shipping Human conversations now pass an explicit typed human-conversation ownership scope when committing staged attachments. That scope is carried through the existing DesktopBridge, preload and Electron main attachment edge into the Host Human message outbox, so Human attachment durability no longer depends on an active Agent while staging validation, fail-closed owner checks, full-batch retry preservation and the canonical Session message-resource upload path remain intact. This is a semantic TypeScript port rather than a byte-identical reference copy, and it introduces no parallel composer or attachment runtime."
     }
   ]
 }
