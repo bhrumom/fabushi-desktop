@@ -518,3 +518,11 @@ Dossier: `projects/telegram-desktop-rust/dossiers/settings-builder-credits-5623-
 | TDRP-R9-POWER-5642 | high | OS battery state is an adapter input; one canonical effective power policy controls expensive features and save/cancel | Performance/Power + platform battery adapter | mapped-open |
 
 Dossier: `projects/telegram-desktop-rust/dossiers/settings-experimental-power-5633-5642-complete-read.md`.
+
+## Deterministic source-order correction at 5,623 and live read-through 5,653
+
+Accepted recursive tree `5030985204963cbbd362ced7412d231b04ebd0cc` proves `Telegram/SourceFiles/settings/settings.style@8b9e56dd…` is blob order **5,623**, between `sections/settings_websites.h` (5,622) and `settings_builder.cpp` (5,624). The earlier 5,623–5,642 labels were therefore off by one and are superseded. Their shard/attestation artifacts are replaced rather than treated as parallel authority.
+
+The corrected contiguous batches are 5,623–5,633 (settings.style through Credits/Gift graphics), 5,634–5,643 (Experimental/FAQ/Settings shell/navigation/Power Saving implementation), and 5,644–5,653 (Power Saving interface, privacy controllers, recent Settings search, scale preview, Settings search/type). Current accounting is **5,653 / 16,123 read**, **10,470 unread**, **15,844 unknown**, **0 omitted**. Reading alone closes no unknown. First unread is 5,654 `Telegram/SourceFiles/statistics/chart_lines_filter_controller.cpp@40c3b612…`.
+
+Traceability requirement: all post-5,622 source rows use accepted-tree blob rank and exact blob SHA; stale superseded shard ranges are not valid evidence.

@@ -266,9 +266,9 @@
     "root_source_entries_total": 6651,
     "recursive_source_entries_total": 16123,
     "unknown_minimum": 15844,
-    "unread_minimum": 10481,
+    "unread_minimum": 10470,
     "omitted_known": 0,
-    "note": "Accepted 863cf10d tree 50309852. Read-through 5,642; unknown=15,844, unread=10,481, omitted=0."
+    "note": "Accepted 863cf10d tree 50309852. Deterministic blob order corrected at settings/settings.style order 5,623. Read-through 5,653; unknown=15,844, unread=10,470, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -282,7 +282,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Live upstream 863cf10d; read-through 5642/16123. unknown/unread closure remains open; exact-head production/release evidence required."
+    "note": "Live upstream 863cf10d; exact deterministic blob read-through 5653/16123 after order correction. unknown/unread closure remains open; exact-head production/release evidence required."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",
@@ -634,6 +634,6 @@
     "development_only_non_applicable": 66,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 5642
+    "read_through": 5653
   }
 }
