@@ -235,6 +235,7 @@ jobs:
           node --test
           --test-name-pattern="Windows updater handoff|update gates"
           desktop/.tmp-grok-electron/source/electron-main/foundations.test.js
+          desktop/.tmp-grok-electron/source/electron-main/analytics/xlsx-export.test.js
 
   platform-worker:
     runs-on: ubuntu-24.04
