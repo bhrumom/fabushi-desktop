@@ -889,6 +889,7 @@ const sourceDispositionSummary={
   omitted:sourceDispositions.rows.filter(row=>row.omitted===true).length
 };
 for (const [label,summary] of [
+  ['upstream lock',lock.source_disposition_evidence],
   ['inventory index',inventoryIndex.source_dispositions],
   ['parity ledger',ledger.source_dispositions]
 ]) {
@@ -900,6 +901,7 @@ for (const [label,summary] of [
 }
 for (const key of ['deterministic_prefix_closed','development_only_non_applicable']) {
   fail(inventoryIndex.source_dispositions?.[key]===ledger.source_dispositions?.[key],'source-dispositions summary drift for '+key);
+  fail(lock.source_disposition_evidence?.[key]===inventoryIndex.source_dispositions?.[key],'upstream lock source-dispositions summary drift for '+key);
 }
 
 const reachabilityDir=path.join(root,'artifacts/tdrp-authority');

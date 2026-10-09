@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15988,
-    "unread_minimum": 14319,
+    "unread_minimum": 14218,
     "omitted_known": 0,
-    "note": "Live 22b352e recursive census is 16,120. 1,801 exact entries are read-complete; 132 are explicitly unknown-closed; unknown 15,988, unread 14,319, omitted 0. Orders 1701-1801 are consumer-traced and responsibility-decomposed with implementation gates open."
+    "note": "Live 22b352e recursive census is 16,120. 1,902 exact entries are read-complete; 132 are explicitly unknown-closed; unknown 15,988, unread 14,218, omitted 0. Orders 1802-1902 are consumer-traced and responsibility-decomposed with implementation gates open."
   },
   "latest_recursive_evidence": {
     "run_id": 37862812304,
@@ -47,10 +47,56 @@
       "source-consumer-trace-1301-1400.txt",
       "source-binary-evidence-1401-1500.txt",
       "source-consumer-reachability-1401-1500.txt",
-      "source-consumer-trace-1401-1500.txt"
+      "source-consumer-trace-1401-1500.txt",
+      "source-binary-evidence-1501-1600.txt",
+      "source-consumer-reachability-1501-1600.txt",
+      "source-consumer-trace-1501-1600.txt",
+      "source-binary-evidence-1601-1700.txt",
+      "source-consumer-reachability-1601-1700.txt",
+      "source-consumer-trace-1601-1700.txt",
+      "source-binary-evidence-1701-1800.txt",
+      "source-consumer-reachability-1701-1800.txt",
+      "source-consumer-trace-1701-1800.txt",
+      "source-binary-evidence-1801-1900.txt",
+      "source-consumer-reachability-1801-1900.txt",
+      "source-consumer-trace-1801-1900.txt",
+      "source-binary-evidence-1901-2000.txt",
+      "source-consumer-reachability-1901-2000.txt",
+      "source-consumer-trace-1901-2000.txt",
+      "source-binary-evidence-2001-2100.txt",
+      "source-consumer-reachability-2001-2100.txt",
+      "source-consumer-trace-2001-2100.txt",
+      "source-binary-evidence-2101-2200.txt",
+      "source-consumer-reachability-2101-2200.txt",
+      "source-consumer-trace-2101-2200.txt",
+      "source-binary-evidence-2201-2300.txt",
+      "source-consumer-reachability-2201-2300.txt",
+      "source-consumer-trace-2201-2300.txt",
+      "source-binary-evidence-2301-2400.txt",
+      "source-consumer-reachability-2301-2400.txt",
+      "source-consumer-trace-2301-2400.txt",
+      "source-binary-evidence-2401-2500.txt",
+      "source-consumer-reachability-2401-2500.txt",
+      "source-consumer-trace-2401-2500.txt",
+      "source-binary-evidence-2501-2600.txt",
+      "source-consumer-reachability-2501-2600.txt",
+      "source-consumer-trace-2501-2600.txt",
+      "source-binary-evidence-2601-2700.txt",
+      "source-consumer-reachability-2601-2700.txt",
+      "source-consumer-trace-2601-2700.txt",
+      "source-binary-evidence-2701-2800.txt",
+      "source-consumer-reachability-2701-2800.txt",
+      "source-consumer-trace-2701-2800.txt",
+      "source-binary-evidence-2801-2900.txt",
+      "source-consumer-reachability-2801-2900.txt",
+      "source-consumer-trace-2801-2900.txt",
+      "source-binary-evidence-2901-3000.txt",
+      "source-consumer-reachability-2901-3000.txt",
+      "source-consumer-trace-2901-3000.txt"
     ],
-    "evidence_status": "exact-current-head-source-authority-success",
-    "upstream_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db"
+    "evidence_status": "exact-parent-source-authority-success-reused-for-source-read",
+    "upstream_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db",
+    "note": "Artifact 11587610040 is exact accepted-tree source evidence generated at parent HEAD 311b3e5a33b248039a646a1aa1720c82be8e112d; a new same-head Source authority run is required after this ledger commit before current acceptance."
   },
   "closure_rules": {
     "executable_runner": "github-actions",
@@ -60,7 +106,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live 22b352e authority is exact through order 1,801. unread_minimum is 14,319, unknown remains 15,988, omitted remains 0. Orders 1701-1801 are mapped-open product responsibilities; read-through does not imply implementation verification.",
+  "note": "Live 22b352e authority is exact through order 1,902. unread_minimum is 14,218, unknown remains 15,988, omitted remains 0. Orders 1802-1902 are mapped-open product responsibilities; read-through does not imply implementation verification.",
   "rebaseline": {
     "from_commit": "6ec5014a92c4580841a043c440d65e8fc605ff78",
     "to_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db",
@@ -72,7 +118,7 @@
       "Telegram/SourceFiles/wallet/wallet_ton_connect.cpp",
       "Telegram/SourceFiles/wallet/wallet_ton_connect.h"
     ],
-    "current_head_source_authority_evidence": "run 37862812304 job 113602673869 artifact 11587610040 @ 311b3e5a33b248039a646a1aa1720c82be8e112d"
+    "current_head_source_authority_evidence": "Parent source-read evidence: run 37862812304 job 113602673869 artifact 11587610040 @ 311b3e5a33b248039a646a1aa1720c82be8e112d; same-head Source authority must be reacquired after this ledger commit."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -81,6 +127,6 @@
     "development_only_non_applicable": 66,
     "unknown_closed": 132,
     "omitted": 0,
-    "read_through": 1801
+    "read_through": 1902
   }
 }
