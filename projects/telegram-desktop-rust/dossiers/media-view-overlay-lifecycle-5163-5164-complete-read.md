@@ -30,3 +30,7 @@ Persistence, call interruption, speed/quality policy, system media controls, PiP
 
 ## Accounting
 After the exact-source read, deterministic read-through is 5,164/16,120; unread is 10,956; unknown remains 15,841; omitted remains 0. `baseline_ready=false` and `acceptance.accepted=false`.
+
+## Production follow-up on canonical MediaViewer
+
+The existing source-neutral MediaViewer now additionally persists user volume/mute preferences and a resumable playback position keyed by a deterministic hash of the source identity rather than storing the raw source path in the position key. Metadata load restores valid state; source replacement, unmount and pause persist it; time updates are bounded to one write per second; completion removes the resumable position. Storage access is fail-soft so unavailable/corrupt local storage cannot break playback. This is covered by `CONTRACT-TDRP-MEDIAVIEW-PLAYBACK-PERSISTENCE-001` and still does not close the broader mapped responsibilities in this dossier.
