@@ -85,3 +85,7 @@ Accepted upstream remains `telegramdesktop/tdesktop@863cf10d9f34fb0b1b35b35da1bd
 ### Read-through 5614–5616
 
 Premium feature order, entitlement, subscription options/ref attribution and purchase routing map to canonical Entitlement/Subscription + Wallet/Payments/Commerce + Settings owners; no Telegram Premium runtime/UI is introduced.
+
+### Read-through 5617–5622
+
+Privacy/Security composition, editable keyboard shortcuts, and server-backed Website/Bot authorization sessions are exact-blob read-complete and mapped-open to existing canonical Account Security/Privacy, Authorization, Command Registry, Bot/Blocked-Peer, Payments/Retention and Settings owners. Exact authorization hash, account/session fencing, destructive confirmation/retry/idempotency and keyboard/a11y behavior remain production gates. Accounting: read-through 5,622; unread 10,501; unknown 15,844; omitted 0. First unread: 5623 `settings/settings_builder.cpp`.

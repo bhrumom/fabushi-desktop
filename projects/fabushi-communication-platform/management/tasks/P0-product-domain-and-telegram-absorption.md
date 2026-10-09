@@ -119,3 +119,7 @@ Fail-closed Revision 9 validation rejected the transient incorrect 5608 path and
 ## Live deterministic source batch 5614–5616
 
 Premium entitlement/subscription/commerce is exact-source read-complete and mapped-open. Existing canonical Entitlement/Subscription, Wallet/Payments/Commerce, Settings/Identity and design-system owners must absorb it. Purchase/ref routing requires invalid-route fail-closed and idempotent cancel/failure/settlement/account-switch/reload/restart reconciliation. Accounting: 5,616/16,123 read, 10,507 unread, 15,844 unknown, 0 omitted. Next: 5617 `settings_privacy_security.cpp`.
+
+### Read-through 5617–5622
+
+Privacy/Security composition, editable keyboard shortcuts, and server-backed Website/Bot authorization sessions are exact-blob read-complete and mapped-open to existing canonical Account Security/Privacy, Authorization, Command Registry, Bot/Blocked-Peer, Payments/Retention and Settings owners. Exact authorization hash, account/session fencing, destructive confirmation/retry/idempotency and keyboard/a11y behavior remain production gates. Accounting: read-through 5,622; unread 10,501; unknown 15,844; omitted 0. First unread: 5623 `settings/settings_builder.cpp`.

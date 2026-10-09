@@ -1,0 +1,43 @@
+{
+  "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+  "start": 5617,
+  "end": 5622,
+  "entries": [
+    {
+      "order": 5617,
+      "path": "Telegram/SourceFiles/settings/sections/settings_privacy_security.cpp",
+      "blob": "b5c5ec4a2322ab43322778a62ebb1102cbf6f913",
+      "consumer_symbol": "settings_privacy_security.cpp"
+    },
+    {
+      "order": 5618,
+      "path": "Telegram/SourceFiles/settings/sections/settings_privacy_security.h",
+      "blob": "c0c8d43f94044cf773ad4c0b8d47a461dc9aed61",
+      "consumer_symbol": "settings_privacy_security.h"
+    },
+    {
+      "order": 5619,
+      "path": "Telegram/SourceFiles/settings/sections/settings_shortcuts.cpp",
+      "blob": "fb7e8c1245da8a28623b3ee78c79c136518387d0",
+      "consumer_symbol": "settings_shortcuts.cpp"
+    },
+    {
+      "order": 5620,
+      "path": "Telegram/SourceFiles/settings/sections/settings_shortcuts.h",
+      "blob": "9740e0a5abed4e0507a034a0ad18806f0fea1105",
+      "consumer_symbol": "settings_shortcuts.h"
+    },
+    {
+      "order": 5621,
+      "path": "Telegram/SourceFiles/settings/sections/settings_websites.cpp",
+      "blob": "0d7dced4529eba860b2cf75933b452cff99b981b",
+      "consumer_symbol": "settings_websites.cpp"
+    },
+    {
+      "order": 5622,
+      "path": "Telegram/SourceFiles/settings/sections/settings_websites.h",
+      "blob": "1258765db969fd9c2683c73d56d47b9d69c66f13",
+      "consumer_symbol": "settings_websites.h"
+    }
+  ]
+}

@@ -488,3 +488,13 @@ Wallet background `MouseButtonPress` is swallowed while the top information box 
 | TDRP-R9-PREMIUM-ENTITLEMENT-COMMERCE-5614-5616 | ORA-TDRP-PREMIUM-5614 | INV-PREMIUM-ENTITLEMENT-ACCOUNT-001; INV-PREMIUM-PURCHASE-ROUTE-001; INV-PREMIUM-REF-ATTRIBUTION-001; INV-PREMIUM-SETTLEMENT-RECONCILE-001; INV-PREMIUM-UI-DERIVED-001 | Canonical Entitlement/Subscription + Wallet/Payments/Commerce + Settings + design system | unit + service/commerce contract + invalid-route fail-closed + duplicate/idempotency + cancel/failure/settlement/account-switch/reload/restart + currency/option refresh + keyboard/focus/a11y/light-dark/responsive/reduced-motion + signed packaged acceptance | mapped-open |
 
 Reading grants source/traceability credit only. Dossier: `projects/telegram-desktop-rust/dossiers/settings-premium-5614-5616-complete-read.md`.
+
+## TDRP Privacy/Security + Shortcuts + Websites 5617–5622
+
+| requirement_id | risk | invariant | production owner | verdict |
+| --- | --- | --- | --- | --- |
+| TDRP-R9-PRIVACY-SECURITY-5617-5618 | critical | Settings only routes exact-account canonical security/privacy state; destructive clear/session/TTL actions require fresh scope and fail closed | Account Security/Privacy + Authorization + Retention + Payments | mapped-open |
+| TDRP-R9-SHORTCUTS-5619-5620 | high | one canonical command registry owns bindings; recording/collision/reset cannot leak focus or create duplicate command truth | Command/Shortcut Registry + Settings | mapped-open |
+| TDRP-R9-WEB-AUTH-5621-5622 | critical | terminate-one targets exact server authorization hash; terminate-all/block coupling reconciles once under exact account | Account Authorization + Bot permissions + Blocked Peers | mapped-open |
+
+Dossier: `projects/telegram-desktop-rust/dossiers/settings-privacy-shortcuts-websites-5617-5622-complete-read.md`.

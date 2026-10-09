@@ -262,3 +262,7 @@ Revision 9 fail-closed validation caught a transient deterministic-order mistake
 ## Revision 9 deterministic source batch 5614–5616 — Premium entitlement/commerce
 
 Exact blobs 5614 `settings_premium.cpp@60ac3cbb…`, 5615 `settings_premium.h@894e07c3…`, 5616 `settings_premium.style@4949348b…` are read/decomposed. Applicable contracts map to canonical account entitlement/subscription, commerce/payment routing, Settings and design-system owners. Purchase activation must be account-fenced, idempotent, cancel/failure safe and reconciled after settlement/reload/restart; invalid external routes fail closed. No Telegram Premium runtime or UI family may be introduced. Accounting: read-through **5,616**, unread **10,507**, unknown **15,844**, omitted **0**.
+
+### Read-through 5617–5622
+
+Privacy/Security composition, editable keyboard shortcuts, and server-backed Website/Bot authorization sessions are exact-blob read-complete and mapped-open to existing canonical Account Security/Privacy, Authorization, Command Registry, Bot/Blocked-Peer, Payments/Retention and Settings owners. Exact authorization hash, account/session fencing, destructive confirmation/retry/idempotency and keyboard/a11y behavior remain production gates. Accounting: read-through 5,622; unread 10,501; unknown 15,844; omitted 0. First unread: 5623 `settings/settings_builder.cpp`.
