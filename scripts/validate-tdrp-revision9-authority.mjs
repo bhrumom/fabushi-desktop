@@ -162,6 +162,100 @@ for (const acquisition of acquisitionInventory.immutable_commit_pin_occurrences 
   fail(raw.includes(acquisition.repository),'acquisition repository missing at accepted upstream: '+acquisition.id);
   fail(raw.includes(acquisition.commit),'acquisition commit missing at accepted upstream: '+acquisition.id);
 }
+const actionResolution=acquisitionInventory.github_action_ref_resolutions;
+fail(actionResolution?.accepted_upstream===lock.upstream.commit,'GitHub Action resolver upstream authority drift');
+fail(Array.isArray(actionResolution?.resolutions),'GitHub Action resolver occurrences missing');
+const mutableActionResolutions=actionResolution.resolutions.filter(item=>item.reference_kind==='mutable-ref-resolved-snapshot');
+const actionAuthority=acquisitionInventory.github_action_immutable_authority;
+fail(actionAuthority?.status==='complete-current-top-level-mutable-action-authority-bindings','mutable GitHub Action immutable authority is incomplete');
+fail(actionAuthority.accepted_upstream===lock.upstream.commit,'mutable GitHub Action binding upstream authority drift');
+fail(Array.isArray(actionAuthority.bindings),'mutable GitHub Action bindings missing');
+fail(actionAuthority.mutable_occurrences===mutableActionResolutions.length,'mutable GitHub Action binding occurrence count drift');
+fail(actionAuthority.bindings.length===mutableActionResolutions.length,'mutable GitHub Action bindings do not cover every mutable occurrence');
+fail(actionAuthority.unbound_occurrences===0,'mutable GitHub Action occurrences remain unbound');
+fail(lock.build_time_acquisition_inventory.github_action_immutable_binding_occurrences===actionAuthority.bindings.length,'lock mutable GitHub Action binding occurrence count drift');
+const actionBindingKey=item=>[
+  item.source_path,
+  item.source_line,
+  item.repository,
+  item.action_path||'',
+  item.mutable_ref||item.ref,
+].join(':');
+const mutableResolutionByKey=new Map();
+for (const resolution of mutableActionResolutions) {
+  const key=actionBindingKey(resolution);
+  fail(!mutableResolutionByKey.has(key),'duplicate mutable GitHub Action resolver occurrence: '+key);
+  mutableResolutionByKey.set(key,resolution);
+}
+const actionBindingKeys=new Set();
+const actionBindingUniqueRefs=new Set();
+for (const binding of actionAuthority.bindings) {
+  const key=actionBindingKey(binding);
+  fail(!actionBindingKeys.has(key),'duplicate mutable GitHub Action authority binding: '+key);
+  actionBindingKeys.add(key);
+  const resolution=mutableResolutionByKey.get(key);
+  fail(Boolean(resolution),'mutable GitHub Action binding has no matching resolver occurrence: '+key);
+  fail(binding.raw===resolution.raw,'mutable GitHub Action binding raw source drift: '+key);
+  fail(binding.authority_kind==='fabushi-immutable-override-binding','mutable GitHub Action binding authority kind drift: '+key);
+  fail(binding.source_ref_remains_mutable===true,'mutable GitHub Action binding must explicitly retain source mutability: '+key);
+  fail(/^[0-9a-f]{40}$/.test(binding.authority_commit||''),'mutable GitHub Action binding is not an exact commit: '+key);
+  fail(binding.authority_commit===resolution.resolved_commit,'mutable GitHub Action binding commit differs from resolver evidence: '+key);
+  const sourceUrl='https://raw.githubusercontent.com/'+lock.upstream.repository+'/'+lock.upstream.commit+'/'+binding.source_path;
+  const sourceRaw=await get(sourceUrl,false);
+  const sourceLine=sourceRaw.split(/\r?\n/)[binding.source_line-1]||'';
+  const target=binding.repository+(binding.action_path ? '/'+binding.action_path : '')+'@'+binding.mutable_ref;
+  fail(sourceLine.includes('uses:')&&sourceLine.includes(target),'mutable GitHub Action source occurrence drift: '+key);
+  actionBindingUniqueRefs.add(binding.repository+'@'+binding.mutable_ref);
+}
+fail(actionBindingKeys.size===mutableResolutionByKey.size,'mutable GitHub Action authority does not exactly cover resolver occurrences');
+fail(actionAuthority.mutable_unique_refs===actionBindingUniqueRefs.size,'mutable GitHub Action unique binding count drift');
+fail(lock.build_time_acquisition_inventory.github_action_immutable_binding_unique_refs===actionBindingUniqueRefs.size,'lock mutable GitHub Action unique binding count drift');
+fail(lock.build_time_acquisition_inventory.github_action_mutable_unbound_occurrences===0,'lock reports unbound mutable GitHub Action occurrences');
+
+const cloneResolution=acquisitionInventory.github_clone_ref_resolutions;
+fail(cloneResolution?.accepted_upstream===lock.upstream.commit,'GitHub clone resolver upstream authority drift');
+fail(Array.isArray(cloneResolution?.resolutions),'GitHub clone resolver occurrences missing');
+fail((cloneResolution.unresolved||[]).length===0,'GitHub clone resolver still has unresolved occurrences');
+const cloneAuthority=acquisitionInventory.github_clone_immutable_authority;
+fail(cloneAuthority?.status==='complete-current-literal-github-clone-authority-bindings','literal GitHub clone immutable authority is incomplete');
+fail(cloneAuthority.accepted_upstream===lock.upstream.commit,'GitHub clone binding upstream authority drift');
+fail(Array.isArray(cloneAuthority.bindings),'GitHub clone bindings missing');
+fail(cloneAuthority.mutable_occurrences===cloneResolution.resolutions.length,'GitHub clone binding occurrence count drift');
+fail(cloneAuthority.bindings.length===cloneResolution.resolutions.length,'GitHub clone bindings do not cover every resolved occurrence');
+fail(cloneAuthority.unbound_occurrences===0,'literal GitHub clone occurrences remain unbound');
+fail(lock.build_time_acquisition_inventory.github_clone_immutable_binding_occurrences===cloneAuthority.bindings.length,'lock GitHub clone binding occurrence count drift');
+const cloneBindingKey=item=>[item.source_path,item.source_line,item.repository,item.mutable_ref||item.ref].join(':');
+const cloneResolutionByKey=new Map();
+for (const resolution of cloneResolution.resolutions) {
+  const key=cloneBindingKey(resolution);
+  fail(resolution.status==='resolved-snapshot-source-ref-still-mutable','GitHub clone resolver status drift: '+key);
+  fail(!cloneResolutionByKey.has(key),'duplicate GitHub clone resolver occurrence: '+key);
+  cloneResolutionByKey.set(key,resolution);
+}
+const cloneBindingKeys=new Set();
+const cloneBindingUniqueRefs=new Set();
+for (const binding of cloneAuthority.bindings) {
+  const key=cloneBindingKey(binding);
+  fail(!cloneBindingKeys.has(key),'duplicate GitHub clone authority binding: '+key);
+  cloneBindingKeys.add(key);
+  const resolution=cloneResolutionByKey.get(key);
+  fail(Boolean(resolution),'GitHub clone binding has no matching resolver occurrence: '+key);
+  fail(binding.raw===resolution.raw,'GitHub clone binding raw source drift: '+key);
+  fail(binding.authority_kind==='fabushi-immutable-clone-override-binding','GitHub clone binding authority kind drift: '+key);
+  fail(binding.source_ref_remains_mutable===true,'GitHub clone binding must explicitly retain source mutability: '+key);
+  fail(/^[0-9a-f]{40}$/.test(binding.authority_commit||''),'GitHub clone binding is not an exact commit: '+key);
+  fail(binding.authority_commit===resolution.resolved_commit,'GitHub clone binding commit differs from resolver evidence: '+key);
+  const sourceUrl='https://raw.githubusercontent.com/'+lock.upstream.repository+'/'+lock.upstream.commit+'/'+binding.source_path;
+  const sourceRaw=await get(sourceUrl,false);
+  const sourceLine=sourceRaw.split(/\r?\n/)[binding.source_line-1]||'';
+  fail(sourceLine.includes('git clone')&&sourceLine.includes('-b '+binding.mutable_ref)&&sourceLine.includes('github.com/'+binding.repository),'GitHub clone source occurrence drift: '+key);
+  cloneBindingUniqueRefs.add(binding.repository+'@'+binding.mutable_ref);
+}
+fail(cloneBindingKeys.size===cloneResolutionByKey.size,'GitHub clone authority does not exactly cover resolver occurrences');
+fail(cloneAuthority.mutable_unique_refs===cloneBindingUniqueRefs.size,'GitHub clone unique binding count drift');
+fail(lock.build_time_acquisition_inventory.github_clone_immutable_binding_unique_refs===cloneBindingUniqueRefs.size,'lock GitHub clone unique binding count drift');
+fail(lock.build_time_acquisition_inventory.github_clone_mutable_unbound_occurrences===0,'lock reports unbound GitHub clone occurrences');
+
 const recursiveChildren=acquisitionInventory.recursive_child_inputs || [];
 fail(recursiveChildren.length===lock.build_time_acquisition_inventory.recursive_child_input_occurrences_recorded,'recursive child occurrence count drift');
 const externalScans=acquisitionInventory.external_nested_scans || [];

@@ -14,17 +14,17 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15988,
-    "unread_minimum": 14420,
+    "unread_minimum": 14319,
     "omitted_known": 0,
-    "note": "Live 22b352e recursive census is 16,120. 1,700 exact entries are read-complete; 132 are explicitly unknown-closed; unknown 15,988, unread 14,420, omitted 0. Orders 1603-1700 are consumer-traced and responsibility-decomposed with implementation gates open."
+    "note": "Live 22b352e recursive census is 16,120. 1,801 exact entries are read-complete; 132 are explicitly unknown-closed; unknown 15,988, unread 14,319, omitted 0. Orders 1701-1801 are consumer-traced and responsibility-decomposed with implementation gates open."
   },
   "latest_recursive_evidence": {
-    "run_id": 37861966662,
+    "run_id": 37862812304,
     "run_attempt": 1,
-    "job_id": 113599732231,
-    "head_sha": "ae11d378f92ce19e42e9ccdf59494461672809f3",
-    "artifact_id": 11585584799,
-    "artifact_digest": "sha256:094e1f221b8078f62f6cd9f313409317ea82d0f2733e10acd8d5f1ad4c32be55",
+    "job_id": 113602673869,
+    "head_sha": "311b3e5a33b248039a646a1aa1720c82be8e112d",
+    "artifact_id": 11587610040,
+    "artifact_digest": "sha256:385b3d93dc666dd25a542463188d2e8c82ba22b546f2ee116861a63e1f38ee5f",
     "artifact_files": [
       "upstream-root-inventory.json",
       "upstream-recursive-inventory.json",
@@ -60,7 +60,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live 22b352e authority is exact through order 1,700. unread_minimum is 14,420, unknown remains 15,988, omitted remains 0. Orders 1603-1700 are mapped-open product responsibilities; read-through does not imply implementation verification.",
+  "note": "Live 22b352e authority is exact through order 1,801. unread_minimum is 14,319, unknown remains 15,988, omitted remains 0. Orders 1701-1801 are mapped-open product responsibilities; read-through does not imply implementation verification.",
   "rebaseline": {
     "from_commit": "6ec5014a92c4580841a043c440d65e8fc605ff78",
     "to_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db",
@@ -72,7 +72,7 @@
       "Telegram/SourceFiles/wallet/wallet_ton_connect.cpp",
       "Telegram/SourceFiles/wallet/wallet_ton_connect.h"
     ],
-    "current_head_source_authority_evidence": "run 37861966662 job 113599732231 artifact 11585584799 @ ae11d378f92ce19e42e9ccdf59494461672809f3"
+    "current_head_source_authority_evidence": "run 37862812304 job 113602673869 artifact 11587610040 @ 311b3e5a33b248039a646a1aa1720c82be8e112d"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -81,6 +81,6 @@
     "development_only_non_applicable": 66,
     "unknown_closed": 132,
     "omitted": 0,
-    "read_through": 1700
+    "read_through": 1801
   }
 }

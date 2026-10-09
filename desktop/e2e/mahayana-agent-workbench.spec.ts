@@ -11,10 +11,6 @@ const packagedExecutable = process.env.FABUSHI_ELECTRON_EXECUTABLE?.trim() || nu
 let e2eAuthServer: ReturnType<typeof createServer> | null = null;
 let e2eAuthBackendPromise: Promise<string> | null = null;
 
-async function scrollIntoInteractiveViewport(locator: Locator): Promise<void> {
-  await locator.evaluate((element) => element.scrollIntoView({ block: 'center', inline: 'nearest' }));
-}
-
 function e2eAuthToken(): string {
   const encode = (value: Record<string, unknown>) => Buffer.from(JSON.stringify(value), 'utf8').toString('base64url');
   return [
@@ -851,9 +847,10 @@ test('Human reply, attachment, reaction, and search stay on the shipping convers
     await expect(rootTurn).toBeVisible({ timeout: 10_000 });
     await expect(rootTurn).not.toHaveAttribute('data-pending', { timeout: 15_000 });
 
-    await scrollIntoInteractiveViewport(rootTurn);
-    await rootTurn.hover();
-    await rootTurn.getByRole('button', { name: 'Reply to your message' }).click();
+    const replyAction = rootTurn.getByRole('button', { name: 'Reply to your message' });
+    await replyAction.focus();
+    await expect(replyAction).toBeFocused();
+    await page.keyboard.press('Enter');
     await expect(page.getByRole('button', { name: 'Cancel reply' })).toBeVisible();
 
     await page.locator('input.sand-prompt-file-input').setInputFiles({
@@ -893,9 +890,9 @@ test('Human reply, attachment, reaction, and search stay on the shipping convers
     await expect(mediaTurn).not.toHaveAttribute('data-pending', { timeout: 15_000 });
     const previewTrigger = mediaTurn.getByRole('button', { name: 'Media preview' });
     await expect(previewTrigger).toBeVisible({ timeout: 10_000 });
-    await scrollIntoInteractiveViewport(mediaTurn);
     await previewTrigger.focus();
-    await previewTrigger.click();
+    await expect(previewTrigger).toBeFocused();
+    await page.keyboard.press('Enter');
     const mediaDialog = page.getByRole('dialog', { name: 'Media preview' });
     await expect(mediaDialog).toBeVisible();
     const closeMedia = mediaDialog.getByRole('button', { name: 'Close media preview' });
@@ -907,13 +904,14 @@ test('Human reply, attachment, reaction, and search stay on the shipping convers
       body: await mediaDialog.screenshot(),
       contentType: 'image/png',
     });
-    await closeMedia.click();
+    await page.keyboard.press('Enter');
     await expect(mediaDialog).toHaveCount(0);
     await expect(previewTrigger).toBeFocused();
 
-    await scrollIntoInteractiveViewport(replyTurn);
-    await replyTurn.hover();
-    await replyTurn.getByRole('button', { name: 'Add reaction' }).click();
+    const reactionAction = replyTurn.getByRole('button', { name: 'Add reaction' });
+    await reactionAction.focus();
+    await expect(reactionAction).toBeFocused();
+    await page.keyboard.press('Enter');
     await page.getByRole('button', { name: 'React with 👍' }).click();
     await expect(replyTurn.getByRole('button', { name: /You reacted with 👍/u })).toBeVisible();
     await expect.poll(() => e2eHumanMessages[1]?.reactions).toEqual([
