@@ -13,10 +13,10 @@
     "recursive_non_directory_entries": 16120,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 15907,
-    "unread_minimum": 13420,
+    "unknown_minimum": 15874,
+    "unread_minimum": 13320,
     "omitted_known": 0,
-    "note": "Live 22b352e recursive census is 16,120. 2,700 exact entries are read-complete; 213 are explicitly unknown-closed; unknown 15,907, unread 13,420, omitted 0. Orders 2601-2700 cover active-device/session identity, Notifications preview and surviving Settings actions; device_tablet_android plus seven legacy Settings families are explicitly unreachable. Applicable implementation gates remain open."
+    "note": "Live 22b352e recursive census is 16,120. 2,800 exact entries are read-complete; 246 are explicitly unknown-closed; unknown 15,874, unread 13,320, omitted 0. Orders 2701-2800 cover Wallet key, auctions/gifts, Profile/Appearance add/photo surfaces, Business/Premium/Boost features; eleven legacy Settings resource families (33 density rows) are explicitly unreachable."
   },
   "latest_recursive_evidence": {
     "run_id": 37864697175,
@@ -106,7 +106,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live 22b352e authority is exact through order 2,700. unread_minimum is 13,420, unknown remains 15,907, omitted remains 0. Active-session platform assets remain consumer-owned; 24 density resources across one stale tablet family and seven legacy Settings families have no accepted-tree product consumer.",
+  "note": "Live 22b352e authority is exact through order 2,800. unread_minimum is 13,320, unknown 15,874, omitted 0; applicable rows remain mapped-open.",
   "rebaseline": {
     "from_commit": "6ec5014a92c4580841a043c440d65e8fc605ff78",
     "to_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db",
@@ -125,8 +125,8 @@
     "upstream_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db",
     "deterministic_prefix_closed": 123,
     "development_only_non_applicable": 66,
-    "unknown_closed": 213,
+    "unknown_closed": 246,
     "omitted": 0,
-    "read_through": 2700
+    "read_through": 2800
   }
 }
