@@ -1267,7 +1267,7 @@
         },
         {
           "path": "Telegram/build/docker/centos_env/Dockerfile",
-          "blob": "c60fa6a8b2b16b3beda750b67ab5e27007a641db",
+          "blob": "e6d22fce93363f059e6929bb30f541549065a6c4",
           "evidence": "Qt 6 Linux image initializes only qtbase qtdeclarative qtwayland qtimageformats qtsvg qtshadertools."
         },
         {
