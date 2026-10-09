@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15846,
-    "unread_minimum": 10216,
+    "unread_minimum": 10145,
     "omitted_known": 0,
-    "note": "Live 65e23ba recursive census remains 16,125; exact read-through 5,909; unknown 15,846, unread 10,216, omitted 0. Fresh current-head Actions remain required."
+    "note": "Live 65e23ba recursive census remains 16,125; exact read-through 5,980; unknown 15,846, unread 10,145, omitted 0. Fresh current-head Actions remain required."
   },
   "latest_recursive_evidence": {
     "run_id": 37967712462,
@@ -46,7 +46,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live authority exact through deterministic blob order 5,909; unread_minimum is 10,216; unknown remains 15,846; omitted remains 0.",
+  "note": "Live authority exact through deterministic blob order 5,980; unread_minimum is 10,145; unknown remains 15,846; omitted remains 0. Fresh exact-head source-authority evidence is required.",
   "rebaseline": {
     "from_commit": "b0d1fe5e08c963402b8b71648c70a2bf68e6fab2",
     "to_commit": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
@@ -72,9 +72,9 @@
       5801,
       5803
     ],
-    "current_source_read_through": 5909,
-    "first_unread_order": 5910,
-    "first_unread_path": "Telegram/SourceFiles/ui/cached_round_corners.cpp",
+    "current_source_read_through": 5980,
+    "first_unread_order": 5981,
+    "first_unread_path": "Telegram/SourceFiles/ui/color_contrast.cpp",
     "current_head_source_authority_evidence": "fresh descendant exact-head Actions required; b0400d/b0d1fe5 evidence is predecessor-only"
   },
   "source_dispositions": {
@@ -84,6 +84,6 @@
     "development_only_non_applicable": 69,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 5909
+    "read_through": 5980
   }
 }
