@@ -77,3 +77,11 @@ Local cache/storage policy and Settings landing composition are exact-source rea
 ### TDRP read-through 5605-5613
 
 The Revision 9 validator caught and rejected a transient order drift; corrected exact order is Notifications 5605–5607, Reactions 5608–5609, Notification Type 5610–5611 and Account Passkeys 5612–5613. All remain production-open under existing source-neutral Notification/Account/Privacy/Call/platform and Account Auth/WebAuthn owners. Remote Agent WebAuthn proxy infrastructure is not credited as Account Passkeys lifecycle parity. Current accounting: read-through 5,613; unread 10,510; unknown 15,844; omitted 0.
+
+### Current live source accounting after 5614–5616
+
+Accepted upstream remains `telegramdesktop/tdesktop@863cf10d9f34fb0b1b35b35da1bda75acfc58d2e` (tree `5030985204963cbbd362ced7412d231b04ebd0cc`). Deterministic read-through is **5,616 / 16,123**; unread **10,507**; unknown **15,844**; omitted **0**. Orders 5614–5616 remain mapped-open to canonical Entitlement/Subscription, Wallet/Payments/Commerce, Settings and design-system owners. First unread is 5617 `settings_privacy_security.cpp`.
+
+### Read-through 5614–5616
+
+Premium feature order, entitlement, subscription options/ref attribution and purchase routing map to canonical Entitlement/Subscription + Wallet/Payments/Commerce + Settings owners; no Telegram Premium runtime/UI is introduced.

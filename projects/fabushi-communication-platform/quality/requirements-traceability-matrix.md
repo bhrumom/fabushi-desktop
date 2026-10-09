@@ -480,3 +480,11 @@ Wallet background `MouseButtonPress` is swallowed while the top information box 
 - `INV-PASSKEY-EXACT-ID-001`: delete targets the exact canonical server credential id behind explicit confirmation.
 - Existing remote Agent WebAuthn proxy/signer/runtime is not accepted as evidence of Account Passkeys product list/create/delete lifecycle.
 - Dossiers: `projects/telegram-desktop-rust/dossiers/settings-notifications-passkeys-5605-5609-complete-read.md`; `projects/telegram-desktop-rust/dossiers/settings-notification-type-passkeys-5610-5613-complete-read.md`.
+
+## TDRP Premium entitlement / commerce 5614–5616 — mapped-open requirements
+
+| requirement_id | oracle_ids | invariant_ids | production owner | required evidence | verdict |
+| --- | --- | --- | --- | --- | --- |
+| TDRP-R9-PREMIUM-ENTITLEMENT-COMMERCE-5614-5616 | ORA-TDRP-PREMIUM-5614 | INV-PREMIUM-ENTITLEMENT-ACCOUNT-001; INV-PREMIUM-PURCHASE-ROUTE-001; INV-PREMIUM-REF-ATTRIBUTION-001; INV-PREMIUM-SETTLEMENT-RECONCILE-001; INV-PREMIUM-UI-DERIVED-001 | Canonical Entitlement/Subscription + Wallet/Payments/Commerce + Settings + design system | unit + service/commerce contract + invalid-route fail-closed + duplicate/idempotency + cancel/failure/settlement/account-switch/reload/restart + currency/option refresh + keyboard/focus/a11y/light-dark/responsive/reduced-motion + signed packaged acceptance | mapped-open |
+
+Reading grants source/traceability credit only. Dossier: `projects/telegram-desktop-rust/dossiers/settings-premium-5614-5616-complete-read.md`.

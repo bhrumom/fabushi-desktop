@@ -228,3 +228,11 @@ Notifications covers global/app policy projection, multi-account cleanup, privac
 Passkeys is an Account Authentication product flow: server registration challenge → bounded platform authenticator/WebAuthn → server finalize, with unsupported/unsigned/cancel failure closed and exact server credential-id deletion. Fabushi already has remote Agent WebAuthn proxy/signer infrastructure, but that is not evidence of an Account Passkeys UI/list/create/delete owner, so this remains mapped-open.
 
 Accounting: read-through 5,613/16,123; unread 10,510; unknown 15,844; omitted 0. First unread is 5,614 `settings_premium.cpp` (`60ac3cbbfcd4b74eda0d3cbca46c969a22878b94`).
+
+### Current live source accounting after 5614–5616
+
+Accepted upstream remains `telegramdesktop/tdesktop@863cf10d9f34fb0b1b35b35da1bda75acfc58d2e` (tree `5030985204963cbbd362ced7412d231b04ebd0cc`). Deterministic read-through is **5,616 / 16,123**; unread **10,507**; unknown **15,844**; omitted **0**. Orders 5614–5616 remain mapped-open to canonical Entitlement/Subscription, Wallet/Payments/Commerce, Settings and design-system owners. First unread is 5617 `settings_privacy_security.cpp`.
+
+### Read-through 5614–5616
+
+Premium entitlement/subscription/commerce and presentation are exact-blob read-complete and mapped-open; no production closure is credited.

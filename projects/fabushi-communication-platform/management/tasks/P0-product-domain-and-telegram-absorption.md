@@ -115,3 +115,7 @@ Local Storage and Settings Main are exact-source read-complete and mapped-open. 
 ## Live deterministic source batch 5605-5613
 
 Fail-closed Revision 9 validation rejected the transient incorrect 5608 path and forced exact-order repair. Corrected source responsibilities are Notifications 5605–5607, Reactions 5608–5609, per-type notification policy 5610–5611 and Account Passkeys 5612–5613. Priority production closure remains native notification reply/mark-read/open exact-scope authorization/cleanup plus canonical Account Passkeys list/create/delete and signed packaged WebAuthn acceptance. Existing remote WebAuthn proxy is infrastructure, not Account Passkeys product completion. Next source: 5614 `settings_premium.cpp`.
+
+## Live deterministic source batch 5614–5616
+
+Premium entitlement/subscription/commerce is exact-source read-complete and mapped-open. Existing canonical Entitlement/Subscription, Wallet/Payments/Commerce, Settings/Identity and design-system owners must absorb it. Purchase/ref routing requires invalid-route fail-closed and idempotent cancel/failure/settlement/account-switch/reload/restart reconciliation. Accounting: 5,616/16,123 read, 10,507 unread, 15,844 unknown, 0 omitted. Next: 5617 `settings_privacy_security.cpp`.

@@ -1,0 +1,135 @@
+{
+  "format_version": 2,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+    "tree": "5030985204963cbbd362ced7412d231b04ebd0cc"
+  },
+  "range": {
+    "first_order": 5614,
+    "last_order": 5616,
+    "entries": 3
+  },
+  "rows": [
+    {
+      "recursive_order": 5614,
+      "source_path": "Telegram/SourceFiles/settings/sections/settings_premium.cpp",
+      "source_blob_sha": "60ac3cbbfcd4b74eda0d3cbca46c969a22878b94",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Premium entitlement/subscription/commerce settings orchestration: server-configured feature order, account entitlement state, subscription options/prices, source-ref attribution, gift/status contexts, promo telemetry and trusted purchase routing.",
+      "upstream_owner": "Settings::Premium + Api::Premium + Main::Session entitlement",
+      "state_machine": "enter exact account/ref -> reload entitlement/options -> project ordered features -> choose option/context -> resolve trusted purchase route or fail closed -> handoff -> reconcile entitlement; teardown pauses derived animation/media only",
+      "side_effects": "Reload entitlement/options, emit promo show/accept events, open preview, resolve trusted bot/invoice route, start purchase handoff.",
+      "failure_cases": "account switch/window mismatch; unavailable premium; empty/stale option; invalid route; duplicate activation; cancel/provider failure/settlement race; stale amount/currency; missing gift/status context; teardown after async media load",
+      "ui_disposition": "Reuse canonical Settings/ProfileSection/ListRow/Radio/Button/Toast/DetailPanel and existing commerce surfaces; no Telegram Premium UI/runtime.",
+      "fabushi_canonical_owner": "Canonical Entitlement/Subscription + Wallet/Payments/Commerce + Settings + Identity/Account + design system",
+      "fabushi_target": "MAPPED OPEN.",
+      "platform_differences": "External payment/browser launch is bounded adapter; entitlement/settlement truth remains canonical and account-scoped.",
+      "production_evidence": "Exact source read; canonical production closure and same-head evidence open.",
+      "test_evidence": "account-switch/stale option fencing; invalid-route fail-closed; duplicate idempotency; cancel/failure/settlement/reload/restart reconciliation; option/currency refresh; gift/status context loss; keyboard/focus/a11y/light-dark/responsive/reduced-motion; packaged commerce acceptance",
+      "disposition": "mapped-open-canonical-entitlement-subscription-commerce",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "Settings::Premium",
+      "consumer_evidence": [
+        "BuildPremiumSectionContent",
+        "SetupSubscriptionOptions",
+        "CreateSubscribeButton",
+        "StartPremiumPayment",
+        "ShowPremium",
+        "SendScreenShow",
+        "SendScreenAccept"
+      ],
+      "reachability_status": "accepted-tree premium settings and purchase orchestration proven; canonical closure open",
+      "license_and_provenance": "tdesktop provenance retained; no payment credential material in evidence.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-required",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "verified_blob_sha": "60ac3cbbfcd4b74eda0d3cbca46c969a22878b94",
+        "file_type": "blob",
+        "recursive_order": 5614
+      },
+      "notes": "Full exact-source read; no unknown credit."
+    },
+    {
+      "recursive_order": 5615,
+      "source_path": "Telegram/SourceFiles/settings/sections/settings_premium.h",
+      "source_blob_sha": "894e07c352a941a0ad427916c238a7619ebce3b1",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Public premium settings, preview and payment-routing interface plus subscribe-button and feature-order contracts.",
+      "upstream_owner": "Settings Premium interface",
+      "state_machine": "typed route/ref -> canonical entitlement/commerce owner -> derived preview/subscribe surface",
+      "side_effects": "Declares entrypoints only.",
+      "failure_cases": "bypass account/entitlement guard; ref drift; duplicate purchase entry",
+      "ui_disposition": "Canonical Settings and commerce entrypoints.",
+      "fabushi_canonical_owner": "Canonical Settings routing + Entitlement/Commerce",
+      "fabushi_target": "MAPPED OPEN.",
+      "platform_differences": "none",
+      "production_evidence": "Exact header read.",
+      "test_evidence": "route/ref identity; account scope; idempotent purchase entry; teardown",
+      "disposition": "mapped-open-canonical-premium-interface",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "PremiumId / StartPremiumPayment",
+      "consumer_evidence": [
+        "ShowPremium",
+        "ShowGiftPremium",
+        "ShowEmojiStatusPremium",
+        "ShowPremiumGiftPremium",
+        "CreateSubscribeButton",
+        "PremiumFeaturesOrder"
+      ],
+      "reachability_status": "public premium interface proven; closure open",
+      "license_and_provenance": "tdesktop provenance retained.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-required",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "verified_blob_sha": "894e07c352a941a0ad427916c238a7619ebce3b1",
+        "file_type": "blob",
+        "recursive_order": 5615
+      },
+      "notes": "Full header read."
+    },
+    {
+      "recursive_order": 5616,
+      "source_path": "Telegram/SourceFiles/settings/sections/settings_premium.style",
+      "source_blob_sha": "4949348b7bab710b891c974d22869438ef76abb1",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Premium presentation tokens/icons/top-bar sizing for paid-entitlement affordances.",
+      "upstream_owner": "Premium settings style tokens",
+      "state_machine": "canonical entitlement/feature state -> design-system projection",
+      "side_effects": "none",
+      "failure_cases": "source-specific components leak; contrast/focus/layout/reduced-motion/theme regressions",
+      "ui_disposition": "Map semantics into canonical Icon/Button/ListRow/ProfileSection tokens; no TelegramPremium* components.",
+      "fabushi_canonical_owner": "Canonical design system + Settings entitlement surface",
+      "fabushi_target": "MAPPED OPEN presentation evidence.",
+      "platform_differences": "Canonical scale/theme/responsive adapters.",
+      "production_evidence": "Exact style read.",
+      "test_evidence": "visual/light-dark/high-scale/responsive/focus/a11y/reduced-motion",
+      "disposition": "mapped-open-canonical-premium-design-system",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "settingsPremium* style tokens",
+      "consumer_evidence": [
+        "settingsPremiumIcon*",
+        "settingsPremiumUserHeight",
+        "settingsPremiumUserTitlePadding"
+      ],
+      "reachability_status": "presentation semantics proven; closure open",
+      "license_and_provenance": "tdesktop provenance retained.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-required",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "verified_blob_sha": "4949348b7bab710b891c974d22869438ef76abb1",
+        "file_type": "blob",
+        "recursive_order": 5616
+      },
+      "notes": "Full style read."
+    }
+  ]
+}
