@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16123,
     "unknown": 15844,
-    "unread": 10470,
+    "unread": 10458,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13493,7 +13493,7 @@
       "Telegram/SourceFiles/ui/chat/chat.style",
       "Telegram/SourceFiles/wallet/wallet_content.cpp"
     ],
-    "source_read_reconciliation": "Recursive denominator is 16,123. Accepted-tree blob order correction restores settings/settings.style as order 5,623; exact read-through is 5,653. Unknown remains 15,844; unread 10,470; omitted 0. First unread is 5,654 statistics/chart_lines_filter_controller.cpp.",
+    "source_read_reconciliation": "Accepted-tree blob order exact through 5,665/16,123; unknown 15,844, unread 10,458, omitted 0. Statistics 5654-5665 are read/decomposed and mapped-open; first unread 5666 statistics_format_values.cpp.",
     "source_authority_evidence": "Deterministic ordering is derived from non-directory/blob rank in accepted recursive tree 5030985204963cbbd362ced7412d231b04ebd0cc. Previous 5623-5642 shard ranges were replaced, not retained as authority."
   },
   "source_dispositions": {
@@ -13503,6 +13503,6 @@
     "development_only_non_applicable": 66,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 5653
+    "read_through": 5665
   }
 }
