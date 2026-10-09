@@ -1,0 +1,67 @@
+{
+  "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+  "start": 5401,
+  "end": 5410,
+  "entries": [
+    {
+      "order": 5401,
+      "path": "Telegram/SourceFiles/platform/linux/text_recognition_linux.h",
+      "blob": "d2d05be5871f0e17ddd8ed7528c192af1eb05b24",
+      "consumer_symbol": "Platform::TextRecognition"
+    },
+    {
+      "order": 5402,
+      "path": "Telegram/SourceFiles/platform/linux/translate_provider_linux.cpp",
+      "blob": "acf8279100d27312292bba30b7fbe0347ac304f8",
+      "consumer_symbol": "Platform::TranslateProvider"
+    },
+    {
+      "order": 5403,
+      "path": "Telegram/SourceFiles/platform/linux/translate_provider_linux.h",
+      "blob": "8e7ad9a263d9ecb5268ae7a76f88690bf06332cf",
+      "consumer_symbol": "platform translate-provider contract"
+    },
+    {
+      "order": 5404,
+      "path": "Telegram/SourceFiles/platform/linux/tray_linux.cpp",
+      "blob": "6b154a49ec2d35a86c14fd6a55ed6c66c8e846ab",
+      "consumer_symbol": "Platform::Tray / IconGraphic"
+    },
+    {
+      "order": 5405,
+      "path": "Telegram/SourceFiles/platform/linux/tray_linux.h",
+      "blob": "181de22b983710fbec156d7c92094b39af4b0f0f",
+      "consumer_symbol": "Platform::Tray contract"
+    },
+    {
+      "order": 5406,
+      "path": "Telegram/SourceFiles/platform/linux/update_install_linux.cpp",
+      "blob": "45d81625f43196fb990ef231704ac076be173cc9",
+      "consumer_symbol": "Platform protected update install"
+    },
+    {
+      "order": 5407,
+      "path": "Telegram/SourceFiles/platform/linux/update_install_linux.h",
+      "blob": "e5edf6d427fc66bd423ec1c0334751b7fa536029",
+      "consumer_symbol": "UpdateInstallMode / protected-update API"
+    },
+    {
+      "order": 5408,
+      "path": "Telegram/SourceFiles/platform/linux/webauthn_linux.cpp",
+      "blob": "c24e63bab5b7cb57aa65ef92f93cfc08011d6364",
+      "consumer_symbol": "Platform::WebAuthn"
+    },
+    {
+      "order": 5409,
+      "path": "Telegram/SourceFiles/platform/mac/current_geo_location_mac.h",
+      "blob": "6bb8195430d9cf504d93db967807da5e11ae73eb",
+      "consumer_symbol": "platform current geo location contract"
+    },
+    {
+      "order": 5410,
+      "path": "Telegram/SourceFiles/platform/mac/current_geo_location_mac.mm",
+      "blob": "0ea55446387b2043b3112f75edbdd41af369b241",
+      "consumer_symbol": "LocationDelegate / ResolveCurrentExactLocation / ResolveLocationAddress"
+    }
+  ]
+}

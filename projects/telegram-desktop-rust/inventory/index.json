@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15841,
-    "unread_minimum": 10720,
+    "unread_minimum": 10710,
     "omitted_known": 0,
-    "note": "Live 42f8a36d recursive census remains 16,120. Read-through 5,400; 279 unknown-closed; unknown 15,841, unread 10,720, omitted 0. Orders 5361-5400 are exact-blob read-complete across payment checkout/reaction and Linux platform integration; only the bounded checkout customer-validation slice is implemented at 39da0625 and exact-head Actions remain pending."
+    "note": "Live 42f8a36d recursive census remains 16,120. Read-through 5,410; unknown 15,841, unread 10,710, omitted 0. Orders 5401-5410 add Linux OCR/translation/tray/protected-updater/WebAuthn and macOS location responsibilities; all remain mapped-open pending exact-head implementation evidence."
   },
   "latest_recursive_evidence": {
     "run_id": 37872749663,
@@ -46,7 +46,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live 42f8a36d authority exact through order 5,400; unread_minimum 10,720; unknown 15,841; omitted 0. Fresh same-head Actions evidence required.",
+  "note": "Live authority exact through order 5,410; unread 10,710; unknown 15,841; omitted 0.",
   "rebaseline": {
     "from_commit": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
     "to_commit": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
@@ -64,7 +64,7 @@
       "changelog.txt"
     ],
     "current_head_source_authority_evidence": "Predecessor Source authority artifact 11614851389 at a7e395c30fe3cd25ac199b1863000bd135f344d4, digest sha256:a4e0f681716efd743c773ccbd1df5c1c17fcf44fe9ba5640b29b0ed9c200a899, proves accepted upstream recursive denominator 16,120. Current head 39da06252e33ef7f8d53061514f8234108ee609e requires fresh exact-head Actions.",
-    "current_source_read_through": 5400
+    "current_source_read_through": 5410
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -73,6 +73,6 @@
     "development_only_non_applicable": 66,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 5400
+    "read_through": 5410
   }
 }
