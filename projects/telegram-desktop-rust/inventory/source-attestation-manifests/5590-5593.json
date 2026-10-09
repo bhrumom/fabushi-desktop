@@ -1,0 +1,31 @@
+{
+  "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+  "start": 5590,
+  "end": 5593,
+  "entries": [
+    {
+      "order": 5590,
+      "path": "Telegram/SourceFiles/settings/sections/settings_credits.cpp",
+      "blob": "dbe0b4cf48e52c30e2066c6ad4181893ed604646",
+      "consumer_symbol": "CreditsId"
+    },
+    {
+      "order": 5591,
+      "path": "Telegram/SourceFiles/settings/sections/settings_credits.h",
+      "blob": "56c88e68b16b4c2c49bcbcc846b9a5969dfb4867",
+      "consumer_symbol": "CreditsId"
+    },
+    {
+      "order": 5592,
+      "path": "Telegram/SourceFiles/settings/sections/settings_folders.cpp",
+      "blob": "8c5b9b4d6b7a5b3166c12ac8e20c50775a84e9dd",
+      "consumer_symbol": "FoldersId"
+    },
+    {
+      "order": 5593,
+      "path": "Telegram/SourceFiles/settings/sections/settings_folders.h",
+      "blob": "8a2984febbf9753dd4aeb698eb7924d4960ca19a",
+      "consumer_symbol": "FoldersId"
+    }
+  ]
+}

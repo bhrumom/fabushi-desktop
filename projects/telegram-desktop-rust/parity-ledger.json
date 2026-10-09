@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16123,
     "unknown": 15844,
-    "unread": 10534,
+    "unread": 10530,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -3149,7 +3149,7 @@
         "typed Story actions",
         "comments/reaction projection"
       ],
-      "platform_delta": "Qt fa\u00e7ade becomes typed React capability contract backed by existing Rust Story owner.",
+      "platform_delta": "Qt façade becomes typed React capability contract backed by existing Rust Story owner.",
       "existing_owner": "Canonical Story owner + ProductShell capability surface + existing domain action owners",
       "fabushi_target_paths": [
         "native/mahayana-messaging/src/story.rs",
@@ -3397,14 +3397,14 @@
         "first async result mutates a replaced Story",
         "comments/reactions use second store"
       ],
-      "ui_disposition": "Delegation semantics retained; Qt controller fa\u00e7ade itself is not ported.",
+      "ui_disposition": "Delegation semantics retained; Qt controller façade itself is not ported.",
       "non_ui_responsibilities": [
         "Single action path",
         "pause reason continuity",
         "lifetime fencing",
         "comments/reaction authoritative projection"
       ],
-      "platform_delta": "Use typed hooks/controllers in existing ProductShell surface rather than C++ fa\u00e7ade.",
+      "platform_delta": "Use typed hooks/controllers in existing ProductShell surface rather than C++ façade.",
       "existing_owner": "Canonical Story owner + Resource playback + ProductShell action composition",
       "fabushi_target_paths": [
         "native/mahayana-messaging/src/story.rs",
@@ -13472,23 +13472,29 @@
     }
   ],
   "rebaseline": {
-    "from_commit": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
+    "from_commit": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
     "to_commit": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
-    "ahead_by": 4,
-    "changed_paths": 9,
+    "ahead_by": 3,
+    "changed_paths": 15,
     "changed_authority_paths": [
-      "Telegram/Resources/uwp/AppX/AppxManifest.xml",
-      "Telegram/Resources/winrc/Telegram.rc",
-      "Telegram/Resources/winrc/Updater.rc",
-      "Telegram/SourceFiles/core/version.h",
-      "Telegram/SourceFiles/history/view/history_view_message.cpp",
-      "Telegram/SourceFiles/ui/chat/attach/attach_bot_webview.cpp",
-      "Telegram/build/build_mac.py",
-      "Telegram/build/version",
-      "changelog.txt"
+      "Telegram/CMakeLists.txt",
+      "Telegram/Resources/animations/bot_menu.tgs",
+      "Telegram/Resources/langs/lang.strings",
+      "Telegram/Resources/qrc/telegram/animations.qrc",
+      "Telegram/SourceFiles/editor/photo_editor_common.cpp",
+      "Telegram/SourceFiles/editor/photo_editor_common.h",
+      "Telegram/SourceFiles/editor/photo_editor_controls.cpp",
+      "Telegram/SourceFiles/history/history_widget.cpp",
+      "Telegram/SourceFiles/history/history_widget.h",
+      "Telegram/SourceFiles/history/view/controls/history_view_bot_menu_button.cpp",
+      "Telegram/SourceFiles/history/view/controls/history_view_bot_menu_button.h",
+      "Telegram/SourceFiles/history/view/controls/history_view_compose_controls.cpp",
+      "Telegram/SourceFiles/history/view/controls/history_view_compose_controls.h",
+      "Telegram/SourceFiles/ui/chat/chat.style",
+      "Telegram/SourceFiles/wallet/wallet_content.cpp"
     ],
-    "source_read_reconciliation": "Recursive denominator remains 16,120. Exact source read-through is now 5475. Orders 5411-5475 add mapped-open macOS/Windows file access, window/lifecycle, native notification reply/actions, Touch Bar, OCR/translation/tray, wallet protection/WebAuthn and updater/launcher responsibilities only; unknown remains 15,841.",
-    "source_authority_evidence": "Fresh same-head evidence is required for the 5411-5475 read-through head; predecessor Source authority artifacts are diagnostic only."
+    "source_read_reconciliation": "Recursive denominator is 16,123. Exact source read-through is now 5,593. Orders 5590-5593 add mapped-open Credits and Conversation Folder settings responsibilities only; unknown remains 15,844.",
+    "source_authority_evidence": "Fresh same-head Source authority evidence is required for the 863cf10d rebaseline and 5593 read-through; predecessor artifacts are diagnostic only."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13497,6 +13503,6 @@
     "development_only_non_applicable": 66,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 5589
+    "read_through": 5593
   }
 }

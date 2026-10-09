@@ -1,0 +1,167 @@
+{
+  "format_version": 2,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+    "tree": "5030985204963cbbd362ced7412d231b04ebd0cc"
+  },
+  "range": {
+    "first_order": 5590,
+    "last_order": 5593,
+    "entries": 4
+  },
+  "rows": [
+    {
+      "recursive_order": 5590,
+      "source_path": "Telegram/SourceFiles/settings/sections/settings_credits.cpp",
+      "source_blob_sha": "dbe0b4cf48e52c30e2066c6ad4181893ed604646",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Account-scoped Stars/currency settings: reactive balances, top-up option acquisition and settlement UI, subscriptions and transaction history/receipts, statistics/gift/affiliate routing, currency withdrawal availability and action",
+      "upstream_owner": "Telegram Credits settings + CreditsHistory/CreditsTopupOptions/EarnStatistics APIs",
+      "state_machine": "enter account-scoped credits route -> load balances/options/history -> project Stars or currency mode; top-up idle -> loading -> options/error -> payment callback; history full/in/out + subscription slices rebuild from API/session events; withdrawal statistics unavailable/available -> action; teardown/account switch invalidates scoped async work",
+      "side_effects": "Loads credits/gift resources, fetches top-up/history/subscription/earn data, opens receipts/gift/affiliate/statistics flows, launches payment/withdrawal action, and reflects authoritative balance. It must not create a second wallet/account truth.",
+      "failure_cases": "stale account result mutates replacement session; duplicate top-up after retry; loading never clears; paid callback fires twice; history/subscription rebuild duplicates or reorders entries; withdrawal remains enabled after stale availability; balance/receipt diverges from server; cancellation/teardown leaks request; inaccessible tabs/actions",
+      "ui_disposition": "Reuse canonical Settings/ProfileSection/Tabs/ListRow/Button/Dialog/LoadingState/ErrorState plus Wallet/Payments receipt/history surfaces with keyboard/focus/a11y/light-dark/responsive states.",
+      "fabushi_canonical_owner": "Canonical Wallet/Payments/Credits + account-scoped billing/subscription/history/earnings service owners",
+      "fabushi_target": "MAPPED OPEN. Extend source-neutral Wallet/Payments/Credits and server contracts; no Telegram Stars/Credits runtime.",
+      "platform_differences": "Telegram Stars/TON presentation and Qt premium graphics map to Fabushi-owned credit/currency product model and canonical UI; provider-specific payment/withdrawal adapters must preserve authorization, idempotency and settlement.",
+      "production_evidence": "Exact live-source read proves responsibilities only. Current Fabushi wallet/payment owner and backend contract still require exact-head implementation and settlement/recovery evidence.",
+      "test_evidence": "HIGH risk: unit/server-contract/integration/fault/security/a11y/E2E for account switch, top-up retry/idempotency/cancel, failed payment, balance reconciliation, history pagination/rebuild, receipt routing, withdrawal availability/error and keyboard/focus/light-dark/responsive.",
+      "disposition": "mapped-open-canonical-wallet-payments-credits",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "CreditsId",
+      "consumer_evidence": [
+        "Telegram/SourceFiles/settings/sections/settings_credits.cpp:1104:Type CreditsId() {",
+        "Telegram/SourceFiles/settings/sections/settings_credits.cpp:1116:Fn<void()> BuyStarsHandler::handler(",
+        "Telegram/SourceFiles/settings/sections/settings_credits.cpp:256:apiFull->requestSubscriptions({}, [=](Data::CreditsStatusSlice d) {",
+        "Telegram/SourceFiles/settings/sections/settings_credits.cpp:919:Api::HandleWithdrawalButton("
+      ],
+      "reachability_status": "accepted-tree credits/payment settings responsibility proven; canonical implementation/evidence closure open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no source-named credits runtime retained.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "verified_blob_sha": "dbe0b4cf48e52c30e2066c6ad4181893ed604646",
+        "file_type": "blob",
+        "recursive_order": 5590
+      },
+      "notes": "Complete exact-source read at live authority. Unknown remains open; omitted=false."
+    },
+    {
+      "recursive_order": 5591,
+      "source_path": "Telegram/SourceFiles/settings/sections/settings_credits.h",
+      "source_blob_sha": "56c88e68b16b4c2c49bcbcc846b9a5969dfb4867",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Public Credits/Currency route and top-up handler/loading contracts",
+      "upstream_owner": "Telegram credits settings interface",
+      "state_machine": "caller resolves Credits/Currency route or invokes top-up handler -> canonical account/payment owner performs scoped loading/settlement -> loading producer reflects authoritative request lifecycle",
+      "side_effects": "Exports route and top-up interaction contracts only; payment/account truth remains canonical owners.",
+      "failure_cases": "handler is retained across account replacement; stale options reused for wrong account; loading state escapes owner; route bypasses canonical authorization/payment owner",
+      "ui_disposition": "Expose through canonical typed Settings/Wallet route and reusable Button/Dialog/Loading primitives; no source-named component.",
+      "fabushi_canonical_owner": "Canonical Wallet/Payments/Credits typed routing and top-up interface",
+      "fabushi_target": "MAPPED OPEN. Preserve callable semantics via source-neutral account-scoped payment interfaces.",
+      "platform_differences": "C++ weak-pointer/rpl mechanics map to typed cancellation scopes/AbortSignal or Rust task ownership in canonical services.",
+      "production_evidence": "Header read proves public contract only; same-head implementation and settlement evidence remain required.",
+      "test_evidence": "MEDIUM risk: route/account binding, handler reuse fencing, loading/cancellation lifetime and accessibility evidence required.",
+      "disposition": "mapped-open-canonical-wallet-payments-credits-interface",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "CreditsId",
+      "consumer_evidence": [
+        "Telegram/SourceFiles/settings/sections/settings_credits.h:23:[[nodiscard]] Type CreditsId();",
+        "Telegram/SourceFiles/settings/sections/settings_credits.h:24:[[nodiscard]] Type CurrencyId();",
+        "Telegram/SourceFiles/settings/sections/settings_credits.h:26:class BuyStarsHandler final : public base::has_weak_ptr {"
+      ],
+      "reachability_status": "accepted-tree public credits settings contract proven; canonical implementation/evidence closure open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no source-named credits interface retained.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "verified_blob_sha": "56c88e68b16b4c2c49bcbcc846b9a5969dfb4867",
+        "file_type": "blob",
+        "recursive_order": 5591
+      },
+      "notes": "Complete exact-source header read at live authority. Unknown remains open; omitted=false."
+    },
+    {
+      "recursive_order": 5592,
+      "source_path": "Telegram/SourceFiles/settings/sections/settings_folders.cpp",
+      "source_blob_sha": "8c5b9b4d6b7a5b3166c12ac8e20c50775a84e9dd",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Conversation folder/filter settings: create/edit/remove/restore/reorder filters, shared-chat-list leave peer selection, recommended filters and limits, premium-gated tags with debounced server mutation, and filter tab/view preferences",
+      "upstream_owner": "Telegram ChatsFilters data/API + Folders settings section",
+      "state_machine": "authoritative filters -> local editable rows; create/edit/remove/restore stages diff -> assign stable IDs/order -> apply local updates -> serialize server remove/leave/add requests -> reconcile updates/order -> completion; shared removal suggestion request -> peer choice -> leave; tags toggle -> premium gate -> 500ms debounce -> request -> teardown flush; view mode persists locally",
+      "side_effects": "Mutates account chat-filter definitions/order/tags, may leave shared chat lists and remove selected peers, applies optimistic local updates, persists display preferences and opens premium/limit/edit flows. Canonical Conversation collection/filter owner remains sole truth.",
+      "failure_cases": "new ID collision; reorder/add/remove races; optimistic local state survives failed/stale account request; leave-chat-list peer selection applied to wrong filter; request chain order breaks; section teardown loses pending tags toggle; rapid tag toggles send stale value; premium downgrade leaves enabled tags; count/status diverges; inaccessible row removal/restore or tab modes",
+      "ui_disposition": "Reuse canonical Settings + Conversation collection/filter + ListRow/Button/IconButton/Radio/Switch/Dialog/Picker/Loading/Error controls; no standalone Folder app or source-named row component.",
+      "fabushi_canonical_owner": "Canonical Conversation collection/filter/search owner + Settings + account-scoped messaging service",
+      "fabushi_target": "MAPPED OPEN. Extend existing Conversation filter owner and Fabushi backend contracts for durable shared filters/tags/order; no Telegram Folder subsystem.",
+      "platform_differences": "MTProto filter/update/leave requests map to Fabushi typed server mutations with explicit sequencing/idempotency/account fencing; Qt row/painter mechanics map to canonical list/settings components.",
+      "production_evidence": "Exact live-source read proves staged diff/order/debounce responsibilities. Current Fabushi filter/server owner still requires exact-head implementation, persistence and reconnect evidence.",
+      "test_evidence": "HIGH risk: unit/property/server-contract/integration/fault/security/a11y/E2E for ID/order diffs, remove/restore, shared leave peer selection, ordered requests, failed/retried mutation, account switch, tags debounce/teardown flush/premium downgrade, counts and responsive keyboard states.",
+      "disposition": "mapped-open-canonical-conversation-filter-settings",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "FoldersId",
+      "consumer_evidence": [
+        "Telegram/SourceFiles/settings/sections/settings_folders.cpp:1331:Type FoldersId() {",
+        "Telegram/SourceFiles/settings/sections/settings_folders.cpp:444:MTPchatlists_GetLeaveChatlistSuggestions(",
+        "Telegram/SourceFiles/settings/sections/settings_folders.cpp:1038:session->data().chatsFilters().requestToggleTags(checked, [=] {",
+        "Telegram/SourceFiles/settings/sections/settings_folders.cpp:1149:Core::App().settings().setChatFiltersHorizontal(value);",
+        "Telegram/SourceFiles/settings/sections/settings_folders.cpp:1189:Core::App().settings().setChatFiltersTabsMode(value);"
+      ],
+      "reachability_status": "accepted-tree folder/filter settings responsibility proven; canonical implementation/evidence closure open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no source-named folder runtime retained.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "verified_blob_sha": "8c5b9b4d6b7a5b3166c12ac8e20c50775a84e9dd",
+        "file_type": "blob",
+        "recursive_order": 5592
+      },
+      "notes": "Complete exact-source read at live authority. Unknown remains open; omitted=false."
+    },
+    {
+      "recursive_order": 5593,
+      "source_path": "Telegram/SourceFiles/settings/sections/settings_folders.h",
+      "source_blob_sha": "8a2984febbf9753dd4aeb698eb7924d4960ca19a",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Public Conversation folder/filter Settings route contract",
+      "upstream_owner": "Telegram folders settings interface",
+      "state_machine": "caller resolves Folders route -> canonical Conversation filter owner projects account-scoped settings and lifecycle",
+      "side_effects": "Exports route contract only; filter/server state remains canonical owners.",
+      "failure_cases": "route creates duplicate collection truth; account scope is lost; settings surface bypasses canonical filter service or accessibility contract",
+      "ui_disposition": "Expose through canonical Settings route and Conversation filter surface; no source-named Folder root.",
+      "fabushi_canonical_owner": "Canonical Settings routing + Conversation collection/filter owner",
+      "fabushi_target": "MAPPED OPEN. Preserve typed route semantics only.",
+      "platform_differences": "C++ Settings Type maps to canonical route registration.",
+      "production_evidence": "Header read proves route surface only; same-head production evidence remains required.",
+      "test_evidence": "MEDIUM risk: route/account binding, composition ownership and keyboard/a11y evidence required.",
+      "disposition": "mapped-open-canonical-conversation-filter-settings-interface",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "FoldersId",
+      "consumer_evidence": [
+        "Telegram/SourceFiles/settings/sections/settings_folders.h:18:[[nodiscard]] Type FoldersId();",
+        "Telegram/SourceFiles/settings/sections/settings_folders.cpp:1331:Type FoldersId() {"
+      ],
+      "reachability_status": "accepted-tree public folder/filter route contract proven; canonical implementation/evidence closure open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no source-named folder interface retained.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "verified_blob_sha": "8a2984febbf9753dd4aeb698eb7924d4960ca19a",
+        "file_type": "blob",
+        "recursive_order": 5593
+      },
+      "notes": "Complete exact-source header read at live authority. Unknown remains open; omitted=false."
+    }
+  ]
+}
