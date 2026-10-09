@@ -1,0 +1,45 @@
+{
+  "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+  "accepted_tree": "5030985204963cbbd362ced7412d231b04ebd0cc",
+  "deterministic_order_basis": "non-directory/blob rank in accepted recursive tree",
+  "start": 5685,
+  "end": 5690,
+  "entries": [
+    {
+      "order": 5685,
+      "path": "Telegram/SourceFiles/statistics/view/stack_chart_common.cpp",
+      "blob": "82a1143fe03883c253b97edcc13e4bc72f82fa82",
+      "consumer_symbol": "stack_chart_common.cpp"
+    },
+    {
+      "order": 5686,
+      "path": "Telegram/SourceFiles/statistics/view/stack_chart_common.h",
+      "blob": "7a06c4686b6f8576ede1ccdca50cf7f1173bd4ea",
+      "consumer_symbol": "stack_chart_common.h"
+    },
+    {
+      "order": 5687,
+      "path": "Telegram/SourceFiles/statistics/view/stack_linear_chart_common.cpp",
+      "blob": "50b86284f15a4440520cb3a365aef2875ca6ece1",
+      "consumer_symbol": "stack_linear_chart_common.cpp"
+    },
+    {
+      "order": 5688,
+      "path": "Telegram/SourceFiles/statistics/view/stack_linear_chart_common.h",
+      "blob": "5e21a540a54e6ba4b3353927011aa540b0d090e5",
+      "consumer_symbol": "stack_linear_chart_common.h"
+    },
+    {
+      "order": 5689,
+      "path": "Telegram/SourceFiles/statistics/view/stack_linear_chart_view.cpp",
+      "blob": "5f6e1216ed421e3b99f31c2e4a573a9e8a3832ec",
+      "consumer_symbol": "stack_linear_chart_view.cpp"
+    },
+    {
+      "order": 5690,
+      "path": "Telegram/SourceFiles/statistics/view/stack_linear_chart_view.h",
+      "blob": "cc147a73620524bc44b5f4f51f66c6b9f1cbce8a",
+      "consumer_symbol": "stack_linear_chart_view.h"
+    }
+  ]
+}

@@ -553,3 +553,12 @@ Dossier: `projects/telegram-desktop-rust/dossiers/statistics-export-5666-5674-co
 | TDRP-R9-CHART-VIEW-5675-5684 | high | one canonical Chart owner derives range/filter/hover/cache/ruler state from authoritative analytics; empty/zero/endpoint/invalid-type cases fail closed; no chart component owns business truth | Analytics/Insights + reusable Chart design system | mapped-open |
 
 Dossier: `projects/telegram-desktop-rust/dossiers/statistics-chart-view-5675-5684-complete-read.md`.
+
+
+## TDRP Statistics stack/pie views 5685–5690
+
+| requirement_id | risk | invariant | production owner | verdict |
+| --- | --- | --- | --- | --- |
+| TDRP-R9-CHART-STACK-5685-5690 | high | stack/pie geometry and local zoom are derived from canonical analytics/filter state, percentage settlement is deterministic, and zero/short/invalid range inputs fail closed | Analytics/Insights + reusable Chart design system | mapped-open |
+
+Dossier: `projects/telegram-desktop-rust/dossiers/statistics-stack-pie-5685-5690-complete-read.md`.
