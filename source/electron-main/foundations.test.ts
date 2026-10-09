@@ -76,7 +76,7 @@ test("attachment staging uses the production filesystem owner and Node UUID sour
     const bytes = new Uint8Array(Buffer.from("Fabushi Human attachment exact-head evidence.", "utf8"));
     const staged = await edge.stageBytes("phase1-human-reply.txt", bytes);
     if (!staged.ok) assert.fail("Expected production attachment staging to succeed.");
-    assert.match(basename(staged.path), /^1700000000000-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\\.txt$/u);
+    assert.match(basename(staged.path), /^1700000000000-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.txt$/u);
     assert.equal(readFileSync(staged.path, "utf8"), "Fabushi Human attachment exact-head evidence.");
     assert.deepEqual(failures, []);
   } finally {
