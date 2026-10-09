@@ -164,6 +164,45 @@ pub struct ProductionSessionWorkers {
     busy_timeout_ms: u64,
 }
 
+fn resolve_human_reply_target_id(
+    existing: &[serde_json::Value],
+    reply_to_id: Option<&str>,
+) -> Result<Option<String>, String> {
+    let Some(reply_id) = reply_to_id
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    else {
+        return Ok(None);
+    };
+    if existing.iter().any(|entry| {
+        entry.get("id").and_then(serde_json::Value::as_str) == Some(reply_id)
+    }) {
+        return Ok(Some(reply_id.to_string()));
+    }
+
+    let nonce = reply_id
+        .strip_prefix("pending-")
+        .or_else(|| reply_id.strip_prefix("human-message:"))
+        .filter(|value| !value.is_empty())
+        .ok_or_else(|| "sendHumanMessage reply target is not in this Human conversation".to_string())?;
+    let mut matches = existing.iter().filter(|entry| {
+        entry.get("clientNonce").and_then(serde_json::Value::as_str) == Some(nonce)
+    });
+    let Some(entry) = matches.next() else {
+        return Err("sendHumanMessage reply target is not in this Human conversation".into());
+    };
+    if matches.next().is_some() {
+        return Err("sendHumanMessage reply target clientNonce is ambiguous in this Human conversation".into());
+    }
+    let canonical_id = entry
+        .get("id")
+        .and_then(serde_json::Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .ok_or_else(|| "sendHumanMessage reply target is not in this Human conversation".to_string())?;
+    Ok(Some(canonical_id.to_string()))
+}
+
 impl ProductionSessionWorkers {
     pub fn production() -> Self {
         Self::production_with_user_time_zone_resolver(Arc::new(|| None))
@@ -2836,16 +2875,7 @@ impl ProductionSessionWorkers {
         let existing = owner
             .get_transcript_entries()
             .map_err(|error| error.to_string())?;
-        let normalized_reply = reply_to_id
-            .map(str::trim)
-            .filter(|value| !value.is_empty());
-        if let Some(reply_id) = normalized_reply {
-            if !existing.iter().any(|entry| {
-                entry.get("id").and_then(serde_json::Value::as_str) == Some(reply_id)
-            }) {
-                return Err("sendHumanMessage reply target is not in this Human conversation".into());
-            }
-        }
+        let normalized_reply = resolve_human_reply_target_id(&existing, reply_to_id)?;
         let normalized_attachments = attachments
             .iter()
             .map(|attachment| {
@@ -2879,7 +2909,7 @@ impl ProductionSessionWorkers {
         }) {
             let same_sender = entry.get("authorId").and_then(serde_json::Value::as_str) == Some(sender_id);
             let same_text = entry.get("content").and_then(serde_json::Value::as_str) == Some(text);
-            let same_reply = entry.get("replyToId").and_then(serde_json::Value::as_str) == normalized_reply;
+            let same_reply = entry.get("replyToId").and_then(serde_json::Value::as_str) == normalized_reply.as_deref();
             let same_attachments = match entry.get("attachments").and_then(serde_json::Value::as_array) {
                 Some(values) => values.len() == normalized_attachments.len()
                     && values.iter().zip(normalized_attachments.iter()).all(|(current, requested)| {
@@ -2926,7 +2956,7 @@ impl ProductionSessionWorkers {
                     "scheduledAtMs": scheduled_at_ms,
                 });
                 let object = entry.as_object_mut().expect("Human pending message must be an object");
-                if let Some(reply_id) = normalized_reply { object.insert("replyToId".into(), serde_json::json!(reply_id)); }
+                if let Some(reply_id) = normalized_reply.as_deref() { object.insert("replyToId".into(), serde_json::json!(reply_id)); }
                 if !normalized_attachments.is_empty() { object.insert("attachments".into(), serde_json::Value::Array(normalized_attachments.clone())); }
                 if let Some(context) = forward_context { object.insert("forwardContext".into(), context.clone()); }
                 entry
@@ -2940,6 +2970,7 @@ impl ProductionSessionWorkers {
             let dispatch_result = (|| -> Result<serde_json::Value, String> {
                 let peer_human_id = self.peer_human_id_from_metadata(&metadata)?;
                 let remote_reply_to_id = normalized_reply
+                    .as_deref()
                     .map(|reply_id| {
                         owner
                             .get_transcript_entries()
@@ -3784,6 +3815,49 @@ mod sharebox_shipping_tests {
 
     fn conversation_id(value: &serde_json::Value) -> String {
         value.get("id").and_then(serde_json::Value::as_str).unwrap().to_string()
+    }
+
+    #[test]
+    fn human_reply_target_aliases_follow_durable_settlement_identity() {
+        let entries = vec![serde_json::json!({
+            "id": "human-server-message:7",
+            "kind": "message",
+            "clientNonce": "root-nonce",
+            "remoteMessageId": 7
+        })];
+
+        assert_eq!(
+            resolve_human_reply_target_id(&entries, Some("human-server-message:7"))
+                .unwrap()
+                .as_deref(),
+            Some("human-server-message:7")
+        );
+        assert_eq!(
+            resolve_human_reply_target_id(&entries, Some("pending-root-nonce"))
+                .unwrap()
+                .as_deref(),
+            Some("human-server-message:7")
+        );
+        assert_eq!(
+            resolve_human_reply_target_id(&entries, Some("human-message:root-nonce"))
+                .unwrap()
+                .as_deref(),
+            Some("human-server-message:7")
+        );
+        assert_eq!(
+            resolve_human_reply_target_id(&entries, Some("pending-other"))
+                .unwrap_err(),
+            "sendHumanMessage reply target is not in this Human conversation"
+        );
+        assert_eq!(resolve_human_reply_target_id(&entries, None).unwrap(), None);
+
+        let ambiguous = vec![
+            serde_json::json!({ "id": "human-server-message:7", "clientNonce": "root-nonce" }),
+            serde_json::json!({ "id": "human-server-message:8", "clientNonce": "root-nonce" }),
+        ];
+        assert!(resolve_human_reply_target_id(&ambiguous, Some("pending-root-nonce"))
+            .unwrap_err()
+            .contains("ambiguous"));
     }
 
     #[test]

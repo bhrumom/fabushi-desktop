@@ -75,7 +75,7 @@ use std::io::{self, BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
 use std::process::{ChildStdin, Command, Stdio};
 use std::sync::{
-    Arc, Mutex, Weak,
+    Arc, Condvar, Mutex, Weak,
     atomic::{AtomicBool, AtomicU64, Ordering},
     mpsc::{self, RecvTimeoutError, Sender},
 };
@@ -115,6 +115,8 @@ struct CoordinatorState {
     active_inference_streams: ActiveInferenceStreamRegistry,
     inference_streams: Mutex<HashMap<String, Sender<Value>>>,
     host_stdin: Mutex<Option<ActiveHostStdin>>,
+    host_exit_generation: Mutex<u64>,
+    host_exit_cv: Condvar,
     gateway_client: Mutex<CoordinatorGatewayClient>,
     gateway_command_policy: GatewayCommandPolicy,
     host_supervisor: Mutex<GatewayHostSupervisor>,
@@ -140,6 +142,30 @@ struct CoordinatorState {
 }
 
 impl CoordinatorState {
+    fn mark_host_generation_exited(&self, generation: u64) {
+        let mut settled = self
+            .host_exit_generation
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        if generation > *settled {
+            *settled = generation;
+        }
+        self.host_exit_cv.notify_all();
+    }
+
+    fn wait_for_host_generation_exit(&self, generation: u64) {
+        let mut settled = self
+            .host_exit_generation
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        while *settled < generation {
+            settled = self
+                .host_exit_cv
+                .wait(settled)
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+        }
+    }
+
     fn write_frame(&self, channel: CarrierChannel, frame: &CoordinatorFrame) -> io::Result<()> {
         let _guard = self
             .stdout_lock
@@ -1533,6 +1559,7 @@ fn spawn_host(state: Arc<CoordinatorState>) -> io::Result<u64> {
 
     thread::spawn(move || {
         let status = child.wait();
+        state.mark_host_generation_exited(generation);
         if let Ok(mut active) = state.host_stdin.lock() {
             if active
                 .as_ref()
@@ -2843,6 +2870,8 @@ fn main() {
         active_inference_streams: ActiveInferenceStreamRegistry::default(),
         inference_streams: Mutex::new(HashMap::new()),
         host_stdin: Mutex::new(None),
+        host_exit_generation: Mutex::new(0),
+        host_exit_cv: Condvar::new(),
         gateway_client: Mutex::new(gateway_client),
         gateway_command_policy: GatewayCommandPolicy::default(),
         host_supervisor: Mutex::new(GatewayHostSupervisor::new(HEALTH_PROBE_TTL_MS)),
@@ -2953,8 +2982,13 @@ fn main() {
     if let Ok(mut server) = state.main_data_port.lock() {
         let _ = server.handle_port_closed();
     }
-    if let Ok(mut active) = state.host_stdin.lock() {
-        active.take();
+    let retiring_host_generation = state
+        .host_stdin
+        .lock()
+        .ok()
+        .and_then(|mut active| active.take().map(|entry| entry.generation));
+    if let Some(generation) = retiring_host_generation {
+        state.wait_for_host_generation_exit(generation);
     }
     if let Ok(mut relay) = state.tool_relay.lock() {
         relay.clear();
