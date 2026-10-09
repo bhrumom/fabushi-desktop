@@ -8,4 +8,4 @@ Accepted authority: `telegramdesktop/tdesktop@65e23ba7137ea4129b6bc1b2616104a1f5
 
 All eleven rows remain `mapped-open`, `unknown_closed=false`, `omitted=false` until canonical shipping implementation, focused tests, consumer reachability and same-head evidence exist.
 
-Accounting after this read: **6,182 / 16,125 read**, **9,943 unread**, **15,846 unknown**, **0 omitted**. First unread: **6,183** `Telegram/SourceFiles/ui/item_text_options.cpp@eec63d2be0577b6c18d1dae1699e8a8e65504fe9`.
+Accounting after this read: **6,182 / 16,125 read**, **9,943 unread**, **15,846 unknown**, **0 omitted**. First unread after this shard was **6,183** `Telegram/SourceFiles/ui/image/image.cpp@338f53d858cfdb63b166714adbe93d00324d5cdb`.
