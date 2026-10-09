@@ -1,7 +1,7 @@
 # Fabushi official MCP marketplace — Specification
 Status: active
 Owner: Fabushi Plugins/MCP
-Last updated: 2026-10-08
+Last updated: 2026-10-09
 
 ## 1. Context / problem
 The user requests a Fabushi-owned official marketplace listing common provider-operated MCP servers, especially Google and GitHub. Canonical main is 3bc92400826cc4ca7ac665b467708e22261edc61. The current recovered MCP catalog, effective-install lookup and HTTP MCP execution depend on Cursor Dashboard. Fabushi account credentials are correctly refused for that foreign backend; the UI's all-or-nothing loading hides even available catalog entries.
@@ -17,22 +17,22 @@ Do not rebuild Google/GitHub APIs, impersonate provider publishers, weaken accou
 - FMCP-002: distinguish Fabushi directory curation from upstream provider ownership. Stable namespaced IDs, descriptions and official provenance are bundled and available without foreign Dashboard access.
 - FMCP-003: installation/update/removal and account credentials persist in the existing encrypted storage mechanism, in a dedicated file isolated from Box secret export. Fabushi account identity scopes every operation. No third-party service receives a Fabushi session token.
 - FMCP-004: installed connectors participate in shipping MCP server/tool inventory and Coordinator/Host routed tools. Implement initialize, notifications/initialized, tools/list pagination and tools/call with Streamable HTTP JSON and SSE responses. Requests are bounded, redirects refused, tools validated and errors redacted; uncertain writes are never automatically retried.
-- FMCP-005: install without authorization remains needsAuth. Explicit provider token setup is supported as an interim route (GitHub PAT / Google OAuth access token), stored only in encrypted native storage and never returned by catalog/list/setup reads. Production one-click OAuth needs registered Fabushi client/broker configuration and is a separate blocked acceptance item, not silently replaced by token setup.
+- FMCP-005: install without authorization remains needsAuth. Explicit provider token setup is supported as an interim route (GitHub PAT / Google OAuth access token), stored only in encrypted native storage and never returned by catalog/list/setup reads. Production one-click OAuth is required: reuse the existing Fabushi account identity and platform Worker, register or reuse suitable owner-controlled clients, and provide state-bound provider consent, token expiry/refresh and revocation. Token setup is not production acceptance.
 - FMCP-006: failures in legacy installed/custom connectors must not hide the official directory or its installed connectors. Show a partial-load warning; do not silently report legacy lookup success.
 - FMCP-007: preserve custom/team/private-skill flows and existing permission/tool-disable gates. Account switches, uninstall or credential changes fence in-flight results. Native error/tool output must not reveal provider credentials.
 - FMCP-008: all executable verification runs in GitHub Actions. No local build/test/lint/generator.
 
 ## 5. Current state
-source/shared/node/mcp/mcp-marketplace.ts reads Dashboard catalog; desktop-mcp-manager.ts owns the production manager and routed tool facade. frontend PluginsDesktopSurface loads catalog, effective plugins and server state together. The existing encrypted SandUserSecretsStore supports dedicated store paths and account scopes. The user confirmed on 2026-10-08 that OAuth applications have not yet been configured. Google preview entitlement has not been confirmed.
+source/shared/node/mcp/mcp-marketplace.ts reads Dashboard catalog; desktop-mcp-manager.ts owns the production manager and routed tool facade. frontend PluginsDesktopSurface loads catalog, effective plugins and server state together. The existing encrypted SandUserSecretsStore supports dedicated store paths and account scopes. On 2026-10-09 the user authorized completing and publishing the usable marketplace and retrieving/provisioning needed configuration through the unified-device-control Mac. The existing identity OAuth config requests only login scopes and discards service tokens; account_connections is the existing service-connection schema. Mac Google Cloud has Chrome publishing clients, whose suitability is unconfirmed; personal and organization GitHub OAuth App lists are empty. Google preview entitlement has not been confirmed.
 
 ## 6. Target state
-Existing Plugins entry displays the Fabushi official catalog. Install configures a real remote connector; actual authorization and MCP discovery determine status/tool count. The directory remains available during foreign Dashboard failures. Normal OAuth login will be activated only after registered application configuration and live acceptance.
+Existing Plugins entry displays the Fabushi official catalog. Install configures a real remote connector; actual authorization and MCP discovery determine status/tool count. The directory remains available during foreign Dashboard failures. Provider connection OAuth, refresh and disconnect are required through the existing platform Worker and encrypted native MCP edge, with separate grants from Fabushi sign-in. Registered-client configuration and real provider evidence must precede a fully usable claim.
 
 ## 7. Architecture / ownership
 Catalog metadata lives in shared MCP. Native connection state, encrypted vault and transport are narrow Electron MCP edges, composed by desktop-mcp-manager.ts. The existing independent Coordinator -> Host routed tools path remains the caller; no second Agent/runtime or Mini App market is introduced. Legacy plugins retain their current owner.
 
 ## 8. Contracts / data flow
-Catalog IDs use fabushi-official-*; server IDs use the same namespace. Native installed records contain plugin ID, token, account label and disabled tools in encrypted JSON. Renderer receives only public metadata/status/tools. Unknown IDs cannot select arbitrary remote hosts. Install values accept optional ACCESS_TOKEN; updates with absent/blank token preserve the current token. Disconnect deletes credentials; uninstall deletes the install. OAuth start without registered configuration returns not-supported with an actionable reason. Successful tools/call is projected into canonical generated MCP results. Tool discovery/calls are fenced against current account and install revision.
+Catalog IDs use fabushi-official-*; server IDs use the same namespace. Native installed records contain plugin ID, token, account label and disabled tools in encrypted JSON. Renderer receives only public metadata/status/tools. Unknown IDs cannot select arbitrary remote hosts. Install values accept optional ACCESS_TOKEN; updates with absent/blank token preserve the current token. Disconnect deletes credentials; uninstall deletes the install. Connection OAuth broker routes belong to the existing platform Worker: authenticated start/poll, state-bound public callback, authenticated refresh/revoke. Provider tokens remain isolated from Fabushi sessions; client secrets stay server-side. Missing registration or preview entitlement returns an actionable provider configuration error. Successful tools/call is projected into canonical generated MCP results. Tool discovery/calls are fenced against current account and install revision.
 
 ## 9. Constraints
 HTTPS fixed endpoints, no redirects, 60s request timeout, bounded response size, provider credentials only. No automatic retries of writes. Offline public catalog; no pretend connection or hardcoded tool inventory.
@@ -54,7 +54,7 @@ Actions unit/contract tests: all official endpoints/provenance; install without 
 - AC-5: current-head CI, integration and release verified. Code push alone is not completion.
 
 ## 14. Release / rollback
-Deliver through a dedicated main-based PR. No schema migration is needed for the dedicated native encrypted vault. Existing installs are retained. Rollback removes official connector composition without altering legacy installs; users may remove the dedicated encrypted native installs.
+Deliver through a dedicated main-based PR. Reuse account_connections for service identities; any additional OAuth attempt/credential lifecycle fields require versioned ACCOUNT_DB migrations. Client secrets and provider tokens must never enter git or public release artifacts. Existing installs are retained. Rollback removes official connector composition without altering legacy installs; users may remove the dedicated encrypted native installs.
 
 ## 15. Observability / evidence
 Retain exact commit/run/job/step links. Emit sanitized error classes and partial-load warnings; never log tokens, raw auth responses or secrets. Live OAuth/configuration blocks remain explicit.
