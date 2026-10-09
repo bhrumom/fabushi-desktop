@@ -316,3 +316,20 @@ Dossier: `projects/telegram-desktop-rust/dossiers/resource-composer-chat-501-600
 
 Dossier: `projects/telegram-desktop-rust/dossiers/build-provenance-resolution-ccache-xz-openal.md`.
 
+
+### TDRP Revision 9 platform source-read requirements 5411-5475
+
+| requirement | risk | invariant | exact source evidence | production status |
+| --- | --- | --- | --- | --- |
+| TDRP-R9-PLATFORM-FILE-SECURITY-5411-5414-5464-5465 | high | file/bookmark/Open-With/download-zone state stays behind one canonical file/security owner | accepted blobs in source-dispositions 5411-5475 + attestation manifest | MAPPED-SOURCE-READ-PRODUCTION-OPEN |
+| TDRP-R9-PLATFORM-WINDOW-LIFECYCLE-5415-5435-5468-5471-5474-5475 | high | native menus/windows/lifecycle project through canonical app-menu/window/theme/settings owners; no second UI/runtime root | same shard + dossier | MAPPED-SOURCE-READ-PRODUCTION-OPEN |
+| TDRP-R9-NATIVE-NOTIFICATION-ACTIONS-5426-5429-5472-5473 | critical | inline reply/action activation must authorize exact conversation/message scope and cleanup exact native notifications | same shard + dossier | MAPPED-SOURCE-READ-PRODUCTION-GAP |
+| TDRP-R9-MAC-TOUCHBAR-OCR-TRANSLATION-TRAY-5436-5459 | medium | platform projections cannot own Composer/Conversation/Media/translation truth | same shard + dossier | MAPPED-SOURCE-READ-PRODUCTION-OPEN |
+| TDRP-R9-WALLET-PASSKEY-5460-5462 | critical | device auth/Secure Enclave/passkey operations remain fail-closed under canonical wallet/account/auth security owners | same shard + dossier | MAPPED-SOURCE-READ-PRODUCTION-GAP |
+| TDRP-R9-UPDATER-LAUNCHER-5419-5420-5466-5467 | critical | updater handoff may proceed only after authenticated package/trusted staging/preflight/privilege/post-install verification and recoverable failure semantics | same shard + existing updater contracts; full protected updater evidence still absent | MAPPED-SOURCE-READ-PRODUCTION-GAP |
+
+- INV-TDRP-R9-NATIVE-NOTIFICATION-SCOPE-001: native reply/action callbacks must bind to the exact authorized conversation/message identity and cannot become a second message owner.
+- INV-TDRP-R9-PROTECTED-UPDATER-001: an updater matrix that only proves update gating or parent handoff does not close trusted-path, authenticated-package, private-staging, privilege, post-install-digest, or failure-recovery responsibilities.
+- INV-TDRP-R9-PASSKEY-SINGLE-AUTH-OWNER-001: native passkey/security-key APIs are adapters to canonical account/auth state, never a second credential truth store.
+- Dossier: `projects/telegram-desktop-rust/dossiers/platform-mac-windows-5411-5475-complete-read.md`.
+- These rows grant source-read/traceability credit only. They do not grant production, test, release, or independent-acceptance credit.
