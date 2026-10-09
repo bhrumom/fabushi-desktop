@@ -1598,6 +1598,21 @@
         ".github/workflows/rust-desktop-runtime.yml"
       ],
       "rationale": "Hardens the existing canonical live updater rather than introducing a Telegram-derived updater owner. Windows/iupdate offers now fail closed without a canonical 64-hex SHA-256 digest; download staging exclusively creates mode-0600 package files instead of following or overwriting a pre-existing destination; the single update service creates mode-0700 staging directories and removes them if permission hardening fails. Existing Authenticode verification, safe-relaunch gating, parent identity handoff and apply-marker recovery remain in the same shipping owner. macOS authenticated apply and post-install installed-artifact identity remain explicitly open."
+    },
+    {
+      "referencePath": "frontend/src/recovered/ui/overlay-primitives.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "b485292a13ffccb5ca5a2df518cb854e77a8b2a0",
+      "behavioralEvidence": [
+        "frontend/src/recovered/ui/overlay-primitives.tsx",
+        "frontend/src/recovered/ui/overlay-dismissal.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/ui/overlay-dismissal.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves the frozen Grok modal/focus/Escape behavior while adapting the canonical OverlayDialog to the TDRP Revision 9 wallet outside-click invariant. Only the visually topmost modal owns an eligible background pointer press; it consumes the event before a microtask-deferred close, and teardown can cancel the scheduled close. This prevents one pointer press from dismissing a lower Transaction layer after closing the current information box. The adaptation remains inside the existing source-neutral OverlayDialog owner, keeps owned floating-child and focus-trap contracts, introduces no Telegram/Wallet dialog component, and is covered by executable backdrop-consumption, topmost-arbitration and deferred-cancellation contract tests in the required Rust desktop runtime gate."
     }
   ]
 }
