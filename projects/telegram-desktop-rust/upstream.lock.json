@@ -266,9 +266,9 @@
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
     "unknown_minimum": 15846,
-    "unread_minimum": 10114,
+    "unread_minimum": 10093,
     "omitted_known": 0,
-    "note": "Accepted 65e23ba tree 6b616494; exact read-through 6,011; unknown=15,846, unread=10,114, omitted=0."
+    "note": "Accepted 65e23ba tree 6b616494; exact read-through 6,032; unknown=15,846, unread=10,093, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -634,38 +634,38 @@
     "development_only_non_applicable": 69,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 6011
+    "read_through": 6032
   },
   "historical_exact_head_evidence": {
     "status": "historical-only",
-    "predecessor_upstream_commit": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
-    "predecessor_target_head": "b4d9f7f8cf580eefd553c5ce105f1d3e682de87f",
+    "predecessor_upstream_commit": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
+    "predecessor_target_head": "6c9f4a71accfb8ef6ed39647ba9c314cdaadffa0",
     "runs": [
       {
-        "id": 37958691718,
-        "workflow": "Rust desktop runtime",
+        "id": 37994253070,
+        "workflow": "Desktop Chat Parity CI",
         "conclusion": "success"
       },
       {
-        "id": 37958689647,
-        "workflow": "Desktop Chat Parity CI",
+        "id": 37994253071,
+        "workflow": "Rust desktop runtime",
         "conclusion": "success"
       }
     ],
     "artifacts": [
       {
-        "id": 11630066443,
-        "digest": "sha256:d4eb35fe0536f9545d0a80b1f79f9821fd530404d062caf5c8fd693f076b66b5"
+        "id": 11646627384,
+        "digest": "sha256:8f66512c3631210316dd0b0728cf09f7177c174a1bcd2a6dd236101fc10b15c1"
       },
       {
-        "id": 11631221092,
-        "digest": "sha256:d0f12d1dd0c81f4226f5a38d1e9dd147f431c71b3dc96b334b054b92c2800f43"
+        "id": 11646890929,
+        "digest": "sha256:3683ec0b5ab2b42a9c78a5e122b4f8db60282423bf1174883017f3d4eb072d0d"
       },
       {
-        "id": 11630211787,
-        "digest": "sha256:2de02ef0217a770851b883ee7c6798fc597200075c7f1bf13918b4d789a51b88"
+        "id": 11646487081,
+        "digest": "sha256:bf39b897019c201c70869ecc227896a4345abaf67b765340ee15408f1c8b0cc6"
       }
     ],
-    "note": "These runs/artifacts prove 863cf10d+b4d9f7f8 only and are historical-only; they do not prove live b0d1fe5e authority or current descendant acceptance."
+    "note": "Predecessor target 6c9f4a71 is green for the two required workflows; fresh descendant exact-head evidence is mandatory."
   }
 }
