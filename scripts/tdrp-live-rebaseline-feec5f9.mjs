@@ -223,7 +223,7 @@ writej(dispidxp,di);
 
 const attDir='projects/telegram-desktop-rust/inventory/source-attestation-manifests';
 for(const n of fs.readdirSync(attDir).filter(x=>/^\d+-\d+\.json$/.test(x))){
- const p=path.join(attDir,n),m=readj(p);assert(m.accepted_upstream===OLD&&m.accepted_tree===OLD_TREE,'attestation authority drift '+n);
+ const p=path.join(attDir,n),m=readj(p);assert(m.accepted_upstream===OLD&&(!m.accepted_tree||m.accepted_tree===OLD_TREE),'attestation authority drift '+n);
  m.accepted_upstream=NEW;m.accepted_tree=NEW_TREE;
  for(const e of m.entries||[]){
    if(changedPrefixPaths.includes(e.path)){
