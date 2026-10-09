@@ -323,74 +323,74 @@
     },
     {
       "order": 5464,
-      "path": "Telegram/SourceFiles/platform/win/file_utilities_win.cpp",
-      "blob": "0bd07fbe6d935630988a45b66204d3e3be80ea7b",
-      "consumer_symbol": "Platform file utilities"
+      "path": "Telegram/SourceFiles/platform/platform_current_geo_location.h",
+      "blob": "269ee81f320a9a6538b318880d79d489afa81fec",
+      "consumer_symbol": "Current location"
     },
     {
       "order": 5465,
-      "path": "Telegram/SourceFiles/platform/win/file_utilities_win.h",
-      "blob": "e89dd8f8e02a19a6b4392bdea0ff0796246b4357",
-      "consumer_symbol": "Platform file utilities"
+      "path": "Telegram/SourceFiles/platform/platform_file_bookmark.h",
+      "blob": "dffc792b80ba86680b83ae6ebef4ed18bf44fb2c",
+      "consumer_symbol": "File bookmark"
     },
     {
       "order": 5466,
-      "path": "Telegram/SourceFiles/platform/win/launcher_win.cpp",
-      "blob": "e3bb1ffa7aff885360e5bf5b4163178873d6831f",
-      "consumer_symbol": "Platform launcher/updater handoff"
+      "path": "Telegram/SourceFiles/platform/platform_file_utilities.cpp",
+      "blob": "e6c3863cd64de77e365884561fbc1a942af73de9",
+      "consumer_symbol": "Platform file utilities"
     },
     {
       "order": 5467,
-      "path": "Telegram/SourceFiles/platform/win/launcher_win.h",
-      "blob": "910a6a33e00eda9f8128970dd3920ab135575529",
-      "consumer_symbol": "Platform launcher/updater handoff"
+      "path": "Telegram/SourceFiles/platform/platform_file_utilities.h",
+      "blob": "0b4fc5cf1c67254776f26a887c6537119213572f",
+      "consumer_symbol": "Platform file utilities"
     },
     {
       "order": 5468,
-      "path": "Telegram/SourceFiles/platform/win/integration_win.cpp",
-      "blob": "a857514cf69383a6af21ad143ae55a31194777bc",
+      "path": "Telegram/SourceFiles/platform/platform_integration.cpp",
+      "blob": "d2f832eeb63b3a246d2ef684a707601a1b3fe2b8",
       "consumer_symbol": "Platform integration"
     },
     {
       "order": 5469,
-      "path": "Telegram/SourceFiles/platform/win/integration_win.h",
-      "blob": "01f04f95bc3d8667c3fad7c79123a9e331fb2e51",
+      "path": "Telegram/SourceFiles/platform/platform_integration.h",
+      "blob": "36ad0b7b792f2dec89a5aa0bfb81360131654b8b",
       "consumer_symbol": "Platform integration"
     },
     {
       "order": 5470,
-      "path": "Telegram/SourceFiles/platform/win/main_window_win.cpp",
-      "blob": "baceb0e57d55c434997b77e9c0472c5e86641631",
-      "consumer_symbol": "Platform main window"
+      "path": "Telegram/SourceFiles/platform/platform_launcher.h",
+      "blob": "172730e67832a59006f40a9acf5668636bd65fa7",
+      "consumer_symbol": "Platform launcher"
     },
     {
       "order": 5471,
-      "path": "Telegram/SourceFiles/platform/win/main_window_win.h",
-      "blob": "95f9d52da691c5ac8cd07013bbda4b70cd560479",
+      "path": "Telegram/SourceFiles/platform/platform_main_window.h",
+      "blob": "e52de1edc18013c6b8ffe308ffbb1811e6736e71",
       "consumer_symbol": "Platform main window"
     },
     {
       "order": 5472,
-      "path": "Telegram/SourceFiles/platform/win/notifications_manager_win.cpp",
-      "blob": "c3f36b52273226a04486a0c2d596afb5e1a3bad1",
+      "path": "Telegram/SourceFiles/platform/platform_notifications_manager.h",
+      "blob": "da41f6010ee720a5a6f8101cfa54d6af67449c25",
       "consumer_symbol": "OS notification manager"
     },
     {
       "order": 5473,
-      "path": "Telegram/SourceFiles/platform/win/notifications_manager_win.h",
-      "blob": "7f9a6ce8ef1d1b35145f944e986b0978d41c1687",
-      "consumer_symbol": "OS notification manager"
+      "path": "Telegram/SourceFiles/platform/platform_overlay_widget.cpp",
+      "blob": "03fb75e3155758a619e46cfd1c212671e574d0f1",
+      "consumer_symbol": "Overlay/window chrome"
     },
     {
       "order": 5474,
-      "path": "Telegram/SourceFiles/platform/win/overlay_widget_win.h",
-      "blob": "6430f4b200ce892e84b72baa4701c65885c09f49",
+      "path": "Telegram/SourceFiles/platform/platform_overlay_widget.h",
+      "blob": "5b599858aacb68cebc7e118663973a46d1d5619f",
       "consumer_symbol": "Overlay/window chrome"
     },
     {
       "order": 5475,
-      "path": "Telegram/SourceFiles/platform/win/specific_win.cpp",
-      "blob": "ba7f267b6d8c1c0f600d82d9a9226bfbc323da42",
+      "path": "Telegram/SourceFiles/platform/platform_specific.h",
+      "blob": "b309f2aec46c72fa494a329d456cd6715c2f8790",
       "consumer_symbol": "Platform-specific lifecycle"
     }
   ]
