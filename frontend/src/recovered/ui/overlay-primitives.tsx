@@ -1,5 +1,6 @@
 import { createPortal } from "react-dom";
 import { createContext, useEffect, useRef, type CSSProperties, type ReactNode, type RefObject } from "react";
+import { consumeOverlayBackdropPointer, scheduleDeferredOverlayDismiss, topmostOverlayLayerIndex } from "./overlay-dismissal";
 
 // The shared modal lifecycle is recovered from the shipped JVn app-alert host:
 // backdrop marker, dialog root marker, focus restoration, Escape and outside
@@ -54,6 +55,14 @@ export function shouldOverlayHandleEscape(childLayerOpen: boolean, closeOnEscape
 
 export function shouldOverlayDismissPointer(insidePanel: boolean, ownedChildLayer: boolean, closeOnBackdrop: boolean, defaultPrevented: boolean, ctrlKey: boolean): boolean {
   return closeOnBackdrop && !defaultPrevented && !ctrlKey && !insidePanel && !ownedChildLayer;
+}
+
+function isTopmostOverlayDialogPanel(panel: HTMLElement): boolean {
+  if (typeof document === "undefined") return true;
+  const panels = [...document.querySelectorAll<HTMLElement>("[data-ui-dialog-root]")].filter((candidate) => candidate.isConnected);
+  if (panels.length === 0) return true;
+  const zIndexes = panels.map((candidate) => Number.parseFloat(candidate.dataset.overlayZIndex ?? "0") || 0);
+  return panels[topmostOverlayLayerIndex(zIndexes)] === panel;
 }
 
 export function shouldOverlayContainFocus(insidePanel: boolean, ownedChildLayer: boolean, trapFocus: boolean): boolean {
@@ -231,6 +240,7 @@ export function OverlayDialog({
   const panelRef = useRef<HTMLDivElement>(null);
   const restoreFocusRef = useRef<HTMLElement | null>(null);
   const onCloseRef = useRef(onClose);
+  const cancelDeferredDismissRef = useRef<(() => void) | null>(null);
   onCloseRef.current = onClose;
 
   useEffect(() => {
@@ -286,10 +296,18 @@ export function OverlayDialog({
     };
     const handlePointerDown = (event: PointerEvent): void => {
       const panel = panelRef.current;
-      if (panel == null) return;
+      if (panel == null || !isTopmostOverlayDialogPanel(panel)) return;
       const insidePanel = typeof Node !== "undefined" && event.target instanceof Node && panel.contains(event.target);
       const ownedChildLayer = isOwnedDismissableLayerTarget(event.target, owner);
-      if (shouldOverlayDismissPointer(insidePanel, ownedChildLayer, closeOnBackdrop, event.defaultPrevented, event.ctrlKey)) onCloseRef.current();
+      if (!shouldOverlayDismissPointer(insidePanel, ownedChildLayer, closeOnBackdrop, event.defaultPrevented, event.ctrlKey)) return;
+      // The topmost modal owns this outside press. Swallow it before deferring
+      // destruction so the same pointer cannot reach and dismiss a lower layer.
+      consumeOverlayBackdropPointer(event);
+      cancelDeferredDismissRef.current?.();
+      cancelDeferredDismissRef.current = scheduleDeferredOverlayDismiss(() => {
+        cancelDeferredDismissRef.current = null;
+        onCloseRef.current();
+      });
     };
     const handleFocusIn = (event: FocusEvent): void => {
       const panel = panelRef.current;
@@ -302,6 +320,8 @@ export function OverlayDialog({
     document.addEventListener("pointerdown", handlePointerDown, true);
     document.addEventListener("focusin", handleFocusIn, true);
     return () => {
+      cancelDeferredDismissRef.current?.();
+      cancelDeferredDismissRef.current = null;
       document.removeEventListener("keydown", handleKeyDown, true);
       document.removeEventListener("pointerdown", handlePointerDown, true);
       document.removeEventListener("focusin", handleFocusIn, true);
@@ -321,6 +341,7 @@ export function OverlayDialog({
         aria-modal="true"
         className={className}
         {...markers}
+        data-overlay-z-index={zIndex}
         data-presentation={dataPresentation}
         data-ui-dialog-root
         ref={panelRef}
