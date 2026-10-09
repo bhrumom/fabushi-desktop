@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15846,
-    "unread_minimum": 10324,
+    "unread_minimum": 10320,
     "omitted_known": 0,
-    "note": "Live 811b83a1 recursive census 16,125; accepted-tree blob order exact through 5,801; unknown 15,846, unread 10,324, omitted 0."
+    "note": "Live 811b83a1 recursive census 16,125; accepted-tree blob order exact through 5,805; unknown 15,846, unread 10,320, omitted 0."
   },
   "latest_recursive_evidence": {
     "run_id": 37872749663,
@@ -46,7 +46,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live authority exact through deterministic blob order 5,801; unread_minimum is 10,324; unknown remains 15,846; omitted remains 0.",
+  "note": "Live authority exact through deterministic blob order 5,805; unread_minimum is 10,320; unknown remains 15,846; omitted remains 0.",
   "rebaseline": {
     "from_commit": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
     "to_commit": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
@@ -56,9 +56,9 @@
       "Telegram/SourceFiles/ui/chat/chat_theme_readability.cpp"
     ],
     "current_head_source_authority_evidence": "Fresh exact-head Source authority evidence required after 811b83a1; predecessor runs/artifacts are historical only.",
-    "current_source_read_through": 5801,
-    "first_unread_order": 5802,
-    "first_unread_path": "Telegram/SourceFiles/test/test_menu.cpp"
+    "current_source_read_through": 5805,
+    "first_unread_order": 5806,
+    "first_unread_path": "Telegram/SourceFiles/test/test_notify_override.cpp"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -67,6 +67,6 @@
     "development_only_non_applicable": 69,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 5801
+    "read_through": 5805
   }
 }

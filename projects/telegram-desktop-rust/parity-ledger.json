@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15846,
-    "unread": 10324,
+    "unread": 10320,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -2258,9 +2258,8 @@
       "implementation_status": "implemented",
       "coverage_disposition": "rewritten",
       "blockers": [
-        "Current-head GitHub Actions compile/test/integration evidence pending",
+        "Current-head GitHub Actions compile/test/integration evidence pending for submit-time Human recipient revalidation",
         "Shipping candidate enumeration remains Human-direct; canonical Group/Channel/topic/saved-sublist child destinations are not yet composed into this picker",
-        "Canonical Conversation permission state does not yet represent authorized send-other/inline/game axes; typed requests therefore fail closed",
         "Exact-head Electron E2E, policy-refresh temporal/reload/restart evidence and independent acceptance remain open"
       ],
       "production_entrypoints": [
@@ -2280,13 +2279,16 @@
         "path:source/host/src/extensions/session/gateway.rs#searchHumanRecipients",
         "path:source/host/src/extensions/session/production.rs#search_human_recipients",
         "commit:a50fd7cf28b6dcebda7240d94208e524b18f145e",
-        "path:native/mahayana-messaging/src/search.rs#recipient_search_authorized"
+        "path:native/mahayana-messaging/src/search.rs#recipient_search_authorized",
+        "path:source/host/src/extensions/session/production.rs#authorize_human_share_destination",
+        "path:source/host/src/extensions/session/production.rs#forward_human_message"
       ],
       "test_evidence": [
         "native/mahayana-messaging/tests/m5_contacts_groups_contract.rs#contacts_and_groups_are_searchable",
         "source/host/src/extensions/session/production.rs#sharebox_shipping_tests::shipping_human_forward_reuses_session_owner_across_retry_and_restart",
         "native/mahayana-messaging/src/search.rs#recipient_policy_tests::recipient_authorization_fails_before_exposure_for_typed_share_requirements",
-        "native/mahayana-messaging/src/search.rs#recipient_policy_tests::recipient_requirements_deserialize_old_media_poll_shape_with_safe_defaults"
+        "native/mahayana-messaging/src/search.rs#recipient_policy_tests::recipient_requirements_deserialize_old_media_poll_shape_with_safe_defaults",
+        "source/host/tests/session_gateway_contract.rs#production_gateway_forward_revalidates_recipient_authority_before_destination_mutation"
       ],
       "target_commit": "a50fd7cf28b6dcebda7240d94208e524b18f145e",
       "workflow_run": null,
@@ -13479,11 +13481,11 @@
     "changed_authority_paths": [
       "Telegram/SourceFiles/ui/chat/chat_theme_readability.cpp"
     ],
-    "source_read_reconciliation": "Accepted-tree blob order exact through 5,801/16,125; unknown 15,846, unread 10,324, omitted 0. Orders 5,794-5,801 retain exact identity under 811b83a1; first unread is 5,802 test/test_menu.cpp. The new chat_theme_readability.cpp blob is order 5,951 and remains unread/unknown.",
+    "source_read_reconciliation": "Accepted-tree blob order exact through 5,805/16,125; unknown 15,846, unread 10,320, omitted 0. Orders 5,802-5,803 close the popup/context-menu professional-test reader and isolated action-trigger contract; 5,804-5,805 close the client-to-server message-id watcher contract. First unread is 5,806 test/test_notify_override.cpp. The 811b83a1 chat_theme_readability.cpp delta remains order 5,951 and unread/unknown.",
     "source_authority_evidence": "Deterministic ordering is derived from non-directory/blob rank in accepted recursive tree 4ddb5182fc1ae238e4dc62a396614614b5b35f97. cf478d37 evidence is historical only.",
-    "current_source_read_through": 5801,
-    "first_unread_order": 5802,
-    "first_unread_path": "Telegram/SourceFiles/test/test_menu.cpp"
+    "current_source_read_through": 5805,
+    "first_unread_order": 5806,
+    "first_unread_path": "Telegram/SourceFiles/test/test_notify_override.cpp"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13492,7 +13494,7 @@
     "development_only_non_applicable": 69,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 5801
+    "read_through": 5805
   },
   "historical_exact_head_evidence": {
     "status": "historical-only",

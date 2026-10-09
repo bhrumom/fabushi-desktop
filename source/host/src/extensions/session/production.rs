@@ -2478,6 +2478,48 @@ impl ProductionSessionWorkers {
         Ok(conversations)
     }
 
+    fn human_share_requirements(
+        source_entry: &serde_json::Value,
+    ) -> fabushi_messaging_core::RecipientSearchRequirements {
+        fabushi_messaging_core::RecipientSearchRequirements {
+            require_media: source_entry
+                .get("attachments")
+                .and_then(serde_json::Value::as_array)
+                .is_some_and(|attachments| !attachments.is_empty()),
+            source_protected_content: source_entry
+                .get("protectedContent")
+                .and_then(serde_json::Value::as_bool)
+                .unwrap_or(false),
+            ..fabushi_messaging_core::RecipientSearchRequirements::default()
+        }
+    }
+
+    fn authorize_human_share_destination(
+        &self,
+        conversation_id: &str,
+        requirements: fabushi_messaging_core::RecipientSearchRequirements,
+    ) -> Result<(), String> {
+        let owner = self.open_human_conversation_db_owner(conversation_id)?;
+        let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+        let local_human_id = self.local_human_id()?;
+        let sender_is_participant = metadata
+            .get("participantIds")
+            .and_then(serde_json::Value::as_array)
+            .is_some_and(|ids| ids.iter().any(|id| id.as_str() == Some(local_human_id)));
+        if !fabushi_messaging_core::recipient_search_authorized(
+            fabushi_messaging_core::RecipientAuthorizationInput::direct_default(
+                sender_is_participant,
+            ),
+            requirements,
+        ) {
+            return Err(
+                "share destination is no longer authorized for the canonical content requirements"
+                    .into(),
+            );
+        }
+        Ok(())
+    }
+
     pub fn search_human_recipients(
         &self,
         source_conversation_id: &str,
@@ -2505,17 +2547,7 @@ impl ProductionSessionWorkers {
         {
             return Err("recipient search source must be a settled canonical message".into());
         }
-        let requirements = fabushi_messaging_core::RecipientSearchRequirements {
-            require_media: source_entry
-                .get("attachments")
-                .and_then(serde_json::Value::as_array)
-                .is_some_and(|attachments| !attachments.is_empty()),
-            source_protected_content: source_entry
-                .get("protectedContent")
-                .and_then(serde_json::Value::as_bool)
-                .unwrap_or(false),
-            ..fabushi_messaging_core::RecipientSearchRequirements::default()
-        };
+        let requirements = Self::human_share_requirements(&source_entry);
         let local_human_id = self.local_human_id()?;
         let normalized_query = query.trim().to_lowercase();
         let mut recipients = self
@@ -2640,6 +2672,8 @@ impl ProductionSessionWorkers {
             return Err("forwardHumanMessage source is protected and cannot be forwarded".into());
         }
 
+        let requirements = Self::human_share_requirements(&source_entry);
+
         let source_text = source_entry
             .get("content")
             .and_then(serde_json::Value::as_str)
@@ -2698,17 +2732,22 @@ impl ProductionSessionWorkers {
             digest.update(destination_conversation_id.as_bytes());
             let destination_nonce = format!("human-forward-{:x}", digest.finalize());
 
-            match self.append_human_message_with_context(
-                &destination_conversation_id,
-                forwarded_text,
-                &destination_nonce,
-                None,
-                None,
-                &attachments,
-                false,
-                None,
-                Some(&forward_context),
-            ) {
+            let send_result = self
+                .authorize_human_share_destination(&destination_conversation_id, requirements)
+                .and_then(|_| {
+                    self.append_human_message_with_context(
+                        &destination_conversation_id,
+                        forwarded_text,
+                        &destination_nonce,
+                        None,
+                        None,
+                        &attachments,
+                        false,
+                        None,
+                        Some(&forward_context),
+                    )
+                });
+            match send_result {
                 Ok(entry) => settlement.push(serde_json::json!({
                     "conversationId": destination_conversation_id,
                     "clientNonce": destination_nonce,

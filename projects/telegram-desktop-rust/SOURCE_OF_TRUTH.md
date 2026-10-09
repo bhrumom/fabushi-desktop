@@ -1,4 +1,4 @@
-Live Revision 9 authority (2026-10-10): telegramdesktop/tdesktop@811b83a1cc5f61bd4238ab3ebfcbee6302078014 (root tree 4ddb5182fc1ae238e4dc62a396614614b5b35f97). Root non-directory=6,653; recursive non-directory=16,125; read-through=5,801; first unread=5,802 Telegram/SourceFiles/test/test_menu.cpp@93cdaf3adf82725adb07e90be83e560d40a7b72d; unread=10,324; unknown=15,846; omitted=0. Upstream delta cf478d37→811b83a1 modifies order 5,951 Telegram/SourceFiles/ui/chat/chat_theme_readability.cpp only; that product responsibility remains unread/unknown. Runs 37958691718/37958689647 and artifacts 11630066443/11631221092/11630211787 remain historical-only for 863cf10d+b4d9f7f8.
+Live Revision 9 authority (2026-10-10): telegramdesktop/tdesktop@811b83a1cc5f61bd4238ab3ebfcbee6302078014 (root tree 4ddb5182fc1ae238e4dc62a396614614b5b35f97). Root non-directory=6,653; recursive non-directory=16,125; read-through=5,805; first unread=5,806 Telegram/SourceFiles/test/test_notify_override.cpp@3a5db0374721b08da7b4892dec73e246ffba5ccc; unread=10,320; unknown=15,846; omitted=0. Upstream delta cf478d37→811b83a1 modifies order 5,951 Telegram/SourceFiles/ui/chat/chat_theme_readability.cpp only; that product responsibility remains unread/unknown. Runs 37958691718/37958689647 and artifacts 11630066443/11631221092/11630211787 remain historical-only for 863cf10d+b4d9f7f8.
 
 # Telegram 源码 → Fabushi 全量等价重写 — Source of Truth
 
@@ -327,3 +327,8 @@ Direct delta: channel_earn.style replaces static negative placeholder margins wi
 ### Revision 9 live read-through note: 5794-5801
 
 Orders 5,794-5,797 preserve professional evidence-log one-line/completion-forgery integrity plus an independent raw-byte oracle. Orders 5,798-5,799 preserve complete mapped-target/viewport capture readiness. Orders 5,800-5,801 preserve the bounded reversible not-marking-read evidence lever. These are test/evidence responsibilities only, create no second product owner, and close no unknown. The new 811b83a1 readability delta is order 5,951 and remains unread/unknown.
+
+
+### Revision 9 live read-through note: 5802-5805
+
+Orders 5,802-5,803 close the exact-blob read/decomposition of popup/context-menu professional evidence semantics: same-turn fresh-menu identity, explicit refusal taxonomy, isolated QAction queued-callback delivery, prepared-frame capture and lock/teardown behavior. Orders 5,804-5,805 close the SentMessageWatcher client→server id reconciliation contract with stable-history/candidate fencing and a five-second diagnostic probe throttle. These are test/evidence responsibilities only and close no unknown. First unread is now 5,806 `test_notify_override.cpp`.

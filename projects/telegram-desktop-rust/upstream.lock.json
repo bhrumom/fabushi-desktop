@@ -266,9 +266,9 @@
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
     "unknown_minimum": 15846,
-    "unread_minimum": 10324,
+    "unread_minimum": 10320,
     "omitted_known": 0,
-    "note": "Accepted 811b83a1 tree 4ddb5182; read-through 5,801; unknown=15,846, unread=10,324, omitted=0."
+    "note": "Accepted 811b83a1 tree 4ddb5182; read-through 5,805; unknown=15,846, unread=10,320, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -282,7 +282,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Live upstream 811b83a1; exact blob read-through 5801/16125; unknown/unread closure remains open; fresh descendant exact-head production/release evidence required."
+    "note": "Live upstream 811b83a1; exact blob read-through 5805/16125; unknown/unread closure remains open; fresh descendant exact-head production/release evidence required."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",
@@ -634,7 +634,7 @@
     "development_only_non_applicable": 69,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 5801
+    "read_through": 5805
   },
   "historical_exact_head_evidence": {
     "status": "historical-only",
