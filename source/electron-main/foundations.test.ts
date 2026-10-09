@@ -166,6 +166,17 @@ test("desktop accessibility state owns the real screen-reader signal without hig
   assert.deepEqual(readDesktopAccessibilityState(), { screenReader: false });
 });
 
+test("Electron accessibility snapshot is read only after app ready while change events are registered before ready", () => {
+  const source = readFileSync(new URL("./main.ts", import.meta.url), "utf8");
+  const listenerIndex = source.indexOf('deps.app.on("accessibility-support-changed"');
+  const whenReadyIndex = source.indexOf(".whenReady()");
+  const snapshotIndex = source.indexOf("setDesktopAccessibilitySupportEnabled(deps.app.accessibilitySupportEnabled === true)");
+  assert.ok(listenerIndex >= 0);
+  assert.ok(whenReadyIndex > listenerIndex);
+  assert.ok(snapshotIndex > whenReadyIndex);
+  assert.equal(source.slice(0, whenReadyIndex).includes("deps.app.accessibilitySupportEnabled"), false);
+});
+
 test("call media device preferences normalize and persist in the canonical settings store", () => {
   const dir=mkdtempSync(join(tmpdir(),"fabushi-call-media-prefs-"));
   try {

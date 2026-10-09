@@ -1677,7 +1677,7 @@
       "referencePath": "source/electron-main/main.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "12d50843b32c14c66437b9c72d2f3aec4b460334",
+      "targetBlobSha": "3db7773a260689c143bde82b495cd38a053bb923",
       "behavioralEvidence": [
         "source/electron-main/main.ts",
         "source/electron-main/accessibility-support.ts",
@@ -1690,7 +1690,7 @@
         ".github/workflows/desktop-chat-parity-ci.yml",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "rationale": "Preserves the frozen Grok Electron lifecycle while adapting one source-neutral OS accessibility responsibility: startup snapshots app.accessibilitySupportEnabled, accessibility-support-changed updates the single main-process state owner, and the existing MainEdge event path broadcasts only the typed screenReader boolean. Window, Coordinator, Host, Runner, settings and high-contrast ownership remain unchanged."
+      "rationale": "Preserves the frozen Grok Electron lifecycle while adapting one source-neutral OS accessibility responsibility: startup snapshots app.accessibilitySupportEnabled, accessibility-support-changed updates the single main-process state owner, and the existing MainEdge event path broadcasts only the typed screenReader boolean. Window, Coordinator, Host, Runner, settings and high-contrast ownership remain unchanged. The initial accessibility snapshot is intentionally read only inside app.whenReady(), because Electron requires accessibilitySupportEnabled to be accessed after ready; the change-event listener remains registered before readiness so no post-registration OS transition is lost."
     },
     {
       "referencePath": "frontend/src/recovered/features/window-chrome/notification-host.tsx",

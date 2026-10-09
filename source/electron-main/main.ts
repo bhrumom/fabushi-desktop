@@ -257,7 +257,6 @@ export function startElectronMain(deps: ElectronMainDependencies): ElectronMainR
   let isMainWindowCreationReady = false;
   let appIsQuitting = false;
   let services: ElectronMainServices | undefined;
-  setDesktopAccessibilitySupportEnabled(deps.app.accessibilitySupportEnabled === true);
   deps.app.on("accessibility-support-changed", (_event, accessibilitySupportEnabled) => {
     const state = setDesktopAccessibilitySupportEnabled(accessibilitySupportEnabled);
     services?.mainEdge.emit("accessibility-support-changed", state);
@@ -385,6 +384,7 @@ export function startElectronMain(deps: ElectronMainDependencies): ElectronMainR
         deps.startup.cancel();
         return;
       }
+      setDesktopAccessibilitySupportEnabled(deps.app.accessibilitySupportEnabled === true);
       deps.startup.markPhase("move_check");
       const moveDisposition = await deps.startup.runMoveCheck({
         hasPendingActivation: deps.deepLinks.hasPendingActivation,
