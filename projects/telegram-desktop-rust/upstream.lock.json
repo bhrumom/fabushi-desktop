@@ -266,9 +266,9 @@
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
     "unknown_minimum": 15846,
-    "unread_minimum": 10304,
+    "unread_minimum": 10301,
     "omitted_known": 0,
-    "note": "Accepted b0d1fe5e tree e279373a; order 5,166 protected-media viewer delta re-read and reconciled; exact read-through 5,821; unknown=15,846, unread=10,304, omitted=0."
+    "note": "Accepted b0d1fe5e tree e279373a; exact read-through 5,824; unknown=15,846, unread=10,301, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -282,7 +282,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Live upstream b0d1fe5e; exact blob read-through 5821/16125 after 5166 re-read and 5814-5821 professional harness attestation; unknown/unread closure remains open; fresh descendant exact-head production/release evidence required."
+    "note": "Live upstream b0d1fe5e; exact blob read-through 5824/16125 after 5822-5824 scenario/secrecy evidence decomposition; unknown/unread closure remains open; fresh descendant exact-head production/release evidence required."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",
@@ -634,7 +634,7 @@
     "development_only_non_applicable": 69,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 5821
+    "read_through": 5824
   },
   "historical_exact_head_evidence": {
     "status": "historical-only",
