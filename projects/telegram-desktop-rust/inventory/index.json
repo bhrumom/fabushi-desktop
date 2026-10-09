@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15846,
-    "unread_minimum": 10312,
+    "unread_minimum": 10304,
     "omitted_known": 0,
-    "note": "Live b0d1fe5e recursive census 16,125; accepted-tree blob order exact through 5,813 after order 5,166 protected-media delta reconciliation; unknown 15,846, unread 10,312, omitted 0."
+    "note": "Live b0d1fe5e recursive census 16,125; accepted-tree blob order exact through 5,821 after order 5,166 protected-media delta reconciliation; unknown 15,846, unread 10,304, omitted 0."
   },
   "latest_recursive_evidence": {
     "run_id": 37967712462,
@@ -46,7 +46,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live authority exact through deterministic blob order 5,813; order 5,166 media_view_overlay_widget.cpp re-read at e35f6711; unread_minimum is 10,312; unknown remains 15,846; omitted remains 0.",
+  "note": "Live authority exact through deterministic blob order 5,821; order 5,166 media_view_overlay_widget.cpp re-read at e35f6711; unread_minimum is 10,304; unknown remains 15,846; omitted remains 0.",
   "rebaseline": {
     "from_commit": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
     "to_commit": "b0d1fe5e08c963402b8b71648c70a2bf68e6fab2",
@@ -56,9 +56,9 @@
       "Telegram/SourceFiles/media/view/media_view_overlay_widget.cpp"
     ],
     "current_head_source_authority_evidence": "Fresh exact-head Source authority evidence required for b0d1fe5e descendant; a8a139b8 evidence proves predecessor 811b83a1 authority only.",
-    "current_source_read_through": 5813,
-    "first_unread_order": 5814,
-    "first_unread_path": "Telegram/SourceFiles/test/test_probe.cpp"
+    "current_source_read_through": 5821,
+    "first_unread_order": 5822,
+    "first_unread_path": "Telegram/SourceFiles/test/test_scenario.cpp"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -67,6 +67,6 @@
     "development_only_non_applicable": 69,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 5813
+    "read_through": 5821
   }
 }

@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15846,
-    "unread": 10312,
+    "unread": 10304,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13481,11 +13481,11 @@
     "changed_authority_paths": [
       "Telegram/SourceFiles/media/view/media_view_overlay_widget.cpp"
     ],
-    "source_read_reconciliation": "Order 5,166 media_view_overlay_widget.cpp changed blob 03138e6e→e35f6711 and was re-read: b0d1fe5e removes viewer-driven automatic Save(ToCacheOrFile) for forbidsSaving messages. Path order is unchanged. Accepted-tree blob order remains reconciled through 5,805, then exact reads 5,806-5,813 advance read-through to 5,813/16,125; unknown 15,846, unread 10,312, omitted 0. First unread is 5,814 test/test_probe.cpp. Earlier 811b83a1 chat_theme_readability.cpp delta remains order 5,951 and unread/unknown.",
+    "source_read_reconciliation": "Order 5,166 media_view_overlay_widget.cpp changed blob 03138e6e→e35f6711 and was re-read: b0d1fe5e removes viewer-driven automatic Save(ToCacheOrFile) for forbidsSaving messages. Path order is unchanged. Accepted-tree blob order remains reconciled through 5,805; exact reads 5,806-5,813 cover notify/open-handoff/panel/post-paint evidence; exact reads 5,814-5,821 cover mark-bounded keyed Probe correlation, controlled boxed RPC fixture validation, 500/400/unknown retry observability, and bounded Runner teardown/drain/fuse semantics. Read-through is 5,821/16,125; unknown 15,846, unread 10,304, omitted 0. First unread is 5,822 test/test_scenario.cpp. Earlier 811b83a1 chat_theme_readability.cpp delta remains order 5,951 and unread/unknown.",
     "source_authority_evidence": "Deterministic ordering is derived from non-directory/blob rank in accepted root/recursive authority rooted at e279373aec283ebfcc6e3bb7385e51205acd84a2. a8a139b8/811b83a1 Actions evidence is predecessor-only; fresh descendant exact-head evidence required.",
-    "current_source_read_through": 5813,
-    "first_unread_order": 5814,
-    "first_unread_path": "Telegram/SourceFiles/test/test_probe.cpp"
+    "current_source_read_through": 5821,
+    "first_unread_order": 5822,
+    "first_unread_path": "Telegram/SourceFiles/test/test_scenario.cpp"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13494,7 +13494,7 @@
     "development_only_non_applicable": 69,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 5813
+    "read_through": 5821
   },
   "historical_exact_head_evidence": {
     "status": "historical-only",
