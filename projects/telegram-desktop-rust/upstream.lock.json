@@ -266,9 +266,9 @@
     "root_source_entries_total": 6651,
     "recursive_source_entries_total": 16123,
     "unknown_minimum": 15844,
-    "unread_minimum": 10422,
+    "unread_minimum": 10412,
     "omitted_known": 0,
-    "note": "Accepted 863cf10d tree 50309852. Read-through 5,701; unknown=15,844, unread=10,422, omitted=0."
+    "note": "Accepted 863cf10d tree 50309852. Read-through 5,711; unknown=15,844, unread=10,412, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,

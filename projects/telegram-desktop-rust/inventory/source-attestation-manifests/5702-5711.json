@@ -1,0 +1,69 @@
+{
+  "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+  "accepted_tree": "5030985204963cbbd362ced7412d231b04ebd0cc",
+  "deterministic_order_basis": "non-directory/blob rank in accepted recursive tree",
+  "start": 5702,
+  "end": 5711,
+  "entries": [
+    {
+      "order": 5702,
+      "path": "Telegram/SourceFiles/storage/download_manager_mtproto.cpp",
+      "blob": "d0007eb17fb0bcfbdffd89b86d8efdb900fcd363",
+      "consumer_symbol": "download_manager_mtproto.cpp"
+    },
+    {
+      "order": 5703,
+      "path": "Telegram/SourceFiles/storage/download_manager_mtproto.h",
+      "blob": "a5916b4913c2669d861a2c5494bf9cf725036a41",
+      "consumer_symbol": "download_manager_mtproto.h"
+    },
+    {
+      "order": 5704,
+      "path": "Telegram/SourceFiles/storage/file_download.cpp",
+      "blob": "d468b15618212346fd7746d1849d52d6be7bf857",
+      "consumer_symbol": "file_download.cpp"
+    },
+    {
+      "order": 5705,
+      "path": "Telegram/SourceFiles/storage/file_download.h",
+      "blob": "5e239a8f860d97c8fefe08323fe5d1d1cb909da5",
+      "consumer_symbol": "file_download.h"
+    },
+    {
+      "order": 5706,
+      "path": "Telegram/SourceFiles/storage/file_download_mtproto.cpp",
+      "blob": "18c4ca3a961bc85df12db594fed23608598289e8",
+      "consumer_symbol": "file_download_mtproto.cpp"
+    },
+    {
+      "order": 5707,
+      "path": "Telegram/SourceFiles/storage/file_download_mtproto.h",
+      "blob": "a840bfc824920744c56875e4afbb7709d805caec",
+      "consumer_symbol": "file_download_mtproto.h"
+    },
+    {
+      "order": 5708,
+      "path": "Telegram/SourceFiles/storage/file_download_web.cpp",
+      "blob": "4db80bbaff9b0c2e01db6192c41bf67416a1c0d4",
+      "consumer_symbol": "file_download_web.cpp"
+    },
+    {
+      "order": 5709,
+      "path": "Telegram/SourceFiles/storage/file_download_web.h",
+      "blob": "bc5367ca182f19fcd16db297d4b9afc2afed8582",
+      "consumer_symbol": "file_download_web.h"
+    },
+    {
+      "order": 5710,
+      "path": "Telegram/SourceFiles/storage/file_upload.cpp",
+      "blob": "a19470a24b6a62b58c63d8cc21d831641d970260",
+      "consumer_symbol": "file_upload.cpp"
+    },
+    {
+      "order": 5711,
+      "path": "Telegram/SourceFiles/storage/file_upload.h",
+      "blob": "5173ce47758f12e3cad87bcc1467e6399e590491",
+      "consumer_symbol": "file_upload.h"
+    }
+  ]
+}

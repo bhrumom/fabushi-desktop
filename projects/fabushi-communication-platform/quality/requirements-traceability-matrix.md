@@ -582,3 +582,8 @@ Dossier: `projects/telegram-desktop-rust/dossiers/statistics-widgets-5691-5696-c
 | TDRP-R9-SETTINGS-MIGRATION-5700-5701 | critical | versioned legacy settings/session/auth/proxy/cache/notification/download/theme migrations validate every stream/value and settle once into canonical owners; malformed/unknown input fails closed | Settings/Persistence Migration + Account Security | mapped-open |
 
 Dossier: `projects/telegram-desktop-rust/dossiers/storage-security-migration-5697-5701-complete-read.md`.
+
+
+### TDRP Revision 9 source read 5702-5711 — storage transfer lifecycle
+
+Accepted upstream `863cf10d9f34fb0b1b35b35da1bda75acfc58d2e` / tree `5030985204963cbbd362ced7412d231b04ebd0cc`. Orders 5,702-5,711 cover adaptive remote download scheduling, generic cache/file loader lifecycle, part-based download/resume, HTTP(S)-only web transfer and multipart media upload. Canonical mapping is the existing source-neutral messaging attachment/file-transfer owner plus platform download/save adapters; MTProto/DC/CDN details are protocol-specific and must not create a Telegram runtime. Required parity includes cancel/teardown/account-switch stale-result fencing, partial resume, integrity/reference refresh, redirect downgrade/scheme protection, TLS/auth/disk failures, adaptive concurrency, removed-session resend, transcode/archive cancellation, upload progress/finalization and restart/recovery. Accounting: 5,711/16,123 read, 10,412 unread, 15,844 unknown, 0 omitted; reading alone closes no unknown. First unread: 5,712 `Telegram/SourceFiles/storage/localimageloader.cpp`.
