@@ -105,7 +105,7 @@ function cellXml(cell: AnalyticsCell, ref: string, numericColumn: boolean): stri
     ? cell.value
     : finite(cell.milliseconds, "date milliseconds") / DAY + XLSX_EPOCH;
   const style = cell.type === "date" ? 1 : cell.type === "datetime" ? 2 : 0;
-  return `${open(style)}<v>${numberText(value, cell.type === "number" ? undefined : 10)}</v></c>`;
+  return `${open(style)}<v>${numberText(value, cell.type === "datetime" ? 10 : undefined)}</v></c>`;
 }
 
 function worksheetXml(sheet: AnalyticsSheet): string {
