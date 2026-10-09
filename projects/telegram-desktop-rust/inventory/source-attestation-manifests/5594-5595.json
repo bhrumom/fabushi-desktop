@@ -1,0 +1,19 @@
+{
+  "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+  "start": 5594,
+  "end": 5595,
+  "entries": [
+    {
+      "order": 5594,
+      "path": "Telegram/SourceFiles/settings/sections/settings_global_ttl.cpp",
+      "blob": "3a22266764ef7fe1496a9fd89d5853afe93bd34a",
+      "consumer_symbol": "GlobalTTLId"
+    },
+    {
+      "order": 5595,
+      "path": "Telegram/SourceFiles/settings/sections/settings_global_ttl.h",
+      "blob": "6484c81b829bb59278f5480034c93d7e4796863c",
+      "consumer_symbol": "GlobalTTLId"
+    }
+  ]
+}
