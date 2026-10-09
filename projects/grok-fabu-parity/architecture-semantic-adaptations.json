@@ -1519,6 +1519,27 @@
         ".github/workflows/rust-desktop-runtime.yml"
       ],
       "rationale": "The recovered composer staging helper remains structurally derived from the frozen Grok workspace module, but shipping Human conversations now pass an explicit typed human-conversation ownership scope when committing staged attachments. That scope is carried through the existing DesktopBridge, preload and Electron main attachment edge into the Host Human message outbox, so Human attachment durability no longer depends on an active Agent while staging validation, fail-closed owner checks, full-batch retry preservation and the canonical Session message-resource upload path remain intact. This is a semantic TypeScript port rather than a byte-identical reference copy, and it introduces no parallel composer or attachment runtime."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/conversation/cards/transcript-card/reaction-picker.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "495a432f83f2e62b9c2996dee825bea570f79fe2",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/conversation/cards/transcript-card/reaction-picker.tsx",
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/message-actions.tsx",
+        "frontend/src/recovered/features/conversation/workspace/view.css",
+        "frontend/src/recovered/features/window-chrome/view.css",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/reaction-system.contract.test.ts",
+        "desktop/e2e/mahayana-agent-workbench.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves the recovered reaction controller/transport and canonical Transcript action ownership while adapting the quick-reaction surface to the existing SandPopover floating primitive. The portal mounts the visible picker above the native drag carrier and sticky composer only while open, keeps Escape/outside-press dismissal and focus return in the canonical floating lifecycle, and unmounts on close so ordinary window drag/composer hit testing resumes. Successful controller settlement closes the same surface without introducing a second reaction store, transport or menu owner. This is a focused TypeScript presentation/lifecycle adaptation required by real Electron pointer hit testing, not a test bypass."
     }
   ]
 }

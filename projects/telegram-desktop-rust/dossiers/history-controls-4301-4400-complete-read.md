@@ -1,9 +1,0 @@
-# Telegram source read: deterministic orders 4301-4400
-
-Authority: accepted `telegramdesktop/tdesktop@22b352e866d0402505c07fa4ed21d75d7e4fb3db` / tree `94ae09469c816b350f60dc9ada1ff049323be8e7`; exact blob/size/type comes from Source authority run `37872749663`, job `113634587680`, artifact `11591390327` (sha256 `9e8d9d297b9f957c5c60e069a3ede35c517d56e18662bcf7573946663b971d65`).
-
-This batch covers History message item/components/edition/helpers/reply-markup/text; location/selection; streamed draft apply/update/stop/adopt/30s cleanup; translation; unread mention/reaction/poll-vote reconciliation across History/Topic/SavedSublist; highlight/pull-to-next/swipe-back/top-toast; the large History widget; Composer bottom/top controls, character limits, AI affordance, media edit/search/stash, Draft Options, Forward Panel, rich draft preview, suggest options, TTL/video cover/voice recording/webpage processing; and Conversation chat section/contact/context-menu/corner/cursor/drag/reply/element/emoji interaction state.
-
-Direct mapped intersections are `TDRP-R9-DRAFT-OPTIONS-CONTRACT-001`, `TDRP-R9-DRAFT-OPTIONS-LIFECYCLE-001`, `TDRP-R9-FORWARD-PANEL-CONTRACT-001`, `TDRP-R9-FORWARD-PANEL-LIFECYCLE-001`, plus History state/lifecycle. Upstream ForwardPanel prunes removed source items, subscribes Topic/SavedSublist destruction, normalizes sender/caption options, clears only matching reply payload and schedules cloud draft save. Draft Options performs typed destination write before asynchronous old-draft cleanup. Fabushi already has direct forwarding/privacy controls, but destination-scoped staged-forward convergence and authoritative SavedSublist wiring are not yet proven; no implementation promotion is taken.
-
-Accounting: `read_through=4400`, `unread=11720`, `unknown=15841`, `unknown_closed=279`, `omitted=0`.
