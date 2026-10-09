@@ -1231,5 +1231,9 @@ test("CONTRACT-TDRP-IV-ARTICLE-MEDIA-LIFECYCLE-001 attachment cards and filmstri
   assert.match(source, /const shouldResolve = shouldResolveDerivedThumbnail\(isNearViewport, isActive\);/);
   assert.match(source, /<MediaThumbnail isActive=\{attachmentIndex === index\}/);
   assert.match(source, /<MediaCard[\s\S]{0,400}observe=\{observeMediaCard\}/);
+  assert.match(source, /if \(isPreviewable\(kind\) && onOpen != null\) \{/);
+  assert.match(source, /return <button aria-label="Media preview"[\s\S]{0,600}data-media-state=\{loading \? "loading" : media == null \? "unavailable" : "ready"\}[\s\S]{0,300}ref=\{observe\}[\s\S]{0,180}>\{preview\}<\/button>/);
+  assert.doesNotMatch(source, /if \(media\?\.kind === "image" && onOpen != null\) return <button/);
+  assert.doesNotMatch(source, /if \(media\?\.kind === "video" && onOpen != null\) return <button/);
   assert.match(source, /<MediaViewer attachments=\{mediaAttachments\}/);
 });
