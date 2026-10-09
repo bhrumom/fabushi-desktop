@@ -1010,7 +1010,7 @@
       "referencePath": "source/electron-main/notifications/os-notification-manager.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "75d026d30a06c3a165b04e69c0663a99c585f6fc",
+      "targetBlobSha": "b4e964b80407b2432e27dfd3c055bc63c202541e",
       "behavioralEvidence": [
         "source/electron-main/notifications/os-notification-manager.ts"
       ],
@@ -1018,13 +1018,13 @@
         "source/electron-main/foundations.test.ts",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "rationale": "Preserves the frozen Grok OS-notification manager as the single Electron notification-instance owner while extending it with source-neutral canonical scopes for Conversation and typed child destinations. Active native notifications are keyed by exact Agent or Conversation/child identity; clearScope retires only the requested canonical scope, reset closes every remaining instance, and activation still reuses the existing window-focus path before routing through the supplied canonical owner callback. This is the minimum platform-adapter seam needed for TDRP notification-clear lifecycle work; it does not claim the missing Human/Topic/SavedSublist authoritative event feed, native reply/action composition, or SavedSublist server relation/membership blocker is complete, and it does not introduce a second notification policy or source-specific notification subsystem."
+      "rationale": "Preserves the frozen Grok OS-notification manager as the single Electron notification-instance owner while extending the same source-neutral owner for canonical Human notification actions. Conversation scope now includes exact accountId + conversationId + optional childId, native Electron reply and mark-read actions are wired through caller-supplied canonical callbacks, successful actions clear only that exact scope, and synchronous/asynchronous failures preserve the notification scope for retry while reporting the failure. Agent notification behavior and window-focus activation remain unchanged. This does not create a Telegram-derived notification runtime or a second message/read-state owner; authoritative Human event feed, authorization, message mutation and read-state settlement remain in the canonical messaging owners and still require same-head product evidence."
     },
     {
       "referencePath": "source/electron-main/production-binding-providers.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "17af9206914a82adaf72a446304b028bc8730a83",
+      "targetBlobSha": "19d73ece44ef800feec467ecbdcc8c3c957478f7",
       "behavioralEvidence": [
         "source/electron-main/production-binding-providers.ts",
         "source/electron-main/local-exec/local-exec-daemon-protocol.ts",
@@ -1035,7 +1035,7 @@
         "source/electron-main/foundations.test.ts",
         ".github/workflows/rust-desktop-runtime.yml"
       ],
-      "rationale": "Preserves the frozen Grok production binding graph while cutting two legacy Host-TypeScript imports: local-exec daemon protocol ownership is now in Electron Main and the data-root resolver is shared. The actual local-exec supervision still belongs to Mahayana Coordinator, so this adaptation strengthens rather than collapses the Grok process boundary."
+      "rationale": "Preserves the frozen Grok production binding graph while retaining the existing Electron Main local-exec/data-root adaptations and composing the canonical OS-notification action surface into the shipping binding. The Electron Notification port now admits native reply metadata and mark-read button actions, and scoped action failures are routed through the existing desktop-edge failure reporter. Message/send/read ownership remains outside Electron Main; this binding only supplies the platform adapter to the unique notification manager and introduces no parallel runtime or policy owner."
     },
     {
       "referencePath": "source/electron-main/startup/desktop-user-data-bootstrap.ts",
