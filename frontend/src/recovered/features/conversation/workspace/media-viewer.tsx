@@ -39,6 +39,81 @@ const MIN_ZOOM = 1;
 const MAX_ZOOM = 5;
 const DRAG_THRESHOLD = 4;
 
+const MEDIA_PLAYBACK_PREFERENCES_KEY = "fabushi.mediaViewer.playback.v1";
+const MEDIA_PLAYBACK_POSITION_PREFIX = "fabushi.mediaViewer.position.v1.";
+const MEDIA_POSITION_WRITE_INTERVAL_MS = 1_000;
+
+interface MediaPlaybackPreferences {
+  volume: number;
+  muted: boolean;
+}
+
+function mediaPlaybackStorage(): Storage | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
+function mediaPlaybackSourceKey(source: string): string {
+  let hash = 0x811c9dc5;
+  for (let index = 0; index < source.length; index += 1) {
+    hash ^= source.charCodeAt(index);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return `${MEDIA_PLAYBACK_POSITION_PREFIX}${(hash >>> 0).toString(16).padStart(8, "0")}`;
+}
+
+function readMediaPlaybackPreferences(): MediaPlaybackPreferences | null {
+  const storage = mediaPlaybackStorage();
+  if (storage == null) return null;
+  try {
+    const parsed = JSON.parse(storage.getItem(MEDIA_PLAYBACK_PREFERENCES_KEY) ?? "null") as Partial<MediaPlaybackPreferences> | null;
+    if (parsed == null || typeof parsed.volume !== "number" || !Number.isFinite(parsed.volume) || typeof parsed.muted !== "boolean") return null;
+    return { volume: clamp(parsed.volume, 0, 1), muted: parsed.muted };
+  } catch {
+    return null;
+  }
+}
+
+function persistMediaPlaybackPreferences(video: HTMLVideoElement): void {
+  const storage = mediaPlaybackStorage();
+  if (storage == null) return;
+  try {
+    storage.setItem(MEDIA_PLAYBACK_PREFERENCES_KEY, JSON.stringify({ volume: clamp(video.volume, 0, 1), muted: video.muted }));
+  } catch {
+    // Playback remains functional when persistent storage is unavailable.
+  }
+}
+
+function readMediaPlaybackPosition(source: string, duration: number): number {
+  const storage = mediaPlaybackStorage();
+  if (storage == null || !Number.isFinite(duration) || duration <= 0) return 0;
+  try {
+    const value = Number(storage.getItem(mediaPlaybackSourceKey(source)) ?? "0");
+    return Number.isFinite(value) && value > 0 && value < Math.max(0, duration - 1) ? value : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function persistMediaPlaybackPosition(video: HTMLVideoElement, source: string, ended = false): void {
+  const storage = mediaPlaybackStorage();
+  if (storage == null || source.length === 0) return;
+  try {
+    const key = mediaPlaybackSourceKey(source);
+    if (ended || !Number.isFinite(video.currentTime) || video.currentTime <= 0 || (Number.isFinite(video.duration) && video.duration > 0 && video.currentTime >= video.duration - 1)) {
+      storage.removeItem(key);
+      return;
+    }
+    storage.setItem(key, String(video.currentTime));
+  } catch {
+    // Playback remains functional when persistent storage is unavailable.
+  }
+}
+
 function isPreviewable(kind: AttachmentKind): boolean {
   return kind === "image" || kind === "video";
 }
@@ -121,6 +196,7 @@ function MediaViewer({ attachments, startIndex, resolveMedia, onClose, restoreFo
   const [transform, setTransform] = useState<Transform>({ scale: MIN_ZOOM, x: 0, y: 0 });
   const viewerRef = useRef<HTMLDivElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const videoPersistenceRef = useRef({ source: "", lastPositionWriteAt: 0 });
   const wheelZoomRemainderRef = useRef(0);
   const pointerRef = useRef<{ id: number | null; startX: number; startY: number; originX: number; originY: number; moved: boolean }>({ id: null, startX: 0, startY: 0, originX: 0, originY: 0, moved: false });
   const current = attachments[index] ?? attachments[0];
@@ -130,7 +206,13 @@ function MediaViewer({ attachments, startIndex, resolveMedia, onClose, restoreFo
   useEffect(() => {
     if (current == null) return undefined;
     let active = true;
-    videoRef.current?.pause();
+    const outgoingVideo = videoRef.current;
+    if (outgoingVideo != null) {
+      persistMediaPlaybackPreferences(outgoingVideo);
+      persistMediaPlaybackPosition(outgoingVideo, videoPersistenceRef.current.source);
+      outgoingVideo.pause();
+    }
+    videoPersistenceRef.current = { source: "", lastPositionWriteAt: 0 };
     setMedia(null);
     setLoading(true);
     setFailed(false);
@@ -193,7 +275,12 @@ function MediaViewer({ attachments, startIndex, resolveMedia, onClose, restoreFo
   }, [onClose, restoreFocus, total]);
 
   useEffect(() => () => {
-    videoRef.current?.pause();
+    const activeVideo = videoRef.current;
+    if (activeVideo != null) {
+      persistMediaPlaybackPreferences(activeVideo);
+      persistMediaPlaybackPosition(activeVideo, videoPersistenceRef.current.source);
+      activeVideo.pause();
+    }
     const activePointerId = pointerRef.current.id;
     const viewer = viewerRef.current;
     if (activePointerId != null && viewer?.hasPointerCapture(activePointerId)) {
@@ -201,6 +288,34 @@ function MediaViewer({ attachments, startIndex, resolveMedia, onClose, restoreFo
     }
     pointerRef.current.id = null;
   }, []);
+
+  const restoreVideoPlaybackState = (event: React.SyntheticEvent<HTMLVideoElement>) => {
+    const video = event.currentTarget;
+    const sourceKey = current?.path ?? "";
+    videoPersistenceRef.current = { source: sourceKey, lastPositionWriteAt: 0 };
+    const preferences = readMediaPlaybackPreferences();
+    if (preferences != null) {
+      video.volume = preferences.volume;
+      video.muted = preferences.muted;
+    }
+    const position = readMediaPlaybackPosition(sourceKey, video.duration);
+    if (position > 0) video.currentTime = position;
+  };
+  const persistVideoPlaybackState = (event: React.SyntheticEvent<HTMLVideoElement>) => {
+    const video = event.currentTarget;
+    persistMediaPlaybackPreferences(video);
+    persistMediaPlaybackPosition(video, videoPersistenceRef.current.source);
+  };
+  const persistVideoPlaybackProgress = (event: React.SyntheticEvent<HTMLVideoElement>) => {
+    const now = Date.now();
+    if (now - videoPersistenceRef.current.lastPositionWriteAt < MEDIA_POSITION_WRITE_INTERVAL_MS) return;
+    videoPersistenceRef.current.lastPositionWriteAt = now;
+    persistMediaPlaybackPosition(event.currentTarget, videoPersistenceRef.current.source);
+  };
+  const clearCompletedVideoPlaybackPosition = (event: React.SyntheticEvent<HTMLVideoElement>) => {
+    persistMediaPlaybackPreferences(event.currentTarget);
+    persistMediaPlaybackPosition(event.currentTarget, videoPersistenceRef.current.source, true);
+  };
 
   const fit = () => setTransform({ scale: MIN_ZOOM, x: 0, y: 0 });
   const zoom = (factor: number) => setTransform((currentTransform) => ({ ...currentTransform, scale: clamp(currentTransform.scale * factor, MIN_ZOOM, MAX_ZOOM) }));
@@ -249,7 +364,7 @@ function MediaViewer({ attachments, startIndex, resolveMedia, onClose, restoreFo
     ? <div aria-live="polite" className="sand-media-viewer__state" role={failed ? "alert" : "status"}>{failed ? "Couldn't load media" : "Loading media…"}</div>
     : source == null ? null
       : media?.kind === "video"
-        ? <video aria-label={caption.length > 0 ? caption : "Media preview"} className="sand-media-viewer__image" controls onError={() => setFailed(true)} playsInline preload="metadata" ref={videoRef} src={source} />
+        ? <video aria-label={caption.length > 0 ? caption : "Media preview"} className="sand-media-viewer__image" controls onEnded={clearCompletedVideoPlaybackPosition} onError={() => setFailed(true)} onLoadedMetadata={restoreVideoPlaybackState} onPause={persistVideoPlaybackState} onTimeUpdate={persistVideoPlaybackProgress} onVolumeChange={persistVideoPlaybackState} playsInline preload="metadata" ref={videoRef} src={source} />
         : <img alt={caption.length > 0 ? caption : "Media preview"} className="sand-media-viewer__image" draggable={false} onDoubleClick={fit} onError={() => setFailed(true)} src={source} style={{ transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})` }} />;
 
   return createPortal(
