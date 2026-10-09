@@ -90,6 +90,20 @@ test("OAuth completes into the scoped native vault and refreshes tools without r
   h.service.dispose();
 });
 
+test("manual credential replacement cannot orphan an OAuth grant", async () => {
+  const h = harness(undefined, oauthFixture()); await h.service.install(ID);
+  const key = "a".repeat(64); const state = JSON.parse(h.vault.get(key)!);
+  Object.assign(state[ID], { token: "oauth-access", refreshToken: "oauth-refresh", connectionId: "grant-a" });
+  h.vault.set(key, JSON.stringify(state)); const before = h.vault.get(key);
+  await assert.rejects(h.service.install(ID, { ACCESS_TOKEN: "manual-access" }), /先断开 OAuth/);
+  assert.equal(h.vault.get(key), before);
+  await h.service.disconnect(ID);
+  await h.service.install(ID, { ACCESS_TOKEN: "manual-access" });
+  assert.match(h.vault.get(key)!, /manual-access/);
+  assert.doesNotMatch(h.vault.get(key)!, /oauth-refresh|grant-a/);
+  h.service.dispose();
+});
+
 test("account change during pending OAuth cancels delivery and cannot install into another account", async () => {
   const oauth=oauthFixture(); let cancelled=false;
   oauth.cancel=async()=>{cancelled=true;};

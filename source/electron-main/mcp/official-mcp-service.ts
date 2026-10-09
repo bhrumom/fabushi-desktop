@@ -73,6 +73,7 @@ export class OfficialMcpService {
     const token = values?.ACCESS_TOKEN?.trim();
     if (token && (token.length > 32_768 || /[\r\n]/.test(token))) throw new Error("Invalid provider credential.");
     await this.mutate(state => {
+      if (token && state[id]?.connectionId) throw new Error("请先断开 OAuth 授权，再设置手动服务凭据。");
       state[id] = { ...(state[id] ?? { disabledTools: [] }), ...(token ? { token } : {}), revision: randomUUID() };
       if (token) { delete state[id]!.refreshToken; delete state[id]!.expiresAt; delete state[id]!.connectionId; }
     });
