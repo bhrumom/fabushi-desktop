@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15841,
-    "unread_minimum": 12920,
+    "unread_minimum": 12820,
     "omitted_known": 0,
-    "note": "Live 22b352e recursive census is 16,120. 3,200 exact entries read-complete; 279 unknown-closed; unknown 15,841, unread 12,920, omitted 0. Orders 3101-3200 cover localization, themes, picker/QRC resource packaging, call/notification sounds, updater trust and Windows/UWP/WinRC packaging; only legacy window_shadow (3 density rows) is explicitly unreachable."
+    "note": "Live 22b352e recursive census is 16,120. 3,300 exact entries read-complete; 279 unknown-closed; unknown 15,841, unread 12,820, omitted 0. Orders 3201-3300 cover signed updater/platform helpers, password-strength resources, and API responsibilities across Stickers, session security, Privacy, Bot, Conversation filters/invites, Community, Identity, Premium/Credits, Search, Poll, Read/Reaction, Reporting, Notifications, sending and Statistics. No row is promoted beyond mapped/open by source reading."
   },
   "latest_recursive_evidence": {
     "run_id": 37864697175,
@@ -106,7 +106,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live 22b352e authority is exact through order 3,200. unread_minimum is 12,920, unknown remains 15,841, omitted remains 0. Exact object/size/type after 3000 is bound from the successful full recursive inventory artifact.",
+  "note": "Live 22b352e authority is exact through order 3,300. unread_minimum is 12,820, unknown remains 15,841, omitted remains 0. Exact object/size/type after 3000 is bound from the successful full recursive inventory artifact.",
   "rebaseline": {
     "from_commit": "6ec5014a92c4580841a043c440d65e8fc605ff78",
     "to_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db",
@@ -127,6 +127,6 @@
     "development_only_non_applicable": 66,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 3200
+    "read_through": 3300
   }
 }
