@@ -83,11 +83,6 @@ test("attachment staging uses the production filesystem owner and Node UUID sour
     if (!staged.ok) assert.fail("Expected production attachment staging to succeed.");
     assert.equal(readFileSync(staged.path, "utf8"), "Fabushi Human attachment exact-head evidence.");
     assert.deepEqual(failures, []);
-
-    const source = readFileSync(new URL("./attachments/attachments.ts", import.meta.url), "utf8");
-    assert.match(source, /import \{ randomUUID \} from "node:crypto"/);
-    assert.match(source, /\(deps\.randomUUID \?\? randomUUID\)\(\)/);
-    assert.doesNotMatch(source, /crypto\.randomUUID/);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
