@@ -214,5 +214,8 @@ test("conversation floating controls keep pointer ownership while visible titleb
   assert.doesNotMatch(workspaceCss, /\.sand-chat-input-dock\s*\{[^}]*pointer-events:\s*none/s);
 
   const flexFill = 'style={{ display: "flex", flex: "1 1 0", flexDirection: "column", minHeight: 0, minWidth: 0, width: "100%" }}';
+  const collapsingColumn = 'style={{ display: "flex", flexDirection: "column", minHeight: 0, minWidth: 0, width: "100%" }}';
   assert.equal(rendererSource.split(flexFill).length - 1, 2);
+  assert.equal(rendererSource.includes(collapsingColumn), false);
+  assert.match(chromeCss, /\.sand-cover-drag\s*\{[^}]*pointer-events:\s*none;[^}]*app-region:\s*drag;/s);
 });
