@@ -1,3 +1,4 @@
+import { needsPluginSetupBeforeAdd, usesOfficialProviderOAuth } from "./official-provider-flow";
 import { useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import type { McpServerSummary, McpToolSummary, PluginVariableField } from "../../../contracts/desktop-bridge";
@@ -530,7 +531,8 @@ function PluginDetail({
       </header>
       <p>{item.description}</p>
       <div>
-        {item.kind === "plugin" && !item.installed ? <button disabled={item.busy} onClick={() => fields.length > 0 && item.hasTeamConfiguredVariables !== true ? setSetupOpen(true) : onInstall?.(item.id, undefined, item.hasTeamConfiguredVariables)} type="button">Add</button> : null}
+        {item.kind === "plugin" && !item.installed ? <button disabled={item.busy} onClick={() => needsPluginSetupBeforeAdd(item.id, fields, item.hasTeamConfiguredVariables) ? setSetupOpen(true) : onInstall?.(item.id, undefined, item.hasTeamConfiguredVariables)} type="button">Add</button> : null}
+        {item.kind === "plugin" && item.installed && usesOfficialProviderOAuth(item.id) ? <button disabled={item.busy} onClick={() => onAuthenticate?.(item.id, "default")} type="button">Connect</button> : null}
         {item.kind === "server" && item.status === "authentication-required" ? <button disabled={item.busy} onClick={() => onAuthenticate?.(item.id, item.accountSlots?.[0]?.accountKey ?? item.accountLabel)} type="button">Authenticate</button> : null}
         {item.kind === "workflow" && onToggleWorkflow != null ? <button disabled={item.busy} onClick={() => onToggleWorkflow(item.id, !item.enabled)} type="button">{item.enabled ? "Disable" : "Enable"}</button> : null}
         {item.kind === "plugin" && item.installed && pluginTeamPolicyActions(item.installMode ?? "user").length > 0 ? <button disabled={item.busy} onClick={() => onRemove?.(item)} type="button">{item.installMode === "team-default" ? "Remove" : "Uninstall"}</button> : null}

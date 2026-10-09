@@ -1,0 +1,45 @@
+name: Official MCP marketplace
+on:
+  pull_request:
+    paths:
+      - 'source/**'
+      - 'frontend/**'
+      - 'desktop/**'
+      - '.github/workflows/official-mcp-marketplace.yml'
+  push:
+    branches: [main, work/official-mcp-marketplace-20261008]
+    paths:
+      - 'source/**'
+      - 'frontend/**'
+      - 'desktop/**'
+      - '.github/workflows/official-mcp-marketplace.yml'
+permissions:
+  contents: read
+jobs:
+  contracts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - run: npm --prefix desktop ci --prefer-offline --no-audit --no-fund
+      - name: Bundle production MCP contracts
+        run: |
+          node --input-type=module <<'JS'
+          import { build } from './desktop/node_modules/esbuild/lib/main.js';
+          await build({ entryPoints: ['source/electron-main/mcp/official-mcp.contract.test.ts'],
+            outfile: 'desktop/.tmp-official-mcp/contracts.cjs', bundle: true, platform: 'node',
+            target: 'node24', format: 'cjs', nodePaths: ['desktop/node_modules'], external: ['electron'] });
+          JS
+      - name: Test provider isolation and production tool lifecycle
+        run: node --test desktop/.tmp-official-mcp/contracts.cjs
+      - name: Record exact tested head
+        run: |
+          git rev-parse HEAD >> "$GITHUB_STEP_SUMMARY"
+          echo 'Provider protocol and OAuth lifecycle calls are fixtures. Application registration, provider qualification and real packaged-product acceptance are recorded separately.' >> "$GITHUB_STEP_SUMMARY"

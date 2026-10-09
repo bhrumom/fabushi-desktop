@@ -2500,6 +2500,44 @@ fn dispatch_inference_if_handled(
         return true;
     }
 
+    if method == "interruptAgent" {
+        let agent_id = inference_agent_id.trim();
+        if agent_id.is_empty() {
+            state.complete_request(
+                channel,
+                request_id,
+                ReplyOutcome::Failed {
+                    failure: Failure::new(
+                        "INFERENCE_INTERRUPT_INVALID",
+                        "interruptAgent requires a non-empty agent id",
+                    ),
+                },
+            );
+            return true;
+        }
+
+        let interrupted = match state.active_inference_streams.request_supersede(agent_id) {
+            InferenceStreamSupersede::CancelNow { stream_id } => {
+                cancel_runner_stream_best_effort(
+                    state,
+                    &stream_id,
+                    "Interrupted by the user",
+                );
+                true
+            }
+            InferenceStreamSupersede::DeferredUntilAccepted { .. } => true,
+            InferenceStreamSupersede::None => false,
+        };
+        state.complete_request(
+            channel,
+            request_id,
+            ReplyOutcome::Ok {
+                value: json!({ "interrupted": interrupted }),
+            },
+        );
+        return true;
+    }
+
     if method != "sendPrompt" {
         return false;
     }

@@ -56,6 +56,11 @@ export function PluginsDesktopSurface({ bridge, githubAuth, activeAgentId = null
   const [controller] = useState(() => createPluginsDesktopController(bridge));
   const controllerSnapshot = useSyncExternalStore(controller.subscribe, controller.getSnapshot, controller.getSnapshot);
   const snapshot = controllerSnapshot.data;
+  useEffect(() => {
+    for (const message of snapshot?.warnings ?? []) {
+      publishSurfaceNotice({ kind: "error", operation: "plugins-load", message }, onNotice, onStatus);
+    }
+  }, [snapshot, onNotice, onStatus]);
   const error = controllerSnapshot.failure == null ? null : controllerSnapshot.failure instanceof Error ? controllerSnapshot.failure.message : String(controllerSnapshot.failure);
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const controllerBusyKey = controllerSnapshot.pendingKeys.at(-1) ?? null;
@@ -327,3 +332,4 @@ export function PluginsDesktopSurface({ bridge, githubAuth, activeAgentId = null
     />
   );
 }
+
