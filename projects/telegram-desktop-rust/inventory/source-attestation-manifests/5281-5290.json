@@ -1,0 +1,67 @@
+{
+  "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+  "start": 5281,
+  "end": 5290,
+  "entries": [
+    {
+      "order": 5281,
+      "path": "Telegram/SourceFiles/mtproto/sender.h",
+      "blob": "5330a0559cff9c5693e71b7cda938a30e15ce305",
+      "consumer_symbol": "typed request builder plus RAII cancellation, explicit handled settlement, dependency/delay/override identity and retry/flood failure policy"
+    },
+    {
+      "order": 5282,
+      "path": "Telegram/SourceFiles/mtproto/session.cpp",
+      "blob": "40d7048c3057c7c5523b786048670524c8bebe4c",
+      "consumer_symbol": "session owner bridging thread-safe queued transport state to main-thread lifecycle: option refresh, restart/stop/kill, key creation, receive/send scheduling and connection state"
+    },
+    {
+      "order": 5283,
+      "path": "Telegram/SourceFiles/mtproto/session.h",
+      "blob": "d6f197d233fa4dcc6d2b19745e6d2787c5227911",
+      "consumer_symbol": "typed SessionData/Session ownership for queued sends, received responses, connection/key lifecycle, request cancellation/state and serialized cross-thread access"
+    },
+    {
+      "order": 5284,
+      "path": "Telegram/SourceFiles/mtproto/session_private.cpp",
+      "blob": "b8be9bbdda1b788c4ab118f91d23cd4feeb82aec",
+      "consumer_symbol": "transport session state machine: connection candidate selection, exponential retry, ping/timeouts, ack/state/resend/replay handling, bounded container retention, auth-key/session reset and stale connection cleanup"
+    },
+    {
+      "order": 5285,
+      "path": "Telegram/SourceFiles/mtproto/session_private.h",
+      "blob": "62b01e38dcb21832125b67dcd35fba3194a26829",
+      "consumer_symbol": "typed private session state for retry timers, connection generations, sent/acked/resending identities, ping/session/key state and deterministic teardown"
+    },
+    {
+      "order": 5286,
+      "path": "Telegram/SourceFiles/mtproto/special_config_request.cpp",
+      "blob": "fdb65506b0a886bc2daeccb61090bc44be7e2d88",
+      "consumer_symbol": "bounded multi-source bootstrap/config discovery with staggered requests, HTTPS-only providers, response parsing/decryption, server-time synchronization and successful-endpoint publication"
+    },
+    {
+      "order": 5287,
+      "path": "Telegram/SourceFiles/mtproto/special_config_request.h",
+      "blob": "91901489e778089b03187682a9556e929867b94f",
+      "consumer_symbol": "typed bootstrap attempt/request ownership and completion callbacks"
+    },
+    {
+      "order": 5288,
+      "path": "Telegram/SourceFiles/mtproto/type_utils.h",
+      "blob": "fd6cdd1e5631f7a7f9690c1ffa8cb438ba6b8036",
+      "consumer_symbol": "source-specific TL boolean conversion helpers with no independent product state owner"
+    },
+    {
+      "order": 5289,
+      "path": "Telegram/SourceFiles/mtproto/web_proxy/web_proxy_frame.cpp",
+      "blob": "bd1d7b310f40203f9da914efc8bdd6711035884b",
+      "consumer_symbol": "bounded multiplexed proxy frame serialization/parser: known type validation, 24-bit stream identity, payload cap, batch cap and partial-buffer retention"
+    },
+    {
+      "order": 5290,
+      "path": "Telegram/SourceFiles/mtproto/web_proxy/web_proxy_frame.h",
+      "blob": "a5ba491fed67d70aee88e6ec2e3ac47c991e78f3",
+      "consumer_symbol": "typed web-proxy frame/window protocol contract and hard resource limits"
+    }
+  ]
+}
