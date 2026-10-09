@@ -4,8 +4,8 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
-    "tree": "fa901c0c44fb1f94fd38de0d5edbcfef23a9f0ad"
+    "commit": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+    "tree": "4ddb5182fc1ae238e4dc62a396614614b5b35f97"
   },
   "range": {
     "first_order": 5722,
@@ -40,7 +40,7 @@
       "consumer_symbol": "storage_account.cpp",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-required",
-        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
         "verified_blob_sha": "5888ffa1164327b7170a2a3d8df7793a3fa467da",
         "file_type": "blob",
         "recursive_order": 5722
@@ -73,7 +73,7 @@
       "consumer_symbol": "storage_account.h",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-required",
-        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
         "verified_blob_sha": "b372bca4b78068e4293724b8a624ddd0a25a0284",
         "file_type": "blob",
         "recursive_order": 5723
@@ -106,7 +106,7 @@
       "consumer_symbol": "storage_cloud_blob.cpp",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-required",
-        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
         "verified_blob_sha": "338ee69dc35cf540c21cea9279d6bc38ee284fbc",
         "file_type": "blob",
         "recursive_order": 5724
@@ -139,7 +139,7 @@
       "consumer_symbol": "storage_cloud_blob.h",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-required",
-        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
         "verified_blob_sha": "f339e81cc8dfc45c795fc9f75837347e6abb37ce",
         "file_type": "blob",
         "recursive_order": 5725
@@ -172,7 +172,7 @@
       "consumer_symbol": "storage_domain.cpp",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-required",
-        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
         "verified_blob_sha": "034a52eec358a48b306ea84d6bcd6598982f2e2e",
         "file_type": "blob",
         "recursive_order": 5726
@@ -205,7 +205,7 @@
       "consumer_symbol": "storage_domain.h",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-required",
-        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
         "verified_blob_sha": "878b236ab119781c9d1630029a72bd1f79e3c4a5",
         "file_type": "blob",
         "recursive_order": 5727
@@ -238,7 +238,7 @@
       "consumer_symbol": "storage_facade.cpp",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-required",
-        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
         "verified_blob_sha": "ffb252a7edf89b0e86b4a98e09835c9b2ab19930",
         "file_type": "blob",
         "recursive_order": 5728
@@ -271,7 +271,7 @@
       "consumer_symbol": "storage_facade.h",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-required",
-        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
         "verified_blob_sha": "8d7ddcde8efd4dd82c08670cb1ab303eb9c928d6",
         "file_type": "blob",
         "recursive_order": 5729

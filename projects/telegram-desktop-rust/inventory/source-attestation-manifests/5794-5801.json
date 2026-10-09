@@ -1,0 +1,57 @@
+{
+  "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+  "accepted_tree": "4ddb5182fc1ae238e4dc62a396614614b5b35f97",
+  "deterministic_order_basis": "non-directory/blob rank in accepted recursive tree",
+  "start": 5794,
+  "end": 5801,
+  "entries": [
+    {
+      "order": 5794,
+      "path": "Telegram/SourceFiles/test/test_log.cpp",
+      "blob": "17c72a8ae1bc672e7c380b855887b859b78fabec",
+      "consumer_symbol": "test_log"
+    },
+    {
+      "order": 5795,
+      "path": "Telegram/SourceFiles/test/test_log.h",
+      "blob": "b792c7df04e5bbabf0cee9fe43a591ffe9c337a1",
+      "consumer_symbol": "test_log"
+    },
+    {
+      "order": 5796,
+      "path": "Telegram/SourceFiles/test/test_log_lines.cpp",
+      "blob": "ab66b2b19ef81ce64bb6b1287de4ccea9237268e",
+      "consumer_symbol": "test_log_lines"
+    },
+    {
+      "order": 5797,
+      "path": "Telegram/SourceFiles/test/test_log_lines.h",
+      "blob": "c20e337c4bb58c27fd8d1e4f3666d10891a602a1",
+      "consumer_symbol": "test_log_lines"
+    },
+    {
+      "order": 5798,
+      "path": "Telegram/SourceFiles/test/test_mapped_target.cpp",
+      "blob": "e346082f2b851fe72eec44c7d1b765e57944dcb7",
+      "consumer_symbol": "test_mapped_target"
+    },
+    {
+      "order": 5799,
+      "path": "Telegram/SourceFiles/test/test_mapped_target.h",
+      "blob": "b75145d6a5692651199df507d85c560d0cb7766a",
+      "consumer_symbol": "test_mapped_target"
+    },
+    {
+      "order": 5800,
+      "path": "Telegram/SourceFiles/test/test_marking_read.cpp",
+      "blob": "fa683bfd70682191f82e49d7e6901a6a2a3a73b4",
+      "consumer_symbol": "test_marking_read"
+    },
+    {
+      "order": 5801,
+      "path": "Telegram/SourceFiles/test/test_marking_read.h",
+      "blob": "67513a698292f68310c384914b9444ae6e7d43f7",
+      "consumer_symbol": "test_marking_read"
+    }
+  ]
+}

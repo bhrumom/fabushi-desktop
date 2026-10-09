@@ -4,8 +4,8 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
-    "tree": "fa901c0c44fb1f94fd38de0d5edbcfef23a9f0ad",
+    "commit": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+    "tree": "4ddb5182fc1ae238e4dc62a396614614b5b35f97",
     "baseline_identity_accepted": false
   },
   "inventory": {
@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15846,
-    "unread_minimum": 10332,
+    "unread_minimum": 10324,
     "omitted_known": 0,
-    "note": "Live cf478d37 recursive census 16,125; accepted-tree blob order exact through 5,793; unknown 15,846, unread 10,332, omitted 0."
+    "note": "Live 811b83a1 recursive census 16,125; accepted-tree blob order exact through 5,801; unknown 15,846, unread 10,324, omitted 0."
   },
   "latest_recursive_evidence": {
     "run_id": 37872749663,
@@ -46,48 +46,27 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live authority exact through deterministic blob order 5,793; unread_minimum is 10,332; unknown remains 15,846; omitted remains 0.",
+  "note": "Live authority exact through deterministic blob order 5,801; unread_minimum is 10,324; unknown remains 15,846; omitted remains 0.",
   "rebaseline": {
-    "from_commit": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
-    "to_commit": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
-    "ahead_by": 7,
-    "changed_paths": 22,
+    "from_commit": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+    "to_commit": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+    "ahead_by": 1,
+    "changed_paths": 1,
     "changed_authority_paths": [
-      ".agents/shared/test-loop.md",
-      ".agents/skills/process-inbox/scripts/workspace.py",
-      ".agents/skills/process-inbox/scripts/workspace_test.py",
-      "Telegram/CMakeLists.txt",
-      "Telegram/SourceFiles/info/channel_statistics/earn/channel_earn.style",
-      "Telegram/SourceFiles/test/README.md",
-      "Telegram/SourceFiles/test/test_animation_clock.cpp",
-      "Telegram/SourceFiles/test/test_animation_clock.h",
-      "Telegram/SourceFiles/test/test_log.cpp",
-      "Telegram/SourceFiles/test/test_log.h",
-      "Telegram/SourceFiles/test/test_marking_read.cpp",
-      "Telegram/SourceFiles/test/test_marking_read.h",
-      "Telegram/SourceFiles/test/test_post_paint.cpp",
-      "Telegram/SourceFiles/test/test_post_paint.h",
-      "Telegram/SourceFiles/test/test_probe.cpp",
-      "Telegram/SourceFiles/test/test_probe.h",
-      "Telegram/SourceFiles/test/test_secrecy_scan.cpp",
-      "Telegram/SourceFiles/test/test_secrecy_scan.h",
-      "Telegram/SourceFiles/test/test_widgets.h",
-      "Telegram/SourceFiles/test/test_window_exposure.cpp",
-      "Telegram/SourceFiles/test/test_window_exposure.h",
-      "Telegram/lib_ui"
+      "Telegram/SourceFiles/ui/chat/chat_theme_readability.cpp"
     ],
-    "current_head_source_authority_evidence": "Fresh exact-head Source authority evidence required after cf478d37; predecessor runs/artifacts are historical only.",
-    "current_source_read_through": 5793,
-    "first_unread_order": 5794,
-    "first_unread_path": "Telegram/SourceFiles/test/test_log.cpp"
+    "current_head_source_authority_evidence": "Fresh exact-head Source authority evidence required after 811b83a1; predecessor runs/artifacts are historical only.",
+    "current_source_read_through": 5801,
+    "first_unread_order": 5802,
+    "first_unread_path": "Telegram/SourceFiles/test/test_menu.cpp"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
-    "upstream_commit": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+    "upstream_commit": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
     "deterministic_prefix_closed": 57,
     "development_only_non_applicable": 69,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 5793
+    "read_through": 5801
   }
 }

@@ -4,8 +4,8 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
-    "tree": "fa901c0c44fb1f94fd38de0d5edbcfef23a9f0ad"
+    "commit": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+    "tree": "4ddb5182fc1ae238e4dc62a396614614b5b35f97"
   },
   "range": {
     "first_order": 5219,
@@ -41,7 +41,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibilities are reimplemented in source-neutral owners rather than copied.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
         "verified_blob_sha": "86437e7d9526929fe8c5a6a832ab5760e96c235c",
         "byte_size": 806,
         "file_type": "blob",
@@ -77,7 +77,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibilities are reimplemented in source-neutral owners rather than copied.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
         "verified_blob_sha": "c09369c7b514091874fbde29dc91d3f98b97cad6",
         "byte_size": 3919,
         "file_type": "blob",
@@ -113,7 +113,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibilities are reimplemented in source-neutral owners rather than copied.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
         "verified_blob_sha": "fa360b50a9e87efdaf1b825eb2311c8f287ac181",
         "byte_size": 747,
         "file_type": "blob",
@@ -149,7 +149,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; MTProto source is not copied into Fabushi.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
         "verified_blob_sha": "5d07404ba07223016c6728b986dcba10628d7194",
         "byte_size": 6210,
         "file_type": "blob",
@@ -185,7 +185,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; MTProto source is not copied into Fabushi.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
         "verified_blob_sha": "13a80b1b049f28866c3db110df5c662e8e74dede",
         "byte_size": 2098,
         "file_type": "blob",
@@ -221,7 +221,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; MTProto source is not copied into Fabushi.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
         "verified_blob_sha": "3baabf3f72c7c7edba3151814681fbf167a5ca0a",
         "byte_size": 6224,
         "file_type": "blob",
@@ -257,7 +257,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; MTProto source is not copied into Fabushi.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
         "verified_blob_sha": "217b684fa222c42e968dfddeaa62f16a0054017f",
         "byte_size": 5793,
         "file_type": "blob",
@@ -293,7 +293,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; MTProto source is not copied into Fabushi.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
         "verified_blob_sha": "baaad903e923bacba4af8c9272fff4a111369d2a",
         "byte_size": 7525,
         "file_type": "blob",
@@ -329,7 +329,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; MTProto source is not copied into Fabushi.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
         "verified_blob_sha": "53a909f931a49a03b9f3f0e388d045412ec33380",
         "byte_size": 1595,
         "file_type": "blob",
@@ -365,7 +365,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; MTProto source is not copied into Fabushi.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
         "verified_blob_sha": "d319e632655bbfe28956c8ced981a5cdf0299d1d",
         "byte_size": 5617,
         "file_type": "blob",
@@ -401,7 +401,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; MTProto source is not copied into Fabushi.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
         "verified_blob_sha": "82d58bed482100a4b9a11383025c2e10c50e573c",
         "byte_size": 1739,
         "file_type": "blob",
@@ -437,7 +437,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; MTProto source is not copied into Fabushi.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
         "verified_blob_sha": "d721a9058e1885d2964ded55bd4e4c7c2ce9e381",
         "byte_size": 18178,
         "file_type": "blob",
@@ -473,7 +473,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; MTProto source is not copied into Fabushi.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
         "verified_blob_sha": "ce09deab2f722ca22d371c851a7c43d939a9034b",
         "byte_size": 2207,
         "file_type": "blob",
@@ -509,7 +509,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; MTProto source is not copied into Fabushi.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
         "verified_blob_sha": "9d025d8ae265e3fe2eef3f32fc609e79a0c4de7f",
         "byte_size": 8442,
         "file_type": "blob",
@@ -545,7 +545,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; MTProto source is not copied into Fabushi.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
         "verified_blob_sha": "d5147291be6e9cf829c394b1b80e2728d0416f70",
         "byte_size": 12813,
         "file_type": "blob",
@@ -581,7 +581,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; MTProto source is not copied into Fabushi.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
         "verified_blob_sha": "661b926fd0e6f7f3ef198290509fbd31800d56d1",
         "byte_size": 5221,
         "file_type": "blob",
@@ -617,7 +617,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; MTProto source is not copied into Fabushi.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
         "verified_blob_sha": "653033365b543e554104c99a963ee194ddb830d9",
         "byte_size": 2058,
         "file_type": "blob",
@@ -653,7 +653,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; MTProto source is not copied into Fabushi.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
         "verified_blob_sha": "4283a353dd00db4b12044ef5a1d46cfbde7f659b",
         "byte_size": 2080,
         "file_type": "blob",
@@ -689,7 +689,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; MTProto source is not copied into Fabushi.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
         "verified_blob_sha": "7938c7acfaace036a8c016f608b4af315316d8e9",
         "byte_size": 2190,
         "file_type": "blob",
@@ -725,7 +725,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; MTProto source is not copied into Fabushi.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
         "verified_blob_sha": "a1ca4cb83a6e84152d542225c44fcf69f6ce7d96",
         "byte_size": 1388,
         "file_type": "blob",
@@ -761,7 +761,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; MTProto source is not copied into Fabushi.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
         "verified_blob_sha": "93abb26596b6428fc87abe603127bfa2f7aed306",
         "byte_size": 3930,
         "file_type": "blob",
@@ -797,7 +797,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; MTProto source is not copied into Fabushi.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
         "verified_blob_sha": "882e0f88d0e377fc17c1e3c2de04a54f443f9409",
         "byte_size": 885,
         "file_type": "blob",

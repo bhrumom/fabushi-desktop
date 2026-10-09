@@ -2,8 +2,8 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "repository": "telegramdesktop/tdesktop",
-  "commit": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
-  "tree": "fa901c0c44fb1f94fd38de0d5edbcfef23a9f0ad",
+  "commit": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+  "tree": "4ddb5182fc1ae238e4dc62a396614614b5b35f97",
   "entries": [
     {
       "path": ".agents/shared/build-lock-recovery.md",
@@ -41659,8 +41659,8 @@
       "path": "Telegram/SourceFiles/ui/chat/chat_theme_readability.cpp",
       "mode": "100644",
       "type": "blob",
-      "object": "29dd9596ef2d20097eabbe0a68fb8e76a9f8ea01",
-      "size": 17888
+      "object": "11c736768ea553afdcebfb88df106a9eb1fde1db",
+      "size": 18404
     },
     {
       "path": "Telegram/SourceFiles/ui/chat/chat_theme_readability.h",

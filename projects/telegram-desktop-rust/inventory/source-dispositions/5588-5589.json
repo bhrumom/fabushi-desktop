@@ -4,8 +4,8 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
-    "tree": "fa901c0c44fb1f94fd38de0d5edbcfef23a9f0ad"
+    "commit": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+    "tree": "4ddb5182fc1ae238e4dc62a396614614b5b35f97"
   },
   "range": {
     "first_order": 5588,
@@ -42,7 +42,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no source-named chat settings owner retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
         "verified_blob_sha": "0f48c2eaa80a66cf280abd50fd6d137e9d8dd7be",
         "file_type": "blob",
         "recursive_order": 5588
@@ -78,7 +78,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no source-named chat settings owner retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
         "verified_blob_sha": "e7ff6f1cf013e60bce2a20f7aadeca4efa2b5bc6",
         "file_type": "blob",
         "recursive_order": 5589

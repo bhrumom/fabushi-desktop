@@ -4,8 +4,8 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
-    "tree": "fa901c0c44fb1f94fd38de0d5edbcfef23a9f0ad"
+    "commit": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+    "tree": "4ddb5182fc1ae238e4dc62a396614614b5b35f97"
   },
   "range": {
     "first_order": 5759,
@@ -40,7 +40,7 @@
       "consumer_symbol": "README.md",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-required",
-        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
         "verified_blob_sha": "5c0b20e1106e86d30ce13cd728696fd889603646",
         "file_type": "blob",
         "recursive_order": 5759,
@@ -74,7 +74,7 @@
       "consumer_symbol": "test_activation.cpp",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-required",
-        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
         "verified_blob_sha": "ea909a8640788bc96eabe94fb32ff6bd0900acb0",
         "file_type": "blob",
         "recursive_order": 5760
@@ -107,7 +107,7 @@
       "consumer_symbol": "test_activation.h",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-required",
-        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
         "verified_blob_sha": "d460fe0328d02ef2e327be406a13e060ab7f4b99",
         "file_type": "blob",
         "recursive_order": 5761
@@ -140,7 +140,7 @@
       "consumer_symbol": "test_agent.cpp",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-required",
-        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
         "verified_blob_sha": "b9fe6ba5718cfb3fb6b736aef1e1315a02cca8e3",
         "file_type": "blob",
         "recursive_order": 5762
@@ -173,7 +173,7 @@
       "consumer_symbol": "test_agent.h",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-required",
-        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
         "verified_blob_sha": "c77f00ad4d6bbadd6149fe8d2634771471e6a73f",
         "file_type": "blob",
         "recursive_order": 5763
@@ -206,7 +206,7 @@
       "consumer_symbol": "test_animation_clock.cpp",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-required",
-        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
         "verified_blob_sha": "7b53e72fe2ec3813e12dd36ddf177f4441c26783",
         "file_type": "blob",
         "recursive_order": 5764,
@@ -240,7 +240,7 @@
       "consumer_symbol": "test_animation_clock.h",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-required",
-        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
         "verified_blob_sha": "87aed04fb62662de29d74273531c14f7f7f751d9",
         "file_type": "blob",
         "recursive_order": 5765,
@@ -274,7 +274,7 @@
       "consumer_symbol": "test_box_button.cpp",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-required",
-        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
         "verified_blob_sha": "798b905b69f4915cadcd0d9b63105996962ce000",
         "file_type": "blob",
         "recursive_order": 5766
@@ -307,7 +307,7 @@
       "consumer_symbol": "test_box_button.h",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-required",
-        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
         "verified_blob_sha": "86e5906251d1adff457dc40ff378562c1a6a1735",
         "file_type": "blob",
         "recursive_order": 5767
@@ -340,7 +340,7 @@
       "consumer_symbol": "test_capture.cpp",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-required",
-        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
         "verified_blob_sha": "c0a813cc32d7c10f10917fc8e84f211c9c814d58",
         "file_type": "blob",
         "recursive_order": 5768
@@ -373,7 +373,7 @@
       "consumer_symbol": "test_capture.h",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-required",
-        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
         "verified_blob_sha": "15dcdd21a5f5b9c65a6c7071b947366da82b828e",
         "file_type": "blob",
         "recursive_order": 5769
@@ -406,7 +406,7 @@
       "consumer_symbol": "test_clipboard.cpp",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-required",
-        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
         "verified_blob_sha": "b63dffd442fed5346fa49753c6d2641177356c7b",
         "file_type": "blob",
         "recursive_order": 5770
@@ -439,7 +439,7 @@
       "consumer_symbol": "test_clipboard.h",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-required",
-        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
         "verified_blob_sha": "e4166806b01c5ab4f00af1fa588aa17dfb0bbbf2",
         "file_type": "blob",
         "recursive_order": 5771

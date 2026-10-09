@@ -1,5 +1,5 @@
 {
-  "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+  "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
   "start": 5371,
   "end": 5380,
   "entries": [
@@ -64,5 +64,5 @@
       "consumer_symbol": "Payments::Ui::Panel"
     }
   ],
-  "accepted_tree": "fa901c0c44fb1f94fd38de0d5edbcfef23a9f0ad"
+  "accepted_tree": "4ddb5182fc1ae238e4dc62a396614614b5b35f97"
 }

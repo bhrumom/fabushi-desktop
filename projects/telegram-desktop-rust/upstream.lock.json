@@ -8,9 +8,9 @@
     "repository": "telegramdesktop/tdesktop",
     "url": "https://github.com/telegramdesktop/tdesktop",
     "discovery_ref": "refs/heads/dev",
-    "commit": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
-    "tree": "fa901c0c44fb1f94fd38de0d5edbcfef23a9f0ad",
-    "committed_at": "2026-10-09T16:50:46Z",
+    "commit": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+    "tree": "4ddb5182fc1ae238e4dc62a396614614b5b35f97",
+    "committed_at": "2026-10-09T17:13:54Z",
     "accepted": true
   },
   "previous_historical_baseline": {
@@ -266,9 +266,9 @@
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
     "unknown_minimum": 15846,
-    "unread_minimum": 10332,
+    "unread_minimum": 10324,
     "omitted_known": 0,
-    "note": "Accepted cf478d37 tree 9a2b87e2; read-through 5,793; unknown=15,846, unread=10,332, omitted=0."
+    "note": "Accepted 811b83a1 tree 4ddb5182; read-through 5,801; unknown=15,846, unread=10,324, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -282,7 +282,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Live upstream cf478d37; exact blob read-through 5793/16123; unknown/unread closure remains open; fresh descendant exact-head production/release evidence required."
+    "note": "Live upstream 811b83a1; exact blob read-through 5801/16125; unknown/unread closure remains open; fresh descendant exact-head production/release evidence required."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",
@@ -629,12 +629,12 @@
   },
   "source_disposition_evidence": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
-    "upstream_commit": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+    "upstream_commit": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
     "deterministic_prefix_closed": 57,
     "development_only_non_applicable": 69,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 5793
+    "read_through": 5801
   },
   "historical_exact_head_evidence": {
     "status": "historical-only",
