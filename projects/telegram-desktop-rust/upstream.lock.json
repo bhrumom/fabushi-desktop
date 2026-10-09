@@ -8,9 +8,9 @@
     "repository": "telegramdesktop/tdesktop",
     "url": "https://github.com/telegramdesktop/tdesktop",
     "discovery_ref": "refs/heads/dev",
-    "commit": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
-    "tree": "4ddb5182fc1ae238e4dc62a396614614b5b35f97",
-    "committed_at": "2026-10-09T17:13:54Z",
+    "commit": "b0d1fe5e08c963402b8b71648c70a2bf68e6fab2",
+    "tree": "e279373aec283ebfcc6e3bb7385e51205acd84a2",
+    "committed_at": "2026-10-09T17:54:52Z",
     "accepted": true
   },
   "previous_historical_baseline": {
@@ -266,9 +266,9 @@
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
     "unknown_minimum": 15846,
-    "unread_minimum": 10320,
+    "unread_minimum": 10312,
     "omitted_known": 0,
-    "note": "Accepted 811b83a1 tree 4ddb5182; read-through 5,805; unknown=15,846, unread=10,320, omitted=0."
+    "note": "Accepted b0d1fe5e tree e279373a; order 5,166 protected-media viewer delta re-read and reconciled; read-through 5,813; unknown=15,846, unread=10,312, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -282,7 +282,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Live upstream 811b83a1; exact blob read-through 5805/16125; unknown/unread closure remains open; fresh descendant exact-head production/release evidence required."
+    "note": "Live upstream b0d1fe5e; exact blob read-through 5813/16125 after 5166 re-read; unknown/unread closure remains open; fresh descendant exact-head production/release evidence required."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",
@@ -624,17 +624,17 @@
     },
     "total_recursive_non_directory_entries": 16125,
     "superseded_by_upstream_commit": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
-    "current_census_status": "live-cf478d37-rebaseline-pending-current-head-actions",
-    "current_upstream_commit": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f"
+    "current_census_status": "live-b0d1fe5e-authority-predecessor-actions-historical-new-descendant-actions-required",
+    "current_upstream_commit": "b0d1fe5e08c963402b8b71648c70a2bf68e6fab2"
   },
   "source_disposition_evidence": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
-    "upstream_commit": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+    "upstream_commit": "b0d1fe5e08c963402b8b71648c70a2bf68e6fab2",
     "deterministic_prefix_closed": 57,
     "development_only_non_applicable": 69,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 5805
+    "read_through": 5813
   },
   "historical_exact_head_evidence": {
     "status": "historical-only",
@@ -666,6 +666,6 @@
         "digest": "sha256:2de02ef0217a770851b883ee7c6798fc597200075c7f1bf13918b4d789a51b88"
       }
     ],
-    "note": "These prove 863cf10d+b4d9f7f8 only and are not current cf478d37 evidence."
+    "note": "These runs/artifacts prove 863cf10d+b4d9f7f8 only and are historical-only; they do not prove live b0d1fe5e authority or current descendant acceptance."
   }
 }

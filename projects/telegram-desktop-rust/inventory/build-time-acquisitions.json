@@ -3,7 +3,7 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_repository": "telegramdesktop/tdesktop",
-  "upstream_commit": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+  "upstream_commit": "b0d1fe5e08c963402b8b71648c70a2bf68e6fab2",
   "discovery": {
     "evidence_run_id": 37837273028,
     "evidence_head_sha": "3929d875d414f522f9b71b7fe6db33b81ccf4451",
@@ -1226,7 +1226,7 @@
   ],
   "recursive_build_reachability": {
     "status": "partial-audited-disposition-open",
-    "accepted_upstream_commit": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+    "accepted_upstream_commit": "b0d1fe5e08c963402b8b71648c70a2bf68e6fab2",
     "rule": "A recursively discovered repository is source/build authority only when an accepted TDesktop build path actually initializes, downloads, generates, patches, or consumes it. Presence as an unselected superproject gitlink is not sufficient.",
     "qt_superproject": {
       "repository": "https://github.com/qt/qt5",
@@ -2471,7 +2471,7 @@
       "root_candidate_policy_status": "complete-for-current-xkbcommon-authority",
       "note": "Closes acquisition-pattern candidates for xkbcommon-1.6.0; keyboard mapping/runtime behavior remains in semantic scope."
     },
-    "rebaseline_status": "42f8a36d changes build_mac.py only among acquisition-scan-adjacent paths; new PkgInfo/localization filesystem operations add no URL/Action/clone/mutable ref/dependency pin. Binding sets are unchanged; prior resolver artifacts are historical-only and current-head provenance regeneration is required."
+    "rebaseline_status": "b0d1fe5e changes only Telegram/SourceFiles/media/view/media_view_overlay_widget.cpp; build-time acquisition paths, immutable pins, mutable Action/clone refs and accepted build reachability inputs are unchanged. Prior resolver artifacts are predecessor evidence; fresh exact-head discovery/provenance is required."
   },
   "external_immutable_resolutions": [
     {
@@ -2508,7 +2508,7 @@
   ],
   "github_action_ref_resolutions": {
     "status": "snapshot-resolved-observed-action-graph-shipping-mutable-refs-still-open",
-    "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+    "accepted_upstream": "b0d1fe5e08c963402b8b71648c70a2bf68e6fab2",
     "evidence": {
       "runner": "github-actions",
       "run_id": 37895845999,
@@ -3457,7 +3457,7 @@
   },
   "github_clone_ref_resolutions": {
     "status": "snapshot-resolved-literal-github-clone-refs-source-refs-still-open",
-    "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+    "accepted_upstream": "b0d1fe5e08c963402b8b71648c70a2bf68e6fab2",
     "evidence": {
       "runner": "github-actions",
       "run_id": 37895845999,
@@ -3773,7 +3773,7 @@
   },
   "github_action_immutable_authority": {
     "status": "complete-current-top-level-mutable-action-authority-bindings",
-    "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+    "accepted_upstream": "b0d1fe5e08c963402b8b71648c70a2bf68e6fab2",
     "policy": "Every mutable top-level GitHub Action occurrence in accepted Telegram source is bound by source path/line/ref to an exact 40-hex commit. The mutable upstream spelling is source evidence only; Fabushi provenance authority is the bound commit. A source/ref/resolution change must fail validation until this binding is explicitly reviewed and updated.",
     "mutable_occurrences": 40,
     "mutable_unique_refs": 15,
@@ -4234,7 +4234,7 @@
   },
   "github_clone_immutable_authority": {
     "status": "complete-current-literal-github-clone-authority-bindings",
-    "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+    "accepted_upstream": "b0d1fe5e08c963402b8b71648c70a2bf68e6fab2",
     "policy": "Every literal GitHub git clone -b occurrence resolved by the accepted-source scanner is bound by source path/line/repository/ref to an exact 40-hex commit. The mutable tag/ref in Telegram source remains evidence only; Fabushi provenance authority is the bound commit.",
     "mutable_occurrences": 33,
     "mutable_unique_refs": 33,

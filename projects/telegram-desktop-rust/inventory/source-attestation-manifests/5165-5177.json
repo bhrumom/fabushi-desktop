@@ -1,5 +1,5 @@
 {
-  "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+  "accepted_upstream": "b0d1fe5e08c963402b8b71648c70a2bf68e6fab2",
   "start": 5165,
   "end": 5177,
   "entries": [
@@ -12,7 +12,7 @@
     {
       "order": 5166,
       "path": "Telegram/SourceFiles/media/view/media_view_overlay_widget.cpp",
-      "blob": "03138e6eeb429ca38a1b8edafa0a9a7d9742cb1a",
+      "blob": "e35f67119323850a3cea450548566186c8a2231c",
       "consumer_symbol": "Media::View::OverlayWidget"
     },
     {
@@ -82,5 +82,5 @@
       "consumer_symbol": "Media::View::PlaybackControls"
     }
   ],
-  "accepted_tree": "4ddb5182fc1ae238e4dc62a396614614b5b35f97"
+  "accepted_tree": "e279373aec283ebfcc6e3bb7385e51205acd84a2"
 }

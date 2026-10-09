@@ -4,8 +4,8 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
-    "tree": "4ddb5182fc1ae238e4dc62a396614614b5b35f97"
+    "commit": "b0d1fe5e08c963402b8b71648c70a2bf68e6fab2",
+    "tree": "e279373aec283ebfcc6e3bb7385e51205acd84a2"
   },
   "range": {
     "first_order": 5165,
@@ -52,17 +52,17 @@
     {
       "recursive_order": 5166,
       "source_path": "Telegram/SourceFiles/media/view/media_view_overlay_widget.cpp",
-      "source_blob_sha": "03138e6eeb429ca38a1b8edafa0a9a7d9742cb1a",
+      "source_blob_sha": "e35f67119323850a3cea450548566186c8a2231c",
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "responsibility": "Top-level media-view product lifecycle and state machine: typed open context, gallery/shared-media navigation, loading/streaming, playback controls, seek/speed/quality/fullscreen/PiP, call-aware pause/resume, system media controls, TTL/single-view burn, screenshot protection, save/share/delete/recognition, keyboard/touch/gesture input, hide/teardown and resource continuity",
+      "responsibility": "Top-level media-view product lifecycle and state machine: typed open context, gallery/shared-media navigation, loading/streaming, playback controls, seek/speed/quality/fullscreen/PiP, call-aware pause/resume, system media controls, TTL/single-view burn, screenshot protection, save/share/delete/recognition, keyboard/touch/gesture input, hide/teardown and resource continuity; protected-message document bubbles must not auto-persist forbidsSaving media to disk/cache-file from updateControls",
       "upstream_owner": "Media::View::OverlayWidget production controller",
       "state_machine": "typed OpenRequest/context -> resolve/display static or streamed media -> controls/input/navigation/streaming updates -> optional fullscreen/PiP/quality transitions -> error/retry or close/hide -> persist eligible playback/window state -> burn/cleanup protected ephemeral state -> deterministic teardown",
-      "side_effects": "Persists media-view window/PiP geometry, playback speed/quality/last position where allowed; coordinates media loading and power-save blocker; drives screenshot protection and TTL read/burn; pauses/resumes around calls; exposes save/share/delete/recognition; owns keyboard/touch/gesture arbitration and clears transient timers/selections/stream state on hide.",
-      "failure_cases": "stale media or async recognition survives source/session replacement; playback position/quality lost or resurrected incorrectly; call pause resumes when it should not; failed stream loops without fail-closed fallback; PiP/fullscreen transition duplicates player ownership; TTL media survives close; screenshot protection drops on native handle changes; hidden viewer retains timers/stream/resources; viewer shortcuts steal control input.",
+      "side_effects": "Persists media-view window/PiP geometry, playback speed/quality/last position where allowed; coordinates media loading and power-save blocker; drives screenshot protection and TTL read/burn; pauses/resumes around calls; exposes save/share/delete/recognition; owns keyboard/touch/gesture arbitration and clears transient timers/selections/stream state on hide. New b0d1fe5e delta removes the updateControls automatic DocumentSaveClickHandler::Save(ToCacheOrFile) path for forbidsSaving messages; protected media viewing must not create a disk persistence side effect merely to populate viewer controls.",
+      "failure_cases": "stale media or async recognition survives source/session replacement; playback position/quality lost or resurrected incorrectly; call pause resumes when it should not; failed stream loops without fail-closed fallback; PiP/fullscreen transition duplicates player ownership; TTL media survives close; screenshot protection drops on native handle changes; hidden viewer retains timers/stream/resources; viewer shortcuts steal control input. A forbidsSaving document being auto-written to disk/cache-file during viewer control refresh is a privacy/security failure.",
       "ui_disposition": "Decompose into existing canonical MediaViewer/ConversationWorkspace, Chromium media element/compositor, canonical permissions/resource owners and platform adapters. Do not introduce Telegram OverlayWidget or a second media runtime. Canonical controls/components and source-neutral names only.",
       "fabushi_canonical_owner": "frontend/src/recovered/features/conversation/workspace/media-viewer.tsx with existing ConversationWorkspace/resource/runtime/platform composition",
-      "fabushi_target": "MAPPED OPEN. Implemented in canonical MediaViewer: Chromium native controls, replacement/unmount playback fencing, media-input arbitration, fullscreen Escape behavior, source-neutral volume/mute persistence and hashed per-source resumable playback position. Still open: call interruption, speed/quality policy, Media Session, deterministic PiP geometry/ownership, TTL/single-view, screenshot protection, recognition and broader service/platform composition.",
+      "fabushi_target": "MAPPED OPEN. Implemented in canonical MediaViewer: Chromium native controls, replacement/unmount playback fencing, media-input arbitration, fullscreen Escape behavior, source-neutral volume/mute persistence and hashed per-source resumable playback position. Still open: call interruption, speed/quality policy, Media Session, deterministic PiP geometry/ownership, TTL/single-view, screenshot protection, recognition and broader service/platform composition. Rebaseline requirement: prove canonical MediaViewer never auto-persists protected/forbids-saving media as a side effect of rendering or control refresh.",
       "platform_differences": "Qt window/RHI/event-filter mechanics are not copied. Electron/Chromium supplies media rendering/fullscreen/PiP primitives; Fabushi must preserve product lifecycle, durable state, security, input, error and accessibility semantics through its existing source-neutral owners.",
       "production_evidence": "projects/telegram-desktop-rust/dossiers/media-view-overlay-lifecycle-5163-5164-complete-read.md; frontend/src/recovered/features/conversation/workspace/media-viewer.tsx contains partial native playback implementation; remaining responsibilities open. Production follow-up: frontend/src/recovered/features/conversation/workspace/media-viewer.tsx persists source-neutral volume/mute preferences and hashed per-source resumable playback position with replacement/unmount/pause/ended lifecycle fencing.",
       "test_evidence": "CONTRACT-TDRP-MEDIAVIEW-NATIVE-PLAYBACK-001 covers the partial canonical playback/input lifecycle; later focused unit/integration/E2E/packaged security/TTL/PiP/system-media evidence remains required. CONTRACT-TDRP-MEDIAVIEW-PLAYBACK-PERSISTENCE-001 binds hashed-key, restoration, throttled timeupdate, close/replacement and fail-soft storage semantics.",
@@ -71,19 +71,20 @@
       "omitted": false,
       "consumer_symbol": "Media::View::OverlayWidget",
       "consumer_evidence": [
-        "Complete direct exact-source read of accepted blob 03138e6e across lines 1-9064, including construction/window lifecycle, shared-media navigation, streaming creation/update/error, playback delegates, system controls, keyboard/touch/gesture handling, TTL/screenshot protection and clearBeforeHide/clearAfterHide."
+        "Complete direct exact-source read of accepted blob 03138e6e across lines 1-9064, including construction/window lifecycle, shared-media navigation, streaming creation/update/error, playback delegates, system controls, keyboard/touch/gesture handling, TTL/screenshot protection and clearBeforeHide/clearAfterHide.",
+        "b0d1fe5e exact delta at updateControls removes the forbidsSaving automatic DocumentSaveClickHandler::Save(fileOrigin, document, ToCacheOrFile) branch; new blob e35f6711 read in full-delta context."
       ],
       "reachability_status": "accepted-tree-source-owner-proven; partial canonical implementation exists; broad product responsibility remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior is decomposed/reimplemented rather than C++ copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
-        "verified_blob_sha": "03138e6eeb429ca38a1b8edafa0a9a7d9742cb1a",
-        "byte_size": 254132,
+        "evidence_status": "live-github-tree-bound-current-head-actions-required",
+        "accepted_upstream": "b0d1fe5e08c963402b8b71648c70a2bf68e6fab2",
+        "verified_blob_sha": "e35f67119323850a3cea450548566186c8a2231c",
+        "byte_size": 253839,
         "file_type": "blob",
         "recursive_order": 5166
       },
-      "notes": "Read-complete only for source accounting; broad mixed responsibility remains mapped-open and receives no unknown/verification/release credit. Current production slice also implements volume/mute persistence and resumable playback position; the broader mapped responsibility remains open."
+      "notes": "Read-complete only for source accounting; broad mixed responsibility remains mapped-open and receives no unknown/verification/release credit. Current production slice also implements volume/mute persistence and resumable playback position; the broader mapped responsibility remains open. Re-read/reconciled for b0d1fe5e: protected media no longer has viewer-driven auto-save-to-disk/cache-file behavior."
     },
     {
       "recursive_order": 5167,
