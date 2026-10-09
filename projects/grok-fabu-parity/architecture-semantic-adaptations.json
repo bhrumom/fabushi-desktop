@@ -950,7 +950,7 @@
         "source/host/tests/mcp_discovery_telemetry_contract.rs",
         "source/host/tests/mcp_discovery_production_wiring_contract.rs"
       ],
-      "rationale": "Preserves the Grok SandMcpManager implementation as the single MCP owner while exposing approved Fabushi capabilities through the typed desktop facade: force-refresh catalog options, external-auth completion, and Box MCP server loading/tool discovery/tool execution backed by the existing Coordinator→Host Box path. Manager ownership is not duplicated in Rust Host and the Coordinator/Host/Runner failure boundaries remain independent. The approved row-62 MCP discovery failure extension now forwards the frozen success/failure/stale/elapsed settlement through a dedicated reportMcpDiscoveryFailed Coordinator main-data request to the unique HostStructuredLogTelemetry owner; generic MCP diagnostics remain separate."
+      "rationale": "Preserves the Grok SandMcpManager implementation as the single MCP owner while exposing approved Fabushi capabilities through the typed desktop facade: force-refresh catalog options, external-auth completion, and Box MCP server loading/tool discovery/tool execution backed by the existing Coordinator\u2192Host Box path. Manager ownership is not duplicated in Rust Host and the Coordinator/Host/Runner failure boundaries remain independent. The approved row-62 MCP discovery failure extension now forwards the frozen success/failure/stale/elapsed settlement through a dedicated reportMcpDiscoveryFailed Coordinator main-data request to the unique HostStructuredLogTelemetry owner; generic MCP diagnostics remain separate."
     },
     {
       "referencePath": "source/electron-main/mcp/mcp-runtime.ts",
