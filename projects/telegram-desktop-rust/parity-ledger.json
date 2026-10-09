@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16120,
     "unknown": 15841,
-    "unread": 11020,
+    "unread": 11010,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13480,7 +13480,7 @@
       "Telegram/SourceFiles/boxes/connection_box.cpp",
       "Telegram/SourceFiles/core/application.cpp"
     ],
-    "source_read_reconciliation": "Recursive path denominator remains 16,120 on the accepted 3a15bf1f tree. Existing deterministic read prefix was exact-path/blob retained across the one-commit rebaseline and is now extended through order 5,100; this reading grants no implementation, verification, baseline-ready or release credit.",
+    "source_read_reconciliation": "Recursive path denominator remains 16,120 on the accepted 3a15bf1f tree. Existing deterministic read prefix was exact-path/blob retained across the one-commit rebaseline and is now extended through order 5,110; this reading grants no implementation, verification, baseline-ready or release credit.",
     "source_authority_evidence": "Live GitHub branch/tree evidence establishes 3a15bf1f/b031c2cd and the two-path source delta; same-head GitHub Actions Source authority artifact is required after this accounting commit."
   },
   "source_dispositions": {
@@ -13490,6 +13490,6 @@
     "development_only_non_applicable": 66,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 5100
+    "read_through": 5110
   }
 }
