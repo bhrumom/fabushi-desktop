@@ -17,13 +17,8 @@ const PROMPT_MIC_PAYLOAD_CLASS = "sand-prompt-mic sand-2lah0s sand-jbqb8w sand-u
 const PROMPT_SEND_CLASS = "sand-prompt-send sand-2lah0s sand-mak4db sand-1tc92z3 sand-1hc1fzr sand-1p5hr7d sand-1lfpgzf sand-1ypdohk";
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=4540240 (Nl.glyphShown/glyphHidden opacity+scale classes)
 // @evidence recovered/frontend/app/assets/index-UbX-y3il.js#byteOffset=5705592 (Windows prompt glyph state classes)
-const COMPOSER_GLYPH_VISIBLE_CLASS = "sand-1hc1fzr sand-3oybdh";
-const COMPOSER_GLYPH_HIDDEN_CLASS = "sand-g01cxk sand-1a33avv";
 const RECORDING_CHIP_CLASS = "sand-recording-chip sand-9f619 sand-3nfvp2 sand-pkkfsy sand-1th6cxs sand-f6zju3 sand-16b7oty sand-cnij5n sand-o7x2bt sand-2lah0s sand-c342km sand-ng3xce sand-1i4c3av sand-i07v4r sand-1kj6vsg sand-1ypdohk sand-1k57tk5 sand-784prv sand-1t137rt sand-9v5kkp sand-1uczgqu sand-1725o6r sand-omy3lu";
 
-function ComposerGlyph({ name, hidden = false }: { readonly name: "mic" | "arrow-up"; readonly hidden?: boolean }) {
-  return <SandIcon className={hidden ? COMPOSER_GLYPH_HIDDEN_CLASS : COMPOSER_GLYPH_VISIBLE_CLASS} name={name} size="sm" style={{ lineHeight: 1 }} variant="filled" />;
-}
 
 // Immutable prompt editor keyboard contract: Escape cancels an active voice
 // session or blurs the prompt when no voice session is active.
@@ -244,7 +239,7 @@ export function ConversationComposer({ acceptedSendGeneration = 0, canExchangeSt
               <span className="sand-recording-chip__waveform sand-1xp8n7a sand-18gnavp sand-2lah0s sand-78zum5 sand-6s0dn4"><VoiceWaveform stream={voice.stream} /></span>
             </button> : voice.isProcessing ? <span aria-label="Transcribing voice input…" className="sand-prompt-voice-processing sand-2lah0s sand-16w9d4f sand-1th6cxs sand-78zum5 sand-6s0dn4 sand-l56j7k" role="status"><SandSpinner ariaLabel="Transcribing voice input…" size={18} />Transcribing…</span> : <>
               {hasPayload ? <SandIconButton aria-label="Start voice input" className={PROMPT_MIC_PAYLOAD_CLASS} disabled={disabled || voiceBusy} icon="mic" onClick={() => voice.handleMicClick()} shape="circle" size="lg" type="button" variant="default" /> : null}
-              {hasPayload ? <button aria-label="Send message" className={PROMPT_SEND_CLASS} disabled={!canSend} type="submit"><span className="sand-1n2onr6 sand-1kky2od sand-lup9mm"><ComposerGlyph hidden={hasPayload} name="mic" /><ComposerGlyph hidden={!hasPayload} name="arrow-up" /></span></button> : <SandIconButton aria-label="Start voice input" className={PROMPT_MIC_EMPTY_CLASS} disabled={disabled} icon="mic" onClick={() => voice.handleMicClick()} shape="circle" size="lg" type="button" variant="default" />}
+              {hasPayload ? <SandIconButton aria-label="Send message" className={PROMPT_SEND_CLASS} disabled={!canSend} icon="arrow-up" shape="circle" size="lg" type="submit" variant="default" /> : <SandIconButton aria-label="Start voice input" className={PROMPT_MIC_EMPTY_CLASS} disabled={disabled} icon="mic" onClick={() => voice.handleMicClick()} shape="circle" size="lg" type="button" variant="default" />}
             </>}
           </span>
         </div>
