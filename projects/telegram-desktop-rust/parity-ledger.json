@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16120,
     "unknown": 15841,
-    "unread": 10820,
+    "unread": 10810,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13487,7 +13487,7 @@
       "Telegram/build/version",
       "changelog.txt"
     ],
-    "source_read_reconciliation": "Recursive denominator remains 16,120. Exact source read-through is now 5300. Orders 5291-5300 add mapped-open WebProxy carrier security/lifecycle and shared-media overview/resource/UI responsibilities only; unknown remains 15,841 and no implementation/verification/release credit is granted.",
+    "source_read_reconciliation": "Recursive denominator remains 16,120. Exact source read-through is now 5310. Orders 5301-5310 add mapped-open secure authorization/account/credential/resource/form responsibilities only; unknown remains 15,841 and no implementation/verification/release credit is granted.",
     "source_authority_evidence": "Predecessor head a5c76249c4f79f9d3355b8c78f0a99e9ce6763bf passed run 37917685269 Source authority job 113777882511 with artifact 11610602313 / sha256:32c47f1a0a30d0d19c1986f21bb2e3afea4a7728e9062ee463979699c04c46e2. Fresh same-head evidence is required for the new read-through head."
   },
   "source_dispositions": {
@@ -13497,6 +13497,6 @@
     "development_only_non_applicable": 66,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 5300
+    "read_through": 5310
   }
 }
