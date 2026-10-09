@@ -19,7 +19,7 @@ import { createWidgetInteractionAdapter } from "./conversation/cards/transcript-
 import { createAssistantMathMarkupCache, type KatexRuntime } from "./conversation/workspace/math-runtime.ts";
 import { resolveWithSingleRetry } from "./conversation/workspace/media-runtime.ts";
 import { accumulateWheelZoomSteps, normalizeWheelZoomDelta } from "./conversation/workspace/media-zoom.ts";
-import { DERIVED_MEDIA_PRELOAD_ROOT_MARGIN, DERIVED_MEDIA_THUMBNAIL_ROOT_MARGIN, isVisibilityBoundDerivedMedia, observeDerivedMediaVisibility, shouldResolveDerivedMedia, shouldResolveDerivedThumbnail } from "./conversation/workspace/media-visibility.ts";
+import { DERIVED_MEDIA_PRELOAD_ROOT_MARGIN, DERIVED_MEDIA_THUMBNAIL_ROOT_MARGIN, isDerivedMediaNearViewport, isVisibilityBoundDerivedMedia, observeDerivedMediaVisibility, shouldResolveDerivedMedia, shouldResolveDerivedThumbnail } from "./conversation/workspace/media-visibility.ts";
 import { TRANSCRIPT_FOLLOW_LATEST_THRESHOLD_PX, isTranscriptNearBottom } from "./conversation/workspace/transcript-follow-state.ts";
 import { beginHorizontalScrollPointer, captureHorizontalScroll, clampHorizontalScrollOffset, normalizeHorizontalScrollWheelDelta, restoreHorizontalScrollOffset, updateHorizontalScrollPointer, updateHorizontalScrollWheelLock } from "./conversation/workspace/horizontal-scroll-state.ts";
 import {
@@ -1130,6 +1130,11 @@ test("UNIT-TDRP-IV-ARTICLE-MEDIA-VISIBILITY-001 derived transcript media follows
   assert.equal(shouldResolveDerivedThumbnail(false, false), false);
   assert.equal(shouldResolveDerivedThumbnail(false, true), true);
   assert.equal(shouldResolveDerivedThumbnail(true, false), true);
+  assert.equal(isDerivedMediaNearViewport({ top: 100, right: 220, bottom: 180, left: 120 }, 800, 600, DERIVED_MEDIA_PRELOAD_ROOT_MARGIN), true);
+  assert.equal(isDerivedMediaNearViewport({ top: 1_241, right: 220, bottom: 1_300, left: 120 }, 800, 600, DERIVED_MEDIA_PRELOAD_ROOT_MARGIN), false);
+  assert.equal(isDerivedMediaNearViewport({ top: 100, right: 1_180, bottom: 180, left: 1_100 }, 800, 600, DERIVED_MEDIA_THUMBNAIL_ROOT_MARGIN), true);
+  assert.equal(isDerivedMediaNearViewport({ top: 100, right: 1_240, bottom: 180, left: 1_121 }, 800, 600, DERIVED_MEDIA_THUMBNAIL_ROOT_MARGIN), false);
+  assert.equal(isDerivedMediaNearViewport({ top: 5_000, right: 5_100, bottom: 5_100, left: 5_000 }, 800, 600, "25%"), true);
 
   const previousObserver = globalThis.IntersectionObserver;
   const instances: FakeIntersectionObserver[] = [];
@@ -1182,6 +1187,7 @@ test("CONTRACT-TDRP-IV-ARTICLE-MEDIA-LIFECYCLE-001 attachment cards and filmstri
   const visibilitySource = readFileSync(new URL("./conversation/workspace/media-visibility.ts", import.meta.url), "utf8");
   assert.match(visibilitySource, /const visibilityBuckets = new Map/);
   assert.match(visibilitySource, /new IntersectionObserver/);
+  assert.match(source, /initialDerivedMediaVisibility\(next, rootMargin\)/);
   assert.match(source, /observeDerivedMediaVisibility\(element, rootMargin, setIsNearViewport\)/);
   assert.match(source, /const shouldResolve = resolveMedia != null && supportedMediaKind && shouldResolveDerivedMedia\(kind, isNearViewport\);/);
   assert.match(source, /if \(!shouldResolve \|\| resolveMedia == null\) \{[\s\S]{0,120}setMedia\(null\);[\s\S]{0,120}setLoading\(false\);/);
