@@ -1,0 +1,67 @@
+{
+  "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+  "start": 5261,
+  "end": 5270,
+  "entries": [
+    {
+      "order": 5261,
+      "path": "Telegram/SourceFiles/mtproto/mtp_instance.h",
+      "blob": "eeb56d29cc8316bd6600c26b6f8edf3a912601eb",
+      "consumer_symbol": "authoritative request/session/config/key control surface: request identity, dependency ordering, cancellation, restart, config refresh, auth-key lifecycle and callback routing"
+    },
+    {
+      "order": 5262,
+      "path": "Telegram/SourceFiles/mtproto/mtproto_auth_key.cpp",
+      "blob": "cb4a4e5c3b94ed33d126068792536a08800615f2",
+      "consumer_symbol": "authentication-key material lifecycle: stable key identity, creation/expiry metadata, bounded serialization and protocol crypto derivation helpers"
+    },
+    {
+      "order": 5263,
+      "path": "Telegram/SourceFiles/mtproto/mtproto_auth_key.h",
+      "blob": "31d0e3db369b309b8f2e9ea1d6b83b6a6d51b20c",
+      "consumer_symbol": "typed authentication-key ownership and expiry contract plus explicit crypto boundary"
+    },
+    {
+      "order": 5264,
+      "path": "Telegram/SourceFiles/mtproto/mtproto_concurrent_sender.cpp",
+      "blob": "89ad7d9625f0858574961c6d90c412bf2ce092e8",
+      "consumer_symbol": "concurrent request adapter: weak-lifetime dispatch, main-thread handoff, parse failure settlement, fail-skip policy, cancel-all and detach semantics"
+    },
+    {
+      "order": 5265,
+      "path": "Telegram/SourceFiles/mtproto/mtproto_concurrent_sender.h",
+      "blob": "f96d0fe3ac1f1ca88fea447f62aaf3596e999712",
+      "consumer_symbol": "typed request-builder/canceller contract with target, delay, dependency and callback ownership"
+    },
+    {
+      "order": 5266,
+      "path": "Telegram/SourceFiles/mtproto/mtproto_config.cpp",
+      "blob": "e8fc605ca197d2bc82a9f73da18eeb945967a99f",
+      "consumer_symbol": "remote configuration state defaults and versioned serialization/deserialization with environment-aware values and bounded persistence"
+    },
+    {
+      "order": 5267,
+      "path": "Telegram/SourceFiles/mtproto/mtproto_config.h",
+      "blob": "289230b64480cb8401239782a1ca3203067baeb1",
+      "consumer_symbol": "typed configuration fields and DcOptions ownership contract"
+    },
+    {
+      "order": 5268,
+      "path": "Telegram/SourceFiles/mtproto/mtproto_dc_options.cpp",
+      "blob": "d8499fc1df2ed7fdb88da687a04b824d243ff49a",
+      "consumer_symbol": "endpoint/CDN-key authority: environment defaults, validated mutation/serialization, change events, proxy/media/CDN filtering and endpoint selection"
+    },
+    {
+      "order": 5269,
+      "path": "Telegram/SourceFiles/mtproto/mtproto_dc_options.h",
+      "blob": "4e0b979c4a84661f3365196ab8702dc8cb60fd03",
+      "consumer_symbol": "typed endpoint, environment and DC-kind lookup contract with concurrent read/write ownership"
+    },
+    {
+      "order": 5270,
+      "path": "Telegram/SourceFiles/mtproto/mtproto_dh_utils.cpp",
+      "blob": "db9c0542fa1f2d86c27da38f511d56ac2accc21c",
+      "consumer_symbol": "Diffie-Hellman safety boundary: prime/generator validation, bounded modular exponentiation and authenticated key material derivation"
+    }
+  ]
+}
