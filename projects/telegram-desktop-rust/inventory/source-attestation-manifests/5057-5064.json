@@ -1,5 +1,5 @@
 {
-  "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+  "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
   "start": 5057,
   "end": 5064,
   "entries": [
@@ -51,5 +51,6 @@
       "blob": "e9b1f25b29b43a1abd96a69f526af8e731d862ff",
       "consumer_symbol": "media_clip_implementation"
     }
-  ]
+  ],
+  "accepted_tree": "fa901c0c44fb1f94fd38de0d5edbcfef23a9f0ad"
 }

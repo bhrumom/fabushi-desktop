@@ -1,5 +1,5 @@
 {
-  "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+  "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
   "start": 4601,
   "end": 4700,
   "entries": [
@@ -603,5 +603,6 @@
       "blob": "0e0599b25abe213587fae89604884fbe33d31a40",
       "consumer_symbol": "info_profile_phone_menu"
     }
-  ]
+  ],
+  "accepted_tree": "fa901c0c44fb1f94fd38de0d5edbcfef23a9f0ad"
 }

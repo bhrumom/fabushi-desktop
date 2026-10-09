@@ -4,8 +4,8 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
-    "tree": "5030985204963cbbd362ced7412d231b04ebd0cc"
+    "commit": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+    "tree": "fa901c0c44fb1f94fd38de0d5edbcfef23a9f0ad"
   },
   "range": {
     "first_order": 5755,
@@ -40,7 +40,7 @@
       "consumer_symbol": "tde2e_api.cpp",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-required",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "efe4edc5eef735c954b39d7a927722a7e8f9214c",
         "file_type": "blob",
         "recursive_order": 5755
@@ -73,7 +73,7 @@
       "consumer_symbol": "tde2e_api.h",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-required",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "9cd79143002adb23a99253017fee70453aa54840",
         "file_type": "blob",
         "recursive_order": 5756
@@ -106,7 +106,7 @@
       "consumer_symbol": "tde2e_integration.cpp",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-required",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "3f63917d5fc76e0ecc124bd8e65e6345a8b8b611",
         "file_type": "blob",
         "recursive_order": 5757
@@ -139,7 +139,7 @@
       "consumer_symbol": "tde2e_integration.h",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-required",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "4715743859f9a1af7aea7585e0f63200c3d42c6a",
         "file_type": "blob",
         "recursive_order": 5758

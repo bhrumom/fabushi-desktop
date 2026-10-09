@@ -4,8 +4,8 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
-    "tree": "5030985204963cbbd362ced7412d231b04ebd0cc"
+    "commit": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+    "tree": "fa901c0c44fb1f94fd38de0d5edbcfef23a9f0ad"
   },
   "range": {
     "first_order": 5476,
@@ -41,7 +41,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram platform runtime retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "03fb75e3155758a619e46cfd1c212671e574d0f1",
         "file_type": "blob",
         "recursive_order": 5476
@@ -76,7 +76,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram platform runtime retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "5b599858aacb68cebc7e118663973a46d1d5619f",
         "file_type": "blob",
         "recursive_order": 5477
@@ -111,7 +111,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram platform runtime retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "b309f2aec46c72fa494a329d456cd6715c2f8790",
         "file_type": "blob",
         "recursive_order": 5478
@@ -146,7 +146,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram platform runtime retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "109c427a28d4ae7bb9bed84c70447244d34f0570",
         "file_type": "blob",
         "recursive_order": 5479
@@ -181,7 +181,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram platform runtime retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "a15b7a8e5c2657bce18ca66e5bbb4a0e2fcec346",
         "file_type": "blob",
         "recursive_order": 5480
@@ -216,7 +216,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram platform runtime retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "20deabebf666a9164711074ec913fe68bfe95e6d",
         "file_type": "blob",
         "recursive_order": 5481
@@ -251,7 +251,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram platform runtime retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "16737910ce952ba7505505785d573a7d4ac359cd",
         "file_type": "blob",
         "recursive_order": 5482
@@ -286,7 +286,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram platform runtime retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "a684ad1960d3e4d3523ad1d84a46dcd84fba4d40",
         "file_type": "blob",
         "recursive_order": 5483
@@ -321,7 +321,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram platform runtime retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "9c7967588e0517d5d4bb9ebf710bcde9caa17017",
         "file_type": "blob",
         "recursive_order": 5484
@@ -356,7 +356,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram platform runtime retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "6bb8195430d9cf504d93db967807da5e11ae73eb",
         "file_type": "blob",
         "recursive_order": 5485
@@ -391,7 +391,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram platform runtime retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "0bd07fbe6d935630988a45b66204d3e3be80ea7b",
         "file_type": "blob",
         "recursive_order": 5486
@@ -426,7 +426,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram platform runtime retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "e89dd8f8e02a19a6b4392bdea0ff0796246b4357",
         "file_type": "blob",
         "recursive_order": 5487
@@ -461,7 +461,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram platform runtime retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "a857514cf69383a6af21ad143ae55a31194777bc",
         "file_type": "blob",
         "recursive_order": 5488
@@ -496,7 +496,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram platform runtime retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "01f04f95bc3d8667c3fad7c79123a9e331fb2e51",
         "file_type": "blob",
         "recursive_order": 5489
@@ -531,7 +531,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram platform runtime retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "e3bb1ffa7aff885360e5bf5b4163178873d6831f",
         "file_type": "blob",
         "recursive_order": 5490
@@ -566,7 +566,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram platform runtime retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "910a6a33e00eda9f8128970dd3920ab135575529",
         "file_type": "blob",
         "recursive_order": 5491
@@ -601,7 +601,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram platform runtime retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "baceb0e57d55c434997b77e9c0472c5e86641631",
         "file_type": "blob",
         "recursive_order": 5492
@@ -636,7 +636,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram platform runtime retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "95f9d52da691c5ac8cd07013bbda4b70cd560479",
         "file_type": "blob",
         "recursive_order": 5493
@@ -671,7 +671,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram platform runtime retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "c3f36b52273226a04486a0c2d596afb5e1a3bad1",
         "file_type": "blob",
         "recursive_order": 5494
@@ -706,7 +706,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram platform runtime retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "7f9a6ce8ef1d1b35145f944e986b0978d41c1687",
         "file_type": "blob",
         "recursive_order": 5495
@@ -741,7 +741,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram platform runtime retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "6430f4b200ce892e84b72baa4701c65885c09f49",
         "file_type": "blob",
         "recursive_order": 5496
@@ -776,7 +776,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram platform runtime retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "ba7f267b6d8c1c0f600d82d9a9226bfbc323da42",
         "file_type": "blob",
         "recursive_order": 5497
@@ -811,7 +811,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram platform runtime retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "adeeb6b8d82e96c6c2d9192d3de783c4d374605f",
         "file_type": "blob",
         "recursive_order": 5498
@@ -846,7 +846,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram platform runtime retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "d2d05be5871f0e17ddd8ed7528c192af1eb05b24",
         "file_type": "blob",
         "recursive_order": 5499
@@ -881,7 +881,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram platform runtime retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "8fed093cb4134c9021cf44cb2c2753ae1b95b425",
         "file_type": "blob",
         "recursive_order": 5500

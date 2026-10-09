@@ -4,8 +4,8 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
-    "tree": "5030985204963cbbd362ced7412d231b04ebd0cc"
+    "commit": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+    "tree": "fa901c0c44fb1f94fd38de0d5edbcfef23a9f0ad"
   },
   "range": {
     "first_order": 5085,
@@ -41,7 +41,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "7751f6a4090f31430fd57d18cc3c8d36c8e3c8f1",
         "byte_size": 9942,
         "file_type": "blob",
@@ -77,7 +77,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "6ca1718a0c10c890028f281cdfa14221d1d0e1f0",
         "byte_size": 2578,
         "file_type": "blob",
@@ -113,7 +113,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "5ffc1d4eab3990c7063b79b38941700ff3aa6909",
         "byte_size": 748,
         "file_type": "blob",
@@ -149,7 +149,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "65baa116915c96f2d6fe2c0dc75c278b6ac0a590",
         "byte_size": 12488,
         "file_type": "blob",
@@ -185,7 +185,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "6df3d14f3299df109804d17d4d73b7348c59a0e1",
         "byte_size": 2712,
         "file_type": "blob",
@@ -221,7 +221,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "51818c7d111d8592015d049f4231c95f10f86200",
         "byte_size": 3373,
         "file_type": "blob",

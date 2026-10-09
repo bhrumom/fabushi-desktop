@@ -1,5 +1,5 @@
 {
-  "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+  "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
   "start": 5541,
   "end": 5571,
   "entries": [
@@ -189,5 +189,6 @@
       "blob": "165c325a8515c5df9f8e210ef4fcf3fae29d71e1",
       "consumer_symbol": "2SV navigation/error invalidation"
     }
-  ]
+  ],
+  "accepted_tree": "fa901c0c44fb1f94fd38de0d5edbcfef23a9f0ad"
 }

@@ -1,5 +1,5 @@
 {
-  "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+  "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
   "start": 5031,
   "end": 5033,
   "entries": [
@@ -21,5 +21,6 @@
       "blob": "86113c3885f9c5728f888f3ab422cdf4ae0b7ea4",
       "consumer_symbol": "send_as_peers"
     }
-  ]
+  ],
+  "accepted_tree": "fa901c0c44fb1f94fd38de0d5edbcfef23a9f0ad"
 }

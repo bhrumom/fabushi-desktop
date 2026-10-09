@@ -4,8 +4,8 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
-    "tree": "5030985204963cbbd362ced7412d231b04ebd0cc"
+    "commit": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+    "tree": "fa901c0c44fb1f94fd38de0d5edbcfef23a9f0ad"
   },
   "range": {
     "first_order": 5590,
@@ -44,7 +44,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no source-named credits runtime retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "dbe0b4cf48e52c30e2066c6ad4181893ed604646",
         "file_type": "blob",
         "recursive_order": 5590
@@ -81,7 +81,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no source-named credits interface retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "56c88e68b16b4c2c49bcbcc846b9a5969dfb4867",
         "file_type": "blob",
         "recursive_order": 5591
@@ -120,7 +120,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no source-named folder runtime retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "8c5b9b4d6b7a5b3166c12ac8e20c50775a84e9dd",
         "file_type": "blob",
         "recursive_order": 5592
@@ -156,7 +156,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no source-named folder interface retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "8a2984febbf9753dd4aeb698eb7924d4960ca19a",
         "file_type": "blob",
         "recursive_order": 5593

@@ -1,6 +1,6 @@
 {
-  "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
-  "accepted_tree": "5030985204963cbbd362ced7412d231b04ebd0cc",
+  "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+  "accepted_tree": "fa901c0c44fb1f94fd38de0d5edbcfef23a9f0ad",
   "deterministic_order_basis": "non-directory/blob rank in accepted recursive tree",
   "start": 5759,
   "end": 5771,
@@ -8,7 +8,7 @@
     {
       "order": 5759,
       "path": "Telegram/SourceFiles/test/README.md",
-      "blob": "429b4f3d83ec6fa6aa71203624a894d1d7973d35",
+      "blob": "5c0b20e1106e86d30ce13cd728696fd889603646",
       "consumer_symbol": "README.md"
     },
     {
@@ -38,13 +38,13 @@
     {
       "order": 5764,
       "path": "Telegram/SourceFiles/test/test_animation_clock.cpp",
-      "blob": "77958b8dcbd61b36583ad47c9bfaa618973e06e0",
+      "blob": "7b53e72fe2ec3813e12dd36ddf177f4441c26783",
       "consumer_symbol": "test_animation_clock.cpp"
     },
     {
       "order": 5765,
       "path": "Telegram/SourceFiles/test/test_animation_clock.h",
-      "blob": "52a5a73d1292bde539f8771de9ce6e3066d995d5",
+      "blob": "87aed04fb62662de29d74273531c14f7f7f751d9",
       "consumer_symbol": "test_animation_clock.h"
     },
     {

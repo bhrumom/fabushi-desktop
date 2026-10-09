@@ -4,8 +4,8 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
-    "tree": "5030985204963cbbd362ced7412d231b04ebd0cc"
+    "commit": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+    "tree": "fa901c0c44fb1f94fd38de0d5edbcfef23a9f0ad"
   },
   "range": {
     "first_order": 5759,
@@ -16,34 +16,35 @@
     {
       "recursive_order": 5759,
       "source_path": "Telegram/SourceFiles/test/README.md",
-      "source_blob_sha": "429b4f3d83ec6fa6aa71203624a894d1d7973d35",
+      "source_blob_sha": "5c0b20e1106e86d30ce13cd728696fd889603646",
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "responsibility": "Task-test harness authority: stage purity, exact object/action identity, bounded readiness, packed-scenario policy, fixture gates/secrets, capture/visual assertions, teardown and failure diagnosis.",
-      "upstream_owner": "tdesktop task-test harness",
+      "responsibility": "Task-test harness authority expanded for non-activating background launch, explicit window exposure, activation refusal, crash/death evidence and telemetry-safe helper numbers.",
+      "upstream_owner": "Canonical professional cross-platform test/evidence harness owner",
       "state_machine": "test precondition -> pure bounded readiness -> exact action/assertion -> structured capture/result -> explicit teardown/diagnostics",
       "side_effects": "Test-only: may activate/focus windows, manipulate harness-owned clipboard sentinels, read protected fixtures, inject input, advance harness clocks and capture product surfaces.",
       "failure_cases": "timeout with diagnostics; stale widget/action identity; locked console; focus/activation refusal; clipboard empty/stale/foreign; hidden/destroyed capture owner; invalid animation request; fixture unavailable; teardown leak",
       "ui_disposition": "TEST/EVIDENCE ONLY. It validates canonical product UI and must not create a Telegram-derived production UI.",
-      "fabushi_canonical_owner": "Canonical professional test/evidence harness owner",
+      "fabushi_canonical_owner": "Canonical professional cross-platform test/evidence harness owner",
       "fabushi_target": "MAPPED OPEN.",
       "platform_differences": "Qt helper mechanics are upstream-specific. Preserve test semantics: preconditions cannot hide product failure, readiness stays pure, fixture secrets never leak, captures target real paint owners, platform focus/clipboard differences are explicit evidence.",
-      "production_evidence": "Exact accepted blob read; professional test-harness parity/evidence remains open.",
-      "test_evidence": "self-tests for refusal/failure paths; Windows/macOS/Linux activation/clipboard; DPR/scale capture; keyboard/focus/a11y; packed scenario teardown; no secret/foreign clipboard logging; deterministic timing.",
+      "production_evidence": "Exact cf478d37 changed blob re-read and rebound; source/tooling read does not itself verify the shipping product.",
+      "test_evidence": "Fresh exact-descendant GitHub Actions evidence required; no threshold reduction, fake product fallback, or source-specific product owner is allowed.",
       "disposition": "mapped-open-test-harness",
       "unknown_closed": false,
       "omitted": false,
       "consumer_evidence": [],
       "reachability_status": "accepted-tree exact blob responsibility proven; test-harness closure open",
       "license_and_provenance": "tdesktop provenance retained.",
-      "notes": "Testing is part of migration Definition of Done; reading this harness closes no unknown.",
+      "notes": "Changed accepted-prefix blob explicitly re-read under cf478d37. Existing applicability/unknown/omitted classification is retained only where the responsibility class remains the same.",
       "consumer_symbol": "README.md",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-required",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
-        "verified_blob_sha": "429b4f3d83ec6fa6aa71203624a894d1d7973d35",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+        "verified_blob_sha": "5c0b20e1106e86d30ce13cd728696fd889603646",
         "file_type": "blob",
-        "recursive_order": 5759
+        "recursive_order": 5759,
+        "byte_size": 244372
       }
     },
     {
@@ -73,7 +74,7 @@
       "consumer_symbol": "test_activation.cpp",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-required",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "ea909a8640788bc96eabe94fb32ff6bd0900acb0",
         "file_type": "blob",
         "recursive_order": 5760
@@ -106,7 +107,7 @@
       "consumer_symbol": "test_activation.h",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-required",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "d460fe0328d02ef2e327be406a13e060ab7f4b99",
         "file_type": "blob",
         "recursive_order": 5761
@@ -139,7 +140,7 @@
       "consumer_symbol": "test_agent.cpp",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-required",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "b9fe6ba5718cfb3fb6b736aef1e1315a02cca8e3",
         "file_type": "blob",
         "recursive_order": 5762
@@ -172,7 +173,7 @@
       "consumer_symbol": "test_agent.h",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-required",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "c77f00ad4d6bbadd6149fe8d2634771471e6a73f",
         "file_type": "blob",
         "recursive_order": 5763
@@ -181,11 +182,11 @@
     {
       "recursive_order": 5764,
       "source_path": "Telegram/SourceFiles/test/test_animation_clock.cpp",
-      "source_blob_sha": "77958b8dcbd61b36583ad47c9bfaa618973e06e0",
+      "source_blob_sha": "7b53e72fe2ec3813e12dd36ddf177f4441c26783",
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "responsibility": "Deterministic clocked-frame runner for short UI animations with explicit requested elapsed times, fixture-gate refusals and evidence rows.",
-      "upstream_owner": "tdesktop task-test harness",
+      "responsibility": "Deterministic clocked-frame runner now routes helper numbers and gate/refusal diagnostics through the shared telemetry-safe NumberFormat contract while preserving exact timing/refusal semantics.",
+      "upstream_owner": "Canonical visual regression/timing harness owner",
       "state_machine": "test precondition -> pure bounded readiness -> exact action/assertion -> structured capture/result -> explicit teardown/diagnostics",
       "side_effects": "Test-only: may activate/focus windows, manipulate harness-owned clipboard sentinels, read protected fixtures, inject input, advance harness clocks and capture product surfaces.",
       "failure_cases": "timeout with diagnostics; stale widget/action identity; locked console; focus/activation refusal; clipboard empty/stale/foreign; hidden/destroyed capture owner; invalid animation request; fixture unavailable; teardown leak",
@@ -193,32 +194,33 @@
       "fabushi_canonical_owner": "Canonical visual regression/timing harness owner",
       "fabushi_target": "MAPPED OPEN.",
       "platform_differences": "Qt helper mechanics are upstream-specific. Preserve test semantics: preconditions cannot hide product failure, readiness stays pure, fixture secrets never leak, captures target real paint owners, platform focus/clipboard differences are explicit evidence.",
-      "production_evidence": "Exact accepted blob read; professional test-harness parity/evidence remains open.",
-      "test_evidence": "self-tests for refusal/failure paths; Windows/macOS/Linux activation/clipboard; DPR/scale capture; keyboard/focus/a11y; packed scenario teardown; no secret/foreign clipboard logging; deterministic timing.",
+      "production_evidence": "Exact cf478d37 changed blob re-read and rebound; source/tooling read does not itself verify the shipping product.",
+      "test_evidence": "Fresh exact-descendant GitHub Actions evidence required; no threshold reduction, fake product fallback, or source-specific product owner is allowed.",
       "disposition": "mapped-open-test-harness",
       "unknown_closed": false,
       "omitted": false,
       "consumer_evidence": [],
       "reachability_status": "accepted-tree exact blob responsibility proven; test-harness closure open",
       "license_and_provenance": "tdesktop provenance retained.",
-      "notes": "Testing is part of migration Definition of Done; reading this harness closes no unknown.",
+      "notes": "Changed accepted-prefix blob explicitly re-read under cf478d37. Existing applicability/unknown/omitted classification is retained only where the responsibility class remains the same.",
       "consumer_symbol": "test_animation_clock.cpp",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-required",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
-        "verified_blob_sha": "77958b8dcbd61b36583ad47c9bfaa618973e06e0",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+        "verified_blob_sha": "7b53e72fe2ec3813e12dd36ddf177f4441c26783",
         "file_type": "blob",
-        "recursive_order": 5764
+        "recursive_order": 5764,
+        "byte_size": 22980
       }
     },
     {
       "recursive_order": 5765,
       "source_path": "Telegram/SourceFiles/test/test_animation_clock.h",
-      "source_blob_sha": "52a5a73d1292bde539f8771de9ce6e3066d995d5",
+      "source_blob_sha": "87aed04fb62662de29d74273531c14f7f7f751d9",
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "responsibility": "Clocked animation request/frame/evidence interface.",
-      "upstream_owner": "tdesktop task-test harness",
+      "responsibility": "Clocked animation request/frame/evidence interface with shared NumberFormat-aware helper text contracts for telemetry-safe numeric diagnostics.",
+      "upstream_owner": "Canonical visual regression/timing harness owner",
       "state_machine": "test precondition -> pure bounded readiness -> exact action/assertion -> structured capture/result -> explicit teardown/diagnostics",
       "side_effects": "Test-only: may activate/focus windows, manipulate harness-owned clipboard sentinels, read protected fixtures, inject input, advance harness clocks and capture product surfaces.",
       "failure_cases": "timeout with diagnostics; stale widget/action identity; locked console; focus/activation refusal; clipboard empty/stale/foreign; hidden/destroyed capture owner; invalid animation request; fixture unavailable; teardown leak",
@@ -226,22 +228,23 @@
       "fabushi_canonical_owner": "Canonical visual regression/timing harness owner",
       "fabushi_target": "MAPPED OPEN.",
       "platform_differences": "Qt helper mechanics are upstream-specific. Preserve test semantics: preconditions cannot hide product failure, readiness stays pure, fixture secrets never leak, captures target real paint owners, platform focus/clipboard differences are explicit evidence.",
-      "production_evidence": "Exact accepted blob read; professional test-harness parity/evidence remains open.",
-      "test_evidence": "self-tests for refusal/failure paths; Windows/macOS/Linux activation/clipboard; DPR/scale capture; keyboard/focus/a11y; packed scenario teardown; no secret/foreign clipboard logging; deterministic timing.",
+      "production_evidence": "Exact cf478d37 changed blob re-read and rebound; source/tooling read does not itself verify the shipping product.",
+      "test_evidence": "Fresh exact-descendant GitHub Actions evidence required; no threshold reduction, fake product fallback, or source-specific product owner is allowed.",
       "disposition": "mapped-open-test-harness",
       "unknown_closed": false,
       "omitted": false,
       "consumer_evidence": [],
       "reachability_status": "accepted-tree exact blob responsibility proven; test-harness closure open",
       "license_and_provenance": "tdesktop provenance retained.",
-      "notes": "Testing is part of migration Definition of Done; reading this harness closes no unknown.",
+      "notes": "Changed accepted-prefix blob explicitly re-read under cf478d37. Existing applicability/unknown/omitted classification is retained only where the responsibility class remains the same.",
       "consumer_symbol": "test_animation_clock.h",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-required",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
-        "verified_blob_sha": "52a5a73d1292bde539f8771de9ce6e3066d995d5",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+        "verified_blob_sha": "87aed04fb62662de29d74273531c14f7f7f751d9",
         "file_type": "blob",
-        "recursive_order": 5765
+        "recursive_order": 5765,
+        "byte_size": 15086
       }
     },
     {
@@ -271,7 +274,7 @@
       "consumer_symbol": "test_box_button.cpp",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-required",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "798b905b69f4915cadcd0d9b63105996962ce000",
         "file_type": "blob",
         "recursive_order": 5766
@@ -304,7 +307,7 @@
       "consumer_symbol": "test_box_button.h",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-required",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "86e5906251d1adff457dc40ff378562c1a6a1735",
         "file_type": "blob",
         "recursive_order": 5767
@@ -337,7 +340,7 @@
       "consumer_symbol": "test_capture.cpp",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-required",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "c0a813cc32d7c10f10917fc8e84f211c9c814d58",
         "file_type": "blob",
         "recursive_order": 5768
@@ -370,7 +373,7 @@
       "consumer_symbol": "test_capture.h",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-required",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "15dcdd21a5f5b9c65a6c7071b947366da82b828e",
         "file_type": "blob",
         "recursive_order": 5769
@@ -403,7 +406,7 @@
       "consumer_symbol": "test_clipboard.cpp",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-required",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "b63dffd442fed5346fa49753c6d2641177356c7b",
         "file_type": "blob",
         "recursive_order": 5770
@@ -436,7 +439,7 @@
       "consumer_symbol": "test_clipboard.h",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-required",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "e4166806b01c5ab4f00af1fa588aa17dfb0bbbf2",
         "file_type": "blob",
         "recursive_order": 5771

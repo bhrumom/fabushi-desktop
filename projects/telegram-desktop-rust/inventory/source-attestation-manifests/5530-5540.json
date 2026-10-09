@@ -1,5 +1,5 @@
 {
-  "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+  "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
   "start": 5530,
   "end": 5540,
   "entries": [
@@ -69,5 +69,6 @@
       "blob": "06fab806ce6a90d5d54027303b0c8050c562d519",
       "consumer_symbol": "Business chatbot delegation"
     }
-  ]
+  ],
+  "accepted_tree": "fa901c0c44fb1f94fd38de0d5edbcfef23a9f0ad"
 }

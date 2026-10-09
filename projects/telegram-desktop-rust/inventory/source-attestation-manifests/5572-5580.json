@@ -1,5 +1,5 @@
 {
-  "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+  "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
   "start": 5572,
   "end": 5580,
   "entries": [
@@ -57,5 +57,6 @@
       "blob": "e06c1cc267c9b6ad63475bf6cf3caf75f4179246",
       "consumer_symbol": "Advanced data/network/download/window/system/update/archive settings"
     }
-  ]
+  ],
+  "accepted_tree": "fa901c0c44fb1f94fd38de0d5edbcfef23a9f0ad"
 }

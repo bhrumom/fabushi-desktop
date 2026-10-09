@@ -4,8 +4,8 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
-    "tree": "5030985204963cbbd362ced7412d231b04ebd0cc"
+    "commit": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+    "tree": "fa901c0c44fb1f94fd38de0d5edbcfef23a9f0ad"
   },
   "range": {
     "first_order": 5617,
@@ -39,7 +39,7 @@
       "license_and_provenance": "tdesktop provenance retained; secrets/session material excluded from evidence.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-required",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "b5c5ec4a2322ab43322778a62ebb1102cbf6f913",
         "file_type": "blob",
         "recursive_order": 5617
@@ -72,7 +72,7 @@
       "license_and_provenance": "tdesktop provenance retained; secrets/session material excluded from evidence.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-required",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "c0c8d43f94044cf773ad4c0b8d47a461dc9aed61",
         "file_type": "blob",
         "recursive_order": 5618
@@ -105,7 +105,7 @@
       "license_and_provenance": "tdesktop provenance retained; secrets/session material excluded from evidence.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-required",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "fb7e8c1245da8a28623b3ee78c79c136518387d0",
         "file_type": "blob",
         "recursive_order": 5619
@@ -138,7 +138,7 @@
       "license_and_provenance": "tdesktop provenance retained; secrets/session material excluded from evidence.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-required",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "9740e0a5abed4e0507a034a0ad18806f0fea1105",
         "file_type": "blob",
         "recursive_order": 5620
@@ -171,7 +171,7 @@
       "license_and_provenance": "tdesktop provenance retained; secrets/session material excluded from evidence.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-required",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "0d7dced4529eba860b2cf75933b452cff99b981b",
         "file_type": "blob",
         "recursive_order": 5621
@@ -204,7 +204,7 @@
       "license_and_provenance": "tdesktop provenance retained; secrets/session material excluded from evidence.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-required",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "1258765db969fd9c2683c73d56d47b9d69c66f13",
         "file_type": "blob",
         "recursive_order": 5622

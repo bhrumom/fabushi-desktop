@@ -1,5 +1,5 @@
 {
-  "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+  "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
   "start": 2001,
   "end": 2100,
   "entries": [
@@ -603,5 +603,6 @@
       "blob": "e4f4f943c2b9fcddf5e35fa4f8b2787adc286f90",
       "consumer_symbol": "silent"
     }
-  ]
+  ],
+  "accepted_tree": "fa901c0c44fb1f94fd38de0d5edbcfef23a9f0ad"
 }

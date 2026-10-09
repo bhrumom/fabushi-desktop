@@ -1,5 +1,5 @@
 {
-  "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+  "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
   "start": 5184,
   "end": 5210,
   "entries": [
@@ -165,5 +165,6 @@
       "blob": "d214af65117aaa89bd822be25b30ac99d547274e",
       "consumer_symbol": "MuteMenu::Descriptor"
     }
-  ]
+  ],
+  "accepted_tree": "fa901c0c44fb1f94fd38de0d5edbcfef23a9f0ad"
 }

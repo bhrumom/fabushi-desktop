@@ -1,5 +1,5 @@
 {
-  "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+  "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
   "start": 4501,
   "end": 4600,
   "entries": [
@@ -594,8 +594,8 @@
     {
       "order": 4599,
       "path": "Telegram/SourceFiles/info/channel_statistics/earn/channel_earn.style",
-      "blob": "393f0661beb32b1bd909c3dffa40b80f1b25b8a9",
-      "consumer_symbol": "channel_earn"
+      "blob": "dc6ae7766af8d145ed9f3125762b2bec7cafb415",
+      "consumer_symbol": "botEarnInputField / InputField::paintEvent / MaskedInputField::paintEvent"
     },
     {
       "order": 4600,
@@ -603,5 +603,6 @@
       "blob": "69ece36f327de47cc91b137e56386b1fc9fa024a",
       "consumer_symbol": "earn_format"
     }
-  ]
+  ],
+  "accepted_tree": "fa901c0c44fb1f94fd38de0d5edbcfef23a9f0ad"
 }

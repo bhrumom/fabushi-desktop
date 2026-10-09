@@ -1,5 +1,5 @@
 {
-  "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+  "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
   "start": 5219,
   "end": 5240,
   "entries": [
@@ -135,5 +135,6 @@
       "blob": "882e0f88d0e377fc17c1e3c2de04a54f443f9409",
       "consumer_symbol": "MTP::details::DcKeyBinder"
     }
-  ]
+  ],
+  "accepted_tree": "fa901c0c44fb1f94fd38de0d5edbcfef23a9f0ad"
 }

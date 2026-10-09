@@ -4,19 +4,19 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
-    "tree": "5030985204963cbbd362ced7412d231b04ebd0cc",
+    "commit": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+    "tree": "fa901c0c44fb1f94fd38de0d5edbcfef23a9f0ad",
     "baseline_identity_accepted": false
   },
   "inventory": {
-    "root_non_directory_entries": 6651,
-    "recursive_non_directory_entries": 16123,
+    "root_non_directory_entries": 6653,
+    "recursive_non_directory_entries": 16125,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 15844,
-    "unread_minimum": 10350,
+    "unknown_minimum": 15846,
+    "unread_minimum": 10332,
     "omitted_known": 0,
-    "note": "Live 863cf10d recursive census 16,123. Accepted-tree blob order exact through 5,773; unknown 15,844, unread 10,350, omitted 0. Orders 5,772-5,773 cover the Windows console-lock professional-test precondition/privacy diagnostic and interface/gate contract."
+    "note": "Live cf478d37 recursive census 16,125; accepted-tree blob order exact through 5,793; unknown 15,846, unread 10,332, omitted 0."
   },
   "latest_recursive_evidence": {
     "run_id": 37872749663,
@@ -34,9 +34,9 @@
       "build-time-github-action-ref-resolutions.json",
       "build-time-github-clone-ref-resolutions.json"
     ],
-    "evidence_status": "historical-only-superseded-by-upstream-863cf10d",
+    "evidence_status": "historical-only-superseded-by-upstream-cf478d37",
     "upstream_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db",
-    "note": "Predecessor artifacts do not prove 863cf10d; fresh same-head Source authority evidence is required."
+    "note": "Predecessor recursive evidence does not prove cf478d37; fresh same-head Source authority evidence required."
   },
   "closure_rules": {
     "executable_runner": "github-actions",
@@ -46,41 +46,28 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live authority exact through deterministic blob order 5,773; unread_minimum is 10,350; unknown remains 15,844; omitted remains 0.",
+  "note": "Live authority exact through deterministic blob order 5,793; unread_minimum is 10,332; unknown remains 15,846; omitted remains 0.",
   "rebaseline": {
-    "from_commit": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
-    "to_commit": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
-    "ahead_by": 3,
-    "changed_paths": 15,
+    "from_commit": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+    "to_commit": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+    "ahead_by": 1,
+    "changed_paths": 2,
     "changed_authority_paths": [
-      "Telegram/CMakeLists.txt",
-      "Telegram/Resources/animations/bot_menu.tgs",
-      "Telegram/Resources/langs/lang.strings",
-      "Telegram/Resources/qrc/telegram/animations.qrc",
-      "Telegram/SourceFiles/editor/photo_editor_common.cpp",
-      "Telegram/SourceFiles/editor/photo_editor_common.h",
-      "Telegram/SourceFiles/editor/photo_editor_controls.cpp",
-      "Telegram/SourceFiles/history/history_widget.cpp",
-      "Telegram/SourceFiles/history/history_widget.h",
-      "Telegram/SourceFiles/history/view/controls/history_view_bot_menu_button.cpp",
-      "Telegram/SourceFiles/history/view/controls/history_view_bot_menu_button.h",
-      "Telegram/SourceFiles/history/view/controls/history_view_compose_controls.cpp",
-      "Telegram/SourceFiles/history/view/controls/history_view_compose_controls.h",
-      "Telegram/SourceFiles/ui/chat/chat.style",
-      "Telegram/SourceFiles/wallet/wallet_content.cpp"
+      "Telegram/SourceFiles/info/channel_statistics/earn/channel_earn.style",
+      "Telegram/lib_ui"
     ],
-    "current_head_source_authority_evidence": "Fresh exact-head Source authority evidence required after the 863cf10d rebaseline; predecessor artifacts are historical only.",
-    "current_source_read_through": 5773,
-    "first_unread_order": 5774,
-    "first_unread_path": "Telegram/SourceFiles/test/test_corner_patch.cpp"
+    "current_head_source_authority_evidence": "Fresh exact-head Source authority evidence required after cf478d37; predecessor runs/artifacts are historical only.",
+    "current_source_read_through": 5793,
+    "first_unread_order": 5794,
+    "first_unread_path": "Telegram/SourceFiles/test/test_log.cpp"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
-    "upstream_commit": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
-    "deterministic_prefix_closed": 123,
-    "development_only_non_applicable": 66,
+    "upstream_commit": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+    "deterministic_prefix_closed": 57,
+    "development_only_non_applicable": 69,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 5773
+    "read_through": 5793
   }
 }

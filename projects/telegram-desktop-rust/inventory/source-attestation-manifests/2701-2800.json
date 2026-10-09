@@ -1,5 +1,5 @@
 {
-  "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+  "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
   "start": 2701,
   "end": 2800,
   "entries": [
@@ -603,5 +603,6 @@
       "blob": "076b0843321828b6beae185d6a301e6a08d4a094",
       "consumer_symbol": "feature_emoji_pack"
     }
-  ]
+  ],
+  "accepted_tree": "fa901c0c44fb1f94fd38de0d5edbcfef23a9f0ad"
 }

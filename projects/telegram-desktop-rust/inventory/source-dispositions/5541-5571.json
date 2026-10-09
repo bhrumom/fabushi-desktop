@@ -4,8 +4,8 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
-    "tree": "5030985204963cbbd362ced7412d231b04ebd0cc"
+    "commit": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
+    "tree": "fa901c0c44fb1f94fd38de0d5edbcfef23a9f0ad"
   },
   "range": {
     "first_order": 5541,
@@ -41,7 +41,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; product behavior to be independently reimplemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "1f96ca1a1f6ba0cc46f5d4f795443d4736a713c9",
         "file_type": "blob",
         "recursive_order": 5541
@@ -76,7 +76,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; product behavior to be independently reimplemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "2bb9afd591157169ad920ded2259ec581506bce2",
         "file_type": "blob",
         "recursive_order": 5542
@@ -111,7 +111,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; product behavior to be independently reimplemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "57098491a079246685255abe8167d2befb8c6d71",
         "file_type": "blob",
         "recursive_order": 5543
@@ -146,7 +146,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "31e03325320a0e6caea799a179ffa29177281c4d",
         "file_type": "blob",
         "recursive_order": 5544
@@ -181,7 +181,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "28a6aa7c564c5040d84c8dd844cf64146907189b",
         "file_type": "blob",
         "recursive_order": 5545
@@ -216,7 +216,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "4765c4f59717db121893cdb4ea53c649bc16892f",
         "file_type": "blob",
         "recursive_order": 5546
@@ -251,7 +251,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "d18687cb5864a303f8b6fcc3adaa3ed5f2280e47",
         "file_type": "blob",
         "recursive_order": 5547
@@ -286,7 +286,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "a5528dfa6947d6fff31a89df95bdf0492de800ab",
         "file_type": "blob",
         "recursive_order": 5548
@@ -321,7 +321,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "5c5938b3a964f0ea2cae3f6b03609d67b2dfcbc1",
         "file_type": "blob",
         "recursive_order": 5549
@@ -356,7 +356,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "325b126025502b5c82a5683b69075b909b313ec3",
         "file_type": "blob",
         "recursive_order": 5550
@@ -391,7 +391,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "4e5fa10302ccbc2e32a9d6d768fb77b8124e92a3",
         "file_type": "blob",
         "recursive_order": 5551
@@ -426,7 +426,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "213ef14880f01992c1c0836ab9f2dc288e72707e",
         "file_type": "blob",
         "recursive_order": 5552
@@ -461,7 +461,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "010cac892937041bf5b02b525ed60353c77e4ed5",
         "file_type": "blob",
         "recursive_order": 5553
@@ -496,7 +496,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "1340e1bde8dd4667ce3093340e91aa46ec7bebe5",
         "file_type": "blob",
         "recursive_order": 5554
@@ -531,7 +531,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "dca036d7a9d5b1acdd4b7eb88e30d45a7f2df2a8",
         "file_type": "blob",
         "recursive_order": 5555
@@ -566,7 +566,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "c018138a97ce5e95723d5f7d69934920ca459fd0",
         "file_type": "blob",
         "recursive_order": 5556
@@ -601,7 +601,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "d5628d378e965e5cfb9216a949661cf1c3393c1e",
         "file_type": "blob",
         "recursive_order": 5557
@@ -636,7 +636,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "aee1541926f0e2969affd179095b9a0e71350fd0",
         "file_type": "blob",
         "recursive_order": 5558
@@ -671,7 +671,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "ce2c069d790c86083dd208b5399cebb8d1c90c31",
         "file_type": "blob",
         "recursive_order": 5559
@@ -706,7 +706,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "6a4df10972f1579f4839d91c4d0c439190ced707",
         "file_type": "blob",
         "recursive_order": 5560
@@ -741,7 +741,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "c827d6c0fc1f20f8c0d6d0411357a226862325fd",
         "file_type": "blob",
         "recursive_order": 5561
@@ -776,7 +776,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "0c1ae4f89cd6bfafe99d691a46c43d8ba76bdf8d",
         "file_type": "blob",
         "recursive_order": 5562
@@ -811,7 +811,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "49865c8044c7c75921586313b77bd331d7c901f5",
         "file_type": "blob",
         "recursive_order": 5563
@@ -846,7 +846,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "4076096c145d1697fcde96f4258d3fdee84dcd02",
         "file_type": "blob",
         "recursive_order": 5564
@@ -881,7 +881,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "90f2d4e1f2167b20471660df9a62449f861be3a0",
         "file_type": "blob",
         "recursive_order": 5565
@@ -916,7 +916,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "6acfb5322745addd7246e86c60315f9738f5b1cc",
         "file_type": "blob",
         "recursive_order": 5566
@@ -951,7 +951,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "b292086e1d06ef95feb78ec43e308444709ea9bc",
         "file_type": "blob",
         "recursive_order": 5567
@@ -986,7 +986,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "a542287083b4614072d1aed25ce2faccca75b0c7",
         "file_type": "blob",
         "recursive_order": 5568
@@ -1021,7 +1021,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "0f0f813daee9e7f5508fc4b5c408a7dfda767657",
         "file_type": "blob",
         "recursive_order": 5569
@@ -1056,7 +1056,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "f8a521918cb8dac5dff8e0fc08e6f402e5b57d83",
         "file_type": "blob",
         "recursive_order": 5570
@@ -1091,7 +1091,7 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "accepted_upstream": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
         "verified_blob_sha": "165c325a8515c5df9f8e210ef4fcf3fae29d71e1",
         "file_type": "blob",
         "recursive_order": 5571
