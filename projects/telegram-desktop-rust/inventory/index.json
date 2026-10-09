@@ -14,17 +14,17 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15988,
-    "unread_minimum": 14218,
+    "unread_minimum": 14120,
     "omitted_known": 0,
-    "note": "Live 22b352e recursive census is 16,120. 1,902 exact entries are read-complete; 132 are explicitly unknown-closed; unknown 15,988, unread 14,218, omitted 0. Orders 1802-1902 are consumer-traced and responsibility-decomposed with implementation gates open."
+    "note": "Live 22b352e recursive census is 16,120. 2,000 exact entries are read-complete; 132 are explicitly unknown-closed; unknown 15,988, unread 14,120, omitted 0. Orders 1903-2000 are consumer-traced and responsibility-decomposed with multi-owner caller splits; implementation gates remain open."
   },
   "latest_recursive_evidence": {
-    "run_id": 37862812304,
+    "run_id": 37864697175,
     "run_attempt": 1,
-    "job_id": 113602673869,
-    "head_sha": "311b3e5a33b248039a646a1aa1720c82be8e112d",
-    "artifact_id": 11587610040,
-    "artifact_digest": "sha256:385b3d93dc666dd25a542463188d2e8c82ba22b546f2ee116861a63e1f38ee5f",
+    "job_id": 113608526168,
+    "head_sha": "4bc99a067c14a4fec6368d664d15f769542620ca",
+    "artifact_id": 11587901366,
+    "artifact_digest": "sha256:b9b0d3518da6288b5b17be9e2f9b930b9d90d0f053cbfaa49bc44b19c84efc1e",
     "artifact_files": [
       "upstream-root-inventory.json",
       "upstream-recursive-inventory.json",
@@ -96,7 +96,7 @@
     ],
     "evidence_status": "exact-parent-source-authority-success-reused-for-source-read",
     "upstream_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db",
-    "note": "Artifact 11587610040 is exact accepted-tree source evidence generated at parent HEAD 311b3e5a33b248039a646a1aa1720c82be8e112d; a new same-head Source authority run is required after this ledger commit before current acceptance."
+    "note": "Artifact 11587901366 is exact accepted-tree source evidence generated at parent HEAD 4bc99a067c14a4fec6368d664d15f769542620ca; a new same-head Source authority run is required after this ledger commit before current acceptance."
   },
   "closure_rules": {
     "executable_runner": "github-actions",
@@ -106,7 +106,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live 22b352e authority is exact through order 1,902. unread_minimum is 14,218, unknown remains 15,988, omitted remains 0. Orders 1802-1902 are mapped-open product responsibilities; read-through does not imply implementation verification.",
+  "note": "Live 22b352e authority is exact through order 2,000. unread_minimum is 14,120, unknown remains 15,988, omitted remains 0. Orders 1903-2000 are mapped-open and split by real caller ownership; read-through does not imply implementation verification.",
   "rebaseline": {
     "from_commit": "6ec5014a92c4580841a043c440d65e8fc605ff78",
     "to_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db",
@@ -127,6 +127,6 @@
     "development_only_non_applicable": 66,
     "unknown_closed": 132,
     "omitted": 0,
-    "read_through": 1902
+    "read_through": 2000
   }
 }

@@ -35,6 +35,32 @@ import { createReleaseMetadata } from "./update/release-metadata.js";
 import { SandSettingsStore } from "../shared/node/settings/sand-settings-store.js";
 import { normalizeSandCallMediaPreferences, normalizeSandUiPreferences, resolveSandUiDirection } from "../shared/desktop.js";
 import { createDesktopCallMediaPort } from "./call-media.js";
+import { normalizeCommitStagedAttachmentsEdgeRequest, normalizeStageAttachmentEdgeRequest } from "./main-edge.js";
+
+test("main edge accepts the shipping preload attachment wire contract", () => {
+  const staged = normalizeStageAttachmentEdgeRequest({
+    filename: "phase1-human-reply.txt",
+    bytesBase64: Buffer.from("Fabushi Human attachment exact-head evidence.", "utf8").toString("base64"),
+  });
+  assert.equal(staged.filename, "phase1-human-reply.txt");
+  assert.equal(Buffer.from(staged.bytes as Uint8Array).toString("utf8"), "Fabushi Human attachment exact-head evidence.");
+  assert.equal(normalizeStageAttachmentEdgeRequest({ filename: "bad.txt", bytesBase64: "***" }).bytes, undefined);
+
+  assert.deepEqual(normalizeCommitStagedAttachmentsEdgeRequest({ items: [
+    { path: "/staging/a.txt", name: "a.txt" },
+    { path: "/staging/b.png", name: "b.png" },
+  ] }), {
+    paths: ["/staging/a.txt", "/staging/b.png"],
+    filenames: ["a.txt", "b.png"],
+  });
+  assert.deepEqual(normalizeCommitStagedAttachmentsEdgeRequest({
+    paths: ["/legacy/a.txt"],
+    filenames: ["a.txt"],
+  }), {
+    paths: ["/legacy/a.txt"],
+    filenames: ["a.txt"],
+  });
+});
 
 test("UI accessibility preferences normalize, persist, and resolve RTL", () => {
   const dir=mkdtempSync(join(tmpdir(),"fabushi-ui-prefs-"));

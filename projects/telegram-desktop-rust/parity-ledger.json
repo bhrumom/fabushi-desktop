@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16120,
     "unknown": 15988,
-    "unread": 14218,
+    "unread": 14120,
     "omitted": 0,
     "responsibilities_total": 54,
     "unmapped_responsibilities": 0
@@ -13419,7 +13419,7 @@
     "ahead_by": 1,
     "changed_paths": 8,
     "story_reads": "six Story source blobs unchanged at d346; provenance rebound after exact blob comparison; changed IV/Markdown and lib_ui files receive no inherited read credit",
-    "source_authority_evidence": "pending-new-head"
+    "source_authority_evidence": "parent exact-head source authority run 37864697175 job 113608526168 artifact 11587901366 @ 4bc99a067c14a4fec6368d664d15f769542620ca; new-head rerun required"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13428,6 +13428,6 @@
     "development_only_non_applicable": 66,
     "unknown_closed": 132,
     "omitted": 0,
-    "read_through": 1902
+    "read_through": 2000
   }
 }
