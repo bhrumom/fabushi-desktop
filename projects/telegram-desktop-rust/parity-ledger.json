@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15846,
-    "unread": 10114,
+    "unread": 10093,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,11 +13478,11 @@
     "to_commit": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
     "ahead_by": 10,
     "changed_paths": 25,
-    "source_read_reconciliation": "18 changed blobs inside prior prefix re-read/reconciled; orders 5831-6011 read/decomposed; read-through=6011, unread=10114, unknown=15846, omitted=0.",
-    "source_authority_evidence": "fresh descendant exact-head Actions required",
-    "current_source_read_through": 6011,
-    "first_unread_order": 6012,
-    "first_unread_path": "Telegram/SourceFiles/ui/controls/feature_list.cpp"
+    "source_read_reconciliation": "18 changed blobs inside prior prefix re-read/reconciled; orders 5831-6032 read/decomposed; read-through=6032, unread=10093, unknown=15846, omitted=0.",
+    "source_authority_evidence": "fresh descendant exact-head Actions required; 6c9f4a71 exact-head evidence is predecessor-only after descendant commits",
+    "current_source_read_through": 6032,
+    "first_unread_order": 6033,
+    "first_unread_path": "Telegram/SourceFiles/ui/controls/round_video_recorder.cpp"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,38 +13491,38 @@
     "development_only_non_applicable": 69,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 6011
+    "read_through": 6032
   },
   "historical_exact_head_evidence": {
     "status": "historical-only",
-    "predecessor_upstream_commit": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
-    "predecessor_target_head": "b4d9f7f8cf580eefd553c5ce105f1d3e682de87f",
+    "predecessor_upstream_commit": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
+    "predecessor_target_head": "6c9f4a71accfb8ef6ed39647ba9c314cdaadffa0",
     "runs": [
       {
-        "id": 37958691718,
-        "workflow": "Rust desktop runtime",
+        "id": 37994253070,
+        "workflow": "Desktop Chat Parity CI",
         "conclusion": "success"
       },
       {
-        "id": 37958689647,
-        "workflow": "Desktop Chat Parity CI",
+        "id": 37994253071,
+        "workflow": "Rust desktop runtime",
         "conclusion": "success"
       }
     ],
     "artifacts": [
       {
-        "id": 11630066443,
-        "digest": "sha256:d4eb35fe0536f9545d0a80b1f79f9821fd530404d062caf5c8fd693f076b66b5"
+        "id": 11646627384,
+        "digest": "sha256:8f66512c3631210316dd0b0728cf09f7177c174a1bcd2a6dd236101fc10b15c1"
       },
       {
-        "id": 11631221092,
-        "digest": "sha256:d0f12d1dd0c81f4226f5a38d1e9dd147f431c71b3dc96b334b054b92c2800f43"
+        "id": 11646890929,
+        "digest": "sha256:3683ec0b5ab2b42a9c78a5e122b4f8db60282423bf1174883017f3d4eb072d0d"
       },
       {
-        "id": 11630211787,
-        "digest": "sha256:2de02ef0217a770851b883ee7c6798fc597200075c7f1bf13918b4d789a51b88"
+        "id": 11646487081,
+        "digest": "sha256:bf39b897019c201c70869ecc227896a4345abaf67b765340ee15408f1c8b0cc6"
       }
     ],
-    "note": "863cf10d+b4d9f7f8 runs/artifacts are historical-only and do not prove live b0d1fe5e authority or a current descendant target HEAD."
+    "note": "These completed/success runs prove accepted upstream 65e23ba + target 6c9f4a71 only; descendant HEADs require fresh exact-head evidence."
   }
 }
