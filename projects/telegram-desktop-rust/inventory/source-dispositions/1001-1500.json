@@ -13620,7 +13620,7 @@
       "omitted": false,
       "consumer_symbol": "inline_button_card",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:276:msgBotKbPaymentIcon: icon {{ \"inline_button_card\", msgBotKbIconFg }};"
+        "Telegram/SourceFiles/ui/chat/chat.style:278:msgBotKbPaymentIcon: icon {{ \"inline_button_card\", msgBotKbIconFg }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop source/legal provenance retained for source-reading evidence. Source-read credit records semantics/consumers only; Telegram artwork/branding is not imported without separate rights/provenance approval.",
@@ -13661,7 +13661,7 @@
       "omitted": false,
       "consumer_symbol": "inline_button_card",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:276:msgBotKbPaymentIcon: icon {{ \"inline_button_card\", msgBotKbIconFg }};"
+        "Telegram/SourceFiles/ui/chat/chat.style:278:msgBotKbPaymentIcon: icon {{ \"inline_button_card\", msgBotKbIconFg }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop source/legal provenance retained for source-reading evidence. Source-read credit records semantics/consumers only; Telegram artwork/branding is not imported without separate rights/provenance approval.",
@@ -13702,7 +13702,7 @@
       "omitted": false,
       "consumer_symbol": "inline_button_card",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:276:msgBotKbPaymentIcon: icon {{ \"inline_button_card\", msgBotKbIconFg }};"
+        "Telegram/SourceFiles/ui/chat/chat.style:278:msgBotKbPaymentIcon: icon {{ \"inline_button_card\", msgBotKbIconFg }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop source/legal provenance retained for source-reading evidence. Source-read credit records semantics/consumers only; Telegram artwork/branding is not imported without separate rights/provenance approval.",
@@ -13743,7 +13743,7 @@
       "omitted": false,
       "consumer_symbol": "inline_button_copy",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:278:msgBotKbCopyIcon: icon {{ \"inline_button_copy\", msgBotKbIconFg }};"
+        "Telegram/SourceFiles/ui/chat/chat.style:280:msgBotKbCopyIcon: icon {{ \"inline_button_copy\", msgBotKbIconFg }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop source/legal provenance retained for source-reading evidence. Source-read credit records semantics/consumers only; Telegram artwork/branding is not imported without separate rights/provenance approval.",
@@ -13784,7 +13784,7 @@
       "omitted": false,
       "consumer_symbol": "inline_button_copy",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:278:msgBotKbCopyIcon: icon {{ \"inline_button_copy\", msgBotKbIconFg }};"
+        "Telegram/SourceFiles/ui/chat/chat.style:280:msgBotKbCopyIcon: icon {{ \"inline_button_copy\", msgBotKbIconFg }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop source/legal provenance retained for source-reading evidence. Source-read credit records semantics/consumers only; Telegram artwork/branding is not imported without separate rights/provenance approval.",
@@ -13825,7 +13825,7 @@
       "omitted": false,
       "consumer_symbol": "inline_button_copy",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:278:msgBotKbCopyIcon: icon {{ \"inline_button_copy\", msgBotKbIconFg }};"
+        "Telegram/SourceFiles/ui/chat/chat.style:280:msgBotKbCopyIcon: icon {{ \"inline_button_copy\", msgBotKbIconFg }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop source/legal provenance retained for source-reading evidence. Source-read credit records semantics/consumers only; Telegram artwork/branding is not imported without separate rights/provenance approval.",
@@ -13866,7 +13866,7 @@
       "omitted": false,
       "consumer_symbol": "inline_button_switch",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:275:msgBotKbSwitchPmIcon: icon {{ \"inline_button_switch\", msgBotKbIconFg }};"
+        "Telegram/SourceFiles/ui/chat/chat.style:277:msgBotKbSwitchPmIcon: icon {{ \"inline_button_switch\", msgBotKbIconFg }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop source/legal provenance retained for source-reading evidence. Source-read credit records semantics/consumers only; Telegram artwork/branding is not imported without separate rights/provenance approval.",
@@ -13907,7 +13907,7 @@
       "omitted": false,
       "consumer_symbol": "inline_button_switch",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:275:msgBotKbSwitchPmIcon: icon {{ \"inline_button_switch\", msgBotKbIconFg }};"
+        "Telegram/SourceFiles/ui/chat/chat.style:277:msgBotKbSwitchPmIcon: icon {{ \"inline_button_switch\", msgBotKbIconFg }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop source/legal provenance retained for source-reading evidence. Source-read credit records semantics/consumers only; Telegram artwork/branding is not imported without separate rights/provenance approval.",
@@ -13948,7 +13948,7 @@
       "omitted": false,
       "consumer_symbol": "inline_button_switch",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:275:msgBotKbSwitchPmIcon: icon {{ \"inline_button_switch\", msgBotKbIconFg }};"
+        "Telegram/SourceFiles/ui/chat/chat.style:277:msgBotKbSwitchPmIcon: icon {{ \"inline_button_switch\", msgBotKbIconFg }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop source/legal provenance retained for source-reading evidence. Source-read credit records semantics/consumers only; Telegram artwork/branding is not imported without separate rights/provenance approval.",
@@ -13989,7 +13989,7 @@
       "omitted": false,
       "consumer_symbol": "inline_button_url",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:274:msgBotKbUrlIcon: icon {{ \"inline_button_url\", msgBotKbIconFg }};"
+        "Telegram/SourceFiles/ui/chat/chat.style:276:msgBotKbUrlIcon: icon {{ \"inline_button_url\", msgBotKbIconFg }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop source/legal provenance retained for source-reading evidence. Source-read credit records semantics/consumers only; Telegram artwork/branding is not imported without separate rights/provenance approval.",
@@ -14030,7 +14030,7 @@
       "omitted": false,
       "consumer_symbol": "inline_button_url",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:274:msgBotKbUrlIcon: icon {{ \"inline_button_url\", msgBotKbIconFg }};"
+        "Telegram/SourceFiles/ui/chat/chat.style:276:msgBotKbUrlIcon: icon {{ \"inline_button_url\", msgBotKbIconFg }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop source/legal provenance retained for source-reading evidence. Source-read credit records semantics/consumers only; Telegram artwork/branding is not imported without separate rights/provenance approval.",
@@ -14071,7 +14071,7 @@
       "omitted": false,
       "consumer_symbol": "inline_button_url",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:274:msgBotKbUrlIcon: icon {{ \"inline_button_url\", msgBotKbIconFg }};"
+        "Telegram/SourceFiles/ui/chat/chat.style:276:msgBotKbUrlIcon: icon {{ \"inline_button_url\", msgBotKbIconFg }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop source/legal provenance retained for source-reading evidence. Source-read credit records semantics/consumers only; Telegram artwork/branding is not imported without separate rights/provenance approval.",
@@ -14112,7 +14112,7 @@
       "omitted": false,
       "consumer_symbol": "inline_button_web",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:277:msgBotKbWebviewIcon: icon {{ \"inline_button_web\", msgBotKbIconFg }};"
+        "Telegram/SourceFiles/ui/chat/chat.style:279:msgBotKbWebviewIcon: icon {{ \"inline_button_web\", msgBotKbIconFg }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop source/legal provenance retained for source-reading evidence. Source-read credit records semantics/consumers only; Telegram artwork/branding is not imported without separate rights/provenance approval.",
@@ -14153,7 +14153,7 @@
       "omitted": false,
       "consumer_symbol": "inline_button_web",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:277:msgBotKbWebviewIcon: icon {{ \"inline_button_web\", msgBotKbIconFg }};"
+        "Telegram/SourceFiles/ui/chat/chat.style:279:msgBotKbWebviewIcon: icon {{ \"inline_button_web\", msgBotKbIconFg }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop source/legal provenance retained for source-reading evidence. Source-read credit records semantics/consumers only; Telegram artwork/branding is not imported without separate rights/provenance approval.",
@@ -14194,7 +14194,7 @@
       "omitted": false,
       "consumer_symbol": "inline_button_web",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:277:msgBotKbWebviewIcon: icon {{ \"inline_button_web\", msgBotKbIconFg }};"
+        "Telegram/SourceFiles/ui/chat/chat.style:279:msgBotKbWebviewIcon: icon {{ \"inline_button_web\", msgBotKbIconFg }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop source/legal provenance retained for source-reading evidence. Source-read credit records semantics/consumers only; Telegram artwork/branding is not imported without separate rights/provenance approval.",
@@ -14372,8 +14372,8 @@
         "Telegram/SourceFiles/chat_helpers/emoji_picker_overlay.style:38:stickersEmojiPickerCollapseIcon: icon {{ \"intro_country_dropdown-flip_vertical\", windowSubTextFg }};",
         "Telegram/SourceFiles/dialogs/dialogs.style:477:dialogsSearchInDown: icon {{ \"intro_country_dropdown\", windowBoldFg }};",
         "Telegram/SourceFiles/intro/intro.style:146:introCountryIcon: icon {{ \"intro_country_dropdown\", menuIconFg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:1061:\texpand: icon {{ \"intro_country_dropdown\", historyPeer1NameFg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:1063:\tcollapse: icon {{ \"intro_country_dropdown-flip_vertical\", historyPeer1NameFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:1063:\texpand: icon {{ \"intro_country_dropdown\", historyPeer1NameFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:1065:\tcollapse: icon {{ \"intro_country_dropdown-flip_vertical\", historyPeer1NameFg }};",
         "Telegram/SourceFiles/ui/effects/credits.style:169:\ticon: icon{{ \"intro_country_dropdown\", lightButtonFg }};",
         "Telegram/SourceFiles/ui/effects/premium.style:469:paidReactChannelArrow: icon{{ \"intro_country_dropdown\", activeButtonFg }};",
         "Telegram/SourceFiles/ui/effects/premium.style:551:starrefRecipientArrow: icon{{ \"intro_country_dropdown\", lightButtonFg }};"
@@ -14425,8 +14425,8 @@
         "Telegram/SourceFiles/chat_helpers/emoji_picker_overlay.style:38:stickersEmojiPickerCollapseIcon: icon {{ \"intro_country_dropdown-flip_vertical\", windowSubTextFg }};",
         "Telegram/SourceFiles/dialogs/dialogs.style:477:dialogsSearchInDown: icon {{ \"intro_country_dropdown\", windowBoldFg }};",
         "Telegram/SourceFiles/intro/intro.style:146:introCountryIcon: icon {{ \"intro_country_dropdown\", menuIconFg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:1061:\texpand: icon {{ \"intro_country_dropdown\", historyPeer1NameFg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:1063:\tcollapse: icon {{ \"intro_country_dropdown-flip_vertical\", historyPeer1NameFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:1063:\texpand: icon {{ \"intro_country_dropdown\", historyPeer1NameFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:1065:\tcollapse: icon {{ \"intro_country_dropdown-flip_vertical\", historyPeer1NameFg }};",
         "Telegram/SourceFiles/ui/effects/credits.style:169:\ticon: icon{{ \"intro_country_dropdown\", lightButtonFg }};",
         "Telegram/SourceFiles/ui/effects/premium.style:469:paidReactChannelArrow: icon{{ \"intro_country_dropdown\", activeButtonFg }};",
         "Telegram/SourceFiles/ui/effects/premium.style:551:starrefRecipientArrow: icon{{ \"intro_country_dropdown\", lightButtonFg }};"
@@ -14478,8 +14478,8 @@
         "Telegram/SourceFiles/chat_helpers/emoji_picker_overlay.style:38:stickersEmojiPickerCollapseIcon: icon {{ \"intro_country_dropdown-flip_vertical\", windowSubTextFg }};",
         "Telegram/SourceFiles/dialogs/dialogs.style:477:dialogsSearchInDown: icon {{ \"intro_country_dropdown\", windowBoldFg }};",
         "Telegram/SourceFiles/intro/intro.style:146:introCountryIcon: icon {{ \"intro_country_dropdown\", menuIconFg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:1061:\texpand: icon {{ \"intro_country_dropdown\", historyPeer1NameFg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:1063:\tcollapse: icon {{ \"intro_country_dropdown-flip_vertical\", historyPeer1NameFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:1063:\texpand: icon {{ \"intro_country_dropdown\", historyPeer1NameFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:1065:\tcollapse: icon {{ \"intro_country_dropdown-flip_vertical\", historyPeer1NameFg }};",
         "Telegram/SourceFiles/ui/effects/credits.style:169:\ticon: icon{{ \"intro_country_dropdown\", lightButtonFg }};",
         "Telegram/SourceFiles/ui/effects/premium.style:469:paidReactChannelArrow: icon{{ \"intro_country_dropdown\", activeButtonFg }};",
         "Telegram/SourceFiles/ui/effects/premium.style:551:starrefRecipientArrow: icon{{ \"intro_country_dropdown\", lightButtonFg }};"
@@ -17732,8 +17732,8 @@
       "omitted": false,
       "consumer_symbol": "map_point",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:512:historyMapPoint: icon {{ \"map_point\", mapPointDrop }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:513:historyMapPointInner: icon {{ \"map_point_inner\", mapPointDot }};"
+        "Telegram/SourceFiles/ui/chat/chat.style:514:historyMapPoint: icon {{ \"map_point\", mapPointDrop }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:515:historyMapPointInner: icon {{ \"map_point_inner\", mapPointDot }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop source/legal provenance retained for source-reading evidence. Source-read credit records semantics/consumers only; Telegram artwork/branding is not imported without separate rights/provenance approval.",
@@ -17774,8 +17774,8 @@
       "omitted": false,
       "consumer_symbol": "map_point",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:512:historyMapPoint: icon {{ \"map_point\", mapPointDrop }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:513:historyMapPointInner: icon {{ \"map_point_inner\", mapPointDot }};"
+        "Telegram/SourceFiles/ui/chat/chat.style:514:historyMapPoint: icon {{ \"map_point\", mapPointDrop }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:515:historyMapPointInner: icon {{ \"map_point_inner\", mapPointDot }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop source/legal provenance retained for source-reading evidence. Source-read credit records semantics/consumers only; Telegram artwork/branding is not imported without separate rights/provenance approval.",
@@ -17816,8 +17816,8 @@
       "omitted": false,
       "consumer_symbol": "map_point",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:512:historyMapPoint: icon {{ \"map_point\", mapPointDrop }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:513:historyMapPointInner: icon {{ \"map_point_inner\", mapPointDot }};"
+        "Telegram/SourceFiles/ui/chat/chat.style:514:historyMapPoint: icon {{ \"map_point\", mapPointDrop }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:515:historyMapPointInner: icon {{ \"map_point_inner\", mapPointDot }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop source/legal provenance retained for source-reading evidence. Source-read credit records semantics/consumers only; Telegram artwork/branding is not imported without separate rights/provenance approval.",
@@ -17858,7 +17858,7 @@
       "omitted": false,
       "consumer_symbol": "map_point_inner",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:513:historyMapPointInner: icon {{ \"map_point_inner\", mapPointDot }};"
+        "Telegram/SourceFiles/ui/chat/chat.style:515:historyMapPointInner: icon {{ \"map_point_inner\", mapPointDot }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop source/legal provenance retained for source-reading evidence. Source-read credit records semantics/consumers only; Telegram artwork/branding is not imported without separate rights/provenance approval.",
@@ -17899,7 +17899,7 @@
       "omitted": false,
       "consumer_symbol": "map_point_inner",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:513:historyMapPointInner: icon {{ \"map_point_inner\", mapPointDot }};"
+        "Telegram/SourceFiles/ui/chat/chat.style:515:historyMapPointInner: icon {{ \"map_point_inner\", mapPointDot }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop source/legal provenance retained for source-reading evidence. Source-read credit records semantics/consumers only; Telegram artwork/branding is not imported without separate rights/provenance approval.",
@@ -17940,7 +17940,7 @@
       "omitted": false,
       "consumer_symbol": "map_point_inner",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:513:historyMapPointInner: icon {{ \"map_point_inner\", mapPointDot }};"
+        "Telegram/SourceFiles/ui/chat/chat.style:515:historyMapPointInner: icon {{ \"map_point_inner\", mapPointDot }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop source/legal provenance retained for source-reading evidence. Source-read credit records semantics/consumers only; Telegram artwork/branding is not imported without separate rights/provenance approval.",
@@ -18470,8 +18470,8 @@
       "omitted": false,
       "consumer_symbol": "media_video_play",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:601:\t{ \"media_video_play_bg\", videoPlayIconBg },",
-        "Telegram/SourceFiles/ui/chat/chat.style:602:\t{ \"media_video_play\", videoPlayIconFg, point(12px, 12px) },"
+        "Telegram/SourceFiles/ui/chat/chat.style:603:\t{ \"media_video_play_bg\", videoPlayIconBg },",
+        "Telegram/SourceFiles/ui/chat/chat.style:604:\t{ \"media_video_play\", videoPlayIconFg, point(12px, 12px) },"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop source/legal provenance retained for source-reading evidence. Source-read credit records semantics/consumers only; Telegram artwork/branding is not imported without separate rights/provenance approval.",
@@ -18512,8 +18512,8 @@
       "omitted": false,
       "consumer_symbol": "media_video_play",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:601:\t{ \"media_video_play_bg\", videoPlayIconBg },",
-        "Telegram/SourceFiles/ui/chat/chat.style:602:\t{ \"media_video_play\", videoPlayIconFg, point(12px, 12px) },"
+        "Telegram/SourceFiles/ui/chat/chat.style:603:\t{ \"media_video_play_bg\", videoPlayIconBg },",
+        "Telegram/SourceFiles/ui/chat/chat.style:604:\t{ \"media_video_play\", videoPlayIconFg, point(12px, 12px) },"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop source/legal provenance retained for source-reading evidence. Source-read credit records semantics/consumers only; Telegram artwork/branding is not imported without separate rights/provenance approval.",
@@ -18554,8 +18554,8 @@
       "omitted": false,
       "consumer_symbol": "media_video_play",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:601:\t{ \"media_video_play_bg\", videoPlayIconBg },",
-        "Telegram/SourceFiles/ui/chat/chat.style:602:\t{ \"media_video_play\", videoPlayIconFg, point(12px, 12px) },"
+        "Telegram/SourceFiles/ui/chat/chat.style:603:\t{ \"media_video_play_bg\", videoPlayIconBg },",
+        "Telegram/SourceFiles/ui/chat/chat.style:604:\t{ \"media_video_play\", videoPlayIconFg, point(12px, 12px) },"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop source/legal provenance retained for source-reading evidence. Source-read credit records semantics/consumers only; Telegram artwork/branding is not imported without separate rights/provenance approval.",
@@ -18596,7 +18596,7 @@
       "omitted": false,
       "consumer_symbol": "media_video_play_bg",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:601:\t{ \"media_video_play_bg\", videoPlayIconBg },"
+        "Telegram/SourceFiles/ui/chat/chat.style:603:\t{ \"media_video_play_bg\", videoPlayIconBg },"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop source/legal provenance retained for source-reading evidence. Source-read credit records semantics/consumers only; Telegram artwork/branding is not imported without separate rights/provenance approval.",
@@ -18637,7 +18637,7 @@
       "omitted": false,
       "consumer_symbol": "media_video_play_bg",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:601:\t{ \"media_video_play_bg\", videoPlayIconBg },"
+        "Telegram/SourceFiles/ui/chat/chat.style:603:\t{ \"media_video_play_bg\", videoPlayIconBg },"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop source/legal provenance retained for source-reading evidence. Source-read credit records semantics/consumers only; Telegram artwork/branding is not imported without separate rights/provenance approval.",
@@ -18678,7 +18678,7 @@
       "omitted": false,
       "consumer_symbol": "media_video_play_bg",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:601:\t{ \"media_video_play_bg\", videoPlayIconBg },"
+        "Telegram/SourceFiles/ui/chat/chat.style:603:\t{ \"media_video_play_bg\", videoPlayIconBg },"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop source/legal provenance retained for source-reading evidence. Source-read credit records semantics/consumers only; Telegram artwork/branding is not imported without separate rights/provenance approval.",
@@ -18719,8 +18719,8 @@
       "omitted": false,
       "consumer_symbol": "media_youtube_play",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:597:\t{ \"media_youtube_play_bg\", youtubePlayIconBg },",
-        "Telegram/SourceFiles/ui/chat/chat.style:598:\t{ \"media_youtube_play\", youtubePlayIconFg, point(24px, 12px) },"
+        "Telegram/SourceFiles/ui/chat/chat.style:599:\t{ \"media_youtube_play_bg\", youtubePlayIconBg },",
+        "Telegram/SourceFiles/ui/chat/chat.style:600:\t{ \"media_youtube_play\", youtubePlayIconFg, point(24px, 12px) },"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop source/legal provenance retained for source-reading evidence. Source-read credit records semantics/consumers only; Telegram artwork/branding is not imported without separate rights/provenance approval.",
@@ -18761,8 +18761,8 @@
       "omitted": false,
       "consumer_symbol": "media_youtube_play",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:597:\t{ \"media_youtube_play_bg\", youtubePlayIconBg },",
-        "Telegram/SourceFiles/ui/chat/chat.style:598:\t{ \"media_youtube_play\", youtubePlayIconFg, point(24px, 12px) },"
+        "Telegram/SourceFiles/ui/chat/chat.style:599:\t{ \"media_youtube_play_bg\", youtubePlayIconBg },",
+        "Telegram/SourceFiles/ui/chat/chat.style:600:\t{ \"media_youtube_play\", youtubePlayIconFg, point(24px, 12px) },"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop source/legal provenance retained for source-reading evidence. Source-read credit records semantics/consumers only; Telegram artwork/branding is not imported without separate rights/provenance approval.",
@@ -18803,8 +18803,8 @@
       "omitted": false,
       "consumer_symbol": "media_youtube_play",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:597:\t{ \"media_youtube_play_bg\", youtubePlayIconBg },",
-        "Telegram/SourceFiles/ui/chat/chat.style:598:\t{ \"media_youtube_play\", youtubePlayIconFg, point(24px, 12px) },"
+        "Telegram/SourceFiles/ui/chat/chat.style:599:\t{ \"media_youtube_play_bg\", youtubePlayIconBg },",
+        "Telegram/SourceFiles/ui/chat/chat.style:600:\t{ \"media_youtube_play\", youtubePlayIconFg, point(24px, 12px) },"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop source/legal provenance retained for source-reading evidence. Source-read credit records semantics/consumers only; Telegram artwork/branding is not imported without separate rights/provenance approval.",
@@ -18845,7 +18845,7 @@
       "omitted": false,
       "consumer_symbol": "media_youtube_play_bg",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:597:\t{ \"media_youtube_play_bg\", youtubePlayIconBg },"
+        "Telegram/SourceFiles/ui/chat/chat.style:599:\t{ \"media_youtube_play_bg\", youtubePlayIconBg },"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop source/legal provenance retained for source-reading evidence. Source-read credit records semantics/consumers only; Telegram artwork/branding is not imported without separate rights/provenance approval.",
@@ -18886,7 +18886,7 @@
       "omitted": false,
       "consumer_symbol": "media_youtube_play_bg",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:597:\t{ \"media_youtube_play_bg\", youtubePlayIconBg },"
+        "Telegram/SourceFiles/ui/chat/chat.style:599:\t{ \"media_youtube_play_bg\", youtubePlayIconBg },"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop source/legal provenance retained for source-reading evidence. Source-read credit records semantics/consumers only; Telegram artwork/branding is not imported without separate rights/provenance approval.",
@@ -18927,7 +18927,7 @@
       "omitted": false,
       "consumer_symbol": "media_youtube_play_bg",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:597:\t{ \"media_youtube_play_bg\", youtubePlayIconBg },"
+        "Telegram/SourceFiles/ui/chat/chat.style:599:\t{ \"media_youtube_play_bg\", youtubePlayIconBg },"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop source/legal provenance retained for source-reading evidence. Source-read credit records semantics/consumers only; Telegram artwork/branding is not imported without separate rights/provenance approval.",
@@ -19723,8 +19723,8 @@
       "consumer_evidence": [
         "Telegram/SourceFiles/media/view/media_view.style:1243:\ticon: icon {{ \"mediaview/mini_repost\", windowFg }};",
         "Telegram/SourceFiles/settings/settings.style:297:chatThemeGiftTaken: icon {{ \"mediaview/mini_repost\", msgFileInBg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:664:whoRepostedDateHeart: icon{{ \"mediaview/mini_repost\", groupCallMemberActiveIcon, point(4px, 4px) }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:665:whoRepostedDateHeartOver: icon{{ \"mediaview/mini_repost\", groupCallMemberActiveIcon, point(4px, 4px) }};"
+        "Telegram/SourceFiles/ui/chat/chat.style:666:whoRepostedDateHeart: icon{{ \"mediaview/mini_repost\", groupCallMemberActiveIcon, point(4px, 4px) }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:667:whoRepostedDateHeartOver: icon{{ \"mediaview/mini_repost\", groupCallMemberActiveIcon, point(4px, 4px) }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop source/legal provenance retained for source-reading evidence. Source-read credit records semantics/consumers only; Telegram artwork/branding is not imported without separate rights/provenance approval.",
@@ -19767,8 +19767,8 @@
       "consumer_evidence": [
         "Telegram/SourceFiles/media/view/media_view.style:1243:\ticon: icon {{ \"mediaview/mini_repost\", windowFg }};",
         "Telegram/SourceFiles/settings/settings.style:297:chatThemeGiftTaken: icon {{ \"mediaview/mini_repost\", msgFileInBg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:664:whoRepostedDateHeart: icon{{ \"mediaview/mini_repost\", groupCallMemberActiveIcon, point(4px, 4px) }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:665:whoRepostedDateHeartOver: icon{{ \"mediaview/mini_repost\", groupCallMemberActiveIcon, point(4px, 4px) }};"
+        "Telegram/SourceFiles/ui/chat/chat.style:666:whoRepostedDateHeart: icon{{ \"mediaview/mini_repost\", groupCallMemberActiveIcon, point(4px, 4px) }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:667:whoRepostedDateHeartOver: icon{{ \"mediaview/mini_repost\", groupCallMemberActiveIcon, point(4px, 4px) }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop source/legal provenance retained for source-reading evidence. Source-read credit records semantics/consumers only; Telegram artwork/branding is not imported without separate rights/provenance approval.",
@@ -19811,8 +19811,8 @@
       "consumer_evidence": [
         "Telegram/SourceFiles/media/view/media_view.style:1243:\ticon: icon {{ \"mediaview/mini_repost\", windowFg }};",
         "Telegram/SourceFiles/settings/settings.style:297:chatThemeGiftTaken: icon {{ \"mediaview/mini_repost\", msgFileInBg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:664:whoRepostedDateHeart: icon{{ \"mediaview/mini_repost\", groupCallMemberActiveIcon, point(4px, 4px) }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:665:whoRepostedDateHeartOver: icon{{ \"mediaview/mini_repost\", groupCallMemberActiveIcon, point(4px, 4px) }};"
+        "Telegram/SourceFiles/ui/chat/chat.style:666:whoRepostedDateHeart: icon{{ \"mediaview/mini_repost\", groupCallMemberActiveIcon, point(4px, 4px) }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:667:whoRepostedDateHeartOver: icon{{ \"mediaview/mini_repost\", groupCallMemberActiveIcon, point(4px, 4px) }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop source/legal provenance retained for source-reading evidence. Source-read credit records semantics/consumers only; Telegram artwork/branding is not imported without separate rights/provenance approval.",

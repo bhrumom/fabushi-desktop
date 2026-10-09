@@ -7238,8 +7238,8 @@
       "consumer_evidence": [
         "Telegram/SourceFiles/chat_helpers/chat_helpers.style:1114:\ticon: icon{{ \"menu/customize\", menuIconFg }};",
         "Telegram/SourceFiles/chat_helpers/chat_helpers.style:1115:\ticonOver: icon{{ \"menu/customize\", menuIconFgOver }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:825:\ticon: icon{{ \"menu/customize\", windowActiveTextFg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:826:\ticonOver: icon{{ \"menu/customize\", windowActiveTextFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:827:\ticon: icon{{ \"menu/customize\", windowActiveTextFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:828:\ticonOver: icon{{ \"menu/customize\", windowActiveTextFg }};",
         "Telegram/SourceFiles/ui/menu_icons.style:94:menuIconCustomize: icon {{ \"menu/customize\", menuIconColor }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
@@ -7284,8 +7284,8 @@
       "consumer_evidence": [
         "Telegram/SourceFiles/chat_helpers/chat_helpers.style:1114:\ticon: icon{{ \"menu/customize\", menuIconFg }};",
         "Telegram/SourceFiles/chat_helpers/chat_helpers.style:1115:\ticonOver: icon{{ \"menu/customize\", menuIconFgOver }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:825:\ticon: icon{{ \"menu/customize\", windowActiveTextFg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:826:\ticonOver: icon{{ \"menu/customize\", windowActiveTextFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:827:\ticon: icon{{ \"menu/customize\", windowActiveTextFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:828:\ticonOver: icon{{ \"menu/customize\", windowActiveTextFg }};",
         "Telegram/SourceFiles/ui/menu_icons.style:94:menuIconCustomize: icon {{ \"menu/customize\", menuIconColor }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
@@ -7330,8 +7330,8 @@
       "consumer_evidence": [
         "Telegram/SourceFiles/chat_helpers/chat_helpers.style:1114:\ticon: icon{{ \"menu/customize\", menuIconFg }};",
         "Telegram/SourceFiles/chat_helpers/chat_helpers.style:1115:\ticonOver: icon{{ \"menu/customize\", menuIconFgOver }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:825:\ticon: icon{{ \"menu/customize\", windowActiveTextFg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:826:\ticonOver: icon{{ \"menu/customize\", windowActiveTextFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:827:\ticon: icon{{ \"menu/customize\", windowActiveTextFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:828:\ticonOver: icon{{ \"menu/customize\", windowActiveTextFg }};",
         "Telegram/SourceFiles/ui/menu_icons.style:94:menuIconCustomize: icon {{ \"menu/customize\", menuIconColor }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
@@ -8609,8 +8609,8 @@
         "Telegram/SourceFiles/info/profile/info_profile_top_bar.style:53:\ticonOver: icon {{ \"menu/edit\", windowBoldFg }};",
         "Telegram/SourceFiles/media/view/media_view.style:719:\t\tmenuGifCaption: icon {{ \"menu/edit\", storiesComposeWhiteText }};",
         "Telegram/SourceFiles/media/view/media_view.style:735:\t\tmenuCover: icon {{ \"menu/edit\", storiesComposeWhiteText }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:681:whenEdited: icon {{ \"menu/edited_status\", windowBoldFg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:682:whenEditedOver: icon {{ \"menu/edited_status\", windowBoldFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:683:whenEdited: icon {{ \"menu/edited_status\", windowBoldFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:684:whenEditedOver: icon {{ \"menu/edited_status\", windowBoldFg }};",
         "Telegram/SourceFiles/ui/menu_icons.style:14:menuIconEdit: icon {{ \"menu/edit\", menuIconColor }};",
         "Telegram/SourceFiles/ui/menu_icons.style:265:mediaMenuIconEdit: icon {{ \"menu/edit\", mediaviewMenuFg }};"
       ],
@@ -8668,8 +8668,8 @@
         "Telegram/SourceFiles/info/profile/info_profile_top_bar.style:53:\ticonOver: icon {{ \"menu/edit\", windowBoldFg }};",
         "Telegram/SourceFiles/media/view/media_view.style:719:\t\tmenuGifCaption: icon {{ \"menu/edit\", storiesComposeWhiteText }};",
         "Telegram/SourceFiles/media/view/media_view.style:735:\t\tmenuCover: icon {{ \"menu/edit\", storiesComposeWhiteText }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:681:whenEdited: icon {{ \"menu/edited_status\", windowBoldFg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:682:whenEditedOver: icon {{ \"menu/edited_status\", windowBoldFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:683:whenEdited: icon {{ \"menu/edited_status\", windowBoldFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:684:whenEditedOver: icon {{ \"menu/edited_status\", windowBoldFg }};",
         "Telegram/SourceFiles/ui/menu_icons.style:14:menuIconEdit: icon {{ \"menu/edit\", menuIconColor }};",
         "Telegram/SourceFiles/ui/menu_icons.style:265:mediaMenuIconEdit: icon {{ \"menu/edit\", mediaviewMenuFg }};"
       ],
@@ -8727,8 +8727,8 @@
         "Telegram/SourceFiles/info/profile/info_profile_top_bar.style:53:\ticonOver: icon {{ \"menu/edit\", windowBoldFg }};",
         "Telegram/SourceFiles/media/view/media_view.style:719:\t\tmenuGifCaption: icon {{ \"menu/edit\", storiesComposeWhiteText }};",
         "Telegram/SourceFiles/media/view/media_view.style:735:\t\tmenuCover: icon {{ \"menu/edit\", storiesComposeWhiteText }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:681:whenEdited: icon {{ \"menu/edited_status\", windowBoldFg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:682:whenEditedOver: icon {{ \"menu/edited_status\", windowBoldFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:683:whenEdited: icon {{ \"menu/edited_status\", windowBoldFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:684:whenEditedOver: icon {{ \"menu/edited_status\", windowBoldFg }};",
         "Telegram/SourceFiles/ui/menu_icons.style:14:menuIconEdit: icon {{ \"menu/edit\", menuIconColor }};",
         "Telegram/SourceFiles/ui/menu_icons.style:265:mediaMenuIconEdit: icon {{ \"menu/edit\", mediaviewMenuFg }};"
       ],
@@ -8860,8 +8860,8 @@
       "omitted": false,
       "consumer_symbol": "edited_status",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:681:whenEdited: icon {{ \"menu/edited_status\", windowBoldFg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:682:whenEditedOver: icon {{ \"menu/edited_status\", windowBoldFg }};"
+        "Telegram/SourceFiles/ui/chat/chat.style:683:whenEdited: icon {{ \"menu/edited_status\", windowBoldFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:684:whenEditedOver: icon {{ \"menu/edited_status\", windowBoldFg }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained for semantic evidence only; Telegram artwork/branding is not imported.",
@@ -8903,8 +8903,8 @@
       "omitted": false,
       "consumer_symbol": "edited_status",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:681:whenEdited: icon {{ \"menu/edited_status\", windowBoldFg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:682:whenEditedOver: icon {{ \"menu/edited_status\", windowBoldFg }};"
+        "Telegram/SourceFiles/ui/chat/chat.style:683:whenEdited: icon {{ \"menu/edited_status\", windowBoldFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:684:whenEditedOver: icon {{ \"menu/edited_status\", windowBoldFg }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained for semantic evidence only; Telegram artwork/branding is not imported.",
@@ -8946,8 +8946,8 @@
       "omitted": false,
       "consumer_symbol": "edited_status",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:681:whenEdited: icon {{ \"menu/edited_status\", windowBoldFg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:682:whenEditedOver: icon {{ \"menu/edited_status\", windowBoldFg }};"
+        "Telegram/SourceFiles/ui/chat/chat.style:683:whenEdited: icon {{ \"menu/edited_status\", windowBoldFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:684:whenEditedOver: icon {{ \"menu/edited_status\", windowBoldFg }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained for semantic evidence only; Telegram artwork/branding is not imported.",
@@ -10012,8 +10012,8 @@
       "omitted": false,
       "consumer_symbol": "faq",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:489:\ticon: icon {{ \"menu/faq\", windowActiveTextFg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:490:\ticonOver: icon {{ \"menu/faq\", windowActiveTextFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:491:\ticon: icon {{ \"menu/faq\", windowActiveTextFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:492:\ticonOver: icon {{ \"menu/faq\", windowActiveTextFg }};",
         "Telegram/SourceFiles/ui/menu_icons.style:129:menuIconFaq: icon {{ \"menu/faq\", menuIconColor }};",
         "Telegram/SourceFiles/wallet/wallet.style:573:\ticon: icon{{ \"menu/faq\", windowActiveTextFg }};",
         "Telegram/SourceFiles/wallet/wallet.style:574:\ticonOver: icon{{ \"menu/faq\", windowActiveTextFg }};"
@@ -10058,8 +10058,8 @@
       "omitted": false,
       "consumer_symbol": "faq",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:489:\ticon: icon {{ \"menu/faq\", windowActiveTextFg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:490:\ticonOver: icon {{ \"menu/faq\", windowActiveTextFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:491:\ticon: icon {{ \"menu/faq\", windowActiveTextFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:492:\ticonOver: icon {{ \"menu/faq\", windowActiveTextFg }};",
         "Telegram/SourceFiles/ui/menu_icons.style:129:menuIconFaq: icon {{ \"menu/faq\", menuIconColor }};",
         "Telegram/SourceFiles/wallet/wallet.style:573:\ticon: icon{{ \"menu/faq\", windowActiveTextFg }};",
         "Telegram/SourceFiles/wallet/wallet.style:574:\ticonOver: icon{{ \"menu/faq\", windowActiveTextFg }};"
@@ -10104,8 +10104,8 @@
       "omitted": false,
       "consumer_symbol": "faq",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:489:\ticon: icon {{ \"menu/faq\", windowActiveTextFg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:490:\ticonOver: icon {{ \"menu/faq\", windowActiveTextFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:491:\ticon: icon {{ \"menu/faq\", windowActiveTextFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:492:\ticonOver: icon {{ \"menu/faq\", windowActiveTextFg }};",
         "Telegram/SourceFiles/ui/menu_icons.style:129:menuIconFaq: icon {{ \"menu/faq\", menuIconColor }};",
         "Telegram/SourceFiles/wallet/wallet.style:573:\ticon: icon{{ \"menu/faq\", windowActiveTextFg }};",
         "Telegram/SourceFiles/wallet/wallet.style:574:\ticonOver: icon{{ \"menu/faq\", windowActiveTextFg }};"
@@ -10663,8 +10663,8 @@
       "omitted": false,
       "consumer_symbol": "forward",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:683:whenOriginal: icon {{ \"menu/forwarded_status\", windowBoldFg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:684:whenOriginalOver: icon {{ \"menu/forwarded_status\", windowBoldFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:685:whenOriginal: icon {{ \"menu/forwarded_status\", windowBoldFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:686:whenOriginalOver: icon {{ \"menu/forwarded_status\", windowBoldFg }};",
         "Telegram/SourceFiles/ui/menu_icons.style:19:menuIconForward: icon {{ \"menu/forward\", menuIconColor }};",
         "Telegram/SourceFiles/ui/menu_icons.style:246:mediaMenuIconForward: icon {{ \"menu/forward\", mediaviewMenuFg }};"
       ],
@@ -10708,8 +10708,8 @@
       "omitted": false,
       "consumer_symbol": "forward",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:683:whenOriginal: icon {{ \"menu/forwarded_status\", windowBoldFg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:684:whenOriginalOver: icon {{ \"menu/forwarded_status\", windowBoldFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:685:whenOriginal: icon {{ \"menu/forwarded_status\", windowBoldFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:686:whenOriginalOver: icon {{ \"menu/forwarded_status\", windowBoldFg }};",
         "Telegram/SourceFiles/ui/menu_icons.style:19:menuIconForward: icon {{ \"menu/forward\", menuIconColor }};",
         "Telegram/SourceFiles/ui/menu_icons.style:246:mediaMenuIconForward: icon {{ \"menu/forward\", mediaviewMenuFg }};"
       ],
@@ -10753,8 +10753,8 @@
       "omitted": false,
       "consumer_symbol": "forward",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:683:whenOriginal: icon {{ \"menu/forwarded_status\", windowBoldFg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:684:whenOriginalOver: icon {{ \"menu/forwarded_status\", windowBoldFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:685:whenOriginal: icon {{ \"menu/forwarded_status\", windowBoldFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:686:whenOriginalOver: icon {{ \"menu/forwarded_status\", windowBoldFg }};",
         "Telegram/SourceFiles/ui/menu_icons.style:19:menuIconForward: icon {{ \"menu/forward\", menuIconColor }};",
         "Telegram/SourceFiles/ui/menu_icons.style:246:mediaMenuIconForward: icon {{ \"menu/forward\", mediaviewMenuFg }};"
       ],
@@ -10798,8 +10798,8 @@
       "omitted": false,
       "consumer_symbol": "forwarded_status",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:683:whenOriginal: icon {{ \"menu/forwarded_status\", windowBoldFg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:684:whenOriginalOver: icon {{ \"menu/forwarded_status\", windowBoldFg }};"
+        "Telegram/SourceFiles/ui/chat/chat.style:685:whenOriginal: icon {{ \"menu/forwarded_status\", windowBoldFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:686:whenOriginalOver: icon {{ \"menu/forwarded_status\", windowBoldFg }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained for semantic evidence only; Telegram artwork/branding is not imported.",
@@ -10841,8 +10841,8 @@
       "omitted": false,
       "consumer_symbol": "forwarded_status",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:683:whenOriginal: icon {{ \"menu/forwarded_status\", windowBoldFg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:684:whenOriginalOver: icon {{ \"menu/forwarded_status\", windowBoldFg }};"
+        "Telegram/SourceFiles/ui/chat/chat.style:685:whenOriginal: icon {{ \"menu/forwarded_status\", windowBoldFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:686:whenOriginalOver: icon {{ \"menu/forwarded_status\", windowBoldFg }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained for semantic evidence only; Telegram artwork/branding is not imported.",
@@ -10884,8 +10884,8 @@
       "omitted": false,
       "consumer_symbol": "forwarded_status",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:683:whenOriginal: icon {{ \"menu/forwarded_status\", windowBoldFg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:684:whenOriginalOver: icon {{ \"menu/forwarded_status\", windowBoldFg }};"
+        "Telegram/SourceFiles/ui/chat/chat.style:685:whenOriginal: icon {{ \"menu/forwarded_status\", windowBoldFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:686:whenOriginalOver: icon {{ \"menu/forwarded_status\", windowBoldFg }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained for semantic evidence only; Telegram artwork/branding is not imported.",
@@ -11731,8 +11731,8 @@
       "omitted": false,
       "consumer_symbol": "header_mode_day",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:887:\ticon: icon {{ \"menu/header_mode_day\", boxTitleCloseFg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:888:\ticonOver: icon {{ \"menu/header_mode_day\", boxTitleCloseFgOver }};"
+        "Telegram/SourceFiles/ui/chat/chat.style:889:\ticon: icon {{ \"menu/header_mode_day\", boxTitleCloseFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:890:\ticonOver: icon {{ \"menu/header_mode_day\", boxTitleCloseFgOver }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained for semantic evidence only; Telegram artwork/branding is not imported.",
@@ -11774,8 +11774,8 @@
       "omitted": false,
       "consumer_symbol": "header_mode_day",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:887:\ticon: icon {{ \"menu/header_mode_day\", boxTitleCloseFg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:888:\ticonOver: icon {{ \"menu/header_mode_day\", boxTitleCloseFgOver }};"
+        "Telegram/SourceFiles/ui/chat/chat.style:889:\ticon: icon {{ \"menu/header_mode_day\", boxTitleCloseFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:890:\ticonOver: icon {{ \"menu/header_mode_day\", boxTitleCloseFgOver }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained for semantic evidence only; Telegram artwork/branding is not imported.",
@@ -11817,8 +11817,8 @@
       "omitted": false,
       "consumer_symbol": "header_mode_day",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:887:\ticon: icon {{ \"menu/header_mode_day\", boxTitleCloseFg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:888:\ticonOver: icon {{ \"menu/header_mode_day\", boxTitleCloseFgOver }};"
+        "Telegram/SourceFiles/ui/chat/chat.style:889:\ticon: icon {{ \"menu/header_mode_day\", boxTitleCloseFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:890:\ticonOver: icon {{ \"menu/header_mode_day\", boxTitleCloseFgOver }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained for semantic evidence only; Telegram artwork/branding is not imported.",
@@ -11860,8 +11860,8 @@
       "omitted": false,
       "consumer_symbol": "header_mode_night",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:879:\ticon: icon {{ \"menu/header_mode_night\", boxTitleCloseFg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:880:\ticonOver: icon {{ \"menu/header_mode_night\", boxTitleCloseFgOver }};"
+        "Telegram/SourceFiles/ui/chat/chat.style:881:\ticon: icon {{ \"menu/header_mode_night\", boxTitleCloseFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:882:\ticonOver: icon {{ \"menu/header_mode_night\", boxTitleCloseFgOver }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained for semantic evidence only; Telegram artwork/branding is not imported.",
@@ -11903,8 +11903,8 @@
       "omitted": false,
       "consumer_symbol": "header_mode_night",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:879:\ticon: icon {{ \"menu/header_mode_night\", boxTitleCloseFg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:880:\ticonOver: icon {{ \"menu/header_mode_night\", boxTitleCloseFgOver }};"
+        "Telegram/SourceFiles/ui/chat/chat.style:881:\ticon: icon {{ \"menu/header_mode_night\", boxTitleCloseFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:882:\ticonOver: icon {{ \"menu/header_mode_night\", boxTitleCloseFgOver }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained for semantic evidence only; Telegram artwork/branding is not imported.",
@@ -11946,8 +11946,8 @@
       "omitted": false,
       "consumer_symbol": "header_mode_night",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:879:\ticon: icon {{ \"menu/header_mode_night\", boxTitleCloseFg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:880:\ticonOver: icon {{ \"menu/header_mode_night\", boxTitleCloseFgOver }};"
+        "Telegram/SourceFiles/ui/chat/chat.style:881:\ticon: icon {{ \"menu/header_mode_night\", boxTitleCloseFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:882:\ticonOver: icon {{ \"menu/header_mode_night\", boxTitleCloseFgOver }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained for semantic evidence only; Telegram artwork/branding is not imported.",
@@ -18811,7 +18811,7 @@
       "omitted": false,
       "consumer_symbol": "read_audio",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:675:whoReadPlayed: icon{{ \"menu/read_audio\", windowBoldFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:677:whoReadPlayed: icon{{ \"menu/read_audio\", windowBoldFg }};",
         "C++/product caller audit: who-read/played and reactions played tab."
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
@@ -18854,7 +18854,7 @@
       "omitted": false,
       "consumer_symbol": "read_audio",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:675:whoReadPlayed: icon{{ \"menu/read_audio\", windowBoldFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:677:whoReadPlayed: icon{{ \"menu/read_audio\", windowBoldFg }};",
         "C++/product caller audit: who-read/played and reactions played tab."
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
@@ -18897,7 +18897,7 @@
       "omitted": false,
       "consumer_symbol": "read_audio",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:675:whoReadPlayed: icon{{ \"menu/read_audio\", windowBoldFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:677:whoReadPlayed: icon{{ \"menu/read_audio\", windowBoldFg }};",
         "C++/product caller audit: who-read/played and reactions played tab."
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
@@ -18940,7 +18940,7 @@
       "omitted": false,
       "consumer_symbol": "read_react_s",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:662:whoLikedDateHeart: icon{{ \"menu/read_react_s\", windowSubTextFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:664:whoLikedDateHeart: icon{{ \"menu/read_react_s\", windowSubTextFg }};",
         "C++/product caller audit: compact who-liked status."
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
@@ -18983,7 +18983,7 @@
       "omitted": false,
       "consumer_symbol": "read_react_s",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:662:whoLikedDateHeart: icon{{ \"menu/read_react_s\", windowSubTextFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:664:whoLikedDateHeart: icon{{ \"menu/read_react_s\", windowSubTextFg }};",
         "C++/product caller audit: compact who-liked status."
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
@@ -19026,7 +19026,7 @@
       "omitted": false,
       "consumer_symbol": "read_react_s",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:662:whoLikedDateHeart: icon{{ \"menu/read_react_s\", windowSubTextFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:664:whoLikedDateHeart: icon{{ \"menu/read_react_s\", windowSubTextFg }};",
         "C++/product caller audit: compact who-liked status."
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
@@ -19069,7 +19069,7 @@
       "omitted": false,
       "consumer_symbol": "read_reactions",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:678:whoReadReactions: icon{{ \"menu/read_reactions\", windowBoldFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:680:whoReadReactions: icon{{ \"menu/read_reactions\", windowBoldFg }};",
         "C++/product caller audit: reaction attribution tabs and profile access."
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
@@ -19112,7 +19112,7 @@
       "omitted": false,
       "consumer_symbol": "read_reactions",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:678:whoReadReactions: icon{{ \"menu/read_reactions\", windowBoldFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:680:whoReadReactions: icon{{ \"menu/read_reactions\", windowBoldFg }};",
         "C++/product caller audit: reaction attribution tabs and profile access."
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
@@ -19155,7 +19155,7 @@
       "omitted": false,
       "consumer_symbol": "read_reactions",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:678:whoReadReactions: icon{{ \"menu/read_reactions\", windowBoldFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:680:whoReadReactions: icon{{ \"menu/read_reactions\", windowBoldFg }};",
         "C++/product caller audit: reaction attribution tabs and profile access."
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
@@ -19198,7 +19198,7 @@
       "omitted": false,
       "consumer_symbol": "read_ticks",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:672:whoReadChecks: icon{{ \"menu/read_ticks\", windowBoldFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:674:whoReadChecks: icon{{ \"menu/read_ticks\", windowBoldFg }};",
         "C++/product caller audit: who-read checks and reactions checks."
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
@@ -19241,7 +19241,7 @@
       "omitted": false,
       "consumer_symbol": "read_ticks",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:672:whoReadChecks: icon{{ \"menu/read_ticks\", windowBoldFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:674:whoReadChecks: icon{{ \"menu/read_ticks\", windowBoldFg }};",
         "C++/product caller audit: who-read checks and reactions checks."
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
@@ -19284,7 +19284,7 @@
       "omitted": false,
       "consumer_symbol": "read_ticks",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:672:whoReadChecks: icon{{ \"menu/read_ticks\", windowBoldFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:674:whoReadChecks: icon{{ \"menu/read_ticks\", windowBoldFg }};",
         "C++/product caller audit: who-read checks and reactions checks."
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
@@ -19327,7 +19327,7 @@
       "omitted": false,
       "consumer_symbol": "read_ticks_s",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:660:whoReadDateChecks: icon{{ \"menu/read_ticks_s\", windowSubTextFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:662:whoReadDateChecks: icon{{ \"menu/read_ticks_s\", windowSubTextFg }};",
         "C++/product caller audit: compact who-read checks."
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
@@ -19370,7 +19370,7 @@
       "omitted": false,
       "consumer_symbol": "read_ticks_s",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:660:whoReadDateChecks: icon{{ \"menu/read_ticks_s\", windowSubTextFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:662:whoReadDateChecks: icon{{ \"menu/read_ticks_s\", windowSubTextFg }};",
         "C++/product caller audit: compact who-read checks."
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
@@ -19413,7 +19413,7 @@
       "omitted": false,
       "consumer_symbol": "read_ticks_s",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:660:whoReadDateChecks: icon{{ \"menu/read_ticks_s\", windowSubTextFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:662:whoReadDateChecks: icon{{ \"menu/read_ticks_s\", windowSubTextFg }};",
         "C++/product caller audit: compact who-read checks."
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",

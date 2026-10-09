@@ -12081,8 +12081,8 @@
       "consumer_evidence": [
         "Telegram/SourceFiles/dialogs/dialogs.style:178:forumDialogJumpArrow: icon{{ \"dialogs/dialogs_topic_arrow\", dialogsTextFg }};",
         "Telegram/SourceFiles/dialogs/dialogs.style:179:forumDialogJumpArrowOver: icon{{ \"dialogs/dialogs_topic_arrow\", dialogsTextFgOver }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:262:topicButtonArrow: icon{{ \"dialogs/dialogs_topic_arrow\", historyReplyIconFg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:269:\ticon: icon{{ \"dialogs/dialogs_topic_arrow-flip_horizontal\", historyReplyIconFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:264:topicButtonArrow: icon{{ \"dialogs/dialogs_topic_arrow\", historyReplyIconFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:271:\ticon: icon{{ \"dialogs/dialogs_topic_arrow-flip_horizontal\", historyReplyIconFg }};",
         "Telegram/SourceFiles/wallet/wallet.style:336:walletDetailsCollectionArrow: icon{{ \"dialogs/dialogs_topic_arrow\", windowSubTextFg }};"
       ],
       "reachability_status": "accepted-tree-consumer-proven",
@@ -12126,8 +12126,8 @@
       "consumer_evidence": [
         "Telegram/SourceFiles/dialogs/dialogs.style:178:forumDialogJumpArrow: icon{{ \"dialogs/dialogs_topic_arrow\", dialogsTextFg }};",
         "Telegram/SourceFiles/dialogs/dialogs.style:179:forumDialogJumpArrowOver: icon{{ \"dialogs/dialogs_topic_arrow\", dialogsTextFgOver }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:262:topicButtonArrow: icon{{ \"dialogs/dialogs_topic_arrow\", historyReplyIconFg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:269:\ticon: icon{{ \"dialogs/dialogs_topic_arrow-flip_horizontal\", historyReplyIconFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:264:topicButtonArrow: icon{{ \"dialogs/dialogs_topic_arrow\", historyReplyIconFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:271:\ticon: icon{{ \"dialogs/dialogs_topic_arrow-flip_horizontal\", historyReplyIconFg }};",
         "Telegram/SourceFiles/wallet/wallet.style:336:walletDetailsCollectionArrow: icon{{ \"dialogs/dialogs_topic_arrow\", windowSubTextFg }};"
       ],
       "reachability_status": "accepted-tree-consumer-proven",
@@ -12171,8 +12171,8 @@
       "consumer_evidence": [
         "Telegram/SourceFiles/dialogs/dialogs.style:178:forumDialogJumpArrow: icon{{ \"dialogs/dialogs_topic_arrow\", dialogsTextFg }};",
         "Telegram/SourceFiles/dialogs/dialogs.style:179:forumDialogJumpArrowOver: icon{{ \"dialogs/dialogs_topic_arrow\", dialogsTextFgOver }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:262:topicButtonArrow: icon{{ \"dialogs/dialogs_topic_arrow\", historyReplyIconFg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:269:\ticon: icon{{ \"dialogs/dialogs_topic_arrow-flip_horizontal\", historyReplyIconFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:264:topicButtonArrow: icon{{ \"dialogs/dialogs_topic_arrow\", historyReplyIconFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:271:\ticon: icon{{ \"dialogs/dialogs_topic_arrow-flip_horizontal\", historyReplyIconFg }};",
         "Telegram/SourceFiles/wallet/wallet.style:336:walletDetailsCollectionArrow: icon{{ \"dialogs/dialogs_topic_arrow\", windowSubTextFg }};"
       ],
       "reachability_status": "accepted-tree-consumer-proven",
@@ -14733,7 +14733,7 @@
         "Telegram/SourceFiles/dialogs/ui/dialogs_layout.style:58:\tactive: icon {{ \"emoji/premium_lock\", dialogsUnreadBgMutedActive, point(4px, 0px) }};",
         "Telegram/SourceFiles/media/view/media_view.style:951:\t\ticon: icon{{ \"emoji/premium_lock\", storiesComposeGrayIcon, point(13px, 14px) }};",
         "Telegram/SourceFiles/ui/boxes/choose_date_time.style:43:\ticon: icon {{ \"emoji/premium_lock\", windowSubTextFg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:868:historySendDisabledIcon: icon {{ \"emoji/premium_lock\", placeholderFgActive }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:870:historySendDisabledIcon: icon {{ \"emoji/premium_lock\", placeholderFgActive }};",
         "Telegram/SourceFiles/ui/effects/credits.style:261:\ticon: icon {{ \"emoji/premium_lock\", placeholderFgActive }};"
       ],
       "reachability_status": "accepted-tree-consumer-proven",
@@ -14784,7 +14784,7 @@
         "Telegram/SourceFiles/dialogs/ui/dialogs_layout.style:58:\tactive: icon {{ \"emoji/premium_lock\", dialogsUnreadBgMutedActive, point(4px, 0px) }};",
         "Telegram/SourceFiles/media/view/media_view.style:951:\t\ticon: icon{{ \"emoji/premium_lock\", storiesComposeGrayIcon, point(13px, 14px) }};",
         "Telegram/SourceFiles/ui/boxes/choose_date_time.style:43:\ticon: icon {{ \"emoji/premium_lock\", windowSubTextFg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:868:historySendDisabledIcon: icon {{ \"emoji/premium_lock\", placeholderFgActive }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:870:historySendDisabledIcon: icon {{ \"emoji/premium_lock\", placeholderFgActive }};",
         "Telegram/SourceFiles/ui/effects/credits.style:261:\ticon: icon {{ \"emoji/premium_lock\", placeholderFgActive }};"
       ],
       "reachability_status": "accepted-tree-consumer-proven",
@@ -14835,7 +14835,7 @@
         "Telegram/SourceFiles/dialogs/ui/dialogs_layout.style:58:\tactive: icon {{ \"emoji/premium_lock\", dialogsUnreadBgMutedActive, point(4px, 0px) }};",
         "Telegram/SourceFiles/media/view/media_view.style:951:\t\ticon: icon{{ \"emoji/premium_lock\", storiesComposeGrayIcon, point(13px, 14px) }};",
         "Telegram/SourceFiles/ui/boxes/choose_date_time.style:43:\ticon: icon {{ \"emoji/premium_lock\", windowSubTextFg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:868:historySendDisabledIcon: icon {{ \"emoji/premium_lock\", placeholderFgActive }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:870:historySendDisabledIcon: icon {{ \"emoji/premium_lock\", placeholderFgActive }};",
         "Telegram/SourceFiles/ui/effects/credits.style:261:\ticon: icon {{ \"emoji/premium_lock\", placeholderFgActive }};"
       ],
       "reachability_status": "accepted-tree-consumer-proven",

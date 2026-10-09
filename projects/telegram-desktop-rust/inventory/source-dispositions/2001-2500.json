@@ -8564,7 +8564,7 @@
       "consumer_evidence": [
         "Telegram/SourceFiles/boxes/compose_ai_box.style:22:aiComposeTabTranslateIcon: icon {{ \"menu/translate\", aiComposeButtonFg }};",
         "Telegram/SourceFiles/boxes/compose_ai_box.style:23:aiComposeTabTranslateIconActive: icon {{ \"menu/translate\", aiComposeButtonFgActive }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:820:historyTranslateIcon: icon{{ \"menu/translate\", windowActiveTextFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:822:historyTranslateIcon: icon{{ \"menu/translate\", windowActiveTextFg }};",
         "Telegram/SourceFiles/ui/effects/premium.style:407:boostFeatureAutoTranslate: icon{{ \"menu/translate\", windowBgActive }};",
         "Telegram/SourceFiles/ui/menu_icons.style:108:menuIconTranslate: icon {{ \"menu/translate\", menuIconColor }};",
         "C++/product caller audit: Peer/chat/history translation, language settings, AI Compose translate, community toggle and Premium auto-translate projection."
@@ -8611,7 +8611,7 @@
       "consumer_evidence": [
         "Telegram/SourceFiles/boxes/compose_ai_box.style:22:aiComposeTabTranslateIcon: icon {{ \"menu/translate\", aiComposeButtonFg }};",
         "Telegram/SourceFiles/boxes/compose_ai_box.style:23:aiComposeTabTranslateIconActive: icon {{ \"menu/translate\", aiComposeButtonFgActive }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:820:historyTranslateIcon: icon{{ \"menu/translate\", windowActiveTextFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:822:historyTranslateIcon: icon{{ \"menu/translate\", windowActiveTextFg }};",
         "Telegram/SourceFiles/ui/effects/premium.style:407:boostFeatureAutoTranslate: icon{{ \"menu/translate\", windowBgActive }};",
         "Telegram/SourceFiles/ui/menu_icons.style:108:menuIconTranslate: icon {{ \"menu/translate\", menuIconColor }};",
         "C++/product caller audit: Peer/chat/history translation, language settings, AI Compose translate, community toggle and Premium auto-translate projection."
@@ -8658,7 +8658,7 @@
       "consumer_evidence": [
         "Telegram/SourceFiles/boxes/compose_ai_box.style:22:aiComposeTabTranslateIcon: icon {{ \"menu/translate\", aiComposeButtonFg }};",
         "Telegram/SourceFiles/boxes/compose_ai_box.style:23:aiComposeTabTranslateIconActive: icon {{ \"menu/translate\", aiComposeButtonFgActive }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:820:historyTranslateIcon: icon{{ \"menu/translate\", windowActiveTextFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:822:historyTranslateIcon: icon{{ \"menu/translate\", windowActiveTextFg }};",
         "Telegram/SourceFiles/ui/effects/premium.style:407:boostFeatureAutoTranslate: icon{{ \"menu/translate\", windowBgActive }};",
         "Telegram/SourceFiles/ui/menu_icons.style:108:menuIconTranslate: icon {{ \"menu/translate\", menuIconColor }};",
         "C++/product caller audit: Peer/chat/history translation, language settings, AI Compose translate, community toggle and Premium auto-translate projection."
