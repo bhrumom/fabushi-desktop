@@ -147,7 +147,7 @@ index["rebaseline"]={"from_commit":OLD,"to_commit":NEW,"ahead_by":1,"changed_pat
 index["source_dispositions"]["upstream_commit"]=NEW; index["source_dispositions"]["read_through"]=5801
 dump("projects/telegram-desktop-rust/inventory/index.json",index)
 
-ledger=load("projects/telegram-desktop-rust/parity-ledger.json")
+ledger=replace_exact(load("projects/telegram-desktop-rust/parity-ledger.json"))
 ledger["upstream_commit"]=NEW; ledger["coverage"]["source_entries_total"]=16125; ledger["coverage"]["unknown"]=15846; ledger["coverage"]["unread"]=10324; ledger["coverage"]["omitted"]=0
 ledger["source_dispositions"]["upstream_commit"]=NEW; ledger["source_dispositions"]["read_through"]=5801
 ledger["rebaseline"]={"from_commit":OLD,"to_commit":NEW,"ahead_by":1,"changed_paths":1,"changed_authority_paths":EXPECTED_CHANGED,
