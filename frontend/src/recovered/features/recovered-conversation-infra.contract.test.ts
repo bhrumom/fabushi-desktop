@@ -725,6 +725,24 @@ test("CONTRACT-TDRP-MEDIAVIEW-NATIVE-PLAYBACK-001 canonical media preview delega
   assert.doesNotMatch(source, /RendererGL|RendererRhi|TelegramMediaViewer|TelegramVideo/);
 });
 
+test("CONTRACT-TDRP-MEDIAVIEW-PLAYBACK-PERSISTENCE-001 canonical media preview persists source-neutral volume and resumable position without leaking source paths", () => {
+  const source = readFileSync(new URL("./conversation/workspace/media-viewer.tsx", import.meta.url), "utf8");
+  assert.match(source, /MEDIA_PLAYBACK_PREFERENCES_KEY = "fabushi\.mediaViewer\.playback\.v1"/);
+  assert.match(source, /MEDIA_PLAYBACK_POSITION_PREFIX = "fabushi\.mediaViewer\.position\.v1\."/);
+  assert.match(source, /function mediaPlaybackSourceKey\(source: string\)[\s\S]{0,380}Math\.imul\(hash, 0x01000193\)[\s\S]{0,180}MEDIA_PLAYBACK_POSITION_PREFIX/);
+  assert.doesNotMatch(source, /MEDIA_PLAYBACK_POSITION_PREFIX[^\n]{0,300}storage\.(?:setItem|getItem)\([^\n]*source/);
+  assert.match(source, /persistMediaPlaybackPreferences\(outgoingVideo\);[\s\S]{0,160}persistMediaPlaybackPosition\(outgoingVideo, videoPersistenceRef\.current\.source\)[\s\S]{0,100}outgoingVideo\.pause\(\)/);
+  assert.match(source, /onLoadedMetadata=\{restoreVideoPlaybackState\}/);
+  assert.match(source, /onPause=\{persistVideoPlaybackState\}/);
+  assert.match(source, /onTimeUpdate=\{persistVideoPlaybackProgress\}/);
+  assert.match(source, /onVolumeChange=\{persistVideoPlaybackState\}/);
+  assert.match(source, /onEnded=\{clearCompletedVideoPlaybackPosition\}/);
+  assert.match(source, /MEDIA_POSITION_WRITE_INTERVAL_MS = 1_000/);
+  assert.match(source, /readMediaPlaybackPosition\(sourceKey, video\.duration\)[\s\S]{0,100}video\.currentTime = position/);
+  assert.match(source, /persistMediaPlaybackPosition\(event\.currentTarget, videoPersistenceRef\.current\.source, true\)/);
+  assert.match(source, /catch \{[\s\S]{0,120}Playback remains functional when persistent storage is unavailable/);
+});
+
 test("CONTRACT-TDRP-IV-VIEW-MEDIA-POINTER-RELEASE-001 media replacement releases stale viewer pointer ownership before the new resource settles", () => {
   const source = readFileSync(new URL("./conversation/workspace/media-viewer.tsx", import.meta.url), "utf8");
   const replacementStart = source.indexOf("setMedia(null);");
