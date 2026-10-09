@@ -882,6 +882,13 @@ test('Human reply, attachment, reaction, and search stay on the shipping convers
       mimeType: 'image/png',
       buffer: mediaAttachmentBytes,
     });
+    // setInputFiles only starts the canonical attachment-staging path. Wait for
+    // the Composer-owned staged attachment projection before sending so this
+    // acceptance proves the real staging boundary instead of racing it.
+    await expect(
+      page.getByRole('list', { name: 'Attachments' })
+        .getByRole('listitem', { name: mediaAttachmentName }),
+    ).toBeVisible({ timeout: 10_000 });
     const mediaText = 'Human media preview window chrome evidence.';
     await prompt.pressSequentially(mediaText);
     await page.getByRole('button', { name: 'Send message' }).click();
