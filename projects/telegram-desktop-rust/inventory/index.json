@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15841,
-    "unread_minimum": 11090,
+    "unread_minimum": 11087,
     "omitted_known": 0,
-    "note": "Live 3a15bf1f recursive census remains 16,120. 5,030 exact entries are read-complete; 279 unknown-closed; unknown 15,841, unread 11,090, omitted 0. Orders 5001-5030 were direct exact-blob semantic reads only and do not promote implementation or release state."
+    "note": "Live 3a15bf1f recursive census remains 16,120. 5,033 exact entries are read-complete; 279 unknown-closed; unknown 15,841, unread 11,087, omitted 0. Orders 5031-5033 were direct exact-blob semantic reads only and do not promote implementation or release state."
   },
   "latest_recursive_evidence": {
     "run_id": 37872749663,
@@ -46,7 +46,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live 3a15bf1f authority is exact through order 5,030. unread_minimum is 11,090, unknown remains 15,841, omitted remains 0.",
+  "note": "Live 3a15bf1f authority is exact through order 5,033. unread_minimum is 11,087, unknown remains 15,841, omitted remains 0.",
   "rebaseline": {
     "from_commit": "36a0c87ca096c48ccf6193aa2c31707fdcafcc7c",
     "to_commit": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
@@ -57,7 +57,7 @@
       "Telegram/SourceFiles/core/application.cpp"
     ],
     "current_head_source_authority_evidence": "Pending: post-rebaseline exact-head GitHub Actions Source authority run/artifact required.",
-    "current_source_read_through": 5030
+    "current_source_read_through": 5033
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -66,6 +66,6 @@
     "development_only_non_applicable": 66,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 5030
+    "read_through": 5033
   }
 }
