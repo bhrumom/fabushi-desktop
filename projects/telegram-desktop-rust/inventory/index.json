@@ -13,10 +13,10 @@
     "recursive_non_directory_entries": 16120,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 15985,
-    "unread_minimum": 13920,
+    "unknown_minimum": 15970,
+    "unread_minimum": 13820,
     "omitted_known": 0,
-    "note": "Live 22b352e recursive census is 16,120. 2,200 exact entries are read-complete; 135 are explicitly unknown-closed; unknown 15,985, unread 13,920, omitted 0. Orders 2101-2200 are consumer-traced and responsibility-decomposed with multi-owner caller splits plus explicit no-consumer closure for stories_to_chats; implementation gates remain open."
+    "note": "Live 22b352e recursive census is 16,120. 2,300 exact entries are read-complete; 150 are explicitly unknown-closed; unknown 15,970, unread 13,820, omitted 0. Orders 2201-2300 cover moderation, read/pin state, Calls, replies, Wallet/Gifts, media, notifications, passkeys, Passport and payment identity fields; implementation gates remain open for applicable rows."
   },
   "latest_recursive_evidence": {
     "run_id": 37864697175,
@@ -106,7 +106,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live 22b352e authority is exact through order 2,200. unread_minimum is 13,920, unknown remains 15,985, omitted remains 0. Orders 2101-2200 are responsibility-decomposed by real callers; stories_to_chats has explicit accepted-tree no-consumer evidence and does not create a Fabushi feature.",
+  "note": "Live 22b352e authority is exact through order 2,300. unread_minimum is 13,820, unknown remains 15,970, omitted remains 0. Orders 2201-2300 are responsibility-decomposed by real callers; 15 density assets across five legacy resource families have explicit no-consumer evidence.",
   "rebaseline": {
     "from_commit": "6ec5014a92c4580841a043c440d65e8fc605ff78",
     "to_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db",
@@ -125,8 +125,8 @@
     "upstream_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db",
     "deterministic_prefix_closed": 123,
     "development_only_non_applicable": 66,
-    "unknown_closed": 135,
+    "unknown_closed": 150,
     "omitted": 0,
-    "read_through": 2200
+    "read_through": 2300
   }
 }
