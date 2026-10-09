@@ -71820,6 +71820,7 @@
       "omitted": false,
       "consumer_symbol": "align_bottom",
       "consumer_evidence": [
+        "Telegram/SourceFiles/iv/iv.style:316:ivEditorTableAlignBottomIcon: icon {{ \"menu/rich/align_bottom-24x24\", menuIconColor }};",
         "Telegram/SourceFiles/iv/iv.style:316: exact menu/rich/align_bottom icon consumer in IV editor style",
         "C++/product caller audit: iv editor align_bottom command."
       ],
@@ -71861,6 +71862,7 @@
       "omitted": false,
       "consumer_symbol": "align_center",
       "consumer_evidence": [
+        "Telegram/SourceFiles/iv/iv.style:312:ivEditorTableAlignCenterIcon: icon {{ \"menu/rich/align_center-24x24\", menuIconColor }};",
         "Telegram/SourceFiles/iv/iv.style:312: exact menu/rich/align_center icon consumer in IV editor style",
         "C++/product caller audit: iv editor align_center command."
       ],
@@ -71902,6 +71904,7 @@
       "omitted": false,
       "consumer_symbol": "align_left",
       "consumer_evidence": [
+        "Telegram/SourceFiles/iv/iv.style:311:ivEditorTableAlignLeftIcon: icon {{ \"menu/rich/align_left-24x24\", menuIconColor }};",
         "Telegram/SourceFiles/iv/iv.style:311: exact menu/rich/align_left icon consumer in IV editor style",
         "C++/product caller audit: iv editor align_left command."
       ],
@@ -71943,6 +71946,7 @@
       "omitted": false,
       "consumer_symbol": "align_middle",
       "consumer_evidence": [
+        "Telegram/SourceFiles/iv/iv.style:315:ivEditorTableAlignMiddleIcon: icon {{ \"menu/rich/align_middle-24x24\", menuIconColor }};",
         "Telegram/SourceFiles/iv/iv.style:315: exact menu/rich/align_middle icon consumer in IV editor style",
         "C++/product caller audit: iv editor align_middle command."
       ],
@@ -71984,6 +71988,7 @@
       "omitted": false,
       "consumer_symbol": "align_right",
       "consumer_evidence": [
+        "Telegram/SourceFiles/iv/iv.style:313:ivEditorTableAlignRightIcon: icon {{ \"menu/rich/align_right-24x24\", menuIconColor }};",
         "Telegram/SourceFiles/iv/iv.style:313: exact menu/rich/align_right icon consumer in IV editor style",
         "C++/product caller audit: iv editor align_right command."
       ],
@@ -72025,6 +72030,7 @@
       "omitted": false,
       "consumer_symbol": "align_stretch",
       "consumer_evidence": [
+        "Telegram/SourceFiles/iv/iv.style:317:ivEditorButtonAlignStretchIcon: icon {{ \"menu/rich/align_stretch-24x24\", menuIconColor }};",
         "Telegram/SourceFiles/iv/iv.style:317: exact menu/rich/align_stretch icon consumer in IV editor style",
         "C++/product caller audit: iv editor align_stretch command."
       ],
@@ -72066,6 +72072,7 @@
       "omitted": false,
       "consumer_symbol": "align_top",
       "consumer_evidence": [
+        "Telegram/SourceFiles/iv/iv.style:314:ivEditorTableAlignTopIcon: icon {{ \"menu/rich/align_top-24x24\", menuIconColor }};",
         "Telegram/SourceFiles/iv/iv.style:314: exact menu/rich/align_top icon consumer in IV editor style",
         "C++/product caller audit: iv editor align_top command."
       ],
@@ -72107,6 +72114,8 @@
       "omitted": false,
       "consumer_symbol": "attach",
       "consumer_evidence": [
+        "Telegram/SourceFiles/iv/iv.style:251:ivEditorToolbarAttachIcon: icon {{ \"menu/rich/attach-24x24\", menuIconColor }};",
+        "Telegram/SourceFiles/iv/iv.style:261:\ticon: icon {{ \"menu/rich/attach-18x18\", dialogsTextFg }};",
         "Telegram/SourceFiles/iv/iv.style:251: exact menu/rich/attach icon consumer in IV editor style",
         "C++/product caller audit: iv editor attach command."
       ],
@@ -72148,6 +72157,9 @@
       "omitted": false,
       "consumer_symbol": "audio",
       "consumer_evidence": [
+        "Telegram/SourceFiles/dialogs/dialogs.style:529:\ticon: icon {{ \"menu/rich/audio-18x18\", dialogsTextFg }};",
+        "Telegram/SourceFiles/iv/iv.style:255:ivEditorToolbarAudioIcon: icon {{ \"menu/rich/audio-24x24\", menuIconColor }};",
+        "Telegram/SourceFiles/iv/iv.style:265:\ticon: icon {{ \"menu/rich/audio-18x18\", dialogsTextFg }};",
         "Telegram/SourceFiles/iv/iv.style:255: exact menu/rich/audio icon consumer in IV editor style",
         "C++/product caller audit: iv editor audio command."
       ],
@@ -72189,6 +72201,8 @@
       "omitted": false,
       "consumer_symbol": "blockquote",
       "consumer_evidence": [
+        "Telegram/SourceFiles/iv/iv.style:238:ivEditorToolbarBlockquoteIcon: icon {{ \"menu/rich/blockquote-24x24\", menuIconColor }};",
+        "Telegram/SourceFiles/iv/iv.style:285:\ticon: icon {{ \"menu/rich/blockquote-18x18\", dialogsTextFg }};",
         "Telegram/SourceFiles/iv/iv.style:238: exact menu/rich/blockquote icon consumer in IV editor style",
         "C++/product caller audit: iv editor blockquote command."
       ],
@@ -72230,6 +72244,7 @@
       "omitted": false,
       "consumer_symbol": "bold",
       "consumer_evidence": [
+        "Telegram/SourceFiles/iv/iv.style:137:ivEditorToolbarBoldIcon: icon {{ \"menu/rich/bold-24x24\", menuIconColor }};",
         "Telegram/SourceFiles/iv/iv.style:137: exact menu/rich/bold icon consumer in IV editor style",
         "C++/product caller audit: iv editor bold command."
       ],
@@ -72271,6 +72286,7 @@
       "omitted": false,
       "consumer_symbol": "bullet_list",
       "consumer_evidence": [
+        "Telegram/SourceFiles/iv/iv.style:244:ivEditorToolbarBulletListIcon: icon {{ \"menu/rich/bullet_list-24x24\", menuIconColor }};",
         "Telegram/SourceFiles/iv/iv.style:244: exact menu/rich/bullet_list icon consumer in IV editor style",
         "C++/product caller audit: iv editor bullet_list command."
       ],
@@ -72312,6 +72328,7 @@
       "omitted": false,
       "consumer_symbol": "button",
       "consumer_evidence": [
+        "Telegram/SourceFiles/iv/iv.style:147:ivEditorToolbarButtonIcon: icon {{ \"menu/rich/button-24x24\", menuIconColor }};",
         "Telegram/SourceFiles/iv/iv.style:147: exact menu/rich/button icon consumer in IV editor style",
         "C++/product caller audit: iv editor button command."
       ],
@@ -72353,6 +72370,7 @@
       "omitted": false,
       "consumer_symbol": "cancel",
       "consumer_evidence": [
+        "Telegram/SourceFiles/iv/iv.style:149:ivEditorBottomCancelIcon: icon {{ \"menu/rich/cancel-24x24\", menuIconColor }};",
         "Telegram/SourceFiles/iv/iv.style:149: exact menu/rich/cancel icon consumer in IV editor style",
         "C++/product caller audit: iv editor cancel command."
       ],
@@ -72394,6 +72412,7 @@
       "omitted": false,
       "consumer_symbol": "code",
       "consumer_evidence": [
+        "Telegram/SourceFiles/iv/iv.style:239:ivEditorToolbarCodeIcon: icon {{ \"menu/rich/code-24x24\", menuIconColor }};",
         "Telegram/SourceFiles/iv/iv.style:239: exact menu/rich/code icon consumer in IV editor style",
         "C++/product caller audit: iv editor code command."
       ],
@@ -72435,6 +72454,7 @@
       "omitted": false,
       "consumer_symbol": "details",
       "consumer_evidence": [
+        "Telegram/SourceFiles/iv/iv.style:252:ivEditorToolbarDetailsIcon: icon {{ \"menu/rich/details-24x24\", menuIconColor }};",
         "Telegram/SourceFiles/iv/iv.style:252: exact menu/rich/details icon consumer in IV editor style",
         "C++/product caller audit: iv editor details command."
       ],
@@ -72476,6 +72496,7 @@
       "omitted": false,
       "consumer_symbol": "discard",
       "consumer_evidence": [
+        "Telegram/SourceFiles/iv/iv.style:148:ivEditorBottomDiscardIcon: icon {{ \"menu/rich/discard-24x24\", menuIconColor }};",
         "Telegram/SourceFiles/iv/iv.style:148: exact menu/rich/discard icon consumer in IV editor style",
         "C++/product caller audit: iv editor discard command."
       ],
@@ -72517,6 +72538,7 @@
       "omitted": false,
       "consumer_symbol": "divider",
       "consumer_evidence": [
+        "Telegram/SourceFiles/iv/iv.style:241:ivEditorToolbarDividerIcon: icon {{ \"menu/rich/divider-24x24\", menuIconColor }};",
         "Telegram/SourceFiles/iv/iv.style:241: exact menu/rich/divider icon consumer in IV editor style",
         "C++/product caller audit: iv editor divider command."
       ],
@@ -72558,6 +72580,7 @@
       "omitted": false,
       "consumer_symbol": "emoji",
       "consumer_evidence": [
+        "Telegram/SourceFiles/iv/iv.style:237:ivEditorToolbarEmojiIcon: icon {{ \"menu/rich/emoji-24x24\", menuIconColor }};",
         "Telegram/SourceFiles/iv/iv.style:237: exact menu/rich/emoji icon consumer in IV editor style",
         "C++/product caller audit: iv editor emoji command."
       ],
@@ -72599,6 +72622,8 @@
       "omitted": false,
       "consumer_symbol": "expand",
       "consumer_evidence": [
+        "Telegram/SourceFiles/chat_helpers/chat_helpers.style:1543:\ticon: icon {{ \"menu/rich/expand-20x20\", historyComposeIconFg }};",
+        "Telegram/SourceFiles/chat_helpers/chat_helpers.style:1544:\ticonOver: icon {{ \"menu/rich/expand-20x20\", historyComposeIconFgOver }};",
         "Telegram/SourceFiles/chat_helpers/chat_helpers.style:1543: icon: icon {{ \"menu/rich/expand-20x20\", historyComposeIconFg }};",
         "C++/product caller audit: composer rich expand and IV surface."
       ],
@@ -72640,6 +72665,7 @@
       "omitted": false,
       "consumer_symbol": "footer",
       "consumer_evidence": [
+        "Telegram/SourceFiles/iv/iv.style:242:ivEditorToolbarFooterIcon: icon {{ \"menu/rich/footer-24x24\", menuIconColor }};",
         "Telegram/SourceFiles/iv/iv.style:242: exact menu/rich/footer icon consumer in IV editor style",
         "C++/product caller audit: iv editor footer command."
       ],

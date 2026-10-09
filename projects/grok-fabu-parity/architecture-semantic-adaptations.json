@@ -890,7 +890,7 @@
       "referencePath": "source/electron-main/main-edge.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "34ebc09f00048d16649fb7b326b2335d85d03734",
+      "targetBlobSha": "86699d3cc73e5cbdac56034ad1f9318c9c0b7ea3",
       "behavioralEvidence": [
         "source/electron-main/main-edge.ts",
         "source/shared/node/settings/sand-settings-store.ts",
