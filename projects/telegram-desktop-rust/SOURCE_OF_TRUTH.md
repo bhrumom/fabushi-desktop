@@ -1,4 +1,4 @@
-Live Revision 9 authority (2026-10-10): telegramdesktop/tdesktop@65e23ba7137ea4129b6bc1b2616104a1f59495ef (root tree 6b616494f3465324e749a04dcd1c9d508657a998). Root non-directory=6,653; recursive non-directory=16,125; read-through=5,871; first unread=5,872 Telegram/SourceFiles/ui/boxes/choose_font_box.cpp@56a7386cb666bac9412bdfafc9e9a2f02e20598e; unread=10,254; unknown=15,846; omitted=0. The live prefix is read/decomposed only; unknown closes only with canonical production owners and same-head evidence. Fresh descendant exact-head GitHub Actions evidence is required.
+Live Revision 9 authority (2026-10-10): telegramdesktop/tdesktop@65e23ba7137ea4129b6bc1b2616104a1f59495ef (root tree 6b616494f3465324e749a04dcd1c9d508657a998). Root non-directory=6,653; recursive non-directory=16,125; read-through=5,909; first unread=5,910 Telegram/SourceFiles/ui/cached_round_corners.cpp@7da69a2299a1fc5d67f8392fe45ee82672b33440; unread=10,216; unknown=15,846; omitted=0. Reading alone never closes unknown. Fresh descendant exact-head GitHub Actions evidence is required.
 
 # Telegram 源码 → Fabushi 全量等价重写 — Source of Truth
 
@@ -364,3 +364,8 @@ Under live `65e23ba7` authority, orders **5,849–5,859** are now exact-blob rea
 ### Source closure through 5,871
 
 Orders **5,860–5,871** (`ui/boxes`) are exact-blob read-complete/responsibility-decomposed. They remain mapped-open product/UI responsibilities; reading does not reduce unknown. Current accounting: **5,871/16,125 read; 10,254 unread; 15,846 unknown; 0 omitted**. First unread 5,872 `choose_font_box.cpp@56a7386c…`. Canonical owner/applicability evidence remains mandatory.
+
+
+### Source closure through 5,909
+
+The deterministic live prefix is exact-blob read-complete/responsibility-decomposed through **5,909**, completing `ui/boxes/**`. Accounting is **5,909/16,125 read; 10,216 unread; 15,846 unknown; 0 omitted**. First unread is 5,910 `ui/cached_round_corners.cpp@7da69a22…`. The predecessor d52b8c5 authority failure identified a stale `upstream.lock.json.source_disposition_evidence.read_through`; this descendant fixes that data contract without modifying or weakening the validator. Canonical production owner, UI/UX, backend/platform dependency and same-head evidence remain mandatory.

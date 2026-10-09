@@ -1,0 +1,237 @@
+{
+  "accepted_upstream": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
+  "accepted_tree": "6b616494f3465324e749a04dcd1c9d508657a998",
+  "deterministic_order_basis": "non-directory/blob rank in accepted recursive tree",
+  "start": 5872,
+  "end": 5909,
+  "entries": [
+    {
+      "order": 5872,
+      "path": "Telegram/SourceFiles/ui/boxes/choose_font_box.cpp",
+      "blob": "56a7386cb666bac9412bdfafc9e9a2f02e20598e",
+      "consumer_symbol": "ChooseFontBox"
+    },
+    {
+      "order": 5873,
+      "path": "Telegram/SourceFiles/ui/boxes/choose_font_box.h",
+      "blob": "ed79f9bc4004b28b253ab356957340afe1d287c3",
+      "consumer_symbol": "ChooseFontBox contract"
+    },
+    {
+      "order": 5874,
+      "path": "Telegram/SourceFiles/ui/boxes/choose_language_box.cpp",
+      "blob": "70957c57847d29aafb75eabf409658c5817ebdde",
+      "consumer_symbol": "ChooseLanguageBox"
+    },
+    {
+      "order": 5875,
+      "path": "Telegram/SourceFiles/ui/boxes/choose_language_box.h",
+      "blob": "dd96332aedd654742fba20e0fa60dda36b3bc2dc",
+      "consumer_symbol": "ChooseLanguageBox contract"
+    },
+    {
+      "order": 5876,
+      "path": "Telegram/SourceFiles/ui/boxes/choose_time.cpp",
+      "blob": "32fcc5938a42be16c257fc4483d734348d8416c3",
+      "consumer_symbol": "ChooseTimeWidget"
+    },
+    {
+      "order": 5877,
+      "path": "Telegram/SourceFiles/ui/boxes/choose_time.h",
+      "blob": "d2f7f1ee763e3e3aeae855c842a8003399057de2",
+      "consumer_symbol": "ChooseTimeWidget contract"
+    },
+    {
+      "order": 5878,
+      "path": "Telegram/SourceFiles/ui/boxes/collectible_info_box.cpp",
+      "blob": "f7edd2e222736f01ede60182d5027c0059802bda",
+      "consumer_symbol": "CollectibleInfoBox"
+    },
+    {
+      "order": 5879,
+      "path": "Telegram/SourceFiles/ui/boxes/collectible_info_box.h",
+      "blob": "2fc94dfc556f159fdf2842c216b787aa919d686c",
+      "consumer_symbol": "CollectibleInfoBox contract"
+    },
+    {
+      "order": 5880,
+      "path": "Telegram/SourceFiles/ui/boxes/collectible_info_box.style",
+      "blob": "36f6e968c68b79ddc9504714c0a447e64e8282d8",
+      "consumer_symbol": "CollectibleInfo style"
+    },
+    {
+      "order": 5881,
+      "path": "Telegram/SourceFiles/ui/boxes/confirm_box.cpp",
+      "blob": "699133fa6894428f68d9815d3313407a68d4c93a",
+      "consumer_symbol": "ConfirmBox"
+    },
+    {
+      "order": 5882,
+      "path": "Telegram/SourceFiles/ui/boxes/confirm_box.h",
+      "blob": "d8d1ae555d1bd52ee360003929de389ca7677cbe",
+      "consumer_symbol": "ConfirmBox contract"
+    },
+    {
+      "order": 5883,
+      "path": "Telegram/SourceFiles/ui/boxes/confirm_phone_box.cpp",
+      "blob": "7920538175460591e678f57ac6a364c5151c1c93",
+      "consumer_symbol": "ConfirmPhoneBox"
+    },
+    {
+      "order": 5884,
+      "path": "Telegram/SourceFiles/ui/boxes/confirm_phone_box.h",
+      "blob": "e532a38276aeecfb0bdad2dc5ce5b98278fa0282",
+      "consumer_symbol": "ConfirmPhoneBox contract"
+    },
+    {
+      "order": 5885,
+      "path": "Telegram/SourceFiles/ui/boxes/country_select_box.cpp",
+      "blob": "f717f4e0a6315b172b44fe22e407baddbceb3791",
+      "consumer_symbol": "CountrySelectBox"
+    },
+    {
+      "order": 5886,
+      "path": "Telegram/SourceFiles/ui/boxes/country_select_box.h",
+      "blob": "779a9f970bc7ad8b4ff136e3c82283903e3c3c83",
+      "consumer_symbol": "CountrySelectBox contract"
+    },
+    {
+      "order": 5887,
+      "path": "Telegram/SourceFiles/ui/boxes/country_select_box.style",
+      "blob": "11acfae11d3ec00e81c5b83cc8c19d0d06d3fced",
+      "consumer_symbol": "CountrySelectBox style"
+    },
+    {
+      "order": 5888,
+      "path": "Telegram/SourceFiles/ui/boxes/edit_birthday_box.cpp",
+      "blob": "d37a183ba5c10d99222661e0a9db0ac362bc2ed4",
+      "consumer_symbol": "EditBirthdayBox"
+    },
+    {
+      "order": 5889,
+      "path": "Telegram/SourceFiles/ui/boxes/edit_birthday_box.h",
+      "blob": "4d33fc262b8efc5a6f615e93e8128e4b7686b1c7",
+      "consumer_symbol": "EditBirthdayBox contract"
+    },
+    {
+      "order": 5890,
+      "path": "Telegram/SourceFiles/ui/boxes/edit_factcheck_box.cpp",
+      "blob": "2265e89e753bbf1065ce5b09b9bcd7583d68beea",
+      "consumer_symbol": "EditFactcheckBox"
+    },
+    {
+      "order": 5891,
+      "path": "Telegram/SourceFiles/ui/boxes/edit_factcheck_box.h",
+      "blob": "b2ca164799bacacd3e65bede65877107131b0ae8",
+      "consumer_symbol": "EditFactcheckBox contract"
+    },
+    {
+      "order": 5892,
+      "path": "Telegram/SourceFiles/ui/boxes/edit_invite_link.cpp",
+      "blob": "e58fbd56d1639eb77e5c888e44a38dfd611005f9",
+      "consumer_symbol": "EditInviteLinkBox"
+    },
+    {
+      "order": 5893,
+      "path": "Telegram/SourceFiles/ui/boxes/edit_invite_link.h",
+      "blob": "dfe35f5e1ff8a9785f2398408e55e185e43d3b5a",
+      "consumer_symbol": "EditInviteLink contract"
+    },
+    {
+      "order": 5894,
+      "path": "Telegram/SourceFiles/ui/boxes/edit_invite_link_session.cpp",
+      "blob": "56cd21cec7894d6d0a49230fdd0e9a83019b7e94",
+      "consumer_symbol": "InviteLink subscription session adapter"
+    },
+    {
+      "order": 5895,
+      "path": "Telegram/SourceFiles/ui/boxes/edit_invite_link_session.h",
+      "blob": "c4dae66c7b90757a097112f3eec149b6d53e5787",
+      "consumer_symbol": "InviteLink subscription adapter contract"
+    },
+    {
+      "order": 5896,
+      "path": "Telegram/SourceFiles/ui/boxes/emoji_stake_box.cpp",
+      "blob": "86a13a1c2c08fabbe457da673d495ae87129dba7",
+      "consumer_symbol": "EmojiGameStakeBox"
+    },
+    {
+      "order": 5897,
+      "path": "Telegram/SourceFiles/ui/boxes/emoji_stake_box.h",
+      "blob": "71451ac10ba12edb17b12ce092d9350876d4811c",
+      "consumer_symbol": "EmojiGameStake contract"
+    },
+    {
+      "order": 5898,
+      "path": "Telegram/SourceFiles/ui/boxes/peer_qr_box.cpp",
+      "blob": "e6c0ea9ead2dac3517b1f555552265f2e69aff14",
+      "consumer_symbol": "PeerQrBox"
+    },
+    {
+      "order": 5899,
+      "path": "Telegram/SourceFiles/ui/boxes/peer_qr_box.h",
+      "blob": "54d0e36b14ee657ab6f5326fc13f7b45ec73dca1",
+      "consumer_symbol": "PeerQrBox contract"
+    },
+    {
+      "order": 5900,
+      "path": "Telegram/SourceFiles/ui/boxes/rate_call_box.cpp",
+      "blob": "fa41cd1e898c1d1a685e9e7a6d8b92ef9060dde8",
+      "consumer_symbol": "RateCallBox"
+    },
+    {
+      "order": 5901,
+      "path": "Telegram/SourceFiles/ui/boxes/rate_call_box.h",
+      "blob": "119167b7745c883976dd12b916cf1892e0d9c788",
+      "consumer_symbol": "RateCallBox contract"
+    },
+    {
+      "order": 5902,
+      "path": "Telegram/SourceFiles/ui/boxes/report_box_graphics.cpp",
+      "blob": "fca4329d1c2029622fe204ec8f24df05a305feb4",
+      "consumer_symbol": "Report boxes"
+    },
+    {
+      "order": 5903,
+      "path": "Telegram/SourceFiles/ui/boxes/report_box_graphics.h",
+      "blob": "55c83cd6cb8e81ea59030be78592c47db315c629",
+      "consumer_symbol": "Report boxes contract"
+    },
+    {
+      "order": 5904,
+      "path": "Telegram/SourceFiles/ui/boxes/show_or_premium_box.cpp",
+      "blob": "fd1fb8ecfc57eb72d8dbc617b380620b05eafa5d",
+      "consumer_symbol": "ShowOrPremiumBox"
+    },
+    {
+      "order": 5905,
+      "path": "Telegram/SourceFiles/ui/boxes/show_or_premium_box.h",
+      "blob": "25bcfc9f90a4861de44b5ce3876b35719b158902",
+      "consumer_symbol": "ShowOrPremium contract"
+    },
+    {
+      "order": 5906,
+      "path": "Telegram/SourceFiles/ui/boxes/single_choice_box.cpp",
+      "blob": "dbdcc91f169303ab1d36ca29d3a8a91538360fbe",
+      "consumer_symbol": "SingleChoiceBox"
+    },
+    {
+      "order": 5907,
+      "path": "Telegram/SourceFiles/ui/boxes/single_choice_box.h",
+      "blob": "4964d3b057f2e30d2981dcfcd5a640e8fbc795eb",
+      "consumer_symbol": "SingleChoiceBox contract"
+    },
+    {
+      "order": 5908,
+      "path": "Telegram/SourceFiles/ui/boxes/time_picker_box.cpp",
+      "blob": "07ac8c81a756bed440d4c4050ab6f05c3adf16c0",
+      "consumer_symbol": "TimePickerBox"
+    },
+    {
+      "order": 5909,
+      "path": "Telegram/SourceFiles/ui/boxes/time_picker_box.h",
+      "blob": "26d16647da3fbe75278a4f72701aafa462c967f6",
+      "consumer_symbol": "TimePickerBox contract"
+    }
+  ]
+}
