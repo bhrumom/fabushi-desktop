@@ -29,7 +29,7 @@ export const OFFICIAL_MCP_CATALOG: readonly OfficialMcpEntry[] = [
   google("Google Sheets", "sheets", "sheetsmcp", "通过 Google 官方 MCP 读取和处理电子表格。"),
   google("Google Slides", "slides", "slidesmcp", "通过 Google 官方 MCP 读取和处理演示文稿。"),
   google("Google Calendar", "calendar", "calendarmcp", "通过 Google 官方 MCP 查询日历和事件；实际能力以服务返回的工具为准。"),
-  google("Google Chat", "chat", "chatmcp", "通过 Google 官方 MCP 访问 Google Chat；还需配置 Google Chat 应用。"),
+  google("Google Chat", "chat", "chatmcp", "通过 Google 官方 MCP 访问 Google Chat；只读无需配置 Chat app，写能力要求关闭互动功能。"),
   google("Google Contacts", "people", "people", "通过 Google People 官方 MCP 读取授权的联系人和个人资料。"),
 ];
 
