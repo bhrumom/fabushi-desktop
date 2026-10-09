@@ -73,7 +73,7 @@ function isOrdinaryMessageActionable(
   onForward?: (entry: TranscriptMessage) => void,
 ): boolean {
   const hasActionableContent = entry.text.length > 0 || (entry.attachments?.length ?? 0) > 0;
-  const deliveryActionable = entry.delivery !== "failed" && entry.delivery !== "pending" && entry.delivery !== "queued";
+  const deliveryActionable = entry.delivery !== "failed" && entry.delivery !== "pending" && entry.delivery !== "queued" && entry.delivery !== "dispatching";
   return hasActionableContent && deliveryActionable && (!isReadOnly || onCopy != null || onForward != null);
 }
 
@@ -1040,7 +1040,7 @@ export function ConversationTranscript({ entries, hasOlder = false, isLoadingOld
         }
 
         const ids = transcriptIds(entry.id, true);
-        const pending = entry.delivery === "pending" || entry.delivery === "queued";
+        const pending = entry.delivery === "pending" || entry.delivery === "queued" || entry.delivery === "dispatching";
         const failed = entry.delivery === "failed";
         const replyPreview = entry.replyToId == null || resolveReplyPreview == null ? null : (resolveReplyPreview(entry.replyToId) ?? { kind: "missing" as const });
         const referencedEntry = entry.replyToId == null ? undefined : entries.find((candidate) => candidate.id === entry.replyToId);

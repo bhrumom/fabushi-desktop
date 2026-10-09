@@ -22,6 +22,7 @@ import { resolveWithSingleRetry } from "./conversation/workspace/media-runtime.t
 import { accumulateWheelZoomSteps, normalizeWheelZoomDelta } from "./conversation/workspace/media-zoom.ts";
 import { DERIVED_MEDIA_PRELOAD_ROOT_MARGIN, DERIVED_MEDIA_THUMBNAIL_ROOT_MARGIN, isDerivedMediaNearViewport, isVisibilityBoundDerivedMedia, observeDerivedMediaVisibility, shouldResolveDerivedMedia, shouldResolveDerivedThumbnail } from "./conversation/workspace/media-visibility.ts";
 import { TRANSCRIPT_FOLLOW_LATEST_THRESHOLD_PX, isTranscriptNearBottom } from "./conversation/workspace/transcript-follow-state.ts";
+import { projectTranscriptEntry } from "../../production/model.ts";
 import { beginHorizontalScrollPointer, captureHorizontalScroll, clampHorizontalScrollOffset, normalizeHorizontalScrollWheelDelta, restoreHorizontalScrollOffset, updateHorizontalScrollPointer, updateHorizontalScrollWheelLock } from "./conversation/workspace/horizontal-scroll-state.ts";
 import {
   areAssistantProjectionCandidatesCompatible,
@@ -1114,6 +1115,31 @@ test("CONTRACT-TDRP-IV-VIEW-HIGHLIGHT-DISPOSAL-001 find highlights cannot settle
   assert.match(runtimeSource, /disposed \|\| generation !== scheduledGeneration/);
   assert.match(runtimeSource, /queueMicrotask/);
   assert.match(runtimeSource, /cancelAnimationFrame/);
+});
+
+test("UNIT-FBCP-HUMAN-DISPATCHING-SETTLEMENT-001 Human dispatching remains unsettled until remote identity settlement", () => {
+  const projected = projectTranscriptEntry({
+    id: "human-message:nonce-1",
+    kind: "message",
+    role: "user",
+    content: "still dispatching",
+    delivery: "dispatching",
+    clientNonce: "nonce-1",
+    timestampMs: 1,
+  }, 0, "Human", "human-conversation");
+  assert.equal(projected?.kind, "message");
+  assert.equal(projected?.kind === "message" ? projected.delivery : undefined, "dispatching");
+});
+
+test("CONTRACT-FBCP-HUMAN-DISPATCHING-SETTLEMENT-001 dispatching stays busy and cannot expose settled message actions", () => {
+  const model = readFileSync(new URL("./conversation/workspace/model.ts", import.meta.url), "utf8");
+  const projection = readFileSync(new URL("../../production/model.ts", import.meta.url), "utf8");
+  const transcript = readFileSync(new URL("./conversation/workspace/transcript.tsx", import.meta.url), "utf8");
+  assert.match(model, /TranscriptDelivery = [^;]*"dispatching"/);
+  assert.match(projection, /candidate === "dispatching"/);
+  assert.match(projection, /candidate === "scheduled"/);
+  assert.match(transcript, /entry\.delivery !== "queued" && entry\.delivery !== "dispatching"/);
+  assert.match(transcript, /entry\.delivery === "queued" \|\| entry\.delivery === "dispatching"/);
 });
 
 test("UNIT-TDRP-IV-ARTICLE-FOLLOW-LATEST-001 transcript follow state stays pinned only near the latest message", () => {

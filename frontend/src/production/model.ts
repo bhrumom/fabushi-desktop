@@ -324,7 +324,7 @@ function messageText(entry: Record<string, unknown>): string | null {
 
 function transcriptDelivery(entry: Record<string, unknown>): TranscriptMessage["delivery"] {
   const candidate = entry.delivery ?? entry.status;
-  if (candidate === "pending" || candidate === "queued" || candidate === "failed" || candidate === "sent") return candidate;
+  if (candidate === "pending" || candidate === "queued" || candidate === "dispatching" || candidate === "failed" || candidate === "sent" || candidate === "scheduled") return candidate;
   if (entry.pending === true || entry.isPending === true) return "pending";
   if (entry.failed === true || entry.isFailed === true) return "failed";
   return undefined;

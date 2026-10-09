@@ -212,7 +212,7 @@ export type ConversationAgentLastEntry =
   | { readonly kind: "attachment"; readonly count: number; readonly kinds: Readonly<Record<string, number>> }
   | { readonly kind: "link"; readonly url: string };
 
-export type TranscriptDelivery = "sent" | "scheduled" | "pending" | "queued" | "failed";
+export type TranscriptDelivery = "sent" | "scheduled" | "pending" | "queued" | "dispatching" | "failed";
 
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=4719000
 export type TranscriptReplyPreview =
