@@ -18,3 +18,7 @@ Still open: durable volume/playback-position/speed policy, explicit quality sele
 
 ## Accounting
 After this complete read: recursive 16,120; read-through 5,177; unread 10,943; unknown 15,841; omitted 0. Unknown remains unchanged because these responsibilities are not yet fully implemented and verified. `baseline_ready=false`; `acceptance.accepted=false`.
+
+## Production follow-up on canonical MediaViewer
+
+The existing source-neutral MediaViewer now additionally persists user volume/mute preferences and a resumable playback position keyed by a deterministic hash of the source identity rather than storing the raw source path in the position key. Metadata load restores valid state; source replacement, unmount and pause persist it; time updates are bounded to one write per second; completion removes the resumable position. Storage access is fail-soft so unavailable/corrupt local storage cannot break playback. This is covered by `CONTRACT-TDRP-MEDIAVIEW-PLAYBACK-PERSISTENCE-001` and still does not close the broader mapped responsibilities in this dossier.
