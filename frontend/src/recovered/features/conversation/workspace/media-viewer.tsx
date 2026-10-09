@@ -7,7 +7,7 @@ import { PdfAttachmentViewer, type PdfBytesResolver } from "./pdf-viewer";
 import type { TranscriptAdjacency } from "./transcript-adjacency";
 import { resolveWithSingleRetry } from "./media-runtime";
 import { accumulateWheelZoomSteps, normalizeWheelZoomDelta } from "./media-zoom";
-import { DERIVED_MEDIA_PRELOAD_ROOT_MARGIN, DERIVED_MEDIA_THUMBNAIL_ROOT_MARGIN, isVisibilityBoundDerivedMedia, observeDerivedMediaVisibility, shouldResolveDerivedMedia, shouldResolveDerivedThumbnail } from "./media-visibility";
+import { DERIVED_MEDIA_PRELOAD_ROOT_MARGIN, DERIVED_MEDIA_THUMBNAIL_ROOT_MARGIN, initialDerivedMediaVisibility, isVisibilityBoundDerivedMedia, observeDerivedMediaVisibility, shouldResolveDerivedMedia, shouldResolveDerivedThumbnail } from "./media-visibility";
 import { SandIconButton } from "../../../ui/sand-kit-primitives";
 
 // @evidence src/app/dist/renderer/assets/view-DPSBrvyV.js#byteOffset=0 (user-attachment media/file leaf)
@@ -55,7 +55,14 @@ function clamp(value: number, minimum: number, maximum: number): number {
 function useNearViewport(enabled: boolean, rootMargin = DERIVED_MEDIA_PRELOAD_ROOT_MARGIN): [(element: HTMLElement | null) => void, boolean] {
   const [element, setElement] = useState<HTMLElement | null>(null);
   const [isNearViewport, setIsNearViewport] = useState(() => !enabled || typeof IntersectionObserver === "undefined");
-  const bindElement = useCallback((next: HTMLElement | null) => setElement(next), []);
+  const bindElement = useCallback((next: HTMLElement | null) => {
+    setElement(next);
+    if (!enabled) {
+      setIsNearViewport(true);
+      return;
+    }
+    setIsNearViewport(next == null ? false : initialDerivedMediaVisibility(next, rootMargin));
+  }, [enabled, rootMargin]);
 
   useEffect(() => {
     if (!enabled) {
