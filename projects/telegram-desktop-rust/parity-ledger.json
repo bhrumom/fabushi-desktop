@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16123,
     "unknown": 15844,
-    "unread": 10536,
+    "unread": 10534,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13497,6 +13497,6 @@
     "development_only_non_applicable": 66,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 5587
+    "read_through": 5589
   }
 }

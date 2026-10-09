@@ -438,3 +438,6 @@ Wallet background `MouseButtonPress` is swallowed while the top information box 
 
 
 | TDRP-R9-SETTINGS-CALLS-001 | ORA-TDRP-SETTINGS-CALLS-5586-5587 | INV-CALL-DEVICE-FALLBACK-001; INV-CALL-PERMISSION-001; INV-CALL-PREVIEW-FENCE-001; INV-CALL-AUTHORIZATION-001 | Canonical Settings + call media/device + account authorization owners | unit + media-device contract + permission fault + current-call/group-call preview cancellation + authorization server reconciliation + keyboard/a11y/light-dark/responsive E2E | mapped-open |
+
+
+| TDRP-R9-SETTINGS-CHAT-001 | ORA-TDRP-SETTINGS-CHAT-5588-5589 | INV-CHAT-THEME-SINGLE-OWNER-001; INV-CHAT-STORAGE-ROUTING-001; INV-CHAT-PRIVACY-ARCHIVE-001; INV-CHAT-SUPPORT-ACCOUNT-SCOPE-001 | Canonical Settings + Theme + Storage/Download + Privacy + Composer/Reaction + Support owners | unit + persistence/server contract + theme/file fault + account-switch cancellation + keyboard/focus/a11y/light-dark/responsive E2E | mapped-open |

@@ -91,9 +91,9 @@ release candidate 只有在 independent acceptance 为 ACCEPT、0 open P0/P1/blo
 
 每个模块继续执行 `unreviewed -> understood -> mapped -> implemented -> verified` 的真实证据路径。遇到 service/account/signing blocker，记录解除条件并继续推进所有不依赖该 blocker 的 responsibility。
 
-Current live authority (2026-10-09): `telegramdesktop/tdesktop@863cf10d9f34fb0b1b35b35da1bda75acfc58d2e` (root tree `5030985204963cbbd362ced7412d231b04ebd0cc`), three commits ahead of historical `42f8a36d43b8c805bc821905bea4cfeb3af1d41d`; 15 root paths changed (12 modified, 3 added), recursive denominator is 16,123, read-through is 5,587, unread is 10,536, unknown is 15,844, omitted is 0, and source closure remains open.
+Current live authority (2026-10-09): `telegramdesktop/tdesktop@863cf10d9f34fb0b1b35b35da1bda75acfc58d2e` (root tree `5030985204963cbbd362ced7412d231b04ebd0cc`), three commits ahead of historical `42f8a36d43b8c805bc821905bea4cfeb3af1d41d`; 15 root paths changed (12 modified, 3 added), recursive denominator is 16,123, read-through is 5,589, unread is 10,534, unknown is 15,844, omitted is 0, and source closure remains open.
 
-Current source accounting: deterministic read-through `5587/16123`; unread `10536`; unknown `15844`; unknown-closed `279`; omitted `0`. Orders 5001-5587 are exact-blob read-complete. Media-view/menu responsibilities and MTProto-derived transport/session/auth/config/security/proxy/error/schema/reconnect/bootstrap responsibilities remain mapped-open except for explicitly cited existing partial Fabushi slices; MTProto wire/socket/DC mechanics are source-neutral platform/protocol replacements, not a second runtime and not omitted. Unknown stays unchanged until complete responsibility and exact-head verification gates close; no baseline-ready or release credit is granted.
+Current source accounting: deterministic read-through `5589/16123`; unread `10534`; unknown `15844`; unknown-closed `279`; omitted `0`. Orders 5001-5589 are exact-blob read-complete. Media-view/menu responsibilities and MTProto-derived transport/session/auth/config/security/proxy/error/schema/reconnect/bootstrap responsibilities remain mapped-open except for explicitly cited existing partial Fabushi slices; MTProto wire/socket/DC mechanics are source-neutral platform/protocol replacements, not a second runtime and not omitted. Unknown stays unchanged until complete responsibility and exact-head verification gates close; no baseline-ready or release credit is granted.
 
 
 ### Read-through 5291-5300
@@ -181,6 +181,6 @@ Orders 5572-5580 are exact-blob read-complete. Detailed settings rows explicitly
 
 ### Rebaseline 42f8a36d -> 863cf10d
 
-Live root tree `5030985204963cbbd362ced7412d231b04ebd0cc` has 6,651 non-directory entries; recursive total is 16,123. Deterministic read-through is 5,587. First unread is order 5,588 `Telegram/SourceFiles/settings/sections/settings_chat.cpp` blob `0f48c2eaa80a66cf280abd50fd6d137e9d8dd7be`. Unknown is 15,844 and remains fail-closed.
+Live root tree `5030985204963cbbd362ced7412d231b04ebd0cc` has 6,651 non-directory entries; recursive total is 16,123. Deterministic read-through is 5,589. First unread is order 5,590 `Telegram/SourceFiles/settings/sections/settings_credits.cpp` blob `dbe0b4cf48e52c30e2066c6ad4181893ed604646`. Unknown is 15,844 and remains fail-closed.
 
 Changed prior-read blobs were re-read at their 863cf10d exact blob identities and re-decomposed. New `bot_menu.tgs` and `history_view_bot_menu_button.cpp/.h` are read-complete but mapped-open to canonical Composer + Button/IconButton + animation/resource owners. No source-named BotMenuButton product component is allowed. `chat.style` (order 5,941) and `wallet_content.cpp` (order 6,314) remain outside deterministic read-through; delta semantics are mapped-open without granting prefix credit.
