@@ -36,7 +36,17 @@ const manifests = fs.readdirSync(manifestDir)
 
 for (const name of manifests) {
   const manifest = JSON.parse(fs.readFileSync(path.join(manifestDir, name), 'utf8'));
-  if (manifest.accepted_upstream !== accepted) throw new Error(name + ': accepted upstream drift');
+  if (!/^[0-9a-f]{40}$/.test(manifest.accepted_upstream || '')) throw new Error(name + ': invalid accepted upstream');
+  if (!/^[0-9a-f]{40}$/.test(manifest.accepted_tree || '')) throw new Error(name + ': invalid accepted tree');
+  if (manifest.accepted_upstream !== accepted) {
+    try {
+      execFileSync('git', ['-C', work, 'merge-base', '--is-ancestor', manifest.accepted_upstream, accepted], { stdio: 'ignore' });
+    } catch {
+      throw new Error(name + ': accepted upstream is not an ancestor of live authority');
+    }
+  }
+  const manifestTree = run('git', ['-C', work, 'rev-parse', manifest.accepted_upstream + '^{tree}']);
+  if (manifestTree !== manifest.accepted_tree) throw new Error(name + ': accepted tree does not match manifest upstream');
   if (!Number.isInteger(manifest.start) || !Number.isInteger(manifest.end) || manifest.start > manifest.end) throw new Error(name + ': invalid bounds');
   if (!Array.isArray(manifest.entries) || manifest.entries.length !== manifest.end - manifest.start + 1) throw new Error(name + ': entry count mismatch');
   for (let i = 0; i < manifest.entries.length; i++) {
