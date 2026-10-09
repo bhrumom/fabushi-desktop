@@ -48,6 +48,7 @@ import {
   createComposerDraftStateStore,
   type ComposerDraftPersistence,
 } from "./conversation/workspace/draft-state.ts";
+import { createTranscriptAcknowledgementController } from "./conversation/workspace/acknowledgement.ts";
 import {
   isForwardRecipientNavigationKey,
   isForwardSubmitShortcut,
@@ -59,6 +60,81 @@ const flush = async (): Promise<void> => {
   await Promise.resolve();
   await Promise.resolve();
 };
+
+
+
+test("UNIT-FBCP-HUMAN-REMOTE-IDENTITY-SETTLEMENT-001 acknowledgement settlement fails closed on missing, foreign, and ambiguous nonce evidence", () => {
+  const controller = createTranscriptAcknowledgementController();
+  controller.setScope("account-a", "human-a");
+  assert.equal(controller.insertOptimistic({
+    accountSlot: "account-a",
+    agentId: "human-a",
+    nonce: "nonce-a",
+    entries: [{ id: "pending-nonce-a", kind: "message", clientNonce: "nonce-a" }],
+    phase: "dispatching",
+  }), true);
+
+  assert.equal(controller.reconcileEcho({
+    accountSlot: "account-a",
+    agentId: "human-a",
+    nonce: "nonce-a",
+  }), false, "a missing remote nonce cannot settle local optimistic state");
+  assert.equal(controller.reconcileEcho({
+    accountSlot: "account-a",
+    agentId: "human-a",
+    nonce: "nonce-a",
+    echoedNonce: "foreign-nonce",
+  }), false, "a foreign remote nonce cannot settle local optimistic state");
+  assert.equal(controller.getSnapshot().records.length, 1);
+
+  assert.equal(controller.reconcileEcho({
+    accountSlot: "account-a",
+    agentId: "human-a",
+    nonce: "nonce-a",
+    echoedNonce: "nonce-a",
+  }), true);
+  assert.equal(controller.getSnapshot().records.length, 0);
+
+  assert.equal(controller.insertOptimistic({
+    accountSlot: "account-a",
+    agentId: "human-a",
+    nonce: "nonce-shared",
+    entries: [{ id: "pending-human-a", kind: "message", clientNonce: "nonce-shared" }],
+    phase: "dispatching",
+  }), true);
+  assert.equal(controller.insertOptimistic({
+    accountSlot: "account-a",
+    agentId: "human-b",
+    nonce: "nonce-shared",
+    entries: [{ id: "pending-human-b", kind: "message", clientNonce: "nonce-shared" }],
+    phase: "dispatching",
+  }), true);
+  assert.equal(controller.reconcileEcho({
+    accountSlot: "account-a",
+    agentId: "human-a",
+    nonce: "nonce-shared",
+    echoedNonce: "nonce-shared",
+  }), false, "same-account nonce ambiguity must fail closed instead of choosing iteration order");
+  controller.setScope("account-a", "human-a");
+  assert.equal(controller.getSnapshot().records.length, 1);
+  controller.setScope("account-a", "human-b");
+  assert.equal(controller.getSnapshot().records.length, 1);
+  controller.dispose();
+});
+
+test("CONTRACT-FBCP-HUMAN-REMOTE-IDENTITY-SETTLEMENT-001 shipping Human send requires exact durable id and remote nonce before replacing pending state", () => {
+  const source = readFileSync(new URL("../../production/ProductionRenderer.tsx", import.meta.url), "utf8");
+  const acknowledgement = readFileSync(new URL("./conversation/workspace/acknowledgement.ts", import.meta.url), "utf8");
+  assert.match(source, /authoritative\.clientNonce !== submission\.nonce/);
+  assert.match(source, /authoritative\.id === "entry-0"/);
+  assert.match(source, /authoritative\.id === `pending-\$\{submission\.nonce\}`/);
+  assert.match(source, /correlated\.length !== 1/);
+  assert.match(source, /echoedNonce: authoritative\.clientNonce/);
+  assert.match(source, /if \(!reconciled\)/);
+  assert.match(acknowledgement, /input\.echoedNonce == null \|\| input\.echoedNonce\.length === 0/);
+  assert.match(acknowledgement, /if \(matched != null\) return null/);
+  assert.match(acknowledgement, /!recordMatches\(match\[1\], input\.echoedNonce\)/);
+});
 
 test("timeline event registry validates protocol rows and descriptions", () => {
   const event = projectTimelineEvent({

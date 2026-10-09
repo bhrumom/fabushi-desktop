@@ -1216,27 +1216,37 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         ...(submission.scheduledAtMs == null ? {} : { scheduledAtMs: submission.scheduledAtMs })
       });
       const authoritative = projectTranscriptEntry(result, 0, humanConversation.name, humanConversation.id);
-      if (authoritative != null) {
-        setEntriesByAgent((current) => {
-          const existing = current[submission.agentId] ?? [];
-          const correlatedIndex = existing.findIndex((entry) =>
-            entry.id === authoritative.id
-            || (entry.kind === "message" && entry.clientNonce === submission.nonce)
-          );
-          return {
-            ...current,
-            [submission.agentId]: correlatedIndex < 0
-              ? [...existing, authoritative]
-              : existing.map((entry, index) => index === correlatedIndex ? authoritative : entry)
-          };
-        });
-        acknowledgementController.reconcileEcho({
-          accountSlot: acknowledgementScopeRef.current.accountSlot,
-          agentId: submission.agentId,
-          nonce: submission.nonce,
-          echoedNonce: submission.nonce
-        });
+      const existing = entriesByAgentRef.current[submission.agentId] ?? [];
+      const correlated = authoritative == null ? [] : existing.filter((entry) =>
+        entry.id === authoritative.id
+        || (entry.kind === "message" && entry.clientNonce === submission.nonce)
+      );
+      if (authoritative == null
+        || authoritative.kind !== "message"
+        || authoritative.role !== "user"
+        || authoritative.id === "entry-0"
+        || authoritative.id === `pending-${submission.nonce}`
+        || authoritative.clientNonce !== submission.nonce
+        || correlated.length !== 1) {
+        throw new Error("sendHumanMessage returned missing or ambiguous durable message identity");
       }
+      const reconciled = acknowledgementController.reconcileEcho({
+        accountSlot: acknowledgementScopeRef.current.accountSlot,
+        agentId: submission.agentId,
+        nonce: submission.nonce,
+        echoedNonce: authoritative.clientNonce
+      });
+      if (!reconciled) {
+        throw new Error("sendHumanMessage returned missing or ambiguous acknowledgement identity");
+      }
+      const correlatedId = correlated[0]?.id;
+      setEntriesByAgent((current) => {
+        const live = current[submission.agentId] ?? [];
+        return {
+          ...current,
+          [submission.agentId]: live.map((entry) => entry.id === correlatedId ? authoritative : entry)
+        };
+      });
       // sendHumanMessage is the authoritative settlement for this submission.
       // Keep the unrelated sidebar roster refresh out of the send lifecycle so
       // an accepted draft clears before the next user edit, and a slow/failed
