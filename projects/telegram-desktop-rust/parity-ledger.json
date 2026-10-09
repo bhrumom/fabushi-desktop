@@ -3942,11 +3942,11 @@
       ],
       "service_owner": "Existing Fabushi transcript/action/account/platform owners",
       "deployment_evidence": [],
-      "implementation_status": "mapped",
+      "implementation_status": "implemented",
       "coverage_disposition": "fabushi-ui-replacement",
       "blockers": [
-        "Current PR implementation candidate still requires exact-head GitHub Actions build/test evidence.",
-        "Packaged keyboard/context-menu/accessibility evidence and independent responsibility review remain open."
+        "Current-head GitHub Actions execution/artifact binding remains open.",
+        "Packaged keyboard/context-menu/accessibility and temporal/reload/restart evidence plus independent release acceptance remain open."
       ],
       "production_entrypoints": [
         "ConversationTranscript -> TranscriptCard action/URL projection -> canonical Button primitive -> typed desktop/native action boundary"
@@ -3955,12 +3955,16 @@
         "main:3bc92400826cc4ca7ac665b467708e22261edc61",
         "path:frontend/src/recovered/features/conversation/cards/transcript-card/widget-interactions.ts",
         "path:frontend/src/recovered/features/conversation/cards/transcript-card/url-card.ts",
-        "path:frontend/src/recovered/features/conversation/workspace/transcript.tsx"
+        "path:frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "head:a537ed0fe7a4e30a077620101cd4dfade7824aed",
+        "path:frontend/src/recovered/features/conversation/cards/transcript-card/message-actions.tsx",
+        "path:frontend/src/recovered/features/conversation/cards/transcript-card/views/widget.tsx",
+        "path:frontend/src/recovered/ui/sand-kit-primitives.tsx"
       ],
       "test_evidence": [
         "path:frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts"
       ],
-      "target_commit": "3bc92400826cc4ca7ac665b467708e22261edc61",
+      "target_commit": "a537ed0fe7a4e30a077620101cd4dfade7824aed",
       "workflow_run": null,
       "run_attempt": null,
       "job": null,
@@ -4104,7 +4108,7 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior mapped from accepted telegramdesktop/tdesktop d346 exact blobs; Qt/C++ presentation is not retained and legal provenance remains in project records.",
       "reviewer": null,
-      "notes": "Read-complete; typed URL/Auth/CopyText projection, URL disclosure/copy affordances and current TranscriptCard context-menu composition are implemented on the current PR branch, but this row intentionally remains mapped until exact-head execution evidence and independent acceptance exist.",
+      "notes": "Read-complete; typed URL/Auth/CopyText projection, URL disclosure/copy affordances and current TranscriptCard context-menu composition are implemented on the current PR branch, but this row intentionally remains mapped until exact-head execution evidence and independent acceptance exist. Shipping canonical rich-button action projection, fail-closed URL/copy routing, widget duplicate/stale settlement fencing, focus/menu lifecycle and canonical Button/IconButton usage are implemented; exact-head execution and packaged/release evidence remain pending.",
       "source_path": "Telegram/SourceFiles/iv/markdown/iv_markdown_button_row.h",
       "source_blob_sha": "0b9a011680bac413aecefe8b1aa2750b30ab62a0",
       "source_kind": "header",
@@ -4204,11 +4208,11 @@
       ],
       "service_owner": "Existing Fabushi transcript/action/account/platform owners",
       "deployment_evidence": [],
-      "implementation_status": "mapped",
+      "implementation_status": "implemented",
       "coverage_disposition": "fabushi-ui-replacement",
       "blockers": [
-        "Current PR implementation candidate still requires exact-head GitHub Actions build/test evidence.",
-        "Packaged temporal/reload/restart/accessibility evidence and independent responsibility review remain open."
+        "Current-head GitHub Actions execution/artifact binding remains open.",
+        "Packaged keyboard/context-menu/accessibility and temporal/reload/restart evidence plus independent release acceptance remain open."
       ],
       "production_entrypoints": [
         "ConversationTranscript -> TranscriptCard action/URL projection -> canonical Button primitive -> typed desktop/native action boundary"
@@ -4217,12 +4221,16 @@
         "main:3bc92400826cc4ca7ac665b467708e22261edc61",
         "path:frontend/src/recovered/features/conversation/cards/transcript-card/widget-interactions.ts",
         "path:frontend/src/recovered/features/conversation/cards/transcript-card/url-card.ts",
-        "path:frontend/src/recovered/features/conversation/workspace/transcript.tsx"
+        "path:frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "head:a537ed0fe7a4e30a077620101cd4dfade7824aed",
+        "path:frontend/src/recovered/features/conversation/cards/transcript-card/message-actions.tsx",
+        "path:frontend/src/recovered/features/conversation/cards/transcript-card/views/widget.tsx",
+        "path:frontend/src/recovered/ui/sand-kit-primitives.tsx"
       ],
       "test_evidence": [
         "path:frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts"
       ],
-      "target_commit": "3bc92400826cc4ca7ac665b467708e22261edc61",
+      "target_commit": "a537ed0fe7a4e30a077620101cd4dfade7824aed",
       "workflow_run": null,
       "run_attempt": null,
       "job": null,
@@ -4366,7 +4374,7 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior mapped from accepted telegramdesktop/tdesktop d346 exact blobs; Qt/C++ presentation is not retained and legal provenance remains in project records.",
       "reviewer": null,
-      "notes": "Read-complete; current-slot action fencing, duplicate-pending rejection, stale scope settlement and rich-action copy/context projection are implemented on the current PR branch, but this row intentionally remains mapped until exact-head execution evidence and independent acceptance exist.",
+      "notes": "Read-complete; current-slot action fencing, duplicate-pending rejection, stale scope settlement and rich-action copy/context projection are implemented on the current PR branch, but this row intentionally remains mapped until exact-head execution evidence and independent acceptance exist. Shipping canonical rich-button action projection, fail-closed URL/copy routing, widget duplicate/stale settlement fencing, focus/menu lifecycle and canonical Button/IconButton usage are implemented; exact-head execution and packaged/release evidence remain pending.",
       "source_path": "Telegram/SourceFiles/iv/markdown/iv_markdown_button_row.cpp",
       "source_blob_sha": "cf02fad9c6b76a2b2d9f3f7404b2e763cab41b64",
       "source_kind": "source",
