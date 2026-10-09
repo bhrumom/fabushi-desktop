@@ -408,3 +408,18 @@ Dossier: `projects/telegram-desktop-rust/dossiers/build-provenance-resolution-cc
 - `INV-TDRP-R9-BUSINESS-RECIPIENT-SCOPE-001`: all-except and selected-only maintain exact include/exclude/type invariants; settings UI never becomes delivery truth.
 - Dossier: `projects/telegram-desktop-rust/dossiers/business-cloud-password-5541-5571-complete-read.md`.
 - These rows grant source-read/traceability credit only.
+
+
+### TDRP Revision 9 settings source-read requirements 5572-5580
+
+| requirement | risk | invariant | exact source evidence | production status |
+| --- | --- | --- | --- | --- |
+| TDRP-R9-SETTINGS-SWITCH-A11Y-5572-5573 | medium | settings toggle exposes checkable/Switch semantics and lock/disabled state cannot mutate canonical value | shard/manifest/dossier | MAPPED-SOURCE-READ-PRODUCTION-OPEN |
+| TDRP-R9-ACTIVE-SESSIONS-5574-5576 | critical | session identity/hash, current/incomplete classification, terminate scope and TTL remain server-backed and fail closed | same | MAPPED-SOURCE-READ-PRODUCTION-OPEN |
+| TDRP-R9-ADVANCED-SETTINGS-5577-5578 | critical | network/storage/window/tray/autostart/update/archive controls mutate only canonical owners and obey platform capability/security constraints | same | MAPPED-SOURCE-READ-PRODUCTION-PARTIAL |
+| TDRP-R9-BLOCKED-PEERS-5579-5580 | critical | block state is canonical privacy state; counts/list/empty UI are reactive projections only | same | MAPPED-SOURCE-READ-PRODUCTION-OPEN |
+
+- `INV-TDRP-R9-ACTIVE-SESSION-HASH-001`: terminate-one must target the exact active authorization hash and never the current session by display inference.
+- `INV-TDRP-R9-AUTOSTART-PASSCODE-001`: start-minimized remains disallowed when a local passcode requires an interactive verified launch prompt.
+- `INV-TDRP-R9-SETTINGS-A11Y-001`: a custom toggle must preserve semantic checkable role/state, keyboard behavior and locked/disabled non-mutation.
+- Dossier: `projects/telegram-desktop-rust/dossiers/settings-sessions-advanced-blocked-5572-5580-complete-read.md`.

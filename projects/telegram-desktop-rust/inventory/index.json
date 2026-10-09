@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15841,
-    "unread_minimum": 10549,
+    "unread_minimum": 10540,
     "omitted_known": 0,
-    "note": "Live 42f8a36d recursive census remains 16,120. Read-through 5,571; unknown 15,841, unread 10,549, omitted 0. Orders 5541-5549 cover business quick replies/recipient policies/templates/working hours; 5550-5571 cover the complete cloud-password settings flow through enrollment, recovery email, email/login-email verification, reset/cancel-reset, manage/disable, invalidation and idle expiry. All remain mapped-open pending canonical production and same-head evidence."
+    "note": "Live 42f8a36d recursive census remains 16,120. Read-through 5,580; unknown 15,841, unread 10,540, omitted 0. Orders 5572-5580 cover accessible detailed settings toggles, active authorization/session management, advanced platform/network/storage/update/archive settings and blocked-peer privacy management. Read credit only; production equivalence remains open."
   },
   "latest_recursive_evidence": {
     "run_id": 37872749663,
@@ -46,7 +46,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live authority exact through deterministic order 5,571; unread_minimum is 10,549; unknown remains 15,841; omitted remains 0.",
+  "note": "Live authority exact through deterministic order 5,580; unread_minimum is 10,540; unknown remains 15,841; omitted remains 0.",
   "rebaseline": {
     "from_commit": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
     "to_commit": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
@@ -63,8 +63,8 @@
       "Telegram/build/version",
       "changelog.txt"
     ],
-    "current_head_source_authority_evidence": "Fresh exact-head Source authority evidence is required after adding deterministic orders 5541-5571; predecessor artifacts do not grant current-head acceptance.",
-    "current_source_read_through": 5571
+    "current_head_source_authority_evidence": "Fresh exact-head Source authority evidence is required after adding deterministic orders 5572-5580; predecessor artifacts do not grant current-head acceptance.",
+    "current_source_read_through": 5580
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -73,6 +73,6 @@
     "development_only_non_applicable": 66,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 5571
+    "read_through": 5580
   }
 }

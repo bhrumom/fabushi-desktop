@@ -93,7 +93,7 @@ release candidate 只有在 independent acceptance 为 ACCEPT、0 open P0/P1/blo
 
 Current live authority (2026-10-09): `telegramdesktop/tdesktop@42f8a36d43b8c805bc821905bea4cfeb3af1d41d` (root tree `6ac9bbc1b44edcb119b1a724e7b0a321c3b7b8fa`), four commits ahead of historical `3a15bf1fe34b6950916215a11b50eadfce4bbb41`; exactly nine existing paths changed, no add/delete/gitlink change, recursive denominator remains 16,120, and source closure remains open.
 
-Current source accounting: deterministic read-through `5571/16120`; unread `10549`; unknown `15841`; unknown-closed `279`; omitted `0`. Orders 5001-5571 are exact-blob read-complete. Media-view/menu responsibilities and MTProto-derived transport/session/auth/config/security/proxy/error/schema/reconnect/bootstrap responsibilities remain mapped-open except for explicitly cited existing partial Fabushi slices; MTProto wire/socket/DC mechanics are source-neutral platform/protocol replacements, not a second runtime and not omitted. Unknown stays unchanged until complete responsibility and exact-head verification gates close; no baseline-ready or release credit is granted.
+Current source accounting: deterministic read-through `5580/16120`; unread `10540`; unknown `15841`; unknown-closed `279`; omitted `0`. Orders 5001-5580 are exact-blob read-complete. Media-view/menu responsibilities and MTProto-derived transport/session/auth/config/security/proxy/error/schema/reconnect/bootstrap responsibilities remain mapped-open except for explicitly cited existing partial Fabushi slices; MTProto wire/socket/DC mechanics are source-neutral platform/protocol replacements, not a second runtime and not omitted. Unknown stays unchanged until complete responsibility and exact-head verification gates close; no baseline-ready or release credit is granted.
 
 
 ### Read-through 5291-5300
@@ -173,3 +173,8 @@ Orders 5530-5540 are exact-blob read-complete. Away Message, Chat Intro, Busines
 ### Read-through 5541-5571
 
 Orders 5541-5549 are exact-read business quick-reply, recipient-scope, shortcut-message and working-hours responsibilities. They enforce premium/count/name/message limits, include/exclude invariants, per-day interval normalization including next-day ranges, and timezone fallback/loading; no equivalent complete canonical owner has yet been proven. Orders 5550-5571 are the cloud-password/account-security flow: transient StepData, password create/check/change, recovery email, email/login-email codes, password hint constraints, reset/pending-reset/cancel-reset, manage/disable, 10-minute idle expiry, and cross-device password-change invalidation. Repository search did not prove an equivalent complete 2SV/recovery state machine. These remain critical mapped-open security responsibilities; unknown stays 15,841 and omitted stays 0.
+
+
+### Read-through 5572-5580
+
+Orders 5572-5580 are exact-blob read-complete. Detailed settings rows explicitly carry Switch/checkable accessibility semantics. Active Sessions manages current/incomplete/other authorizations, 60-second refresh, device naming, terminate-one/all and auto-terminate TTL. Advanced settings span source-neutral network/proxy, download/storage, auto-download, title/frame, tray/taskbar/close behavior, autostart, updater, power/archive and platform capability surfaces. Blocked Peers is a canonical privacy list with reactive server-backed state. These rows remain mapped-open until same-head product/security/a11y evidence proves equivalence; unknown remains 15,841.
