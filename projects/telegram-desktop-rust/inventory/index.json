@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15988,
-    "unread_minimum": 14070,
+    "unread_minimum": 14020,
     "omitted_known": 0,
-    "note": "Live 22b352e recursive census is 16,120. 2,050 exact entries are read-complete; 132 are explicitly unknown-closed; unknown 15,988, unread 14,070, omitted 0. Orders 2001-2050 are exact-source read and responsibility-decomposed to the canonical Rich Content/IV editor owner; implementation gates remain open."
+    "note": "Live 22b352e recursive census is 16,120. 2,100 exact entries are read-complete; 132 are explicitly unknown-closed; unknown 15,988, unread 14,020, omitted 0. Orders 2051-2100 are consumer-traced and responsibility-decomposed with real multi-owner caller splits; implementation gates remain open."
   },
   "latest_recursive_evidence": {
     "run_id": 37864697175,
@@ -127,6 +127,6 @@
     "development_only_non_applicable": 66,
     "unknown_closed": 132,
     "omitted": 0,
-    "read_through": 2050
+    "read_through": 2100
   }
 }
