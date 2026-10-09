@@ -825,3 +825,66 @@ test("OS notification action failures preserve exact scope for retry", async () 
   assert.deepEqual(failures, ["mark-read"]);
   assert.equal(closeCount, 0);
 });
+
+
+test("attachment download rejects transfer identity drift and removes partial output", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "fabushi-attachment-download-"));
+  const target = join(dir, "download.bin");
+  const failures: Array<{ leg: string; errorClass: string }> = [];
+  let reads = 0;
+  try {
+    const edge = createAttachmentEdgePort({
+      legs: {
+        async readAttachmentChunk(request: { path: string; offset: number; length: number }) {
+          reads += 1;
+          if (request.length === 0) return { totalSize: 4, bytesBase64: "" };
+          return { totalSize: 5, bytesBase64: Buffer.from("abcd").toString("base64") };
+        },
+      },
+      getMainWindow: () => null,
+      onEdgeFailure: (failure: { leg: string; errorClass: string }) => failures.push(failure),
+      downloadsDir: dir,
+      resolveSuggestedDownloadName: () => "download.bin",
+      resolveDefaultDownloadPath: () => target,
+      showSaveDialog: async () => ({ canceled: false, filePath: target }),
+      createHiddenWindow: () => ({}),
+      showErrorMessage: async () => {},
+    } as unknown as AttachmentEdgeDeps);
+    assert.equal(await edge.download("/remote/file", "download.bin"), false);
+    assert.equal(reads, 2);
+    assert.equal(existsSync(target), false);
+    assert.ok(failures.some((failure) => failure.leg === "download" && failure.errorClass === "transfer-identity-changed"));
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test("attachment download rejects invalid totals and oversized chunks", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "fabushi-attachment-download-size-"));
+  const target = join(dir, "download.bin");
+  const failures: Array<{ leg: string; errorClass: string }> = [];
+  try {
+    let mode: "invalid-total" | "oversized" = "invalid-total";
+    const edge = createAttachmentEdgePort({
+      legs: {
+        async readAttachmentChunk(request: { path: string; offset: number; length: number }) {
+          if (request.length === 0) return { totalSize: mode === "invalid-total" ? -1 : 2, bytesBase64: "" };
+          return { totalSize: 2, bytesBase64: Buffer.from("abc").toString("base64") };
+        },
+      },
+      getMainWindow: () => null,
+      onEdgeFailure: (failure: { leg: string; errorClass: string }) => failures.push(failure),
+      downloadsDir: dir,
+      resolveSuggestedDownloadName: () => "download.bin",
+      resolveDefaultDownloadPath: () => target,
+      showSaveDialog: async () => ({ canceled: false, filePath: target }),
+      createHiddenWindow: () => ({}),
+      showErrorMessage: async () => {},
+    } as unknown as AttachmentEdgeDeps);
+    assert.equal(await edge.download("/remote/file", "download.bin"), false);
+    assert.equal(existsSync(target), false);
+    assert.ok(failures.some((failure) => failure.errorClass === "invalid-total-size"));
+    mode = "oversized";
+    assert.equal(await edge.download("/remote/file", "download.bin"), false);
+    assert.equal(existsSync(target), false);
+    assert.ok(failures.some((failure) => failure.errorClass === "invalid-chunk-size"));
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});

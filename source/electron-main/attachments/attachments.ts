@@ -115,11 +115,24 @@ export function createAttachmentEdgePort(deps: AttachmentEdgeDeps) {
     async download(source: unknown, suggestedName: unknown): Promise<boolean> {
       const path = normalizeAttachmentSource(source); if (path == null) return await failDownload("invalid-source");
       let probe: AttachmentChunk | null; try { probe = await deps.legs.readAttachmentChunk({ path, offset: 0, length: 0 }); } catch (error) { return await failDownload(errorClassOf(error)); } if (probe == null) return await failDownload("unavailable");
+      if (!Number.isSafeInteger(probe.totalSize) || probe.totalSize < 0) return await failDownload("invalid-total-size");
       try {
         const defaultPath = deps.resolveDefaultDownloadPath({ fileName: deps.resolveSuggestedDownloadName({ suggestedName, sourcePath: path }), configuredDir: null, osDownloadsDir: deps.downloadsDir }); const prompt = await deps.showSaveDialog(deps.getMainWindow() ?? deps.createHiddenWindow({ show: false }), { defaultPath }); if (prompt.canceled || prompt.filePath == null || prompt.filePath.length === 0) return false;
         let handle; try { handle = await open(prompt.filePath, "w"); } catch (error) { return await failDownload(errorClassOf(error)); }
-        let offset = 0; let failure = "transfer-failed"; try { while (offset < probe.totalSize) { const chunk = await deps.legs.readAttachmentChunk({ path, offset, length: GATEWAY_READ_CHUNK_BYTES }); if (chunk == null) break; const bytes = Buffer.from(chunk.bytesBase64, "base64"); if (bytes.length === 0) break; await handle.write(bytes, 0, bytes.length, offset); offset += bytes.length; } } catch (error) { failure = errorClassOf(error); } finally { await handle.close(); }
-        if (offset >= probe.totalSize) return true; try { await rm(prompt.filePath, { force: true }); } catch (error) { if (failure === "transfer-failed") failure = errorClassOf(error); } return await failDownload(failure);
+        let offset = 0; let failure = "transfer-failed"; try {
+          while (offset < probe.totalSize) {
+            const requestedLength = Math.min(GATEWAY_READ_CHUNK_BYTES, probe.totalSize - offset);
+            const chunk = await deps.legs.readAttachmentChunk({ path, offset, length: requestedLength });
+            if (chunk == null) break;
+            if (chunk.totalSize !== probe.totalSize) { failure = "transfer-identity-changed"; break; }
+            const bytes = Buffer.from(chunk.bytesBase64, "base64");
+            if (bytes.length === 0) break;
+            if (bytes.length > requestedLength) { failure = "invalid-chunk-size"; break; }
+            await handle.write(bytes, 0, bytes.length, offset);
+            offset += bytes.length;
+          }
+        } catch (error) { failure = errorClassOf(error); } finally { await handle.close(); }
+        if (offset === probe.totalSize) return true; try { await rm(prompt.filePath, { force: true }); } catch (error) { if (failure === "transfer-failed") failure = errorClassOf(error); } return await failDownload(failure);
       } catch (error) { return await failDownload(errorClassOf(error)); }
     },
   };
