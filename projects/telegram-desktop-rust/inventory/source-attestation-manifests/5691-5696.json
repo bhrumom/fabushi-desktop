@@ -1,0 +1,45 @@
+{
+  "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+  "accepted_tree": "5030985204963cbbd362ced7412d231b04ebd0cc",
+  "deterministic_order_basis": "non-directory/blob rank in accepted recursive tree",
+  "start": 5691,
+  "end": 5696,
+  "entries": [
+    {
+      "order": 5691,
+      "path": "Telegram/SourceFiles/statistics/widgets/chart_header_widget.cpp",
+      "blob": "b8754ceb6388ac856183b5bec7bd58cb3d923684",
+      "consumer_symbol": "chart_header_widget.cpp"
+    },
+    {
+      "order": 5692,
+      "path": "Telegram/SourceFiles/statistics/widgets/chart_header_widget.h",
+      "blob": "22056db3f1544770f6d98fac64f3225997e81c12",
+      "consumer_symbol": "chart_header_widget.h"
+    },
+    {
+      "order": 5693,
+      "path": "Telegram/SourceFiles/statistics/widgets/chart_lines_filter_widget.cpp",
+      "blob": "30bf2b9fb6b0cd3b737d9ba9f371779cc47d6a31",
+      "consumer_symbol": "chart_lines_filter_widget.cpp"
+    },
+    {
+      "order": 5694,
+      "path": "Telegram/SourceFiles/statistics/widgets/chart_lines_filter_widget.h",
+      "blob": "b27f1342009820188107bbfa03c2a0793fdb38e0",
+      "consumer_symbol": "chart_lines_filter_widget.h"
+    },
+    {
+      "order": 5695,
+      "path": "Telegram/SourceFiles/statistics/widgets/point_details_widget.cpp",
+      "blob": "b0cc6ba8abeed2756377d425152a1ea5930f31ad",
+      "consumer_symbol": "point_details_widget.cpp"
+    },
+    {
+      "order": 5696,
+      "path": "Telegram/SourceFiles/statistics/widgets/point_details_widget.h",
+      "blob": "7d6a39b90717d4564c6934aaed700641043e01f8",
+      "consumer_symbol": "point_details_widget.h"
+    }
+  ]
+}

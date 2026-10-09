@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15844,
-    "unread_minimum": 10433,
+    "unread_minimum": 10427,
     "omitted_known": 0,
-    "note": "Live 863cf10d recursive census 16,123. Accepted-tree blob order exact through 5,690; unknown 15,844, unread 10,433, omitted 0. Orders 5,685-5,690 cover stack-chart geometry/indexing plus stack-linear percentage aggregation and local zoom/pie transition state."
+    "note": "Live 863cf10d recursive census 16,123. Accepted-tree blob order exact through 5,696; unknown 15,844, unread 10,427, omitted 0. Orders 5,691-5,696 close statistics widgets: header, line filters and interactive localized/currency point details."
   },
   "latest_recursive_evidence": {
     "run_id": 37872749663,
@@ -46,7 +46,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live authority exact through deterministic blob order 5,690; unread_minimum is 10,433; unknown remains 15,844; omitted remains 0.",
+  "note": "Live authority exact through deterministic blob order 5,696; unread_minimum is 10,427; unknown remains 15,844; omitted remains 0.",
   "rebaseline": {
     "from_commit": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
     "to_commit": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
@@ -70,9 +70,9 @@
       "Telegram/SourceFiles/wallet/wallet_content.cpp"
     ],
     "current_head_source_authority_evidence": "Fresh exact-head Source authority evidence required after the 863cf10d rebaseline; predecessor artifacts are historical only.",
-    "current_source_read_through": 5690,
-    "first_unread_order": 5691,
-    "first_unread_path": "Telegram/SourceFiles/statistics/widgets/chart_header_widget.cpp"
+    "current_source_read_through": 5696,
+    "first_unread_order": 5697,
+    "first_unread_path": "PENDING accepted-tree next blob after statistics/widgets"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -81,6 +81,6 @@
     "development_only_non_applicable": 66,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 5690
+    "read_through": 5696
   }
 }

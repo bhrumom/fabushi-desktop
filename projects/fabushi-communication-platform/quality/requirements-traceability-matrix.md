@@ -562,3 +562,12 @@ Dossier: `projects/telegram-desktop-rust/dossiers/statistics-chart-view-5675-568
 | TDRP-R9-CHART-STACK-5685-5690 | high | stack/pie geometry and local zoom are derived from canonical analytics/filter state, percentage settlement is deterministic, and zero/short/invalid range inputs fail closed | Analytics/Insights + reusable Chart design system | mapped-open |
 
 Dossier: `projects/telegram-desktop-rust/dossiers/statistics-stack-pie-5685-5690-complete-read.md`.
+
+
+## TDRP Statistics widgets 5691–5696
+
+| requirement_id | risk | invariant | production owner | verdict |
+| --- | --- | --- | --- | --- |
+| TDRP-R9-CHART-WIDGETS-5691-5696 | high | canonical controls project chart title/filter/details state without owning analytics or wallet truth; last-visible-series guard, locale/currency, keyboard/focus/a11y and responsive/theme/DPR behavior are preserved | Analytics/Insights + canonical design system | mapped-open |
+
+Dossier: `projects/telegram-desktop-rust/dossiers/statistics-widgets-5691-5696-complete-read.md`.
