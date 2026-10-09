@@ -1493,7 +1493,7 @@
       "referencePath": "source/electron-main/attachments/attachments.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "2c1360cc8a84e1b856f677f262b0c579fbce85df",
+      "targetBlobSha": "9fb1ed46b2ae623e7fa781d6d3ab47f465f4a332",
       "behavioralEvidence": [
         "source/electron-main/attachments/attachments.ts"
       ],

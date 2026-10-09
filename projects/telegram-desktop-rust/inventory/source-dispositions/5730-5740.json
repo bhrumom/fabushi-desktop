@@ -313,7 +313,7 @@
     {
       "recursive_order": 5739,
       "source_path": "Telegram/SourceFiles/storage/storage_sparse_ids_list.cpp",
-      "source_blob_sha": "cc0e3ed6b2c763326c2b16635a7671a747ef506b",
+      "source_blob_sha": "cc0e3ed6b2c763326c2c16635a7671a747ef506b",
       "read_complete": true,
       "responsibility_decomposition_complete": true,
       "responsibility": "Sparse message-id range merge/count/query implementation preserving no-skip ranges, server-total semantics, pagination skipped counts and bottom invalidation.",
@@ -338,7 +338,7 @@
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-required",
         "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
-        "verified_blob_sha": "cc0e3ed6b2c763326c2b16635a7671a747ef506b",
+        "verified_blob_sha": "cc0e3ed6b2c763326c2c16635a7671a747ef506b",
         "file_type": "blob",
         "recursive_order": 5739
       }
