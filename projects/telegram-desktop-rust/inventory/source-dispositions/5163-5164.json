@@ -26,10 +26,10 @@
       "failure_cases": "stale media or async recognition survives source/session replacement; playback position/quality lost or resurrected incorrectly; call pause resumes when it should not; failed stream loops without fail-closed fallback; PiP/fullscreen transition duplicates player ownership; TTL media survives close; screenshot protection drops on native handle changes; hidden viewer retains timers/stream/resources; viewer shortcuts steal control input.",
       "ui_disposition": "Decompose into existing canonical MediaViewer/ConversationWorkspace, Chromium media element/compositor, canonical permissions/resource owners and platform adapters. Do not introduce Telegram OverlayWidget or a second media runtime. Canonical controls/components and source-neutral names only.",
       "fabushi_canonical_owner": "frontend/src/recovered/features/conversation/workspace/media-viewer.tsx with existing ConversationWorkspace/resource/runtime/platform composition",
-      "fabushi_target": "MAPPED OPEN. This cycle added reachable Chromium native playback controls and replacement/unmount playback fencing in the canonical MediaViewer. Remaining persistence, call interruption, explicit speed/quality policy, system-media-control integration, PiP geometry, TTL/single-view, screenshot-protection and recognition/service responsibilities require existing-owner implementation plus focused exact-head evidence.",
+      "fabushi_target": "MAPPED OPEN. Implemented in canonical MediaViewer: Chromium native controls, replacement/unmount playback fencing, media-input arbitration, fullscreen Escape behavior, source-neutral volume/mute persistence and hashed per-source resumable playback position. Still open: call interruption, speed/quality policy, Media Session, deterministic PiP geometry/ownership, TTL/single-view, screenshot protection, recognition and broader service/platform composition.",
       "platform_differences": "Qt window/RHI/event-filter mechanics are not copied. Electron/Chromium supplies media rendering/fullscreen/PiP primitives; Fabushi must preserve product lifecycle, durable state, security, input, error and accessibility semantics through its existing source-neutral owners.",
-      "production_evidence": "projects/telegram-desktop-rust/dossiers/media-view-overlay-lifecycle-5163-5164-complete-read.md; frontend/src/recovered/features/conversation/workspace/media-viewer.tsx contains partial native playback implementation; remaining responsibilities open.",
-      "test_evidence": "CONTRACT-TDRP-MEDIAVIEW-NATIVE-PLAYBACK-001 covers the partial canonical playback/input lifecycle; later focused unit/integration/E2E/packaged security/TTL/PiP/system-media evidence remains required.",
+      "production_evidence": "projects/telegram-desktop-rust/dossiers/media-view-overlay-lifecycle-5163-5164-complete-read.md; frontend/src/recovered/features/conversation/workspace/media-viewer.tsx contains partial native playback implementation; remaining responsibilities open. Production follow-up: frontend/src/recovered/features/conversation/workspace/media-viewer.tsx persists source-neutral volume/mute preferences and hashed per-source resumable playback position with replacement/unmount/pause/ended lifecycle fencing.",
+      "test_evidence": "CONTRACT-TDRP-MEDIAVIEW-NATIVE-PLAYBACK-001 covers the partial canonical playback/input lifecycle; later focused unit/integration/E2E/packaged security/TTL/PiP/system-media evidence remains required. CONTRACT-TDRP-MEDIAVIEW-PLAYBACK-PERSISTENCE-001 binds hashed-key, restoration, throttled timeupdate, close/replacement and fail-soft storage semantics.",
       "disposition": "mapped-open-media-view-lifecycle",
       "unknown_closed": false,
       "omitted": false,
@@ -47,7 +47,7 @@
         "file_type": "blob",
         "recursive_order": 5163
       },
-      "notes": "Read-complete only for source accounting; broad mixed responsibility remains mapped-open and receives no unknown/verification/release credit."
+      "notes": "Read-complete only for source accounting; broad mixed responsibility remains mapped-open and receives no unknown/verification/release credit. Current production slice also implements volume/mute persistence and resumable playback position; the broader mapped responsibility remains open."
     },
     {
       "recursive_order": 5164,
