@@ -72,7 +72,6 @@ test("attachment staging uses the production filesystem owner and Node UUID sour
       getStagingDir: () => dir,
       onEdgeFailure: (failure: { leg: string; errorClass: string }) => failures.push(failure),
       now: () => 1_700_000_000_000,
-      randomUUID: () => "00000000-0000-4000-8000-000000000001",
     } as unknown as AttachmentEdgeDeps);
     const bytes = new Uint8Array(Buffer.from("Fabushi Human attachment exact-head evidence.", "utf8"));
     const staged = await edge.stageBytes("phase1-human-reply.txt", bytes);
