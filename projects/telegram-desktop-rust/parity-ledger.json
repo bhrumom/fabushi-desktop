@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16120,
     "unknown": 15841,
-    "unread": 10850,
+    "unread": 10840,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13487,7 +13487,7 @@
       "Telegram/build/version",
       "changelog.txt"
     ],
-    "source_read_reconciliation": "Recursive denominator remains 16,120. Changed read-prefix orders are rebound and exact source read-through is now 5270. Orders 5261-5270 add mapped-open MTProto control/auth/config/security replacement responsibilities only; no implementation/verification/release credit.",
+    "source_read_reconciliation": "Recursive denominator remains 16,120. Exact source read-through is now 5280. Orders 5271-5280 add mapped-open proxy/network/error/API-schema/transport replacement responsibilities only; no implementation/verification/release credit.",
     "source_authority_evidence": "Live GitHub authority is 42f8a36d/6ac9bbc1; same-head Source authority artifact remains required."
   },
   "source_dispositions": {
@@ -13497,6 +13497,6 @@
     "development_only_non_applicable": 66,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 5270
+    "read_through": 5280
   }
 }
