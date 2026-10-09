@@ -120,6 +120,7 @@ function MediaViewer({ attachments, startIndex, resolveMedia, onClose, restoreFo
   const [failed, setFailed] = useState(false);
   const [transform, setTransform] = useState<Transform>({ scale: MIN_ZOOM, x: 0, y: 0 });
   const viewerRef = useRef<HTMLDivElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const wheelZoomRemainderRef = useRef(0);
   const pointerRef = useRef<{ id: number | null; startX: number; startY: number; originX: number; originY: number; moved: boolean }>({ id: null, startX: 0, startY: 0, originX: 0, originY: 0, moved: false });
   const current = attachments[index] ?? attachments[0];
@@ -129,6 +130,7 @@ function MediaViewer({ attachments, startIndex, resolveMedia, onClose, restoreFo
   useEffect(() => {
     if (current == null) return undefined;
     let active = true;
+    videoRef.current?.pause();
     setMedia(null);
     setLoading(true);
     setFailed(false);
@@ -161,11 +163,14 @@ function MediaViewer({ attachments, startIndex, resolveMedia, onClose, restoreFo
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
+        if (document.fullscreenElement != null) return;
         event.preventDefault();
         event.stopPropagation();
         onClose();
         return;
       }
+      const target = event.target instanceof Element ? event.target : null;
+      if (target?.closest("video, audio, button, input, select, textarea, [role='slider'], [contenteditable='true']") != null) return;
       if (total <= 1) return;
       if (event.key === "ArrowLeft") {
         event.preventDefault();
@@ -188,6 +193,7 @@ function MediaViewer({ attachments, startIndex, resolveMedia, onClose, restoreFo
   }, [onClose, restoreFocus, total]);
 
   useEffect(() => () => {
+    videoRef.current?.pause();
     const activePointerId = pointerRef.current.id;
     const viewer = viewerRef.current;
     if (activePointerId != null && viewer?.hasPointerCapture(activePointerId)) {
@@ -200,6 +206,7 @@ function MediaViewer({ attachments, startIndex, resolveMedia, onClose, restoreFo
   const zoom = (factor: number) => setTransform((currentTransform) => ({ ...currentTransform, scale: clamp(currentTransform.scale * factor, MIN_ZOOM, MAX_ZOOM) }));
 
   const onWheel = (event: React.WheelEvent<HTMLDivElement>) => {
+    if (media?.kind === "video") return;
     event.preventDefault();
     const normalizedDelta = normalizeWheelZoomDelta(event.deltaY, event.deltaMode);
     if (event.ctrlKey) {
@@ -212,7 +219,7 @@ function MediaViewer({ attachments, startIndex, resolveMedia, onClose, restoreFo
     zoom(Math.exp(normalizedDelta * 0.0015));
   };
   const onPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (event.button !== 0 || transform.scale <= MIN_ZOOM) return;
+    if (media?.kind === "video" || event.button !== 0 || transform.scale <= MIN_ZOOM) return;
     if (event.target instanceof Element && event.target.closest("button, a[href], input, select, textarea, [role='button']") != null) return;
     const currentTransform = transform;
     pointerRef.current = { id: event.pointerId, startX: event.clientX, startY: event.clientY, originX: currentTransform.x, originY: currentTransform.y, moved: false };
@@ -242,14 +249,14 @@ function MediaViewer({ attachments, startIndex, resolveMedia, onClose, restoreFo
     ? <div aria-live="polite" className="sand-media-viewer__state" role={failed ? "alert" : "status"}>{failed ? "Couldn't load media" : "Loading media…"}</div>
     : source == null ? null
       : media?.kind === "video"
-        ? <video aria-label={caption.length > 0 ? caption : "Media preview"} className="sand-media-viewer__image" controls={false} onError={() => setFailed(true)} preload="metadata" src={source} style={{ transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})` }} />
+        ? <video aria-label={caption.length > 0 ? caption : "Media preview"} className="sand-media-viewer__image" controls onError={() => setFailed(true)} playsInline preload="metadata" ref={videoRef} src={source} />
         : <img alt={caption.length > 0 ? caption : "Media preview"} className="sand-media-viewer__image" draggable={false} onDoubleClick={fit} onError={() => setFailed(true)} src={source} style={{ transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})` }} />;
 
   return createPortal(
     <div aria-label={title} aria-modal="true" className="sand-media-viewer" onClick={(event) => { if (event.target === event.currentTarget) onClose(); }} onLostPointerCapture={onLostPointerCapture} onPointerCancel={onPointerUp} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} ref={viewerRef} role="dialog">
       <div className="sand-media-viewer__top-bar"><SandIconButton aria-label="Close media preview" className="sand-media-viewer__close" icon="close" label="Close media preview" onClick={onClose} size="sm" type="button" variant="ghost" /></div>
       <div className="sand-media-viewer__column">
-        <div className="sand-media-viewer__media-cell" onDoubleClick={fit} onWheel={onWheel}>
+        <div className="sand-media-viewer__media-cell" onDoubleClick={media?.kind === "video" ? undefined : fit} onWheel={onWheel}>
           {total > 1 ? <button aria-label="Previous media" className="sand-media-viewer__nav" onClick={() => setIndex((value) => (value - 1 + total) % total)} style={{ left: "18px" }} type="button">‹</button> : null}
           {total > 1 ? <button aria-label="Next media" className="sand-media-viewer__nav" onClick={() => setIndex((value) => (value + 1) % total)} style={{ right: "18px" }} type="button">›</button> : null}
           {content}
