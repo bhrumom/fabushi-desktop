@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16120,
     "unknown": 15841,
-    "unread": 11620,
+    "unread": 11520,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13491,7 +13491,7 @@
         "external/ada/CMakeLists.txt"
       ]
     },
-    "source_read_reconciliation": "Path set is unchanged. Existing 1-4500 deterministic prefix is retained; order 4112 editor_trim_timeline.cpp was exact-delta re-read/rebound. IV Article ledger source blob was exact-delta re-read/rebound but remains mapped/pending; no new source-disposition read credit was granted.",
+    "source_read_reconciliation": "Path set is unchanged. Existing deterministic read prefix is retained and now extended through order 4600; order 4112 was exact-delta re-read/rebound. IV Article ledger source blob was exact-delta re-read/rebound but remains mapped/pending; no unknown, implementation, coverage or release credit was granted by reading.",
     "source_authority_evidence": "Live GitHub compare/tree evidence establishes 36a0c87/94e009f and path-stable recursive denominator; same-head GitHub Actions Source authority artifact is required after this rebaseline commit."
   },
   "source_dispositions": {
@@ -13501,6 +13501,6 @@
     "development_only_non_applicable": 66,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 4500
+    "read_through": 4600
   }
 }
