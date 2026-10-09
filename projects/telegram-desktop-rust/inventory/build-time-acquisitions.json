@@ -1231,7 +1231,7 @@
   ],
   "recursive_build_reachability": {
     "status": "partial-audited-disposition-open",
-    "accepted_upstream_commit": "b0d1fe5e08c963402b8b71648c70a2bf68e6fab2",
+    "accepted_upstream_commit": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
     "rule": "A recursively discovered repository is source/build authority only when an accepted TDesktop build path actually initializes, downloads, generates, patches, or consumes it. Presence as an unselected superproject gitlink is not sufficient.",
     "qt_superproject": {
       "repository": "https://github.com/qt/qt5",
@@ -2476,7 +2476,7 @@
       "root_candidate_policy_status": "complete-for-current-xkbcommon-authority",
       "note": "Closes acquisition-pattern candidates for xkbcommon-1.6.0; keyboard mapping/runtime behavior remains in semantic scope."
     },
-    "rebaseline_status": "b0d1fe5e changes only Telegram/SourceFiles/media/view/media_view_overlay_widget.cpp; build-time acquisition paths, immutable pins, mutable Action/clone refs and accepted build reachability inputs are unchanged. Prior resolver artifacts are predecessor evidence; fresh exact-head discovery/provenance is required."
+    "rebaseline_status": "Live 65e23ba7 changes macOS packaging/test harness/product blobs but does not change the accepted prepare.py, Linux Docker, or Snap build-reachability evidence blobs audited below; reachability dispositions remain unchanged. Fresh descendant exact-head authority validation is required."
   },
   "external_immutable_resolutions": [
     {
