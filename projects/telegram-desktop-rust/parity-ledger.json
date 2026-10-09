@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15846,
-    "unread": 10301,
+    "unread": 10295,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13481,11 +13481,11 @@
     "changed_authority_paths": [
       "Telegram/SourceFiles/media/view/media_view_overlay_widget.cpp"
     ],
-    "source_read_reconciliation": "Accepted-tree exact reads now cover through 5,824/16,125. Orders 5,822-5,824 add the debug-only per-task scenario overlay slot plus the fail-closed secrecy scan/contract with identity/day/banner source selection, control/canary gates, Send-vs-Recv classification, bounded secret handling, safe site reporting and own-evidence re-scan. Unknown remains 15,846; unread 10,301; omitted 0. First unread is 5,825 test/test_style.cpp.",
+    "source_read_reconciliation": "Accepted-tree exact reads now cover through 5,830/16,125. Orders 5,825-5,830 add live-style stabilization/baselines, controlled InputField text-drop/refusal/shielding evidence, and narrowly scoped Unicode space-class text-read normalization with deliberate negative controls. Unknown remains 15,846; unread 10,295; omitted 0. First unread is 5,831 test/test_toast_capture.cpp.",
     "source_authority_evidence": "Deterministic ordering is derived from non-directory/blob rank in accepted root/recursive authority rooted at e279373aec283ebfcc6e3bb7385e51205acd84a2. a8a139b8/811b83a1 Actions evidence is predecessor-only; fresh descendant exact-head evidence required.",
-    "current_source_read_through": 5824,
-    "first_unread_order": 5825,
-    "first_unread_path": "Telegram/SourceFiles/test/test_style.cpp"
+    "current_source_read_through": 5830,
+    "first_unread_order": 5831,
+    "first_unread_path": "Telegram/SourceFiles/test/test_toast_capture.cpp"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13494,7 +13494,7 @@
     "development_only_non_applicable": 69,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 5824
+    "read_through": 5830
   },
   "historical_exact_head_evidence": {
     "status": "historical-only",
