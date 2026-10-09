@@ -1547,6 +1547,23 @@
         ".github/workflows/rust-desktop-runtime.yml"
       ],
       "rationale": "Preserves the recovered reaction controller/transport and canonical Transcript action ownership while adapting the quick-reaction surface to the existing SandPopover floating primitive. The portal mounts the visible picker above the native drag carrier and sticky composer only while open, keeps Escape/outside-press dismissal and focus return in the canonical floating lifecycle, and unmounts on close so ordinary window drag/composer hit testing resumes. Successful controller settlement closes the same surface without introducing a second reaction store, transport or menu owner. This is a focused TypeScript presentation/lifecycle adaptation required by real Electron pointer hit testing, not a test bypass."
+    },
+    {
+      "referencePath": "source/electron-main/update/update-download.ts",
+      "expectedBaseParityMode": "typescript-port",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "2f49c59ab0a4b277349d3b6e74967e386de3b379",
+      "behavioralEvidence": [
+        "source/electron-main/update/update-feed.ts",
+        "source/electron-main/update/update-download.ts",
+        "source/electron-main/update/sand-update-service.ts",
+        "projects/telegram-desktop-rust/dossiers/platform-mac-windows-5411-5475-complete-read.md"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Hardens the existing canonical live updater rather than introducing a Telegram-derived updater owner. Windows/iupdate offers now fail closed without a canonical 64-hex SHA-256 digest; download staging exclusively creates mode-0600 package files instead of following or overwriting a pre-existing destination; the single update service creates mode-0700 staging directories and removes them if permission hardening fails. Existing Authenticode verification, safe-relaunch gating, parent identity handoff and apply-marker recovery remain in the same shipping owner. macOS authenticated apply and post-install installed-artifact identity remain explicitly open."
     }
   ]
 }

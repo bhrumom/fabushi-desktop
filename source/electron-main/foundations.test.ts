@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
+import { createHash } from "node:crypto";
 import test from "node:test";
 
 import { getSimulatedGatewayLatencyMs, setSimulatedGatewayLatencyMs, SIMULATED_GATEWAY_LATENCY_MAX_MS } from "./dev/dev-network-latency.js";
@@ -15,6 +16,8 @@ import { resolveScanRoots } from "./process-metrics/wiring.js";
 import { computeUpdateDisabledReason } from "./update/update-gate.js";
 import { isSafeToRelaunchForUpdate } from "./update/safe-relaunch-gate.js";
 import { SandWindowsInstaller, WINDOWS_PARENT_EXIT_GRACE_MS, buildWindowsInstallerParentHandoffScript } from "./update/win32-installer.js";
+import { parseUpdateResponse } from "./update/update-feed.js";
+import { downloadAndVerify } from "./update/update-download.js";
 import { createProductionWindowBroadcaster } from "./window-broadcast.js";
 import { unavailableOnePasswordProvisioningSink, OnePasswordProvisioningError } from "./onepassword/onepassword-provisioning-contract.js";
 import { requireDisposable, requireFunction, requireObject } from "./adapters/provider-guards.js";
@@ -387,6 +390,54 @@ test("process redaction keeps only Grok helper labels and hashes every original 
   assert.equal(foreign.name, "secret-app");
   assert.equal(foreign.nameHash.length, 64);
   assert.notEqual(foreign.nameHash, foreign.name);
+});
+
+
+
+test("protected updater requires authenticated Windows packages and private exclusive staging files", async () => {
+  assert.throws(
+    () => parseUpdateResponse({ version: "1.2.76", url: "https://updates.example/fabushi.exe" }, "iupdate"),
+    /sha256hash must be a 64-character hexadecimal digest/u,
+  );
+  assert.throws(
+    () => parseUpdateResponse({ version: "1.2.76", url: "https://updates.example/fabushi.exe", sha256hash: "not-a-digest" }, "iupdate"),
+    /sha256hash must be a 64-character hexadecimal digest/u,
+  );
+  const upperDigest = "A".repeat(64);
+  assert.equal(
+    parseUpdateResponse({ version: "1.2.76", url: "https://updates.example/fabushi.exe", sha256hash: upperDigest }, "iupdate").sha256,
+    upperDigest.toLowerCase(),
+  );
+
+  const dir = mkdtempSync(join(tmpdir(), "fabushi-protected-update-"));
+  try {
+    const existing = join(dir, "existing.exe");
+    writeFileSync(existing, "do-not-overwrite", "utf8");
+    await assert.rejects(
+      downloadAndVerify({
+        url: "https://updates.example/existing.exe",
+        destinationPath: existing,
+        sha256: "0".repeat(64),
+        fetchImpl: (async () => new Response(Buffer.from("replacement", "utf8"))) as typeof fetch,
+      }),
+      /EEXIST|exist/iu,
+    );
+    assert.equal(readFileSync(existing, "utf8"), "do-not-overwrite");
+
+    const staged = join(dir, "staged.exe");
+    const payload = Buffer.from("verified-update-payload", "utf8");
+    const digest = createHash("sha256").update(payload).digest("hex");
+    await downloadAndVerify({
+      url: "https://updates.example/staged.exe",
+      destinationPath: staged,
+      sha256: digest,
+      fetchImpl: (async () => new Response(payload)) as typeof fetch,
+    });
+    assert.equal(readFileSync(staged, "utf8"), "verified-update-payload");
+    assert.equal(statSync(staged).mode & 0o777, 0o600);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test("desktop connectivity tracks only recent resumes and exposes telemetry stamps", () => {
