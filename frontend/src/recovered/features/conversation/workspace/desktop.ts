@@ -1,4 +1,4 @@
-import type { DesktopBridge } from "../../../contracts/desktop-bridge";
+import type { DesktopAttachmentCommitScope, DesktopBridge } from "../../../contracts/desktop-bridge";
 import type { DraftAttachment } from "./model";
 
 // Immutable root: ef4e9831b65d39633f09c9ad0c083b98b7ebf52e3bb558182aee5bde31f876fa
@@ -85,12 +85,14 @@ export function createFixtureAttachments(files: readonly StageableFile[]): Draft
 
 export async function commitComposerAttachments(
   bridge: Pick<DesktopBridge, "commitStagedAttachments">,
-  attachments: readonly DraftAttachment[]
+  attachments: readonly DraftAttachment[],
+  scope?: DesktopAttachmentCommitScope
 ): Promise<DraftAttachment[]> {
   if (attachments.length === 0) return [];
   const committed = await bridge.commitStagedAttachments(
     attachments.map((attachment) => attachment.path),
-    attachments.map((attachment) => attachment.name)
+    attachments.map((attachment) => attachment.name),
+    scope
   );
   if (committed == null || committed.length !== attachments.length) throw new Error("The desktop bridge could not commit the staged attachments.");
   return attachments.map((attachment, index) => ({ ...attachment, path: committed[index] ?? attachment.path }));

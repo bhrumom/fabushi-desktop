@@ -9,11 +9,15 @@ export const LINK_PREVIEW_PHOTO_MAX_DIMENSION = 1280;
 export const LINK_PREVIEW_ICON_MAX_DIMENSION = 128;
 
 export interface AttachmentChunk { readonly totalSize: number; readonly bytesBase64: string }
+export type AttachmentCommitScope = {
+  readonly kind: "human-conversation";
+  readonly conversationId: string;
+};
 export interface AttachmentLegs {
   readAttachmentImage(request: { path: string }): Promise<ImageAttachment | null>;
   readAttachmentText(request: { path: string }): Promise<string | null>;
   readAttachmentChunk(request: { path: string; offset: number; length: number }): Promise<AttachmentChunk | null>;
-  uploadAttachment(request: { filename: string; bytesBase64: string }): Promise<{ path: string }>;
+  uploadAttachment(request: { filename: string; bytesBase64: string; humanConversationId?: string }): Promise<{ path: string }>;
 }
 export interface ImageAttachment { readonly dataUrl: string; readonly width: number | null; readonly height: number | null }
 export interface PreviewImagePort {
@@ -50,6 +54,14 @@ export interface AttachmentEdgeDeps {
 
 export function errorClassOf(error: unknown): string { return error instanceof Error ? error.name || "Error" : typeof error; }
 export function isSafeFilename(value: unknown): value is string { return typeof value === "string" && value.length > 0 && value.length <= 255 && !value.includes("/") && !value.includes("\\") && !value.includes("\0"); }
+const HUMAN_CONVERSATION_ID = /^human-direct-[0-9a-f]{64}$/u;
+function normalizeAttachmentCommitScope(scope: unknown): { readonly humanConversationId?: string } | null {
+  if (scope == null) return {};
+  if (typeof scope !== "object" || Array.isArray(scope)) return null;
+  const value = scope as Record<string, unknown>;
+  if (value.kind !== "human-conversation" || typeof value.conversationId !== "string" || !HUMAN_CONVERSATION_ID.test(value.conversationId)) return null;
+  return { humanConversationId: value.conversationId };
+}
 export function normalizeAttachmentSource(source: unknown): string | null {
   if (typeof source !== "string" || source.length === 0) return null;
   try { const url = new URL(source); return url.protocol === "file:" ? posixPathFromFileUrl(source) : null; } catch { return source; }
@@ -91,9 +103,11 @@ export function createAttachmentEdgePort(deps: AttachmentEdgeDeps) {
       if (bytes.byteLength > deps.byteLimitForName(filename)) return { ok: false as const, reason: "too-large" as const };
       try { const dir = deps.getStagingDir(); await mkdir(dir, { recursive: true }); const path = join(dir, `${(deps.now ?? Date.now)()}-${(deps.randomUUID ?? randomUUID)()}${extname(filename)}`); await writeFile(path, bytes); return { ok: true as const, path }; } catch (error) { report("stage", error); return { ok: false as const, reason: "failed" as const }; }
     },
-    async commitStaged(rawPaths: unknown, rawFilenames: unknown): Promise<string[] | null> {
+    async commitStaged(rawPaths: unknown, rawFilenames: unknown, rawScope?: unknown): Promise<string[] | null> {
+      const scope = normalizeAttachmentCommitScope(rawScope); if (scope == null) return null;
       const paths = Array.isArray(rawPaths) ? rawPaths : []; const filenames = Array.isArray(rawFilenames) ? rawFilenames : []; const committed: string[] = [];
-      for (let index = 0; index < paths.length; index += 1) { const stagedPath = paths[index]; const filename = filenames[index]; if (typeof stagedPath !== "string" || stagedPath.length === 0 || !isSafeFilename(filename) || !deps.isWithinStagingDir(stagedPath)) return null; let bytes: Buffer; try { bytes = await readFile(stagedPath); } catch (error) { report("commit", error); return null; } if (bytes.byteLength === 0) return null; try { committed.push((await deps.legs.uploadAttachment({ filename, bytesBase64: bytes.toString("base64") })).path); } catch (error) { report("commit", error); return null; } }
+      for (let index = 0; index < paths.length; index += 1) { const stagedPath = paths[index]; const filename = filenames[index]; if (typeof stagedPath !== "string" || stagedPath.length === 0 || !isSafeFilename(filename) || !deps.isWithinStagingDir(stagedPath)) return null; let bytes: Buffer; try { bytes = await readFile(stagedPath); } catch (error) { report("commit", error); return null; } if (bytes.byteLength === 0) return null; try { committed.push((await deps.legs.uploadAttachment({ filename, bytesBase64: bytes.toString("base64"), ...scope })).path); } catch (error) { report("commit", error); return null; } }
+      for (const stagedPath of paths) { if (typeof stagedPath === "string") await rm(stagedPath, { force: true }).catch((error: unknown) => report("commit-cleanup", error)); }
       return committed;
     },
     async discardStaged(stagedPath: unknown): Promise<void> { if (typeof stagedPath !== "string" || stagedPath.length === 0 || !deps.isWithinStagingDir(stagedPath)) return; await rm(stagedPath, { force: true }).catch((error: unknown) => report("discard", error)); },

@@ -16,15 +16,23 @@ export function normalizeStageAttachmentEdgeRequest(raw: unknown): { readonly fi
   return { filename: request.filename, bytes: new Uint8Array(decoded.buffer, decoded.byteOffset, decoded.byteLength) };
 }
 
-export function normalizeCommitStagedAttachmentsEdgeRequest(raw: unknown): { readonly paths: unknown; readonly filenames: unknown } {
+export function normalizeCommitStagedAttachmentsEdgeRequest(raw: unknown): {
+  readonly paths: unknown;
+  readonly filenames: unknown;
+  readonly scope?: unknown;
+} {
   const request = requestRecord(raw);
+  const withScope = (value: { readonly paths: unknown; readonly filenames: unknown }) =>
+    Object.prototype.hasOwnProperty.call(request, "scope")
+      ? { ...value, scope: request.scope }
+      : value;
   if (Array.isArray(request.items)) {
-    return {
+    return withScope({
       paths: request.items.map((item) => requestRecord(item).path),
       filenames: request.items.map((item) => requestRecord(item).name),
-    };
+    });
   }
   // Compatibility only: older direct edge callers used parallel arrays. The
   // shipping preload owns the canonical item-list wire contract.
-  return { paths: request.paths, filenames: request.filenames };
+  return withScope({ paths: request.paths, filenames: request.filenames });
 }

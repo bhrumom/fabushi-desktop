@@ -1199,7 +1199,11 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     const humanConversation = humanConversationsRef.current.find((conversation) => conversation.id === submission.agentId);
     if (humanConversation != null) {
       const draftAttachments = submission.attachments.map((attachment) => ({ path: attachment.path, name: attachment.name }));
-      const attachments = bridge == null ? draftAttachments : await commitComposerAttachments(bridge, draftAttachments);
+      const attachments = bridge == null ? draftAttachments : await commitComposerAttachments(
+        bridge,
+        draftAttachments,
+        { kind: "human-conversation", conversationId: submission.agentId }
+      );
       for (const attachment of draftAttachments) stagedPaths.current.delete(attachment.path);
       const result = await client.call("sendHumanMessage", {
         conversationId: submission.agentId,

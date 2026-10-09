@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
 import test from "node:test";
@@ -47,12 +47,17 @@ test("main edge accepts the shipping preload attachment wire contract", () => {
   assert.equal(Buffer.from(staged.bytes as Uint8Array).toString("utf8"), "Fabushi Human attachment exact-head evidence.");
   assert.equal(normalizeStageAttachmentEdgeRequest({ filename: "bad.txt", bytesBase64: "***" }).bytes, undefined);
 
-  assert.deepEqual(normalizeCommitStagedAttachmentsEdgeRequest({ items: [
-    { path: "/staging/a.txt", name: "a.txt" },
-    { path: "/staging/b.png", name: "b.png" },
-  ] }), {
+  const humanScope = { kind: "human-conversation", conversationId: `human-direct-${"a".repeat(64)}` };
+  assert.deepEqual(normalizeCommitStagedAttachmentsEdgeRequest({
+    items: [
+      { path: "/staging/a.txt", name: "a.txt" },
+      { path: "/staging/b.png", name: "b.png" },
+    ],
+    scope: humanScope,
+  }), {
     paths: ["/staging/a.txt", "/staging/b.png"],
     filenames: ["a.txt", "b.png"],
+    scope: humanScope,
   });
   assert.deepEqual(normalizeCommitStagedAttachmentsEdgeRequest({
     paths: ["/legacy/a.txt"],
@@ -79,6 +84,61 @@ test("attachment staging uses the production filesystem owner and Node UUID sour
     assert.match(basename(staged.path), /^1700000000000-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.txt$/u);
     assert.equal(readFileSync(staged.path, "utf8"), "Fabushi Human attachment exact-head evidence.");
     assert.deepEqual(failures, []);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("attachment commit binds Human scope and preserves retry staging until the full batch succeeds", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "fabushi-human-attachment-commit-"));
+  const firstPath = join(dir, "first.txt");
+  const secondPath = join(dir, "second.txt");
+  const uploads: Array<{ filename: string; bytesBase64: string; humanConversationId?: string }> = [];
+  const failures: Array<{ leg: string; errorClass: string }> = [];
+  try {
+    writeFileSync(firstPath, "first", "utf8");
+    writeFileSync(secondPath, "second", "utf8");
+    let failSecond = true;
+    const edge = createAttachmentEdgePort({
+      legs: {
+        async uploadAttachment(request: { filename: string; bytesBase64: string; humanConversationId?: string }) {
+          uploads.push(request);
+          if (request.filename === "second.txt" && failSecond) throw new Error("synthetic durable owner failure");
+          return { path: `/durable/${request.filename}` };
+        },
+      },
+      isWithinStagingDir: (path: string) => path === firstPath || path === secondPath,
+      onEdgeFailure: (failure: { leg: string; errorClass: string }) => failures.push(failure),
+    } as unknown as AttachmentEdgeDeps);
+
+    assert.equal(await edge.commitStaged(
+      [firstPath],
+      ["first.txt"],
+      { kind: "human-conversation", conversationId: "not-canonical" },
+    ), null);
+    assert.equal(uploads.length, 0);
+    assert.equal(existsSync(firstPath), true);
+
+    const conversationId = `human-direct-${"b".repeat(64)}`;
+    assert.equal(await edge.commitStaged(
+      [firstPath, secondPath],
+      ["first.txt", "second.txt"],
+      { kind: "human-conversation", conversationId },
+    ), null);
+    assert.equal(existsSync(firstPath), true);
+    assert.equal(existsSync(secondPath), true);
+
+    failSecond = false;
+    assert.deepEqual(await edge.commitStaged(
+      [firstPath, secondPath],
+      ["first.txt", "second.txt"],
+      { kind: "human-conversation", conversationId },
+    ), ["/durable/first.txt", "/durable/second.txt"]);
+    assert.equal(existsSync(firstPath), false);
+    assert.equal(existsSync(secondPath), false);
+    assert.equal(uploads.at(-2)?.humanConversationId, conversationId);
+    assert.equal(uploads.at(-1)?.humanConversationId, conversationId);
+    assert.ok(failures.some((failure) => failure.leg === "commit"));
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

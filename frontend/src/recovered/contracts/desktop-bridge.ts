@@ -118,6 +118,11 @@ export type StagedAttachmentResult =
   | { ok: true; path: string }
   | { ok: false; reason: "empty" | "too-large" | "failed" };
 
+export type DesktopAttachmentCommitScope = {
+  kind: "human-conversation";
+  conversationId: string;
+};
+
 export interface AvatarFileSelection {
   dataUrl: string;
   fileName: string;
@@ -473,6 +478,7 @@ export interface DesktopBridge {
   commitStagedAttachments(
     paths: readonly string[],
     filenames: readonly string[],
+    scope?: DesktopAttachmentCommitScope,
   ): Promise<string[] | null>;
   discardStagedAttachment(path: string): Promise<void>;
   readonly mcp: McpDesktopBridge;
