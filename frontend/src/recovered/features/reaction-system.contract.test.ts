@@ -211,6 +211,7 @@ test("conversation floating controls keep pointer ownership while visible titleb
   assert.match(chromeCss, /\.sand-agents-sidebar__header,[\s\S]{0,120}\.sand-chat-header\s*\{[^}]*app-region:\s*drag;/s);
   assert.match(chromeCss, /\.sand-chat-header :is\([^)]*button[^)]*\)[\s\S]{0,100}app-region:\s*no-drag;/s);
   assert.match(chromeCss, /\.sand-window-controls button\s*\{[^}]*app-region:\s*no-drag;/s);
+  assert.doesNotMatch(chromeCss, /\.sand-window-controls\s*\{[^}]*pointer-events:\s*none;/s);
   assert.match(workspaceCss, /\.sand-chat-find\s*\{[^}]*z-index:\s*4;[^}]*flex:\s*0 0 auto;[^}]*app-region:\s*no-drag;/s);
   assert.doesNotMatch(workspaceCss, /\.sand-chat-find\s*\{[^}]*pointer-events:\s*none/s);
   assert.doesNotMatch(workspaceCss, /\.sand-chat-input-dock\s*\{[^}]*pointer-events:\s*none/s);
