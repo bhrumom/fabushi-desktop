@@ -1,0 +1,85 @@
+{
+  "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+  "start": 5165,
+  "end": 5177,
+  "entries": [
+    {
+      "order": 5165,
+      "path": "Telegram/SourceFiles/media/view/media_view_pip.cpp",
+      "blob": "1a1f2bd7c440ca4c9dfafad44d0fb5ddd9e3cfc8",
+      "consumer_symbol": "Media::View::Pip"
+    },
+    {
+      "order": 5166,
+      "path": "Telegram/SourceFiles/media/view/media_view_pip.h",
+      "blob": "0dcde9499c542d2fcdbc2df53bf067625c467208",
+      "consumer_symbol": "Media::View::Pip"
+    },
+    {
+      "order": 5167,
+      "path": "Telegram/SourceFiles/media/view/media_view_pip_opengl.cpp",
+      "blob": "c801791aec34a70ba4cd96e0d760c5c7b0916ac2",
+      "consumer_symbol": "Media::View::Pip::RendererGL"
+    },
+    {
+      "order": 5168,
+      "path": "Telegram/SourceFiles/media/view/media_view_pip_opengl.h",
+      "blob": "351cfb9eec1be811c9d865ba00ccc4dae2a501e0",
+      "consumer_symbol": "Media::View::Pip::RendererGL"
+    },
+    {
+      "order": 5169,
+      "path": "Telegram/SourceFiles/media/view/media_view_pip_raster.cpp",
+      "blob": "8d7c5f2f6e2faf8a9d411c7391682758a2c367c4",
+      "consumer_symbol": "Media::View::Pip::RendererSW"
+    },
+    {
+      "order": 5170,
+      "path": "Telegram/SourceFiles/media/view/media_view_pip_raster.h",
+      "blob": "9a03b7ad7269a903a2e881c131265b709fe8fbec",
+      "consumer_symbol": "Media::View::Pip::RendererSW"
+    },
+    {
+      "order": 5171,
+      "path": "Telegram/SourceFiles/media/view/media_view_pip_renderer.h",
+      "blob": "d73ccd1a255af3ad219bc2beb5777bfdd4377b3b",
+      "consumer_symbol": "Media::View::Pip::Renderer"
+    },
+    {
+      "order": 5172,
+      "path": "Telegram/SourceFiles/media/view/media_view_pip_rhi.cpp",
+      "blob": "a93167400236693397c311444a06b151497b00fe",
+      "consumer_symbol": "Media::View::Pip::RendererRhi"
+    },
+    {
+      "order": 5173,
+      "path": "Telegram/SourceFiles/media/view/media_view_pip_rhi.h",
+      "blob": "5498c0e1844fce1cb414a6dda101840d9ca17d91",
+      "consumer_symbol": "Media::View::Pip::RendererRhi"
+    },
+    {
+      "order": 5174,
+      "path": "Telegram/SourceFiles/media/view/media_view_playback_controls.cpp",
+      "blob": "f3fa3aa5ff6ee37d404874604b4e4a509d44ae1a",
+      "consumer_symbol": "Media::View::PlaybackControls"
+    },
+    {
+      "order": 5175,
+      "path": "Telegram/SourceFiles/media/view/media_view_playback_controls.h",
+      "blob": "1c06dfb6b62c643829c9ef0099e75fe2d15228fe",
+      "consumer_symbol": "Media::View::PlaybackControls"
+    },
+    {
+      "order": 5176,
+      "path": "Telegram/SourceFiles/media/view/media_view_playback_progress.cpp",
+      "blob": "e3f55f4e2ff83d0f1b956247d596ae95af2d6068",
+      "consumer_symbol": "Media::View::PlaybackProgress"
+    },
+    {
+      "order": 5177,
+      "path": "Telegram/SourceFiles/media/view/media_view_playback_progress.h",
+      "blob": "d68097c96d76e63f73b9e636d6275d6c2c501ad2",
+      "consumer_symbol": "Media::View::PlaybackProgress"
+    }
+  ]
+}
