@@ -25,7 +25,7 @@ jobs:
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
-          test "$(git rev-parse HEAD^)" = "f92892f0b6aa9d988bf9fc818c396f5aac362b5d"
+          test "$(git rev-parse HEAD^)" = "ac7e2204f3cf3c7adc3519858475ab257bfc6777"
       - name: Rebaseline live Revision 9 authority
         env:
           GITHUB_TOKEN: ${{ github.token }}

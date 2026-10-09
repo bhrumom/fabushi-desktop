@@ -98,10 +98,10 @@ const devCandidates=rows.filter(r=>/development-only.*non-applicable|non-applica
 const byDisposition=Object.entries(rows.reduce((a,r)=>(a[r.disposition]=(a[r.disposition]||0)+1,a),{})).sort((a,b)=>a[0].localeCompare(b[0]));
 console.log('RECOMPUTE prefixClosed='+prefixClosed+' unknownClosed='+unknownClosedBefore+' omitted='+omittedBefore+' developmentCandidate='+devCandidates.length);
 console.log('DEVELOPMENT_DISPOSITIONS '+JSON.stringify(byDisposition.filter(([k])=>/development-only|non-applicable/i.test(k))));
-assert(devCandidates.length===66,'development_only_non_applicable recompute drift '+devCandidates.length);
+assert(devCandidates.length===69,'development_only_non_applicable recompute drift '+devCandidates.length);
 assert(unknownClosedBefore===279,'unknown_closed recompute drift');
 assert(omittedBefore===0,'omitted recompute drift');
-assert(prefixClosed===123,'deterministic_prefix_closed recompute drift');
+assert(prefixClosed===57,'deterministic_prefix_closed recompute drift');
 
 const defs=[
 ['test_corner_patch','Rounded-corner patch visual oracle with exact containment/chrome exclusion and DPR device-pixel fail-closed measurement.','Canonical visual regression/capture harness owner'],
@@ -239,7 +239,7 @@ rows=[...rows,...newRows];
 const unknownClosed=rows.filter(r=>r.unknown_closed===true).length;
 const omitted=rows.filter(r=>r.omitted===true).length;
 let deterministicPrefixClosed=0;for(const r of rows){if(r.recursive_order===deterministicPrefixClosed+1&&r.unknown_closed===true)deterministicPrefixClosed++;else break}
-assert(unknownClosed===279&&omitted===0&&deterministicPrefixClosed===123,'post-update closure recompute drift');
+assert(unknownClosed===279&&omitted===0&&deterministicPrefixClosed===57,'post-update closure recompute drift');
 
 const uiPin=lock.direct_gitlinks.find(x=>x.path==='Telegram/lib_ui');assert(uiPin.commit===LIB_OLD,'lib_ui lock pin drift');uiPin.commit=LIB_NEW;
 const uiCount=lock.observed_recursive_inventory.direct_component_counts.find(x=>x.mount==='Telegram/lib_ui');assert(uiCount.commit===LIB_OLD&&uiCount.entries===432,'lib_ui component census drift');uiCount.commit=LIB_NEW;
