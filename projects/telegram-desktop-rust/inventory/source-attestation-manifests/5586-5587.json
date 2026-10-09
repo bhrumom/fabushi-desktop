@@ -1,0 +1,19 @@
+{
+  "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+  "start": 5586,
+  "end": 5587,
+  "entries": [
+    {
+      "order": 5586,
+      "path": "Telegram/SourceFiles/settings/sections/settings_calls.cpp",
+      "blob": "99ce45c03b9ade8f04e5f2ebd2b2ca74c1f0ce2a",
+      "consumer_symbol": "CallsId"
+    },
+    {
+      "order": 5587,
+      "path": "Telegram/SourceFiles/settings/sections/settings_calls.h",
+      "blob": "686dddae0a1d9ec92c51822757827cc3a8e6b0b8",
+      "consumer_symbol": "AddCameraSubsection"
+    }
+  ]
+}
