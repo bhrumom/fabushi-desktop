@@ -55,6 +55,10 @@ test("catalog pins all nine upstream HTTPS endpoints and labels preview and cred
     "https://people.googleapis.com/mcp/v1",
   ]);
   assert.equal(new Set(OFFICIAL_MCP_CATALOG.map(e => e.id)).size, 9);
+  const chat = OFFICIAL_MCP_CATALOG.find(e => e.id === "fabushi-official-google-chat");
+  assert.ok(chat);
+  assert.match(chat.description, /只读无需配置 Chat app/);
+  assert.match(chat.description, /关闭互动功能/);
   for (const listing of officialMcpCatalogPlugins()) {
     assert.equal(listing.marketplace?.displayName, "Fabushi 官方插件市场");
     assert.equal(listing.variableFields[0]!.isSecret, true);
