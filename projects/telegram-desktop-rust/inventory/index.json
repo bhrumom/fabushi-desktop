@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15841,
-    "unread_minimum": 10645,
+    "unread_minimum": 10620,
     "omitted_known": 0,
-    "note": "Live 42f8a36d recursive census remains 16,120. Read-through 5,475; unknown 15,841, unread 10,645, omitted 0. Orders 5411-5463 cover macOS platform responsibilities; corrected deterministic orders 5464-5475 cover shared platform location/file/integration/launcher/window/notification/MediaViewer-overlay/lifecycle contracts. Windows-specific files begin at 5481 and remain unread in current durable accounting."
+    "note": "Live 42f8a36d recursive census remains 16,120. Read-through 5,500; unknown 15,841, unread 10,620, omitted 0. Orders 5476-5480 close source reading for shared text-recognition/translation/tray/WebAuthn/window-title contracts; 5481-5500 add Windows location, file/dialog security, lifecycle, updater handoff, window privacy, exact-scope notifications, platform security/settings, capability deltas, tray and Windows Hello wallet responsibilities. All remain mapped-open pending canonical production and same-head evidence."
   },
   "latest_recursive_evidence": {
     "run_id": 37872749663,
@@ -46,7 +46,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live authority exact through corrected deterministic order 5,475; unread_minimum is 10,645; unknown remains 15,841; omitted remains 0.",
+  "note": "Live authority exact through deterministic order 5,500; unread_minimum is 10,620; unknown remains 15,841; omitted remains 0.",
   "rebaseline": {
     "from_commit": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
     "to_commit": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
@@ -63,8 +63,8 @@
       "Telegram/build/version",
       "changelog.txt"
     ],
-    "current_head_source_authority_evidence": "Fresh exact-head Source authority evidence is required after correcting deterministic orders 5464-5475; predecessor artifacts do not grant current-head acceptance.",
-    "current_source_read_through": 5475
+    "current_head_source_authority_evidence": "Fresh exact-head Source authority evidence is required after adding deterministic orders 5476-5500; predecessor artifacts do not grant current-head acceptance.",
+    "current_source_read_through": 5500
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -73,6 +73,6 @@
     "development_only_non_applicable": 66,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 5475
+    "read_through": 5500
   }
 }

@@ -335,3 +335,26 @@ Dossier: `projects/telegram-desktop-rust/dossiers/build-provenance-resolution-cc
 - INV-TDRP-R9-PASSKEY-SINGLE-AUTH-OWNER-001: native passkey/security-key APIs are adapters to canonical account/auth state, never a second credential truth store.
 - Dossier: `projects/telegram-desktop-rust/dossiers/platform-mac-windows-5411-5475-complete-read.md` (filename retained for provenance; corrected content records Windows start at order 5481).
 - These rows grant source-read/traceability credit only. They do not grant production, test, release, or independent-acceptance credit.
+
+
+### TDRP Revision 9 platform source-read requirements 5476-5500
+
+| requirement | risk | invariant | exact source evidence | production status |
+| --- | --- | --- | --- | --- |
+| TDRP-R9-SHARED-CAPABILITIES-5476-5480 | high | OCR/translation/tray/WebAuthn/window-title adapters report truthful capability and derive all product state from canonical owners | accepted blobs in source-dispositions 5476-5500 + attestation manifest | MAPPED-SOURCE-READ-PRODUCTION-OPEN |
+| TDRP-R9-WIN-LOCATION-5481-5482 | high | exact location is permission/failure aware; unavailable reverse-geocode is never fabricated | same shard + dossier | MAPPED-SOURCE-READ-PRODUCTION-OPEN |
+| TDRP-R9-WIN-FILE-DIALOG-5483-5484 | high | Open-With/external launch/Zone.Identifier/dialog persistence remain behind canonical file/security policy and native resources are bounded | same shard + dossier | MAPPED-SOURCE-READ-PRODUCTION-OPEN |
+| TDRP-R9-WIN-LIFECYCLE-5485-5486 | high | native events stay fenced; sleep/resume is debounced and screen-lock/time/settings changes update one canonical lifecycle state | same shard + dossier | MAPPED-SOURCE-READ-PRODUCTION-OPEN |
+| TDRP-R9-WIN-UPDATER-HANDOFF-5487-5488 | critical | privilege and parent-process handoff may only follow authenticated staging and must resist PID reuse/modal test deadlock | same shard + current canonical updater sources | MAPPED-SOURCE-READ-PRODUCTION-PARTIAL |
+| TDRP-R9-WIN-WINDOW-PRIVACY-5489-5490 | critical | passcode/protected content cannot leak through DWM preview/capture and native window state remains a projection | same shard + canonical window-chrome source comparison | MAPPED-SOURCE-READ-PRODUCTION-GAP |
+| TDRP-R9-WIN-NOTIFICATION-ACTIONS-5491-5492 | critical | reply/mark/open activation requires exact active session/peer/topic-or-sublist/message scope and exact cleanup | same shard + canonical SandOsNotificationManager comparison | MAPPED-SOURCE-READ-PRODUCTION-GAP |
+| TDRP-R9-WIN-PLATFORM-SECURITY-5493-5499 | high | overlay/tray/autostart/permission/capture/theme/capability state remains source-neutral and unsupported native OCR/translation is reported unavailable | same shard + dossier | MAPPED-SOURCE-READ-PRODUCTION-OPEN |
+| TDRP-R9-WIN-HELLO-WALLET-5500 | critical | only hardware-attested TPM-backed credential flow may derive wrap keys; secret buffers and error classes fail closed | same shard + dossier | MAPPED-SOURCE-READ-PRODUCTION-GAP |
+
+- `INV-TDRP-R9-WIN-NOTIFICATION-ACTION-SCOPE-001`: a native toast action is not authorization; the exact active canonical conversation/message scope must still exist before reply/mark/open.
+- `INV-TDRP-R9-WIN-LOCKED-PREVIEW-PRIVACY-001`: minimized/taskbar/DWM/capture surfaces must not reveal protected conversation content while the canonical lock/privacy state requires redaction.
+- `INV-TDRP-R9-WIN-POWER-DEBOUNCE-001`: duplicate/out-of-order suspend/resume broadcasts cannot create duplicate lifecycle transitions or stale online state.
+- `INV-TDRP-R9-WIN-HELLO-HARDWARE-001`: Windows Hello support alone is insufficient; TPM presence, hardware attestation, exact credential payload semantics and fail-closed unwrap classification are required.
+- `INV-TDRP-R9-WIN-CAPABILITY-ABSENCE-001`: Windows-native OCR/translation absence must remain observable; a source-neutral replacement may satisfy product capability but cannot masquerade as the unavailable native adapter.
+- Dossier: `projects/telegram-desktop-rust/dossiers/platform-shared-windows-5476-5500-complete-read.md`.
+- These rows grant source-read/traceability credit only. They do not grant production, test, release, or independent-acceptance credit.
