@@ -571,3 +571,14 @@ Dossier: `projects/telegram-desktop-rust/dossiers/statistics-stack-pie-5685-5690
 | TDRP-R9-CHART-WIDGETS-5691-5696 | high | canonical controls project chart title/filter/details state without owning analytics or wallet truth; last-visible-series guard, locale/currency, keyboard/focus/a11y and responsive/theme/DPR behavior are preserved | Analytics/Insights + canonical design system | mapped-open |
 
 Dossier: `projects/telegram-desktop-rust/dossiers/statistics-widgets-5691-5696-complete-read.md`.
+
+
+## TDRP PCH and storage security/migration 5697–5701
+
+| requirement_id | risk | invariant | production owner | verdict |
+| --- | --- | --- | --- | --- |
+| TDRP-R9-BUILD-COMPOSITION-5697 | medium | canonical cross-platform build graph preserves required source-neutral product/platform dependencies without Telegram C++ PCH coupling | Build/Packaging | mapped-open |
+| TDRP-R9-STORAGE-SECURITY-5698-5699 | critical | local records are version/signature checked, atomically committed and encrypted; passcode KDF parameters are recorded, bounded and fail closed; wrong/invalid secrets never produce accepted state | Persistence + Local Security/Key Protection | mapped-open |
+| TDRP-R9-SETTINGS-MIGRATION-5700-5701 | critical | versioned legacy settings/session/auth/proxy/cache/notification/download/theme migrations validate every stream/value and settle once into canonical owners; malformed/unknown input fails closed | Settings/Persistence Migration + Account Security | mapped-open |
+
+Dossier: `projects/telegram-desktop-rust/dossiers/storage-security-migration-5697-5701-complete-read.md`.
