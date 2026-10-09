@@ -4,8 +4,8 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
-    "tree": "b031c2cd84aa0cbbb149a7e5693c41ef14d643f3"
+    "commit": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+    "tree": "6ac9bbc1b44edcb119b1a724e7b0a321c3b7b8fa"
   },
   "range": {
     "first_order": 4001,
@@ -16911,7 +16911,7 @@
     {
       "recursive_order": 4413,
       "source_path": "Telegram/SourceFiles/history/view/history_view_message.cpp",
-      "source_blob_sha": "dd3658a2cee89ee78c9d940d7cbd3c03b5df9957",
+      "source_blob_sha": "5152d85e89b6da554095d85a1a16d96d4f969c3d",
       "read_complete": true,
       "responsibility_decomposition_complete": true,
       "responsibility": "Message visual/state projection",
@@ -16924,7 +16924,7 @@
       "fabushi_target": "OPEN: bind shipping owner and close missing message/reply/reaction/media/service/button/view state, geometry/paint/action and mutation lifecycle with lifecycle/resource bounds, persistence/restart where applicable, concurrency, security/payment/service, a11y/visual/performance and tests.",
       "platform_differences": "Telegram Qt/C++/MTProto mechanics are reference behavior; Fabushi preserves applicable semantics in canonical Rust/TypeScript/Electron/service owners.",
       "production_evidence": "projects/telegram-desktop-rust/dossiers/history-media-4401-4500-complete-read.md; exact-source read only; implementation/verification remains open.",
-      "test_evidence": "Accepted-tree Source authority run 37872749663 job 113634587680 artifact 11591390327; current-head product evidence remains open.",
+      "test_evidence": "Live 42f8a36d exact-tree blob rebound; prior Actions artifact is historical-only. Current-head Source authority and product evidence remain required.",
       "disposition": "mapped-open-history-message",
       "unknown_closed": false,
       "omitted": false,
@@ -16935,19 +16935,15 @@
       "reachability_status": "accepted-tree-source-owner-proven; shipping verification remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
       "source_binary_evidence": {
-        "run_id": 37872749663,
-        "job_id": 113634587680,
-        "artifact_id": 11591390327,
-        "artifact_digest": "sha256:9e8d9d297b9f957c5c60e069a3ede35c517d56e18662bcf7573946663b971d65",
-        "artifact_member": "upstream-recursive-inventory.json",
-        "accepted_upstream": "22b352e866d0402505c07fa4ed21d75d7e4fb3db",
-        "evidence_contract": "exact accepted-tree recursive inventory object/size/type binding",
-        "verified_blob_sha": "dd3658a2cee89ee78c9d940d7cbd3c03b5df9957",
+        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "evidence_contract": "live accepted-tree exact blob/size/type binding; same-head GitHub Actions attestation pending",
+        "verified_blob_sha": "5152d85e89b6da554095d85a1a16d96d4f969c3d",
         "byte_size": 220570,
         "file_type": "blob",
-        "recursive_order": 4413
+        "recursive_order": 4413,
+        "evidence_status": "live-tree-rebound-pending-current-head-actions"
       },
-      "notes": "Read-complete does not promote implementation_status or release verification."
+      "notes": "Re-read/rebound on live 42f8a36d; no implementation, verification, baseline-ready or release state is promoted."
     },
     {
       "recursive_order": 4414,

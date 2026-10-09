@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
+import { SandPopover } from "../../../../ui/sand-floating-primitives";
 import {
   QUICK_REACTION_EMOJIS,
   SAND_REACTION_SELF,
@@ -11,6 +12,8 @@ import {
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=5084026 (reaction transport callback)
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=5084671 (reaction picker selectors/copy)
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=5076856 (message reaction optimistic action)
+
+export const MESSAGE_REACTION_POPOVER_Z_INDEX = 5002;
 
 export interface ReactionCountProjection {
   readonly emoji: string;
@@ -77,7 +80,7 @@ export function ReactionPicker({ entryId, agentId, myReactions, transport, contr
   if (controller == null && (agentId == null || transport == null)) return null;
   const react = (emoji: string) => {
     if (controller != null) {
-      controller.react(entryId, emoji);
+      if (controller.react(entryId, emoji)) onReacted?.();
       return;
     }
     if (agentId == null || transport == null) return;
@@ -154,61 +157,42 @@ export function MessageReactionAction({ entryId, agentId, myReactions, transport
   const canReact = controller != null || (agentId != null && transport != null);
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const open = controlledOpen ?? uncontrolledOpen;
-  const wrapperRef = useRef<HTMLDivElement | null>(null);
-  const triggerRef = useRef<HTMLButtonElement | null>(null);
-  const setOpen = (next: boolean, restoreFocus = false) => {
+  const setOpen = (next: boolean) => {
     if (controlledOpen === undefined) setUncontrolledOpen(next);
     onOpenChange?.(next);
-    if (!next && restoreFocus) triggerRef.current?.focus();
   };
-
-  useEffect(() => {
-    if (!open) return;
-    const onPointerDown = (event: globalThis.PointerEvent) => {
-      if (!(event.target instanceof Node) || wrapperRef.current?.contains(event.target)) return;
-      setOpen(false);
-    };
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      event.preventDefault();
-      setOpen(false, true);
-    };
-    document.addEventListener("pointerdown", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("pointerdown", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [open]);
 
   if (!canReact || entryId.length === 0) return null;
   const handleReacted = () => {
-    setOpen(false, true);
+    setOpen(false);
     onReacted?.();
   };
+  const picker = <ReactionPicker
+    agentId={agentId}
+    controller={controller}
+    entryId={entryId}
+    myReactions={myReactions}
+    onExpandPicker={onExpandPicker}
+    onReacted={handleReacted}
+    transport={transport}
+  />;
   return (
-    <div ref={wrapperRef}>
-      <button
-        aria-expanded={open}
-        aria-haspopup="menu"
-        aria-label="Add reaction"
-        className="sand-message-hover-actions__button"
-        onClick={() => setOpen(!open)}
-        ref={triggerRef}
-        type="button"
-      >
+    <SandPopover
+      ariaLabel="Reaction picker"
+      closeOnEscape
+      closeOnOutsidePress
+      content={picker}
+      contentStyle={{ zIndex: MESSAGE_REACTION_POPOVER_Z_INDEX }}
+      onOpenChange={setOpen}
+      open={open}
+      placement="top-end"
+      returnFocus
+      role="region"
+    >
+      <button aria-label="Add reaction" className="sand-message-hover-actions__button" type="button">
         <span aria-hidden="true" data-icon-name="smiley-happy">{children}</span>
       </button>
-      {open ? <ReactionPicker
-        agentId={agentId}
-        controller={controller}
-        entryId={entryId}
-        myReactions={myReactions}
-        onExpandPicker={onExpandPicker}
-        onReacted={handleReacted}
-        transport={transport}
-      /> : null}
-    </div>
+    </SandPopover>
   );
 }
 

@@ -4,8 +4,8 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
-    "tree": "b031c2cd84aa0cbbb149a7e5693c41ef14d643f3",
+    "commit": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+    "tree": "6ac9bbc1b44edcb119b1a724e7b0a321c3b7b8fa",
     "baseline_identity_accepted": false
   },
   "inventory": {
@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15841,
-    "unread_minimum": 10980,
+    "unread_minimum": 10970,
     "omitted_known": 0,
-    "note": "Live 3a15bf1f recursive census remains 16,120. 5,140 exact entries are read-complete; 279 unknown-closed; unknown 15,841, unread 10,980, omitted 0. Orders 5121-5140 were direct exact-blob semantic reads only and do not promote implementation or release state."
+    "note": "Live 42f8a36d recursive census remains 16,120. Read-through 5,150; 279 unknown-closed; unknown 15,841, unread 10,970, omitted 0. No implementation/release promotion."
   },
   "latest_recursive_evidence": {
     "run_id": 37872749663,
@@ -34,7 +34,7 @@
       "build-time-github-action-ref-resolutions.json",
       "build-time-github-clone-ref-resolutions.json"
     ],
-    "evidence_status": "historical-only-superseded-by-upstream-36a0c87",
+    "evidence_status": "historical-only-superseded-by-upstream-42f8a36d",
     "upstream_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db",
     "note": "Artifact 11591390327 proves the superseded 22b352e accepted tree only. A new same-head Source authority run is required for 36a0c87 after this rebaseline commit."
   },
@@ -46,26 +46,33 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live 3a15bf1f authority is exact through order 5,140. unread_minimum is 10,980, unknown remains 15,841, omitted remains 0.",
+  "note": "Live 42f8a36d authority exact through order 5,150; unread 10,970, unknown 15,841, omitted 0.",
   "rebaseline": {
-    "from_commit": "36a0c87ca096c48ccf6193aa2c31707fdcafcc7c",
-    "to_commit": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
-    "ahead_by": 1,
-    "changed_paths": 2,
+    "from_commit": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
+    "to_commit": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+    "ahead_by": 4,
+    "changed_paths": 9,
     "changed_authority_paths": [
-      "Telegram/SourceFiles/boxes/connection_box.cpp",
-      "Telegram/SourceFiles/core/application.cpp"
+      "Telegram/Resources/uwp/AppX/AppxManifest.xml",
+      "Telegram/Resources/winrc/Telegram.rc",
+      "Telegram/Resources/winrc/Updater.rc",
+      "Telegram/SourceFiles/core/version.h",
+      "Telegram/SourceFiles/history/view/history_view_message.cpp",
+      "Telegram/SourceFiles/ui/chat/attach/attach_bot_webview.cpp",
+      "Telegram/build/build_mac.py",
+      "Telegram/build/version",
+      "changelog.txt"
     ],
-    "current_head_source_authority_evidence": "Pending: post-rebaseline exact-head GitHub Actions Source authority run/artifact required.",
-    "current_source_read_through": 5140
+    "current_head_source_authority_evidence": "Pending post-rebaseline exact-head GitHub Actions Source authority artifact.",
+    "current_source_read_through": 5150
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
-    "upstream_commit": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
+    "upstream_commit": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
     "deterministic_prefix_closed": 123,
     "development_only_non_applicable": 66,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 5140
+    "read_through": 5150
   }
 }

@@ -192,9 +192,19 @@ test("workspace and expanded picker handoffs fail closed without required owners
 });
 
 
-test("reaction picker remains above the sticky composer while open", () => {
-  const css = readFileSync(new URL("./conversation/workspace/view.css", import.meta.url), "utf8");
-  assert.match(css, /\.sand-chat-input-dock\s*\{[^}]*z-index:\s*3;/s);
-  assert.match(css, /\.sand-message-action-anchor--menu-open\s*\{[^}]*z-index:\s*5001;/s);
-  assert.match(css, /\.sand-message-hover-actions\s*\{[^}]*z-index:\s*5001;/s);
+test("reaction picker canonical overlay owns hit testing only while open", () => {
+  const workspaceCss = readFileSync(new URL("./conversation/workspace/view.css", import.meta.url), "utf8");
+  const chromeCss = readFileSync(new URL("./window-chrome/view.css", import.meta.url), "utf8");
+  const pickerSource = readFileSync(new URL("./conversation/cards/transcript-card/reaction-picker.tsx", import.meta.url), "utf8");
+  const floatingSource = readFileSync(new URL("../ui/sand-floating-primitives.tsx", import.meta.url), "utf8");
+
+  const composerLayer = Number(workspaceCss.match(/\.sand-chat-input-dock\s*\{[^}]*z-index:\s*(\d+);/s)?.[1]);
+  const dragLayer = Number(chromeCss.match(/\.sand-cover-drag\s*\{[^}]*z-index:\s*(\d+);/s)?.[1]);
+  const reactionLayer = Number(pickerSource.match(/MESSAGE_REACTION_POPOVER_Z_INDEX\s*=\s*(\d+);/)?.[1]);
+  assert.equal(reactionLayer > composerLayer, true);
+  assert.equal(reactionLayer > dragLayer, true);
+  assert.match(pickerSource, /<SandPopover[\s\S]{0,800}contentStyle=\{\{ zIndex: MESSAGE_REACTION_POPOVER_Z_INDEX \}\}[\s\S]{0,600}open=\{open\}[\s\S]{0,300}returnFocus/);
+  assert.match(floatingSource, /if \(!context\.open\) return null;[\s\S]{0,1200}createPortal\(surface, document\.body\)/);
+  assert.doesNotMatch(workspaceCss, /\.sand-chat-input-dock\s*\{[^}]*pointer-events:\s*none/s);
+  assert.doesNotMatch(chromeCss, /\.sand-cover-drag\s*\{[^}]*pointer-events:\s*none/s);
 });

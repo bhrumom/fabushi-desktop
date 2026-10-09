@@ -247,4 +247,4 @@ TDRP-001 只有以下同时成立才能 accepted：
 
 References: https://github.com/telegramdesktop/tdesktop ; upstream README/individual licenses at the accepted exact tree ; FBCP-001 Revision 7 ; current canonical Fabushi/Bot specifications.
 
-Current live authority (2026-10-09): `telegramdesktop/tdesktop@3a15bf1fe34b6950916215a11b50eadfce4bbb41` (root tree `b031c2cd84aa0cbbb149a7e5693c41ef14d643f3`), one commit ahead of historical `36a0c87ca096c48ccf6193aa2c31707fdcafcc7c`; changed paths: `Telegram/SourceFiles/boxes/connection_box.cpp`, `Telegram/SourceFiles/core/application.cpp`.
+Current live authority (2026-10-09): telegramdesktop/tdesktop@42f8a36d43b8c805bc821905bea4cfeb3af1d41d (root tree 6ac9bbc1b44edcb119b1a724e7b0a321c3b7b8fa), four commits ahead of historical 3a15bf1fe34b6950916215a11b50eadfce4bbb41; exactly nine existing paths changed, no add/delete/gitlink change, recursive denominator remains 16,120, and source closure remains open.cpp`, `Telegram/SourceFiles/core/application.cpp`.

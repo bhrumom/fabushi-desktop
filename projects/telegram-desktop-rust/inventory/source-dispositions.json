@@ -4,13 +4,13 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
-    "tree": "b031c2cd84aa0cbbb149a7e5693c41ef14d643f3"
+    "commit": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+    "tree": "6ac9bbc1b44edcb119b1a724e7b0a321c3b7b8fa"
   },
   "deterministic_recursive_prefix": {
     "first_order": 1,
-    "last_order": 5140,
-    "entries": 5140
+    "last_order": 5150,
+    "entries": 5150
   },
   "semantics": {
     "development_only_non_applicable_is_not_omission": true,
@@ -155,6 +155,12 @@
       "first_order": 5121,
       "last_order": 5140,
       "entries": 20
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/5141-5150.json",
+      "first_order": 5141,
+      "last_order": 5150,
+      "entries": 10
     }
   ]
 }

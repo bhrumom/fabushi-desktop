@@ -2,12 +2,12 @@
   "format_version": 3,
   "project_id": "TDRP-001",
   "spec_revision": 9,
-  "upstream_commit": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
+  "upstream_commit": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
   "target_commit": "3bc92400826cc4ca7ac665b467708e22261edc61",
   "coverage": {
     "source_entries_total": 16120,
     "unknown": 15841,
-    "unread": 10980,
+    "unread": 10970,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13472,24 +13472,31 @@
     }
   ],
   "rebaseline": {
-    "from_commit": "36a0c87ca096c48ccf6193aa2c31707fdcafcc7c",
-    "to_commit": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
-    "ahead_by": 1,
-    "changed_paths": 2,
+    "from_commit": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
+    "to_commit": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+    "ahead_by": 4,
+    "changed_paths": 9,
     "changed_authority_paths": [
-      "Telegram/SourceFiles/boxes/connection_box.cpp",
-      "Telegram/SourceFiles/core/application.cpp"
+      "Telegram/Resources/uwp/AppX/AppxManifest.xml",
+      "Telegram/Resources/winrc/Telegram.rc",
+      "Telegram/Resources/winrc/Updater.rc",
+      "Telegram/SourceFiles/core/version.h",
+      "Telegram/SourceFiles/history/view/history_view_message.cpp",
+      "Telegram/SourceFiles/ui/chat/attach/attach_bot_webview.cpp",
+      "Telegram/build/build_mac.py",
+      "Telegram/build/version",
+      "changelog.txt"
     ],
-    "source_read_reconciliation": "Recursive path denominator remains 16,120 on the accepted 3a15bf1f tree. Existing deterministic read prefix was exact-path/blob retained across the one-commit rebaseline and is now extended through order 5,140; this reading grants no implementation, verification, baseline-ready or release credit.",
-    "source_authority_evidence": "Live GitHub branch/tree evidence establishes 3a15bf1f/b031c2cd and the two-path source delta; same-head GitHub Actions Source authority artifact is required after this accounting commit."
+    "source_read_reconciliation": "Recursive denominator remains 16,120. Changed read-prefix orders are rebound and read-through advanced 5140 to 5150 by exact source reads. No implementation/verification/release credit.",
+    "source_authority_evidence": "Live GitHub authority is 42f8a36d/6ac9bbc1; same-head Source authority artifact remains required."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
-    "upstream_commit": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
+    "upstream_commit": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
     "deterministic_prefix_closed": 123,
     "development_only_non_applicable": 66,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 5140
+    "read_through": 5150
   }
 }

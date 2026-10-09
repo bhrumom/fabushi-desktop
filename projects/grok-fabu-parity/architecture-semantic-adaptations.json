@@ -400,7 +400,7 @@
       "referencePath": "frontend/src/recovered/features/conversation/workspace/media-viewer.tsx",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "9c18a421c313b107e84314a576b98eb1e9de04a7",
+      "targetBlobSha": "2873e1e5ee4a5deaa877656f4ebc1a013e9d5ba3",
       "behavioralEvidence": [
         "frontend/src/recovered/features/conversation/workspace/media-viewer.tsx",
         "frontend/src/recovered/features/conversation/workspace/transcript.tsx",

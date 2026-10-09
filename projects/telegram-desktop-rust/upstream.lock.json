@@ -8,16 +8,16 @@
     "repository": "telegramdesktop/tdesktop",
     "url": "https://github.com/telegramdesktop/tdesktop",
     "discovery_ref": "refs/heads/dev",
-    "commit": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
-    "tree": "b031c2cd84aa0cbbb149a7e5693c41ef14d643f3",
-    "committed_at": "2026-10-09T05:54:30Z",
+    "commit": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+    "tree": "6ac9bbc1b44edcb119b1a724e7b0a321c3b7b8fa",
+    "committed_at": "2026-10-09T08:10:13Z",
     "accepted": true
   },
   "previous_historical_baseline": {
-    "commit": "36a0c87ca096c48ccf6193aa2c31707fdcafcc7c",
-    "tree": "94e009f981d886ee55cd0450f0a5cc9b38305ba8",
+    "commit": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
+    "tree": "b031c2cd84aa0cbbb149a7e5693c41ef14d643f3",
     "evidence_status": "historical-only",
-    "reason": "Revision 9 live dev authority advanced one crash/layer-lifecycle commit to 3a15bf1fe34b6950916215a11b50eadfce4bbb41; 36a0c87ca096c48ccf6193aa2c31707fdcafcc7c authority and its Actions artifacts are historical-only."
+    "reason": "Revision 9 live dev authority advanced four commits to 42f8a36d; 3a15bf1f evidence is historical-only. Nine existing root paths changed with no add/delete/gitlink change."
   },
   "observed_root_inventory": {
     "tree_truncated": false,
@@ -29,8 +29,8 @@
     "root_non_directory_count": 6648
   },
   "delta_from_previous_baseline": {
-    "ahead_by": 1,
-    "changed_paths": 2
+    "ahead_by": 4,
+    "changed_paths": 9
   },
   "direct_gitlinks": [
     {
@@ -264,9 +264,9 @@
     "root_source_entries_total": 6648,
     "recursive_source_entries_total": 16120,
     "unknown_minimum": 15841,
-    "unread_minimum": 10980,
+    "unread_minimum": 10970,
     "omitted_known": 0,
-    "note": "Accepted telegramdesktop/tdesktop@3a15bf1fe34b6950916215a11b50eadfce4bbb41 root tree b031c2cd84aa0cbbb149a7e5693c41ef14d643f3. Recursive denominator remains 16,120. 5,140 exact entries are read-complete, 279 unknown-closed: unknown=15,841, unread=10,980, omitted=0. Orders 5001-5140 were direct exact-blob semantic reads only; reading does not promote implementation or release state."
+    "note": "Accepted 42f8a36d root tree 6ac9bbc1. Recursive denominator stays 16,120. Read-through 5,150 after re-signing changed orders 3154/3200/3201/3765/4413 and reading 5141-5150; unknown=15,841, unread=10,970, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -280,7 +280,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Live upstream baseline is 3a15bf1fe34b6950916215a11b50eadfce4bbb41; current-head Revision 9 source-authority evidence is required. Full source closure remains open."
+    "note": "Live upstream is 42f8a36d; successful same-head Source authority/attestation artifacts and full source closure remain required."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",
@@ -294,7 +294,7 @@
     "artifact_digest": "sha256:2282fdfe4cdc4835240a503092b107ae6037749e1d615978a34a36829f9affca",
     "upstream_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
     "recursive_non_directory_entries": 15788,
-    "superseded_by_upstream_commit": "36a0c87ca096c48ccf6193aa2c31707fdcafcc7c"
+    "superseded_by_upstream_commit": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d"
   },
   "recursive_inventory_evidence": {
     "status": "historical-only",
@@ -309,7 +309,7 @@
     "upstream_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
     "recursive_non_directory_entries": 15788,
     "source_closure_ready": false,
-    "superseded_by_upstream_commit": "36a0c87ca096c48ccf6193aa2c31707fdcafcc7c"
+    "superseded_by_upstream_commit": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d"
   },
   "build_time_acquisition_inventory": {
     "path": "projects/telegram-desktop-rust/inventory/build-time-acquisitions.json",
@@ -621,17 +621,17 @@
       "entries": 43
     },
     "total_recursive_non_directory_entries": 16120,
-    "superseded_by_upstream_commit": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
-    "current_census_status": "live-tree-and-exact-delta-recomputed-path-stable-pending-current-head-actions",
-    "current_upstream_commit": "3a15bf1fe34b6950916215a11b50eadfce4bbb41"
+    "superseded_by_upstream_commit": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+    "current_census_status": "live-tree-nine-path-delta-path-stable-pending-current-head-actions",
+    "current_upstream_commit": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d"
   },
   "source_disposition_evidence": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
-    "upstream_commit": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
+    "upstream_commit": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
     "deterministic_prefix_closed": 123,
     "development_only_non_applicable": 66,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 5140
+    "read_through": 5150
   }
 }

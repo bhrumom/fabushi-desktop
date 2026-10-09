@@ -1,6 +1,6 @@
 # Telegram source read: deterministic orders 3701-3800
 
-Authority: accepted `telegramdesktop/tdesktop@22b352e866d0402505c07fa4ed21d75d7e4fb3db` / tree `94ae09469c816b350f60dc9ada1ff049323be8e7`; exact object/size/type is bound to Source authority run `37869950664`, job `113625536646`, artifact `11589926169`, member `upstream-recursive-inventory.json`.
+Authority: live accepted telegramdesktop/tdesktop@42f8a36d / tree 6ac9bbc1. Order 3765 core/version.h re-read and rebound to 84ea0f90963b3a8a8dc3f9595b4e3d37dbf8dedf (7.3 stable identity). Prior artifacts are historical-only.
 
 Exact source reading splits this batch across real owners: typed click/deep-link routing, Cloud Password and screenshot protection, Settings/Proxy, crash/deadlock observability, geolocation, external-control IPC, file permissions/utilities, launcher/sandbox/single-instance state, keyboard shortcuts, TON/external URL routing, UI integration, updater channel/check/trust keys/unpack/signature verification, WebSocket transport and country metadata.
 
