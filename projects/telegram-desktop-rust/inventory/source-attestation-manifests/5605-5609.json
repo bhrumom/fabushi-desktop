@@ -1,0 +1,37 @@
+{
+  "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+  "start": 5605,
+  "end": 5609,
+  "entries": [
+    {
+      "order": 5605,
+      "path": "Telegram/SourceFiles/settings/sections/settings_notifications.cpp",
+      "blob": "a16c3ee9690de934d795a2803ada0e82c3f9db94",
+      "consumer_symbol": "NotificationsId"
+    },
+    {
+      "order": 5606,
+      "path": "Telegram/SourceFiles/settings/sections/settings_notifications.h",
+      "blob": "b55fabd4d8ba98a590cc96a14b917ea1a4d26984",
+      "consumer_symbol": "NotificationsId"
+    },
+    {
+      "order": 5607,
+      "path": "Telegram/SourceFiles/settings/sections/settings_notifications.style",
+      "blob": "b98dd63f0127fccd50c83b8b621d1f2ffef5f03a",
+      "consumer_symbol": "notificationsBoxMonitor"
+    },
+    {
+      "order": 5608,
+      "path": "Telegram/SourceFiles/settings/sections/settings_passkeys.cpp",
+      "blob": "79a0ada396ad986446305ecc95a5ffedc052faab",
+      "consumer_symbol": "PasskeysId"
+    },
+    {
+      "order": 5609,
+      "path": "Telegram/SourceFiles/settings/sections/settings_passkeys.h",
+      "blob": "612d507ab0d070a99dbc372ce8d8b633c0f85531",
+      "consumer_symbol": "PasskeysId"
+    }
+  ]
+}

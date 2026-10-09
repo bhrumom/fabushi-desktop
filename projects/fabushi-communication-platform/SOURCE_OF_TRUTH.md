@@ -66,9 +66,14 @@ Revision 3 读取：main `860f03a8553c779fe006c7826f190c3014a571dc`；PR #20 已
 
 先做新基线全量差异与 current owner 对照，再按已明确责任推进真实实现。遇到阻塞记录解除条件并推进不依赖该阻塞的下一项，不能放宽 gate。此次只修订文档，未完成模块迁移或 UI 改造；全产品完成以 FBCP-001 AC-01 至 AC-50 全部通过为准。
 
-Current live authority (2026-10-09): `telegramdesktop/tdesktop@863cf10d9f34fb0b1b35b35da1bda75acfc58d2e` (root tree `5030985204963cbbd362ced7412d231b04ebd0cc`), three commits ahead of historical `42f8a36d43b8c805bc821905bea4cfeb3af1d41d`; 15 root paths changed (12 modified, 3 added), recursive denominator is 16,123, read-through is 5,604, unread is 10,519, unknown is 15,844, omitted is 0, and source closure remains open.
+Current live authority (2026-10-09): `telegramdesktop/tdesktop@863cf10d9f34fb0b1b35b35da1bda75acfc58d2e` (root tree `5030985204963cbbd362ced7412d231b04ebd0cc`), three commits ahead of historical `42f8a36d43b8c805bc821905bea4cfeb3af1d41d`; 15 root paths changed (12 modified, 3 added), recursive denominator is 16,123, read-through is 5,609, unread is 10,514, unknown is 15,844, omitted is 0, and source closure remains open.
 
 
 ### TDRP read-through 5600-5604
 
 Local cache/storage policy and Settings landing composition are exact-source read-complete but mapped-open. They reuse existing canonical Settings, Storage/Cache, Identity/Account, Privacy/Security, Wallet/Payments, Business and platform-adapter owners; no second Settings or storage runtime is introduced. Current accounting: read-through 5,604; unread 10,519; unknown 15,844; omitted 0.
+
+
+### TDRP read-through 5605-5609
+
+Notification policy/platform integration and Account Passkeys/WebAuthn are exact-source read-complete but production-open. Existing canonical Notification, Account/Session, Privacy, Call/Auth and Platform adapter owners must absorb them; no Telegram-derived notification manager truth or passkey store is introduced. Current accounting: read-through 5,609; unread 10,514; unknown 15,844; omitted 0.

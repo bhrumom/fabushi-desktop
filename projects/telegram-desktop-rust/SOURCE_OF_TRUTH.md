@@ -91,7 +91,7 @@ release candidate 只有在 independent acceptance 为 ACCEPT、0 open P0/P1/blo
 
 每个模块继续执行 `unreviewed -> understood -> mapped -> implemented -> verified` 的真实证据路径。遇到 service/account/signing blocker，记录解除条件并继续推进所有不依赖该 blocker 的 responsibility。
 
-Current live authority (2026-10-09): `telegramdesktop/tdesktop@863cf10d9f34fb0b1b35b35da1bda75acfc58d2e` (root tree `5030985204963cbbd362ced7412d231b04ebd0cc`), three commits ahead of historical `42f8a36d43b8c805bc821905bea4cfeb3af1d41d`; 15 root paths changed (12 modified, 3 added), recursive denominator is 16,123, read-through is 5,604, unread is 10,519, unknown is 15,844, omitted is 0, and source closure remains open.
+Current live authority (2026-10-09): `telegramdesktop/tdesktop@863cf10d9f34fb0b1b35b35da1bda75acfc58d2e` (root tree `5030985204963cbbd362ced7412d231b04ebd0cc`), three commits ahead of historical `42f8a36d43b8c805bc821905bea4cfeb3af1d41d`; 15 root paths changed (12 modified, 3 added), recursive denominator is 16,123, read-through is 5,609, unread is 10,514, unknown is 15,844, omitted is 0, and source closure remains open.
 
 Current source accounting: deterministic read-through `5599/16123`; unread `10524`; unknown `15844`; unknown-closed `279`; omitted `0`. Orders 5001-5599 are exact-blob read-complete. Media-view/menu responsibilities and MTProto-derived transport/session/auth/config/security/proxy/error/schema/reconnect/bootstrap responsibilities remain mapped-open except for explicitly cited existing partial Fabushi slices; MTProto wire/socket/DC mechanics are source-neutral platform/protocol replacements, not a second runtime and not omitted. Unknown stays unchanged until complete responsibility and exact-head verification gates close; no baseline-ready or release credit is granted.
 
@@ -217,3 +217,10 @@ Manage semantics include wallet key-protection revalidation/migration before pas
 Orders 5600-5604 are exact `settings_local_storage.cpp/.h/.style` and `settings_main.cpp/.h` blobs. Local Storage owns account-local dual-cache statistics, category/all clearing, device-capacity projection, coupled total/media cache quotas and retention policy; clearing is duplicate-fenced and settles only after both databases plus the minimum presentation interval. Settings Main composes active-account profile plus canonical Notifications/Privacy/Chat/Folders/Advanced/Devices/Power/Language/Wallet/Business/Help routes, add-account/logout, scale confirm/restart, validation/support actions and account-scoped refreshes.
 
 All responsibilities remain mapped-open to source-neutral owners. Production closure must cover failure/cancel/retry/idempotency/account-switch/stale-result/teardown/reload/restart/recovery plus keyboard/focus/a11y/light-dark/responsive/reduced-motion evidence. Unknown remains 15,844; omitted remains 0. Read-through is 5,604/16,123; first unread is 5,605 `settings_notifications.cpp` (`a16c3ee9690de934d795a2803ada0e82c3f9db94`).
+
+
+### Read-through 5605-5609
+
+Notifications combines server-backed type mute/exceptions/reactions and call/contact settings with app desktop/sound/preview/badge/multi-account/native-manager/display preferences. All-account disable performs exact inactive-session cleanup. Native/custom manager selection is a platform adapter, not a second notification owner; reply/mark-read/open still require canonical exact-scope authorization and cleanup.
+
+Passkeys is one account-auth chain: server registration challenge → bounded platform WebAuthn → server finalize, with unsupported/unsigned failure closed and exact-id deletion. Signed packaged Windows/macOS WebAuthn evidence remains required. All rows stay mapped-open. Accounting: read-through 5,609; unread 10,514; unknown 15,844; omitted 0. First unread 5,610 `settings_premium.cpp`.
