@@ -1,8 +1,10 @@
 export type AnalyticsCell =
   | { readonly type: "empty" }
-  | { readonly type: "text" | "header"; readonly text: string }
+  | { readonly type: "text"; readonly text: string }
+  | { readonly type: "header"; readonly text: string }
   | { readonly type: "number"; readonly value: number }
-  | { readonly type: "date" | "datetime"; readonly milliseconds: number };
+  | { readonly type: "date"; readonly milliseconds: number }
+  | { readonly type: "datetime"; readonly milliseconds: number };
 
 export interface AnalyticsSheet {
   readonly name: string;
