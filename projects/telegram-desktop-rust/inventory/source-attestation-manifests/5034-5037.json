@@ -1,0 +1,31 @@
+{
+  "accepted_upstream": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
+  "start": 5034,
+  "end": 5037,
+  "entries": [
+    {
+      "order": 5034,
+      "path": "Telegram/SourceFiles/mainwidget.cpp",
+      "blob": "619d6ad925a31424c65dd4d83c1d118376d76f4b",
+      "consumer_symbol": "MainWidget"
+    },
+    {
+      "order": 5035,
+      "path": "Telegram/SourceFiles/mainwidget.h",
+      "blob": "086a6992cb1cd6b0deb6e145b839b383c7538a6e",
+      "consumer_symbol": "MainWidget"
+    },
+    {
+      "order": 5036,
+      "path": "Telegram/SourceFiles/mainwindow.cpp",
+      "blob": "4c2279e4c9fa033d7845e93c6291b75b8da1be16",
+      "consumer_symbol": "MainWindow"
+    },
+    {
+      "order": 5037,
+      "path": "Telegram/SourceFiles/mainwindow.h",
+      "blob": "8f628c4797690ce5e88e61add25d27406110cc16",
+      "consumer_symbol": "MainWindow"
+    }
+  ]
+}
