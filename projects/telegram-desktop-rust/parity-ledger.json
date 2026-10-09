@@ -13493,11 +13493,11 @@
       "Telegram/SourceFiles/ui/chat/chat.style",
       "Telegram/SourceFiles/wallet/wallet_content.cpp"
     ],
-    "source_read_reconciliation": "Accepted-tree blob order exact through 5,665/16,123; unknown 15,844, unread 10,458, omitted 0. Statistics 5654-5665 are read/decomposed and mapped-open; first unread 5666 statistics_format_values.cpp.",
+    "source_read_reconciliation": "Accepted-tree blob order exact through 5,696/16,123; unknown 15,844, unread 10,427, omitted 0. Statistics 5,654-5,696 are read/decomposed and mapped-open; first unread 5,697 Telegram/SourceFiles/stdafx.h@252ab2c2aa698e3337894ab6d50acef697789036.",
     "source_authority_evidence": "Deterministic ordering is derived from non-directory/blob rank in accepted recursive tree 5030985204963cbbd362ced7412d231b04ebd0cc. Previous 5623-5642 shard ranges were replaced, not retained as authority.",
     "current_source_read_through": 5696,
     "first_unread_order": 5697,
-    "first_unread_path": "PENDING accepted-tree next blob after statistics/widgets"
+    "first_unread_path": "Telegram/SourceFiles/stdafx.h"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",

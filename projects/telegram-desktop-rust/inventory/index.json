@@ -72,7 +72,7 @@
     "current_head_source_authority_evidence": "Fresh exact-head Source authority evidence required after the 863cf10d rebaseline; predecessor artifacts are historical only.",
     "current_source_read_through": 5696,
     "first_unread_order": 5697,
-    "first_unread_path": "PENDING accepted-tree next blob after statistics/widgets"
+    "first_unread_path": "Telegram/SourceFiles/stdafx.h"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
