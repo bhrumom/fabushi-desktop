@@ -22,7 +22,7 @@ import { resolveWithSingleRetry } from "./conversation/workspace/media-runtime.t
 import { accumulateWheelZoomSteps, normalizeWheelZoomDelta } from "./conversation/workspace/media-zoom.ts";
 import { DERIVED_MEDIA_PRELOAD_ROOT_MARGIN, DERIVED_MEDIA_THUMBNAIL_ROOT_MARGIN, isDerivedMediaNearViewport, isVisibilityBoundDerivedMedia, observeDerivedMediaVisibility, shouldResolveDerivedMedia, shouldResolveDerivedThumbnail } from "./conversation/workspace/media-visibility.ts";
 import { TRANSCRIPT_FOLLOW_LATEST_THRESHOLD_PX, isTranscriptNearBottom } from "./conversation/workspace/transcript-follow-state.ts";
-import { projectTranscriptEntry } from "../../production/model.ts";
+import { isTranscriptDeliveryActionable, isTranscriptDeliveryBusy, normalizeTranscriptDelivery } from "./conversation/workspace/transcript-delivery-state.ts";
 import { beginHorizontalScrollPointer, captureHorizontalScroll, clampHorizontalScrollOffset, normalizeHorizontalScrollWheelDelta, restoreHorizontalScrollOffset, updateHorizontalScrollPointer, updateHorizontalScrollWheelLock } from "./conversation/workspace/horizontal-scroll-state.ts";
 import {
   areAssistantProjectionCandidatesCompatible,
@@ -1118,28 +1118,26 @@ test("CONTRACT-TDRP-IV-VIEW-HIGHLIGHT-DISPOSAL-001 find highlights cannot settle
 });
 
 test("UNIT-FBCP-HUMAN-DISPATCHING-SETTLEMENT-001 Human dispatching remains unsettled until remote identity settlement", () => {
-  const projected = projectTranscriptEntry({
-    id: "human-message:nonce-1",
-    kind: "message",
-    role: "user",
-    content: "still dispatching",
-    delivery: "dispatching",
-    clientNonce: "nonce-1",
-    timestampMs: 1,
-  }, 0, "Human", "human-conversation");
-  assert.equal(projected?.kind, "message");
-  assert.equal(projected?.kind === "message" ? projected.delivery : undefined, "dispatching");
+  assert.equal(normalizeTranscriptDelivery("dispatching"), "dispatching");
+  assert.equal(normalizeTranscriptDelivery("scheduled"), "scheduled");
+  assert.equal(isTranscriptDeliveryBusy("dispatching"), true);
+  assert.equal(isTranscriptDeliveryActionable("dispatching"), false);
+  assert.equal(isTranscriptDeliveryBusy("sent"), false);
+  assert.equal(isTranscriptDeliveryActionable("sent"), true);
 });
 
 test("CONTRACT-FBCP-HUMAN-DISPATCHING-SETTLEMENT-001 dispatching stays busy and cannot expose settled message actions", () => {
+  const state = readFileSync(new URL("./conversation/workspace/transcript-delivery-state.ts", import.meta.url), "utf8");
   const model = readFileSync(new URL("./conversation/workspace/model.ts", import.meta.url), "utf8");
   const projection = readFileSync(new URL("../../production/model.ts", import.meta.url), "utf8");
   const transcript = readFileSync(new URL("./conversation/workspace/transcript.tsx", import.meta.url), "utf8");
-  assert.match(model, /TranscriptDelivery = [^;]*"dispatching"/);
-  assert.match(projection, /candidate === "dispatching"/);
-  assert.match(projection, /candidate === "scheduled"/);
-  assert.match(transcript, /entry\.delivery !== "queued" && entry\.delivery !== "dispatching"/);
-  assert.match(transcript, /entry\.delivery === "queued" \|\| entry\.delivery === "dispatching"/);
+  assert.match(state, /candidate === "dispatching"/);
+  assert.match(state, /candidate === "scheduled"/);
+  assert.match(state, /delivery === "pending" \|\| delivery === "queued" \|\| delivery === "dispatching"/);
+  assert.match(model, /TranscriptDelivery = TranscriptDeliveryState/);
+  assert.match(projection, /normalizeTranscriptDelivery\(/);
+  assert.match(transcript, /isTranscriptDeliveryActionable\(entry\.delivery\)/);
+  assert.match(transcript, /isTranscriptDeliveryBusy\(entry\.delivery\)/);
 });
 
 test("UNIT-TDRP-IV-ARTICLE-FOLLOW-LATEST-001 transcript follow state stays pinned only near the latest message", () => {

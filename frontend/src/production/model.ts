@@ -17,6 +17,7 @@ import { projectSendMessageText, type SendMessageTextAdjacency } from "../recove
 import { projectTimelineEvent } from "../recovered/features/conversation/cards/timeline-event-registry";
 import { projectTranscriptReactions } from "../recovered/features/conversation/cards/transcript-card/reaction-actions";
 import type { TranscriptThreadSummary } from "../recovered/features/conversation/cards/transcript-card/thread-summary-controller";
+import { normalizeTranscriptDelivery } from "../recovered/features/conversation/workspace/transcript-delivery-state";
 
 export type { DeepLinkInfo } from "../recovered/features/deep-links/overlay/model";
 
@@ -323,11 +324,11 @@ function messageText(entry: Record<string, unknown>): string | null {
 }
 
 function transcriptDelivery(entry: Record<string, unknown>): TranscriptMessage["delivery"] {
-  const candidate = entry.delivery ?? entry.status;
-  if (candidate === "pending" || candidate === "queued" || candidate === "dispatching" || candidate === "failed" || candidate === "sent" || candidate === "scheduled") return candidate;
-  if (entry.pending === true || entry.isPending === true) return "pending";
-  if (entry.failed === true || entry.isFailed === true) return "failed";
-  return undefined;
+  return normalizeTranscriptDelivery(
+    entry.delivery ?? entry.status,
+    entry.pending === true || entry.isPending === true,
+    entry.failed === true || entry.isFailed === true,
+  );
 }
 
 function transcriptStreaming(entry: Record<string, unknown>): boolean {

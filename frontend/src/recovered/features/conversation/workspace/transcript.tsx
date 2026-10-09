@@ -34,6 +34,7 @@ import { reconcileAssistantContentProjection, type AssistantProjectionCandidate,
 import { formatTranscriptToolCallName } from "./tool-call-label";
 import { copyTranscriptCodeText } from "./code-copy";
 import { isTranscriptNearBottom } from "./transcript-follow-state";
+import { isTranscriptDeliveryActionable, isTranscriptDeliveryBusy } from "./transcript-delivery-state";
 
 function transcriptIds(id: string, hasTimestamp: boolean) {
   const base = `sand-conversation-entry-${encodeURIComponent(id)}`;
@@ -73,7 +74,7 @@ function isOrdinaryMessageActionable(
   onForward?: (entry: TranscriptMessage) => void,
 ): boolean {
   const hasActionableContent = entry.text.length > 0 || (entry.attachments?.length ?? 0) > 0;
-  const deliveryActionable = entry.delivery !== "failed" && entry.delivery !== "pending" && entry.delivery !== "queued" && entry.delivery !== "dispatching";
+  const deliveryActionable = isTranscriptDeliveryActionable(entry.delivery);
   return hasActionableContent && deliveryActionable && (!isReadOnly || onCopy != null || onForward != null);
 }
 
@@ -1040,7 +1041,7 @@ export function ConversationTranscript({ entries, hasOlder = false, isLoadingOld
         }
 
         const ids = transcriptIds(entry.id, true);
-        const pending = entry.delivery === "pending" || entry.delivery === "queued" || entry.delivery === "dispatching";
+        const pending = isTranscriptDeliveryBusy(entry.delivery);
         const failed = entry.delivery === "failed";
         const replyPreview = entry.replyToId == null || resolveReplyPreview == null ? null : (resolveReplyPreview(entry.replyToId) ?? { kind: "missing" as const });
         const referencedEntry = entry.replyToId == null ? undefined : entries.find((candidate) => candidate.id === entry.replyToId);
