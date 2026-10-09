@@ -464,17 +464,19 @@ Wallet background `MouseButtonPress` is swallowed while the top information box 
 - Dossier: `projects/telegram-desktop-rust/dossiers/settings-local-storage-main-5600-5604-complete-read.md`.
 
 
-## TDRP Notifications + Passkeys 5605-5609 — mapped-open requirements
+## TDRP Notifications + Passkeys 5605-5613 — mapped-open requirements
 
 | requirement_id | oracle_ids | invariant_ids | production owner | required evidence | verdict |
 | --- | --- | --- | --- | --- | --- |
-| TDRP-R9-NOTIFICATIONS-5605-5607 | ORA-TDRP-NOTIFY-5605 | INV-NOTIFY-POLICY-SINGLE-OWNER-001; INV-NOTIFY-ACCOUNT-CLEANUP-001; INV-NOTIFY-NATIVE-ADAPTER-001; INV-NOTIFY-PRIVACY-PREVIEW-001; INV-NOTIFY-ACTION-SCOPE-001 | Canonical Notification Policy + Account/Session scope + Privacy + Call authorization + Platform Notification adapter | unit + server contract/fault + account-switch/reload + native/custom recreation + exact inactive-session cleanup + native reply/mark-read/open exact-scope + keyboard/a11y/light-dark/responsive packaged E2E | mapped-open |
-| TDRP-R9-PASSKEYS-5608-5609 | ORA-TDRP-PASSKEYS-5608 | INV-PASSKEY-CHALLENGE-FENCE-001; INV-PASSKEY-SIGNED-BUILD-001; INV-PASSKEY-EXACT-ID-001; INV-PASSKEY-FINALIZE-RECONCILE-001 | Canonical Account Auth/Passkeys + Platform WebAuthn adapter | unit + server/WebAuthn contract + stale challenge/cancel/unsupported/unsigned + platform-success/server-fail + idempotency/account-switch/restart + signed packaged Windows/macOS WebAuthn acceptance | mapped-open |
+| TDRP-R9-NOTIFICATIONS-5605-5611 | ORA-TDRP-NOTIFY-5605; ORA-TDRP-NOTIFY-REACTIONS-5608; ORA-TDRP-NOTIFY-TYPE-5610 | INV-NOTIFY-POLICY-SINGLE-OWNER-001; INV-NOTIFY-ACCOUNT-CLEANUP-001; INV-NOTIFY-NATIVE-ADAPTER-001; INV-NOTIFY-PRIVACY-PREVIEW-001; INV-NOTIFY-ACTION-SCOPE-001; INV-NOTIFY-EXCEPTION-SCOPE-001 | Canonical Notification Policy + Account/Session scope + Privacy + Call authorization + Conversation override + Platform Notification adapter | unit + server contract/fault + account-switch/reload + reaction source-scope + type default/exception precedence + native/custom recreation + exact inactive-session cleanup + native reply/mark-read/open exact-scope + keyboard/a11y/light-dark/responsive packaged E2E | mapped-open |
+| TDRP-R9-PASSKEYS-5612-5613 | ORA-TDRP-PASSKEYS-5612 | INV-PASSKEY-CHALLENGE-FENCE-001; INV-PASSKEY-SIGNED-BUILD-001; INV-PASSKEY-EXACT-ID-001; INV-PASSKEY-FINALIZE-RECONCILE-001 | Canonical Account Auth/Passkeys + Platform WebAuthn adapter | unit + server/WebAuthn contract + stale challenge/cancel/unsupported/unsigned + platform-success/server-fail + idempotency/account-switch/restart + signed packaged Windows/macOS WebAuthn acceptance | mapped-open |
 
-- `INV-NOTIFY-ACCOUNT-CLEANUP-001`: disabling all-account notifications must clear only inactive-session native/custom notifications and preserve active-session state.
+- `INV-NOTIFY-ACCOUNT-CLEANUP-001`: disabling all-account notifications clears only inactive-session native/custom notifications and preserves active-session state.
 - `INV-NOTIFY-NATIVE-ADAPTER-001`: native/custom notification managers are bounded projections; message/read truth remains canonical.
 - `INV-NOTIFY-ACTION-SCOPE-001`: native reply/mark-read/open must re-authorize exact account/conversation/topic-or-sublist/message scope before mutation and clean only matching notifications.
+- `INV-NOTIFY-EXCEPTION-SCOPE-001`: private/group/broadcast defaults and exact-peer exceptions preserve owner/type identity; add/remove/clear cannot leak across account or peer scope.
 - `INV-PASSKEY-CHALLENGE-FENCE-001`: registration challenge and platform callback cannot outlive their account/session/request identity.
 - `INV-PASSKEY-SIGNED-BUILD-001`: unsupported or unsigned platform credential creation fails closed; no software fallback may masquerade as platform WebAuthn.
 - `INV-PASSKEY-EXACT-ID-001`: delete targets the exact canonical server credential id behind explicit confirmation.
-- Dossier: `projects/telegram-desktop-rust/dossiers/settings-notifications-passkeys-5605-5609-complete-read.md`.
+- Existing remote Agent WebAuthn proxy/signer/runtime is not accepted as evidence of Account Passkeys product list/create/delete lifecycle.
+- Dossiers: `projects/telegram-desktop-rust/dossiers/settings-notifications-passkeys-5605-5609-complete-read.md`; `projects/telegram-desktop-rust/dossiers/settings-notification-type-passkeys-5610-5613-complete-read.md`.

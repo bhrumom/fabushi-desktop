@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16123,
     "unknown": 15844,
-    "unread": 10514,
+    "unread": 10510,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13493,8 +13493,8 @@
       "Telegram/SourceFiles/ui/chat/chat.style",
       "Telegram/SourceFiles/wallet/wallet_content.cpp"
     ],
-    "source_read_reconciliation": "Recursive denominator is 16,123. Exact source read-through is now 5,609. Orders 5605-5609 add mapped-open canonical Notification policy/platform-adapter and Passkey/WebAuthn responsibilities; unknown remains 15,844.",
-    "source_authority_evidence": "Fresh same-head Source authority evidence is required after the 5,609 read-through commit; predecessor artifacts are diagnostic only."
+    "source_read_reconciliation": "Recursive denominator is 16,123. Exact source read-through is now 5,613. Orders 5605-5609 are Notifications + Reactions; 5610-5611 are per-type notification policy; 5612-5613 are Account Passkeys/WebAuthn. All remain mapped-open; unknown remains 15,844.",
+    "source_authority_evidence": "Revision 9 validator caught and rejected the transient 5608 deterministic-path drift. This correction restores exact recursive order and requires fresh same-head source-authority evidence."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13503,6 +13503,6 @@
     "development_only_non_applicable": 66,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 5609
+    "read_through": 5613
   }
 }

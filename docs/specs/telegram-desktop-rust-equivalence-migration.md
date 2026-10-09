@@ -247,7 +247,7 @@ TDRP-001 只有以下同时成立才能 accepted：
 
 References: https://github.com/telegramdesktop/tdesktop ; upstream README/individual licenses at the accepted exact tree ; FBCP-001 Revision 7 ; current canonical Fabushi/Bot specifications.
 
-Current live authority (2026-10-09): `telegramdesktop/tdesktop@863cf10d9f34fb0b1b35b35da1bda75acfc58d2e` (root tree `5030985204963cbbd362ced7412d231b04ebd0cc`), three commits ahead of historical `42f8a36d43b8c805bc821905bea4cfeb3af1d41d`; 15 root paths changed (12 modified, 3 added), recursive denominator is 16,123, read-through is 5,609, unread is 10,514, unknown is 15,844, omitted is 0, and source closure remains open.
+Current live authority (2026-10-09): `telegramdesktop/tdesktop@863cf10d9f34fb0b1b35b35da1bda75acfc58d2e` (root tree `5030985204963cbbd362ced7412d231b04ebd0cc`), three commits ahead of historical `42f8a36d43b8c805bc821905bea4cfeb3af1d41d`; 15 root paths changed (12 modified, 3 added), recursive denominator is 16,123, read-through is 5,613, unread is 10,510, unknown is 15,844, omitted is 0, and source closure remains open.
 
 
 ### Revision 9 live read-through note: 5600-5604
@@ -255,6 +255,6 @@ Current live authority (2026-10-09): `telegramdesktop/tdesktop@863cf10d9f34fb0b1
 Exact-source decomposition now includes Local Storage and Settings Main. Local cache clearing/quota/retention must bind canonical Storage/Cache owners; Settings routing/profile/account/wallet/business/help composition must bind canonical product owners. Source-read credit does not reduce unknown. Current counters: 16,123 total; 5,604 read-through; 10,519 unread; 15,844 unknown; 0 omitted. First unread: order 5,605 `settings_notifications.cpp`.
 
 
-### Revision 9 live read-through note: 5605-5609
+### Revision 9 live read-through note: 5605-5613
 
-Exact-source decomposition now includes Notifications and Passkeys. Notification settings map to canonical notification policy/account scope/privacy/call authorization/platform adapters; Passkeys map to canonical Account Auth plus bounded WebAuthn. Reading does not close native notification action authorization or credential lifecycle production gaps. Counters: 16,123 total; 5,609 read-through; 10,514 unread; 15,844 unknown; 0 omitted. First unread: 5,610 `settings_premium.cpp`.
+Revision 9 fail-closed validation caught a transient deterministic-order mistake at 5608 and rejected the branch evidence. Correct exact order is: 5605–5607 Notifications main/header/style; 5608–5609 Reactions; 5610–5611 per-type notification policy; 5612–5613 Passkeys. The corrected rows are all mapped-open. Notification responsibilities map to canonical policy/account/privacy/call/platform owners; Account Passkeys map to canonical Account Auth plus bounded WebAuthn. Existing remote Agent WebAuthn proxy infrastructure is not product Account Passkeys proof. Reading does not close native action authorization or credential lifecycle gaps. Counters: 16,123 total; 5,613 read-through; 10,510 unread; 15,844 unknown; 0 omitted. First unread: 5,614 `settings_premium.cpp`.

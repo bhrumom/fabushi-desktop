@@ -23,15 +23,15 @@
     },
     {
       "order": 5608,
-      "path": "Telegram/SourceFiles/settings/sections/settings_passkeys.cpp",
-      "blob": "79a0ada396ad986446305ecc95a5ffedc052faab",
-      "consumer_symbol": "PasskeysId"
+      "path": "Telegram/SourceFiles/settings/sections/settings_notifications_reactions.cpp",
+      "blob": "87361b9226b8833f244706c4fec2d7e165a89dd6",
+      "consumer_symbol": "NotificationsReactions"
     },
     {
       "order": 5609,
-      "path": "Telegram/SourceFiles/settings/sections/settings_passkeys.h",
-      "blob": "612d507ab0d070a99dbc372ce8d8b633c0f85531",
-      "consumer_symbol": "PasskeysId"
+      "path": "Telegram/SourceFiles/settings/sections/settings_notifications_reactions.h",
+      "blob": "21a661dce7c3790bca8af8f6a1f99367dc2b538b",
+      "consumer_symbol": "NotificationsReactions"
     }
   ]
 }
