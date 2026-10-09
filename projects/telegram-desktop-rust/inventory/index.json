@@ -13,10 +13,10 @@
     "recursive_non_directory_entries": 16120,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 15844,
-    "unread_minimum": 13020,
+    "unknown_minimum": 15841,
+    "unread_minimum": 12920,
     "omitted_known": 0,
-    "note": "Live 22b352e recursive census is 16,120. 3,100 exact entries are read-complete; 276 are explicitly unknown-closed; unknown 15,844, unread 13,020, omitted 0. Orders 3001-3100 cover Stories stealth, themes/navigation, Toast, Calls/Profile/Search top bar, platform tray/install, profile photo upload, voice-record lock/view-once, media mute, Wallet and Windows window control; only title_search (3 density rows) is explicitly unreachable."
+    "note": "Live 22b352e recursive census is 16,120. 3,200 exact entries read-complete; 279 unknown-closed; unknown 15,841, unread 12,920, omitted 0. Orders 3101-3200 cover localization, themes, picker/QRC resource packaging, call/notification sounds, updater trust and Windows/UWP/WinRC packaging; only legacy window_shadow (3 density rows) is explicitly unreachable."
   },
   "latest_recursive_evidence": {
     "run_id": 37864697175,
@@ -106,7 +106,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live 22b352e authority is exact through order 3,100. unread_minimum is 13,020, unknown remains 15,844, omitted remains 0. Exact object/size/type after 3000 is bound from the successful full recursive-inventory artifact.",
+  "note": "Live 22b352e authority is exact through order 3,200; post-3000 object/size/type comes from successful full recursive inventory artifact.",
   "rebaseline": {
     "from_commit": "6ec5014a92c4580841a043c440d65e8fc605ff78",
     "to_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db",
@@ -125,8 +125,8 @@
     "upstream_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db",
     "deterministic_prefix_closed": 123,
     "development_only_non_applicable": 66,
-    "unknown_closed": 276,
+    "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 3100
+    "read_through": 3200
   }
 }
