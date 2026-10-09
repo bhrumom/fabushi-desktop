@@ -1,4 +1,4 @@
-Live Revision 9 authority (2026-10-10): telegramdesktop/tdesktop@65e23ba7137ea4129b6bc1b2616104a1f59495ef (root tree 6b616494f3465324e749a04dcd1c9d508657a998). Root non-directory=6,653; recursive non-directory=16,125; read-through=5,991; first unread=5,992 Telegram/SourceFiles/ui/controls/call_button.cpp@af74333fde39b33ca6a40a8bc8efd8bef0da3a9b; unread=10,134; unknown=15,846; omitted=0. Reading alone never closes unknown. Fresh descendant exact-head GitHub Actions evidence is required.
+Live Revision 9 authority (2026-10-10): telegramdesktop/tdesktop@65e23ba7137ea4129b6bc1b2616104a1f59495ef (root tree 6b616494f3465324e749a04dcd1c9d508657a998). Root non-directory=6,653; recursive non-directory=16,125; read-through=6,001; first unread=6,002 Telegram/SourceFiles/ui/controls/delete_message_context_action.cpp@9cecf76e10501486a63c9eff49ed2dfa083be45f; unread=10,124; unknown=15,846; omitted=0. Reading alone never closes unknown. Fresh descendant exact-head GitHub Actions evidence is required.
 
 # Telegram 源码 → Fabushi 全量等价重写 — Source of Truth
 
@@ -379,3 +379,8 @@ Orders **5,910–5,980** are exact-blob read-complete/responsibility-decomposed.
 ### Source closure through 5,991
 
 The deterministic prefix is read/decomposed through **5,991**. Color contrast/serialization maps to canonical semantic-theme utilities; button busy/context-menu/two-label behavior maps to canonical Button/IconButton/ContextMenu without source-named components. A visual disabled state does not replace command-level duplicate-execution fencing. Reading closes no unknown. Accounting: **5,991/16,125 read; 10,134 unread; 15,846 unknown; 0 omitted**.
+
+
+### Source closure through 6,001
+
+The deterministic prefix is exact-blob read/decomposed through **6,001**. Call action/mute UI maps to existing Human call + canonical Button/IconButton owners; service check maps to Checkbox/theme; compose-AI/large-paste maps to canonical Composer/attachment/AI owners; custom emoji Toast maps to Toast + emoji/media resolution. The current production slice canonicalizes Human call buttons and puts duplicate mute refusal plus rollback in the command owner, not presentation state. Unknown is unchanged because the complete responsibilities are not yet verified. Accounting: **6,001/16,125 read; 10,124 unread; 15,846 unknown; 0 omitted**. First unread is 6,002 `ui/controls/delete_message_context_action.cpp@9cecf76e…`.
