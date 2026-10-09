@@ -13,18 +13,18 @@
     "recursive_non_directory_entries": 16120,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 15991,
-    "unread_minimum": 14577,
+    "unknown_minimum": 15988,
+    "unread_minimum": 14420,
     "omitted_known": 0,
-    "note": "Live 22b352e recursive census is 16,120. 1,543 exact entries are read-complete; 129 are explicitly unknown-closed; unknown 15,991, unread 14,577, omitted 0. Orders 1538-1543 are responsibility-decomposed; Story share/views awaits exact-head verification and Poll attachment preview remains open."
+    "note": "Live 22b352e recursive census is 16,120. 1,700 exact entries are read-complete; 132 are explicitly unknown-closed; unknown 15,988, unread 14,420, omitted 0. Orders 1603-1700 are consumer-traced and responsibility-decomposed with implementation gates open."
   },
   "latest_recursive_evidence": {
-    "run_id": 37860154455,
+    "run_id": 37861966662,
     "run_attempt": 1,
-    "job_id": 113594053543,
-    "head_sha": "930a4d4e8894c1589f184cfd5b9410bf104f53d2",
-    "artifact_id": 11585542841,
-    "artifact_digest": "sha256:fdaf778a364adfc3b9c71d4c511abad0842e7130bfecdaf63d122a019de05716",
+    "job_id": 113599732231,
+    "head_sha": "ae11d378f92ce19e42e9ccdf59494461672809f3",
+    "artifact_id": 11585584799,
+    "artifact_digest": "sha256:094e1f221b8078f62f6cd9f313409317ea82d0f2733e10acd8d5f1ad4c32be55",
     "artifact_files": [
       "upstream-root-inventory.json",
       "upstream-recursive-inventory.json",
@@ -49,7 +49,7 @@
       "source-consumer-reachability-1401-1500.txt",
       "source-consumer-trace-1401-1500.txt"
     ],
-    "evidence_status": "exact-parent-head-source-authority-evidence",
+    "evidence_status": "exact-current-head-source-authority-success",
     "upstream_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db"
   },
   "closure_rules": {
@@ -60,7 +60,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live 22b352e authority is exact through order 1,543. unread_minimum is 14,577, unknown remains 15,991, omitted remains 0. Orders 1538-1543 stay fail-closed until Story exact-head verification and Poll attachment preview implementation both close their responsibilities.",
+  "note": "Live 22b352e authority is exact through order 1,700. unread_minimum is 14,420, unknown remains 15,988, omitted remains 0. Orders 1603-1700 are mapped-open product responsibilities; read-through does not imply implementation verification.",
   "rebaseline": {
     "from_commit": "6ec5014a92c4580841a043c440d65e8fc605ff78",
     "to_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db",
@@ -72,15 +72,15 @@
       "Telegram/SourceFiles/wallet/wallet_ton_connect.cpp",
       "Telegram/SourceFiles/wallet/wallet_ton_connect.h"
     ],
-    "current_head_source_authority_evidence": "run 37856138232 job 113580961853 artifact 11584172080 @ 48dd7f5eedb4838bf9a3bb7164cdd6b37c6dceb0"
+    "current_head_source_authority_evidence": "run 37861966662 job 113599732231 artifact 11585584799 @ ae11d378f92ce19e42e9ccdf59494461672809f3"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
     "upstream_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db",
     "deterministic_prefix_closed": 123,
     "development_only_non_applicable": 66,
-    "unknown_closed": 129,
+    "unknown_closed": 132,
     "omitted": 0,
-    "read_through": 1543
+    "read_through": 1700
   }
 }

@@ -23,13 +23,13 @@ Telegram media-view only exposes the share control when the displayed media is a
 
 Fabushi already owns the Story surface in `frontend/src/production/StoryCapabilitySurface.tsx` and the canonical Story state in `native/mahayana-messaging/src/story.rs`. The native model already carries `privacy`, `pinned_to_profile`, `protected_content`, and expiry. The current change extends the Coordinator DTO/parser to retain that source-neutral state and gates the canonical Share action by `privacy.kind === "everyone"`, `!protectedContent`, and `pinnedToProfile || expiresAtMs > nowMs`. The action rechecks against `Date.now()` to avoid an expiry race. No Telegram share icon/artwork is imported.
 
-Status: implemented on the working tree, pending exact-head GitHub Actions verification.
+Status: verified on exact HEAD ae11d378f92ce19e42e9ccdf59494461672809f3. GitHub Actions run 37861966662 renderer job 113599732256 passed CONTRACT-TDRP-STORY-SHARE-VIEWS-001, renderer typecheck/build, and source authority job 113599732231 passed with artifact 11585584799.
 
 ## Story views responsibility
 
 The Story model already owns named views plus `anonymous_view_count`. The current change extends the Coordinator DTO/parser to retain `anonymousViewCount` and projects the canonical visible count as `Object.keys(story.views).length + story.anonymousViewCount`. The surface reuses `SandBadge`; it does not import Telegram's eye raster.
 
-Status: implemented on the working tree, pending exact-head GitHub Actions verification.
+Status: the Story views sub-responsibility is verified on exact HEAD ae11d378f92ce19e42e9ccdf59494461672809f3 by the same renderer/source-authority evidence. Orders 1541-1543 nevertheless remain unknown-open because the shared mediaview/views asset also owns the still-unimplemented Poll attachment preview consumer.
 
 ## Poll attachment preview responsibility
 
@@ -39,4 +39,4 @@ Any future implementation must use the canonical Composer / attachment / Dialog 
 
 ## Accounting
 
-This dossier makes orders 1538-1543 read-complete and responsibility-decomposed. Deterministic read-through may advance from 1537 to 1543 and unread decreases from 14,583 to 14,577. Unknown remains 15,991 because neither the new Story implementation has exact-head verification yet nor the Poll attachment preview responsibility is implemented. Omitted remains 0.
+This dossier makes orders 1538-1543 read-complete and responsibility-decomposed. Deterministic read-through may advance from 1537 to 1543 and unread decreases from 14,583 to 14,577. Story share orders 1538-1540 are now unknown-closed by exact-head evidence. Unknown is therefore 15,988. Orders 1541-1543 remain unknown-open because Poll attachment preview is still unimplemented even though the Story views sub-responsibility is verified. Omitted remains 0.

@@ -11,6 +11,10 @@ const packagedExecutable = process.env.FABUSHI_ELECTRON_EXECUTABLE?.trim() || nu
 let e2eAuthServer: ReturnType<typeof createServer> | null = null;
 let e2eAuthBackendPromise: Promise<string> | null = null;
 
+async function scrollIntoInteractiveViewport(locator: Locator): Promise<void> {
+  await locator.evaluate((element) => element.scrollIntoView({ block: 'center', inline: 'nearest' }));
+}
+
 function e2eAuthToken(): string {
   const encode = (value: Record<string, unknown>) => Buffer.from(JSON.stringify(value), 'utf8').toString('base64url');
   return [
@@ -847,6 +851,7 @@ test('Human reply, attachment, reaction, and search stay on the shipping convers
     await expect(rootTurn).toBeVisible({ timeout: 10_000 });
     await expect(rootTurn).not.toHaveAttribute('data-pending', { timeout: 15_000 });
 
+    await scrollIntoInteractiveViewport(rootTurn);
     await rootTurn.hover();
     await rootTurn.getByRole('button', { name: 'Reply to your message' }).click();
     await expect(page.getByRole('button', { name: 'Cancel reply' })).toBeVisible();
@@ -888,6 +893,7 @@ test('Human reply, attachment, reaction, and search stay on the shipping convers
     await expect(mediaTurn).not.toHaveAttribute('data-pending', { timeout: 15_000 });
     const previewTrigger = mediaTurn.getByRole('button', { name: 'Media preview' });
     await expect(previewTrigger).toBeVisible({ timeout: 10_000 });
+    await scrollIntoInteractiveViewport(mediaTurn);
     await previewTrigger.focus();
     await previewTrigger.click();
     const mediaDialog = page.getByRole('dialog', { name: 'Media preview' });
@@ -905,6 +911,7 @@ test('Human reply, attachment, reaction, and search stay on the shipping convers
     await expect(mediaDialog).toHaveCount(0);
     await expect(previewTrigger).toBeFocused();
 
+    await scrollIntoInteractiveViewport(replyTurn);
     await replyTurn.hover();
     await replyTurn.getByRole('button', { name: 'Add reaction' }).click();
     await page.getByRole('button', { name: 'React with 👍' }).click();
