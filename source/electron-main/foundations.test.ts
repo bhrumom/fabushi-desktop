@@ -70,7 +70,7 @@ test("attachment staging uses the production filesystem owner and Node UUID sour
     const edge = createAttachmentEdgePort({
       byteLimitForName: () => 1024,
       getStagingDir: () => dir,
-      onEdgeFailure: (failure) => failures.push(failure),
+      onEdgeFailure: (failure: { leg: string; errorClass: string }) => failures.push(failure),
       now: () => 1_700_000_000_000,
       randomUUID: () => "00000000-0000-4000-8000-000000000001",
     } as unknown as AttachmentEdgeDeps);
