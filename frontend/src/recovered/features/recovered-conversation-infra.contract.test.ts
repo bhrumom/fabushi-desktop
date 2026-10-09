@@ -710,6 +710,21 @@ test("CONTRACT-TDRP-MEDIAVIEW-WINDOW-CHROME-REPLACEMENT-001 media preview replac
   assert.match(styles, /\.sand-media-viewer__image \{[\s\S]{0,100}max-width: 92vw;[\s\S]{0,100}max-height: calc\(100vh - 145px\)/);
 });
 
+test("CONTRACT-TDRP-MEDIAVIEW-NATIVE-PLAYBACK-001 canonical media preview delegates video playback to Chromium without a second renderer owner", () => {
+  const source = readFileSync(new URL("./conversation/workspace/media-viewer.tsx", import.meta.url), "utf8");
+  assert.match(source, /const videoRef = useRef<HTMLVideoElement \| null>\(null\);/);
+  assert.match(source, /<video aria-label=\{caption\.length > 0 \? caption : "Media preview"\} className="sand-media-viewer__image" controls[\s\S]{0,220}playsInline[\s\S]{0,160}preload="metadata"[\s\S]{0,120}ref=\{videoRef\}/);
+  assert.doesNotMatch(source, /controls=\{false\}/);
+  assert.match(source, /videoRef\.current\?\.pause\(\);[\s\S]{0,80}setMedia\(null\)/);
+  assert.match(source, /useEffect\(\(\) => \(\) => \{[\s\S]{0,100}videoRef\.current\?\.pause\(\)/);
+  assert.match(source, /event\.key === "Escape"[\s\S]{0,100}document\.fullscreenElement != null[\s\S]{0,140}onClose\(\)/);
+  assert.match(source, /target\?\.closest\("video, audio, button, input, select, textarea, \[role='slider'\], \[contenteditable='true'\]"\) != null\) return;/);
+  assert.match(source, /const onWheel = \(event: React\.WheelEvent<HTMLDivElement>\) => \{[\s\S]{0,100}media\?\.kind === "video"[\s\S]{0,60}return;/);
+  assert.match(source, /const onPointerDown = \(event: React\.PointerEvent<HTMLDivElement>\) => \{[\s\S]{0,120}media\?\.kind === "video"[\s\S]{0,120}return;/);
+  assert.match(source, /onDoubleClick=\{media\?\.kind === "video" \? undefined : fit\}/);
+  assert.doesNotMatch(source, /RendererGL|RendererRhi|TelegramMediaViewer|TelegramVideo/);
+});
+
 test("CONTRACT-TDRP-IV-VIEW-MEDIA-POINTER-RELEASE-001 media replacement releases stale viewer pointer ownership before the new resource settles", () => {
   const source = readFileSync(new URL("./conversation/workspace/media-viewer.tsx", import.meta.url), "utf8");
   const replacementStart = source.indexOf("setMedia(null);");
