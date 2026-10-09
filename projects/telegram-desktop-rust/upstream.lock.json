@@ -266,9 +266,9 @@
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
     "unknown_minimum": 15846,
-    "unread_minimum": 10021,
+    "unread_minimum": 10000,
     "omitted_known": 0,
-    "note": "Accepted 65e23ba tree 6b616494; exact read-through 6,104; unknown=15,846, unread=10,021, omitted=0."
+    "note": "Accepted 65e23ba tree 6b616494; exact read-through 6,125; unknown=15,846, unread=10,000, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -634,7 +634,7 @@
     "development_only_non_applicable": 69,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 6104
+    "read_through": 6125
   },
   "historical_exact_head_evidence": {
     "status": "historical-only",
