@@ -264,9 +264,9 @@
     "root_source_entries_total": 6648,
     "recursive_source_entries_total": 16120,
     "unknown_minimum": 15841,
-    "unread_minimum": 10620,
+    "unread_minimum": 10591,
     "omitted_known": 0,
-    "note": "Accepted 42f8a36d tree 6ac9bbc1. Read-through 5,500; unknown=15,841, unread=10,620, omitted=0."
+    "note": "Accepted 42f8a36d tree 6ac9bbc1. Read-through 5,529; unknown=15,841, unread=10,591, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -280,7 +280,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Live upstream 42f8a36d; read-through 5500/16120. unknown/unread closure and current-head Actions remain required."
+    "note": "Live upstream 42f8a36d; read-through 5529/16120. unknown/unread closure and current-head Actions remain required."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",
@@ -632,6 +632,6 @@
     "development_only_non_applicable": 66,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 5500
+    "read_through": 5529
   }
 }

@@ -358,3 +358,21 @@ Dossier: `projects/telegram-desktop-rust/dossiers/build-provenance-resolution-cc
 - `INV-TDRP-R9-WIN-CAPABILITY-ABSENCE-001`: Windows-native OCR/translation absence must remain observable; a source-neutral replacement may satisfy product capability but cannot masquerade as the unavailable native adapter.
 - Dossier: `projects/telegram-desktop-rust/dossiers/platform-shared-windows-5476-5500-complete-read.md`.
 - These rows grant source-read/traceability credit only. They do not grant production, test, release, or independent-acceptance credit.
+
+
+### TDRP Revision 9 source-read requirements 5501-5529
+
+| requirement | risk | invariant | exact source evidence | production status |
+| --- | --- | --- | --- | --- |
+| TDRP-R9-WIN-AUTH-IDENTITY-5501-5504 | critical | passkey/wallet/shell identity is exact, fail-closed and owned by canonical auth/packaging owners | source-dispositions 5501-5529 + manifest + dossier | MAPPED-SOURCE-READ-PRODUCTION-GAP |
+| TDRP-R9-WIN-STARTUP-NATIVE-5505-5509 | high | OS policy/capability absence is observable and native APIs remain bounded adapters | same shard + dossier | MAPPED-SOURCE-READ-PRODUCTION-OPEN |
+| TDRP-R9-WIN-TASKBAR-TOAST-5510-5514 | critical | player/notification state remains canonical; native taskbar/toast input is derived, fenced and authorized | same shard + dossier | MAPPED-SOURCE-READ-PRODUCTION-GAP |
+| TDRP-R9-POLL-LINK-MEDIA-5515-5520 | critical | one canonical poll/survey owner controls option links/media; upload callbacks are token-fenced and cancel-safe | same shard + dossier | MAPPED-SOURCE-READ-PRODUCTION-GAP |
+| TDRP-R9-PROFILE-PRIMITIVES-5521-5527 | medium | profile presentation reuses canonical ProfileSection/design-system and never owns profile truth | same shard + dossier | MAPPED-SOURCE-READ-PRODUCTION-OPEN |
+| TDRP-R9-SETTINGS-STATE-5528-5529 | high | settings/persistence/security/lifecycle truth is typed and single-owner; passcode backoff and filesystem permissions fail safe | same shard + dossier | MAPPED-SOURCE-READ-PRODUCTION-OPEN |
+
+- `INV-TDRP-R9-POLL-UPLOAD-TOKEN-001`: stale preparation/upload completion cannot replace media selected after its token was issued.
+- `INV-TDRP-R9-WIN-TASKBAR-DERIVED-001`: taskbar controls and icons derive from the canonical media player and theme; Explorer-specific settlement delay cannot become player truth.
+- `INV-TDRP-R9-TOAST-ACTIVATION-AUTH-001`: COM activation/user input is untrusted transport until exact canonical notification/conversation authorization succeeds.
+- Dossier: `projects/telegram-desktop-rust/dossiers/windows-poll-profile-settings-5501-5529-complete-read.md`.
+- These rows grant source-read/traceability credit only.
