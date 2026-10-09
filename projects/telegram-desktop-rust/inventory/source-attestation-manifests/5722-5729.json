@@ -1,0 +1,57 @@
+{
+  "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+  "accepted_tree": "5030985204963cbbd362ced7412d231b04ebd0cc",
+  "deterministic_order_basis": "non-directory/blob rank in accepted recursive tree",
+  "start": 5722,
+  "end": 5729,
+  "entries": [
+    {
+      "order": 5722,
+      "path": "Telegram/SourceFiles/storage/storage_account.cpp",
+      "blob": "5888ffa1164327b7170a2a3d8df7793a3fa467da",
+      "consumer_symbol": "storage_account.cpp"
+    },
+    {
+      "order": 5723,
+      "path": "Telegram/SourceFiles/storage/storage_account.h",
+      "blob": "b372bca4b78068e4293724b8a624ddd0a25a0284",
+      "consumer_symbol": "storage_account.h"
+    },
+    {
+      "order": 5724,
+      "path": "Telegram/SourceFiles/storage/storage_cloud_blob.cpp",
+      "blob": "338ee69dc35cf540c21cea9279d6bc38ee284fbc",
+      "consumer_symbol": "storage_cloud_blob.cpp"
+    },
+    {
+      "order": 5725,
+      "path": "Telegram/SourceFiles/storage/storage_cloud_blob.h",
+      "blob": "f339e81cc8dfc45c795fc9f75837347e6abb37ce",
+      "consumer_symbol": "storage_cloud_blob.h"
+    },
+    {
+      "order": 5726,
+      "path": "Telegram/SourceFiles/storage/storage_domain.cpp",
+      "blob": "034a52eec358a48b306ea84d6bcd6598982f2e2e",
+      "consumer_symbol": "storage_domain.cpp"
+    },
+    {
+      "order": 5727,
+      "path": "Telegram/SourceFiles/storage/storage_domain.h",
+      "blob": "878b236ab119781c9d1630029a72bd1f79e3c4a5",
+      "consumer_symbol": "storage_domain.h"
+    },
+    {
+      "order": 5728,
+      "path": "Telegram/SourceFiles/storage/storage_facade.cpp",
+      "blob": "ffb252a7edf89b0e86b4a98e09835c9b2ab19930",
+      "consumer_symbol": "storage_facade.cpp"
+    },
+    {
+      "order": 5729,
+      "path": "Telegram/SourceFiles/storage/storage_facade.h",
+      "blob": "8d7ddcde8efd4dd82c08670cb1ab303eb9c928d6",
+      "consumer_symbol": "storage_facade.h"
+    }
+  ]
+}

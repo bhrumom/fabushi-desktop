@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15844,
-    "unread_minimum": 10402,
+    "unread_minimum": 10394,
     "omitted_known": 0,
-    "note": "Live 863cf10d recursive census 16,123. Accepted-tree blob order exact through 5,721; unknown 15,844, unread 10,402, omitted 0. Orders 5,712-5,721 cover media-send preparation plus versioned local settings/document/peer persistence and migration."
+    "note": "Live 863cf10d recursive census 16,123. Accepted-tree blob order exact through 5,729; unknown 15,844, unread 10,394, omitted 0. Orders 5,722-5,729 cover account/domain persistence, cloud blobs, passcode/App Lock/wallet keying and shared-media/profile-photo cache facade."
   },
   "latest_recursive_evidence": {
     "run_id": 37872749663,
@@ -81,6 +81,6 @@
     "development_only_non_applicable": 66,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 5721
+    "read_through": 5729
   }
 }
