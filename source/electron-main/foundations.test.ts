@@ -41,6 +41,7 @@ import { createDesktopCallMediaPort } from "./call-media.js";
 import { normalizeCommitStagedAttachmentsEdgeRequest, normalizeStageAttachmentEdgeRequest } from "./attachments/attachment-edge-wire.js";
 import { createAttachmentEdgePort, type AttachmentEdgeDeps } from "./attachments/attachments.js";
 import { createMainEdgeHandlers } from "./main-edge.js";
+import { readDesktopAccessibilityState, setDesktopAccessibilitySupportEnabled } from "./accessibility-support.js";
 
 test("main edge accepts the shipping preload attachment wire contract", () => {
   const staged = normalizeStageAttachmentEdgeRequest({
@@ -159,11 +160,12 @@ test("UI accessibility preferences normalize, persist, and resolve RTL", () => {
   } finally { rmSync(dir,{recursive:true,force:true}); }
 });
 
-test("main edge exposes screen-reader support as a distinct Electron accessibility signal", () => {
-  const enabled = createMainEdgeHandlers({ readAccessibilitySupportEnabled: () => true } as never);
-  const disabled = createMainEdgeHandlers({ readAccessibilitySupportEnabled: () => false } as never);
-  assert.deepEqual(enabled.getAccessibilityState({}), { screenReader: true });
-  assert.deepEqual(disabled.getAccessibilityState({}), { screenReader: false });
+test("main edge exposes screen-reader support as distinct main-process accessibility state", () => {
+  setDesktopAccessibilitySupportEnabled(true);
+  assert.deepEqual(readDesktopAccessibilityState(), { screenReader: true });
+  assert.deepEqual(createMainEdgeHandlers({} as never).getAccessibilityState({}), { screenReader: true });
+  setDesktopAccessibilitySupportEnabled(false);
+  assert.deepEqual(createMainEdgeHandlers({} as never).getAccessibilityState({}), { screenReader: false });
 });
 
 test("call media device preferences normalize and persist in the canonical settings store", () => {

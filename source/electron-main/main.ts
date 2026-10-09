@@ -1,5 +1,6 @@
 import { installApplicationMenu, type ApplicationMenuElectronPort } from "./application-menu.js";
 import { reportDesktopEdgeFailure } from "./desktop-edge-failures.js";
+import { setDesktopAccessibilitySupportEnabled } from "./accessibility-support.js";
 import { createDevToolsGate, createDevToolsMembershipResolver } from "./devtools-gate.js";
 import {
   createHostWindowChords,
@@ -256,8 +257,10 @@ export function startElectronMain(deps: ElectronMainDependencies): ElectronMainR
   let isMainWindowCreationReady = false;
   let appIsQuitting = false;
   let services: ElectronMainServices | undefined;
+  setDesktopAccessibilitySupportEnabled(deps.app.accessibilitySupportEnabled === true);
   deps.app.on("accessibility-support-changed", (_event, accessibilitySupportEnabled) => {
-    services?.mainEdge.emit("accessibility-support-changed", { screenReader: accessibilitySupportEnabled === true });
+    const state = setDesktopAccessibilitySupportEnabled(accessibilitySupportEnabled);
+    services?.mainEdge.emit("accessibility-support-changed", state);
   });
   let overlaySession: ReturnType<typeof createWindowsTitleBarOverlaySession> | undefined;
 
