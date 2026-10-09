@@ -948,7 +948,7 @@
         "source/host/tests/mcp_discovery_telemetry_contract.rs",
         "source/host/tests/mcp_discovery_production_wiring_contract.rs"
       ],
-      "rationale": "Preserves the Grok SandMcpManager implementation as the single MCP owner while exposing approved Fabushi capabilities through the typed desktop facade: force-refresh catalog options, external-auth completion, and Box MCP server loading/tool discovery/tool execution backed by the existing Coordinator\u2192Host Box path. Manager ownership is not duplicated in Rust Host and the Coordinator/Host/Runner failure boundaries remain independent. The approved row-62 MCP discovery failure extension now forwards the frozen success/failure/stale/elapsed settlement through a dedicated reportMcpDiscoveryFailed Coordinator main-data request to the unique HostStructuredLogTelemetry owner; generic MCP diagnostics remain separate."
+      "rationale": "Preserves the Grok SandMcpManager implementation as the single MCP owner while exposing approved Fabushi capabilities through the typed desktop facade: force-refresh catalog options, external-auth completion, and Box MCP server loading/tool discovery/tool execution backed by the existing Coordinator→Host Box path. Manager ownership is not duplicated in Rust Host and the Coordinator/Host/Runner failure boundaries remain independent. The approved row-62 MCP discovery failure extension now forwards the frozen success/failure/stale/elapsed settlement through a dedicated reportMcpDiscoveryFailed Coordinator main-data request to the unique HostStructuredLogTelemetry owner; generic MCP diagnostics remain separate."
     },
     {
       "referencePath": "source/electron-main/mcp/mcp-runtime.ts",
@@ -1476,6 +1476,21 @@
         ".github/workflows/rust-desktop-runtime.yml"
       ],
       "rationale": "Preserves the frozen Grok transcript model while explicitly adapting TranscriptDelivery with a scheduled state required by canonical Fabushi Human direct-message transport. The new state represents a server-persisted message that is visible to the sender but fenced from the recipient until the single durable D1 scheduler activates it; it does not introduce a second transcript/message owner or alter ordinary sent/pending/queued/failed semantics."
+    },
+    {
+      "referencePath": "source/electron-main/attachments/attachments.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "fefb411467f153b98aa5b90153e4fd2aa11ee912",
+      "behavioralEvidence": [
+        "source/electron-main/attachments/attachments.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/desktop-chat-parity.yml",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves the frozen Grok attachment staging contract while adapting the shipping Electron main-process owner to use the explicit node:crypto randomUUID authority instead of an implicit global crypto binding. The attachment edge still validates names and byte limits, creates the staging directory, writes bytes to the production staging root, emits structured edge failures, and preserves commit/discard lifecycle semantics. The focused filesystem contract exercises the default Node UUID path, exact staged bytes, and cleanup; required exact-head Electron and Rust workflows provide integration evidence. This is a production-runtime compatibility adaptation, not a second attachment owner."
     }
   ]
 }
