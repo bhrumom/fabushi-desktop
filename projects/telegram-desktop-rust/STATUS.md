@@ -1,4 +1,4 @@
-Live Revision 9 authority (2026-10-10): telegramdesktop/tdesktop@65e23ba7137ea4129b6bc1b2616104a1f59495ef (root tree 6b616494f3465324e749a04dcd1c9d508657a998). Root non-directory=6,653; recursive non-directory=16,125; read-through=6,052; first unread=6,053 Telegram/SourceFiles/ui/controls/tabbed_search.cpp@ca207d0bf9ec6c6c4ea518b20fd6e83ce41bf679; unread=10,073; unknown=15,846; omitted=0. Reading alone never closes unknown. Fresh descendant exact-head GitHub Actions evidence is required.
+Live Revision 9 authority (2026-10-10): telegramdesktop/tdesktop@65e23ba7137ea4129b6bc1b2616104a1f59495ef (root tree 6b616494f3465324e749a04dcd1c9d508657a998). Root non-directory=6,653; recursive non-directory=16,125; read-through=6,068; first unread=6,069 Telegram/SourceFiles/ui/controls/who_reacted_context_action.cpp@6851dee06d13ac8f1f771cb3384c9367b5a53c75; unread=10,057; unknown=15,846; omitted=0. Reading alone never closes unknown. Fresh descendant exact-head GitHub Actions evidence is required.
 
 # Telegram Desktop → Fabushi 全量等价重写 — Status
 
@@ -130,3 +130,8 @@ Orders **6,033-6,041** are exact-blob read/decomposed for round-video recording/
 ### Source closure through 6,052
 
 Orders **6,042-6,052** are exact-blob read/decomposed for Stars rating, source-neutral tabs/subsection reorder and swipe gesture/scroll ownership. The existing canonical `SandTabs` owner is extended with optional overflow visibility, context-menu requests, locked reorder boundaries, pointer cancellation/edge-scroll and Alt+Arrow keyboard reorder; no Telegram-derived Tabs owner was added. Stars account/reputation truth, complete Avatar/Badge subsection composition and the navigation/conversation swipe owner remain mapped-open. Accounting: **6,052/16,125 read; 10,073 unread; 15,846 unknown; 0 omitted**. First unread is 6,053 `ui/controls/tabbed_search.cpp@ca207d0b…`. Reading alone does not reduce unknown.
+
+### Source closure through 6,068
+
+Orders **6,053-6,068** are exact-blob read/decomposed for grouped search/category picking, detail rows and transient tooltip lifetime, title/status chrome, localized fixed-precision amount input/IME, ephemeral-media countdown presentation, and Avatar/profile-media acquisition/upload/privacy/streaming lifecycle. The existing canonical `SandTooltip` gains optional auto-dismiss, outside-press/Escape dismissal and focus-return policy with a focused contract test; no Telegram-derived Tooltip owner was added. Search/Picker shipping composition, full profile-media ownership, monetary-domain applicability and authoritative ephemeral-message lifecycle remain mapped-open. Accounting: **6,068/16,125 read; 10,057 unread; 15,846 unknown; 0 omitted**. First unread is 6,069 `ui/controls/who_reacted_context_action.cpp@6851dee0…`. Reading alone does not reduce unknown.
+

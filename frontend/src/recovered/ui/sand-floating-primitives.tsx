@@ -268,6 +268,10 @@ export interface SandTooltipProps {
   readonly offset?: number;
   readonly openDelay?: number;
   readonly closeDelay?: number;
+  readonly autoDismissMs?: number;
+  readonly closeOnOutsidePress?: boolean;
+  readonly closeOnEscape?: boolean;
+  readonly returnFocus?: boolean;
   readonly disabled?: boolean;
   readonly defaultOpen?: boolean;
   readonly open?: boolean;
@@ -279,20 +283,71 @@ export interface SandTooltipProps {
   readonly onOpenChange?: (open: boolean) => void;
 }
 
-export function SandTooltip({ children, content, placement = "top", offset = 8, openDelay = 30, closeDelay = 300, disabled = false, defaultOpen = false, open: controlledOpen, ariaLabel, width, minWidth, maxWidth, onOpenChange }: SandTooltipProps): ReactNode {
+export function SandTooltip({
+  children,
+  content,
+  placement = "top",
+  offset = 8,
+  openDelay = 30,
+  closeDelay = 300,
+  autoDismissMs,
+  closeOnOutsidePress = false,
+  closeOnEscape = false,
+  returnFocus = false,
+  disabled = false,
+  defaultOpen = false,
+  open: controlledOpen,
+  ariaLabel,
+  width,
+  minWidth,
+  maxWidth,
+  onOpenChange,
+}: SandTooltipProps): ReactNode {
   const [hoverOpen, setHoverOpen] = useState(defaultOpen);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autoDismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const open = controlledOpen ?? hoverOpen;
-  const setOpen = (next: boolean) => { if (controlledOpen == null) setHoverOpen(next); onOpenChange?.(next); };
-  const schedule = (next: boolean, delay: number) => { if (timerRef.current != null) clearTimeout(timerRef.current); timerRef.current = setTimeout(() => setOpen(next), delay); };
-  useEffect(() => () => { if (timerRef.current != null) clearTimeout(timerRef.current); }, []);
+  const setOpen = useCallback((next: boolean) => {
+    if (controlledOpen == null) setHoverOpen(next);
+    onOpenChange?.(next);
+  }, [controlledOpen, onOpenChange]);
+  const schedule = useCallback((next: boolean, delay: number) => {
+    if (hoverTimerRef.current != null) clearTimeout(hoverTimerRef.current);
+    hoverTimerRef.current = setTimeout(() => setOpen(next), delay);
+  }, [setOpen]);
+  useEffect(() => () => {
+    if (hoverTimerRef.current != null) clearTimeout(hoverTimerRef.current);
+  }, []);
+  useEffect(() => {
+    if (autoDismissTimerRef.current != null) {
+      clearTimeout(autoDismissTimerRef.current);
+      autoDismissTimerRef.current = null;
+    }
+    if (!open || disabled || autoDismissMs == null || autoDismissMs <= 0) return;
+    const timer = setTimeout(() => setOpen(false), autoDismissMs);
+    autoDismissTimerRef.current = timer;
+    return () => {
+      if (autoDismissTimerRef.current === timer) {
+        clearTimeout(timer);
+        autoDismissTimerRef.current = null;
+      }
+    };
+  }, [autoDismissMs, disabled, open, setOpen]);
   const trigger = cloneElement(children, {
     "data-base-ui-tooltip-trigger": disabled ? undefined : "",
     onFocus: (event: FocusEvent) => { (children.props as { onFocus?: (event: FocusEvent) => void }).onFocus?.(event); if (!disabled) schedule(true, openDelay); },
     onMouseEnter: (event: MouseEvent) => { (children.props as { onMouseEnter?: (event: MouseEvent) => void }).onMouseEnter?.(event); if (!disabled) schedule(true, openDelay); },
     onMouseLeave: (event: MouseEvent) => { (children.props as { onMouseLeave?: (event: MouseEvent) => void }).onMouseLeave?.(event); if (!disabled) schedule(false, closeDelay); },
   } as never);
-  return <FloatingRoot open={open} onOpenChange={setOpen} placement={placement} offset={offset} closeOnOutsidePress={false} closeOnEscape={false} returnFocus={false}>
+  return <FloatingRoot
+    open={open}
+    onOpenChange={setOpen}
+    placement={placement}
+    offset={offset}
+    closeOnOutsidePress={closeOnOutsidePress}
+    closeOnEscape={closeOnEscape}
+    returnFocus={returnFocus}
+  >
     <SandFloatingTrigger>{trigger}</SandFloatingTrigger>
     <FloatingSurface ariaLabel={ariaLabel} className="ui-menu__tooltip" dataComponent="tooltip-popup" role="tooltip" style={{ width, minWidth, maxWidth }}>{content}</FloatingSurface>
   </FloatingRoot>;

@@ -1620,7 +1620,7 @@
       "referencePath": "frontend/src/recovered/ui/sand-floating-primitives.tsx",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "b809f4f2e00361ac65b7f6e492c2c4adba1e06a5",
+      "targetBlobSha": "13a37937d614fbfbdb176eaba25d49949c40107b",
       "behavioralEvidence": [
         "frontend/src/recovered/ui/sand-floating-primitives.tsx"
       ],
@@ -1629,7 +1629,7 @@
         ".github/workflows/rust-desktop-runtime.yml",
         "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts"
       ],
-      "rationale": "Preserves the frozen Grok floating/menu primitive structure while adapting the source-neutral canonical ContextMenu contract required by TDRP Revision 9: one live point-owned menu, empty-content refusal, right-click and Shift+F10 activation only when actions exist, explicit aria-haspopup/aria-expanded projection, and deterministic close/teardown through the existing FloatingContext dismissal lifecycle. This is an intentional semantic port, not a second Telegram-named menu owner."
+      "rationale": "Preserves the frozen Grok floating/menu primitive structure while adapting the source-neutral canonical ContextMenu contract required by TDRP Revision 9: one live point-owned menu, empty-content refusal, right-click and Shift+F10 activation only when actions exist, explicit aria-haspopup/aria-expanded projection, and deterministic close/teardown through the existing FloatingContext dismissal lifecycle. This is an intentional semantic port, not a second Telegram-named menu owner. The same canonical floating owner now also accepts optional Tooltip auto-dismiss, outside-press/Escape dismissal and focus-return policy required by TDRP 6055/6067-6068, without creating a second tooltip lifecycle."
     },
     {
       "referencePath": "frontend/src/recovered/ui/sand-kit-primitives.tsx",

@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15846,
-    "unread": 10073,
+    "unread": 10057,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,11 +13478,11 @@
     "to_commit": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
     "ahead_by": 10,
     "changed_paths": 25,
-    "source_read_reconciliation": "18 changed blobs inside prior prefix re-read/reconciled; orders 5831-6052 read/decomposed; read-through=6052, unread=10073, unknown=15846, omitted=0.",
-    "source_authority_evidence": "8c8a8b76 predecessor source-authority job 114045886399 succeeded with artifact 11647601050; descendant exact-head Actions required.",
-    "current_source_read_through": 6052,
-    "first_unread_order": 6053,
-    "first_unread_path": "Telegram/SourceFiles/ui/controls/tabbed_search.cpp"
+    "source_read_reconciliation": "18 changed blobs inside prior prefix re-read/reconciled; orders 5831-6068 read/decomposed; read-through=6068, unread=10057, unknown=15846, omitted=0.",
+    "source_authority_evidence": "55dee111 predecessor source-authority job 114050616674 succeeded with artifact 11648646136; descendant exact-head Actions required.",
+    "current_source_read_through": 6068,
+    "first_unread_order": 6069,
+    "first_unread_path": "Telegram/SourceFiles/ui/controls/who_reacted_context_action.cpp"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,7 +13491,7 @@
     "development_only_non_applicable": 69,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 6052
+    "read_through": 6068
   },
   "historical_exact_head_evidence": {
     "status": "historical-only",
