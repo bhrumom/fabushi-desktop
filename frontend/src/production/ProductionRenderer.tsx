@@ -1237,9 +1237,18 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
           echoedNonce: submission.nonce
         });
       }
-      const projectedHumans = projectHumanConversations(await client.call("listHumanConversations"));
-      humanConversationsRef.current = projectedHumans;
-      setHumanConversations(projectedHumans);
+      // sendHumanMessage is the authoritative settlement for this submission.
+      // Keep the unrelated sidebar roster refresh out of the send lifecycle so
+      // an accepted draft clears before the next user edit, and a slow/failed
+      // roster refresh cannot reclassify an already accepted message as failed.
+      const humanRosterAccountGeneration = accountScopeGenerationRef.current;
+      void client.call("listHumanConversations").then((value) => {
+        if (accountScopeGenerationRef.current !== humanRosterAccountGeneration
+          || accountRef.current?.kind !== "logged-in") return;
+        const projectedHumans = projectHumanConversations(value);
+        humanConversationsRef.current = projectedHumans;
+        setHumanConversations(projectedHumans);
+      }).catch(() => {});
       return;
     }
     const draftAttachments = submission.attachments.map((attachment) => ({ path: attachment.path, name: attachment.name }));

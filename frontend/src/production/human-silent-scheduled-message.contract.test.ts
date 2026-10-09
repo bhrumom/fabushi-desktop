@@ -24,6 +24,21 @@ describe("canonical Human silent and scheduled transport", () => {
     expect(renderer).toContain("localDateTimeInputValue");
   });
 
+  it("settles an accepted Human send before the non-authoritative roster refresh", () => {
+    const renderer = read("production/ProductionRenderer.tsx");
+    const sendStart = renderer.indexOf("const sendComposerPrompt = async");
+    const sendEnd = renderer.indexOf("const [sendJournalApprovalLifecycle]", sendStart);
+    const humanSend = renderer.slice(sendStart, sendEnd);
+    expect(sendStart).toBeGreaterThanOrEqual(0);
+    expect(sendEnd).toBeGreaterThan(sendStart);
+    expect(humanSend).toContain('const result = await client.call("sendHumanMessage"');
+    expect(humanSend).toContain('void client.call("listHumanConversations").then((value) => {');
+    expect(humanSend).not.toContain('projectHumanConversations(await client.call("listHumanConversations"))');
+    expect(humanSend.indexOf('client.call("sendHumanMessage"')).toBeLessThan(humanSend.indexOf('void client.call("listHumanConversations")'));
+    expect(renderer).toContain("clearDraftIfCurrent(draftIdentity)");
+    expect(renderer).toContain("setComposerClearGeneration((current) => current + 1)");
+  });
+
   it("keeps Host durability and canonical server payload in one owner", () => {
     const gateway = read("../host/src/extensions/session/gateway.rs");
     const production = read("../host/src/extensions/session/production.rs");
