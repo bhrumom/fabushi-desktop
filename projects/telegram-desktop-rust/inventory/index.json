@@ -46,7 +46,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live authority exact through deterministic blob order 5,665; unread_minimum 10,458; unknown 15,844; omitted 0.",
+  "note": "Live authority exact through deterministic blob order 5,665; unread_minimum is 10,458; unknown remains 15,844; omitted remains 0.",
   "rebaseline": {
     "from_commit": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
     "to_commit": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
