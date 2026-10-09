@@ -13,7 +13,7 @@ Execution: all executable verification only GitHub Actions
 
 重新读取 main、PR #20 状态和 current canonical exact HEAD。PR #20 在本次规范读取时已合并；不能继续从历史 open/draft 认知开始，也不能回退到旧实现分支。既有 Bot 架构/验收硬门继续有效。
 
-重新读取 tdesktop discovery HEAD。当前 accepted discovery HEAD 为 `36a0c87ca096c48ccf6193aa2c31707fdcafcc7c`（root tree `94e009f981d886ee55cd0450f0a5cc9b38305ba8`；相对上一 accepted `22b352e866d0402505c07fa4ed21d75d7e4fb3db` 前进 5 commits、5 个顶层 authority 路径变化，并将 `cmake` gitlink 更新到 `desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422`；recursive path set 保持 16,120 不变；既有 recursive/build-time authority 仍须由 current-head Actions 重取证），更早研究基线为 `33261535a0e747f125e0ed25486f01e556330677`。在 GitHub Actions 中建立完整 root tree、递归 gitlinks、外部依赖/补丁/资源/工具链一致 baseline，更新现有 lock/inventory/ledger/dossiers，记录旧→新差异。`baseline_ready` 不得在递归/外部来源未闭合时为 true。
+重新读取 tdesktop discovery HEAD。当前 accepted discovery HEAD 为 `42f8a36d43b8c805bc821905bea4cfeb3af1d41d`（root tree `6ac9bbc1b44edcb119b1a724e7b0a321c3b7b8fa`；相对 `3a15bf1fe34b6950916215a11b50eadfce4bbb41` 前进 4 commits，修改 9 个既有路径，无 add/delete/gitlink，recursive path set 保持 16,120）。`3a15bf1fe34b6950916215a11b50eadfce4bbb41` 与更早 authority 仅作历史证据。既有 recursive/build-time authority 必须由 current-head GitHub Actions 重取证；`baseline_ready` 在递归/外部来源及逐责任迁移未闭合前不得为 true。
 
 ## B. Inventory all files and understand all modules
 
@@ -104,4 +104,4 @@ P0 只在以下均完成时通过：
 
 P0 通过只是实施输入闭合，不是产品已完成。某项 blocked 时继续无依赖阻塞的研究、合同、已批准实现或证据收集；不能伪造 P0/既有 Bot gate 已通过来启动依赖它的工作。需要用户支持先检查相同通知及回复，按指定渠道通知一次，再推进其他内容。
 
-Current live authority (2026-10-09): telegramdesktop/tdesktop@42f8a36d43b8c805bc821905bea4cfeb3af1d41d (root tree 6ac9bbc1b44edcb119b1a724e7b0a321c3b7b8fa), four commits ahead of historical 3a15bf1fe34b6950916215a11b50eadfce4bbb41; exactly nine existing paths changed, no add/delete/gitlink change, recursive denominator remains 16,120, and source closure remains open.cpp`, `Telegram/SourceFiles/core/application.cpp`.
+Current live authority (2026-10-09): `telegramdesktop/tdesktop@42f8a36d43b8c805bc821905bea4cfeb3af1d41d` (root tree `6ac9bbc1b44edcb119b1a724e7b0a321c3b7b8fa`), four commits ahead of historical `3a15bf1fe34b6950916215a11b50eadfce4bbb41`; exactly nine existing paths changed, no add/delete/gitlink change, recursive denominator remains 16,120, and source closure remains open.

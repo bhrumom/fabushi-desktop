@@ -91,6 +91,6 @@ release candidate 只有在 independent acceptance 为 ACCEPT、0 open P0/P1/blo
 
 每个模块继续执行 `unreviewed -> understood -> mapped -> implemented -> verified` 的真实证据路径。遇到 service/account/signing blocker，记录解除条件并继续推进所有不依赖该 blocker 的 responsibility。
 
-Current live authority (2026-10-09): telegramdesktop/tdesktop@42f8a36d43b8c805bc821905bea4cfeb3af1d41d (root tree 6ac9bbc1b44edcb119b1a724e7b0a321c3b7b8fa), four commits ahead of historical 3a15bf1fe34b6950916215a11b50eadfce4bbb41; exactly nine existing paths changed, no add/delete/gitlink change, recursive denominator remains 16,120, and source closure remains open.cpp`, `Telegram/SourceFiles/core/application.cpp`.
+Current live authority (2026-10-09): `telegramdesktop/tdesktop@42f8a36d43b8c805bc821905bea4cfeb3af1d41d` (root tree `6ac9bbc1b44edcb119b1a724e7b0a321c3b7b8fa`), four commits ahead of historical `3a15bf1fe34b6950916215a11b50eadfce4bbb41`; exactly nine existing paths changed, no add/delete/gitlink change, recursive denominator remains 16,120, and source closure remains open.
 
 Current source accounting: deterministic read-through `5140/16120`; unread `10980`; unknown `15841`; unknown-closed `279`; omitted `0`. Orders 5001-5140 are exact-blob read-complete with mapped-open dispositions only; no implementation, verification, baseline-ready or release credit is granted by this accounting update.
