@@ -93,7 +93,7 @@ release candidate 只有在 independent acceptance 为 ACCEPT、0 open P0/P1/blo
 
 Current live authority (2026-10-09): `telegramdesktop/tdesktop@42f8a36d43b8c805bc821905bea4cfeb3af1d41d` (root tree `6ac9bbc1b44edcb119b1a724e7b0a321c3b7b8fa`), four commits ahead of historical `3a15bf1fe34b6950916215a11b50eadfce4bbb41`; exactly nine existing paths changed, no add/delete/gitlink change, recursive denominator remains 16,120, and source closure remains open.
 
-Current source accounting: deterministic read-through `5310/16120`; unread `10810`; unknown `15841`; unknown-closed `279`; omitted `0`. Orders 5001-5310 are exact-blob read-complete. Media-view/menu responsibilities and MTProto-derived transport/session/auth/config/security/proxy/error/schema/reconnect/bootstrap responsibilities remain mapped-open except for explicitly cited existing partial Fabushi slices; MTProto wire/socket/DC mechanics are source-neutral platform/protocol replacements, not a second runtime and not omitted. Unknown stays unchanged until complete responsibility and exact-head verification gates close; no baseline-ready or release credit is granted.
+Current source accounting: deterministic read-through `5320/16120`; unread `10800`; unknown `15841`; unknown-closed `279`; omitted `0`. Orders 5001-5320 are exact-blob read-complete. Media-view/menu responsibilities and MTProto-derived transport/session/auth/config/security/proxy/error/schema/reconnect/bootstrap responsibilities remain mapped-open except for explicitly cited existing partial Fabushi slices; MTProto wire/socket/DC mechanics are source-neutral platform/protocol replacements, not a second runtime and not omitted. Unknown stays unchanged until complete responsibility and exact-head verification gates close; no baseline-ready or release credit is granted.
 
 
 ### Read-through 5291-5300
@@ -104,3 +104,8 @@ Orders 5291-5300 are exact-blob read-complete at upstream `42f8a36d43b8c805bc821
 ### Read-through 5301-5310
 
 Orders 5301-5310 are exact-blob read-complete at upstream `42f8a36d43b8c805bc821905bea4cfeb3af1d41d`. Passport-derived secure authorization responsibilities are mapped-open to current source-neutral account/identity, provider authorization/OAuth, credential/security, recovery, resource upload and canonical form owners. Telegram Passport protocol/crypto/UI is not introduced as a second runtime. Unknown remains 15,841 and omitted remains 0.
+
+
+### Read-through 5311-5320
+
+Orders 5311-5320 are exact-blob read-complete. Secure form/panel/scan responsibilities remain mapped-open to canonical account/identity, provider authorization, attachment/resource, recovery, form-validation and design-system owners. No Telegram Passport UI/runtime is introduced. Unknown remains 15,841; omitted remains 0.
