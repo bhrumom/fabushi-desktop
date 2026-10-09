@@ -544,3 +544,12 @@ RTM invariant: validated canonical analytics data -> derived reusable chart; inv
 | TDRP-R9-STATS-XLSX-5673-5674 | critical | XLSX export escapes XML/control characters, keeps user text as non-formula inline strings, legalizes/deduplicates sheet names, handles numeric/date/ZIP failure safely, and is account/cancel/retry fenced | Canonical Export/XLSX service | mapped-open |
 
 Dossier: `projects/telegram-desktop-rust/dossiers/statistics-export-5666-5674-complete-read.md`.
+
+
+## TDRP Statistics chart views 5675–5684
+
+| requirement_id | risk | invariant | production owner | verdict |
+| --- | --- | --- | --- | --- |
+| TDRP-R9-CHART-VIEW-5675-5684 | high | one canonical Chart owner derives range/filter/hover/cache/ruler state from authoritative analytics; empty/zero/endpoint/invalid-type cases fail closed; no chart component owns business truth | Analytics/Insights + reusable Chart design system | mapped-open |
+
+Dossier: `projects/telegram-desktop-rust/dossiers/statistics-chart-view-5675-5684-complete-read.md`.
