@@ -532,3 +532,15 @@ Traceability requirement: all post-5,622 source rows use accepted-tree blob rank
 Exact blobs for line-filter animation, ruler generation, interactive chart widget, range min/max segment tree, statistics style/common types and chart JSON deserialization are read/decomposed. They map to canonical Analytics/Insights data projection + reusable Chart/design-system owners; business/account truth must not live in the chart. JSON parse errors, empty columns and column-length mismatches fail closed. Hover/zoom/filter/footer state is derived and lifetime-bounded. Accounting: **5,665/16,123 read; 10,458 unread; 15,844 unknown; 0 omitted**. First unread: 5,666 `statistics_format_values.cpp`.
 
 RTM invariant: validated canonical analytics data -> derived reusable chart; invalid graph payload cannot silently fabricate data; keyboard/a11y/theme/responsive/reduced-motion/zoom/filter evidence remains required.
+
+
+## TDRP Statistics formatting and export 5666–5674
+
+| requirement_id | risk | invariant | production owner | verdict |
+| --- | --- | --- | --- | --- |
+| TDRP-R9-STATS-LOCALIZATION-5666-5667 | high | analytics timestamps are formatted from canonical time with locale/timezone/DST-safe date/time semantics; stale locale/account results cannot publish | Analytics + Localization/Time | mapped-open |
+| TDRP-R9-STATS-CURRENCY-GRAPHICS-5668-5669 | medium | TON/Credits graphics are derived from canonical currency + theme/DPR tokens and own no wallet balance/state | Analytics + Wallet/Credits visual tokens + design system | mapped-open |
+| TDRP-R9-STATS-SHEETS-5670-5672 | high | authoritative analytics values project once into typed export sheets; short series become empty cells and do not fabricate values | Analytics + Export | mapped-open |
+| TDRP-R9-STATS-XLSX-5673-5674 | critical | XLSX export escapes XML/control characters, keeps user text as non-formula inline strings, legalizes/deduplicates sheet names, handles numeric/date/ZIP failure safely, and is account/cancel/retry fenced | Canonical Export/XLSX service | mapped-open |
+
+Dossier: `projects/telegram-desktop-rust/dossiers/statistics-export-5666-5674-complete-read.md`.
