@@ -105,3 +105,43 @@ test("mixed text and numeric data keeps the header non-numeric", () => {
   const sheet = unzipStored(workbook).get("xl/worksheets/sheet1.xml")!.toString("utf8");
   assert.match(sheet, /<c r="A1" s="3" t="inlineStr">/);
 });
+
+
+test("sheet names are deduplicated case-insensitively for Excel compatibility", () => {
+  const workbook = serializeAnalyticsWorkbook([
+    { name: "Data", rows: [] },
+    { name: "data", rows: [] },
+    { name: "DATA", rows: [] },
+  ]);
+  const book = unzipStored(workbook).get("xl/workbook.xml")!.toString("utf8");
+  const names = [...book.matchAll(/<sheet name="([^"]+)"/g)].map((match) => match[1]);
+  assert.deepEqual(names, ["Data", "data (2)", "DATA (3)"]);
+});
+
+test("finite analytics numbers preserve small and high precision values", () => {
+  const workbook = serializeAnalyticsWorkbook([{
+    name: "precision",
+    rows: [[
+      { type: "number", value: 1e-10 },
+      { type: "number", value: 1.23456789012345 },
+    ]],
+  }]);
+  const sheet = unzipStored(workbook).get("xl/worksheets/sheet1.xml")!.toString("utf8");
+  assert.match(sheet, /<c r="A1"><v>1e-10<\/v><\/c>/);
+  assert.match(sheet, /<c r="B1"><v>1\.23456789012345<\/v><\/c>/);
+});
+
+test("user text that begins like a formula remains an inline string", () => {
+  const workbook = serializeAnalyticsWorkbook([{
+    name: "formula-safe",
+    rows: [[
+      { type: "text", text: "=HYPERLINK(\"https://example.invalid\")" },
+      { type: "text", text: "+1+1" },
+      { type: "text", text: "-2+3" },
+      { type: "text", text: "@SUM(A1:A2)" },
+    ]],
+  }]);
+  const sheet = unzipStored(workbook).get("xl/worksheets/sheet1.xml")!.toString("utf8");
+  assert.equal((sheet.match(/t="inlineStr"/g) ?? []).length, 4);
+  assert.doesNotMatch(sheet, /<f>/);
+});

@@ -31,10 +31,13 @@ function finite(value: number, label: string): number {
   return value;
 }
 
-function numberText(value: number, digits = 6): string {
+function numberText(value: number, fixedDigits?: number): string {
   finite(value, "cell value");
-  const rounded = Math.round(value);
-  return value === rounded && Math.abs(value) < 1e15 ? String(rounded) : value.toFixed(digits);
+  if (fixedDigits != null) return value.toFixed(fixedDigits);
+  // Preserve the exact finite JS number rather than rounding analytics values
+  // to six decimals. Scientific notation is legal in SpreadsheetML numeric
+  // cells and avoids silently turning small non-zero values into zero.
+  return String(value);
 }
 
 function columnName(index: number): string {
@@ -51,14 +54,14 @@ function sanitizeSheetName(name: string, index: number, limit = 31): string {
 }
 
 function uniqueNames(sheets: readonly AnalyticsSheet[]): string[] {
-  const used: string[] = [];
+  const used = new Set<string>();
   return sheets.map((sheet, index) => {
     let result = sanitizeSheetName(sheet.name, index);
-    for (let suffix = 2; used.includes(result); suffix += 1) {
+    for (let suffix = 2; used.has(result.toLocaleLowerCase("en-US")); suffix += 1) {
       const tail = ` (${suffix})`;
       result = sanitizeSheetName(sheet.name, index, 31 - tail.length) + tail;
     }
-    used.push(result);
+    used.add(result.toLocaleLowerCase("en-US"));
     return result;
   });
 }
@@ -100,7 +103,7 @@ function cellXml(cell: AnalyticsCell, ref: string, numericColumn: boolean): stri
     ? cell.value
     : finite(cell.milliseconds, "date milliseconds") / DAY + XLSX_EPOCH;
   const style = cell.type === "date" ? 1 : cell.type === "datetime" ? 2 : 0;
-  return `${open(style)}<v>${numberText(value, cell.type === "number" ? 6 : 10)}</v></c>`;
+  return `${open(style)}<v>${numberText(value, cell.type === "number" ? undefined : 10)}</v></c>`;
 }
 
 function worksheetXml(sheet: AnalyticsSheet): string {
