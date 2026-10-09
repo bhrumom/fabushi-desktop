@@ -26,7 +26,7 @@ Parent: FBCP-001 Revision 7
 
 ## Baseline
 
-2026-10-08 live rebaseline 后 tdesktop accepted discovery HEAD 为 `36a0c87ca096c48ccf6193aa2c31707fdcafcc7c`（tree `94e009f981d886ee55cd0450f0a5cc9b38305ba8`）；`d346b42a1d30ef60dc989b6e5191bb8e571f6bd5` 与历史 baseline `f23c37857220eb84f8559f0901ea26fb304b564b` 与更早 research baseline `33261535a0e747f125e0ed25486f01e556330677` 仅作历史证据。当前 source closure 仍 open，baseline_ready/acceptance.accepted 仍必须为 false。
+2026-10-09 live rebaseline 后 tdesktop accepted discovery HEAD 为 `3a15bf1fe34b6950916215a11b50eadfce4bbb41`（tree `b031c2cd84aa0cbbb149a7e5693c41ef14d643f3`）；其父 `36a0c87ca096c48ccf6193aa2c31707fdcafcc7c` 以及更早 baseline 仅作历史证据。当前 source closure 仍 open，baseline_ready/acceptance.accepted 仍必须为 false。
 
 accepted baseline 必须在 GitHub Actions 中重新确认，并递归闭合：
 - root tracked files / gitlinks；
@@ -92,3 +92,5 @@ release candidate 只有在 independent acceptance 为 ACCEPT、0 open P0/P1/blo
 每个模块继续执行 `unreviewed -> understood -> mapped -> implemented -> verified` 的真实证据路径。遇到 service/account/signing blocker，记录解除条件并继续推进所有不依赖该 blocker 的 responsibility。
 
 Current live authority (2026-10-09): `telegramdesktop/tdesktop@3a15bf1fe34b6950916215a11b50eadfce4bbb41` (root tree `b031c2cd84aa0cbbb149a7e5693c41ef14d643f3`), one commit ahead of historical `36a0c87ca096c48ccf6193aa2c31707fdcafcc7c`; changed paths: `Telegram/SourceFiles/boxes/connection_box.cpp`, `Telegram/SourceFiles/core/application.cpp`.
+
+Current source accounting: deterministic read-through `5030/16120`; unread `11090`; unknown `15841`; unknown-closed `279`; omitted `0`. Orders 5001-5030 are exact-blob read-complete with mapped-open dispositions only; no implementation, verification, baseline-ready or release credit is granted by this accounting update.
