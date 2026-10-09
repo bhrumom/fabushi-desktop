@@ -264,9 +264,9 @@
     "root_source_entries_total": 6648,
     "recursive_source_entries_total": 16120,
     "unknown_minimum": 15841,
-    "unread_minimum": 10830,
+    "unread_minimum": 10820,
     "omitted_known": 0,
-    "note": "Accepted 42f8a36d root tree 6ac9bbc1. Recursive denominator stays 16,120. Read-through 5,290 after direct exact-blob read of MTProto session/bootstrap/frame orders 5281-5290; unknown=15,841, unread=10,830, omitted=0."
+    "note": "Accepted 42f8a36d root tree 6ac9bbc1. Recursive denominator stays 16,120. Read-through 5,300 after direct exact-blob read of WebProxy carrier and shared-media overview orders 5291-5300; unknown=15,841, unread=10,820, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -632,6 +632,6 @@
     "development_only_non_applicable": 66,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 5290
+    "read_through": 5300
   }
 }
