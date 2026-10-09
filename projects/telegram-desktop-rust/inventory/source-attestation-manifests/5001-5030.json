@@ -1,0 +1,187 @@
+{
+  "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+  "start": 5001,
+  "end": 5030,
+  "entries": [
+    {
+      "order": 5001,
+      "path": "Telegram/SourceFiles/lang/translate_url_provider.cpp",
+      "blob": "d9c5bb00d4d61f5d8067915ed86c348df800b64c",
+      "consumer_symbol": "translate_url_provider"
+    },
+    {
+      "order": 5002,
+      "path": "Telegram/SourceFiles/lang/translate_url_provider.h",
+      "blob": "8bb1efbb03c6621ee9ffae1eadc13cde54b976fd",
+      "consumer_symbol": "translate_url_provider"
+    },
+    {
+      "order": 5003,
+      "path": "Telegram/SourceFiles/layout/abstract_layout_item.cpp",
+      "blob": "adda49fb28495d6d5ebdc96edb23ef0207df7343",
+      "consumer_symbol": "abstract_layout_item"
+    },
+    {
+      "order": 5004,
+      "path": "Telegram/SourceFiles/layout/abstract_layout_item.h",
+      "blob": "99bd0b4ccdbd8ef6d2e24b8a3db05162aa754434",
+      "consumer_symbol": "abstract_layout_item"
+    },
+    {
+      "order": 5005,
+      "path": "Telegram/SourceFiles/layout/layout_document_generic_preview.cpp",
+      "blob": "feb86a51b1ec6159848934f30ccd0c4847b48021",
+      "consumer_symbol": "layout_document_generic_preview"
+    },
+    {
+      "order": 5006,
+      "path": "Telegram/SourceFiles/layout/layout_document_generic_preview.h",
+      "blob": "46d5e43d308d0d1f831e9a2a0fc44d3e8859859c",
+      "consumer_symbol": "layout_document_generic_preview"
+    },
+    {
+      "order": 5007,
+      "path": "Telegram/SourceFiles/layout/layout_item_base.cpp",
+      "blob": "77f2d8e47e9d75a85acb96da0ea65545a1281d04",
+      "consumer_symbol": "layout_item_base"
+    },
+    {
+      "order": 5008,
+      "path": "Telegram/SourceFiles/layout/layout_item_base.h",
+      "blob": "0a97d67d8a172be43d58311c99e0a82cb1b66147",
+      "consumer_symbol": "layout_item_base"
+    },
+    {
+      "order": 5009,
+      "path": "Telegram/SourceFiles/layout/layout_mosaic.cpp",
+      "blob": "334aa7c55d769bcf7302efd588ee5b9ab607e675",
+      "consumer_symbol": "layout_mosaic"
+    },
+    {
+      "order": 5010,
+      "path": "Telegram/SourceFiles/layout/layout_mosaic.h",
+      "blob": "1f3d7e4df257643d4d00886a3b3c77e2552c48a6",
+      "consumer_symbol": "layout_mosaic"
+    },
+    {
+      "order": 5011,
+      "path": "Telegram/SourceFiles/layout/layout_position.cpp",
+      "blob": "2631e2caf18b4e75e8851fecfbbdcbf40e1f84c4",
+      "consumer_symbol": "layout_position"
+    },
+    {
+      "order": 5012,
+      "path": "Telegram/SourceFiles/layout/layout_position.h",
+      "blob": "c9266cf9399783bce90b31c77bd71e9d5ff75569",
+      "consumer_symbol": "layout_position"
+    },
+    {
+      "order": 5013,
+      "path": "Telegram/SourceFiles/layout/layout_selection.cpp",
+      "blob": "52d0b3f099e57ccbf15c3d099700b2d43a2eac99",
+      "consumer_symbol": "layout_selection"
+    },
+    {
+      "order": 5014,
+      "path": "Telegram/SourceFiles/layout/layout_selection.h",
+      "blob": "3a7be49fcaa2209eb166ab8c67e966fce2148a26",
+      "consumer_symbol": "layout_selection"
+    },
+    {
+      "order": 5015,
+      "path": "Telegram/SourceFiles/logs.cpp",
+      "blob": "0ec028f00b8dc2ecc4680d9ba1ffde830408dfe3",
+      "consumer_symbol": "logs"
+    },
+    {
+      "order": 5016,
+      "path": "Telegram/SourceFiles/logs.h",
+      "blob": "460bb0502f859308a81852e72df8c4735097f688",
+      "consumer_symbol": "logs"
+    },
+    {
+      "order": 5017,
+      "path": "Telegram/SourceFiles/main.cpp",
+      "blob": "0b0156c535505224e76e9a8474a8a4d5c6b887a7",
+      "consumer_symbol": "main"
+    },
+    {
+      "order": 5018,
+      "path": "Telegram/SourceFiles/main/main_account.cpp",
+      "blob": "2721c7ac12effe454d398610d26d638fadaa1f68",
+      "consumer_symbol": "main_account"
+    },
+    {
+      "order": 5019,
+      "path": "Telegram/SourceFiles/main/main_account.h",
+      "blob": "eb05f1b40489aea6278eb8225006023af6c73cea",
+      "consumer_symbol": "main_account"
+    },
+    {
+      "order": 5020,
+      "path": "Telegram/SourceFiles/main/main_app_config.cpp",
+      "blob": "f1f59194b9b296be70bf7a8a08d0ea4b82aef269",
+      "consumer_symbol": "main_app_config"
+    },
+    {
+      "order": 5021,
+      "path": "Telegram/SourceFiles/main/main_app_config.h",
+      "blob": "f6195a8be9939731afca2da4dec09e88ea218f79",
+      "consumer_symbol": "main_app_config"
+    },
+    {
+      "order": 5022,
+      "path": "Telegram/SourceFiles/main/main_app_config_values.cpp",
+      "blob": "bd2b1f0705204f42fe79f95ca3d5243de5987300",
+      "consumer_symbol": "main_app_config_values"
+    },
+    {
+      "order": 5023,
+      "path": "Telegram/SourceFiles/main/main_app_config_values.h",
+      "blob": "fc1f8e76ad91a38059c5019fad6be55d973d6073",
+      "consumer_symbol": "main_app_config_values"
+    },
+    {
+      "order": 5024,
+      "path": "Telegram/SourceFiles/main/main_domain.cpp",
+      "blob": "4b94ea13354dd3788fc76a722d2f0078c955859f",
+      "consumer_symbol": "main_domain"
+    },
+    {
+      "order": 5025,
+      "path": "Telegram/SourceFiles/main/main_domain.h",
+      "blob": "7f85abc8fdcc141064a2a2e818f1b81a90dcec6a",
+      "consumer_symbol": "main_domain"
+    },
+    {
+      "order": 5026,
+      "path": "Telegram/SourceFiles/main/main_session.cpp",
+      "blob": "2b9d58946e87458dfef61a2afbe255b0611a7cf1",
+      "consumer_symbol": "main_session"
+    },
+    {
+      "order": 5027,
+      "path": "Telegram/SourceFiles/main/main_session.h",
+      "blob": "00aa65140f0fc11e80c7e0e899939f79668cbce7",
+      "consumer_symbol": "main_session"
+    },
+    {
+      "order": 5028,
+      "path": "Telegram/SourceFiles/main/main_session_settings.cpp",
+      "blob": "dacb8da60af47634856d65c210d99701e3387bbc",
+      "consumer_symbol": "main_session_settings"
+    },
+    {
+      "order": 5029,
+      "path": "Telegram/SourceFiles/main/main_session_settings.h",
+      "blob": "ff7a07a82243d3fa7d8e1f0353740d8d764dfe68",
+      "consumer_symbol": "main_session_settings"
+    },
+    {
+      "order": 5030,
+      "path": "Telegram/SourceFiles/main/session/send_as_peers.cpp",
+      "blob": "86113c3885f9c5728f888f3ab422cdf4ae0b7ea4",
+      "consumer_symbol": "send_as_peers"
+    }
+  ]
+}

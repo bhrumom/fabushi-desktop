@@ -1,0 +1,1441 @@
+import { _electron as electron, expect, test, type Page } from '@playwright/test';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { createServer } from 'node:http';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { AgentTranscriptStore } from '../src/agent-workspace/agent-transcript-store';
+import { AgentWorkspaceController } from '../src/agent-workspace/agent-workspace-controller';
+import { AgentRuntimeCoordinator } from '../src/agent-workspace/agent-runtime-coordinator';
+import { mergeAccountSidebarLayoutState } from '../src/agent-workspace/account-sidebar-layout';
+import { agentMatchesGroupMember, indexAgentsByRuntimeOrSurfaceId, type AgentSidebarItem } from '../src/agent-workspace/agent-model';
+import { composeAgentPromptText } from '../src/agent-workspace/prompt-context';
+import { restoreAgentStoreWorkspace } from '../src/agent-workspace/agent-store-recovery';
+import { projectAgentMcpReferences } from '../src/agent-workspace/use-agent-mcp-controller';
+import {
+  emojiSuggestions,
+  findPullRequestReadTool,
+  parsePullRequestToolResult,
+} from '../src/agent-workspace/agent-composer-suggestion-provider';
+import type { TranscriptEntry } from '../src/agent-workspace/transcript-model';
+import type { RuntimeEvent } from '../../frontend/apps/web/src/lib/mahayana-host/contracts';
+import {
+  FABU_AGENT_ATTACHMENT_INDEX_PATH,
+  FABU_AGENT_ROOT_PATH,
+  FABU_AGENT_RUNTIME_CHECKPOINT_PATH,
+  FabuAgentStore,
+  fabuAgentConversationTranscriptPath,
+} from '../src/fabu-runtime/agent-store';
+
+const appRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const packagedExecutable = process.env.FABUSHI_ELECTRON_EXECUTABLE?.trim() || null;
+
+let e2eAuthServer: ReturnType<typeof createServer> | null = null;
+let e2eAuthBackendPromise: Promise<string> | null = null;
+
+function e2eAuthToken(): string {
+  const encode = (value: Record<string, unknown>) => Buffer.from(JSON.stringify(value), 'utf8').toString('base64url');
+  return [
+    encode({ alg: 'none', typ: 'JWT' }),
+    encode({ sub: 'fabushi-e2e-account', email: 'e2e@fabushi.local', exp: 4_102_444_800 }),
+    'fabushi-e2e',
+  ].join('.');
+}
+
+async function ensureE2eAuthBackend(): Promise<string> {
+  if (e2eAuthBackendPromise != null) return await e2eAuthBackendPromise;
+  e2eAuthBackendPromise = new Promise<string>((resolve, reject) => {
+    const token = e2eAuthToken();
+    const server = createServer((request, response) => {
+      const requestUrl = new URL(request.url ?? '/', 'http://127.0.0.1');
+      response.setHeader('content-type', 'application/json');
+      if (requestUrl.pathname === '/auth/poll') {
+        response.statusCode = 200;
+        response.end(JSON.stringify({ accessToken: token, refreshToken: token }));
+        return;
+      }
+      if (requestUrl.pathname === '/oauth/token') {
+        response.statusCode = 200;
+        response.end(JSON.stringify({ access_token: token, refresh_token: token }));
+        return;
+      }
+      response.statusCode = 404;
+      response.end(JSON.stringify({ error: 'not-found' }));
+    });
+    e2eAuthServer = server;
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', () => {
+      const address = server.address();
+      if (address == null || typeof address === 'string') {
+        reject(new Error('Focused Electron auth backend did not bind a TCP address.'));
+        return;
+      }
+      resolve(`http://127.0.0.1:${address.port}`);
+    });
+  });
+  return await e2eAuthBackendPromise;
+}
+
+test.afterAll(async () => {
+  const server = e2eAuthServer;
+  e2eAuthServer = null;
+  e2eAuthBackendPromise = null;
+  if (server == null || !server.listening) return;
+  await new Promise<void>((resolve, reject) => {
+    server.close((error) => error == null ? resolve() : reject(error));
+  });
+});
+
+async function launchDesktopApp(appDataDir: string) {
+  const e2eAuthBackendUrl = await ensureE2eAuthBackend();
+  return electron.launch({
+    ...(packagedExecutable
+      ? { executablePath: packagedExecutable, args: [] }
+      : { args: [appRoot] }),
+    env: {
+      ...process.env,
+      // Focused Electron acceptance must opt out of production background
+      // persistence so Playwright app.close() reaches the real before-quit
+      // cleanup path instead of being converted into a hidden-window session.
+      FABUSHI_E2E: '1',
+      SAND_USER_DATA_DIR: appDataDir,
+      // Keep the frozen Grok account implementation byte-identical while
+      // giving focused CI a deterministic local OAuth exchange.
+      SAND_BACKEND_URL: e2eAuthBackendUrl,
+      CURSOR_API_BASE_URL: e2eAuthBackendUrl,
+      SAND_CURSOR_WEBSITE_URL: e2eAuthBackendUrl,
+      SAND_DISABLE_SENTRY: '1',
+      FABUSHI_FEATURE_HOST_MODE: process.env.FABUSHI_FEATURE_HOST_MODE || 'test',
+      // Agent Network is a frozen Grok feature gate whose bundled default is OFF.
+      // This focused parity test opts in through the same dev override contract
+      // used by SandExperimentService instead of changing the production default.
+      SAND_FEATURE_GATE_OVERRIDES: 'sand_agent_network=1',
+      MAHAYANA_APP_HOST_BIN: process.env.MAHAYANA_APP_HOST_BIN || '',
+    },
+  });
+}
+
+async function completeBrowserLogin(page: Page): Promise<void> {
+  const rendererErrors: string[] = [];
+  page.on('console', (message) => {
+    if (message.type() === 'error') rendererErrors.push(message.text());
+  });
+
+  await page.waitForFunction(() => {
+    const candidate = window as unknown as { desktop?: { cursorAccount?: { getStatus?: unknown }; onboarding?: { setSeen?: unknown } } };
+    return typeof candidate.desktop?.cursorAccount?.getStatus === 'function'
+      && typeof candidate.desktop?.onboarding?.setSeen === 'function';
+  }, { timeout: 15_000 });
+
+  const accountKind = async (): Promise<string> => page.evaluate(async () => {
+    const candidate = window as unknown as {
+      desktop: {
+        cursorAccount: { getStatus(): Promise<{ kind?: string }> };
+      };
+    };
+    return (await candidate.desktop.cursorAccount.getStatus()).kind ?? 'unknown';
+  });
+
+  const initialKind = await accountKind();
+  if (initialKind === 'logged-out') {
+    // Exercise the shipping recovered-Grok sign-in surface instead of the
+    // retired DesktopAuthBoundary. Its button calls cursorAccount.login(),
+    // which owns the Electron/main auth contract used by the production shell.
+    const signInSurface = page.getByRole('main', { name: 'Fabushi', exact: true });
+    await expect(signInSurface).toBeVisible({ timeout: 15_000 });
+    await signInSurface.getByRole('button', { name: 'Sign in', exact: true }).click();
+  }
+
+  await expect.poll(accountKind, { timeout: 20_000 }).toBe('logged-in');
+  // Onboarding persistence is account-scoped. Complete the shipping login
+  // transition first, then persist the public preference for the authenticated
+  // account and verify the mirror before recreating the renderer. This avoids
+  // writing into a departing anonymous scope while still exercising the real
+  // cursorAccount -> Electron main -> Coordinator/Host authentication path.
+  await page.evaluate(async () => {
+    const candidate = window as unknown as {
+      desktop: {
+        onboarding: {
+          setSeen(seen: boolean): Promise<unknown>;
+        };
+      };
+    };
+    await candidate.desktop.onboarding.setSeen(true);
+  });
+  const onboardingSeen = async (): Promise<boolean> => page.evaluate(async () => {
+    const candidate = window as unknown as {
+      desktop: {
+        onboarding: {
+          getSeen(): Promise<boolean>;
+        };
+      };
+    };
+    return (await candidate.desktop.onboarding.getSeen()) === true;
+  });
+  await expect.poll(onboardingSeen, { timeout: 10_000 }).toBe(true);
+
+  // The production renderer resolves onboarding at account/bootstrap boundaries;
+  // reload only the renderer after persisting the authenticated account setting.
+  // Main/Coordinator/Host and the authenticated session remain live.
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => {
+    const candidate = window as unknown as { desktop?: { cursorAccount?: { getStatus?: unknown } } };
+    return typeof candidate.desktop?.cursorAccount?.getStatus === 'function';
+  }, { timeout: 15_000 });
+  await expect.poll(accountKind, { timeout: 10_000 }).toBe('logged-in');
+  await expect(page.getByRole('main', { name: 'Fabushi', exact: true })).toBeHidden({ timeout: 10_000 });
+
+  const fatal = page.locator('.sand-error-boundary--app');
+  if (await fatal.count()) {
+    const surfaceText = await fatal.first().innerText().catch(() => 'unknown renderer failure');
+    throw new Error(`renderer root fatal: ${rendererErrors.at(-1) ?? surfaceText}`);
+  }
+
+  // listAgents is now owned by the shipping Rust Session store. A fresh
+  // FABUSHI_APP_DATA directory is intentionally empty, so create the focused
+  // fixture through the real New -> createAgent -> listAgents path instead of
+  // relying on the retired compatibility Host's synthetic roster.
+  const roster = page.getByRole('region', { name: 'Agent list' });
+  const primary = roster.getByRole('button', { name: 'New chat', exact: true });
+  if (await primary.count() === 0) {
+    await page.getByRole('button', { name: 'New', exact: true }).click();
+  }
+  await expect(primary).toBeVisible({ timeout: 15_000 });
+}
+
+function rgbLuma(value: string): number {
+  const components = value.match(/[\d.]+/g)?.slice(0, 3).map(Number) ?? [];
+  if (components.length !== 3) return 255;
+  return components[0] * 0.2126 + components[1] * 0.7152 + components[2] * 0.0722;
+}
+
+function parseComputedColor(value: string): { r: number; g: number; b: number; a: number } | null {
+  if (value.trim().toLowerCase() === 'transparent') return { r: 0, g: 0, b: 0, a: 0 };
+  const components = value.match(/[\d.]+/g)?.map(Number) ?? [];
+  if (components.length < 3) return null;
+  const srgbFunction = /^color\(srgb\s/i.test(value);
+  const scale = srgbFunction ? 255 : 1;
+  const alphaRaw = components[3] ?? 1;
+  return {
+    r: components[0] * scale,
+    g: components[1] * scale,
+    b: components[2] * scale,
+    a: Math.max(0, Math.min(1, alphaRaw > 1 ? alphaRaw / 100 : alphaRaw)),
+  };
+}
+
+function compositedLuma(foreground: string, background: string): number {
+  const front = parseComputedColor(foreground);
+  const back = parseComputedColor(background);
+  if (front == null || back == null) return 255;
+  const r = front.r * front.a + back.r * (1 - front.a);
+  const g = front.g * front.a + back.g * (1 - front.a);
+  const b = front.b * front.a + back.b * (1 - front.a);
+  return r * 0.2126 + g * 0.7152 + b * 0.0722;
+}
+
+function primaryMahayanaAgentPeer(page: Page) {
+  // The shipping Grok sidebar must keep visible Agents directly reachable;
+  // Search is covered separately and is not a fallback for a broken roster.
+  return page.getByRole('region', { name: 'Agent list' }).getByRole('button', { name: 'New chat', exact: true });
+}
+
+test('desktop uses the Fabushi-owned Grok parity surface without a parallel Messenger', async () => {
+  const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-grok-parity-'));
+  const app = await launchDesktopApp(appDataDir);
+
+  try {
+    const page = await app.firstWindow();
+
+    await test.step('Agent controller keeps simultaneous requests isolated by peer', async () => {
+      const controller = new AgentWorkspaceController();
+      controller.beginRequest('agent:a', 'request:a');
+      controller.beginRequest('agent:b', 'request:b');
+      expect(controller.requestSnapshot()).toEqual({
+        'agent:a': 'request:a',
+        'agent:b': 'request:b',
+      });
+      expect(controller.snapshot()).toEqual({});
+      expect(controller.operationForPeer('agent:a')).toBeNull();
+      expect(controller.operationForPeer('agent:b')).toBeNull();
+
+      controller.adoptOperation('request:a', 'operation:a', 'agent:a');
+      expect(controller.operationForPeer('agent:a')).toBe('operation:a');
+      expect(controller.requestForPeer('agent:b')).toBe('request:b');
+      expect(controller.isBusy('agent:a')).toBe(true);
+      expect(controller.isBusy('agent:b')).toBe(true);
+
+      controller.finishOperation('operation:a');
+      expect(controller.isBusy('agent:a')).toBe(false);
+      expect(controller.isBusy('agent:b')).toBe(true);
+      expect(controller.claimRuntimeOperation('operation:unknown')).toBeNull();
+
+      const claimedPeer = controller.claimRuntimeOperation('operation:b', controller.peerForRequest('request:b'));
+      expect(claimedPeer).toBe('agent:b');
+      expect(controller.peerForRuntimeId('operation:b')).toBe('agent:b');
+      expect(controller.requestForPeer('agent:b')).toBeNull();
+      expect(controller.finishRuntimeOperation('operation:b')).toBe('agent:b');
+      expect(controller.isOperationFinished('operation:b')).toBe(true);
+      expect(controller.claimRuntimeOperation('operation:b', 'agent:b')).toBeNull();
+
+      controller.setDraft('agent:a', 'first prompt @Research /Review changes @GitHub');
+      controller.appendAttachments('agent:a', [{ id: 'attachment:a', name: 'a.txt' }]);
+      controller.setReply('agent:a', { id: 'reply:a', role: 'peer', text: 'previous answer' });
+      controller.upsertReference('agent:a', { kind: 'agent', id: 'agent:research', label: 'Research' });
+      controller.upsertReference('agent:a', { kind: 'workflow', id: 'workflow:review', label: 'Review changes' });
+      controller.upsertReference('agent:a', { kind: 'mcp', id: 'mcp:github', label: 'GitHub' });
+      controller.setDraft('agent:b', 'independent draft');
+
+      const submitted = controller.takeDraft('agent:a');
+      expect(submitted.text).toBe('first prompt @Research /Review changes @GitHub');
+      expect(submitted.attachments.map((attachment) => attachment.id)).toEqual(['attachment:a']);
+      expect(submitted.replyTo?.id).toBe('reply:a');
+      expect(submitted.references).toEqual([
+        { kind: 'agent', id: 'agent:research', label: 'Research' },
+        { kind: 'workflow', id: 'workflow:review', label: 'Review changes' },
+        { kind: 'mcp', id: 'mcp:github', label: 'GitHub' },
+      ]);
+      expect(submitted.richText).toContain('"type":"doc"');
+      expect(submitted.richText).toContain('"type":"mention"');
+      expect(submitted.richText).toContain('"type":"workflowReference"');
+      const composedPrompt = composeAgentPromptText(submitted.text, submitted.replyTo, submitted.references);
+      expect(composedPrompt).toContain('@Research [agent:agent:research]');
+      expect(composedPrompt).toContain('/Review changes [workflow:workflow:review]');
+      expect(composedPrompt).toContain('@GitHub [mcp:mcp:github]');
+      expect(controller.draftForPeer('agent:a')).toBe('');
+      expect(controller.draftForPeer('agent:b')).toBe('independent draft');
+
+      controller.setDraft('agent:a', 'newer draft typed while the send was pending');
+      controller.restoreDraft('agent:a', submitted);
+      expect(controller.draftForPeer('agent:a')).toBe('newer draft typed while the send was pending');
+      expect(controller.attachmentsForPeer('agent:a').map((attachment) => attachment.id)).toEqual(['attachment:a']);
+      expect(controller.replyForPeer('agent:a')?.id).toBe('reply:a');
+      expect(controller.referencesForPeer('agent:a')).toEqual([
+        { kind: 'agent', id: 'agent:research', label: 'Research' },
+        { kind: 'workflow', id: 'workflow:review', label: 'Review changes' },
+        { kind: 'mcp', id: 'mcp:github', label: 'GitHub' },
+      ]);
+      controller.setDraft('agent:a', 'new draft without a mention');
+      controller.pruneReferences('agent:a', 'new draft without a mention');
+      expect(controller.referencesForPeer('agent:a')).toEqual([]);
+    });
+
+    await test.step('Account sidebar CAS preserves concurrent cross-device edits', async () => {
+      const base = {
+        pinnedOrder: ['agent:a', 'agent:b'],
+        sections: [{
+          id: 'focus',
+          name: 'Focus',
+          agentKeys: ['agent:a'],
+          isCollapsed: false,
+        }],
+      };
+      const merged = mergeAccountSidebarLayoutState(
+        base,
+        {
+          pinnedOrder: ['agent:b'],
+          sections: [
+            {
+              id: 'focus',
+              name: 'Focused work',
+              agentKeys: ['agent:a'],
+              isCollapsed: false,
+            },
+            {
+              id: 'local',
+              name: 'Local only',
+              agentKeys: ['agent:b'],
+              isCollapsed: false,
+            },
+          ],
+        },
+        {
+          pinnedOrder: ['agent:a', 'agent:b', 'agent:c'],
+          sections: [
+            {
+              id: 'focus',
+              name: 'Focus',
+              agentKeys: ['agent:a'],
+              isCollapsed: true,
+            },
+            {
+              id: 'remote',
+              name: 'Remote only',
+              agentKeys: ['agent:c'],
+              isCollapsed: false,
+            },
+          ],
+        },
+      );
+
+      // Local unpin wins over a concurrent remote reorder, while the remote-only
+      // pinned Agent is retained. Independent section edits from both devices
+      // are also merged rather than overwritten by a CAS retry.
+      expect(merged.pinnedOrder).toEqual(['agent:b', 'agent:c']);
+      expect(merged.sections.map((section) => section.id)).toEqual(['focus', 'local', 'remote']);
+      expect(merged.sections[0]).toEqual({
+        id: 'focus',
+        name: 'Focused work',
+        agentKeys: ['agent:a'],
+        isCollapsed: true,
+      });
+      expect(merged.sections[1]?.agentKeys).toEqual(['agent:b']);
+      expect(merged.sections[2]?.agentKeys).toEqual(['agent:c']);
+    });
+
+    await test.step('Agent MCP catalog normalizes untyped Host rows into stable Composer references', async () => {
+      expect(projectAgentMcpReferences([
+        { name: 'github', status: 'connected', transport: 'streamable_http', tools: [{ name: 'search' }, { name: 'pull' }] },
+        { id: 'custom-id', displayName: 'Custom MCP', status: 'auth_required', tools: [] },
+        { name: 'github', status: 'connected', tools: [] },
+        null,
+        { status: 'connected' },
+      ])).toEqual([
+        {
+          id: 'mcp:github',
+          name: 'github',
+          description: 'connected · 2 tools · streamable_http',
+          status: 'connected',
+          toolCount: 2,
+        },
+        {
+          id: 'mcp:custom-id',
+          name: 'Custom MCP',
+          description: 'auth_required',
+          status: 'auth_required',
+          toolCount: 0,
+        },
+      ]);
+    });
+
+    await test.step('Composer suggestions project emoji and read-only GitHub PR references', async () => {
+      expect(emojiSuggestions('thi').some((candidate) => candidate.shortcodes.includes('thinking'))).toBe(true);
+      expect(findPullRequestReadTool([
+        {
+          name: 'github',
+          tools: [
+            { name: 'pull' },
+            { name: 'create_pull_request' },
+            { name: 'search_pull_requests' },
+          ],
+        },
+      ])).toEqual({ server: 'github', tool: 'search_pull_requests' });
+      expect(parsePullRequestToolResult({
+        items: [{
+          number: 7,
+          title: 'Agent workspace parity',
+          html_url: 'https://github.com/bhrumom/fabushi-desktop/pull/7',
+        }],
+      })).toEqual([{
+        prNumber: 7,
+        title: 'Agent workspace parity',
+        url: 'https://github.com/bhrumom/fabushi-desktop/pull/7',
+      }]);
+
+      const controller = new AgentWorkspaceController();
+      const richText = JSON.stringify({
+        type: 'doc',
+        content: [{
+          type: 'paragraph',
+          content: [
+            { type: 'text', text: 'Review ' },
+            {
+              type: 'prReference',
+              attrs: {
+                prNumber: 7,
+                title: 'Agent workspace parity',
+                url: 'https://github.com/bhrumom/fabushi-desktop/pull/7',
+              },
+            },
+          ],
+        }],
+      });
+      controller.setDraftDocument('agent:pr', 'Review #7', richText);
+      expect(controller.referencesForPeer('agent:pr')).toContainEqual({
+        kind: 'pull-request',
+        id: 'https://github.com/bhrumom/fabushi-desktop/pull/7',
+        label: '7',
+      });
+      expect(composeAgentPromptText(
+        controller.draftForPeer('agent:pr'),
+        undefined,
+        controller.referencesForPeer('agent:pr'),
+      )).toContain('#7 [pull-request:https://github.com/bhrumom/fabushi-desktop/pull/7]');
+    });
+
+    await test.step('Agent transcript canonicalizes duplicate legacy assistant rows into one operation timeline', async () => {
+      const transcripts = new AgentTranscriptStore();
+      transcripts.replace('agent:canonical', [{
+        id: 'operation:canonical:assistant-turn',
+        source: 'legacy',
+        role: 'peer',
+        text: '',
+        createdAtMs: 1,
+        kind: 'assistant-turn',
+        operationId: 'operation:canonical',
+        assistantTurn: {
+          id: 'assistant-turn:operation:canonical',
+          operationId: 'operation:canonical',
+          createdAtMs: 1,
+          updatedAtMs: 1,
+          status: 'completed',
+          parts: [],
+        },
+      }, {
+        id: 'legacy-final',
+        source: 'legacy',
+        role: 'peer',
+        text: 'single canonical answer',
+        createdAtMs: 2,
+        kind: 'message',
+        operationId: 'operation:canonical',
+      }, {
+        id: 'operation:canonical:duplicate',
+        source: 'legacy',
+        role: 'peer',
+        text: 'stale duplicate',
+        createdAtMs: 0,
+        kind: 'assistant-turn',
+        operationId: 'operation:canonical',
+        assistantTurn: {
+          id: 'assistant-turn:operation:canonical:duplicate',
+          operationId: 'operation:canonical',
+          createdAtMs: 0,
+          updatedAtMs: 0,
+          status: 'running',
+          parts: [],
+        },
+      }]);
+      const entries = transcripts.entries('agent:canonical');
+      expect(entries.filter((entry) => entry.operationId === 'operation:canonical')).toHaveLength(1);
+      expect(entries[0]?.kind).toBe('assistant-turn');
+      expect(entries[0]?.text).toBe('single canonical answer');
+      expect(entries[0]?.assistantTurn?.parts.filter((part) => part.kind === 'text')).toHaveLength(1);
+    });
+
+    await test.step('Agent group identity survives Host runtime-to-surface normalization', async () => {
+      const agent: AgentSidebarItem = {
+        key: 'agent:runtime-agent',
+        peerKey: 'legacy:bot:surface-bot',
+        id: 'surface-bot',
+        agentId: 'runtime-agent',
+        name: 'Research',
+        description: 'Research Agent',
+        pinned: false,
+        hidden: false,
+        unread: 0,
+        busy: false,
+        isGroup: false,
+        updatedAtMs: 1,
+      };
+      expect(agentMatchesGroupMember(agent, 'runtime-agent')).toBe(true);
+      expect(agentMatchesGroupMember(agent, 'surface-bot')).toBe(true);
+      expect(agentMatchesGroupMember(agent, 'other-agent')).toBe(false);
+      const index = indexAgentsByRuntimeOrSurfaceId([agent]);
+      expect(index.get('runtime-agent')?.key).toBe(agent.key);
+      expect(index.get('surface-bot')?.key).toBe(agent.key);
+    });
+
+    await test.step('Agent Store root restores a cross-device transcript snapshot without last-write-wins guessing', async () => {
+      const agentId = 'agent:cloud';
+      const conversationId = 'conversation:cloud';
+      const transcriptPath = fabuAgentConversationTranscriptPath(conversationId);
+      const entries: TranscriptEntry[] = [{
+        id: 'cloud:user:1',
+        kind: 'message',
+        role: 'me',
+        text: 'restored prompt',
+        createdAtMs: 1,
+      }, {
+        id: 'cloud:assistant:1',
+        kind: 'message',
+        role: 'peer',
+        text: 'restored answer',
+        createdAtMs: 2,
+      }];
+      const encode = (value: unknown) => Buffer.from(JSON.stringify(value), 'utf8').toString('base64');
+      const objects = new Map([
+        [FABU_AGENT_ROOT_PATH, {
+          path: FABU_AGENT_ROOT_PATH,
+          etag: 'root-etag',
+          dataBase64: encode({
+            schemaVersion: 1,
+            agentId,
+            updatedAtMs: 3,
+            files: [{ path: transcriptPath, blobId: 'blob-transcript', etag: 'transcript-etag', revision: 4 }],
+          }),
+        }],
+        [transcriptPath, {
+          path: transcriptPath,
+          blobId: 'blob-transcript',
+          etag: 'transcript-etag',
+          revision: 4,
+          dataBase64: encode({ schemaVersion: 1, agentId, conversationId, entries, updatedAtMs: 3 }),
+        }],
+      ]);
+      objects.set(FABU_AGENT_ATTACHMENT_INDEX_PATH, {
+        path: FABU_AGENT_ATTACHMENT_INDEX_PATH,
+        blobId: 'blob-attachments',
+        etag: 'attachments-etag',
+        revision: 2,
+        dataBase64: encode({
+          schemaVersion: 1,
+          agentId,
+          attachments: [{ id: 'attachment:cloud', name: 'cloud.txt', path: '/agent/cloud.txt', sizeBytes: 12 }],
+        }),
+      });
+      objects.set(FABU_AGENT_RUNTIME_CHECKPOINT_PATH, {
+        path: FABU_AGENT_RUNTIME_CHECKPOINT_PATH,
+        blobId: 'blob-checkpoint',
+        etag: 'checkpoint-etag',
+        revision: 3,
+        dataBase64: encode({
+          schemaVersion: 1,
+          agentId,
+          conversationId,
+          operationId: 'operation:cloud-stale',
+          status: 'running',
+          updatedAtMs: 3,
+        }),
+      });
+      objects.set(FABU_AGENT_ROOT_PATH, {
+        ...objects.get(FABU_AGENT_ROOT_PATH)!,
+        dataBase64: encode({
+          schemaVersion: 1,
+          agentId,
+          updatedAtMs: 4,
+          files: [
+            { path: transcriptPath, blobId: 'blob-transcript', etag: 'transcript-etag', revision: 4 },
+            { path: FABU_AGENT_ATTACHMENT_INDEX_PATH, blobId: 'blob-attachments', etag: 'attachments-etag', revision: 2 },
+            { path: FABU_AGENT_RUNTIME_CHECKPOINT_PATH, blobId: 'blob-checkpoint', etag: 'checkpoint-etag', revision: 3 },
+          ],
+        }),
+      });
+      const store = new FabuAgentStore(agentId, {
+        async list() { return { files: [] }; },
+        async read(_agentId, path) {
+          const object = objects.get(path);
+          if (!object) throw new Error(`missing ${path}`);
+          return object;
+        },
+        async write() { return {}; },
+        async delete() { return {}; },
+      });
+      const recovered = await restoreAgentStoreWorkspace(store, conversationId);
+      expect(recovered.attachments.map((attachment) => attachment.id)).toEqual(['attachment:cloud']);
+      expect(recovered.checkpoint?.operationId).toBe('operation:cloud-stale');
+      expect(recovered.entries.filter((entry) => entry.kind === 'notice')).toHaveLength(1);
+      expect(recovered.entries.find((entry) => entry.kind === 'notice')?.status).toBe('interrupted');
+      const transcripts = new AgentTranscriptStore();
+      transcripts.hydrateEntries('agent:cloud-peer', recovered.entries);
+      expect(transcripts.entries('agent:cloud-peer').map((entry) => entry.text)).toEqual(['restored prompt', 'restored answer', '']);
+
+      const corruptObjects = new Map(objects);
+      corruptObjects.set(transcriptPath, {
+        ...corruptObjects.get(transcriptPath)!,
+        etag: 'unexpected-etag',
+      });
+      const corruptStore = new FabuAgentStore(agentId, {
+        async list() { return { files: [] }; },
+        async read(_agentId, path) {
+          const object = corruptObjects.get(path);
+          if (!object) throw new Error(`missing ${path}`);
+          return object;
+        },
+        async write() { return {}; },
+        async delete() { return {}; },
+      });
+      await expect(restoreAgentStoreWorkspace(corruptStore, conversationId)).rejects.toThrow('Agent Store etag mismatch');
+    });
+
+    await test.step('Agent runtime coordinator isolates concurrent Agent streams and preserves drafts on reconnect', async () => {
+      const controller = new AgentWorkspaceController();
+      const transcripts = new AgentTranscriptStore();
+      const computerStatuses: import('../../frontend/apps/web/src/lib/mahayana-host/contracts').ComputerStatus[] = [];
+      const coordinator = new AgentRuntimeCoordinator(controller, transcripts, {
+        onComputerStatus: (status) => { computerStatuses.push(status); },
+      });
+      expect(coordinator.handle({
+        type: 'computer.status',
+        timestamp: new Date(1).toISOString(),
+        requestId: 'computer-status:test',
+        status: {
+          platform: 'macos',
+          available: true,
+          captureSupported: true,
+          inputSupported: true,
+          accessibilityGranted: false,
+          screenRecordingGranted: true,
+          localExecutionEnabled: true,
+          routeEgressLocally: true,
+          remoteControlEnabled: false,
+          aiControlEnabled: true,
+        },
+      })).toBe(true);
+      expect(computerStatuses[0]?.platform).toBe('macos');
+      expect(computerStatuses[0]?.accessibilityGranted).toBe(false);
+      coordinator.bindAgentPeers([{ agentId: 'agent:runtime-b', peerKey: 'agent:b' }]);
+      expect(coordinator.handle({
+        type: 'computer.result',
+        timestamp: new Date(1).toISOString(),
+        requestId: 'computer:b',
+        agentId: 'agent:runtime-b',
+        result: {
+          origin: 'ai',
+          actionsExecuted: 1,
+          snapshot: { capturedAtMs: 1, dataUrl: 'data:image/png;base64,AA==' },
+        },
+      })).toBe(true);
+      expect(transcripts.entries('agent:b').filter((entry) => entry.kind === 'computer-handoff')).toHaveLength(1);
+      expect(transcripts.entries('agent:a').filter((entry) => entry.kind === 'computer-handoff')).toHaveLength(0);
+      expect(coordinator.handle({
+        type: 'computer.result',
+        timestamp: new Date(1).toISOString(),
+        requestId: 'computer:unscoped',
+        result: {
+          origin: 'local-ui',
+          actionsExecuted: 1,
+          snapshot: { capturedAtMs: 1, dataUrl: 'data:image/png;base64,AA==' },
+        },
+      })).toBe(false);
+
+      controller.setDraft('agent:a', 'draft survives reconnect');
+      coordinator.beginLocalTurn({
+        peerKey: 'agent:a',
+        requestId: 'request:a',
+        messageId: 'user:a',
+        text: 'A',
+        createdAtMs: 1,
+      });
+      coordinator.beginLocalTurn({
+        peerKey: 'agent:b',
+        requestId: 'request:b',
+        messageId: 'user:b',
+        text: 'B',
+        createdAtMs: 2,
+      });
+
+      coordinator.adoptOperation('request:a', 'operation:a', 'agent:a');
+      coordinator.adoptOperation('request:b', 'operation:b', 'agent:b');
+      expect(controller.operationForPeer('agent:a')).toBe('operation:a');
+      expect(controller.operationForPeer('agent:b')).toBe('operation:b');
+
+      expect(coordinator.handle({
+        type: 'chat.delta',
+        timestamp: new Date(3).toISOString(),
+        operationId: 'operation:a',
+        delta: 'alpha',
+      })).toBe(true);
+      expect(coordinator.handle({
+        type: 'chat.delta',
+        timestamp: new Date(4).toISOString(),
+        operationId: 'operation:b',
+        delta: 'beta',
+      })).toBe(true);
+      coordinator.flushPendingDeltas();
+
+      expect(coordinator.handle({
+        type: 'approval.requested',
+        timestamp: new Date(4).toISOString(),
+        operationId: 'operation:b',
+        agentId: 'agent:b',
+        approvalId: 'approval:b',
+        miniAppId: 'runtime',
+        capability: 'filesystem.write',
+        reason: 'Write the requested file.',
+      })).toBe(true);
+      expect(transcripts.entries('agent:b').filter((entry) => entry.kind === 'approval')).toHaveLength(1);
+      expect(transcripts.entries('agent:a').filter((entry) => entry.kind === 'approval')).toHaveLength(0);
+      expect(transcripts.entries('agent:b').find((entry) => entry.kind === 'approval')?.approval?.approvalId).toBe('approval:b');
+
+      expect(coordinator.handle({
+        type: 'approval.resolved',
+        timestamp: new Date(4).toISOString(),
+        operationId: 'operation:b',
+        agentId: 'agent:b',
+        approvalId: 'approval:b',
+        decision: 'allow-once',
+      })).toBe(true);
+      expect(transcripts.entries('agent:b').find((entry) => entry.kind === 'approval')?.approval?.decision).toBe('allow-once');
+
+      expect(coordinator.handle({
+        type: 'operation.completed',
+        timestamp: new Date(5).toISOString(),
+        operationId: 'operation:a',
+      })).toBe(true);
+      expect(controller.isBusy('agent:a')).toBe(false);
+      expect(controller.isBusy('agent:b')).toBe(true);
+      expect(transcripts.entries('agent:a').map((entry) => entry.text).join(' ')).toContain('alpha');
+      expect(transcripts.entries('agent:b').map((entry) => entry.text).join(' ')).toContain('beta');
+      expect(transcripts.entries('agent:a').map((entry) => entry.text).join(' ')).not.toContain('beta');
+
+      coordinator.resetOperations();
+      expect(controller.draftForPeer('agent:a')).toBe('draft survives reconnect');
+      expect(controller.isBusy('agent:b')).toBe(false);
+
+      coordinator.bindAgentPeers([{
+        agentId: 'agent:restart-runtime',
+        peerKey: 'agent:restart',
+        conversationId: 'codex:agent:restart',
+      }]);
+      coordinator.beginLocalTurn({
+        peerKey: 'agent:restart',
+        requestId: 'request:restart',
+        messageId: 'user:restart',
+        text: 'survive host restart',
+        createdAtMs: 6,
+      });
+      coordinator.adoptOperation('request:restart', 'operation:restart', 'agent:restart');
+      expect(coordinator.handle({
+        type: 'turn.state',
+        timestamp: new Date(6).toISOString(),
+        operationId: 'operation:restart',
+        turnId: 'turn:restart',
+        runId: 'run:restart:1',
+        conversationId: 'codex:agent:restart',
+        state: 'thinking',
+        sequence: 1,
+      })).toBe(true);
+      expect(coordinator.handle({
+        type: 'host.lifecycle',
+        timestamp: new Date(7).toISOString(),
+        lifecycle: 'stopped',
+        state: 'stopped',
+        generation: 9,
+        sequence: 20,
+        recoverable: true,
+        error: 'fault injection',
+      })).toBe(true);
+      expect(controller.isBusy('agent:restart')).toBe(false);
+      expect(controller.isOperationFinished('operation:restart')).toBe(true);
+      expect(transcripts.entries('agent:restart').filter((entry) => entry.kind === 'assistant-turn')).toHaveLength(0);
+
+      expect(coordinator.handle({
+        type: 'turn.state',
+        timestamp: new Date(8).toISOString(),
+        operationId: 'operation:restart:recovered',
+        turnId: 'turn:restart',
+        runId: 'run:restart:2',
+        conversationId: 'codex:agent:restart',
+        state: 'recovering',
+        sequence: 2,
+      })).toBe(true);
+      expect(controller.operationForPeer('agent:restart')).toBe('operation:restart:recovered');
+      expect(transcripts.thread('agent:restart').find((message) => message.id === 'user:restart')?.operationId)
+        .toBe('operation:restart:recovered');
+      expect(transcripts.entries('agent:restart').filter((entry) => entry.kind === 'assistant-turn')).toHaveLength(1);
+      expect(controller.draftForPeer('agent:a')).toBe('draft survives reconnect');
+      expect(coordinator.handle({
+        type: 'turn.state',
+        timestamp: new Date(9).toISOString(),
+        operationId: 'operation:restart:recovered',
+        turnId: 'turn:restart',
+        runId: 'run:restart:2',
+        conversationId: 'codex:agent:restart',
+        state: 'completed',
+        sequence: 3,
+      })).toBe(true);
+      expect(controller.isBusy('agent:restart')).toBe(false);
+
+      coordinator.beginLocalTurn({
+        peerKey: 'agent:waiting-restart',
+        requestId: 'request:waiting-restart',
+        messageId: 'user:waiting-restart',
+        text: 'needs explicit approval',
+        createdAtMs: 10,
+      });
+      coordinator.adoptOperation(
+        'request:waiting-restart',
+        'operation:waiting-restart',
+        'agent:waiting-restart',
+      );
+      expect(coordinator.handle({
+        type: 'turn.state',
+        timestamp: new Date(10).toISOString(),
+        operationId: 'operation:waiting-restart',
+        turnId: 'turn:waiting-restart',
+        runId: 'run:waiting-restart',
+        conversationId: 'codex:agent:waiting-restart',
+        state: 'waiting-user',
+        sequence: 1,
+      })).toBe(true);
+      expect(coordinator.handle({
+        type: 'host.lifecycle',
+        timestamp: new Date(11).toISOString(),
+        lifecycle: 'stopped',
+        state: 'stopped',
+        generation: 10,
+        sequence: 21,
+        recoverable: true,
+        error: 'approval channel reset',
+      })).toBe(true);
+      expect(controller.isBusy('agent:waiting-restart')).toBe(false);
+      expect(
+        transcripts.entries('agent:waiting-restart')
+          .find((entry) => entry.kind === 'assistant-turn')
+          ?.assistantTurn?.status,
+      ).toBe('interrupted');
+
+      coordinator.bindAgentPeers([{ agentId: 'c', peerKey: 'agent:c' }]);
+      expect(coordinator.handleCommandBridge({
+        phase: 'dispatch',
+        command: { type: 'chat.send', requestId: 'request:c', text: 'C', agentId: 'c' },
+        context: { conversationKey: 'agent:c', agentId: 'c' },
+      })).toBe(true);
+      expect(controller.requestForPeer('agent:c')).toBe('request:c');
+      expect(coordinator.handleCommandBridge({
+        phase: 'accepted',
+        command: { type: 'chat.send', requestId: 'request:c', text: 'C', agentId: 'c' },
+        accepted: { requestId: 'request:c', operationId: 'operation:c' },
+        context: { conversationKey: 'agent:c', agentId: 'c' },
+      })).toBe(true);
+      expect(controller.operationForPeer('agent:c')).toBe('operation:c');
+      expect(transcripts.entries('agent:c').filter((entry) => entry.kind === 'assistant-turn')).toHaveLength(1);
+
+      transcripts.appendUserMessage('agent:q', {
+        id: 'queued:q',
+        text: 'queued once',
+        createdAtMs: 10,
+        optimistic: true,
+        queued: true,
+      });
+      expect(transcripts.thread('agent:q').filter((message) => message.queued)).toHaveLength(1);
+      coordinator.beginLocalTurn({
+        peerKey: 'agent:q',
+        requestId: 'request:q',
+        messageId: 'queued:q',
+        text: 'queued once',
+        createdAtMs: 11,
+      });
+      transcripts.removeQueuedUserMessage('agent:q', 'queued:q');
+      expect(transcripts.thread('agent:q').filter((message) => message.id === 'queued:q')).toHaveLength(1);
+      expect(transcripts.thread('agent:q').find((message) => message.id === 'queued:q')?.queued).toBe(false);
+
+      coordinator.dispose();
+    });
+
+    await test.step('Agent runtime correlation fails closed without a canonical operation id', async () => {
+      const controller = new AgentWorkspaceController();
+      const transcripts = new AgentTranscriptStore();
+      const coordinator = new AgentRuntimeCoordinator(controller, transcripts);
+      coordinator.bindAgentPeers([{
+        agentId: 'strict',
+        peerKey: 'agent:strict',
+        conversationId: 'codex:agent:strict',
+      }]);
+
+      coordinator.beginLocalTurn({
+        peerKey: 'agent:strict',
+        requestId: 'request:strict',
+        messageId: 'user:strict',
+        text: 'strict ownership',
+        createdAtMs: 30,
+      });
+
+      expect(coordinator.handle({
+        type: 'chat.delta',
+        timestamp: new Date(31).toISOString(),
+        delta: 'must-not-be-inferred',
+      } as unknown as RuntimeEvent)).toBe(false);
+      expect(coordinator.handle({
+        type: 'chat.message',
+        timestamp: new Date(32).toISOString(),
+        role: 'assistant',
+        text: 'must-not-be-inferred',
+      })).toBe(false);
+      expect(controller.requestForPeer('agent:strict')).toBe('request:strict');
+      expect(controller.operationForPeer('agent:strict')).toBeNull();
+      expect(transcripts.entries('agent:strict').map((entry) => entry.text).join(' ')).not.toContain('must-not-be-inferred');
+
+      expect(coordinator.handle({
+        type: 'turn.state',
+        timestamp: new Date(33).toISOString(),
+        operationId: 'operation:strict',
+        turnId: 'turn:strict',
+        runId: 'run:strict',
+        conversationId: 'codex:agent:strict',
+        state: 'thinking',
+        sequence: 1,
+      })).toBe(true);
+      expect(controller.operationForPeer('agent:strict')).toBe('operation:strict');
+      expect(controller.requestForPeer('agent:strict')).toBeNull();
+
+      expect(coordinator.handle({
+        type: 'chat.delta',
+        timestamp: new Date(34).toISOString(),
+        operationId: 'operation:strict',
+        delta: 'canonical',
+      })).toBe(true);
+      coordinator.flushPendingDeltas();
+      expect(transcripts.entries('agent:strict').map((entry) => entry.text).join(' ')).toContain('canonical');
+      coordinator.dispose();
+    });
+
+    await test.step('Agent command bridge resolves Rust conversation ids back to canonical peers under concurrent sends', async () => {
+      const controller = new AgentWorkspaceController();
+      const transcripts = new AgentTranscriptStore();
+      const coordinator = new AgentRuntimeCoordinator(controller, transcripts);
+      coordinator.bindAgentPeers([
+        { agentId: 'research', peerKey: 'agent:research', conversationId: 'codex:agent:research' },
+        { agentId: 'builder', peerKey: 'agent:builder', conversationId: 'codex:agent:builder' },
+      ]);
+
+      coordinator.beginLocalTurn({
+        peerKey: 'agent:research',
+        requestId: 'request:research',
+        messageId: 'user:research',
+        text: 'Research',
+        createdAtMs: 20,
+      });
+      coordinator.beginLocalTurn({
+        peerKey: 'agent:builder',
+        requestId: 'request:builder',
+        messageId: 'user:builder',
+        text: 'Builder',
+        createdAtMs: 21,
+      });
+
+      const researchCommand = {
+        type: 'chat.send' as const,
+        requestId: 'request:research',
+        conversationId: 'codex:agent:research',
+        agentId: 'research',
+        text: 'Research',
+      };
+      const builderCommand = {
+        type: 'chat.send' as const,
+        requestId: 'request:builder',
+        conversationId: 'codex:agent:builder',
+        agentId: 'builder',
+        text: 'Builder',
+      };
+
+      expect(coordinator.handleCommandBridge({
+        phase: 'dispatch',
+        command: researchCommand,
+        context: {
+          conversationKey: 'codex:agent:research',
+          conversationId: 'codex:agent:research',
+          agentId: 'research',
+        },
+      })).toBe(true);
+      expect(coordinator.handleCommandBridge({
+        phase: 'dispatch',
+        command: builderCommand,
+        context: {
+          conversationKey: 'codex:agent:builder',
+          conversationId: 'codex:agent:builder',
+          agentId: 'builder',
+        },
+      })).toBe(true);
+
+      expect(controller.requestForPeer('agent:research')).toBe('request:research');
+      expect(controller.requestForPeer('agent:builder')).toBe('request:builder');
+      expect(controller.requestForPeer('codex:agent:research')).toBeNull();
+      expect(controller.requestForPeer('codex:agent:builder')).toBeNull();
+
+      expect(coordinator.handleCommandBridge({
+        phase: 'accepted',
+        command: researchCommand,
+        accepted: { requestId: 'request:research', operationId: 'operation:research' },
+        context: {
+          conversationKey: 'codex:agent:research',
+          conversationId: 'codex:agent:research',
+          agentId: 'research',
+        },
+      })).toBe(true);
+      expect(coordinator.handleCommandBridge({
+        phase: 'accepted',
+        command: builderCommand,
+        accepted: { requestId: 'request:builder', operationId: 'operation:builder' },
+        context: {
+          conversationKey: 'codex:agent:builder',
+          conversationId: 'codex:agent:builder',
+          agentId: 'builder',
+        },
+      })).toBe(true);
+
+      expect(controller.operationForPeer('agent:research')).toBe('operation:research');
+      expect(controller.operationForPeer('agent:builder')).toBe('operation:builder');
+      expect(controller.operationForPeer('codex:agent:research')).toBeNull();
+      expect(controller.operationForPeer('codex:agent:builder')).toBeNull();
+
+      for (const [operationId, conversationId, text] of [
+        ['operation:research', 'codex:agent:research', 'research complete'],
+        ['operation:builder', 'codex:agent:builder', 'builder complete'],
+      ] as const) {
+        expect(coordinator.handle({
+          type: 'chat.message',
+          timestamp: new Date(22).toISOString(),
+          operationId,
+          role: 'assistant',
+          text,
+        })).toBe(true);
+        expect(coordinator.handle({
+          type: 'turn.state',
+          timestamp: new Date(23).toISOString(),
+          operationId,
+          turnId: `turn:${operationId}`,
+          runId: `run:${operationId}`,
+          conversationId,
+          state: 'completed',
+          sequence: 4,
+        })).toBe(true);
+        expect(coordinator.handle({
+          type: 'operation.completed',
+          timestamp: new Date(24).toISOString(),
+          operationId,
+        })).toBe(true);
+      }
+
+      expect(controller.isBusy('agent:research')).toBe(false);
+      expect(controller.isBusy('agent:builder')).toBe(false);
+      expect(transcripts.entries('agent:research').map((entry) => entry.text).join(' ')).toContain('research complete');
+      expect(transcripts.entries('agent:builder').map((entry) => entry.text).join(' ')).toContain('builder complete');
+      expect(transcripts.entries('agent:research').map((entry) => entry.text).join(' ')).not.toContain('builder complete');
+      expect(transcripts.entries('agent:builder').map((entry) => entry.text).join(' ')).not.toContain('research complete');
+      coordinator.dispose();
+    });
+
+    await test.step('Agent transcript store keeps one ordered assistant turn through adoption and finalization', async () => {
+      const transcripts = new AgentTranscriptStore();
+      transcripts.replace('agent:a', [{
+        id: 'user:a',
+        source: 'legacy',
+        role: 'me',
+        text: '你好',
+        createdAtMs: 1,
+        kind: 'message',
+        operationId: 'request:a',
+      }]);
+      transcripts.appendAssistantTurnEvent('agent:a', {
+        type: 'operation.started',
+        timestamp: new Date(2).toISOString(),
+        operationId: 'request:a',
+        label: '正在思考',
+        interruptible: true,
+      });
+      transcripts.appendAssistantTurnEvent('agent:a', {
+        type: 'chat.delta',
+        timestamp: new Date(3).toISOString(),
+        operationId: 'request:a',
+        delta: '你',
+      });
+      transcripts.appendAssistantTurnEvent('agent:a', {
+        type: 'chat.delta',
+        timestamp: new Date(4).toISOString(),
+        operationId: 'request:a',
+        delta: '好',
+      });
+
+      transcripts.adoptOperation('agent:a', 'request:a', 'operation:a');
+      transcripts.appendAssistantTurnEvent('agent:a', {
+        type: 'chat.message',
+        timestamp: new Date(5).toISOString(),
+        operationId: 'operation:a',
+        role: 'assistant',
+        text: '你好',
+      });
+      transcripts.appendAssistantTurnEvent('agent:a', {
+        type: 'operation.completed',
+        timestamp: new Date(6).toISOString(),
+        operationId: 'operation:a',
+      });
+
+      const thread = transcripts.thread('agent:a');
+      const assistantTurns = thread.filter((message) => message.kind === 'assistant-turn');
+      expect(assistantTurns).toHaveLength(1);
+      expect(assistantTurns[0]?.operationId).toBe('operation:a');
+      expect(assistantTurns[0]?.text).toBe('你好');
+      expect(transcripts.entries('agent:a').filter((entry) => entry.kind === 'assistant-turn')).toHaveLength(1);
+    });
+
+    await test.step('Agent transcript store owns regenerate prompt lookup', async () => {
+      const transcripts = new AgentTranscriptStore();
+      transcripts.replace('agent:regen', [{
+        id: 'regen:user:1',
+        source: 'legacy',
+        role: 'me',
+        text: 'Review this attachment',
+        createdAtMs: 1,
+        kind: 'message',
+        attachments: [{ id: 'regen:attachment:1', name: 'input.txt' }],
+      }, {
+        id: 'regen:assistant:1',
+        source: 'legacy',
+        role: 'peer',
+        text: 'First answer',
+        createdAtMs: 2,
+        kind: 'message',
+      }, {
+        id: 'regen:queued:2',
+        source: 'legacy',
+        role: 'me',
+        text: 'Queued future prompt',
+        createdAtMs: 3,
+        kind: 'message',
+        queued: true,
+      }, {
+        id: 'regen:assistant:2',
+        source: 'legacy',
+        role: 'peer',
+        text: 'Target answer',
+        createdAtMs: 4,
+        kind: 'message',
+      }]);
+
+      const prompt = transcripts.userPromptBefore('agent:regen', 'regen:assistant:2');
+      expect(prompt?.id).toBe('regen:user:1');
+      expect(prompt?.text).toBe('Review this attachment');
+      expect(prompt?.attachments?.map((attachment) => attachment.id)).toEqual(['regen:attachment:1']);
+      expect(transcripts.userPromptBefore('agent:regen', 'missing')).toBeUndefined();
+    });
+
+    await test.step('parity stylesheet and surface marker load before authentication', async () => {
+      await expect(page.locator('body')).toHaveAttribute('data-fabushi-surface', 'grok-parity-v1');
+      const parityLoaded = await page.evaluate(() => Array.from(document.styleSheets).some((sheet) =>
+        String(sheet.href ?? '').includes('grok-parity.css')));
+      expect(parityLoaded).toBe(true);
+      const bodyBackground = await page.locator('body').evaluate((element) => getComputedStyle(element).backgroundColor);
+      expect(rgbLuma(bodyBackground)).toBeLessThan(40);
+    });
+
+    await completeBrowserLogin(page);
+
+    await test.step('canonical Agent workspace replaces the Messenger navigation shell', async () => {
+      await expect(page.getByTestId('messenger-workspace')).toHaveCount(1);
+      await expect(page.getByTestId('messenger-workspace')).toHaveAttribute('data-agent-root-shell', 'true');
+      await expect(page.getByTestId('messenger-workspace')).toHaveAttribute('data-product-shell', 'agent');
+      await expect(page.locator('.desktop-mode-switch')).toHaveCount(0);
+      await expect(page.getByRole('button', { name: 'New', exact: true })).toBeVisible();
+      await expect(primaryMahayanaAgentPeer(page)).toBeVisible();
+      await expect(page.getByRole('region', { name: 'Agent list' }).getByRole('button', { name: 'New chat', exact: true })).toHaveCount(1);
+      await expect(page.getByRole('region', { name: 'Agent list' }).getByRole('button', { name: 'Incident Bot', exact: true })).toHaveCount(0);
+      await expect(page.getByTestId('profile-navigation-trigger')).toHaveCount(0);
+      await expect(page.locator('[data-testid^="legacy-peer-"]')).toHaveCount(0);
+
+      await page.keyboard.press(process.platform === 'darwin' ? 'Meta+K' : 'Control+K');
+      const search = page.getByRole('dialog', { name: 'Search' });
+      await expect(search).toBeVisible();
+      await expect(search.getByRole('combobox', { name: 'Search' })).toBeFocused();
+      await expect(search.getByRole('option', { name: 'New chat Agent', exact: true })).toBeVisible();
+      await page.keyboard.press('Escape');
+      await expect(search).toBeHidden();
+    });
+
+    await test.step('Agent Network is the Agent-domain group surface', async () => {
+      await page.getByRole('button', { name: 'Agent network' }).click();
+      const orgChart = page.getByRole('main').filter({ has: page.getByRole('heading', { name: 'Org chart' }) });
+      await expect(orgChart.getByRole('heading', { name: 'Org chart' })).toBeVisible();
+
+      const network = orgChart.getByRole('region', { name: 'Agent network' });
+      await expect(network).toBeVisible();
+      const geometry = await network.evaluate((element) => {
+        const rect = element.getBoundingClientRect();
+        const parentRect = element.parentElement?.getBoundingClientRect();
+        return {
+          width: rect.width,
+          height: rect.height,
+          parentWidth: parentRect?.width ?? 0,
+          parentHeight: parentRect?.height ?? 0,
+        };
+      });
+      expect(geometry.width).toBeGreaterThan(0);
+      expect(geometry.height).toBeGreaterThan(0);
+      expect(Math.abs(geometry.width - geometry.parentWidth)).toBeLessThanOrEqual(1);
+      expect(Math.abs(geometry.height - geometry.parentHeight)).toBeLessThanOrEqual(1);
+
+      const firstAgentNode = network.locator('.sand-org-chart-network__node').first();
+      await expect(firstAgentNode).toBeVisible();
+      await expect(firstAgentNode).toHaveAttribute('aria-pressed', /true|false/);
+
+      const scene = network.locator('.sand-org-chart-network__scene');
+      const transformBeforeWheel = await scene.evaluate((element) => getComputedStyle(element).transform);
+      await scene.dispatchEvent('wheel', {
+        clientX: 120,
+        clientY: 120,
+        ctrlKey: false,
+        deltaMode: 0,
+        deltaY: -120,
+      });
+      await expect.poll(async () => scene.evaluate((element) => getComputedStyle(element).transform))
+        .not.toBe(transformBeforeWheel);
+
+      await network.screenshot({ path: test.info().outputPath('agent-network-responsive.png') });
+      await expect(orgChart.getByText(/\d+ agents? · \d+ groups? · \d+ message links?/)).toBeVisible();
+      await orgChart.getByRole('button', { name: 'Close org chart' }).click();
+      await expect(page.getByRole('heading', { name: 'Org chart' })).toHaveCount(0);
+    });
+
+    await test.step('Agent conversation and composer expose dark low-contrast material', async () => {
+      const peer = primaryMahayanaAgentPeer(page);
+      await expect(peer).toBeVisible();
+      await peer.click();
+      const input = page.getByRole('textbox', { name: 'Prompt' });
+      await expect(input).toBeVisible();
+
+      const composer = page.locator('.sand-prompt-shell');
+      await expect(composer).toHaveCount(1);
+      const material = await composer.evaluate((composerElement, peerElement) => {
+        if (!(peerElement instanceof HTMLElement)) return null;
+        const composerStyle = getComputedStyle(composerElement);
+        const peerStyle = getComputedStyle(peerElement);
+        return {
+          composerBackground: composerStyle.backgroundColor,
+          composerRadius: composerStyle.borderRadius,
+          peerBackground: peerStyle.backgroundColor,
+          peerRadius: peerStyle.borderRadius,
+          bodyBackground: getComputedStyle(document.body).backgroundColor,
+        };
+      }, await peer.elementHandle());
+
+      expect(material).not.toBeNull();
+      // Frozen Grok uses translucent token surfaces here
+      // (--cursor-bg-input-surface -> --cursor-bg-quaternary). Validate the
+      // visible material after alpha compositing over the dark workspace instead
+      // of treating the translucent foreground RGB as an opaque pixel.
+      expect(compositedLuma(material!.composerBackground, material!.bodyBackground)).toBeLessThan(70);
+      expect(parseFloat(material!.composerRadius)).toBeGreaterThanOrEqual(14);
+      expect(compositedLuma(material!.peerBackground, material!.bodyBackground)).toBeLessThan(80);
+      expect(parseFloat(material!.peerRadius)).toBeGreaterThanOrEqual(10);
+    });
+
+    await test.step('Agent uses one canonical workspace and Agent-scoped attachment draft', async () => {
+      const composer = page.locator('.sand-prompt-shell');
+      const transcript = page.getByRole('log', { name: 'Conversation transcript' });
+      await expect(composer).toHaveCount(1);
+      await expect(transcript).toHaveCount(1);
+
+      const fileInput = composer.locator('input[type="file"]');
+      await expect(fileInput).toHaveAttribute('multiple', '');
+      await fileInput.setInputFiles({
+        name: 'agent-notes.txt',
+        mimeType: 'text/plain',
+        buffer: Buffer.from('Agent-owned attachment context'),
+      });
+      await expect(composer.getByText('agent-notes.txt')).toBeVisible();
+
+      const input = page.getByRole('textbox', { name: 'Prompt' });
+      await expect(input).toHaveAttribute('contenteditable', 'true');
+      await input.fill('Use the attached note.');
+      await expect(composer.getByText('agent-notes.txt')).toBeVisible();
+      await expect.poll(async () => page.evaluate(async () => {
+        const candidate = window as unknown as {
+          desktop: {
+            cursorAccount: { getStatus(): Promise<{ kind?: string; authId?: string | null; email?: string | null }> };
+            agent: { clientPersistence: { read(key: string): Promise<string | null> } };
+          };
+        };
+        const status = await candidate.desktop.cursorAccount.getStatus();
+        if (status.kind !== 'logged-in') return false;
+        const slot = status.authId ?? status.email ?? 'account';
+        const encodedSlot = encodeURIComponent(slot).replaceAll('.', '%2E');
+        const raw = await candidate.desktop.agent.clientPersistence.read('sand.client.slice.account.' + encodedSlot + '.composer-drafts');
+        return raw?.includes('Use the attached note.') === true && raw.includes('agent-notes.txt');
+      }), { timeout: 5_000 }).toBe(true);
+      await composer.getByRole('button', { name: 'Send message' }).click();
+
+      await expect(composer.getByText('agent-notes.txt')).toHaveCount(0);
+      console.log('[attachment-probe] transcript-after-click', JSON.stringify(await transcript.getByRole('article').allInnerTexts()));
+      const firstUserTurn = transcript.getByRole('article').filter({ hasText: 'Use the attached note.' }).filter({ hasText: 'agent-notes.txt' });
+      await expect(firstUserTurn).toHaveCount(1);
+      await expect(firstUserTurn.getByText('agent-notes.txt')).toBeVisible();
+
+      await fileInput.setInputFiles({
+        name: 'attachment-only.txt',
+        mimeType: 'text/plain',
+        buffer: Buffer.from('Attachment-only Agent submission'),
+      });
+      await expect(composer.getByRole('button', { name: 'Send message' })).toBeVisible();
+      await composer.getByRole('button', { name: 'Send message' }).click();
+      await expect(transcript.getByText('attachment-only.txt')).toBeVisible();
+
+      await page.keyboard.press(process.platform === 'darwin' ? 'Meta+K' : 'Control+K');
+      const palette = page.getByRole('dialog', { name: 'Search' });
+      await expect(palette).toBeVisible();
+      await palette.getByRole('combobox', { name: 'Search' }).fill('agent-notes.txt');
+      // The deterministic Host does not advertise global media search. The
+      // shipping Search surface must represent that capability contract instead
+      // of fabricating a local attachment index for this focused chat test.
+      await expect(palette.getByText('Search unavailable', { exact: true })).toBeVisible();
+      await expect(palette.getByRole('tab', { name: 'Files', exact: true })).toHaveCount(0);
+      // Send Escape to the shipping Search combobox itself. The palette owns
+      // the keyboard dismissal contract; targeting the focused control avoids a
+      // page-level key race and lets us wait for the pointer-blocking backdrop
+      // to unmount before opening Agent info.
+      await palette.getByRole('combobox', { name: 'Search' }).press('Escape');
+      await expect(palette).toHaveCount(0);
+    });
+
+    await test.step('Agent settings are an Agent-owned secondary surface', async () => {
+      // The shipping recovered-Grok header opens Agent Settings from the Agent
+      // identity itself. The retired AgentOverlays test ids are not part of the
+      // production renderer contract anymore.
+      await page.getByRole('button', { name: 'View agent settings' }).click();
+      const settings = page.getByRole('region', { name: 'Agent settings' });
+      await expect(settings).toBeVisible();
+      await expect(settings.getByLabel('Agent name')).toHaveValue(/.+/);
+      await expect(settings.getByLabel('Agent description')).toBeVisible();
+      await expect(settings.getByRole('switch')).toBeVisible();
+
+      // Computer is a sibling info pane in the recovered Grok header. Switching
+      // to it closes Agent Settings rather than nesting another legacy overlay.
+      await page.getByRole('button', { name: "Fabushi's Computer" }).click();
+      await expect(settings).toHaveCount(0);
+      const details = page.getByRole('complementary', { name: 'Conversation details' });
+      await expect(details).toBeVisible();
+      await expect(details.getByRole('region', { name: 'Computer preview' })).toBeVisible();
+      await details.getByRole('button', { name: 'Close details' }).click();
+      await expect(details).toBeHidden();
+    });
+
+    await test.step('Agent sidebar supports modifier selection and account-scoped sections', async () => {
+      const peer = primaryMahayanaAgentPeer(page);
+      await peer.click({ modifiers: [process.platform === 'darwin' ? 'Meta' : 'Control'] });
+      // The recovered Grok 0.18 sidebar exposes selection through pressed
+      // Agent rows plus the accessible Move/Clear action header; the retired
+      // agent-selection-bar + Create section dialog are not shipping contracts.
+      await expect(peer).toHaveAttribute('aria-pressed', 'true');
+      const moveSelected = page.getByRole('button', { name: 'Move selected agent to section' });
+      await expect(moveSelected).toBeVisible();
+
+      await moveSelected.click();
+      const moveMenu = page.getByRole('menu', { name: 'Move to section' });
+      await expect(moveMenu).toBeVisible();
+      await moveMenu.getByRole('menuitem', { name: 'New section' }).click();
+      const renameSection = page.getByLabel('Rename section');
+      await expect(renameSection).toBeVisible();
+      await renameSection.fill('Focused work');
+      await renameSection.press('Enter');
+      const focusedWork = page.locator('.sand-agents-section[data-section-id]').filter({ hasText: 'Focused work' });
+      await expect(focusedWork).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Clear selection' })).toHaveCount(0);
+      await expect(peer).toHaveAttribute('aria-pressed', 'false');
+
+      // Pinning is a presentation dimension, not section ownership. First prove
+      // the selected Agent is actually projected into the newly persisted section.
+      // Then pin it through the recovered Grok row context menu, prove the section
+      // projection disappears while pinned, and finally unpin it and prove the
+      // original section ownership is restored. This guards the original
+      // 35522950977 regression without assuming fixture-specific initial pin state.
+      const focusedAgentRow = focusedWork.getByRole('button', { name: 'New chat', exact: true });
+      await expect(focusedAgentRow).toBeVisible();
+
+      await focusedAgentRow.click({ button: 'right' });
+      const agentActions = page.getByRole('menu', { name: 'Agent actions' });
+      await expect(agentActions).toBeVisible();
+      await agentActions.getByRole('menuitem', { name: 'Pin' }).click();
+      await expect(peer).toHaveAttribute('data-pinned', 'true');
+      await expect(focusedAgentRow).toHaveCount(0);
+
+      await peer.click({ button: 'right' });
+      await expect(agentActions).toBeVisible();
+      await agentActions.getByRole('menuitem', { name: 'Unpin' }).click();
+      await expect(peer).not.toHaveAttribute('data-pinned', 'true');
+      await expect(focusedAgentRow).toBeVisible();
+    });
+  } finally {
+    await app.close();
+    await rm(appDataDir, { recursive: true, force: true });
+  }
+});

@@ -1,0 +1,1557 @@
+import { _electron as electron, expect, test, type ElectronApplication, type Locator, type Page } from '@playwright/test';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { createServer } from 'node:http';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const appRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const packagedExecutable = process.env.FABUSHI_ELECTRON_EXECUTABLE?.trim() || null;
+
+let e2eAuthServer: ReturnType<typeof createServer> | null = null;
+let e2eAuthBackendPromise: Promise<string> | null = null;
+
+function e2eAuthToken(): string {
+  const encode = (value: Record<string, unknown>) => Buffer.from(JSON.stringify(value), 'utf8').toString('base64url');
+  return [
+    encode({ alg: 'none', typ: 'JWT' }),
+    encode({ sub: 'fabushi-e2e-account', email: 'e2e@fabushi.local', exp: 4_102_444_800 }),
+    'fabushi-e2e',
+  ].join('.');
+}
+
+
+function encodeVarint(value: number): Buffer {
+  const bytes: number[] = [];
+  let remaining = value >>> 0;
+  do {
+    let byte = remaining & 0x7f;
+    remaining >>>= 7;
+    if (remaining !== 0) byte |= 0x80;
+    bytes.push(byte);
+  } while (remaining !== 0);
+  return Buffer.from(bytes);
+}
+
+function encodeLengthDelimited(fieldNumber: number, payload: Buffer): Buffer {
+  return Buffer.concat([
+    encodeVarint((fieldNumber << 3) | 2),
+    encodeVarint(payload.length),
+    payload,
+  ]);
+}
+
+function encodeConnectFrame(payload: Buffer): Buffer {
+  const header = Buffer.alloc(5);
+  header.writeUInt8(0, 0);
+  header.writeUInt32BE(payload.length, 1);
+  return Buffer.concat([header, payload]);
+}
+
+function encodeCursorTextPart(text: string, isFinal: boolean): Buffer {
+  const fields: Buffer[] = [];
+  if (text.length > 0) fields.push(encodeLengthDelimited(1, Buffer.from(text, 'utf8')));
+  if (isFinal) fields.push(Buffer.from([0x10, 0x01]));
+  const textPart = Buffer.concat(fields);
+  return encodeConnectFrame(encodeLengthDelimited(1, textPart));
+}
+
+async function readRequestBody(request: import('node:http').IncomingMessage): Promise<Buffer> {
+  const chunks: Buffer[] = [];
+  for await (const chunk of request) chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  return Buffer.concat(chunks);
+}
+
+type E2eHumanAttachment = {
+  resourceId: string;
+  name: string;
+  contentType: string;
+  size: number;
+  createdAt: string;
+};
+
+type E2eHumanReaction = {
+  emoji: string;
+  count: number;
+  reactedByMe: boolean;
+};
+
+type E2eHumanMessage = {
+  id: number;
+  senderUserId: string;
+  senderUsername: string;
+  recipientUserId: string;
+  recipientUsername: string;
+  text: string;
+  clientRequestId: string;
+  createdAt: string;
+  readAt: null;
+  isOutgoing: true;
+  replyToMessageId: number | null;
+  attachments: E2eHumanAttachment[];
+  reactions: E2eHumanReaction[];
+};
+
+type E2eHumanResource = E2eHumanAttachment & { bytes: Buffer };
+
+let e2eHumanMessages: E2eHumanMessage[] = [];
+let e2eHumanMessageSequence = 1;
+let e2eHumanResourceSequence = 1;
+let e2eHumanResources = new Map<string, E2eHumanResource>();
+let e2eLoginDeviceSequence = 1;
+const e2eObservedSocialDeviceIds = new Set<string>();
+
+function issueE2eLoginDeviceId(): string {
+  return `fabushi-e2e-device-${e2eLoginDeviceSequence++}`;
+}
+
+function isE2eSocialDeviceId(value: unknown): value is string {
+  if (typeof value !== 'string' || !/^fabushi-e2e-device(?:-\d+)?$/u.test(value)) return false;
+  e2eObservedSocialDeviceIds.add(value);
+  return true;
+}
+
+function parseE2eMultipartFile(contentType: string | undefined, body: Buffer): { name: string; contentType: string; bytes: Buffer } | null {
+  const boundaryMatch = /boundary=(?:"([^"]+)"|([^;\s]+))/iu.exec(contentType ?? '');
+  const boundary = boundaryMatch?.[1] ?? boundaryMatch?.[2];
+  if (boundary == null || boundary.length === 0) return null;
+  const headerEnd = body.indexOf(Buffer.from('\r\n\r\n'));
+  if (headerEnd < 0) return null;
+  const payloadStart = headerEnd + 4;
+  const payloadEnd = body.indexOf(Buffer.from(`\r\n--${boundary}`), payloadStart);
+  if (payloadEnd < payloadStart) return null;
+  const headers = body.subarray(0, headerEnd).toString('utf8');
+  const filenameMatch = /filename="([^"]+)"/iu.exec(headers);
+  const partTypeMatch = /content-type:\s*([^\r\n]+)/iu.exec(headers);
+  const name = filenameMatch?.[1]?.trim() ?? '';
+  if (name.length === 0) return null;
+  return {
+    name,
+    contentType: partTypeMatch?.[1]?.trim() || 'application/octet-stream',
+    bytes: body.subarray(payloadStart, payloadEnd),
+  };
+}
+
+async function ensureE2eAuthBackend(): Promise<string> {
+  if (e2eAuthBackendPromise != null) return await e2eAuthBackendPromise;
+  e2eAuthBackendPromise = new Promise<string>((resolve, reject) => {
+    const token = e2eAuthToken();
+    const server = createServer(async (request, response) => {
+      const requestUrl = new URL(request.url ?? '/', 'http://127.0.0.1');
+      if (requestUrl.pathname === '/auth/poll') {
+        response.setHeader('content-type', 'application/json');
+        response.statusCode = 200;
+        response.end(JSON.stringify({ accessToken: token, refreshToken: token }));
+        return;
+      }
+      if (requestUrl.pathname === '/oauth/token') {
+        response.setHeader('content-type', 'application/json');
+        response.statusCode = 200;
+        response.end(JSON.stringify({ access_token: token, refresh_token: token }));
+        return;
+      }
+      if (requestUrl.pathname === '/api/auth/browser/start' && request.method === 'POST') {
+        const origin = `http://${request.headers.host ?? '127.0.0.1'}`;
+        response.setHeader('content-type', 'application/json');
+        response.statusCode = 200;
+        response.end(JSON.stringify({
+          attemptId: 'fabushi-e2e-browser-attempt',
+          loginUrl: `${origin}/fabushi-e2e-browser-login`,
+          pollSecret: 'fabushi-e2e-poll-secret',
+          expiresAt: Date.now() + 60_000,
+          pollAfterMs: 250,
+        }));
+        return;
+      }
+      if (requestUrl.pathname === '/api/auth/browser/attempts/fabushi-e2e-browser-attempt' && request.method === 'POST') {
+        const body = JSON.parse((await readRequestBody(request)).toString('utf8')) as { pollSecret?: unknown };
+        if (body.pollSecret !== 'fabushi-e2e-poll-secret') {
+          response.setHeader('content-type', 'application/json');
+          response.statusCode = 403;
+          response.end(JSON.stringify({ error: { code: 'invalid-poll-secret' } }));
+          return;
+        }
+        const expiresAt = 4_102_444_800_000;
+        response.setHeader('content-type', 'application/json');
+        response.statusCode = 200;
+        response.end(JSON.stringify({
+          status: 'completed',
+          session: {
+            accessToken: token,
+            refreshToken: token,
+            accessTokenExpiresAt: expiresAt,
+            refreshTokenExpiresAt: expiresAt,
+            sessionId: 'fabushi-e2e-session',
+            deviceId: issueE2eLoginDeviceId(),
+            username: 'e2e@fabushi.local',
+            userId: 'fabushi-e2e-account',
+            provider: 'focused-e2e',
+          },
+        }));
+        return;
+      }
+      if (requestUrl.pathname === '/api/auth/user-info') {
+        if (request.headers.authorization !== `Bearer ${token}`) {
+          response.setHeader('content-type', 'application/json');
+          response.statusCode = 401;
+          response.end(JSON.stringify({ error: { code: 'invalid-access-token' } }));
+          return;
+        }
+        response.setHeader('content-type', 'application/json');
+        response.statusCode = 200;
+        response.end(JSON.stringify({
+          id: 'fabushi-e2e-account',
+          username: 'e2e@fabushi.local',
+          email: 'e2e@fabushi.local',
+          displayName: 'Fabushi E2E',
+        }));
+        return;
+      }
+      if (requestUrl.pathname === '/api/auth/refresh' && request.method === 'POST') {
+        const expiresAt = 4_102_444_800_000;
+        response.setHeader('content-type', 'application/json');
+        response.statusCode = 200;
+        response.end(JSON.stringify({
+          accessToken: token,
+          refreshToken: token,
+          accessTokenExpiresAt: expiresAt,
+          refreshTokenExpiresAt: expiresAt,
+          sessionId: 'fabushi-e2e-session',
+          deviceId: 'fabushi-e2e-device',
+          username: 'e2e@fabushi.local',
+          userId: 'fabushi-e2e-account',
+          provider: 'focused-e2e',
+        }));
+        return;
+      }
+      if (requestUrl.pathname === '/api/social/friends' && request.method === 'GET') {
+        if (request.headers.authorization !== `Bearer ${token}`
+          || !isE2eSocialDeviceId(request.headers['x-fabushi-device-id'])) {
+          response.setHeader('content-type', 'application/json');
+          response.statusCode = 401;
+          response.end(JSON.stringify({ success: false, error: 'invalid-social-credential' }));
+          return;
+        }
+        response.setHeader('content-type', 'application/json');
+        response.statusCode = 200;
+        response.end(JSON.stringify({ success: true, data: { friends: [{
+          id: 'friend-human-parity-peer-e2e',
+          userId: 'human-parity-peer-e2e',
+          username: 'human-parity-peer-e2e',
+          displayName: 'Human Parity Peer',
+          avatarUrl: null,
+          status: 'accepted',
+        }] } }));
+        return;
+      }
+      if (requestUrl.pathname === '/api/social/calls' && request.method === 'GET') {
+        response.setHeader('content-type', 'application/json');
+        response.statusCode = 200;
+        response.end(JSON.stringify({ success: true, calls: [] }));
+        return;
+      }
+      if (requestUrl.pathname === '/api/social/message-resources' && request.method === 'POST') {
+        if (request.headers.authorization !== `Bearer ${token}`
+          || !isE2eSocialDeviceId(request.headers['x-fabushi-device-id'])) {
+          response.setHeader('content-type', 'application/json');
+          response.statusCode = 401;
+          response.end(JSON.stringify({ success: false, error: 'invalid-social-credential' }));
+          return;
+        }
+        const upload = parseE2eMultipartFile(
+          typeof request.headers['content-type'] === 'string' ? request.headers['content-type'] : undefined,
+          await readRequestBody(request),
+        );
+        if (upload == null || upload.bytes.length === 0) {
+          response.setHeader('content-type', 'application/json');
+          response.statusCode = 400;
+          response.end(JSON.stringify({ success: false, error: 'invalid-human-message-resource' }));
+          return;
+        }
+        const resource: E2eHumanResource = {
+          resourceId: `e2e-resource-${e2eHumanResourceSequence++}`,
+          name: upload.name,
+          contentType: upload.contentType,
+          size: upload.bytes.length,
+          createdAt: new Date().toISOString(),
+          bytes: Buffer.from(upload.bytes),
+        };
+        e2eHumanResources.set(resource.resourceId, resource);
+        const { bytes: _bytes, ...metadata } = resource;
+        response.setHeader('content-type', 'application/json');
+        response.statusCode = 200;
+        response.end(JSON.stringify({ success: true, resource: metadata }));
+        return;
+      }
+      const resourceMatch = /^\/api\/social\/message-resources\/([^/]+)$/u.exec(requestUrl.pathname);
+      if (resourceMatch != null && request.method === 'GET') {
+        if (request.headers.authorization !== `Bearer ${token}`
+          || !isE2eSocialDeviceId(request.headers['x-fabushi-device-id'])) {
+          response.setHeader('content-type', 'application/json');
+          response.statusCode = 401;
+          response.end(JSON.stringify({ success: false, error: 'invalid-social-credential' }));
+          return;
+        }
+        const resource = e2eHumanResources.get(decodeURIComponent(resourceMatch[1]));
+        if (resource == null) {
+          response.statusCode = 404;
+          response.end('missing Human message resource');
+          return;
+        }
+        response.setHeader('content-type', 'application/octet-stream');
+        response.setHeader('content-length', String(resource.bytes.length));
+        response.statusCode = 200;
+        response.end(resource.bytes);
+        return;
+      }
+      if (requestUrl.pathname === '/api/social/messages' && request.method === 'GET') {
+        if (request.headers.authorization !== `Bearer ${token}`
+          || !isE2eSocialDeviceId(request.headers['x-fabushi-device-id'])) {
+          response.setHeader('content-type', 'application/json');
+          response.statusCode = 401;
+          response.end(JSON.stringify({ success: false, error: 'invalid-social-credential' }));
+          return;
+        }
+        const contactId = requestUrl.searchParams.get('contactId') ?? '';
+        const before = requestUrl.searchParams.get('before');
+        const requestedLimit = Number.parseInt(requestUrl.searchParams.get('limit') ?? '200', 10);
+        const limit = Number.isFinite(requestedLimit) ? Math.max(1, Math.min(requestedLimit, 200)) : 200;
+        const rows = e2eHumanMessages
+          .filter((message) => message.recipientUserId === contactId || message.senderUserId === contactId)
+          .filter((message) => before == null || message.createdAt < before)
+          .slice(-limit);
+        response.setHeader('content-type', 'application/json');
+        response.statusCode = 200;
+        response.end(JSON.stringify({ success: true, data: { messages: rows } }));
+        return;
+      }
+      if (requestUrl.pathname === '/api/social/messages' && request.method === 'POST') {
+        if (request.headers.authorization !== `Bearer ${token}`
+          || !isE2eSocialDeviceId(request.headers['x-fabushi-device-id'])) {
+          response.setHeader('content-type', 'application/json');
+          response.statusCode = 401;
+          response.end(JSON.stringify({ success: false, error: 'invalid-social-credential' }));
+          return;
+        }
+        const body = JSON.parse((await readRequestBody(request)).toString('utf8')) as {
+          targetUserId?: unknown;
+          text?: unknown;
+          clientRequestId?: unknown;
+          replyToMessageId?: unknown;
+          attachments?: unknown;
+        };
+        const targetUserId = typeof body.targetUserId === 'string' ? body.targetUserId.trim() : '';
+        const text = typeof body.text === 'string' ? body.text.trim() : '';
+        const clientRequestId = typeof body.clientRequestId === 'string' ? body.clientRequestId.trim() : '';
+        const attachmentRefs = Array.isArray(body.attachments) ? body.attachments : [];
+        const attachments = attachmentRefs.flatMap((candidate): E2eHumanAttachment[] => {
+          if (candidate == null || typeof candidate !== 'object' || Array.isArray(candidate)) return [];
+          const resourceId = 'resourceId' in candidate && typeof candidate.resourceId === 'string'
+            ? candidate.resourceId.trim()
+            : '';
+          const resource = e2eHumanResources.get(resourceId);
+          if (resource == null) return [];
+          const { bytes: _bytes, ...metadata } = resource;
+          return [metadata];
+        });
+        const replyTarget = body.replyToMessageId == null
+          ? null
+          : e2eHumanMessages.find((candidate) => String(candidate.id) === String(body.replyToMessageId)) ?? null;
+        if (targetUserId.length === 0
+          || clientRequestId.length === 0
+          || (text.length === 0 && attachments.length === 0)
+          || attachments.length !== attachmentRefs.length
+          || (body.replyToMessageId != null && replyTarget == null)) {
+          response.setHeader('content-type', 'application/json');
+          response.statusCode = 400;
+          response.end(JSON.stringify({ success: false, error: 'invalid-focused-human-message' }));
+          return;
+        }
+        let message = e2eHumanMessages.find((candidate) => candidate.clientRequestId === clientRequestId);
+        if (message == null) {
+          message = {
+            id: e2eHumanMessageSequence++,
+            senderUserId: 'fabushi-e2e-account',
+            senderUsername: 'e2e@fabushi.local',
+            recipientUserId: targetUserId,
+            recipientUsername: targetUserId,
+            text,
+            clientRequestId,
+            createdAt: new Date().toISOString(),
+            readAt: null,
+            isOutgoing: true,
+            replyToMessageId: replyTarget?.id ?? null,
+            attachments,
+            reactions: [],
+          };
+          e2eHumanMessages.push(message);
+        }
+        response.setHeader('content-type', 'application/json');
+        response.statusCode = 200;
+        response.end(JSON.stringify({ success: true, message }));
+        return;
+      }
+      const reactionMatch = /^\/api\/social\/messages\/(\d+)\/reactions$/u.exec(requestUrl.pathname);
+      if (reactionMatch != null && request.method === 'POST') {
+        if (request.headers.authorization !== `Bearer ${token}`
+          || !isE2eSocialDeviceId(request.headers['x-fabushi-device-id'])) {
+          response.setHeader('content-type', 'application/json');
+          response.statusCode = 401;
+          response.end(JSON.stringify({ success: false, error: 'invalid-social-credential' }));
+          return;
+        }
+        const message = e2eHumanMessages.find((candidate) => String(candidate.id) === reactionMatch[1]);
+        const body = JSON.parse((await readRequestBody(request)).toString('utf8')) as { emoji?: unknown; active?: unknown };
+        const emoji = typeof body.emoji === 'string' ? body.emoji.trim() : '';
+        if (message == null || emoji.length === 0 || typeof body.active !== 'boolean') {
+          response.setHeader('content-type', 'application/json');
+          response.statusCode = 400;
+          response.end(JSON.stringify({ success: false, error: 'invalid-focused-human-reaction' }));
+          return;
+        }
+        message.reactions = message.reactions.filter((reaction) => reaction.emoji !== emoji);
+        if (body.active) message.reactions.push({ emoji, count: 1, reactedByMe: true });
+        response.setHeader('content-type', 'application/json');
+        response.statusCode = 200;
+        response.end(JSON.stringify({ success: true, messageId: message.id, reactions: message.reactions }));
+        return;
+      }
+      if (requestUrl.pathname === '/v1/ai/responses' && request.method === 'POST') {
+        const body = await readRequestBody(request);
+        if (request.headers.authorization !== `Bearer ${token}`
+          || !String(request.headers['content-type'] ?? '').startsWith('application/json')) {
+          response.setHeader('content-type', 'application/json');
+          response.statusCode = 401;
+          response.end(JSON.stringify({ error: 'invalid-fabushi-responses-request' }));
+          return;
+        }
+        const isSelfHosted = body.includes(Buffer.from('自建 Bot', 'utf8'));
+        const text = isSelfHosted
+          ? '收到：自建 Bot 请规划步骤'
+          : '收到：请分析这个任务';
+        const providerRequest = JSON.parse(body.toString('utf8')) as { input?: unknown };
+        const isToolContinuation = Array.isArray(providerRequest.input)
+          && providerRequest.input.some((item) => item != null
+            && typeof item === 'object'
+            && !Array.isArray(item)
+            && 'type' in item
+            && item.type === 'function_call_output');
+        response.setHeader('content-type', 'text/event-stream');
+        response.statusCode = 200;
+        if (isToolContinuation) {
+          // The visible assistant body was already persisted by the shipping
+          // Host-owned SendMessage tool. Finish the provider turn with private
+          // diagnostic text only; it must never become a renderer transcript.
+          response.end([
+            `data: ${JSON.stringify({ type: 'response.output_text.delta', delta: 'done' })}\n\n`,
+            `data: ${JSON.stringify({
+              type: 'response.completed',
+              response: {
+                id: 'fabushi-e2e-response-final',
+                output: [],
+                usage: {
+                  input_tokens: 8,
+                  output_tokens: 1,
+                  input_tokens_details: { cached_tokens: 0 },
+                },
+              },
+            })}\n\n`,
+          ].join(''));
+          return;
+        }
+        const call = {
+          type: 'function_call',
+          name: 'SendMessage',
+          call_id: 'fabushi-e2e-send-message',
+          arguments: JSON.stringify({ type: 'text', content: text }),
+        };
+        response.end([
+          `data: ${JSON.stringify({ type: 'response.output_item.done', item: call })}\n\n`,
+          `data: ${JSON.stringify({
+            type: 'response.completed',
+            response: {
+              id: 'fabushi-e2e-response',
+              output: [call],
+              usage: {
+                input_tokens: 8,
+                output_tokens: 8,
+                input_tokens_details: { cached_tokens: 0 },
+              },
+            },
+          })}\n\n`,
+        ].join(''));
+        return;
+      }
+      if (requestUrl.pathname === '/aiserver.v1.InferenceService/Stream') {
+        const body = await readRequestBody(request);
+        const authorization = request.headers.authorization;
+        const requestId = request.headers['x-request-id'];
+        const contentType = request.headers['content-type'];
+        if (authorization !== `Bearer ${token}`
+          || typeof requestId !== 'string'
+          || !requestId
+          || contentType !== 'application/connect+proto'
+          || body.length < 6) {
+          response.setHeader('content-type', 'application/json');
+          response.statusCode = 400;
+          response.end(JSON.stringify({ error: 'invalid-inference-request' }));
+          return;
+        }
+        const isSelfHosted = body.includes(Buffer.from('自建 Bot', 'utf8'));
+        const text = isSelfHosted
+          ? '收到：自建 Bot 请规划步骤'
+          : '收到：请分析这个任务';
+        response.setHeader('content-type', 'application/connect+proto');
+        response.statusCode = 200;
+        response.end(Buffer.concat([
+          encodeCursorTextPart(text, false),
+          encodeCursorTextPart('', true),
+        ]));
+        return;
+      }
+      response.setHeader('content-type', 'application/json');
+      response.statusCode = 404;
+      response.end(JSON.stringify({ error: 'not-found' }));
+    });
+    e2eAuthServer = server;
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', () => {
+      const address = server.address();
+      if (address == null || typeof address === 'string') {
+        reject(new Error('Focused Electron auth backend did not bind a TCP address.'));
+        return;
+      }
+      resolve(`http://127.0.0.1:${address.port}`);
+    });
+  });
+  return await e2eAuthBackendPromise;
+}
+
+test.afterAll(async () => {
+  const server = e2eAuthServer;
+  e2eAuthServer = null;
+  e2eAuthBackendPromise = null;
+  if (server == null || !server.listening) return;
+  await new Promise<void>((resolve, reject) => {
+    server.close((error) => error == null ? resolve() : reject(error));
+  });
+});
+
+async function launchDesktopApp(appDataDir: string): Promise<ElectronApplication> {
+  const e2eAuthBackendUrl = await ensureE2eAuthBackend();
+  // Exercise the shipping Fabushi account -> private Host credential ->
+  // Responses transport chain. The browser-first login below owns the token;
+  // focused acceptance must not seed a parallel Cursor inference credential.
+  return electron.launch({
+    ...(packagedExecutable
+      ? { executablePath: packagedExecutable, args: [] }
+      : { args: [appRoot] }),
+    env: {
+      ...process.env,
+      // Focused Electron acceptance must opt out of production background
+      // persistence so Playwright app.close() reaches the real before-quit
+      // cleanup path instead of being converted into a hidden-window session.
+      FABUSHI_E2E: '1',
+      SAND_USER_DATA_DIR: appDataDir,
+      SAND_BACKEND_URL: e2eAuthBackendUrl,
+      CURSOR_API_BASE_URL: e2eAuthBackendUrl,
+      FABUSHI_API_BASE_URL: e2eAuthBackendUrl,
+      FABUSHI_RESPONSES_URL: `${e2eAuthBackendUrl}/v1/ai/responses`,
+      SAND_CURSOR_WEBSITE_URL: e2eAuthBackendUrl,
+      SAND_DISABLE_SENTRY: '1',
+      FABUSHI_FEATURE_HOST_MODE: process.env.FABUSHI_FEATURE_HOST_MODE || 'test',
+      MAHAYANA_APP_HOST_BIN: process.env.MAHAYANA_APP_HOST_BIN || '',
+    },
+  });
+}
+
+async function completeBrowserLogin(page: Page): Promise<void> {
+  const rendererErrors: string[] = [];
+  page.on('console', (message) => {
+    if (message.type() === 'error') rendererErrors.push(message.text());
+  });
+
+  await page.waitForFunction(() => {
+    const candidate = window as unknown as { desktop?: { cursorAccount?: { getStatus?: unknown }; onboarding?: { setSeen?: unknown } } };
+    return typeof candidate.desktop?.cursorAccount?.getStatus === 'function'
+      && typeof candidate.desktop?.onboarding?.setSeen === 'function';
+  }, { timeout: 15_000 });
+
+  const accountKind = async (): Promise<string> => page.evaluate(async () => {
+    const candidate = window as unknown as {
+      desktop: {
+        cursorAccount: { getStatus(): Promise<{ kind?: string }> };
+      };
+    };
+    return (await candidate.desktop.cursorAccount.getStatus()).kind ?? 'unknown';
+  });
+
+  const initialKind = await accountKind();
+  if (initialKind === 'logged-out') {
+    // Exercise the shipping recovered-Grok sign-in surface instead of the
+    // retired DesktopAuthBoundary. Its button calls cursorAccount.login(),
+    // which owns the Electron/main auth contract used by the production shell.
+    const signInSurface = page.getByRole('main', { name: 'Fabushi', exact: true });
+    await expect(signInSurface).toBeVisible({ timeout: 15_000 });
+    await signInSurface.getByRole('button', { name: 'Sign in', exact: true }).click();
+  }
+
+  await expect.poll(accountKind, { timeout: 20_000 }).toBe('logged-in');
+  // Onboarding persistence is account-scoped. Complete the shipping login
+  // transition first, then persist the public preference for the authenticated
+  // account and verify the mirror before recreating the renderer. This avoids
+  // writing into a departing anonymous scope while still exercising the real
+  // cursorAccount -> Electron main -> Coordinator/Host authentication path.
+  await page.evaluate(async () => {
+    const candidate = window as unknown as {
+      desktop: {
+        onboarding: {
+          setSeen(seen: boolean): Promise<unknown>;
+        };
+      };
+    };
+    await candidate.desktop.onboarding.setSeen(true);
+  });
+  const onboardingSeen = async (): Promise<boolean> => page.evaluate(async () => {
+    const candidate = window as unknown as {
+      desktop: {
+        onboarding: {
+          getSeen(): Promise<boolean>;
+        };
+      };
+    };
+    return (await candidate.desktop.onboarding.getSeen()) === true;
+  });
+  await expect.poll(onboardingSeen, { timeout: 10_000 }).toBe(true);
+
+  // The production renderer resolves onboarding at account/bootstrap boundaries;
+  // reload only the renderer after persisting the authenticated account setting.
+  // Main/Coordinator/Host and the authenticated session remain live.
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => {
+    const candidate = window as unknown as { desktop?: { cursorAccount?: { getStatus?: unknown } } };
+    return typeof candidate.desktop?.cursorAccount?.getStatus === 'function';
+  }, { timeout: 15_000 });
+  await expect.poll(accountKind, { timeout: 10_000 }).toBe('logged-in');
+  await expect(page.getByRole('main', { name: 'Fabushi', exact: true })).toBeHidden({ timeout: 10_000 });
+
+  const fatal = page.locator('.sand-error-boundary--app');
+  if (await fatal.count()) {
+    const surfaceText = await fatal.first().innerText().catch(() => 'unknown renderer failure');
+    throw new Error(`renderer root fatal: ${rendererErrors.at(-1) ?? surfaceText}`);
+  }
+
+  // listAgents is now owned by the shipping Rust Session store. A fresh
+  // FABUSHI_APP_DATA directory is intentionally empty, so create the focused
+  // fixture through the real New -> createAgent -> listAgents path instead of
+  // relying on the retired compatibility Host's synthetic roster.
+  const roster = page.getByRole('region', { name: 'Agent list' });
+  const primary = roster.getByRole('button', { name: 'New chat', exact: true });
+  const loadedAgentRows = roster.locator('button.sand-agent-item');
+  const emptyRoster = roster.getByText('No saved agents yet.', { exact: true });
+  await expect.poll(async () => {
+    if (await loadedAgentRows.count() > 0) return 'loaded';
+    return await emptyRoster.isVisible().catch(() => false) ? 'empty' : 'pending';
+  }, { timeout: 15_000 }).not.toBe('pending');
+  if (await primary.count() === 0) {
+    // A fresh authenticated account may already contain the shipping default
+    // Grok Agent. That proves the roster is loaded, but it is not the focused
+    // fixture this suite needs. Open the production identity picker and create
+    // exactly one Agent through the same New -> createAgent -> refreshRoster path.
+    await page.getByRole('button', { name: 'New', exact: true }).click();
+    const createAgent = page.getByRole('dialog', { name: 'Create agent' });
+    await expect(createAgent).toBeVisible();
+    await expect(createAgent.getByRole('group', { name: 'Avatar shape' })).toBeVisible();
+    await expect(createAgent.getByRole('group', { name: 'Avatar color' })).toBeVisible();
+    await createAgent.getByRole('button', { name: 'Create', exact: true }).click();
+    await expect(createAgent).toBeHidden();
+  }
+  await expect(primary).toHaveCount(1, { timeout: 15_000 });
+  await expect(primary).toBeVisible({ timeout: 15_000 });
+}
+
+async function openMahayanaConversation(page: Page): Promise<void> {
+  const peer = page.getByRole('region', { name: 'Agent list' }).getByRole('button', { name: 'New chat', exact: true });
+  await expect(peer).toBeVisible({ timeout: 15_000 });
+  await peer.click();
+  const prompt = page.getByRole('textbox', { name: 'Prompt' });
+  await expect(prompt).toBeVisible();
+  // New -> createAgent -> refreshRoster -> openAgent is a real shipping async
+  // transition. The production composer intentionally remains non-editable
+  // while that transition owns the busy state, so acceptance must wait for
+  // the same actionable contract a user sees instead of racing visibility.
+  await expect(prompt).toHaveAttribute('contenteditable', 'true', { timeout: 15_000 });
+}
+
+async function createSelfHostedBotAcceptanceChannel(page: Page): Promise<{ conversationId: string; peerTestId: string }> {
+  await page.getByTestId('profile-navigation-trigger').click();
+  const chats = page.getByTitle('聊天', { exact: true });
+  if (await chats.isVisible().catch(() => false)) await chats.click();
+  await page.getByRole('button', { name: '新建', exact: true }).click();
+  await page.getByRole('button', { name: '新建频道' }).click();
+  await page.getByPlaceholder('频道名称').fill('自建 Bot Mahayana 验收');
+  await page.getByPlaceholder('频道简介').fill('Rust messaging → Mahayana multi-step runtime');
+  await page.getByRole('button', { name: '创建频道' }).click();
+
+  const peer = page.locator('[data-testid^="peer-selfhosted:channel:"]').filter({ hasText: '自建 Bot Mahayana 验收' }).first();
+  await expect(peer).toBeVisible({ timeout: 10_000 });
+  const peerTestId = await peer.getAttribute('data-testid');
+  expect(peerTestId).toBeTruthy();
+  await peer.click();
+  await expect(page.getByTestId('messenger-input')).toBeVisible();
+  return {
+    peerTestId: peerTestId!,
+    conversationId: peerTestId!.replace(/^peer-selfhosted:/, ''),
+  };
+}
+
+async function emitBotInvocationRequested(
+  page: Page,
+  conversationId: string,
+  text: string,
+): Promise<string> {
+  return page.evaluate(({ conversationId: id, text: prompt }) => {
+    const invocationId = `invocation:e2e:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`;
+    window.dispatchEvent(new CustomEvent('fabushi:mahayana-runtime-event', {
+      detail: {
+        type: 'messaging.event',
+        timestamp: new Date().toISOString(),
+        requestId: `messaging:e2e:${Date.now()}`,
+        envelope: {
+          protocolVersion: 2,
+          cursor: String(Date.now()),
+          serverTimeMs: Date.now(),
+          event: {
+            type: 'botInvocationRequested',
+            invocation: {
+              id: invocationId,
+              botId: 'bot:e2e:helper',
+              senderId: 'human:e2e',
+              conversationId: id,
+              text: { text: prompt, entities: [] },
+              metadata: { source: 'messaging-service' },
+              createdAtMs: Date.now(),
+            },
+          },
+        },
+      },
+    }));
+    return invocationId;
+  }, { conversationId, text });
+}
+
+async function expectHermesAssistantTurn(page: Page, expectedText: string): Promise<Locator> {
+  const transcript = page.getByRole('log', { name: 'Conversation transcript' });
+  const matchingMessages = transcript.getByRole('group', { name: 'Agent message' }).filter({ hasText: expectedText });
+  await expect(matchingMessages).toHaveCount(1, { timeout: 15_000 });
+
+  const message = matchingMessages.first();
+  await expect(message).toBeVisible();
+  // The accessible Agent-message group is the stable production contract.
+  // Resolve its nearest semantic turn container instead of depending on a
+  // renderer implementation attribute such as data-role.
+  const turn = message.locator('xpath=ancestor::*[@role="article"][1]');
+  await expect(turn).toBeVisible();
+  await expect(message).toBeVisible();
+  const body = message.locator('.sand-message-prose');
+  await expect(body).toContainText(expectedText);
+  await expect(body).not.toContainText('chat-response');
+
+  // Routine success belongs in the recovered Grok transcript. The retired
+  // Mahayana turn/Workbench presentation must not reappear as a parallel
+  // success surface, and no operation-scoped thinking/tool row may remain
+  // pending after the final assistant message has settled.
+  await expect(page.getByTestId('mahayana-assistant-turn')).toHaveCount(0);
+  await expect(page.getByTestId('agent-workbench')).toBeHidden();
+  await expect(transcript.locator('[data-kind="thinking"]')).toHaveCount(0);
+  await expect(transcript.locator('[data-kind="tool-call"][data-status="pending"]')).toHaveCount(0);
+
+  // Token-sized runtime deltas and the late final message must reconcile into
+  // one canonical assistant body rather than producing duplicate replies.
+  const bodyText = (await body.allTextContents()).join('');
+  expect(bodyText.split(expectedText).length - 1).toBe(1);
+  return turn;
+}
+
+test('Mahayana renders one Hermes-style assistant turn instead of a completion Workbench card', async () => {
+  const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-mahayana-assistant-turn-'));
+  let app: ElectronApplication | null = null;
+
+  try {
+    app = await launchDesktopApp(appDataDir);
+    const page = await app.firstWindow();
+    await completeBrowserLogin(page);
+    await openMahayanaConversation(page);
+
+    const prompt = '请分析这个任务，规划步骤，调用工具并给出最终结果。';
+    const promptInput = page.getByRole('textbox', { name: 'Prompt' });
+    await promptInput.click();
+    // The recovered TipTap editor fences scope-switch transactions until it
+    // observes a real UI edit. pressSequentially exercises the same input
+    // contract as a user instead of mutating contenteditable DOM via fill().
+    await promptInput.pressSequentially(prompt);
+    const send = page.getByRole('button', { name: 'Send message' });
+    await expect(send).toBeVisible();
+    await send.click();
+
+    // The user bubble is a local-first transition and must paint before the
+    // Mahayana Host finishes accepting/routing the agent turn. The Hermes
+    // assistant projection is validated below with the production 15s turn
+    // contract; requiring it inside this 1s local-echo window races Host
+    // acceptance and prevents the stronger lifecycle assertions from running.
+    await expect(page.getByRole('article').filter({ hasText: prompt }).last()).toBeVisible({ timeout: 1_000 });
+    await expect(promptInput).toBeVisible();
+
+    const turn = await expectHermesAssistantTurn(page, '收到：请分析这个任务');
+    await expect(turn).toHaveCount(1);
+    // A late transcript baseline must never swallow a live assistant reply.
+    // Keep observing the same canonical turn after the runtime has had time to
+    // publish its initial snapshot/reconciliation events.
+    await page.waitForTimeout(1_000);
+    await expect(turn).toHaveCount(1);
+    await expect(turn.getByRole('group', { name: 'Agent message' })).toContainText('收到：请分析这个任务');
+    await expect(page.getByRole('button', { name: 'New Human chat', exact: true })).toHaveCount(0);
+    await expect(promptInput).toBeVisible();
+  } finally {
+    await app?.close().catch(() => undefined);
+    await rm(appDataDir, { recursive: true, force: true });
+  }
+});
+
+
+test('Human reply, attachment, reaction, and search stay on the shipping conversation contracts', async ({}, testInfo) => {
+  e2eHumanMessages = [];
+  e2eHumanMessageSequence = 1;
+  e2eHumanResourceSequence = 1;
+  e2eHumanResources = new Map<string, E2eHumanResource>();
+  const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-human-message-parity-'));
+  const attachmentName = 'phase1-human-reply.txt';
+  const attachmentBytes = Buffer.from('Fabushi Human attachment exact-head evidence.', 'utf8');
+  let app: ElectronApplication | null = null;
+
+  try {
+    app = await launchDesktopApp(appDataDir);
+    let page = await app.firstWindow();
+    await completeBrowserLogin(page);
+    const humanPeer = page.getByRole('region', { name: 'Agent list' })
+      .getByRole('button', { name: 'Human Parity Peer', exact: true });
+    await expect(humanPeer).toBeVisible({ timeout: 15_000 });
+    await humanPeer.click();
+
+    const prompt = page.getByRole('textbox', { name: 'Prompt' });
+    await expect(prompt).toHaveAttribute('contenteditable', 'true', { timeout: 15_000 });
+    const rootText = 'Human parity root for reply search.';
+    await prompt.pressSequentially(rootText);
+    await page.getByRole('button', { name: 'Send message' }).click();
+    const rootTurn = page.getByRole('article').filter({ hasText: rootText }).last();
+    await expect(rootTurn).toBeVisible({ timeout: 10_000 });
+    await expect(rootTurn).not.toHaveAttribute('data-pending', { timeout: 15_000 });
+
+    const replyAction = rootTurn.getByRole('button', { name: 'Reply to your message' });
+    await replyAction.focus();
+    await expect(replyAction).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(page.getByRole('button', { name: 'Cancel reply' })).toBeVisible();
+
+    await page.locator('input.sand-prompt-file-input').setInputFiles({
+      name: attachmentName,
+      mimeType: 'text/plain',
+      buffer: attachmentBytes,
+    });
+    await expect(page.getByRole('list', { name: 'Attachments' }).getByRole('listitem', { name: attachmentName })).toBeVisible();
+
+    const replyText = 'Human parity reply with attachment.';
+    await prompt.pressSequentially(replyText);
+    await page.getByRole('button', { name: 'Send message' }).click();
+    const replyTurn = page.getByRole('article').filter({ hasText: replyText }).last();
+    await expect(replyTurn).toBeVisible({ timeout: 10_000 });
+    await expect(replyTurn).not.toHaveAttribute('data-pending', { timeout: 15_000 });
+    await expect(replyTurn.getByText(attachmentName, { exact: true })).toBeVisible();
+    await expect(replyTurn.getByRole('button', { name: 'Jump to replied message' })).toBeVisible();
+
+    expect(e2eHumanMessages).toHaveLength(2);
+    expect(e2eHumanMessages[1]?.replyToMessageId).toBe(e2eHumanMessages[0]?.id);
+    expect(e2eHumanMessages[1]?.attachments.map((attachment) => attachment.name)).toEqual([attachmentName]);
+    const uploadedResource = [...e2eHumanResources.values()].find((resource) => resource.name === attachmentName);
+    expect(uploadedResource?.bytes.equals(attachmentBytes)).toBe(true);
+
+    const mediaAttachmentName = 'phase1-human-preview.png';
+    const mediaAttachmentBytes = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Zl/0AAAAASUVORK5CYII=', 'base64');
+    await page.locator('input.sand-prompt-file-input').setInputFiles({
+      name: mediaAttachmentName,
+      mimeType: 'image/png',
+      buffer: mediaAttachmentBytes,
+    });
+    const mediaText = 'Human media preview window chrome evidence.';
+    await prompt.pressSequentially(mediaText);
+    await page.getByRole('button', { name: 'Send message' }).click();
+    const mediaTurn = page.getByRole('article').filter({ hasText: mediaText }).last();
+    await expect(mediaTurn).toBeVisible({ timeout: 10_000 });
+    await expect(mediaTurn).not.toHaveAttribute('data-pending', { timeout: 15_000 });
+    const previewTrigger = mediaTurn.getByRole('button', { name: 'Media preview' });
+    await expect(previewTrigger).toBeVisible({ timeout: 10_000 });
+    await previewTrigger.focus();
+    await expect(previewTrigger).toBeFocused();
+    await page.keyboard.press('Enter');
+    const mediaDialog = page.getByRole('dialog', { name: 'Media preview' });
+    await expect(mediaDialog).toBeVisible();
+    const closeMedia = mediaDialog.getByRole('button', { name: 'Close media preview' });
+    await expect(closeMedia).toBeVisible();
+    await expect(closeMedia).toHaveClass(/sand-kit-icon-button/u);
+    await closeMedia.focus();
+    await expect(closeMedia).toBeFocused();
+    await testInfo.attach('media-viewer-canonical-window-chrome', {
+      body: await mediaDialog.screenshot(),
+      contentType: 'image/png',
+    });
+    await page.keyboard.press('Enter');
+    await expect(mediaDialog).toHaveCount(0);
+    await expect(previewTrigger).toBeFocused();
+
+    const reactionAction = replyTurn.getByRole('button', { name: 'Add reaction' });
+    await reactionAction.focus();
+    await expect(reactionAction).toBeFocused();
+    await page.keyboard.press('Enter');
+    await page.getByRole('button', { name: 'React with 👍' }).click();
+    await expect(replyTurn.getByRole('button', { name: /You reacted with 👍/u })).toBeVisible();
+    await expect.poll(() => e2eHumanMessages[1]?.reactions).toEqual([
+      { emoji: '👍', count: 1, reactedByMe: true },
+    ]);
+
+    await page.keyboard.press('Control+f');
+    const findInChat = page.getByRole('textbox', { name: 'Find in chat' });
+    await expect(findInChat).toBeVisible();
+    await findInChat.fill('phase1-human-reply');
+    await expect(page.locator('.sand-chat-find').getByRole('status')).toHaveText('1/1');
+    await page.getByRole('button', { name: 'Close find' }).click();
+
+    await app.close();
+    app = null;
+    app = await launchDesktopApp(appDataDir);
+    page = await app.firstWindow();
+    await completeBrowserLogin(page);
+    await page.getByRole('region', { name: 'Agent list' }).getByRole('button', { name: 'Human Parity Peer', exact: true }).click();
+    const restoredReply = page.getByRole('article').filter({ hasText: replyText }).last();
+    await expect(restoredReply).toBeVisible({ timeout: 10_000 });
+    await expect(restoredReply.getByText(attachmentName, { exact: true })).toBeVisible();
+    await expect(restoredReply.getByRole('button', { name: 'Jump to replied message' })).toBeVisible();
+    await expect(restoredReply.getByRole('button', { name: /You reacted with 👍/u })).toBeVisible();
+  } finally {
+    await app?.close().catch(() => undefined);
+    await rm(appDataDir, { recursive: true, force: true });
+  }
+});
+
+test('shipping Human Forward uses the canonical picker and survives restart', async () => {
+  e2eHumanMessages = [];
+  e2eHumanMessageSequence = 1;
+  e2eHumanResourceSequence = 1;
+  e2eHumanResources = new Map<string, E2eHumanResource>();
+  e2eObservedSocialDeviceIds.clear();
+
+  const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-human-forward-e2e-'));
+  let app: ElectronApplication | null = null;
+
+  const createHumanConversation = async (page: Page, humanId: string, title: string): Promise<void> => {
+    await page.getByRole('button', { name: 'New Human chat', exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: 'New Human chat' });
+    await dialog.getByRole('textbox', { name: 'Human identity' }).fill(humanId);
+    await dialog.getByRole('textbox', { name: 'Conversation title' }).fill(title);
+    await dialog.getByRole('button', { name: 'Create', exact: true }).click();
+    await expect(page.getByRole('textbox', { name: 'Prompt' })).toHaveAttribute('contenteditable', 'true', { timeout: 15_000 });
+  };
+
+  try {
+    app = await launchDesktopApp(appDataDir);
+    let page = await app.firstWindow();
+    await completeBrowserLogin(page);
+    await openMahayanaConversation(page);
+
+    await createHumanConversation(page, 'human-forward-source-e2e', 'Forward Source');
+    const sourceText = 'Forward persistence evidence from the shipping Human workspace.';
+    const prompt = page.getByRole('textbox', { name: 'Prompt' });
+    await prompt.pressSequentially(sourceText);
+    await page.getByRole('button', { name: 'Send message' }).click();
+    const sourceTurn = page.getByRole('article').filter({ hasText: sourceText }).last();
+    await expect(sourceTurn).toBeVisible({ timeout: 10_000 });
+    await expect(sourceTurn).not.toHaveAttribute('data-pending', { timeout: 15_000 });
+
+    await createHumanConversation(page, 'human-forward-destination-e2e', 'Forward Destination');
+    await page.getByRole('region', { name: 'Agent list' })
+      .getByRole('button', { name: 'Forward Source', exact: true })
+      .click();
+    const restoredSource = page.getByRole('article').filter({ hasText: sourceText }).last();
+    await expect(restoredSource).toBeVisible({ timeout: 10_000 });
+
+    await restoredSource.click({ button: 'right' });
+    await page.getByRole('menuitem', { name: 'Forward', exact: true }).click();
+
+    const forwardDialog = page.getByRole('dialog', { name: 'Forward message' });
+    await expect(forwardDialog).toBeVisible();
+    const recipients = forwardDialog.getByRole('listbox', { name: 'Forward recipients' });
+    await expect(recipients.getByRole('option', { name: /Forward Destination/u })).toBeVisible({ timeout: 10_000 });
+    await recipients.getByRole('option', { name: /Forward Destination/u }).click();
+    await expect(forwardDialog.getByText('1 selected', { exact: true })).toBeVisible();
+    await forwardDialog.getByRole('button', { name: 'Forward', exact: true }).click();
+    await expect(forwardDialog).toBeHidden({ timeout: 15_000 });
+
+    await page.getByRole('region', { name: 'Agent list' })
+      .getByRole('button', { name: 'Forward Destination', exact: true })
+      .click();
+    const forwarded = page.getByRole('article').filter({ hasText: sourceText }).last();
+    await expect(forwarded).toBeVisible({ timeout: 15_000 });
+    await expect(forwarded).not.toHaveAttribute('data-pending');
+
+    await app.close();
+    app = null;
+    app = await launchDesktopApp(appDataDir);
+    page = await app.firstWindow();
+    await completeBrowserLogin(page);
+    await page.getByRole('region', { name: 'Agent list' })
+      .getByRole('button', { name: 'Forward Destination', exact: true })
+      .click();
+    await expect(page.getByRole('article').filter({ hasText: sourceText }).last()).toBeVisible({ timeout: 15_000 });
+  } finally {
+    await app?.close().catch(() => undefined);
+    await rm(appDataDir, { recursive: true, force: true });
+  }
+});
+
+test('two shipping Electron device sessions converge one Human conversation through canonical remote sync', async () => {
+  e2eHumanMessages = [];
+  e2eHumanMessageSequence = 1;
+  e2eHumanResourceSequence = 1;
+  e2eHumanResources = new Map<string, E2eHumanResource>();
+  e2eObservedSocialDeviceIds.clear();
+
+  const appDataDirA = await mkdtemp(path.join(tmpdir(), 'fabushi-human-convergence-a-'));
+  const appDataDirB = await mkdtemp(path.join(tmpdir(), 'fabushi-human-convergence-b-'));
+  let appA: ElectronApplication | null = null;
+  let appB: ElectronApplication | null = null;
+
+  const createHumanConversation = async (page: Page, humanId: string, title: string): Promise<void> => {
+    await page.getByRole('button', { name: 'New Human chat', exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: 'New Human chat' });
+    await dialog.getByRole('textbox', { name: 'Human identity' }).fill(humanId);
+    await dialog.getByRole('textbox', { name: 'Conversation title' }).fill(title);
+    await dialog.getByRole('button', { name: 'Create', exact: true }).click();
+    await expect(page.getByRole('textbox', { name: 'Prompt' })).toHaveAttribute('contenteditable', 'true', { timeout: 15_000 });
+  };
+
+  const sendHumanTurn = async (page: Page, text: string): Promise<void> => {
+    const prompt = page.getByRole('textbox', { name: 'Prompt' });
+    await prompt.pressSequentially(text);
+    await page.getByRole('button', { name: 'Send message' }).click();
+    const turn = page.getByRole('article').filter({ hasText: text }).last();
+    await expect(turn).toBeVisible({ timeout: 10_000 });
+    await expect(turn).not.toHaveAttribute('data-pending', { timeout: 15_000 });
+  };
+
+  const reopenConversation = async (page: Page, title: string): Promise<void> => {
+    const peer = page.getByRole('region', { name: 'Agent list' }).getByRole('button', { name: title, exact: true });
+    await expect(peer).toBeVisible({ timeout: 15_000 });
+    await peer.click();
+    await expect(page.getByRole('textbox', { name: 'Prompt' })).toHaveAttribute('contenteditable', 'true', { timeout: 15_000 });
+  };
+
+  try {
+    appA = await launchDesktopApp(appDataDirA);
+    const pageA = await appA.firstWindow();
+    await completeBrowserLogin(pageA);
+    await openMahayanaConversation(pageA);
+
+    appB = await launchDesktopApp(appDataDirB);
+    const pageB = await appB.firstWindow();
+    await completeBrowserLogin(pageB);
+    await openMahayanaConversation(pageB);
+
+    const convergencePeerId = 'human-convergence-peer-e2e';
+    const convergenceTitle = 'Human Convergence Peer';
+    await createHumanConversation(pageA, convergencePeerId, convergenceTitle);
+    await createHumanConversation(pageB, convergencePeerId, convergenceTitle);
+
+    const fromA = 'Dual-device Human convergence from Electron device A.';
+    await sendHumanTurn(pageA, fromA);
+
+    await createHumanConversation(pageB, 'human-convergence-switch-b-e2e', 'Human Convergence Switch B');
+    await reopenConversation(pageB, convergenceTitle);
+    await expect(pageB.getByRole('article').filter({ hasText: fromA }).last()).toBeVisible({ timeout: 15_000 });
+
+    const fromB = 'Dual-device Human convergence from Electron device B.';
+    await sendHumanTurn(pageB, fromB);
+
+    await createHumanConversation(pageA, 'human-convergence-switch-a-e2e', 'Human Convergence Switch A');
+    await reopenConversation(pageA, convergenceTitle);
+    await expect(pageA.getByRole('article').filter({ hasText: fromA }).last()).toBeVisible({ timeout: 15_000 });
+    await expect(pageA.getByRole('article').filter({ hasText: fromB }).last()).toBeVisible({ timeout: 15_000 });
+
+    expect(e2eObservedSocialDeviceIds.size).toBeGreaterThanOrEqual(2);
+  } finally {
+    await appB?.close().catch(() => undefined);
+    await appA?.close().catch(() => undefined);
+    await rm(appDataDirB, { recursive: true, force: true });
+    await rm(appDataDirA, { recursive: true, force: true });
+  }
+});
+
+test('Settings localization, accessibility, bidirectional text, and IME stay on shipping Electron surfaces', async () => {
+  const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-settings-a11y-i18n-'));
+  let app: ElectronApplication | null = null;
+
+  try {
+    app = await launchDesktopApp(appDataDir);
+    let page = await app.firstWindow();
+    await completeBrowserLogin(page);
+    await openMahayanaConversation(page);
+
+    await page.evaluate(() => {
+      const mediaDevices = navigator.mediaDevices;
+      if (mediaDevices == null) throw new Error('navigator.mediaDevices is unavailable');
+      Object.defineProperty(mediaDevices, 'enumerateDevices', {
+        configurable: true,
+        value: async () => [
+          { deviceId: 'mic-studio-e2e', groupId: 'group-audio', kind: 'audioinput', label: 'Studio Microphone', toJSON: () => ({}) },
+          { deviceId: 'camera-hd-e2e', groupId: 'group-video', kind: 'videoinput', label: 'HD Camera', toJSON: () => ({}) },
+        ],
+      });
+    });
+
+    await page.getByRole('button', { name: 'Account', exact: true }).click();
+    await page.getByText('Settings', { exact: true }).click();
+    const settings = page.getByRole('dialog', { name: 'Fabushi settings' });
+    await expect(settings).toBeVisible();
+    await expect(settings.getByRole('navigation', { name: 'Settings sections' })).toBeVisible();
+    await expect(settings.getByText('Language & Accessibility', { exact: true })).toBeVisible();
+    await expect(settings.getByText('Privacy', { exact: true })).toBeVisible();
+    await expect(settings.getByRole('status', { name: 'Privacy mode' })).toHaveText('Enabled');
+    await expect(settings.getByText('Desktop behavior', { exact: true })).toBeVisible();
+    await expect(settings.getByText('Notifications', { exact: true })).toBeVisible();
+    await expect(settings.getByText('Storage', { exact: true })).toBeVisible();
+    await expect(settings.getByText('Downloads', { exact: true })).toBeVisible();
+    await expect(settings.getByText('Shortcuts', { exact: true })).toBeVisible();
+    await expect(settings.getByText('Advanced', { exact: true })).toBeVisible();
+    await expect(settings.getByText(/canonical app-profile and Host stores/u)).toBeVisible();
+    await expect(settings.getByText(/native Save As dialog/u)).toBeVisible();
+    await expect(settings.getByText(/fixed by the Electron owner/u)).toBeVisible();
+    await expect(settings.getByText(/Fabushi account policy/u)).toBeVisible();
+
+    const theme = settings.getByRole('button', { name: 'Theme' });
+    await theme.focus();
+    await page.keyboard.press('Enter');
+    const darkThemeOption = page.getByRole('option', { name: 'Dark', exact: true });
+    await darkThemeOption.focus();
+    await page.keyboard.press('Enter');
+    await expect(theme).toContainText('Dark');
+    await expect.poll(() => page.evaluate(async () => {
+      const candidate = window as unknown as { desktop: { theme: { get(): Promise<{ preference: string; resolved: string }> } } };
+      return candidate.desktop.theme.get();
+    })).toEqual({ preference: 'dark', resolved: 'dark' });
+
+    await expect(settings.getByRole('button', { name: 'Timezone' })).toBeVisible();
+    const localExecution = settings.getByRole('button', { name: 'Execution on Local Computer' });
+    await localExecution.focus();
+    await page.keyboard.press('Enter');
+    const neverAllow = page.getByRole('option', { name: 'Never allow', exact: true });
+    await neverAllow.focus();
+    await page.keyboard.press('Enter');
+    await expect(localExecution).toContainText('Never allow');
+
+    await settings.getByRole('button', { name: 'Updates', exact: true }).click();
+    await expect(settings.getByRole('heading', { name: 'Updates', exact: true })).toBeVisible();
+    const updateState = await page.evaluate(async () => {
+      const candidate = window as unknown as {
+        desktop: {
+          update: {
+            getStatus(): Promise<{ currentVersion: string; currentTrack: string; state: { type: string } }>;
+          };
+        };
+      };
+      const status = await candidate.desktop.update.getStatus();
+      return { currentVersion: status.currentVersion, currentTrack: status.currentTrack, stateType: status.state.type };
+    });
+    expect(updateState.currentVersion.length).toBeGreaterThan(0);
+    expect(['stable', 'nightly', 'dogfood']).toContain(updateState.currentTrack);
+    expect(['disabled', 'idle', 'checking', 'available', 'downloading', 'staging', 'ready']).toContain(updateState.stateType);
+    await expect(settings.getByText(`Fabushi ${updateState.currentVersion}`, { exact: true })).toBeVisible();
+    await expect(settings.locator('output[aria-live="polite"]')).toBeVisible();
+
+    await settings.getByRole('button', { name: 'General', exact: true }).click();
+    const language = settings.getByRole('button', { name: 'Language' });
+    await language.focus();
+    await page.keyboard.press('Enter');
+    const arabicOption = page.getByRole('option', { name: 'العربية', exact: true });
+    await arabicOption.focus();
+    await page.keyboard.press('Enter');
+
+    const localizedSettings = page.locator('.sand-settings-dialog');
+    await expect(localizedSettings).toHaveAttribute('aria-label', 'إعدادات Fabushi');
+    await expect(localizedSettings.getByRole('navigation', { name: 'أقسام الإعدادات' })).toBeVisible();
+    await expect(localizedSettings.getByRole('heading', { name: 'عام', exact: true })).toBeVisible();
+    await expect(localizedSettings.getByText('اللغة وإمكانية الوصول', { exact: true })).toBeVisible();
+    await expect(localizedSettings.getByText('الوسائط والأجهزة', { exact: true })).toBeVisible();
+    await expect(localizedSettings.getByText('الخصوصية', { exact: true })).toBeVisible();
+    await expect(localizedSettings.getByRole('status', { name: 'وضع الخصوصية' })).toHaveText('مفعّل');
+    await expect(localizedSettings.getByText('سلوك سطح المكتب', { exact: true })).toBeVisible();
+    await expect(localizedSettings.getByText('متقدم', { exact: true })).toBeVisible();
+    await expect.poll(() => page.evaluate(() => ({
+      lang: document.documentElement.lang,
+      dir: document.documentElement.dir,
+    }))).toEqual({ lang: 'ar', dir: 'rtl' });
+
+    const microphone = localizedSettings.getByRole('button', { name: 'الميكروفون' });
+    await microphone.focus();
+    await page.keyboard.press('Enter');
+    const studioMicrophone = page.getByRole('option', { name: 'Studio Microphone', exact: true });
+    await studioMicrophone.focus();
+    await page.keyboard.press('Enter');
+
+    const camera = localizedSettings.getByRole('button', { name: 'الكاميرا' });
+    await camera.focus();
+    await page.keyboard.press('Enter');
+    const hdCamera = page.getByRole('option', { name: 'HD Camera', exact: true });
+    await hdCamera.focus();
+    await page.keyboard.press('Enter');
+
+    await expect.poll(() => page.evaluate(async () => {
+      const candidate = window as unknown as { desktop: { callMedia: { getPreferences(): Promise<{ microphoneId: string | null; cameraId: string | null }> } } };
+      return candidate.desktop.callMedia.getPreferences();
+    })).toEqual({ microphoneId: 'mic-studio-e2e', cameraId: 'camera-hd-e2e' });
+
+    await page.evaluate(() => {
+      const mediaDevices = navigator.mediaDevices;
+      if (mediaDevices == null) throw new Error('navigator.mediaDevices is unavailable');
+      Object.defineProperty(mediaDevices, 'enumerateDevices', {
+        configurable: true,
+        value: async () => { throw new Error('E2E media enumeration failure'); },
+      });
+    });
+    await localizedSettings.getByRole('button', { name: 'تحديث الأجهزة' }).click();
+    await expect(localizedSettings.getByRole('alert')).toContainText('E2E media enumeration failure');
+
+    const livePreferenceStatus = localizedSettings.locator('.sand-settings-a11y-status');
+    await expect(livePreferenceStatus).toHaveAttribute('role', 'status');
+    const arabicOne = await page.evaluate(() => new Intl.NumberFormat('ar').format(1));
+    const arabicTwo = await page.evaluate(() => new Intl.NumberFormat('ar').format(2));
+    const arabicThree = await page.evaluate(() => new Intl.NumberFormat('ar').format(3));
+
+    const reduceMotion = localizedSettings.getByRole('switch', { name: /تقليل الحركة/u });
+    await reduceMotion.focus();
+    await page.keyboard.press('Space');
+    await expect(livePreferenceStatus).toContainText(arabicOne);
+
+    const highContrast = localizedSettings.getByRole('switch', { name: /تباين عالٍ/u });
+    await highContrast.focus();
+    await page.keyboard.press('Space');
+    await expect(livePreferenceStatus).toContainText(arabicTwo);
+
+    const direction = localizedSettings.getByRole('button', { name: 'اتجاه القراءة' });
+    await direction.focus();
+    await page.keyboard.press('Enter');
+    const rtlOption = page.getByRole('option', { name: 'من اليمين إلى اليسار', exact: true });
+    await rtlOption.focus();
+    await page.keyboard.press('Enter');
+
+    const textSize = localizedSettings.getByRole('button', { name: 'حجم النص' });
+    await textSize.focus();
+    await page.keyboard.press('Enter');
+    const textScaleOption = page.getByRole('option', { name: '125%', exact: true });
+    await textScaleOption.focus();
+    await page.keyboard.press('Enter');
+    await expect(livePreferenceStatus).toContainText(arabicThree);
+
+    await expect.poll(() => page.evaluate(async () => {
+      const candidate = window as unknown as {
+        desktop: {
+          uiPreferences: {
+            get(): Promise<{
+              locale: string;
+              direction: 'auto' | 'ltr' | 'rtl';
+              reducedMotion: boolean;
+              highContrast: boolean;
+              textScale: number;
+            }>;
+          };
+        };
+      };
+      return await candidate.desktop.uiPreferences.get();
+    })).toEqual({
+      locale: 'ar',
+      direction: 'rtl',
+      reducedMotion: true,
+      highContrast: true,
+      textScale: 1.25,
+    });
+
+    await expect.poll(() => page.evaluate(() => ({
+      lang: document.documentElement.lang,
+      dir: document.documentElement.dir,
+      reducedMotion: document.documentElement.dataset.sandReducedMotion,
+      highContrast: document.documentElement.dataset.sandHighContrast,
+      textScale: document.documentElement.style.getPropertyValue('--sand-ui-text-scale'),
+    }))).toEqual({
+      lang: 'ar',
+      dir: 'rtl',
+      reducedMotion: 'true',
+      highContrast: 'true',
+      textScale: '1.25',
+    });
+
+    await app.close();
+    app = null;
+    app = await launchDesktopApp(appDataDir);
+    page = await app.firstWindow();
+    await completeBrowserLogin(page);
+    await expect.poll(() => page.evaluate(() => ({
+      lang: document.documentElement.lang,
+      dir: document.documentElement.dir,
+      reducedMotion: document.documentElement.dataset.sandReducedMotion,
+      highContrast: document.documentElement.dataset.sandHighContrast,
+      textScale: document.documentElement.style.getPropertyValue('--sand-ui-text-scale'),
+    }))).toEqual({
+      lang: 'ar',
+      dir: 'rtl',
+      reducedMotion: 'true',
+      highContrast: 'true',
+      textScale: '1.25',
+    });
+    await expect.poll(() => page.evaluate(async () => {
+      const candidate = window as unknown as { desktop: { callMedia: { getPreferences(): Promise<{ microphoneId: string | null; cameraId: string | null }> } } };
+      return candidate.desktop.callMedia.getPreferences();
+    })).toEqual({ microphoneId: 'mic-studio-e2e', cameraId: 'camera-hd-e2e' });
+
+    await openMahayanaConversation(page);
+    const prompt = page.getByRole('textbox', { name: 'Prompt' });
+    await expect(prompt).toHaveAttribute('dir', 'auto');
+    const typography = await prompt.evaluate((element) => {
+      const root = getComputedStyle(document.documentElement);
+      const style = getComputedStyle(element);
+      return {
+        fallback: root.getPropertyValue('--fabushi-ui-font-fallback'),
+        unicodeBidi: style.unicodeBidi,
+      };
+    });
+    expect(typography.fallback).toContain('Noto Sans CJK SC');
+    expect(typography.fallback).toContain('Noto Sans Arabic');
+    expect(typography.fallback).toContain('Apple Color Emoji');
+    expect(typography.unicodeBidi).toBe('plaintext');
+
+    await prompt.focus();
+    await prompt.dispatchEvent('compositionstart', { data: '' });
+    await page.keyboard.insertText('かな漢字');
+    await page.keyboard.press('Enter');
+    await expect(prompt).toContainText('かな漢字');
+    await expect(page.getByRole('button', { name: 'Stop response' })).toHaveCount(0);
+    await prompt.dispatchEvent('compositionend', { data: 'かな漢字' });
+    await page.keyboard.insertText('🙂 العربية Fabushi');
+    await expect(prompt).toContainText('かな漢字🙂 العربية Fabushi');
+
+    await page.getByRole('button', { name: 'Account', exact: true }).click();
+    await page.getByText('Settings', { exact: true }).click();
+    const restoredSettings = page.locator('.sand-settings-dialog');
+    await expect(restoredSettings).toHaveAttribute('aria-label', 'إعدادات Fabushi');
+    const firstSettingsNavigationItem = restoredSettings.getByRole('button', { name: 'عام', exact: true });
+    await firstSettingsNavigationItem.focus();
+    await page.keyboard.press('Shift+Tab');
+    expect(await page.evaluate(() => document.querySelector('.sand-settings-dialog')?.contains(document.activeElement) === true)).toBe(true);
+    const close = restoredSettings.getByRole('button', { name: 'إغلاق', exact: true });
+    await close.focus();
+    await expect(close).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(restoredSettings).toBeHidden();
+  } finally {
+    await app?.close().catch(() => undefined);
+    await rm(appDataDir, { recursive: true, force: true });
+  }
+});
+
+test('Human call surface exposes the shipping WebRTC and Electron media bridge', async () => {
+  e2eHumanMessages = [];
+  e2eHumanMessageSequence = 1;
+  const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-human-call-media-'));
+  let app: ElectronApplication | null = null;
+  try {
+    app = await launchDesktopApp(appDataDir);
+    const page = await app.firstWindow();
+    await completeBrowserLogin(page);
+    await openMahayanaConversation(page);
+    await page.getByRole('button', { name: 'New Human chat', exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: 'New Human chat' });
+    await dialog.getByRole('textbox', { name: 'Human identity' }).fill('human-call-peer-e2e');
+    await dialog.getByRole('textbox', { name: 'Conversation title' }).fill('Human Call Peer');
+    await dialog.getByRole('button', { name: 'Create', exact: true }).click();
+
+    await expect(page.getByRole('group', { name: 'Human call controls' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Start voice call' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Start video call' })).toBeVisible();
+    const capability = await page.evaluate(async () => {
+      const candidate = window as unknown as {
+        desktop: {
+          callMedia: {
+            requestPermissions(input: { audio: boolean; video: boolean }): Promise<unknown>;
+            listDisplaySources(): Promise<unknown>;
+            getPreferences(): Promise<{ microphoneId: string | null; cameraId: string | null }>;
+            setPreferences(preferences: { microphoneId: string | null; cameraId: string | null }): Promise<{ microphoneId: string | null; cameraId: string | null }>;
+          };
+        };
+      };
+      return {
+        hasPeerConnection: typeof RTCPeerConnection === 'function',
+        hasGetUserMedia: typeof navigator.mediaDevices?.getUserMedia === 'function',
+        permissionProbe: await candidate.desktop.callMedia.requestPermissions({ audio: false, video: false }),
+        hasDisplaySourceBridge: typeof candidate.desktop.callMedia.listDisplaySources === 'function',
+        preferencesRoundTrip: await candidate.desktop.callMedia
+          .setPreferences({ microphoneId: 'call-mic-e2e', cameraId: 'call-camera-e2e' })
+          .then(() => candidate.desktop.callMedia.getPreferences()),
+      };
+    });
+    expect(capability.hasPeerConnection).toBe(true);
+    expect(capability.hasGetUserMedia).toBe(true);
+    expect(capability.hasDisplaySourceBridge).toBe(true);
+    expect(capability.permissionProbe).toEqual({ microphone: 'not-requested', camera: 'not-requested' });
+    expect(capability.preferencesRoundTrip).toEqual({ microphoneId: 'call-mic-e2e', cameraId: 'call-camera-e2e' });
+  } finally {
+    await app?.close().catch(() => undefined);
+    await rm(appDataDir, { recursive: true, force: true });
+  }
+});
+
+test('Human conversation survives restart and explicitly hands off into one Hermes-style assistant turn', async () => {
+  e2eHumanMessages = [];
+  e2eHumanMessageSequence = 1;
+  const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-human-agent-vertical-slice-'));
+  let app: ElectronApplication | null = null;
+  const humanMessage = 'Human durable message for the native Fabushi conversation.';
+
+  try {
+    app = await launchDesktopApp(appDataDir);
+    let page = await app.firstWindow();
+    await completeBrowserLogin(page);
+
+    // Create one real Agent through the shipping sidebar so the Human handoff
+    // has an existing Coordinator -> Host -> Runner target.
+    await openMahayanaConversation(page);
+    await expect(page.getByRole('region', { name: 'Agent list' }).getByRole('button', { name: 'New chat', exact: true })).toBeVisible();
+
+    // Human conversations are created from the same sidebar and mounted into
+    // the same recovered conversation workspace rather than a parallel shell.
+    await page.getByRole('button', { name: 'New Human chat', exact: true }).click();
+    const humanDialog = page.getByRole('dialog', { name: 'New Human chat' });
+    await expect(humanDialog).toBeVisible();
+    await humanDialog.getByRole('textbox', { name: 'Human identity' }).fill('human-peer-e2e');
+    await humanDialog.getByRole('textbox', { name: 'Conversation title' }).fill('Human Alice');
+    await humanDialog.getByRole('button', { name: 'Create', exact: true }).click();
+
+    await expect(page.getByText('Human', { exact: true })).toBeVisible();
+    const prompt = page.getByRole('textbox', { name: 'Prompt' });
+    await expect(prompt).toHaveAttribute('contenteditable', 'true', { timeout: 15_000 });
+    await prompt.pressSequentially(humanMessage);
+    await page.getByRole('button', { name: 'Send message' }).click();
+    const durableHumanTurn = page.getByRole('article').filter({ hasText: humanMessage }).last();
+    await expect(durableHumanTurn).toBeVisible({ timeout: 10_000 });
+    // The optimistic bubble is not the durability boundary. Wait for the same
+    // row to settle from pending to Host-accepted before terminating the app.
+    await expect(durableHumanTurn).not.toHaveAttribute('data-pending', { timeout: 15_000 });
+
+    const roster = page.getByRole('region', { name: 'Agent list' });
+    await expect(roster.getByRole('button', { name: 'Human Alice', exact: true })).toBeVisible();
+    await expect(roster.getByRole('button', { name: 'New chat', exact: true })).toBeVisible();
+
+    // Restart the packaged/runtime app data scope and prove the authenticated
+    // Human identity resolves to the same durable Session/Transcript owner.
+    await app.close();
+    app = null;
+    app = await launchDesktopApp(appDataDir);
+    page = await app.firstWindow();
+    await completeBrowserLogin(page);
+    await page.getByRole('region', { name: 'Agent list' }).getByRole('button', { name: 'Human Alice', exact: true }).click();
+    await expect(page.getByRole('article').filter({ hasText: humanMessage }).last()).toBeVisible({ timeout: 10_000 });
+
+    // Human find-in-chat is backed by the canonical Host transcript search,
+    // not a renderer-only scan of whichever tail page happens to be mounted.
+    await page.keyboard.press('Control+f');
+    const findInChat = page.getByRole('textbox', { name: 'Find in chat' });
+    await expect(findInChat).toBeVisible();
+    await findInChat.fill('durable message');
+    await expect(page.locator('.sand-chat-find').getByRole('status')).toHaveText('1/1');
+    await findInChat.press('Enter');
+    await expect(page.getByRole('article').filter({ hasText: humanMessage }).last()).toBeVisible();
+    await page.getByRole('button', { name: 'Close find' }).click();
+
+    // Explicit Human -> Agent continuation stays on the existing
+    // Coordinator -> Host -> Runner path, but the trusted Host terminal
+    // projection must land back in this same Human workspace.
+    const assistantReply = '收到：请分析这个任务';
+    await page.getByRole('button', { name: 'Ask Agent', exact: true }).click();
+    await expectHermesAssistantTurn(page, assistantReply);
+    await expect(page.getByText('Human', { exact: true })).toBeVisible();
+    await expect(page.getByRole('textbox', { name: 'Prompt' })).toBeVisible();
+
+    // A second restart proves the Agent-authored result is not renderer-only
+    // state: it must be replayed from the durable Human Session transcript.
+    await app.close();
+    app = null;
+    app = await launchDesktopApp(appDataDir);
+    page = await app.firstWindow();
+    await completeBrowserLogin(page);
+    await page.getByRole('region', { name: 'Agent list' }).getByRole('button', { name: 'Human Alice', exact: true }).click();
+    await expect(page.getByRole('article').filter({ hasText: humanMessage }).last()).toBeVisible({ timeout: 10_000 });
+    await expectHermesAssistantTurn(page, assistantReply);
+    await expect(page.getByText('Human', { exact: true })).toBeVisible();
+  } finally {
+    await app?.close().catch(() => undefined);
+    await rm(appDataDir, { recursive: true, force: true });
+  }
+});
+
+test('self-hosted Bot invocation projects into the same Hermes-style turn without actor impersonation', async () => {
+  const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-selfhosted-bot-mahayana-'));
+  let app: ElectronApplication | null = null;
+  const prompt = '自建 Bot 请规划步骤，调用 Mahayana 工具并完成这个任务。';
+
+  try {
+    app = await launchDesktopApp(appDataDir);
+    let page = await app.firstWindow();
+    await completeBrowserLogin(page);
+    const { conversationId, peerTestId } = await createSelfHostedBotAcceptanceChannel(page);
+
+    // The authenticated human turn first goes through the canonical Rust messaging store.
+    await page.getByTestId('messenger-input').fill(prompt);
+    await page.getByTestId('messenger-send').click();
+    await expect(page.getByRole('article').filter({ hasText: prompt }).last()).toBeVisible({ timeout: 10_000 });
+
+    // The Rust messaging service has a separate contract test proving that a
+    // human message to a Bot produces this exact BotInvocationRequested event.
+    // Here we verify the Electron consumer half: invocation -> Mahayana -> one
+    // ordinary assistant turn instead of a second task-card surface.
+    const invocationId = await emitBotInvocationRequested(page, conversationId, prompt);
+    expect(invocationId).toContain('invocation:e2e:');
+
+    await expectHermesAssistantTurn(page, '收到：自建 Bot 请规划步骤');
+    await expect(page.getByTestId('agent-run')).toBeHidden();
+
+    // This journal is only the idempotency/claim record for consuming the Bot
+    // invocation. It is not accepted as transcript or run-state authority.
+    await expect.poll(async () => page.evaluate(() => {
+      const journal = JSON.parse(localStorage.getItem('fabushi.desktop.selfhosted-mahayana-invocations.v1') || 'null');
+      return Object.values(journal?.claims || {}).some((claim: unknown) =>
+        Boolean(claim && typeof claim === 'object' && (claim as { state?: string }).state === 'accepted'));
+    })).toBe(true);
+
+    await app.close();
+    app = null;
+
+    // Restart coverage is intentionally limited to the canonical messaging
+    // history here. Ordered AssistantTurn replay must come from the production
+    // Rust gateway/session store and is a separate MSR-204 acceptance blocker.
+    app = await launchDesktopApp(appDataDir);
+    page = await app.firstWindow();
+    await completeBrowserLogin(page);
+    const restoredPeer = page.getByTestId(peerTestId);
+    await expect(restoredPeer).toBeVisible({ timeout: 15_000 });
+    await restoredPeer.click();
+    await expect(page.getByRole('article').filter({ hasText: prompt }).last()).toBeVisible({ timeout: 10_000 });
+  } finally {
+    await app?.close().catch(() => undefined);
+    await rm(appDataDir, { recursive: true, force: true });
+  }
+});

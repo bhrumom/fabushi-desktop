@@ -1,0 +1,735 @@
+{
+  "format_version": 1,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "accepted_upstream_commit": "f23c37857220eb84f8559f0901ea26fb304b564b",
+  "discovery_provenance": {
+    "run_id": 37607789689,
+    "head_sha": "16f5f04e362a4ef93d0c5f9fb8a61f5b4e3500b1",
+    "artifact_id": 11475597885,
+    "artifact_digest": "sha256:ac9f74cd2e573de663c149768f6b5a462eb08ae3b2484f2bfaa4a8b9663ae219"
+  },
+  "authority_count": 48,
+  "occurrence_count": 67,
+  "authorities": [
+    {
+      "id": "ROOT-MUT-001",
+      "repository": "https://code.videolan.org/videolan/dav1d",
+      "commit": "54706fc6bc0cdecab7e9593974a4039cc038fca7",
+      "occurrences": [
+        {
+          "source_path": "Telegram/build/prepare/prepare.py",
+          "source_line": 833,
+          "observed_ref": "1.5.4"
+        }
+      ],
+      "status": "immutable-snapshot-pending-recursive-scan"
+    },
+    {
+      "id": "ROOT-MUT-002",
+      "repository": "https://github.com/AOMediaCodec/libavif",
+      "commit": "1aadfad932c98c069a1204261b1856f81f3bc199",
+      "occurrences": [
+        {
+          "source_path": "snap/snapcraft.yaml",
+          "source_line": 149,
+          "observed_ref": "v1.3.0"
+        }
+      ],
+      "status": "immutable-snapshot-pending-recursive-scan"
+    },
+    {
+      "id": "ROOT-MUT-003",
+      "repository": "https://github.com/AOMediaCodec/libavif",
+      "commit": "c5240fc79fe5c2407e10afd35f5505ef6333ea49",
+      "occurrences": [
+        {
+          "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+          "source_line": 333,
+          "observed_ref": "v1.4.2"
+        },
+        {
+          "source_path": "Telegram/build/prepare/prepare.py",
+          "source_line": 956,
+          "observed_ref": "v1.4.2"
+        }
+      ],
+      "status": "immutable-snapshot-pending-recursive-scan"
+    },
+    {
+      "id": "ROOT-MUT-004",
+      "repository": "https://github.com/FFmpeg/FFmpeg",
+      "commit": "1041abdc962f4cc4f394aa8de9dc5236c0c3b9e7",
+      "occurrences": [
+        {
+          "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+          "source_line": 607,
+          "observed_ref": "n8.1.3"
+        },
+        {
+          "source_path": "Telegram/build/prepare/prepare.py",
+          "source_line": 1172,
+          "observed_ref": "n8.1.3"
+        }
+      ],
+      "status": "immutable-snapshot-pending-recursive-scan"
+    },
+    {
+      "id": "ROOT-MUT-005",
+      "repository": "https://github.com/FFmpeg/FFmpeg",
+      "commit": "f1e3a2bf7a2f2cde936d1ed97f09a26853d20125",
+      "occurrences": [
+        {
+          "source_path": "snap/snapcraft.yaml",
+          "source_line": 165,
+          "observed_ref": "n6.1.6"
+        }
+      ],
+      "status": "immutable-snapshot-pending-recursive-scan"
+    },
+    {
+      "id": "ROOT-MUT-006",
+      "repository": "https://github.com/FFmpeg/gas-preprocessor",
+      "commit": "ac1836309c2e77023c228b7184485597286289d3",
+      "occurrences": [
+        {
+          "source_path": "Telegram/build/prepare/prepare.py",
+          "source_line": 825,
+          "observed_ref": "HEAD"
+        }
+      ],
+      "status": "immutable-snapshot-pending-recursive-scan"
+    },
+    {
+      "id": "ROOT-MUT-007",
+      "repository": "https://github.com/FFmpeg/nv-codec-headers",
+      "commit": "1889e62e2d35ff7aa9baca2bceb14f053785e6f1",
+      "occurrences": [
+        {
+          "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+          "source_line": 592,
+          "observed_ref": "n12.1.14.0"
+        },
+        {
+          "source_path": "Telegram/build/prepare/prepare.py",
+          "source_line": 1164,
+          "observed_ref": "n12.1.14.0"
+        },
+        {
+          "source_path": "snap/snapcraft.yaml",
+          "source_line": 386,
+          "observed_ref": "n12.1.14.0"
+        }
+      ],
+      "status": "immutable-snapshot-pending-recursive-scan"
+    },
+    {
+      "id": "ROOT-MUT-008",
+      "repository": "https://github.com/PipeWire/pipewire",
+      "commit": "3a443b4e1c9730675c7de0453a6279ab9ee263fd",
+      "occurrences": [
+        {
+          "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+          "source_line": 791,
+          "observed_ref": "0.3.62"
+        }
+      ],
+      "status": "immutable-snapshot-pending-recursive-scan"
+    },
+    {
+      "id": "ROOT-MUT-009",
+      "repository": "https://github.com/ada-url/ada",
+      "commit": "010f7c45aeaff1205452e7da2df8702cf725fb3e",
+      "occurrences": [
+        {
+          "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+          "source_line": 966,
+          "observed_ref": "v3.2.4"
+        },
+        {
+          "source_path": "Telegram/build/prepare/prepare.py",
+          "source_line": 1883,
+          "observed_ref": "v3.2.4"
+        },
+        {
+          "source_path": "snap/snapcraft.yaml",
+          "source_line": 135,
+          "observed_ref": "v3.2.4"
+        }
+      ],
+      "status": "immutable-snapshot-pending-recursive-scan"
+    },
+    {
+      "id": "ROOT-MUT-010",
+      "repository": "https://github.com/boostorg/regex",
+      "commit": "4cbcd3078e6ae10d05124379623a1bf03fcb9350",
+      "occurrences": [
+        {
+          "source_path": "Telegram/build/prepare/prepare.py",
+          "source_line": 1168,
+          "observed_ref": "boost-1.83.0"
+        }
+      ],
+      "status": "immutable-snapshot-pending-recursive-scan"
+    },
+    {
+      "id": "ROOT-MUT-011",
+      "repository": "https://github.com/cisco/openh264",
+      "commit": "652bdb7719f30b52b08e506645a7322ff1b2cc6f",
+      "occurrences": [
+        {
+          "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+          "source_line": 278,
+          "observed_ref": "v2.6.0"
+        },
+        {
+          "source_path": "Telegram/build/prepare/prepare.py",
+          "source_line": 898,
+          "observed_ref": "v2.6.0"
+        }
+      ],
+      "status": "immutable-snapshot-pending-recursive-scan"
+    },
+    {
+      "id": "ROOT-MUT-012",
+      "repository": "https://github.com/desktop-app/lzma",
+      "commit": "455a368eec2ac5d94de4de71bbf7a8a0fa0d72b7",
+      "occurrences": [
+        {
+          "source_path": "Telegram/build/prepare/prepare.py",
+          "source_line": 609,
+          "observed_ref": "HEAD"
+        }
+      ],
+      "status": "immutable-snapshot-pending-recursive-scan"
+    },
+    {
+      "id": "ROOT-MUT-013",
+      "repository": "https://github.com/gitlab-freedesktop-mirrors/libxcb",
+      "commit": "cc4b93c9cd93bad15b7106747b0213e4b9c53a1c",
+      "occurrences": [
+        {
+          "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+          "source_line": 398,
+          "observed_ref": "libxcb-1.16"
+        }
+      ],
+      "status": "immutable-snapshot-pending-recursive-scan"
+    },
+    {
+      "id": "ROOT-MUT-014",
+      "repository": "https://github.com/gitlab-freedesktop-mirrors/libxcb-image",
+      "commit": "1abfc17b1e08e46dbdf34b4ef36097a8c307a8ec",
+      "occurrences": [
+        {
+          "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+          "source_line": 437,
+          "observed_ref": "xcb-util-image-0.4.1-gitlab"
+        }
+      ],
+      "status": "immutable-snapshot-pending-recursive-scan"
+    },
+    {
+      "id": "ROOT-MUT-015",
+      "repository": "https://github.com/gitlab-freedesktop-mirrors/libxcb-util",
+      "commit": "bffd8df1725c0fae9105a097e75b466e2f49d7bd",
+      "occurrences": [
+        {
+          "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+          "source_line": 423,
+          "observed_ref": "xcb-util-0.4.1-gitlab"
+        }
+      ],
+      "status": "immutable-snapshot-pending-recursive-scan"
+    },
+    {
+      "id": "ROOT-MUT-016",
+      "repository": "https://github.com/gitlab-freedesktop-mirrors/libxcb-wm",
+      "commit": "0c6681e465c9cc7b1fbb60778ba1eaa61ab01a14",
+      "occurrences": [
+        {
+          "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+          "source_line": 411,
+          "observed_ref": "xcb-util-wm-0.4.2"
+        }
+      ],
+      "status": "immutable-snapshot-pending-recursive-scan"
+    },
+    {
+      "id": "ROOT-MUT-017",
+      "repository": "https://github.com/gitlab-freedesktop-mirrors/libxcomposite",
+      "commit": "cecff847395deb553b6331f31776f9cbfc809add",
+      "occurrences": [
+        {
+          "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+          "source_line": 580,
+          "observed_ref": "libXcomposite-0.4.6"
+        }
+      ],
+      "status": "immutable-snapshot-pending-recursive-scan"
+    },
+    {
+      "id": "ROOT-MUT-018",
+      "repository": "https://github.com/gitlab-freedesktop-mirrors/libxdamage",
+      "commit": "1f20df4fd7c132f55e924dc5ec3f270cd54704d0",
+      "occurrences": [
+        {
+          "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+          "source_line": 569,
+          "observed_ref": "libXdamage-1.1.6"
+        }
+      ],
+      "status": "immutable-snapshot-pending-recursive-scan"
+    },
+    {
+      "id": "ROOT-MUT-019",
+      "repository": "https://github.com/gitlab-freedesktop-mirrors/libxext",
+      "commit": "67e82cc395f44faddd83ec3d0d21624fe91c6fc0",
+      "occurrences": [
+        {
+          "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+          "source_line": 501,
+          "observed_ref": "libXext-1.3.5"
+        }
+      ],
+      "status": "immutable-snapshot-pending-recursive-scan"
+    },
+    {
+      "id": "ROOT-MUT-020",
+      "repository": "https://github.com/gitlab-freedesktop-mirrors/libxfixes",
+      "commit": "84df9cb81cc31bbed27ba241a23ae04f61da57db",
+      "occurrences": [
+        {
+          "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+          "source_line": 523,
+          "observed_ref": "libXfixes-5.0.3"
+        }
+      ],
+      "status": "immutable-snapshot-pending-recursive-scan"
+    },
+    {
+      "id": "ROOT-MUT-021",
+      "repository": "https://github.com/gitlab-freedesktop-mirrors/libxrandr",
+      "commit": "3387129532899eaeee3477a2d92fa662d7292a84",
+      "occurrences": [
+        {
+          "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+          "source_line": 547,
+          "observed_ref": "libXrandr-1.5.3"
+        }
+      ],
+      "status": "immutable-snapshot-pending-recursive-scan"
+    },
+    {
+      "id": "ROOT-MUT-022",
+      "repository": "https://github.com/gitlab-freedesktop-mirrors/libxrender",
+      "commit": "e5e23272394c90731debd7e18dd167e8c25b5c15",
+      "occurrences": [
+        {
+          "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+          "source_line": 558,
+          "observed_ref": "libXrender-0.9.11"
+        }
+      ],
+      "status": "immutable-snapshot-pending-recursive-scan"
+    },
+    {
+      "id": "ROOT-MUT-023",
+      "repository": "https://github.com/gitlab-freedesktop-mirrors/libxtst",
+      "commit": "99b89c3bcb0ebb0b6dd86bfdc9d276715eaea889",
+      "occurrences": [
+        {
+          "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+          "source_line": 512,
+          "observed_ref": "libXtst-1.2.4"
+        }
+      ],
+      "status": "immutable-snapshot-pending-recursive-scan"
+    },
+    {
+      "id": "ROOT-MUT-024",
+      "repository": "https://github.com/gitlab-freedesktop-mirrors/libxv",
+      "commit": "d419928942dbf1897c9627475aa4a2828a81240f",
+      "occurrences": [
+        {
+          "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+          "source_line": 536,
+          "observed_ref": "libXv-1.0.12"
+        }
+      ],
+      "status": "immutable-snapshot-pending-recursive-scan"
+    },
+    {
+      "id": "ROOT-MUT-025",
+      "repository": "https://github.com/gitlab-freedesktop-mirrors/xcbproto",
+      "commit": "98eeebfc2d7db5377b85437418fb942ea30ffc0d",
+      "occurrences": [
+        {
+          "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+          "source_line": 385,
+          "observed_ref": "xcb-proto-1.16.0"
+        }
+      ],
+      "status": "immutable-snapshot-pending-recursive-scan"
+    },
+    {
+      "id": "ROOT-MUT-026",
+      "repository": "https://github.com/google/brotli",
+      "commit": "028fb5a23661f123017c060daa546b55cf4bde29",
+      "occurrences": [
+        {
+          "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+          "source_line": 214,
+          "observed_ref": "v1.2.0"
+        }
+      ],
+      "status": "immutable-snapshot-pending-recursive-scan"
+    },
+    {
+      "id": "ROOT-MUT-027",
+      "repository": "https://github.com/google/googletest",
+      "commit": "e2239ee6043f73722e7aa812a459f54a28552929",
+      "occurrences": [
+        {
+          "source_path": "Telegram/build/prepare/prepare.py",
+          "source_line": 1452,
+          "observed_ref": "release-1.11.0"
+        },
+        {
+          "source_path": "Telegram/build/prepare/prepare.py",
+          "source_line": 1492,
+          "observed_ref": "release-1.11.0"
+        }
+      ],
+      "status": "immutable-snapshot-pending-recursive-scan"
+    },
+    {
+      "id": "ROOT-MUT-028",
+      "repository": "https://github.com/google/highway",
+      "commit": "2607d3b5b0113992fe84d3848859eae13b3b52c1",
+      "occurrences": [
+        {
+          "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+          "source_line": 225,
+          "observed_ref": "1.4.0"
+        }
+      ],
+      "status": "immutable-snapshot-pending-recursive-scan"
+    },
+    {
+      "id": "ROOT-MUT-029",
+      "repository": "https://github.com/kcat/openal-soft",
+      "commit": "b2c48f7718ef3fcf67921a8b6534c4914e328970",
+      "occurrences": [
+        {
+          "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+          "source_line": 809,
+          "observed_ref": "1.25.2"
+        }
+      ],
+      "status": "immutable-snapshot-pending-recursive-scan"
+    },
+    {
+      "id": "ROOT-MUT-030",
+      "repository": "https://github.com/kcat/openal-soft",
+      "commit": "dc7d7054a5b4f3bec1dc23a42fd616a0847af948",
+      "occurrences": [
+        {
+          "source_path": "snap/snapcraft.yaml",
+          "source_line": 349,
+          "observed_ref": "1.24.3"
+        }
+      ],
+      "status": "immutable-snapshot-pending-recursive-scan"
+    },
+    {
+      "id": "ROOT-MUT-031",
+      "repository": "https://github.com/libjxl/libjxl",
+      "commit": "a7a9c787341cf703dede03c2009fa460cae5e5df",
+      "occurrences": [
+        {
+          "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+          "source_line": 348,
+          "observed_ref": "v0.12.0"
+        },
+        {
+          "source_path": "Telegram/build/prepare/prepare.py",
+          "source_line": 1024,
+          "observed_ref": "v0.12.0"
+        }
+      ],
+      "status": "immutable-snapshot-pending-recursive-scan"
+    },
+    {
+      "id": "ROOT-MUT-032",
+      "repository": "https://github.com/mm2/Little-CMS",
+      "commit": "453bafeb85b4ef96498866b7a8eadcc74dff9223",
+      "occurrences": [
+        {
+          "source_path": "Telegram/build/prepare/prepare.py",
+          "source_line": 1129,
+          "observed_ref": "lcms2.16"
+        }
+      ],
+      "status": "immutable-snapshot-pending-recursive-scan"
+    },
+    {
+      "id": "ROOT-MUT-033",
+      "repository": "https://github.com/mm2/Little-CMS",
+      "commit": "d0752309ff93f62be246ee9bf18338107f30d485",
+      "occurrences": [
+        {
+          "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+          "source_line": 203,
+          "observed_ref": "lcms2.15"
+        }
+      ],
+      "status": "immutable-snapshot-pending-recursive-scan"
+    },
+    {
+      "id": "ROOT-MUT-034",
+      "repository": "https://github.com/mozilla/mozjpeg",
+      "commit": "6c9f0897afa1c2738d7222a0a9ab49e8b536a267",
+      "occurrences": [
+        {
+          "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+          "source_line": 236,
+          "observed_ref": "v4.1.5"
+        },
+        {
+          "source_path": "Telegram/build/prepare/prepare.py",
+          "source_line": 671,
+          "observed_ref": "v4.1.5"
+        },
+        {
+          "source_path": "snap/snapcraft.yaml",
+          "source_line": 334,
+          "observed_ref": "v4.1.5"
+        }
+      ],
+      "status": "immutable-snapshot-pending-recursive-scan"
+    },
+    {
+      "id": "ROOT-MUT-035",
+      "repository": "https://github.com/openssl/openssl",
+      "commit": "a7e992847de83aa36be0c399c89db3fb827b0be2",
+      "occurrences": [
+        {
+          "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+          "source_line": 825,
+          "observed_ref": "openssl-3.2.1"
+        },
+        {
+          "source_path": "Telegram/build/prepare/prepare.py",
+          "source_line": 708,
+          "observed_ref": "openssl-3.2.1"
+        },
+        {
+          "source_path": "snap/snapcraft.yaml",
+          "source_line": 368,
+          "observed_ref": "openssl-3.2.1"
+        }
+      ],
+      "status": "immutable-snapshot-pending-recursive-scan"
+    },
+    {
+      "id": "ROOT-MUT-036",
+      "repository": "https://github.com/qt/qt5",
+      "commit": "713a36536903d172f9e6737584d428753c119496",
+      "occurrences": [
+        {
+          "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+          "source_line": 873,
+          "observed_ref": "v6.11.2"
+        },
+        {
+          "source_path": "Telegram/build/prepare/prepare.py",
+          "source_line": 1668,
+          "observed_ref": "v6.11.2"
+        },
+        {
+          "source_path": "snap/snapcraft.yaml",
+          "source_line": 396,
+          "observed_ref": "v6.11.2"
+        }
+      ],
+      "status": "immutable-snapshot-pending-recursive-scan"
+    },
+    {
+      "id": "ROOT-MUT-037",
+      "repository": "https://github.com/qt/qt5",
+      "commit": "dc2ac680fa9d0ef7b0d9520859593d13951bedea",
+      "occurrences": [
+        {
+          "source_path": "Telegram/build/prepare/prepare.py",
+          "source_line": 1599,
+          "observed_ref": "v5.15.19-lts-lgpl"
+        }
+      ],
+      "status": "immutable-snapshot-pending-recursive-scan"
+    },
+    {
+      "id": "ROOT-MUT-038",
+      "repository": "https://github.com/strukturag/libheif",
+      "commit": "413e2a87e6a70b3eccc3a3adc5801179dd2d9e00",
+      "occurrences": [
+        {
+          "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+          "source_line": 760,
+          "observed_ref": "v1.23.5"
+        },
+        {
+          "source_path": "Telegram/build/prepare/prepare.py",
+          "source_line": 1355,
+          "observed_ref": "v1.23.5"
+        }
+      ],
+      "status": "immutable-snapshot-pending-recursive-scan"
+    },
+    {
+      "id": "ROOT-MUT-039",
+      "repository": "https://github.com/telegramdesktop/openal-soft",
+      "commit": "291c0fdbbdd767f00c45c7fca562614faea57647",
+      "occurrences": [
+        {
+          "source_path": "Telegram/build/prepare/prepare.py",
+          "source_line": 1417,
+          "observed_ref": "291c0fdbbdd767f00c45c7fca562614faea57647"
+        }
+      ],
+      "status": "immutable-snapshot-pending-recursive-scan"
+    },
+    {
+      "id": "ROOT-MUT-040",
+      "repository": "https://github.com/telegramdesktop/openal-soft",
+      "commit": "c2eab43d72890c58d4b51d5d98eafb9f011e1c89",
+      "occurrences": [
+        {
+          "source_path": "Telegram/build/prepare/prepare.py",
+          "source_line": 1417,
+          "observed_ref": "coreaudio_device_uid"
+        }
+      ],
+      "status": "immutable-snapshot-pending-recursive-scan"
+    },
+    {
+      "id": "ROOT-MUT-041",
+      "repository": "https://github.com/tukaani-project/xz",
+      "commit": "49053c0a649f4c8bd2b8d97ce915f401fbc0f3d9",
+      "occurrences": [
+        {
+          "source_path": "Telegram/build/prepare/prepare.py",
+          "source_line": 622,
+          "observed_ref": "v5.4.5"
+        }
+      ],
+      "status": "immutable-snapshot-pending-recursive-scan"
+    },
+    {
+      "id": "ROOT-MUT-042",
+      "repository": "https://github.com/tukaani-project/xz",
+      "commit": "a522a226545730551f7e7c2685fab27cf567746c",
+      "occurrences": [
+        {
+          "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+          "source_line": 192,
+          "observed_ref": "v5.8.1"
+        }
+      ],
+      "status": "immutable-snapshot-pending-recursive-scan"
+    },
+    {
+      "id": "ROOT-MUT-043",
+      "repository": "https://github.com/videolan/dav1d",
+      "commit": "54706fc6bc0cdecab7e9593974a4039cc038fca7",
+      "occurrences": [
+        {
+          "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+          "source_line": 263,
+          "observed_ref": "1.5.4"
+        }
+      ],
+      "status": "immutable-snapshot-pending-recursive-scan"
+    },
+    {
+      "id": "ROOT-MUT-044",
+      "repository": "https://github.com/webmproject/libvpx",
+      "commit": "12f3a2ac603e8f10742105519e0cd03c3b8f71dd",
+      "occurrences": [
+        {
+          "source_path": "Telegram/build/prepare/prepare.py",
+          "source_line": 1067,
+          "observed_ref": "v1.14.1"
+        }
+      ],
+      "status": "immutable-snapshot-pending-recursive-scan"
+    },
+    {
+      "id": "ROOT-MUT-045",
+      "repository": "https://github.com/webmproject/libwebp",
+      "commit": "4fa21912338357f89e4fd51cf2368325b59e9bd9",
+      "occurrences": [
+        {
+          "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+          "source_line": 311,
+          "observed_ref": "v1.6.0"
+        },
+        {
+          "source_path": "Telegram/build/prepare/prepare.py",
+          "source_line": 985,
+          "observed_ref": "v1.6.0"
+        }
+      ],
+      "status": "immutable-snapshot-pending-recursive-scan"
+    },
+    {
+      "id": "ROOT-MUT-046",
+      "repository": "https://github.com/xiph/opus",
+      "commit": "ddbe48383984d56acd9e1ab6a090c54ca6b735a6",
+      "occurrences": [
+        {
+          "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+          "source_line": 252,
+          "observed_ref": "v1.5.2"
+        },
+        {
+          "source_path": "Telegram/build/prepare/prepare.py",
+          "source_line": 755,
+          "observed_ref": "v1.5.2"
+        }
+      ],
+      "status": "immutable-snapshot-pending-recursive-scan"
+    },
+    {
+      "id": "ROOT-MUT-047",
+      "repository": "https://github.com/xiph/rnnoise",
+      "commit": "904a876dce1f9ab8860c0a5000ed151f9f6eef58",
+      "occurrences": [
+        {
+          "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+          "source_line": 373,
+          "observed_ref": "v0.2"
+        },
+        {
+          "source_path": "snap/snapcraft.yaml",
+          "source_line": 442,
+          "observed_ref": "v0.2"
+        }
+      ],
+      "status": "immutable-snapshot-pending-recursive-scan"
+    },
+    {
+      "id": "ROOT-MUT-048",
+      "repository": "https://github.com/xkbcommon/libxkbcommon",
+      "commit": "d2a08f761c796733e42fac4099f5c38d443e88e1",
+      "occurrences": [
+        {
+          "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+          "source_line": 839,
+          "observed_ref": "xkbcommon-1.6.0"
+        }
+      ],
+      "status": "immutable-snapshot-pending-recursive-scan"
+    }
+  ]
+}

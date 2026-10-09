@@ -1,0 +1,507 @@
+{
+  "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+  "start": 2301,
+  "end": 2400,
+  "entries": [
+    {
+      "order": 2301,
+      "path": "Telegram/Resources/icons/payments/payment_phone@3x.png",
+      "blob": "94cb40b05238ed9c39afd9218dfc2b25589fcdc7"
+    },
+    {
+      "order": 2302,
+      "path": "Telegram/Resources/icons/payments/payment_shipping.png",
+      "blob": "6628b0d92b849867d7ff7d5970a97889a95013d0"
+    },
+    {
+      "order": 2303,
+      "path": "Telegram/Resources/icons/payments/payment_shipping@2x.png",
+      "blob": "d77dbac90ecf5b187fcadc5e69154a06f8753de0"
+    },
+    {
+      "order": 2304,
+      "path": "Telegram/Resources/icons/payments/payment_shipping@3x.png",
+      "blob": "ffe2fbe9d94b44da5d631916523459a064b3deb2"
+    },
+    {
+      "order": 2305,
+      "path": "Telegram/Resources/icons/payments/premium_emoji.png",
+      "blob": "e8b8fcf292b6f466acfdcc9d938efbbb44ff8551"
+    },
+    {
+      "order": 2306,
+      "path": "Telegram/Resources/icons/payments/premium_emoji@2x.png",
+      "blob": "8824f11b97c6f1051e2e8f9d9e97022a6658631b"
+    },
+    {
+      "order": 2307,
+      "path": "Telegram/Resources/icons/payments/premium_emoji@3x.png",
+      "blob": "5bd6ad0133eb80342bccffa75ae23ffe200a60dc"
+    },
+    {
+      "order": 2308,
+      "path": "Telegram/Resources/icons/payments/small_star.png",
+      "blob": "94e3fc4c5adfaccd1d5d3d216f23309c5c890b0e"
+    },
+    {
+      "order": 2309,
+      "path": "Telegram/Resources/icons/payments/small_star@2x.png",
+      "blob": "4dc7016fe9f52a81d6991d1095fd16b3a1f2525a"
+    },
+    {
+      "order": 2310,
+      "path": "Telegram/Resources/icons/payments/small_star@3x.png",
+      "blob": "8f7ae06daa1970b5e9346d93d60f94a4356fa058"
+    },
+    {
+      "order": 2311,
+      "path": "Telegram/Resources/icons/payments/ton_emoji.svg",
+      "blob": "bc5b9f1ee5ee1ac1aa7d638f390c9ae6c2c20bf9"
+    },
+    {
+      "order": 2312,
+      "path": "Telegram/Resources/icons/payments/ton_emoji_body.svg",
+      "blob": "4076c7909797aba1e8fe770c942df679810af8b7"
+    },
+    {
+      "order": 2313,
+      "path": "Telegram/Resources/icons/payments/ton_emoji_shine.svg",
+      "blob": "c677344bb26585857254f4bdbee98d178806cf20"
+    },
+    {
+      "order": 2314,
+      "path": "Telegram/Resources/icons/photo_editor/camera.svg",
+      "blob": "cb62ae7a95b43bee6712edc030441fa3595db81f"
+    },
+    {
+      "order": 2315,
+      "path": "Telegram/Resources/icons/photo_editor/corners.svg",
+      "blob": "09b04284330346a9c774035dfbd41c5db1bfd20a"
+    },
+    {
+      "order": 2316,
+      "path": "Telegram/Resources/icons/photo_editor/flip.png",
+      "blob": "e751a33e115e75b98934158f3395097ee8327f53"
+    },
+    {
+      "order": 2317,
+      "path": "Telegram/Resources/icons/photo_editor/flip@2x.png",
+      "blob": "1a2ab86e0036f6a50230286dc0a6a3c7ad6c91b6"
+    },
+    {
+      "order": 2318,
+      "path": "Telegram/Resources/icons/photo_editor/flip@3x.png",
+      "blob": "d65697d700c0b747bcb92816f5777d4fee0286d0"
+    },
+    {
+      "order": 2319,
+      "path": "Telegram/Resources/icons/photo_editor/gif.png",
+      "blob": "4fcd12ea58bf7daaa67ee4cebd7d1fce44cbeb2b"
+    },
+    {
+      "order": 2320,
+      "path": "Telegram/Resources/icons/photo_editor/gif@2x.png",
+      "blob": "2faee5fad0c38b11a8f89ece0abe0ce733136fee"
+    },
+    {
+      "order": 2321,
+      "path": "Telegram/Resources/icons/photo_editor/gif@3x.png",
+      "blob": "cb940753e5565aa57d162c7d7023dcdb90ba5a8a"
+    },
+    {
+      "order": 2322,
+      "path": "Telegram/Resources/icons/photo_editor/keyboard.svg",
+      "blob": "e1d8731da054060f46fa4c778755523b492736d6"
+    },
+    {
+      "order": 2323,
+      "path": "Telegram/Resources/icons/photo_editor/link.png",
+      "blob": "949ebfce973523600fe495d0f442321fe4fb2b4e"
+    },
+    {
+      "order": 2324,
+      "path": "Telegram/Resources/icons/photo_editor/link@2x.png",
+      "blob": "cb5834ab72ac6ce6632b45d05ac3867536c6ca4a"
+    },
+    {
+      "order": 2325,
+      "path": "Telegram/Resources/icons/photo_editor/link@3x.png",
+      "blob": "da43c82ed716382a21619345615243f2cf392939"
+    },
+    {
+      "order": 2326,
+      "path": "Telegram/Resources/icons/photo_editor/paint.png",
+      "blob": "aad8e497e4d8e33ee7bc43fe140269267ffb9c72"
+    },
+    {
+      "order": 2327,
+      "path": "Telegram/Resources/icons/photo_editor/paint@2x.png",
+      "blob": "d7a3bd82af3ebd92285f5ced71b27fbb46d60fe6"
+    },
+    {
+      "order": 2328,
+      "path": "Telegram/Resources/icons/photo_editor/paint@3x.png",
+      "blob": "fed47f4256cdff3232ba3c6aed42950ec11fba03"
+    },
+    {
+      "order": 2329,
+      "path": "Telegram/Resources/icons/photo_editor/ratio.svg",
+      "blob": "357b6dd6efc8304a9ce7fa14fced44bb02303775"
+    },
+    {
+      "order": 2330,
+      "path": "Telegram/Resources/icons/photo_editor/rotate.png",
+      "blob": "c0dd23ceaa681d4cf4812d8da69d2983281f5194"
+    },
+    {
+      "order": 2331,
+      "path": "Telegram/Resources/icons/photo_editor/rotate@2x.png",
+      "blob": "ff9d83c3c6845fab385b7bba4e5c37608cfcab0f"
+    },
+    {
+      "order": 2332,
+      "path": "Telegram/Resources/icons/photo_editor/rotate@3x.png",
+      "blob": "1ddc726ec08e7241b841bc204748cb62f9ba9cc7"
+    },
+    {
+      "order": 2333,
+      "path": "Telegram/Resources/icons/photo_editor/shape_arrow.svg",
+      "blob": "c4a74faf27e6ce6c6530fe64b95c4ac8900a5336"
+    },
+    {
+      "order": 2334,
+      "path": "Telegram/Resources/icons/photo_editor/shape_bubble.svg",
+      "blob": "83912fed0ae855efe09a53f10dd33f7240f9d8a5"
+    },
+    {
+      "order": 2335,
+      "path": "Telegram/Resources/icons/photo_editor/shape_bubble_fill.svg",
+      "blob": "66cc5400776f5b97d04b596543d86ca0e2aa5094"
+    },
+    {
+      "order": 2336,
+      "path": "Telegram/Resources/icons/photo_editor/shape_circle.svg",
+      "blob": "4c92a4ac98d4b973a1d9fdf3b13c0b10c5eb80f9"
+    },
+    {
+      "order": 2337,
+      "path": "Telegram/Resources/icons/photo_editor/shape_circle_fill.svg",
+      "blob": "b262eb821c057f14bad454a85aa5a28be78c740f"
+    },
+    {
+      "order": 2338,
+      "path": "Telegram/Resources/icons/photo_editor/shape_rectangle.svg",
+      "blob": "1b2c8d6d5504e73c5d7461ad864fe53a65d56e13"
+    },
+    {
+      "order": 2339,
+      "path": "Telegram/Resources/icons/photo_editor/shape_rectangle_fill.svg",
+      "blob": "e0454b5ab1d95e6c62f84752bbd471b98908b291"
+    },
+    {
+      "order": 2340,
+      "path": "Telegram/Resources/icons/photo_editor/shape_star.svg",
+      "blob": "e38e871570317779f55e99da05ecd2fdaf42b4ae"
+    },
+    {
+      "order": 2341,
+      "path": "Telegram/Resources/icons/photo_editor/shape_star_fill.svg",
+      "blob": "21d1d935f17c2d508ad5919c16706adea4da7850"
+    },
+    {
+      "order": 2342,
+      "path": "Telegram/Resources/icons/photo_editor/shapes.svg",
+      "blob": "c0a32c200496714d4178e13ddbd29fe8f61be6c1"
+    },
+    {
+      "order": 2343,
+      "path": "Telegram/Resources/icons/photo_editor/undo.png",
+      "blob": "64a3593e50892b1f18d69fba396bbeeee29c4cd1"
+    },
+    {
+      "order": 2344,
+      "path": "Telegram/Resources/icons/photo_editor/undo@2x.png",
+      "blob": "8faa12e6d4bce45de5c19e189800c089ef59d7f8"
+    },
+    {
+      "order": 2345,
+      "path": "Telegram/Resources/icons/photo_editor/undo@3x.png",
+      "blob": "37641354e6f270128dc883a23750531314bcccfe"
+    },
+    {
+      "order": 2346,
+      "path": "Telegram/Resources/icons/photo_editor/widget_music.png",
+      "blob": "789aeac95ad049d43797da93260b1b8ea2a05318"
+    },
+    {
+      "order": 2347,
+      "path": "Telegram/Resources/icons/photo_editor/widget_music@2x.png",
+      "blob": "3535d85dbf5411fe3f04ccd69a556fc05202728b"
+    },
+    {
+      "order": 2348,
+      "path": "Telegram/Resources/icons/photo_editor/widget_music@3x.png",
+      "blob": "8f464aaca7ae63f60f43c7a0ec142b5a9bf5001d"
+    },
+    {
+      "order": 2349,
+      "path": "Telegram/Resources/icons/pinned_show_all.png",
+      "blob": "3bd4d0c77e2772da60366b7c995ba95226c79886"
+    },
+    {
+      "order": 2350,
+      "path": "Telegram/Resources/icons/pinned_show_all@2x.png",
+      "blob": "be0b4b0d820b2ee3b1ea8cc24d31b0febbd59346"
+    },
+    {
+      "order": 2351,
+      "path": "Telegram/Resources/icons/pinned_show_all@3x.png",
+      "blob": "39d1d93e85f0fe433bbc4af1e5fb490199293237"
+    },
+    {
+      "order": 2352,
+      "path": "Telegram/Resources/icons/plane_white.svg",
+      "blob": "2a8761c70b29c149a6aab5f2d57b6c4cf117d81b"
+    },
+    {
+      "order": 2353,
+      "path": "Telegram/Resources/icons/player/panel_close.png",
+      "blob": "9e7594b693281e40ed59461f465945374ba5191b"
+    },
+    {
+      "order": 2354,
+      "path": "Telegram/Resources/icons/player/panel_close@2x.png",
+      "blob": "eb6e710bcc5f2ace24bfada49753fd2ea7e5be43"
+    },
+    {
+      "order": 2355,
+      "path": "Telegram/Resources/icons/player/panel_close@3x.png",
+      "blob": "e9e4d7795e502dd4c7365bf46022e95b90ed0d45"
+    },
+    {
+      "order": 2356,
+      "path": "Telegram/Resources/icons/player/player_backward.png",
+      "blob": "6dd0e15780b528dd59ad9701125cacbe2f061439"
+    },
+    {
+      "order": 2357,
+      "path": "Telegram/Resources/icons/player/player_backward@2x.png",
+      "blob": "ab24effae6d269b20571cc6d3df33c37001277e7"
+    },
+    {
+      "order": 2358,
+      "path": "Telegram/Resources/icons/player/player_backward@3x.png",
+      "blob": "5aea6896cfcc007450932da4f3201386160436cd"
+    },
+    {
+      "order": 2359,
+      "path": "Telegram/Resources/icons/player/player_check.png",
+      "blob": "285a76b885fc86e8b910cd5c00288a143a14a895"
+    },
+    {
+      "order": 2360,
+      "path": "Telegram/Resources/icons/player/player_check@2x.png",
+      "blob": "7a51614af6d5323030d35d20a17b1ebde7a04bfa"
+    },
+    {
+      "order": 2361,
+      "path": "Telegram/Resources/icons/player/player_check@3x.png",
+      "blob": "c9cc4b1c7e78b995e7b25e6297d8c277ac4ebc66"
+    },
+    {
+      "order": 2362,
+      "path": "Telegram/Resources/icons/player/player_forward.png",
+      "blob": "adda5406f30229f8e70ca3f95accc7fdb9ad3d7b"
+    },
+    {
+      "order": 2363,
+      "path": "Telegram/Resources/icons/player/player_forward@2x.png",
+      "blob": "2c31059d83feb9afe1893394d6ee2c4f6467f7e3"
+    },
+    {
+      "order": 2364,
+      "path": "Telegram/Resources/icons/player/player_forward@3x.png",
+      "blob": "8e37465ec7285196b3a6914bcb59bc165260fe5b"
+    },
+    {
+      "order": 2365,
+      "path": "Telegram/Resources/icons/player/player_fullscreen.png",
+      "blob": "29f7b1b625a32e627a19b8eb9d05a8881564235d"
+    },
+    {
+      "order": 2366,
+      "path": "Telegram/Resources/icons/player/player_fullscreen@2x.png",
+      "blob": "8380f1859068f6ac57532ab89f4a8c834e072fd2"
+    },
+    {
+      "order": 2367,
+      "path": "Telegram/Resources/icons/player/player_fullscreen@3x.png",
+      "blob": "77ebb58bd4f4e1b9b4328be2e88b6f89269d749d"
+    },
+    {
+      "order": 2368,
+      "path": "Telegram/Resources/icons/player/player_mini_full.png",
+      "blob": "a0c01b157cbd6e3f85ef4049b24187a46fcff1a9"
+    },
+    {
+      "order": 2369,
+      "path": "Telegram/Resources/icons/player/player_mini_full@2x.png",
+      "blob": "fdb27f19654cc38dda6718407c56b61d9bdc18af"
+    },
+    {
+      "order": 2370,
+      "path": "Telegram/Resources/icons/player/player_mini_full@3x.png",
+      "blob": "2dfdb6411724c850424083253f9826dcee0e4c13"
+    },
+    {
+      "order": 2371,
+      "path": "Telegram/Resources/icons/player/player_mini_half.png",
+      "blob": "e89fe42004321ecb00973649e3a744fcbee87dfa"
+    },
+    {
+      "order": 2372,
+      "path": "Telegram/Resources/icons/player/player_mini_half@2x.png",
+      "blob": "e261f0808e8840c38717aa3d4ef336c05d33594c"
+    },
+    {
+      "order": 2373,
+      "path": "Telegram/Resources/icons/player/player_mini_half@3x.png",
+      "blob": "4ad6f3b5e5c74cee8a5416559c94369fa066b8c5"
+    },
+    {
+      "order": 2374,
+      "path": "Telegram/Resources/icons/player/player_mini_off.png",
+      "blob": "08d5de9f19ab7e4c38a03a86de6c63b3c2f34406"
+    },
+    {
+      "order": 2375,
+      "path": "Telegram/Resources/icons/player/player_mini_off@2x.png",
+      "blob": "fa16cb764cc2bb615e3ea3fba2b4f18f63373278"
+    },
+    {
+      "order": 2376,
+      "path": "Telegram/Resources/icons/player/player_mini_off@3x.png",
+      "blob": "6d62c0164f95ac56b48ce8ae59cfc115fc0f8bee"
+    },
+    {
+      "order": 2377,
+      "path": "Telegram/Resources/icons/player/player_minimize.png",
+      "blob": "662c532ec8f0e1abd662b1422b4e24880d04d142"
+    },
+    {
+      "order": 2378,
+      "path": "Telegram/Resources/icons/player/player_minimize@2x.png",
+      "blob": "13c175a358fc24aafcfdeef52f959b9ab1dc9ead"
+    },
+    {
+      "order": 2379,
+      "path": "Telegram/Resources/icons/player/player_minimize@3x.png",
+      "blob": "4fde439dd51312126c2a2df0580c4bf41d5a6655"
+    },
+    {
+      "order": 2380,
+      "path": "Telegram/Resources/icons/player/player_more.png",
+      "blob": "a0603fb435d3950cdeb7acfff101bac2df0ab15f"
+    },
+    {
+      "order": 2381,
+      "path": "Telegram/Resources/icons/player/player_more@2x.png",
+      "blob": "d729c2305f6f6eea5d66b2538b471b42b792919e"
+    },
+    {
+      "order": 2382,
+      "path": "Telegram/Resources/icons/player/player_more@3x.png",
+      "blob": "3ca1794881fd013f868d29590e68c274c897a81a"
+    },
+    {
+      "order": 2383,
+      "path": "Telegram/Resources/icons/player/player_order.png",
+      "blob": "2d44eefc6b5696a71c061a164117269187e8fcd6"
+    },
+    {
+      "order": 2384,
+      "path": "Telegram/Resources/icons/player/player_order@2x.png",
+      "blob": "76e30a792e14f376c288c488900b7be7b30d3513"
+    },
+    {
+      "order": 2385,
+      "path": "Telegram/Resources/icons/player/player_order@3x.png",
+      "blob": "be44a993085e8675c616f6d4768b1b94a0fb835d"
+    },
+    {
+      "order": 2386,
+      "path": "Telegram/Resources/icons/player/player_pause.png",
+      "blob": "b40213cbba6983cd1fd500e1ff0e0d6073041a09"
+    },
+    {
+      "order": 2387,
+      "path": "Telegram/Resources/icons/player/player_pause@2x.png",
+      "blob": "a8e819654ad86499799e7c9f514afff09bddd27e"
+    },
+    {
+      "order": 2388,
+      "path": "Telegram/Resources/icons/player/player_pause@3x.png",
+      "blob": "71d9fd6ebda895afc3fa07b663292a686f385664"
+    },
+    {
+      "order": 2389,
+      "path": "Telegram/Resources/icons/player/player_pause_big.png",
+      "blob": "99c9207f1e9f23f1f3ce48df8a22308d21f22c98"
+    },
+    {
+      "order": 2390,
+      "path": "Telegram/Resources/icons/player/player_pause_big@2x.png",
+      "blob": "74538bd9f6683252275c2c902aba108b9f4292af"
+    },
+    {
+      "order": 2391,
+      "path": "Telegram/Resources/icons/player/player_pause_big@3x.png",
+      "blob": "7913d8741b4d4c5c005d423b36a5ef8436523c4a"
+    },
+    {
+      "order": 2392,
+      "path": "Telegram/Resources/icons/player/player_pip.png",
+      "blob": "155555bbd6be725fea96e52e5658eb1ecd184579"
+    },
+    {
+      "order": 2393,
+      "path": "Telegram/Resources/icons/player/player_pip@2x.png",
+      "blob": "d37c609add3f8551f1e1fdd52488a267033075b9"
+    },
+    {
+      "order": 2394,
+      "path": "Telegram/Resources/icons/player/player_pip@3x.png",
+      "blob": "d921c88c51278d6c7394b5e5d1368ffdbfae76a5"
+    },
+    {
+      "order": 2395,
+      "path": "Telegram/Resources/icons/player/player_pip_close.png",
+      "blob": "72126ed98910a1c1268a2840a233d5f9df9dc16e"
+    },
+    {
+      "order": 2396,
+      "path": "Telegram/Resources/icons/player/player_pip_close@2x.png",
+      "blob": "56dfd6f56fdf94e946f969831a368a3d6918646e"
+    },
+    {
+      "order": 2397,
+      "path": "Telegram/Resources/icons/player/player_pip_close@3x.png",
+      "blob": "47bef146195c23f7fee29ea8270ecb095e763fdc"
+    },
+    {
+      "order": 2398,
+      "path": "Telegram/Resources/icons/player/player_pip_enlarge.png",
+      "blob": "d9c156a4dac63a47ac3637e61271c3a627f0ca00"
+    },
+    {
+      "order": 2399,
+      "path": "Telegram/Resources/icons/player/player_pip_enlarge@2x.png",
+      "blob": "1bfb76b699b8f4be1277ad256365ecfd22fdda30"
+    },
+    {
+      "order": 2400,
+      "path": "Telegram/Resources/icons/player/player_pip_enlarge@3x.png",
+      "blob": "8961ce7b039a85f2231720fd8556e1ffb132736d"
+    }
+  ]
+}

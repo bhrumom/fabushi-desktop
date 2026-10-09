@@ -1,0 +1,155 @@
+name: TDRP external URL auth responsibility
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  external-url-auth:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact event SHA
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - name: Assert exact checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - name: Install desktop dependencies
+        working-directory: desktop
+        run: npm ci
+      - name: Typecheck shipping renderer and Electron sources
+        working-directory: desktop
+        run: npm run typecheck
+      - name: Verify external URL auth credential boundary
+        working-directory: desktop
+        run: npx playwright test e2e/tdrp-external-url-auth-policy.spec.ts --workers=1
+      - name: Verify shipping composition keeps the accepted-auth privilege inside the account owner
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'parseServerAcceptedAuthExternalUrl' source/product/fabushi/fabushi-account-adapters.ts
+          grep -q 'parseAllowedExternalUrl' source/electron-main/entry.ts
+          if grep -q 'parseServerAcceptedAuthExternalUrl' source/electron-main/main-edge.ts; then
+            echo "MainEdge must not be able to mint accepted-auth URL context." >&2
+            exit 1
+          fi
+      - name: Record exact-head auth evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/tdrp-url-auth
+          cat > artifacts/tdrp-url-auth/evidence.json <<JSON
+          {
+            "project_id": "TDRP-001",
+            "spec_revision": 9,
+            "responsibility_id": "TDRP-R9-EXTERNAL-URL-AUTH-CONTEXT-001",
+            "head_sha": "${GITHUB_SHA}",
+            "run_id": ${GITHUB_RUN_ID},
+            "run_attempt": ${GITHUB_RUN_ATTEMPT},
+            "source_commit": "f23c37857220eb84f8559f0901ea26fb304b564b",
+            "source_blob": "f68ea15d650a07ed52839020fb46711012b288ae",
+            "policy_path": "source/shared/external-url-policy.ts",
+            "account_owner_path": "source/product/fabushi/fabushi-account-adapters.ts",
+            "contract_test": "desktop/e2e/tdrp-external-url-auth-policy.spec.ts",
+            "status": "passed"
+          }
+          JSON
+      - name: Upload auth responsibility evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: tdrp-external-url-auth-${{ github.sha }}
+          path: artifacts/tdrp-url-auth
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+
+
+  independent-review:
+    name: Independent external URL auth review
+    needs: external-url-auth
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact event SHA independently
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - name: Assert exact checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+      - name: Download producer evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: tdrp-external-url-auth-${{ github.sha }}
+          path: artifacts/tdrp-url-auth-producer
+      - name: Independently review privilege boundary and provenance
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const evidence = JSON.parse(fs.readFileSync('artifacts/tdrp-url-auth-producer/evidence.json', 'utf8'));
+          if (evidence.head_sha !== process.env.GITHUB_SHA) throw new Error('external URL evidence HEAD drift');
+          if (evidence.source_commit !== 'f23c37857220eb84f8559f0901ea26fb304b564b') throw new Error('external URL source authority drift');
+          if (evidence.status !== 'passed') throw new Error('external URL producer did not pass');
+          const policy = fs.readFileSync('source/shared/external-url-policy.ts', 'utf8');
+          const account = fs.readFileSync('source/product/fabushi/fabushi-account-adapters.ts', 'utf8');
+          const edge = fs.readFileSync('source/electron-main/main-edge.ts', 'utf8');
+          const contract = fs.readFileSync('desktop/e2e/tdrp-external-url-auth-policy.spec.ts', 'utf8');
+          for (const required of [
+            'stripForeignWebAuthTokens',
+            'parseServerAcceptedAuthExternalUrl',
+            'url.origin !== expected.origin'
+          ]) if (!policy.includes(required)) throw new Error('missing external URL policy invariant: ' + required);
+          if (!account.includes('parseServerAcceptedAuthExternalUrl')) throw new Error('account owner does not hold accepted-auth capability');
+          if (edge.includes('parseServerAcceptedAuthExternalUrl')) throw new Error('MainEdge can mint accepted-auth URL context');
+          for (const required of [
+            'untrusted external URLs strip foreign web-login credentials from query and fragment',
+            'server-accepted auth URLs preserve the exact URL only inside the expected first-party origin'
+          ]) if (!contract.includes(required)) throw new Error('missing external URL contract case: ' + required);
+          NODE
+      - name: Record independent review verdict
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/tdrp-url-auth-review
+          cat > artifacts/tdrp-url-auth-review/review-verdict.json <<JSON
+          {
+            "project_id": "TDRP-001",
+            "spec_revision": 9,
+            "responsibility_id": "TDRP-R9-EXTERNAL-URL-AUTH-CONTEXT-001",
+            "head_sha": "${GITHUB_SHA}",
+            "run_id": ${GITHUB_RUN_ID},
+            "run_attempt": ${GITHUB_RUN_ATTEMPT},
+            "review_scope": "independent-downstream-job-clean-checkout",
+            "producer_artifact": "tdrp-external-url-auth-${GITHUB_SHA}",
+            "source_commit": "f23c37857220eb84f8559f0901ea26fb304b564b",
+            "verdict": "ACCEPT"
+          }
+          JSON
+      - name: Upload independent external URL auth review
+        uses: actions/upload-artifact@v4
+        with:
+          name: tdrp-external-url-auth-review-${{ github.sha }}
+          path: artifacts/tdrp-url-auth-review
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0

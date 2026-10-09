@@ -1,0 +1,166 @@
+{
+  "format_version": 2,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+    "tree": "6ac9bbc1b44edcb119b1a724e7b0a321c3b7b8fa"
+  },
+  "deterministic_recursive_prefix": {
+    "first_order": 1,
+    "last_order": 5150,
+    "entries": 5150
+  },
+  "semantics": {
+    "development_only_non_applicable_is_not_omission": true,
+    "unknown_closed_requires_exact_blob_read_and_explicit_disposition": true
+  },
+  "storage": "sharded-v1",
+  "shards": [
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/1-500.json",
+      "first_order": 1,
+      "last_order": 500,
+      "entries": 500
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/501-1000.json",
+      "first_order": 501,
+      "last_order": 1000,
+      "entries": 500
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/1001-1500.json",
+      "first_order": 1001,
+      "last_order": 1500,
+      "entries": 500
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/1501-2000.json",
+      "first_order": 1501,
+      "last_order": 2000,
+      "entries": 500
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/2001-2500.json",
+      "first_order": 2001,
+      "last_order": 2500,
+      "entries": 500
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/2501-3000.json",
+      "first_order": 2501,
+      "last_order": 3000,
+      "entries": 500
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/3001-3500.json",
+      "first_order": 3001,
+      "last_order": 3500,
+      "entries": 500
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/3501-4000.json",
+      "first_order": 3501,
+      "last_order": 4000,
+      "entries": 500
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/4001-4500.json",
+      "first_order": 4001,
+      "last_order": 4500,
+      "entries": 500
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/4501-5000.json",
+      "first_order": 4501,
+      "last_order": 5000,
+      "entries": 500
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/5001-5030.json",
+      "first_order": 5001,
+      "last_order": 5030,
+      "entries": 30
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/5031-5033.json",
+      "first_order": 5031,
+      "last_order": 5033,
+      "entries": 3
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/5034-5037.json",
+      "first_order": 5034,
+      "last_order": 5037,
+      "entries": 4
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/5038-5042.json",
+      "first_order": 5038,
+      "last_order": 5042,
+      "entries": 5
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/5043-5056.json",
+      "first_order": 5043,
+      "last_order": 5056,
+      "entries": 14
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/5057-5064.json",
+      "first_order": 5057,
+      "last_order": 5064,
+      "entries": 8
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/5065-5073.json",
+      "first_order": 5065,
+      "last_order": 5073,
+      "entries": 9
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/5074-5084.json",
+      "first_order": 5074,
+      "last_order": 5084,
+      "entries": 11
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/5085-5090.json",
+      "first_order": 5085,
+      "last_order": 5090,
+      "entries": 6
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/5091-5100.json",
+      "first_order": 5091,
+      "last_order": 5100,
+      "entries": 10
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/5101-5110.json",
+      "first_order": 5101,
+      "last_order": 5110,
+      "entries": 10
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/5111-5120.json",
+      "first_order": 5111,
+      "last_order": 5120,
+      "entries": 10
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/5121-5140.json",
+      "first_order": 5121,
+      "last_order": 5140,
+      "entries": 20
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/5141-5150.json",
+      "first_order": 5141,
+      "last_order": 5150,
+      "entries": 10
+    }
+  ]
+}
