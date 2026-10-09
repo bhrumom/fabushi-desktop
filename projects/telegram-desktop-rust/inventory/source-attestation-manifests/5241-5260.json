@@ -1,0 +1,127 @@
+{
+  "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+  "start": 5241,
+  "end": 5260,
+  "entries": [
+    {
+      "order": 5241,
+      "path": "Telegram/SourceFiles/mtproto/details/mtproto_dcenter.h",
+      "blob": "651dcf171544745efc0b5d53afd8af4a57fa5a88",
+      "consumer_symbol": "typed per-endpoint persistent/temporary/media credential ownership, exclusive key creation and connection-init invalidation"
+    },
+    {
+      "order": 5242,
+      "path": "Telegram/SourceFiles/mtproto/details/mtproto_domain_resolver.cpp",
+      "blob": "eeac8f6a8e2df67967ea7b536fb165e2f8d983e9",
+      "consumer_symbol": "multi-provider DoH resolution, IPv4/IPv6 parallel attempts, randomized stagger, cache expiry, request cancellation and stale result settlement"
+    },
+    {
+      "order": 5243,
+      "path": "Telegram/SourceFiles/mtproto/details/mtproto_domain_resolver.h",
+      "blob": "cb1979bbbf0454135c8668ed1e5013da85d1dedc",
+      "consumer_symbol": "typed DNS attempt/request/cache ownership contract"
+    },
+    {
+      "order": 5244,
+      "path": "Telegram/SourceFiles/mtproto/details/mtproto_dump_to_text.cpp",
+      "blob": "a6250bbd41942873cda107b3102b41309d92f86a",
+      "consumer_symbol": "bounded protocol diagnostic decoding including gzip-packed payloads and malformed-data error representation"
+    },
+    {
+      "order": 5245,
+      "path": "Telegram/SourceFiles/mtproto/details/mtproto_dump_to_text.h",
+      "blob": "61c47665e7aed3b1641fd87613723ae2b7cf18ac",
+      "consumer_symbol": "bounded diagnostic text buffer growth and decode error contract"
+    },
+    {
+      "order": 5246,
+      "path": "Telegram/SourceFiles/mtproto/details/mtproto_received_ids_manager.cpp",
+      "blob": "20bade0c4c6634d20d124d26e750554e3bd5c8c2",
+      "consumer_symbol": "bounded duplicate message-id detection, ack-needed state and too-old reset semantics"
+    },
+    {
+      "order": 5247,
+      "path": "Telegram/SourceFiles/mtproto/details/mtproto_received_ids_manager.h",
+      "blob": "8f7dfbb9d11ba348af9f7d16921fc283792505d1",
+      "consumer_symbol": "typed duplicate/idempotency window contract"
+    },
+    {
+      "order": 5248,
+      "path": "Telegram/SourceFiles/mtproto/details/mtproto_rsa_public_key.cpp",
+      "blob": "312c8b1ddb3145d5ec3180323e8d72d50c35e526",
+      "consumer_symbol": "RSA key parsing/fingerprint/encryption/decryption/OAEP helper used by MTProto handshake"
+    },
+    {
+      "order": 5249,
+      "path": "Telegram/SourceFiles/mtproto/details/mtproto_rsa_public_key.h",
+      "blob": "86978061d7e7368d60fd2d76e46196f06dd36135",
+      "consumer_symbol": "typed RSA public-key validity/fingerprint/crypto boundary"
+    },
+    {
+      "order": 5250,
+      "path": "Telegram/SourceFiles/mtproto/details/mtproto_serialized_request.cpp",
+      "blob": "f4ff13192b9bfe7827069fc990a60629e18bae08",
+      "consumer_symbol": "request serialization, salt/session/msg-id/seqno/body layout, bounded padding and message-size mutation"
+    },
+    {
+      "order": 5251,
+      "path": "Telegram/SourceFiles/mtproto/details/mtproto_serialized_request.h",
+      "blob": "7d8d42605e20a3899610acc12e4258c7d838f184",
+      "consumer_symbol": "typed serialized request ownership/correlation/dependency metadata contract"
+    },
+    {
+      "order": 5252,
+      "path": "Telegram/SourceFiles/mtproto/details/mtproto_tcp_socket.cpp",
+      "blob": "b3130fd706b7cbfa33f7c9f54ac5e87abe9c3e10",
+      "consumer_symbol": "raw TCP socket event/read/write/buffer/error lifecycle"
+    },
+    {
+      "order": 5253,
+      "path": "Telegram/SourceFiles/mtproto/details/mtproto_tcp_socket.h",
+      "blob": "453e2eaac735fb5697a22cdebb4eb8573d738521",
+      "consumer_symbol": "typed TCP platform socket boundary"
+    },
+    {
+      "order": 5254,
+      "path": "Telegram/SourceFiles/mtproto/details/mtproto_tls_socket.cpp",
+      "blob": "e7562e3ca1a1da03f5d368085d5e61d887ab3f16",
+      "consumer_symbol": "TLS-like obfuscated client/server hello generation/validation, HMAC digest, state machine and framed data lifecycle"
+    },
+    {
+      "order": 5255,
+      "path": "Telegram/SourceFiles/mtproto/details/mtproto_tls_socket.h",
+      "blob": "d4a90083ead17f27fcacc219129935a148132608",
+      "consumer_symbol": "typed TLS-obfuscation socket state contract"
+    },
+    {
+      "order": 5256,
+      "path": "Telegram/SourceFiles/mtproto/details/mtproto_web_proxy_socket.cpp",
+      "blob": "9aa05e7034031310de4aa9d410fbb15d21c63ee8",
+      "consumer_symbol": "multiplexed web-proxy stream registration, window granting, connect/data/disconnect/failure lifecycle"
+    },
+    {
+      "order": 5257,
+      "path": "Telegram/SourceFiles/mtproto/details/mtproto_web_proxy_socket.h",
+      "blob": "02ed27b77d4ff606b3e1cb548a60e4f2c2ca11f0",
+      "consumer_symbol": "typed web-proxy stream/socket state boundary"
+    },
+    {
+      "order": 5258,
+      "path": "Telegram/SourceFiles/mtproto/facade.cpp",
+      "blob": "2ff96d0ac1ae3a495c9d699e965d4ee9a61a3350",
+      "consumer_symbol": "global protocol pause/unpause hook"
+    },
+    {
+      "order": 5259,
+      "path": "Telegram/SourceFiles/mtproto/facade.h",
+      "blob": "39e2f732c7df32af37ebf8222e887aec7e11b256",
+      "consumer_symbol": "typed shifted endpoint roles for config/logout/update/download/upload/group-call/media plus connection/request state constants"
+    },
+    {
+      "order": 5260,
+      "path": "Telegram/SourceFiles/mtproto/mtp_instance.cpp",
+      "blob": "d25fe3b72298fab371854f80186ee8e4777ea087",
+      "consumer_symbol": "authoritative protocol instance: config/proxy/DC/session/key owners, request registration/correlation/dependencies/delay/cancel/retry, auth export/import, logout, key destruction, state/error callbacks and config refresh"
+    }
+  ]
+}
