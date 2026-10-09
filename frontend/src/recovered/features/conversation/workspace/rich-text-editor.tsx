@@ -896,10 +896,13 @@ export function PromptRichTextEditor({ prompt, richText, scopeKey = "", clearGen
     const isEmpty = prompt.length === 0 && (richText == null || richText.length === 0);
     if (wasPopulated && isEmpty) {
       clearFence.current = { generation: clearGeneration, before: JSON.stringify(editor.getJSON()) };
-      editor.chain().command(({ tr }) => {
+      const preserveEditorFocus = editor.view.hasFocus();
+      const clear = editor.chain().command(({ tr }) => {
         tr.setMeta("sand-field-cleared", true);
         return true;
-      }).clearContent(false).focus("end").run();
+      }).clearContent(false);
+      if (preserveEditorFocus) clear.focus("end");
+      clear.run();
       return;
     }
     editor.commands.setContent(expected, { emitUpdate: false });
@@ -913,7 +916,10 @@ export function PromptRichTextEditor({ prompt, richText, scopeKey = "", clearGen
       blur: () => editor.view.dom.blur(),
       clear: () => {
         clearFence.current = { generation: clearGeneration, before: JSON.stringify(editor.getJSON()) };
-        editor.chain().command(({ tr }) => { tr.setMeta("sand-field-cleared", true); return true; }).clearContent(false).focus("end").run();
+        const preserveEditorFocus = editor.view.hasFocus();
+        const clear = editor.chain().command(({ tr }) => { tr.setMeta("sand-field-cleared", true); return true; }).clearContent(false);
+        if (preserveEditorFocus) clear.focus("end");
+        clear.run();
       },
       restore: (value) => { editor.commands.setContent(promptEditorContent(value.prompt, value.richText), { emitUpdate: false }); editor.commands.focus("end"); },
       insertText: (value) => {

@@ -417,7 +417,7 @@
       "referencePath": "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "988a89ff68792b3764d8982df08e98c2a8fce49b",
+      "targetBlobSha": "253f39b1122fde676e744c91ffee54de8e5534dd",
       "behavioralEvidence": [
         "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
         "frontend/src/recovered/features/conversation/workspace/composer.tsx"
@@ -428,7 +428,7 @@
         ".github/workflows/rust-desktop-runtime.yml",
         "desktop/e2e/grok-parity.spec.ts"
       ],
-      "rationale": "The frozen TipTap composer is preserved semantically, with only Fabushi ownership boundaries around local persistence and voice input. Agent switches fence queued transactions from the previous scope. Browser beforeinput releases the fence before ordinary edits; committed DOM input also performs a one-shot canonical-state rescue when ProseMirror has already reconciled the DOM without emitting an accepted onUpdate, preventing visible prompt text from diverging from the persisted Agent-scoped draft. Programmatic voice/dictation insertion explicitly releases the same fence before insertText. The focused Electron parity E2E reads the real client-persistence slice and guards this ownership boundary. THEME-I18N-A11Y further keeps this canonical owner while making locale changes immediately visible in the mounted Settings shell, providing locale-sensitive formatting/announcement evidence, and fencing real composition input so CJK/RTL mixed-direction editing cannot submit or be externally overwritten mid-composition."
+      "rationale": "The frozen TipTap composer is preserved semantically, with only Fabushi ownership boundaries around local persistence and voice input. Agent switches fence queued transactions from the previous scope. Browser beforeinput releases the fence before ordinary edits; committed DOM input also performs a one-shot canonical-state rescue when ProseMirror has already reconciled the DOM without emitting an accepted onUpdate, preventing visible prompt text from diverging from the persisted Agent-scoped draft. Programmatic voice/dictation insertion explicitly releases the same fence before insertText. The focused Electron parity E2E reads the real client-persistence slice and guards this ownership boundary. THEME-I18N-A11Y further keeps this canonical owner while making locale changes immediately visible in the mounted Settings shell, providing locale-sensitive formatting/announcement evidence, and fencing real composition input so CJK/RTL mixed-direction editing cannot submit or be externally overwritten mid-composition. Accepted-send and external draft-clear settlement now preserve editor focus only when the editor already owns focus; if the user has moved focus to a transcript Media preview, reaction action, or other canonical control before the asynchronous clear settles, the composer clears without stealing focus. This keeps keyboard-submit focus continuity while making transcript focus ownership user-driven and closes the shipping Human media/reaction focus lifecycle without weakening E2E assertions."
     },
     {
       "referencePath": "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
@@ -950,7 +950,7 @@
         "source/host/tests/mcp_discovery_telemetry_contract.rs",
         "source/host/tests/mcp_discovery_production_wiring_contract.rs"
       ],
-      "rationale": "Preserves the Grok SandMcpManager implementation as the single MCP owner while exposing approved Fabushi capabilities through the typed desktop facade: force-refresh catalog options, external-auth completion, and Box MCP server loading/tool discovery/tool execution backed by the existing Coordinator→Host Box path. Manager ownership is not duplicated in Rust Host and the Coordinator/Host/Runner failure boundaries remain independent. The approved row-62 MCP discovery failure extension now forwards the frozen success/failure/stale/elapsed settlement through a dedicated reportMcpDiscoveryFailed Coordinator main-data request to the unique HostStructuredLogTelemetry owner; generic MCP diagnostics remain separate."
+      "rationale": "Preserves the Grok SandMcpManager implementation as the single MCP owner while exposing approved Fabushi capabilities through the typed desktop facade: force-refresh catalog options, external-auth completion, and Box MCP server loading/tool discovery/tool execution backed by the existing Coordinator\u2192Host Box path. Manager ownership is not duplicated in Rust Host and the Coordinator/Host/Runner failure boundaries remain independent. The approved row-62 MCP discovery failure extension now forwards the frozen success/failure/stale/elapsed settlement through a dedicated reportMcpDiscoveryFailed Coordinator main-data request to the unique HostStructuredLogTelemetry owner; generic MCP diagnostics remain separate."
     },
     {
       "referencePath": "source/electron-main/mcp/mcp-runtime.ts",

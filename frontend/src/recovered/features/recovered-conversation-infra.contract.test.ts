@@ -339,6 +339,13 @@ test("routine history formats status and relative/zoned timestamps", () => {
 
 
 
+test("accepted-send editor clear preserves user-owned focus outside the composer", async () => {
+  const source = await readFile(new URL("./conversation/workspace/rich-text-editor.tsx", import.meta.url), "utf8");
+  assert.match(source, /const preserveEditorFocus = editor\.view\.hasFocus\(\);/);
+  assert.match(source, /if \(preserveEditorFocus\) clear\.focus\("end"\);/);
+  assert.doesNotMatch(source, /clearContent\(false\)\.focus\("end"\)\.run\(\)/);
+});
+
 test("composer draft restore does not overwrite a staged attachment added while persistence is loading", async () => {
   let releaseRead!: () => void;
   let noteReadStarted!: () => void;
