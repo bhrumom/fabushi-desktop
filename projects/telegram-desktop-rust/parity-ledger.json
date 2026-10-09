@@ -6,8 +6,8 @@
   "target_commit": "3bc92400826cc4ca7ac665b467708e22261edc61",
   "coverage": {
     "source_entries_total": 16120,
-    "unknown": 15874,
-    "unread": 13320,
+    "unknown": 15847,
+    "unread": 13120,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13426,8 +13426,8 @@
     "upstream_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db",
     "deterministic_prefix_closed": 123,
     "development_only_non_applicable": 66,
-    "unknown_closed": 246,
+    "unknown_closed": 273,
     "omitted": 0,
-    "read_through": 2800
+    "read_through": 3000
   }
 }

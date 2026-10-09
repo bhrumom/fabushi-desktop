@@ -13,10 +13,10 @@
     "recursive_non_directory_entries": 16120,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 15874,
-    "unread_minimum": 13320,
+    "unknown_minimum": 15847,
+    "unread_minimum": 13120,
     "omitted_known": 0,
-    "note": "Live 22b352e recursive census is 16,120. 2,800 exact entries are read-complete; 246 are explicitly unknown-closed; unknown 15,874, unread 13,320, omitted 0. Orders 2701-2800 cover Wallet key, auctions/gifts, Profile/Appearance add/photo surfaces, Business/Premium/Boost features; eleven legacy Settings resource families (33 density rows) are explicitly unreachable."
+    "note": "Live 22b352e recursive census is 16,120. 3,000 exact entries are read-complete; 273 are explicitly unknown-closed; unknown 15,847, unread 13,120, omitted 0. Orders 2801-3000 cover Premium/Boost/Business/Privacy/Stories/media feature presentation, settings/profile/stickers/retention, sponsored monetization, statistics and Story boosts; nine legacy resource families (27 density rows) are explicitly unreachable."
   },
   "latest_recursive_evidence": {
     "run_id": 37864697175,
@@ -106,7 +106,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live 22b352e authority is exact through order 2,800. unread_minimum is 13,320, unknown 15,874, omitted 0; applicable rows remain mapped-open.",
+  "note": "Live 22b352e authority is exact through order 3,000. unread_minimum is 13,120, unknown remains 15,847, omitted remains 0. premium_dollar/star/starmini retain direct QRC/C++ reachability despite generated misses; nine true orphan families are closed.",
   "rebaseline": {
     "from_commit": "6ec5014a92c4580841a043c440d65e8fc605ff78",
     "to_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db",
@@ -125,8 +125,8 @@
     "upstream_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db",
     "deterministic_prefix_closed": 123,
     "development_only_non_applicable": 66,
-    "unknown_closed": 246,
+    "unknown_closed": 273,
     "omitted": 0,
-    "read_through": 2800
+    "read_through": 3000
   }
 }
