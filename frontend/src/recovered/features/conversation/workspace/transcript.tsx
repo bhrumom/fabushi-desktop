@@ -33,6 +33,7 @@ import { beginHorizontalScrollPointer, captureHorizontalScroll, clampHorizontalS
 import { reconcileAssistantContentProjection, type AssistantProjectionCandidate, type AssistantProjectionState } from "./assistant-content-projection";
 import { formatTranscriptToolCallName } from "./tool-call-label";
 import { copyTranscriptCodeText } from "./code-copy";
+import { isTranscriptNearBottom } from "./transcript-follow-state";
 
 function transcriptIds(id: string, hasTimestamp: boolean) {
   const base = `sand-conversation-entry-${encodeURIComponent(id)}`;
@@ -818,6 +819,7 @@ export function TranscriptThinkingRow({ entry, expanded, onToggle }: { entry: Tr
 
 export function ConversationTranscript({ entries, hasOlder = false, isLoadingOlder = false, loadOlder, isAgentRunning = false, renderComputerHandoff, isTransportDown = false, isReadOnly = false, onCancelQueuedSend, onCopyMessage, onDeleteFailedSend, onForward, onReply, onStartThread, renderMessageReactionActions, renderMessageReactionPills, resolveTranscriptCardInteractions, onResendFailedSend, resolveAttachmentMedia, readAttachmentBytes, downloadAttachment, resolveReplyPreview, isReplyTargetInScope, onOpenReply, onOpenAutomation, localToolPermissionStore, resolveLocalToolPermission, transcriptCards, urlCards, threadRootId = null, transcriptHandleRef }: { entries: readonly ConversationTranscriptEntry[]; isAgentRunning?: boolean; isReadOnly?: boolean; renderComputerHandoff?(entry: TranscriptComputerHandoff): ReactNode; resolveAttachmentMedia?: (source: string) => Promise<AttachmentMedia | null>; readAttachmentBytes?: (path: string, maxBytes: number) => Promise<AttachmentBytesResult | null>; downloadAttachment?: (path: string, suggestedName?: string) => Promise<boolean>; resolveReplyPreview?(targetId: string): TranscriptReplyPreview | null; isReplyTargetInScope?(targetId: string): boolean; localToolPermissionStore?: LocalToolPermissionStore; resolveLocalToolPermission?(input: ResolveLocalToolPermissionInput): Promise<unknown>; transcriptCards?: TranscriptCardRootMountContract; resolveTranscriptCardInteractions?: TranscriptCardInteractionContext; urlCards?: UrlCardProvider | null; threadRootId?: string | null; transcriptHandleRef?: { current: FindInChatTranscriptHandle | null } } & ConversationTranscriptActions) {
   const transcriptRef = useRef<HTMLDivElement | null>(null);
+  const followLatestRef = useRef(true);
   const pointerActivationRevisionRef = useRef(0);
   const pointerActivationIntentRef = useRef<{ revision: number; target: HTMLElement; pointerId: number; startX: number; startY: number } | null>(null);
   const olderLoadInFlightRef = useRef(false);
@@ -860,6 +862,24 @@ export function ConversationTranscript({ entries, hasOlder = false, isLoadingOld
     if (transcriptHandleRef == null) return;
     for (const listener of [...viewCommitListenersRef.current]) listener();
   }, [entries, transcriptHandleRef]);
+  useLayoutEffect(() => {
+    const transcript = transcriptRef.current;
+    if (transcript == null || !followLatestRef.current) return;
+    transcript.scrollTop = Math.max(0, transcript.scrollHeight - transcript.clientHeight);
+  }, [entries]);
+  useEffect(() => {
+    const transcript = transcriptRef.current;
+    if (transcript == null) return;
+    const syncFollowLatest = () => {
+      followLatestRef.current = isTranscriptNearBottom({
+        scrollTop: transcript.scrollTop,
+        clientHeight: transcript.clientHeight,
+        scrollHeight: transcript.scrollHeight,
+      });
+    };
+    transcript.addEventListener("scroll", syncFollowLatest, { passive: true });
+    return () => transcript.removeEventListener("scroll", syncFollowLatest);
+  }, []);
   useEffect(() => {
     const retirePointerActivationIntent = () => {
       pointerActivationIntentRef.current = null;

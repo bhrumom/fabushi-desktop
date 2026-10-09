@@ -20,6 +20,7 @@ import { createAssistantMathMarkupCache, type KatexRuntime } from "./conversatio
 import { resolveWithSingleRetry } from "./conversation/workspace/media-runtime.ts";
 import { accumulateWheelZoomSteps, normalizeWheelZoomDelta } from "./conversation/workspace/media-zoom.ts";
 import { DERIVED_MEDIA_PRELOAD_ROOT_MARGIN, DERIVED_MEDIA_THUMBNAIL_ROOT_MARGIN, isVisibilityBoundDerivedMedia, observeDerivedMediaVisibility, shouldResolveDerivedMedia, shouldResolveDerivedThumbnail } from "./conversation/workspace/media-visibility.ts";
+import { TRANSCRIPT_FOLLOW_LATEST_THRESHOLD_PX, isTranscriptNearBottom } from "./conversation/workspace/transcript-follow-state.ts";
 import { beginHorizontalScrollPointer, captureHorizontalScroll, clampHorizontalScrollOffset, normalizeHorizontalScrollWheelDelta, restoreHorizontalScrollOffset, updateHorizontalScrollPointer, updateHorizontalScrollWheelLock } from "./conversation/workspace/horizontal-scroll-state.ts";
 import {
   areAssistantProjectionCandidatesCompatible,
@@ -1100,6 +1101,23 @@ test("CONTRACT-TDRP-IV-VIEW-HIGHLIGHT-DISPOSAL-001 find highlights cannot settle
   assert.match(runtimeSource, /disposed \|\| generation !== scheduledGeneration/);
   assert.match(runtimeSource, /queueMicrotask/);
   assert.match(runtimeSource, /cancelAnimationFrame/);
+});
+
+test("UNIT-TDRP-IV-ARTICLE-FOLLOW-LATEST-001 transcript follow state stays pinned only near the latest message", () => {
+  assert.equal(TRANSCRIPT_FOLLOW_LATEST_THRESHOLD_PX, 96);
+  assert.equal(isTranscriptNearBottom({ scrollTop: 0, clientHeight: 600, scrollHeight: 600 }), true);
+  assert.equal(isTranscriptNearBottom({ scrollTop: 304, clientHeight: 600, scrollHeight: 1_000 }), true);
+  assert.equal(isTranscriptNearBottom({ scrollTop: 303, clientHeight: 600, scrollHeight: 1_000 }), false);
+  assert.equal(isTranscriptNearBottom({ scrollTop: -20, clientHeight: 600, scrollHeight: 640 }), true);
+});
+
+test("CONTRACT-TDRP-IV-ARTICLE-FOLLOW-LATEST-LIFECYCLE-001 transcript follows appended content only while the user remains near the bottom", () => {
+  const source = readFileSync(new URL("./conversation/workspace/transcript.tsx", import.meta.url), "utf8");
+  assert.match(source, /const followLatestRef = useRef\(true\)/);
+  assert.match(source, /if \(transcript == null \|\| !followLatestRef\.current\) return;[\s\S]{0,180}transcript\.scrollTop = Math\.max\(0, transcript\.scrollHeight - transcript\.clientHeight\)/);
+  assert.match(source, /followLatestRef\.current = isTranscriptNearBottom\([\s\S]{0,240}scrollHeight: transcript\.scrollHeight/);
+  assert.match(source, /addEventListener\("scroll", syncFollowLatest, \{ passive: true \}\)/);
+  assert.match(source, /removeEventListener\("scroll", syncFollowLatest\)/);
 });
 
 test("UNIT-TDRP-IV-ARTICLE-MEDIA-VISIBILITY-001 derived transcript media follows a bounded visibility budget", () => {
