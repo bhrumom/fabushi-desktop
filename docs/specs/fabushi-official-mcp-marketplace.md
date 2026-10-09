@@ -100,3 +100,9 @@ Current owner-controlled login scope review confirms that Google/GitHub login do
 
 ## 22. Manual credential replacement
 An OAuth-connected install must reject a manual ACCESS_TOKEN replacement until the user disconnects the OAuth grant through the existing revocation flow. This preserves connection metadata and prevents silently orphaning an active provider grant. Actions must exercise rejection and unchanged persisted OAuth state before release.
+
+## 23. Add must start provider authorization (2026-10-09)
+Observed installed cad7b931 Mac: clicking GitHub Add opens an optional manual-token setup form, and installMarketplacePlugin only installs. This violates the intended one-click service connection.
+FMCP-009: Clicking Add for one of the nine exact official provider IDs bypasses optional manual-token setup, persists the install, invokes native authenticate(default), and opens only its returned authorization URL through the existing desktop opener. Manual token entry remains an explicit advanced setting; legacy required-field flows stay intact. An installed official entry offers Connect to resume/retry authorization. Install/auth/opener failures must remain visible; no success/connected claim before native provider discovery.
+AC-6: Actions proves install -> authenticate -> open order, install failure prevents authentication, explicit manual token and legacy installs preserve their existing flows, and unsupported/error authorization is visible. Repackage the changed exact head and observe Add opening the provider page on the authorized Mac before accepting the interaction.
+Plan: extend the existing frontend install adapter and detail controls, preserve native broker/vault ownership, record frozen-boundary adaptations, run Actions contracts and shipping gates, then install the new signed candidate. User explicitly requested Mac operation/acceptance; Mac remains excluded from builds and automated test suites.
