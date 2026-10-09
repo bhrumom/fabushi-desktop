@@ -1647,6 +1647,23 @@
         "frontend/src/recovered/ui/in-flight-command.contract.test.ts"
       ],
       "rationale": "Preserves the frozen Grok Button/IconButton primitive structure while adapting the canonical source-neutral pending/two-line semantics required by TDRP Revision 9: pending maps to aria-busy plus temporary disabled presentation without mutating permanent applicability, selected styling includes expanded controls, and an optional title/subtitle projection remains inside the same Button owner. Authoritative duplicate-effect refusal remains outside the primitive in the owning command fence."
+    },
+    {
+      "referencePath": "frontend/src/recovered/ui/sand-form-primitives.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "140b887c6428a7fe407e656960c933932f92f525",
+      "behavioralEvidence": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/ui/sand-tabs-state.ts",
+        "projects/telegram-desktop-rust/dossiers/ui-controls-rating-tabs-swipe-6042-6052-complete-read.md"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/ui/sand-tabs-state.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml",
+        "scripts/check-grok-architecture.mjs"
+      ],
+      "rationale": "Preserves the frozen Grok form/Tabs primitive structure while intentionally extending the existing source-neutral canonical SandTabs owner for TDRP Revision 9 responsibilities read from accepted Telegram ui/controls SubTabs/SubsectionSlider blobs. The adaptation adds optional overflow visibility, stable context-menu intent, pinned/locked reorder boundaries, pointer-capture cancellation, edge scrolling and keyboard reorder with Started/Applied/Cancelled intent while retaining the same ARIA tablist/tab ownership and keeping persisted ordering/domain truth outside the primitive. Pure navigation/reorder contract tests are required in the Rust desktop runtime gate; no Telegram-derived Tabs component or parallel runtime is introduced."
     }
   ]
 }
