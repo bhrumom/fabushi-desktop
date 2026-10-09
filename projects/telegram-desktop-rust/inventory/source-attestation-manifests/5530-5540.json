@@ -1,0 +1,73 @@
+{
+  "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+  "start": 5530,
+  "end": 5540,
+  "entries": [
+    {
+      "order": 5530,
+      "path": "Telegram/SourceFiles/settings/business/settings_away_message.cpp",
+      "blob": "ea51876ac69e0ef538126597eade8d8f9da895cf",
+      "consumer_symbol": "Away message automation"
+    },
+    {
+      "order": 5531,
+      "path": "Telegram/SourceFiles/settings/business/settings_away_message.h",
+      "blob": "e9037b4f66afef0d71b261014dc992a858b4b4e5",
+      "consumer_symbol": "Away message automation"
+    },
+    {
+      "order": 5532,
+      "path": "Telegram/SourceFiles/settings/business/settings_chat_intro.cpp",
+      "blob": "43b45c2beb71bf825d35950e34f80ec624f84ea6",
+      "consumer_symbol": "Business chat intro"
+    },
+    {
+      "order": 5533,
+      "path": "Telegram/SourceFiles/settings/business/settings_chat_intro.h",
+      "blob": "f44105dd1c6499358ad6979799aab91957f36e0c",
+      "consumer_symbol": "Business chat intro"
+    },
+    {
+      "order": 5534,
+      "path": "Telegram/SourceFiles/settings/business/settings_chat_links.cpp",
+      "blob": "7a53001f1afc1bd989b437785ce5d07d6cc087da",
+      "consumer_symbol": "Business chat links"
+    },
+    {
+      "order": 5535,
+      "path": "Telegram/SourceFiles/settings/business/settings_chat_links.h",
+      "blob": "ce4f010f82b8d25a8563ce57d40812fa29ca1eff",
+      "consumer_symbol": "Business chat links"
+    },
+    {
+      "order": 5536,
+      "path": "Telegram/SourceFiles/settings/business/settings_chatbots.cpp",
+      "blob": "557372a7c3101e94f23cd44cd2fd8f932d49b21f",
+      "consumer_symbol": "Business chatbot delegation"
+    },
+    {
+      "order": 5537,
+      "path": "Telegram/SourceFiles/settings/business/settings_chatbots.h",
+      "blob": "06fab806ce6a90d5d54027303b0c8050c562d519",
+      "consumer_symbol": "Business chatbot delegation"
+    },
+    {
+      "order": 5538,
+      "path": "Telegram/SourceFiles/settings/business/settings_greeting.cpp",
+      "blob": "1f96ca1a1f6ba0cc46f5d4f795443d4736a713c9",
+      "consumer_symbol": "Greeting automation"
+    },
+    {
+      "order": 5539,
+      "path": "Telegram/SourceFiles/settings/business/settings_greeting.h",
+      "blob": "2bb9afd591157169ad920ded2259ec581506bce2",
+      "consumer_symbol": "Greeting automation"
+    },
+    {
+      "order": 5540,
+      "path": "Telegram/SourceFiles/settings/business/settings_location.cpp",
+      "blob": "57098491a079246685255abe8167d2befb8c6d71",
+      "consumer_symbol": "Business location"
+    }
+  ]
+}

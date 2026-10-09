@@ -376,3 +376,18 @@ Dossier: `projects/telegram-desktop-rust/dossiers/build-provenance-resolution-cc
 - `INV-TDRP-R9-TOAST-ACTIVATION-AUTH-001`: COM activation/user input is untrusted transport until exact canonical notification/conversation authorization succeeds.
 - Dossier: `projects/telegram-desktop-rust/dossiers/windows-poll-profile-settings-5501-5529-complete-read.md`.
 - These rows grant source-read/traceability credit only.
+
+
+### TDRP Revision 9 business settings source-read requirements 5530-5540
+
+| requirement | risk | invariant | exact source evidence | production status |
+| --- | --- | --- | --- | --- |
+| TDRP-R9-BUSINESS-AWAY-GREETING-5530-5531-5538-5539 | critical | scheduled/inactivity automation uses one canonical conversation-policy owner; recipient/shortcut limits and persistence failures are fail-closed | shard/manifest/dossier | MAPPED-SOURCE-READ-PRODUCTION-GAP |
+| TDRP-R9-BUSINESS-CHAT-INTRO-5532-5533 | high | intro title/description/sticker are canonical onboarding/profile state; preview is derived | same | MAPPED-SOURCE-READ-PRODUCTION-GAP |
+| TDRP-R9-BUSINESS-CHAT-LINKS-5534-5535 | critical | create/share/copy/rename/delete resolves through canonical conversation link/deep-link owner and preserves exact recipient/message state | same | MAPPED-SOURCE-READ-PRODUCTION-GAP |
+| TDRP-R9-BUSINESS-CHATBOT-DELEGATION-5536-5537 | critical | bot delegation extends canonical Agent/Bot + CapabilityBroker permissions; elevated transfers/username changes require explicit user-visible warning | same | MAPPED-SOURCE-READ-PRODUCTION-GAP |
+| TDRP-R9-BUSINESS-LOCATION-5540 | high | address/map point remain canonical profile/location state and map unavailability has an explicit fallback | same | MAPPED-SOURCE-READ-PRODUCTION-GAP |
+
+- `INV-TDRP-R9-BUSINESS-AUTOMATION-SINGLE-OWNER-001`: settings surfaces may edit automation but cannot own delivery truth or create a second scheduler.
+- `INV-TDRP-R9-DELEGATED-BOT-CAPABILITY-001`: high-impact delegated permissions are explicit capability grants, never inferred from bot selection.
+- Dossier: `projects/telegram-desktop-rust/dossiers/business-settings-5530-5540-complete-read.md`.
