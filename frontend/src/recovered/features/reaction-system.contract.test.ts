@@ -196,5 +196,5 @@ test("reaction picker remains above the sticky composer while open", () => {
   const css = readFileSync(new URL("./conversation/workspace/view.css", import.meta.url), "utf8");
   assert.match(css, /\.sand-chat-input-dock\s*\{[^}]*z-index:\s*3;/s);
   assert.match(css, /\.sand-message-action-anchor--menu-open\s*\{[^}]*z-index:\s*5001;/s);
-  assert.match(css, /\.sand-message-hover-actions\s*\{[^}]*z-index:\s*4;/s);
+  assert.match(css, /\.sand-message-hover-actions\s*\{[^}]*z-index:\s*5001;/s);
 });
