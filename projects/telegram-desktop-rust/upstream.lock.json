@@ -266,9 +266,9 @@
     "root_source_entries_total": 6651,
     "recursive_source_entries_total": 16123,
     "unknown_minimum": 15844,
-    "unread_minimum": 10412,
+    "unread_minimum": 10402,
     "omitted_known": 0,
-    "note": "Accepted 863cf10d tree 50309852. Read-through 5,711; unknown=15,844, unread=10,412, omitted=0."
+    "note": "Accepted 863cf10d tree 50309852. Read-through 5,721; unknown=15,844, unread=10,402, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -634,6 +634,6 @@
     "development_only_non_applicable": 66,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 5701
+    "read_through": 5721
   }
 }
