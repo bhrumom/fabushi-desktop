@@ -234,7 +234,7 @@ export async function createSandDesktopMcpManager(options: DesktopMcpManagerOpti
       await official.remove(pluginId); return { removed: true, state: { servers: await official.servers() } };
     },
     authenticateServer: (serverId, accountKey, requestingAgentId, forceReauth, trigger) =>
-      official?.owns(serverId) ? official.authenticate(serverId, accountKey)
+      official?.owns(serverId) ? official.authenticate(serverId, accountKey, forceReauth === true)
         : manager.authenticateServer(serverId, accountKey, requestingAgentId ?? null, forceReauth === true, trigger ?? null),
     logoutAccount: async (args) => {
       if (!official?.owns(args.serverId)) return manager.logoutAccount(args.serverId, args.accountKey);

@@ -42,4 +42,4 @@ jobs:
       - name: Record exact tested head
         run: |
           git rev-parse HEAD >> "$GITHUB_STEP_SUMMARY"
-          echo 'Provider calls are protocol fixtures. Live OAuth acceptance remains blocked until application registration and preview entitlement are configured.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Provider protocol and OAuth lifecycle calls are fixtures. Application registration, provider qualification and real packaged-product acceptance are recorded separately.' >> "$GITHUB_STEP_SUMMARY"

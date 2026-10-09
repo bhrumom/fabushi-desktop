@@ -49,7 +49,7 @@ export function officialMcpCatalogPlugins(): SandMarketplacePlugin[] {
     variableFields: [{
       key: "ACCESS_TOKEN", label: entry.provider === "GitHub" ? "GitHub 访问令牌（可选）" : "Google OAuth 访问令牌（可选）",
       placeholder: "", isRequired: false, isSecret: true,
-      hint: "仅保存在本机加密凭据中。可以先安装；一键登录尚需 Fabushi OAuth 应用配置。"
+      hint: "通常安装后点击连接并授权即可；手动令牌仅供高级设置，保存在本机加密凭据中。"
     }],
     publisher: { name: entry.provider.toLowerCase(), displayName: `${entry.provider} · 官方服务`, isUserOwned: false },
     marketplace: { name: "fabushi-official", displayName: "Fabushi 官方插件市场", ownership: "team" },

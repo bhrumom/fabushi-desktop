@@ -18,6 +18,7 @@ import { reportDesktopEdgeFailure, reportDesktopEdgeFailureClass } from "../desk
 import { requireFunction, requireObject } from "./provider-guards.js";
 import { createOfficialMcpVaultPorts } from "../mcp/official-mcp-vault.js";
 import { accountCacheScope, parseJwtPayload } from "../../shared/node/cursor-token.js";
+import { createOfficialMcpOAuthPorts } from "../mcp/official-mcp-oauth.js";
 
 type McpRuntimeDeps = Parameters<typeof createMcpRuntime<DesktopMcpManagerFacade>>[0];
 
@@ -232,12 +233,23 @@ export function createProductionMcpOAuthPorts(): ProductionMcpOAuthPorts {
     resolveRuntimeDeps: (context) => ({
       createManager: async (options) => await createSandDesktopMcpManager({
         ...options,
-        officialMcp: createOfficialMcpVaultPorts(getSandRootDir(), async () => {
+        officialMcp: { ...createOfficialMcpVaultPorts(getSandRootDir(), async () => {
           const auth = await context.requireAccount().getAuthService();
           const token = await auth.peekAccessToken?.();
           if (!token || !parseJwtPayload(token)?.sub) throw new Error("Sign in to Fabushi before connecting a service.");
           return accountCacheScope(token);
-        }),
+        }), oauth: createOfficialMcpOAuthPorts({
+          getAccessToken: async backendUrl => {
+            const auth = await context.requireAccount().getAuthService();
+            const token = await auth.getValidAccessToken({ backendUrl });
+            if (!token) throw new Error("请先登录 Fabushi。");
+            return token;
+          },
+          changed: () => {
+            context.broadcast("sand:mcp-auth-event", { status: "changed", provider: "fabushi-official" });
+            void context.mcpHost.refreshMcp();
+          },
+        }) },
         getAccessToken: async (request) => {
           const token = await options.getAccessToken(request);
           if (token == null) throw new Error("MCP manager requires an authenticated account.");

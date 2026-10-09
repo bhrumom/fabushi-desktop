@@ -4,14 +4,25 @@ import { OfficialMcpService } from "./official-mcp-service.js";
 import { OFFICIAL_MCP_CATALOG, officialMcpCatalogPlugins } from "../../shared/node/mcp/fabushi-official-catalog.js";
 import { loadPluginsDesktopSnapshot } from "../../../frontend/src/recovered/features/plugins/overlay/desktop.js";
 import type { DesktopBridge } from "../../../frontend/src/recovered/contracts/desktop-bridge.js";
+import { createOfficialMcpOAuthPorts, type OfficialMcpOAuthPorts } from "./official-mcp-oauth.js";
 
 const ID = "fabushi-official-github";
+function oauthFixture(): OfficialMcpOAuthPorts {
+  return {
+    start: async () => ({ attemptId: "attempt-a", authorizationUrl: "https://api.ombhrum.com/api/mcp/oauth/authorize?ticket=opaque" }),
+    poll: async () => ({ status: "ready", credential: { token: "provider-oauth-access", refreshToken: "provider-oauth-refresh", connectionId: "grant-a", expiresAt: Date.now()+3_600_000 } }),
+    acknowledge: async () => {}, cancel: async () => {},
+    refresh: async c => ({ ...c, token: "renewed-provider-access", expiresAt: Date.now()+3_600_000 }),
+    revoke: async () => {}, changed: () => {},
+  };
+}
 const TOOL = { name: "read_issue", description: "Read an issue", inputSchema: { type: "object" } };
 type Call = { url: string; init: RequestInit; payload: any };
-function harness(handler?: (call: Call) => Response | Promise<Response>) {
+function harness(handler?: (call: Call) => Response | Promise<Response>, oauth?: OfficialMcpOAuthPorts) {
   let scope = "a".repeat(64);
   const vault = new Map<string, string>(), calls: Call[] = [];
   const service = new OfficialMcpService({
+    oauth,
     getScope: async () => scope, read: async key => vault.get(key) ?? null,
     write: async (key, value) => { vault.set(key, value); },
     fetch: async (url, init) => {
@@ -59,6 +70,70 @@ test("install without credential remains needsAuth and does not contact provider
   assert.equal((await h.service.authenticate(ID, "default")).status, "not-supported");
   assert.deepEqual(await h.service.routedTools(), []);
   assert.equal(h.calls.length, 0);
+});
+
+test("OAuth completes into the scoped native vault and refreshes tools without returning credentials to UI", async () => {
+  const oauth = oauthFixture(); let acknowledged = false, changed = false;
+  oauth.acknowledge = async () => { acknowledged = true; };
+  oauth.changed = () => { changed = true; };
+  const h = harness(undefined, oauth); await h.service.install(ID);
+  const started = await h.service.authenticate(ID, "default");
+  assert.equal(started.status, "started");
+  assert.doesNotMatch(JSON.stringify(started), /provider-oauth/);
+  await new Promise(resolve => setTimeout(resolve, 2_200));
+  assert.ok(acknowledged && changed);
+  assert.match([...h.vault.values()].join(""), /provider-oauth-refresh/);
+  assert.equal((await h.service.servers())[0]!.status, "connected");
+  assert.doesNotMatch(JSON.stringify(await h.service.servers()), /provider-oauth/);
+  await h.service.disconnect(ID);
+  assert.doesNotMatch([...h.vault.values()].join(""), /provider-oauth/);
+  h.service.dispose();
+});
+
+test("account change during pending OAuth cancels delivery and cannot install into another account", async () => {
+  const oauth=oauthFixture(); let cancelled=false;
+  oauth.cancel=async()=>{cancelled=true;};
+  const h=harness(undefined,oauth); await h.service.install(ID);
+  await h.service.authenticate(ID,"default"); h.switchAccount();
+  await new Promise(resolve=>setTimeout(resolve,2_200));
+  assert.ok(cancelled); assert.doesNotMatch([...h.vault.values()].join(""), /provider-oauth/);
+  assert.deepEqual(await h.service.effective(),[]); h.service.dispose();
+});
+
+test("expired OAuth refresh is single-flight, stays before provider calls, and fences account switches", async () => {
+  const oauth=oauthFixture(); let refreshes=0;
+  oauth.refresh=async c=>{refreshes++; await new Promise(resolve=>setTimeout(resolve,20)); return {...c,token:"refreshed-secret",expiresAt:Date.now()+3_600_000};};
+  const h=harness(undefined,oauth); await h.service.install(ID);
+  const key="a".repeat(64); const state=JSON.parse(h.vault.get(key)!);
+  Object.assign(state[ID],{token:"expired-secret",refreshToken:"refresh-secret",expiresAt:Date.now()-1000,connectionId:"grant-a"});
+  h.vault.set(key,JSON.stringify(state));
+  await Promise.all([h.service.tools(ID),h.service.tools(ID)]);
+  assert.equal(refreshes,1);
+  assert.ok(h.calls.every(call=>new Headers(call.init.headers).get("Authorization")==="Bearer refreshed-secret"));
+  state[ID].expiresAt=Date.now()-1000; h.vault.set(key,JSON.stringify(state));
+  oauth.refresh=async c=>{h.switchAccount();return {...c,token:"must-not-persist"};};
+  await assert.rejects(h.service.tools(ID));
+  assert.doesNotMatch([...h.vault.values()].join(""), /must-not-persist/); h.service.dispose();
+});
+
+test("disconnect clears local credentials even when upstream revocation fails", async () => {
+  const oauth=oauthFixture(); oauth.revoke=async()=>{throw new Error("offline");};
+  const h=harness(undefined,oauth); await h.service.install(ID,{ACCESS_TOKEN:"access-secret"});
+  const key="a".repeat(64); const state=JSON.parse(h.vault.get(key)!); state[ID].connectionId="grant-a";
+  h.vault.set(key,JSON.stringify(state));
+  await assert.rejects(h.service.remove(ID),/本机授权/);
+  assert.deepEqual(await h.service.effective(),[]);
+  assert.doesNotMatch([...h.vault.values()].join(""),/access-secret/); h.service.dispose();
+});
+
+test("native broker confines Fabushi authorization to its origin and rejects foreign redirect URLs", async () => {
+  const calls: {url:string;init:RequestInit}[]=[];
+  const oauth=createOfficialMcpOAuthPorts({getAccessToken:async origin=>{assert.equal(origin,"https://api.ombhrum.com");return "fabushi-session";},changed:()=>{},
+    fetch:async(input,init)=>{calls.push({url:String(input),init:init!});return new Response(JSON.stringify({attemptId:"attempt-a",authorizationUrl:"https://evil.example/steal"}),{headers:{"Content-Type":"application/json"}});}});
+  await assert.rejects(oauth.start(ID),/Untrusted/);
+  assert.equal(calls[0]!.url,"https://api.ombhrum.com/api/mcp/oauth/start");
+  assert.equal(calls[0]!.init.redirect,"error");
+  assert.equal(new Headers(calls[0]!.init.headers).get("Authorization"),"Bearer fabushi-session");
 });
 
 test("real initialize/list/call uses only provider credential, negotiated protocol and session", async () => {
