@@ -1,3 +1,4 @@
+import { usesOfficialProviderOAuth } from "./official-provider-flow";
 import type {
   DesktopBridge,
   EffectivePlugin,
@@ -551,7 +552,14 @@ export async function loadPluginsDesktopSnapshot(bridge: DesktopBridge): Promise
 }
 
 export async function installMarketplacePlugin(bridge: DesktopBridge, pluginId: string, values?: Record<string, string>, hasTeamConfiguredVariables?: boolean): Promise<McpServerState> {
-  return await bridge.mcp.install({ entryId: pluginId, ...(values == null ? {} : { values }), ...(hasTeamConfiguredVariables === true ? { hasTeamConfiguredVariables: true } : {}) });
+  const state = await bridge.mcp.install({ entryId: pluginId, ...(values == null ? {} : { values }), ...(hasTeamConfiguredVariables === true ? { hasTeamConfiguredVariables: true } : {}) });
+  if (usesOfficialProviderOAuth(pluginId) && !values?.ACCESS_TOKEN?.trim()) {
+    const result = await authenticatePluginBrowserServer(bridge, pluginId);
+    if (result.status !== "started" && result.status !== "already-authenticated") {
+      throw new Error("message" in result ? result.message : "服务授权尚未配置，请稍后点击连接重试。");
+    }
+  }
+  return state;
 }
 
 export async function updateMarketplacePluginSetup(bridge: DesktopBridge, pluginId: string, values: Record<string, string>): Promise<McpServerState> {

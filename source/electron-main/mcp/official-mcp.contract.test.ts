@@ -1,8 +1,9 @@
+import { needsPluginSetupBeforeAdd, usesOfficialProviderOAuth } from "../../../frontend/src/recovered/features/plugins/overlay/official-provider-flow.js";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { OfficialMcpService } from "./official-mcp-service.js";
 import { OFFICIAL_MCP_CATALOG, officialMcpCatalogPlugins } from "../../shared/node/mcp/fabushi-official-catalog.js";
-import { loadPluginsDesktopSnapshot } from "../../../frontend/src/recovered/features/plugins/overlay/desktop.js";
+import { installMarketplacePlugin, loadPluginsDesktopSnapshot } from "../../../frontend/src/recovered/features/plugins/overlay/desktop.js";
 import type { DesktopBridge } from "../../../frontend/src/recovered/contracts/desktop-bridge.js";
 import { createOfficialMcpOAuthPorts, type OfficialMcpOAuthPorts } from "./official-mcp-oauth.js";
 
@@ -258,4 +259,45 @@ test("legacy lookup failure leaves catalog visible with explicit partial-load wa
   const snapshot = await loadPluginsDesktopSnapshot(bridge);
   assert.equal(snapshot.catalog[0]!.id, ID);
   assert.ok(snapshot.warnings?.some(w => w.includes("尚未确认")));
+});
+
+
+test("official Add installs then authenticates and opens the native broker URL", async () => {
+  const calls: string[] = [];
+  const state = { servers: [] };
+  const bridge = { mcp: {
+    install: async (input: {entryId: string}) => { calls.push(`install:${input.entryId}`); return state; },
+    authenticate: async (id: string, account: string) => { calls.push(`authenticate:${id}:${account}`); return {status: "started", serverName: "GitHub", authorizationUrl: "https://api.ombhrum.com/api/mcp/oauth/authorize?ticket=fixture"}; },
+  }, openExternal: async (url: string) => { calls.push(`open:${url}`); } } as unknown as DesktopBridge;
+  assert.equal(await installMarketplacePlugin(bridge, ID), state);
+  assert.deepEqual(calls, [`install:${ID}`, `authenticate:${ID}:default`, "open:https://api.ombhrum.com/api/mcp/oauth/authorize?ticket=fixture"]);
+  calls.length = 0;
+  await installMarketplacePlugin(bridge, ID, {ACCESS_TOKEN: "manual-provider-token"});
+  await installMarketplacePlugin(bridge, "legacy-custom-plugin");
+  assert.deepEqual(calls, [`install:${ID}`, "install:legacy-custom-plugin"]);
+});
+
+test("official Add stops on installation failure and exposes authorization or opener failures", async () => {
+  let authCalls = 0;
+  const bridge = { mcp: {
+    install: async () => { throw new Error("storage unavailable"); },
+    authenticate: async () => { authCalls++; return {status:"not-supported", serverName:"GitHub", message:"provider configuration missing"}; },
+  }, openExternal: async () => { throw new Error("browser unavailable"); } } as unknown as DesktopBridge;
+  await assert.rejects(installMarketplacePlugin(bridge, ID), /storage unavailable/);
+  assert.equal(authCalls, 0);
+  bridge.mcp.install = async () => ({servers:[]});
+  await assert.rejects(installMarketplacePlugin(bridge, ID), /provider configuration missing/);
+  bridge.mcp.authenticate = async () => ({status:"started",serverName:"GitHub",authorizationUrl:"https://api.ombhrum.com/api/mcp/oauth/authorize?ticket=fixture"});
+  await assert.rejects(installMarketplacePlugin(bridge, ID), /browser unavailable/);
+});
+
+test("official optional credentials do not intercept Add while required and legacy setup remains", () => {
+  for (const entry of OFFICIAL_MCP_CATALOG) {
+    assert.equal(usesOfficialProviderOAuth(entry.id), true);
+    assert.equal(needsPluginSetupBeforeAdd(entry.id, [{isRequired:false}]), false);
+    assert.equal(needsPluginSetupBeforeAdd(entry.id, [{isRequired:true}]), true);
+  }
+  assert.equal(usesOfficialProviderOAuth("fabushi-official-unknown"), false);
+  assert.equal(needsPluginSetupBeforeAdd("legacy-plugin", [{isRequired:false}]), true);
+  assert.equal(needsPluginSetupBeforeAdd("legacy-plugin", [{isRequired:true}], true), false);
 });

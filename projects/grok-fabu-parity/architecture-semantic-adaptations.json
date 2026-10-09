@@ -1218,7 +1218,7 @@
       "referencePath": "frontend/src/recovered/features/plugins/overlay/desktop.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "72be7b2c29e032a3f2cf0d4808233c918536fb8a",
+      "targetBlobSha": "692b4ea24d01a69166c82c6c2458d1d0b3bf6243",
       "behavioralEvidence": [
         "frontend/src/recovered/features/plugins/overlay/desktop.ts",
         "source/electron-main/mcp/official-mcp-service.ts",
@@ -1228,7 +1228,7 @@
         "source/electron-main/mcp/official-mcp.contract.test.ts",
         ".github/workflows/official-mcp-marketplace.yml"
       ],
-      "rationale": "Preserve existing Plugins projection/install/private-skill flows, while independently settling catalog, effective installs and server inventory. Catalog failure remains fatal; unavailable installed/server state produces an explicit warning and leaves available directory data inspectable."
+      "rationale": "Preserve existing Plugins projection/install/private-skill flows, while independently settling catalog, effective installs and server inventory. Catalog failure remains fatal; unavailable installed/server state produces an explicit warning and leaves available directory data inspectable. Official provider Add bypasses optional manual credentials and uses the existing install/native-auth/external-opener lifecycle; installed entries expose Connect for retry. Required custom/team setup and native permission, token, account and broker boundaries remain intact. Actions verifies ordering, failure propagation and manual/legacy preservation."
     },
     {
       "referencePath": "source/electron-main/mcp/mcp-desktop.ts",
@@ -1246,6 +1246,21 @@
         ".github/workflows/official-mcp-marketplace.yml"
       ],
       "rationale": "Preserve all existing MCP IPC, settings sync and permission boundaries while refreshing the canonical Host MCP tool inventory after a tool-disable toggle. Official connector disabled state is stored in its scoped native vault and enforced again at execution. Official provider consent now uses the existing Fabushi account origin through a session-bound broker; native encrypted delivery/refresh/revoke remains on this MCP edge. Existing auth-event broadcast and Host refresh settle the existing Plugins surface, without exposing service tokens in renderer or moving account/Coordinator ownership."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/plugins/overlay/browser.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/plugins/overlay/browser.tsx",
+        "source/electron-main/mcp/official-mcp-service.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/mcp/official-mcp.contract.test.ts",
+        ".github/workflows/official-mcp-marketplace.yml"
+      ],
+      "rationale": " Official provider Add bypasses optional manual credentials and uses the existing install/native-auth/external-opener lifecycle; installed entries expose Connect for retry. Required custom/team setup and native permission, token, account and broker boundaries remain intact. Actions verifies ordering, failure propagation and manual/legacy preservation.",
+      "targetBlobSha": "c7d49ff93d1d0f3df044ae1b67457ed65f7e441c"
     }
   ]
 }
