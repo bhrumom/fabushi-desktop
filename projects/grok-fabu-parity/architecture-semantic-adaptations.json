@@ -904,20 +904,25 @@
       "referencePath": "source/electron-main/main-edge.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "a78247bfa5ba11f9fbb24dc5ef06b9ac823348fc",
+      "targetBlobSha": "87c19f5c82739c1055522cbd6b0138f73db87c24",
       "behavioralEvidence": [
         "source/electron-main/main-edge.ts",
         "source/shared/node/settings/sand-settings-store.ts",
-        "source/shared/rpc/main.ts"
+        "source/shared/rpc/main.ts",
+        "source/electron-main/accessibility-support.ts",
+        "source/electron-main/main.ts",
+        "source/electron-preload/preload.ts",
+        "frontend/src/recovered/features/window-chrome/notification-host.tsx"
       ],
       "testEvidence": [
         "source/electron-main/foundations.test.ts",
         ".github/workflows/desktop-chat-parity-ci.yml",
         ".github/workflows/rust-desktop-runtime.yml",
         "frontend/src/production/human-call-media.tsx",
-        "desktop/e2e/mahayana-agent-workbench.spec.ts"
+        "desktop/e2e/mahayana-agent-workbench.spec.ts",
+        "source/electron-preload/preload-boundaries.test.ts"
       ],
-      "rationale": "Phase 1 adds canonical Fabushi language/accessibility preferences without introducing a second settings runtime: persistence stays in the existing Electron SandSettingsStore, mutations cross the existing typed MainEdge/preload bridge, and the recovered Settings surface only projects that owner. Locale/direction, reduced-motion, high-contrast controls, and bounded text scaling are normalized fail-closed and applied to the shipping renderer document; account, Coordinator, Host, Runner, theme, and Agent ownership are unchanged. Phase 1 media/device settings remain on this same canonical Settings/MainEdge/preload owner: selected microphone/camera IDs are normalized and persisted locally, exposed through the existing callMedia bridge, projected by recovered Settings, and consumed by the shipping Human call capture path with stale-device fallback."
+      "rationale": "Phase 1 adds canonical Fabushi language/accessibility preferences without introducing a second settings runtime: persistence stays in the existing Electron SandSettingsStore, mutations cross the existing typed MainEdge/preload bridge, and the recovered Settings surface only projects that owner. Locale/direction, reduced-motion, high-contrast controls, and bounded text scaling are normalized fail-closed and applied to the shipping renderer document; account, Coordinator, Host, Runner, theme, and Agent ownership are unchanged. Phase 1 media/device settings remain on this same canonical Settings/MainEdge/preload owner: selected microphone/camera IDs are normalized and persisted locally, exposed through the existing callMedia bridge, projected by recovered Settings, and consumed by the shipping Human call capture path with stale-device fallback. This exact-head adaptation also exposes the real Electron app.accessibilitySupportEnabled state through the existing trusted MainEdge method and accessibility-support-changed event. The main process remains the only OS-signal owner; highContrast is not inferred as screen-reader state, and renderer notification composition is consumer-only."
     },
     {
       "referencePath": "source/electron-main/main-production-services.ts",
@@ -1089,11 +1094,14 @@
       "referencePath": "source/electron-preload/preload.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "6aef532983d7c4ceff96efc054225c42e264ede1",
+      "targetBlobSha": "5e0f4855b7e1eac6ddfa6ae844bff389353c7237",
       "behavioralEvidence": [
         "source/electron-preload/preload.ts",
         "source/electron-preload/runtime/primary.ts",
-        "desktop/scripts/build-electron-runtime.mjs"
+        "desktop/scripts/build-electron-runtime.mjs",
+        "source/shared/rpc/main.ts",
+        "frontend/src/recovered/contracts/desktop-bridge.ts",
+        "frontend/src/recovered/features/window-chrome/notification-host.tsx"
       ],
       "testEvidence": [
         "source/electron-preload/preload-boundaries.test.ts",
@@ -1103,7 +1111,7 @@
         "frontend/src/production/human-call-media.tsx",
         "desktop/e2e/mahayana-agent-workbench.spec.ts"
       ],
-      "rationale": "Preserves the frozen Grok 0.18 thin preload boundary while adapting Fabushi's native attachment IPC contract: renderer Uint8Array payloads are encoded to the native bytesBase64 field, rich native staging results are normalized to the recovered {ok,path} contract, and rich committed attachment records are normalized to string paths. Commit requests carry path/name pairs as native items so file names survive the staging-to-committed transition. The shipping preload is bundled from source/electron-preload/runtime/primary.ts by desktop/scripts/build-electron-runtime.mjs; no deleted desktop/electron compatibility root is retained as behavioral or test evidence. Phase 1 additionally routes canonical UI language/accessibility preferences through this existing boundary and applies them to the shipping renderer without creating a parallel settings owner. Phase 1 media/device settings remain on this same canonical Settings/MainEdge/preload owner: selected microphone/camera IDs are normalized and persisted locally, exposed through the existing callMedia bridge, projected by recovered Settings, and consumed by the shipping Human call capture path with stale-device fallback."
+      "rationale": "Preserves the frozen Grok 0.18 thin preload boundary while adapting Fabushi's native attachment IPC contract: renderer Uint8Array payloads are encoded to the native bytesBase64 field, rich native staging results are normalized to the recovered {ok,path} contract, and rich committed attachment records are normalized to string paths. Commit requests carry path/name pairs as native items so file names survive the staging-to-committed transition. The shipping preload is bundled from source/electron-preload/runtime/primary.ts by desktop/scripts/build-electron-runtime.mjs; no deleted desktop/electron compatibility root is retained as behavioral or test evidence. Phase 1 additionally routes canonical UI language/accessibility preferences through this existing boundary and applies them to the shipping renderer without creating a parallel settings owner. Phase 1 media/device settings remain on this same canonical Settings/MainEdge/preload owner: selected microphone/camera IDs are normalized and persisted locally, exposed through the existing callMedia bridge, projected by recovered Settings, and consumed by the shipping Human call capture path with stale-device fallback. The same trusted top-frame preload now carries a typed accessibility.get/onChanged surface backed by Electron's real screen-reader support signal; it does not infer assistive technology from high-contrast preferences and it unregisters the event subscription on teardown."
     },
     {
       "referencePath": "source/host/extensions/box-store-sync/box-copy-in.ts",
@@ -1664,6 +1672,45 @@
         "scripts/check-grok-architecture.mjs"
       ],
       "rationale": "Preserves the frozen Grok form/Tabs primitive structure while intentionally extending the existing source-neutral canonical SandTabs owner for TDRP Revision 9 responsibilities read from accepted Telegram ui/controls SubTabs/SubsectionSlider blobs. The adaptation adds optional overflow visibility, stable context-menu intent, pinned/locked reorder boundaries, pointer-capture cancellation, edge scrolling and keyboard reorder with Started/Applied/Cancelled intent while retaining the same ARIA tablist/tab ownership and keeping persisted ordering/domain truth outside the primitive. Pure navigation/reorder contract tests are required in the Rust desktop runtime gate; no Telegram-derived Tabs component or parallel runtime is introduced."
+    },
+    {
+      "referencePath": "source/electron-main/main.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "12d50843b32c14c66437b9c72d2f3aec4b460334",
+      "behavioralEvidence": [
+        "source/electron-main/main.ts",
+        "source/electron-main/accessibility-support.ts",
+        "source/electron-main/main-edge.ts",
+        "source/shared/rpc/main.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        "source/electron-preload/preload-boundaries.test.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves the frozen Grok Electron lifecycle while adapting one source-neutral OS accessibility responsibility: startup snapshots app.accessibilitySupportEnabled, accessibility-support-changed updates the single main-process state owner, and the existing MainEdge event path broadcasts only the typed screenReader boolean. Window, Coordinator, Host, Runner, settings and high-contrast ownership remain unchanged."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/window-chrome/notification-host.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "6cfdc9e36c0e16545d59462f8e4de1dc30142acf",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/window-chrome/notification-host.tsx",
+        "frontend/src/recovered/contracts/desktop-bridge.ts",
+        "source/electron-preload/preload.ts",
+        "source/electron-main/accessibility-support.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/contracts/desktop-bridge.contract.test.ts",
+        "source/electron-preload/preload-boundaries.test.ts",
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Keeps the recovered root-shell notification host as the unique Banner/notification composition while adapting a source-neutral screen-reader status consumer. The host reads and subscribes to the trusted desktop accessibility bridge, projects one dismissible role=status information tray when screenReader is true, clears stale dismissal when the OS signal turns off, and leaves highContrast as an independent UI preference. No second notification or accessibility owner is introduced."
     }
   ]
 }
