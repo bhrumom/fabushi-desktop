@@ -14,17 +14,17 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15846,
-    "unread_minimum": 10084,
+    "unread_minimum": 10073,
     "omitted_known": 0,
-    "note": "Live 65e23ba recursive census remains 16,125; exact read-through 6,041; unknown 15,846, unread 10,084, omitted 0. Fresh current-head Actions remain required."
+    "note": "Live 65e23ba recursive census remains 16,125; exact read-through 6,052; unknown 15,846, unread 10,073, omitted 0. Fresh current-head Actions remain required."
   },
   "latest_recursive_evidence": {
-    "run_id": 37994253071,
+    "run_id": 37997056082,
     "run_attempt": 1,
-    "job_id": 114036265507,
-    "head_sha": "6c9f4a71accfb8ef6ed39647ba9c314cdaadffa0",
-    "artifact_id": 11646890929,
-    "artifact_digest": "sha256:3683ec0b5ab2b42a9c78a5e122b4f8db60282423bf1174883017f3d4eb072d0d",
+    "job_id": 114045886399,
+    "head_sha": "8c8a8b76bcb1e66feace9b73cc92051957db1ab0",
+    "artifact_id": 11647601050,
+    "artifact_digest": "sha256:6073b5c8a376079c44b050f70ac9abd476a7e00a6b4ed685ff552f2e0309c82b",
     "artifact_files": [
       "upstream-root-inventory.json",
       "upstream-recursive-inventory.json",
@@ -34,9 +34,9 @@
       "build-time-github-action-ref-resolutions.json",
       "build-time-github-clone-ref-resolutions.json"
     ],
-    "evidence_status": "historical-only-predecessor-target-head-6c9f4a71",
+    "evidence_status": "historical-only-predecessor-source-authority-target-head-8c8a8b76",
     "upstream_commit": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
-    "note": "Run 37994253071 / job 114036265507 proves accepted upstream 65e23ba on predecessor target HEAD 6c9f4a71; descendant commits require fresh exact-head Actions."
+    "note": "Run 37997056082 / job 114045886399 proves accepted upstream 65e23ba source authority on predecessor target HEAD 8c8a8b76; descendant census/production commits require fresh exact-head Actions."
   },
   "closure_rules": {
     "executable_runner": "github-actions",
@@ -46,7 +46,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live authority exact through deterministic blob order 6,041; unread_minimum is 10,084; unknown remains 15,846; omitted remains 0. Fresh exact-head source-authority evidence is required.",
+  "note": "Live authority exact through deterministic blob order 6,052; unread_minimum is 10,073; unknown remains 15,846; omitted remains 0. Fresh exact-head source-authority evidence is required.",
   "rebaseline": {
     "from_commit": "b0d1fe5e08c963402b8b71648c70a2bf68e6fab2",
     "to_commit": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
@@ -72,10 +72,10 @@
       5801,
       5803
     ],
-    "current_source_read_through": 6041,
-    "first_unread_order": 6042,
-    "first_unread_path": "Telegram/SourceFiles/ui/controls/stars_rating.cpp",
-    "current_head_source_authority_evidence": "fresh descendant exact-head Actions required; 6c9f4a71 runs are predecessor-only after descendant commits"
+    "current_source_read_through": 6052,
+    "first_unread_order": 6053,
+    "first_unread_path": "Telegram/SourceFiles/ui/controls/tabbed_search.cpp",
+    "current_head_source_authority_evidence": "8c8a8b76 source-authority job 114045886399 succeeded with artifact 11647601050; descendant exact-head Actions are required."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -84,6 +84,6 @@
     "development_only_non_applicable": 69,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 6041
+    "read_through": 6052
   }
 }
