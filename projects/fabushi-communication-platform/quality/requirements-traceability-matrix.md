@@ -423,3 +423,13 @@ Dossier: `projects/telegram-desktop-rust/dossiers/build-provenance-resolution-cc
 - `INV-TDRP-R9-AUTOSTART-PASSCODE-001`: start-minimized remains disallowed when a local passcode requires an interactive verified launch prompt.
 - `INV-TDRP-R9-SETTINGS-A11Y-001`: a custom toggle must preserve semantic checkable role/state, keyboard behavior and locked/disabled non-mutation.
 - Dossier: `projects/telegram-desktop-rust/dossiers/settings-sessions-advanced-blocked-5572-5580-complete-read.md`.
+
+## TDRP 863cf10d upstream delta — mapped-open requirements
+
+| requirement_id | oracle_ids | invariant_ids | production owner | required evidence | verdict |
+| --- | --- | --- | --- | --- | --- |
+| TDRP-R9-WALLET-OUTSIDE-CLICK-001 | ORA-TDRP-WALLET-OUTSIDE-CLICK-001 | INV-WALLET-CLOSE-TOP-ONLY-001; INV-WALLET-EVENT-SWALLOWED-001; INV-WALLET-DEFERRED-DESTROY-001 | Canonical Dialog/Popover layer-stack owner | unit + interaction integration + keyboard/focus + cancellation + a11y + light/dark + responsive E2E | mapped-open |
+| TDRP-R9-EDITOR-CIRCLE-ROUNDING-001 | ORA-TDRP-EDITOR-CIRCLE-ROUNDING-001 | INV-EDITOR-CIRCLE-RADIUS-001; INV-EDITOR-NONDESTRUCTIVE-STATE-001 | Canonical Media Editor owner | unit + editor state + visual + light/dark + keyboard/a11y + persistence regression | mapped-open |
+| TDRP-R9-COMPOSER-BOT-MENU-COMPACT-001 | ORA-TDRP-COMPOSER-BOT-MENU-COMPACT-001 | INV-COMPOSER-PEER-FENCE-001; INV-COMPOSER-ANIMATION-CANCEL-001; INV-COMPOSER-CANONICAL-COMPONENT-001 | Canonical Composer + Button/IconButton + animation owner | unit + contract + rapid-typing cancellation + focus/keyboard + a11y + reduced-motion + light/dark + responsive + interaction E2E | mapped-open |
+
+Wallet background `MouseButtonPress` is swallowed while the top information box is visible, closes only that box through deferred destruction, and preserves the lower Transaction layer. Circle sticker rounding maps to the canonical Media Editor (`Circle`, multiplier 0.5). Bot-menu compact/full behavior maps to canonical Composer/Button/IconButton/animation owners; TelegramButton/BotMenuButton is prohibited. None reduce unknown until production + exact-head evidence close.

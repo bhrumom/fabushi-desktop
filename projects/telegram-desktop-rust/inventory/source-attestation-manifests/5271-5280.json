@@ -1,67 +1,67 @@
 {
-  "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+  "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
   "start": 5271,
   "end": 5280,
   "entries": [
     {
       "order": 5271,
-      "path": "Telegram/SourceFiles/mtproto/mtproto_dh_utils.h",
-      "blob": "e857e671500cf4283ea10ae05d8ce6acdb2c24b5",
-      "consumer_symbol": "typed Diffie-Hellman prime/modexp validation and key-derivation API contract"
+      "path": "Telegram/SourceFiles/mtproto/mtproto_dc_options.cpp",
+      "blob": "d8499fc1df2ed7fdb88da687a04b824d243ff49a",
+      "consumer_symbol": "MTP::DcOptions"
     },
     {
       "order": 5272,
-      "path": "Telegram/SourceFiles/mtproto/mtproto_pch.h",
-      "blob": "284089e7e19470f7bc2f197b8a09cfed7050b4ad",
-      "consumer_symbol": "build compilation context for MTProto Qt/network/reactive dependencies; source-specific build input with no standalone shipping product owner"
+      "path": "Telegram/SourceFiles/mtproto/mtproto_dc_options.h",
+      "blob": "4e0b979c4a84661f3365196ab8702dc8cb60fd03",
+      "consumer_symbol": "MTP::DcOptions"
     },
     {
       "order": 5273,
-      "path": "Telegram/SourceFiles/mtproto/mtproto_proxy_data.cpp",
-      "blob": "f9748fcb6358dd8ce7429536ec2b999cb2a989ef",
-      "consumer_symbol": "proxy configuration validation/canonicalization, credential secret parsing, host/path security binding, resolved-IP expiry and platform proxy conversion"
+      "path": "Telegram/SourceFiles/mtproto/mtproto_dh_utils.cpp",
+      "blob": "db9c0542fa1f2d86c27da38f511d56ac2accc21c",
+      "consumer_symbol": "MTP DH utilities"
     },
     {
       "order": 5274,
-      "path": "Telegram/SourceFiles/mtproto/mtproto_proxy_data.h",
-      "blob": "d8deebac2359936f72901ba0eec0cbfdfb186e90",
-      "consumer_symbol": "typed proxy settings/type/status, resolved-address lifetime, capability URL and platform conversion contract"
+      "path": "Telegram/SourceFiles/mtproto/mtproto_dh_utils.h",
+      "blob": "e857e671500cf4283ea10ae05d8ce6acdb2c24b5",
+      "consumer_symbol": "MTP DH utilities"
     },
     {
       "order": 5275,
-      "path": "Telegram/SourceFiles/mtproto/mtproto_response.cpp",
-      "blob": "a6456394834ed9e6f605e8acabc2ca73eab8e03a",
-      "consumer_symbol": "fail-closed protocol error parsing into structured code/type/description with local error construction"
+      "path": "Telegram/SourceFiles/mtproto/mtproto_pch.h",
+      "blob": "284089e7e19470f7bc2f197b8a09cfed7050b4ad",
+      "consumer_symbol": "MTProto build/PCH"
     },
     {
       "order": 5276,
-      "path": "Telegram/SourceFiles/mtproto/mtproto_response.h",
-      "blob": "4025f784561e8b6743b7223686bef28cf373d5b7",
-      "consumer_symbol": "typed response correlation plus temporary/flood/default-handled error classification and user-fallback contract"
+      "path": "Telegram/SourceFiles/mtproto/mtproto_proxy_data.cpp",
+      "blob": "f9748fcb6358dd8ce7429536ec2b999cb2a989ef",
+      "consumer_symbol": "MTP::ProxyData"
     },
     {
       "order": 5277,
-      "path": "Telegram/SourceFiles/mtproto/proxy_check.cpp",
-      "blob": "c2c2ddb0cf2286f62ccbf51a60eccaa472c12d79",
-      "consumer_symbol": "bounded proxy connectivity probe lifecycle with dual-stack selection, latency settlement, cleanup and failure routing"
+      "path": "Telegram/SourceFiles/mtproto/mtproto_proxy_data.h",
+      "blob": "d8deebac2359936f72901ba0eec0cbfdfb186e90",
+      "consumer_symbol": "MTP::ProxyData"
     },
     {
       "order": 5278,
-      "path": "Telegram/SourceFiles/mtproto/proxy_check.h",
-      "blob": "1cbfb15fd2cae6f92f49a4c4d999a30b00073780",
-      "consumer_symbol": "typed proxy-check connection ownership/reset/drop/start contract"
+      "path": "Telegram/SourceFiles/mtproto/mtproto_response.cpp",
+      "blob": "a6456394834ed9e6f605e8acabc2ca73eab8e03a",
+      "consumer_symbol": "MTP::Error"
     },
     {
       "order": 5279,
-      "path": "Telegram/SourceFiles/mtproto/scheme/api.tl",
-      "blob": "57e72169e6e8fc8d36af957a96ca20f40b5d8a07",
-      "consumer_symbol": "Telegram application API schema/generator authority covering typed peer/message/media/account/service methods; protocol schema input requiring source-neutral Fabushi typed API/service responsibility mapping"
+      "path": "Telegram/SourceFiles/mtproto/mtproto_response.h",
+      "blob": "4025f784561e8b6743b7223686bef28cf373d5b7",
+      "consumer_symbol": "MTP::Response/Error"
     },
     {
       "order": 5280,
-      "path": "Telegram/SourceFiles/mtproto/scheme/mtproto.tl",
-      "blob": "76225965bfc794388db241f3f760db8ab79e84f8",
-      "consumer_symbol": "MTProto core wire schema for auth handshake, ack/replay/state/resend, errors, ping, salts and session lifecycle; source-neutral transport/session responsibilities remain required"
+      "path": "Telegram/SourceFiles/mtproto/proxy_check.cpp",
+      "blob": "c2c2ddb0cf2286f62ccbf51a60eccaa472c12d79",
+      "consumer_symbol": "MTP proxy check"
     }
   ]
 }

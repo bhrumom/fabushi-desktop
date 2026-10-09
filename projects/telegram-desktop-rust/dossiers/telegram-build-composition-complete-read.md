@@ -16,3 +16,6 @@ Accounting:
 - unknown: `15,730`
 - omitted: `0`
 - read/decomposed through deterministic entry: `88`
+
+
+> 2026-10-09 rebaseline: changed source in this domain was re-read at `863cf10d9f34fb0b1b35b35da1bda75acfc58d2e` / `5030985204963cbbd362ced7412d231b04ebd0cc`. Prior changed-blob identity is historical-only; current decomposition is in `live-863cf10d-wallet-editor-bot-menu-rebaseline.md`.

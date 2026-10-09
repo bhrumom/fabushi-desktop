@@ -4,8 +4,8 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
-    "tree": "6ac9bbc1b44edcb119b1a724e7b0a321c3b7b8fa"
+    "commit": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+    "tree": "5030985204963cbbd362ced7412d231b04ebd0cc"
   },
   "range": {
     "first_order": 5541,
@@ -15,6 +15,111 @@
   "rows": [
     {
       "recursive_order": 5541,
+      "source_path": "Telegram/SourceFiles/settings/business/settings_greeting.cpp",
+      "source_blob_sha": "1f96ca1a1f6ba0cc46f5d4f795443d4736a713c9",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "greeting enablement with shortcut limits, scoped recipients, configurable inactivity period and save/error behavior",
+      "upstream_owner": "Telegram business settings UI/domain",
+      "state_machine": "load server policy -> edit enable/recipient/schedule-or-period/shortcut -> validate limits -> save canonical automation -> surface fail-closed error",
+      "side_effects": "Maps to canonical business automation/conversation policy owner; settings UI cannot become the domain truth owner.",
+      "failure_cases": "invalid schedule/period/limits accepted; recipient scope lost; unavailable capability presented as supported; stale preview/async result overwrites newer state; failed persistence treated as success",
+      "ui_disposition": "Reuse canonical Button/IconButton/TextField/TextArea/Radio/Switch/Menu/Dialog/ConversationRow/ProfileSection/Picker/CreationFlow components; no Telegram/business-source-named parallel primitives.",
+      "fabushi_canonical_owner": "canonical business automation/conversation policy owner",
+      "fabushi_target": "MAPPED OPEN PRODUCTION GAP. Extend existing source-neutral canonical domain; do not create a Telegram-derived runtime.",
+      "platform_differences": "Telegram-specific API/protocol objects are not copied. Preserve scheduling, permission, recipient, deep-link, location, validation, warning and recovery semantics in source-neutral Fabushi domains.",
+      "production_evidence": "Repository search found no equivalent current production owner for this responsibility; implementation plus server/platform contract and same-head evidence remain open.",
+      "test_evidence": "CRITICAL risk: exact-head unit/contract/integration/fault/security/a11y/E2E evidence required before closure.",
+      "disposition": "mapped-open-canonical-product-gap",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "Greeting automation",
+      "consumer_evidence": [
+        "Complete direct exact-source read of Telegram/SourceFiles/settings/business/settings_greeting.cpp at accepted blob 1f96ca1a1f6ba0cc46f5d4f795443d4736a713c9."
+      ],
+      "reachability_status": "accepted-tree product responsibility proven; canonical production closure open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; product behavior to be independently reimplemented under Fabushi canonical owners.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "verified_blob_sha": "1f96ca1a1f6ba0cc46f5d4f795443d4736a713c9",
+        "file_type": "blob",
+        "recursive_order": 5541
+      },
+      "notes": "Read-complete. Applicable responsibility remains production-open; unknown remains open; omitted=false."
+    },
+    {
+      "recursive_order": 5542,
+      "source_path": "Telegram/SourceFiles/settings/business/settings_greeting.h",
+      "source_blob_sha": "2bb9afd591157169ad920ded2259ec581506bce2",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "settings route identity for greeting automation",
+      "upstream_owner": "Telegram business settings UI/domain",
+      "state_machine": "load canonical state -> edit through canonical controls -> validate -> persist domain command -> derived preview/list update",
+      "side_effects": "Maps to canonical business automation/conversation policy owner; settings UI cannot become the domain truth owner.",
+      "failure_cases": "invalid schedule/period/limits accepted; recipient scope lost; unavailable capability presented as supported; stale preview/async result overwrites newer state; failed persistence treated as success",
+      "ui_disposition": "Reuse canonical Button/IconButton/TextField/TextArea/Radio/Switch/Menu/Dialog/ConversationRow/ProfileSection/Picker/CreationFlow components; no Telegram/business-source-named parallel primitives.",
+      "fabushi_canonical_owner": "canonical business automation/conversation policy owner",
+      "fabushi_target": "MAPPED OPEN PRODUCTION GAP. Extend existing source-neutral canonical domain; do not create a Telegram-derived runtime.",
+      "platform_differences": "Telegram-specific API/protocol objects are not copied. Preserve scheduling, permission, recipient, deep-link, location, validation, warning and recovery semantics in source-neutral Fabushi domains.",
+      "production_evidence": "Repository search found no equivalent current production owner for this responsibility; implementation plus server/platform contract and same-head evidence remain open.",
+      "test_evidence": "CRITICAL risk: exact-head unit/contract/integration/fault/security/a11y/E2E evidence required before closure.",
+      "disposition": "mapped-open-canonical-product-gap",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "Greeting automation",
+      "consumer_evidence": [
+        "Complete direct exact-source read of Telegram/SourceFiles/settings/business/settings_greeting.h at accepted blob 2bb9afd591157169ad920ded2259ec581506bce2."
+      ],
+      "reachability_status": "accepted-tree product responsibility proven; canonical production closure open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; product behavior to be independently reimplemented under Fabushi canonical owners.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "verified_blob_sha": "2bb9afd591157169ad920ded2259ec581506bce2",
+        "file_type": "blob",
+        "recursive_order": 5542
+      },
+      "notes": "Read-complete. Applicable responsibility remains production-open; unknown remains open; omitted=false."
+    },
+    {
+      "recursive_order": 5543,
+      "source_path": "Telegram/SourceFiles/settings/business/settings_location.cpp",
+      "source_blob_sha": "57098491a079246685255abe8167d2befb8c6d71",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "address editing, optional map point, map capability tokens/fallback, picker lifecycle, cached map preview, exact current point and trimmed save",
+      "upstream_owner": "Telegram business settings UI/domain",
+      "state_machine": "load profile location -> edit address/map enable -> capability-aware picker -> exact point/address -> trim/save -> fallback when maps unsupported",
+      "side_effects": "Maps to canonical profile/business location + location capability owner; settings UI cannot become the domain truth owner.",
+      "failure_cases": "invalid schedule/period/limits accepted; recipient scope lost; unavailable capability presented as supported; stale preview/async result overwrites newer state; failed persistence treated as success",
+      "ui_disposition": "Reuse canonical Button/IconButton/TextField/TextArea/Radio/Switch/Menu/Dialog/ConversationRow/ProfileSection/Picker/CreationFlow components; no Telegram/business-source-named parallel primitives.",
+      "fabushi_canonical_owner": "canonical profile/business location + location capability owner",
+      "fabushi_target": "MAPPED OPEN PRODUCTION GAP. Extend existing source-neutral canonical domain; do not create a Telegram-derived runtime.",
+      "platform_differences": "Telegram-specific API/protocol objects are not copied. Preserve scheduling, permission, recipient, deep-link, location, validation, warning and recovery semantics in source-neutral Fabushi domains.",
+      "production_evidence": "Repository search found no equivalent current production owner for this responsibility; implementation plus server/platform contract and same-head evidence remain open.",
+      "test_evidence": "HIGH risk: exact-head unit/contract/integration/fault/security/a11y/E2E evidence required before closure.",
+      "disposition": "mapped-open-canonical-product-gap",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "Business location",
+      "consumer_evidence": [
+        "Complete direct exact-source read of Telegram/SourceFiles/settings/business/settings_location.cpp at accepted blob 57098491a079246685255abe8167d2befb8c6d71."
+      ],
+      "reachability_status": "accepted-tree product responsibility proven; canonical production closure open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; product behavior to be independently reimplemented under Fabushi canonical owners.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "verified_blob_sha": "57098491a079246685255abe8167d2befb8c6d71",
+        "file_type": "blob",
+        "recursive_order": 5543
+      },
+      "notes": "Read-complete. Applicable responsibility remains production-open; unknown remains open; omitted=false."
+    },
+    {
+      "recursive_order": 5544,
       "source_path": "Telegram/SourceFiles/settings/business/settings_location.h",
       "source_blob_sha": "31e03325320a0e6caea799a179ffa29177281c4d",
       "read_complete": true,
@@ -41,15 +146,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "31e03325320a0e6caea799a179ffa29177281c4d",
         "file_type": "blob",
-        "recursive_order": 5541
+        "recursive_order": 5544
       },
       "notes": "Read-complete. Applicable responsibility remains open; unknown is not lowered; omitted=false."
     },
     {
-      "recursive_order": 5542,
+      "recursive_order": 5545,
       "source_path": "Telegram/SourceFiles/settings/business/settings_quick_replies.cpp",
       "source_blob_sha": "28a6aa7c564c5040d84c8dd844cf64146907189b",
       "read_complete": true,
@@ -76,15 +181,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "28a6aa7c564c5040d84c8dd844cf64146907189b",
         "file_type": "blob",
-        "recursive_order": 5542
+        "recursive_order": 5545
       },
       "notes": "Read-complete. Applicable responsibility remains open; unknown is not lowered; omitted=false."
     },
     {
-      "recursive_order": 5543,
+      "recursive_order": 5546,
       "source_path": "Telegram/SourceFiles/settings/business/settings_quick_replies.h",
       "source_blob_sha": "4765c4f59717db121893cdb4ea53c649bc16892f",
       "read_complete": true,
@@ -111,15 +216,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "4765c4f59717db121893cdb4ea53c649bc16892f",
         "file_type": "blob",
-        "recursive_order": 5543
+        "recursive_order": 5546
       },
       "notes": "Read-complete. Applicable responsibility remains open; unknown is not lowered; omitted=false."
     },
     {
-      "recursive_order": 5544,
+      "recursive_order": 5547,
       "source_path": "Telegram/SourceFiles/settings/business/settings_recipients_helper.cpp",
       "source_blob_sha": "d18687cb5864a303f8b6fcc3adaa3ed5f2280e47",
       "read_complete": true,
@@ -146,15 +251,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "d18687cb5864a303f8b6fcc3adaa3ed5f2280e47",
         "file_type": "blob",
-        "recursive_order": 5544
+        "recursive_order": 5547
       },
       "notes": "Read-complete. Applicable responsibility remains open; unknown is not lowered; omitted=false."
     },
     {
-      "recursive_order": 5545,
+      "recursive_order": 5548,
       "source_path": "Telegram/SourceFiles/settings/business/settings_recipients_helper.h",
       "source_blob_sha": "a5528dfa6947d6fff31a89df95bdf0492de800ab",
       "read_complete": true,
@@ -181,15 +286,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "a5528dfa6947d6fff31a89df95bdf0492de800ab",
         "file_type": "blob",
-        "recursive_order": 5545
+        "recursive_order": 5548
       },
       "notes": "Read-complete. Applicable responsibility remains open; unknown is not lowered; omitted=false."
     },
     {
-      "recursive_order": 5546,
+      "recursive_order": 5549,
       "source_path": "Telegram/SourceFiles/settings/business/settings_shortcut_messages.cpp",
       "source_blob_sha": "5c5938b3a964f0ea2cae3f6b03609d67b2dfcbc1",
       "read_complete": true,
@@ -216,15 +321,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "5c5938b3a964f0ea2cae3f6b03609d67b2dfcbc1",
         "file_type": "blob",
-        "recursive_order": 5546
+        "recursive_order": 5549
       },
       "notes": "Read-complete. Applicable responsibility remains open; unknown is not lowered; omitted=false."
     },
     {
-      "recursive_order": 5547,
+      "recursive_order": 5550,
       "source_path": "Telegram/SourceFiles/settings/business/settings_shortcut_messages.h",
       "source_blob_sha": "325b126025502b5c82a5683b69075b909b313ec3",
       "read_complete": true,
@@ -251,15 +356,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "325b126025502b5c82a5683b69075b909b313ec3",
         "file_type": "blob",
-        "recursive_order": 5547
+        "recursive_order": 5550
       },
       "notes": "Read-complete. Applicable responsibility remains open; unknown is not lowered; omitted=false."
     },
     {
-      "recursive_order": 5548,
+      "recursive_order": 5551,
       "source_path": "Telegram/SourceFiles/settings/business/settings_working_hours.cpp",
       "source_blob_sha": "4e5fa10302ccbc2e32a9d6d768fb77b8124e92a3",
       "read_complete": true,
@@ -286,15 +391,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "4e5fa10302ccbc2e32a9d6d768fb77b8124e92a3",
         "file_type": "blob",
-        "recursive_order": 5548
+        "recursive_order": 5551
       },
       "notes": "Read-complete. Applicable responsibility remains open; unknown is not lowered; omitted=false."
     },
     {
-      "recursive_order": 5549,
+      "recursive_order": 5552,
       "source_path": "Telegram/SourceFiles/settings/business/settings_working_hours.h",
       "source_blob_sha": "213ef14880f01992c1c0836ab9f2dc288e72707e",
       "read_complete": true,
@@ -321,15 +426,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "213ef14880f01992c1c0836ab9f2dc288e72707e",
         "file_type": "blob",
-        "recursive_order": 5549
+        "recursive_order": 5552
       },
       "notes": "Read-complete. Applicable responsibility remains open; unknown is not lowered; omitted=false."
     },
     {
-      "recursive_order": 5550,
+      "recursive_order": 5553,
       "source_path": "Telegram/SourceFiles/settings/cloud_password/settings_cloud_password_common.cpp",
       "source_blob_sha": "010cac892937041bf5b02b525ed60353c77e4ed5",
       "read_complete": true,
@@ -356,15 +461,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "010cac892937041bf5b02b525ed60353c77e4ed5",
         "file_type": "blob",
-        "recursive_order": 5550
+        "recursive_order": 5553
       },
       "notes": "Read-complete. Applicable responsibility remains open; unknown is not lowered; omitted=false."
     },
     {
-      "recursive_order": 5551,
+      "recursive_order": 5554,
       "source_path": "Telegram/SourceFiles/settings/cloud_password/settings_cloud_password_common.h",
       "source_blob_sha": "1340e1bde8dd4667ce3093340e91aa46ec7bebe5",
       "read_complete": true,
@@ -391,15 +496,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "1340e1bde8dd4667ce3093340e91aa46ec7bebe5",
         "file_type": "blob",
-        "recursive_order": 5551
+        "recursive_order": 5554
       },
       "notes": "Read-complete. Applicable responsibility remains open; unknown is not lowered; omitted=false."
     },
     {
-      "recursive_order": 5552,
+      "recursive_order": 5555,
       "source_path": "Telegram/SourceFiles/settings/cloud_password/settings_cloud_password_email.cpp",
       "source_blob_sha": "dca036d7a9d5b1acdd4b7eb88e30d45a7f2df2a8",
       "read_complete": true,
@@ -426,15 +531,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "dca036d7a9d5b1acdd4b7eb88e30d45a7f2df2a8",
         "file_type": "blob",
-        "recursive_order": 5552
+        "recursive_order": 5555
       },
       "notes": "Read-complete. Applicable responsibility remains open; unknown is not lowered; omitted=false."
     },
     {
-      "recursive_order": 5553,
+      "recursive_order": 5556,
       "source_path": "Telegram/SourceFiles/settings/cloud_password/settings_cloud_password_email.h",
       "source_blob_sha": "c018138a97ce5e95723d5f7d69934920ca459fd0",
       "read_complete": true,
@@ -461,15 +566,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "c018138a97ce5e95723d5f7d69934920ca459fd0",
         "file_type": "blob",
-        "recursive_order": 5553
+        "recursive_order": 5556
       },
       "notes": "Read-complete. Applicable responsibility remains open; unknown is not lowered; omitted=false."
     },
     {
-      "recursive_order": 5554,
+      "recursive_order": 5557,
       "source_path": "Telegram/SourceFiles/settings/cloud_password/settings_cloud_password_email_confirm.cpp",
       "source_blob_sha": "d5628d378e965e5cfb9216a949661cf1c3393c1e",
       "read_complete": true,
@@ -496,15 +601,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "d5628d378e965e5cfb9216a949661cf1c3393c1e",
         "file_type": "blob",
-        "recursive_order": 5554
+        "recursive_order": 5557
       },
       "notes": "Read-complete. Applicable responsibility remains open; unknown is not lowered; omitted=false."
     },
     {
-      "recursive_order": 5555,
+      "recursive_order": 5558,
       "source_path": "Telegram/SourceFiles/settings/cloud_password/settings_cloud_password_email_confirm.h",
       "source_blob_sha": "aee1541926f0e2969affd179095b9a0e71350fd0",
       "read_complete": true,
@@ -531,15 +636,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "aee1541926f0e2969affd179095b9a0e71350fd0",
         "file_type": "blob",
-        "recursive_order": 5555
+        "recursive_order": 5558
       },
       "notes": "Read-complete. Applicable responsibility remains open; unknown is not lowered; omitted=false."
     },
     {
-      "recursive_order": 5556,
+      "recursive_order": 5559,
       "source_path": "Telegram/SourceFiles/settings/cloud_password/settings_cloud_password_hint.cpp",
       "source_blob_sha": "ce2c069d790c86083dd208b5399cebb8d1c90c31",
       "read_complete": true,
@@ -566,15 +671,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "ce2c069d790c86083dd208b5399cebb8d1c90c31",
         "file_type": "blob",
-        "recursive_order": 5556
+        "recursive_order": 5559
       },
       "notes": "Read-complete. Applicable responsibility remains open; unknown is not lowered; omitted=false."
     },
     {
-      "recursive_order": 5557,
+      "recursive_order": 5560,
       "source_path": "Telegram/SourceFiles/settings/cloud_password/settings_cloud_password_hint.h",
       "source_blob_sha": "6a4df10972f1579f4839d91c4d0c439190ced707",
       "read_complete": true,
@@ -601,15 +706,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "6a4df10972f1579f4839d91c4d0c439190ced707",
         "file_type": "blob",
-        "recursive_order": 5557
+        "recursive_order": 5560
       },
       "notes": "Read-complete. Applicable responsibility remains open; unknown is not lowered; omitted=false."
     },
     {
-      "recursive_order": 5558,
+      "recursive_order": 5561,
       "source_path": "Telegram/SourceFiles/settings/cloud_password/settings_cloud_password_input.cpp",
       "source_blob_sha": "c827d6c0fc1f20f8c0d6d0411357a226862325fd",
       "read_complete": true,
@@ -636,15 +741,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "c827d6c0fc1f20f8c0d6d0411357a226862325fd",
         "file_type": "blob",
-        "recursive_order": 5558
+        "recursive_order": 5561
       },
       "notes": "Read-complete. Applicable responsibility remains open; unknown is not lowered; omitted=false."
     },
     {
-      "recursive_order": 5559,
+      "recursive_order": 5562,
       "source_path": "Telegram/SourceFiles/settings/cloud_password/settings_cloud_password_input.h",
       "source_blob_sha": "0c1ae4f89cd6bfafe99d691a46c43d8ba76bdf8d",
       "read_complete": true,
@@ -671,15 +776,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "0c1ae4f89cd6bfafe99d691a46c43d8ba76bdf8d",
         "file_type": "blob",
-        "recursive_order": 5559
+        "recursive_order": 5562
       },
       "notes": "Read-complete. Applicable responsibility remains open; unknown is not lowered; omitted=false."
     },
     {
-      "recursive_order": 5560,
+      "recursive_order": 5563,
       "source_path": "Telegram/SourceFiles/settings/cloud_password/settings_cloud_password_login_email.cpp",
       "source_blob_sha": "49865c8044c7c75921586313b77bd331d7c901f5",
       "read_complete": true,
@@ -706,15 +811,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "49865c8044c7c75921586313b77bd331d7c901f5",
         "file_type": "blob",
-        "recursive_order": 5560
+        "recursive_order": 5563
       },
       "notes": "Read-complete. Applicable responsibility remains open; unknown is not lowered; omitted=false."
     },
     {
-      "recursive_order": 5561,
+      "recursive_order": 5564,
       "source_path": "Telegram/SourceFiles/settings/cloud_password/settings_cloud_password_login_email.h",
       "source_blob_sha": "4076096c145d1697fcde96f4258d3fdee84dcd02",
       "read_complete": true,
@@ -741,15 +846,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "4076096c145d1697fcde96f4258d3fdee84dcd02",
         "file_type": "blob",
-        "recursive_order": 5561
+        "recursive_order": 5564
       },
       "notes": "Read-complete. Applicable responsibility remains open; unknown is not lowered; omitted=false."
     },
     {
-      "recursive_order": 5562,
+      "recursive_order": 5565,
       "source_path": "Telegram/SourceFiles/settings/cloud_password/settings_cloud_password_login_email_confirm.cpp",
       "source_blob_sha": "90f2d4e1f2167b20471660df9a62449f861be3a0",
       "read_complete": true,
@@ -776,15 +881,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "90f2d4e1f2167b20471660df9a62449f861be3a0",
         "file_type": "blob",
-        "recursive_order": 5562
+        "recursive_order": 5565
       },
       "notes": "Read-complete. Applicable responsibility remains open; unknown is not lowered; omitted=false."
     },
     {
-      "recursive_order": 5563,
+      "recursive_order": 5566,
       "source_path": "Telegram/SourceFiles/settings/cloud_password/settings_cloud_password_login_email_confirm.h",
       "source_blob_sha": "6acfb5322745addd7246e86c60315f9738f5b1cc",
       "read_complete": true,
@@ -811,15 +916,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "6acfb5322745addd7246e86c60315f9738f5b1cc",
         "file_type": "blob",
-        "recursive_order": 5563
+        "recursive_order": 5566
       },
       "notes": "Read-complete. Applicable responsibility remains open; unknown is not lowered; omitted=false."
     },
     {
-      "recursive_order": 5564,
+      "recursive_order": 5567,
       "source_path": "Telegram/SourceFiles/settings/cloud_password/settings_cloud_password_manage.cpp",
       "source_blob_sha": "b292086e1d06ef95feb78ec43e308444709ea9bc",
       "read_complete": true,
@@ -846,15 +951,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "b292086e1d06ef95feb78ec43e308444709ea9bc",
         "file_type": "blob",
-        "recursive_order": 5564
+        "recursive_order": 5567
       },
       "notes": "Read-complete. Applicable responsibility remains open; unknown is not lowered; omitted=false."
     },
     {
-      "recursive_order": 5565,
+      "recursive_order": 5568,
       "source_path": "Telegram/SourceFiles/settings/cloud_password/settings_cloud_password_manage.h",
       "source_blob_sha": "a542287083b4614072d1aed25ce2faccca75b0c7",
       "read_complete": true,
@@ -881,15 +986,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "a542287083b4614072d1aed25ce2faccca75b0c7",
         "file_type": "blob",
-        "recursive_order": 5565
+        "recursive_order": 5568
       },
       "notes": "Read-complete. Applicable responsibility remains open; unknown is not lowered; omitted=false."
     },
     {
-      "recursive_order": 5566,
+      "recursive_order": 5569,
       "source_path": "Telegram/SourceFiles/settings/cloud_password/settings_cloud_password_start.cpp",
       "source_blob_sha": "0f0f813daee9e7f5508fc4b5c408a7dfda767657",
       "read_complete": true,
@@ -916,15 +1021,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "0f0f813daee9e7f5508fc4b5c408a7dfda767657",
         "file_type": "blob",
-        "recursive_order": 5566
+        "recursive_order": 5569
       },
       "notes": "Read-complete. Applicable responsibility remains open; unknown is not lowered; omitted=false."
     },
     {
-      "recursive_order": 5567,
+      "recursive_order": 5570,
       "source_path": "Telegram/SourceFiles/settings/cloud_password/settings_cloud_password_start.h",
       "source_blob_sha": "f8a521918cb8dac5dff8e0fc08e6f402e5b57d83",
       "read_complete": true,
@@ -951,15 +1056,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "f8a521918cb8dac5dff8e0fc08e6f402e5b57d83",
         "file_type": "blob",
-        "recursive_order": 5567
+        "recursive_order": 5570
       },
       "notes": "Read-complete. Applicable responsibility remains open; unknown is not lowered; omitted=false."
     },
     {
-      "recursive_order": 5568,
+      "recursive_order": 5571,
       "source_path": "Telegram/SourceFiles/settings/cloud_password/settings_cloud_password_step.cpp",
       "source_blob_sha": "165c325a8515c5df9f8e210ef4fcf3fae29d71e1",
       "read_complete": true,
@@ -986,113 +1091,8 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "165c325a8515c5df9f8e210ef4fcf3fae29d71e1",
-        "file_type": "blob",
-        "recursive_order": 5568
-      },
-      "notes": "Read-complete. Applicable responsibility remains open; unknown is not lowered; omitted=false."
-    },
-    {
-      "recursive_order": 5569,
-      "source_path": "Telegram/SourceFiles/settings/cloud_password/settings_cloud_password_step.h",
-      "source_blob_sha": "6fe8332febd7a36344b47562396e14935048290a",
-      "read_complete": true,
-      "responsibility_decomposition_complete": true,
-      "responsibility": "2SV shared step/navigation contract",
-      "upstream_owner": "Telegram cloud-password/account-security flow",
-      "state_machine": "step event -> exact navigation stack transition -> PASSWORD_HASH_INVALID/SRP_PASSWORD_CHANGED invalidates transient credentials and quits 2SV stack",
-      "side_effects": "Maps to canonical account security/2SV owner; UI/transient step state cannot become a second account/business truth owner.",
-      "failure_cases": "stale/current password retained too long; duplicate request races; recovery/login code scope or expected length lost; flood/expired/invalid errors collapsed into success; password changed elsewhere but old secret remains usable; pending reset cannot be cancelled/observed; transient secrets survive navigation",
-      "ui_disposition": "Reuse canonical TextField/Button/Dialog/AlertDialog/Banner/Error/Loading account-security surfaces with keyboard/a11y/focus/light-dark behavior; never expose secrets in logs/evidence.",
-      "fabushi_canonical_owner": "canonical account security/2SV owner",
-      "fabushi_target": "MAPPED OPEN PRODUCTION GAP. Implement through source-neutral canonical owner only.",
-      "platform_differences": "Telegram API identifiers/protocol/UI mechanics are not copied; preserve product/security state machine, validation, limits, lifecycle, recovery and error semantics.",
-      "production_evidence": "Current repository searches found no equivalent Telegram-style cloud-password/SRP/recovery-email state machine. Treat responsibility as applicable account-security behavior where product requirements require 2SV/recovery; implementation/security evidence remain open.",
-      "test_evidence": "CRITICAL risk: exact-head unit/contract/integration/fault/security/a11y/E2E evidence required before unknown closure.",
-      "disposition": "mapped-open-canonical-product-security-gap",
-      "unknown_closed": false,
-      "omitted": false,
-      "consumer_symbol": "2SV shared step/navigation contract",
-      "consumer_evidence": [
-        "Complete direct exact-source read of Telegram/SourceFiles/settings/cloud_password/settings_cloud_password_step.h at accepted blob 6fe8332febd7a36344b47562396e14935048290a."
-      ],
-      "reachability_status": "accepted-tree responsibility proven; canonical production closure open",
-      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
-      "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
-        "verified_blob_sha": "6fe8332febd7a36344b47562396e14935048290a",
-        "file_type": "blob",
-        "recursive_order": 5569
-      },
-      "notes": "Read-complete. Applicable responsibility remains open; unknown is not lowered; omitted=false."
-    },
-    {
-      "recursive_order": 5570,
-      "source_path": "Telegram/SourceFiles/settings/cloud_password/settings_cloud_password_validate_icon.cpp",
-      "source_blob_sha": "f189cda2d9ab43a7f2991ac8b3270f313c3c66d7",
-      "read_complete": true,
-      "responsibility_decomposition_complete": true,
-      "responsibility": "2SV success presentation",
-      "upstream_owner": "Telegram cloud-password/account-security flow",
-      "state_machine": "load account-security state -> collect bounded secret/code/email input -> serialize one request -> classify failure -> clear transient state -> exact next step",
-      "side_effects": "Maps to canonical account security UI/design-system owner; UI/transient step state cannot become a second account/business truth owner.",
-      "failure_cases": "stale/current password retained too long; duplicate request races; recovery/login code scope or expected length lost; flood/expired/invalid errors collapsed into success; password changed elsewhere but old secret remains usable; pending reset cannot be cancelled/observed; transient secrets survive navigation",
-      "ui_disposition": "Reuse canonical TextField/Button/Dialog/AlertDialog/Banner/Error/Loading account-security surfaces with keyboard/a11y/focus/light-dark behavior; never expose secrets in logs/evidence.",
-      "fabushi_canonical_owner": "canonical account security UI/design-system owner",
-      "fabushi_target": "MAPPED OPEN PRODUCTION GAP. Implement through source-neutral canonical owner only.",
-      "platform_differences": "Telegram API identifiers/protocol/UI mechanics are not copied; preserve product/security state machine, validation, limits, lifecycle, recovery and error semantics.",
-      "production_evidence": "Current repository searches found no equivalent Telegram-style cloud-password/SRP/recovery-email state machine. Treat responsibility as applicable account-security behavior where product requirements require 2SV/recovery; implementation/security evidence remain open.",
-      "test_evidence": "MEDIUM risk: exact-head unit/contract/integration/fault/security/a11y/E2E evidence required before unknown closure.",
-      "disposition": "mapped-open-canonical-product-security-gap",
-      "unknown_closed": false,
-      "omitted": false,
-      "consumer_symbol": "2SV success presentation",
-      "consumer_evidence": [
-        "Complete direct exact-source read of Telegram/SourceFiles/settings/cloud_password/settings_cloud_password_validate_icon.cpp at accepted blob f189cda2d9ab43a7f2991ac8b3270f313c3c66d7."
-      ],
-      "reachability_status": "accepted-tree responsibility proven; canonical production closure open",
-      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
-      "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
-        "verified_blob_sha": "f189cda2d9ab43a7f2991ac8b3270f313c3c66d7",
-        "file_type": "blob",
-        "recursive_order": 5570
-      },
-      "notes": "Read-complete. Applicable responsibility remains open; unknown is not lowered; omitted=false."
-    },
-    {
-      "recursive_order": 5571,
-      "source_path": "Telegram/SourceFiles/settings/cloud_password/settings_cloud_password_validate_icon.h",
-      "source_blob_sha": "54280d7360ea0a9fa601525fac4f4c6a0d9dc557",
-      "read_complete": true,
-      "responsibility_decomposition_complete": true,
-      "responsibility": "2SV success presentation contract",
-      "upstream_owner": "Telegram cloud-password/account-security flow",
-      "state_machine": "load account-security state -> collect bounded secret/code/email input -> serialize one request -> classify failure -> clear transient state -> exact next step",
-      "side_effects": "Maps to canonical account security UI/design-system owner; UI/transient step state cannot become a second account/business truth owner.",
-      "failure_cases": "stale/current password retained too long; duplicate request races; recovery/login code scope or expected length lost; flood/expired/invalid errors collapsed into success; password changed elsewhere but old secret remains usable; pending reset cannot be cancelled/observed; transient secrets survive navigation",
-      "ui_disposition": "Reuse canonical TextField/Button/Dialog/AlertDialog/Banner/Error/Loading account-security surfaces with keyboard/a11y/focus/light-dark behavior; never expose secrets in logs/evidence.",
-      "fabushi_canonical_owner": "canonical account security UI/design-system owner",
-      "fabushi_target": "MAPPED OPEN PRODUCTION GAP. Implement through source-neutral canonical owner only.",
-      "platform_differences": "Telegram API identifiers/protocol/UI mechanics are not copied; preserve product/security state machine, validation, limits, lifecycle, recovery and error semantics.",
-      "production_evidence": "Current repository searches found no equivalent Telegram-style cloud-password/SRP/recovery-email state machine. Treat responsibility as applicable account-security behavior where product requirements require 2SV/recovery; implementation/security evidence remain open.",
-      "test_evidence": "MEDIUM risk: exact-head unit/contract/integration/fault/security/a11y/E2E evidence required before unknown closure.",
-      "disposition": "mapped-open-canonical-product-security-gap",
-      "unknown_closed": false,
-      "omitted": false,
-      "consumer_symbol": "2SV success presentation contract",
-      "consumer_evidence": [
-        "Complete direct exact-source read of Telegram/SourceFiles/settings/cloud_password/settings_cloud_password_validate_icon.h at accepted blob 54280d7360ea0a9fa601525fac4f4c6a0d9dc557."
-      ],
-      "reachability_status": "accepted-tree responsibility proven; canonical production closure open",
-      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior to be independently implemented under Fabushi canonical owners.",
-      "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
-        "verified_blob_sha": "54280d7360ea0a9fa601525fac4f4c6a0d9dc557",
         "file_type": "blob",
         "recursive_order": 5571
       },

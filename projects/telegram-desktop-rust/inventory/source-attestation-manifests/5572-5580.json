@@ -1,61 +1,61 @@
 {
-  "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+  "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
   "start": 5572,
   "end": 5580,
   "entries": [
     {
       "order": 5572,
+      "path": "Telegram/SourceFiles/settings/cloud_password/settings_cloud_password_step.h",
+      "blob": "6fe8332febd7a36344b47562396e14935048290a",
+      "consumer_symbol": "2SV shared step/navigation contract"
+    },
+    {
+      "order": 5573,
+      "path": "Telegram/SourceFiles/settings/cloud_password/settings_cloud_password_validate_icon.cpp",
+      "blob": "f189cda2d9ab43a7f2991ac8b3270f313c3c66d7",
+      "consumer_symbol": "2SV success presentation"
+    },
+    {
+      "order": 5574,
+      "path": "Telegram/SourceFiles/settings/cloud_password/settings_cloud_password_validate_icon.h",
+      "blob": "54280d7360ea0a9fa601525fac4f4c6a0d9dc557",
+      "consumer_symbol": "2SV success presentation contract"
+    },
+    {
+      "order": 5575,
       "path": "Telegram/SourceFiles/settings/detailed_settings_button.cpp",
       "blob": "f0fe642c62aa6b7132a13d59a30e17b50e248668",
       "consumer_symbol": "Detailed settings switch control"
     },
     {
-      "order": 5573,
+      "order": 5576,
       "path": "Telegram/SourceFiles/settings/detailed_settings_button.h",
       "blob": "a5dfee47af97bcd64995dc744ddb0f9642f7b79c",
       "consumer_symbol": "Detailed settings switch control contract"
     },
     {
-      "order": 5574,
+      "order": 5577,
       "path": "Telegram/SourceFiles/settings/sections/settings_active_sessions.cpp",
       "blob": "27616cbf6f76c2df1efd9e8462234839d346abd8",
       "consumer_symbol": "Active sessions/device authorization management"
     },
     {
-      "order": 5575,
+      "order": 5578,
       "path": "Telegram/SourceFiles/settings/sections/settings_active_sessions.h",
       "blob": "f3a577385bd7110ef3be6457c2350e9f6e7ccb83",
       "consumer_symbol": "Active sessions settings route"
     },
     {
-      "order": 5576,
+      "order": 5579,
       "path": "Telegram/SourceFiles/settings/sections/settings_active_sessions.style",
       "blob": "ef72d4f9db4325e3771dd92243f44574ef17901b",
       "consumer_symbol": "Active sessions presentation tokens"
     },
     {
-      "order": 5577,
+      "order": 5580,
       "path": "Telegram/SourceFiles/settings/sections/settings_advanced.cpp",
       "blob": "e06c1cc267c9b6ad63475bf6cf3caf75f4179246",
       "consumer_symbol": "Advanced data/network/download/window/system/update/archive settings"
-    },
-    {
-      "order": 5578,
-      "path": "Telegram/SourceFiles/settings/sections/settings_advanced.h",
-      "blob": "ceed08440fb2f897b14693545b4e2f8e8401f0ea",
-      "consumer_symbol": "Advanced settings route/contracts"
-    },
-    {
-      "order": 5579,
-      "path": "Telegram/SourceFiles/settings/sections/settings_blocked_peers.cpp",
-      "blob": "f06bb447090fd1bfa1a10e68c0606235677c5f3e",
-      "consumer_symbol": "Blocked peers management"
-    },
-    {
-      "order": 5580,
-      "path": "Telegram/SourceFiles/settings/sections/settings_blocked_peers.h",
-      "blob": "d520ced1687a5e9b882f8ecb04aa2ea8789bedcc",
-      "consumer_symbol": "Blocked peers settings route"
     }
   ]
 }

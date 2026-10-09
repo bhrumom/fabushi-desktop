@@ -58,7 +58,7 @@ Repository: `bhrumom/fabushi-desktop`
 
 Revision 3 读取：main `860f03a8553c779fe006c7826f190c3014a571dc`；PR #20 已合并（merge `ee66bacdf47f36af2ae96c0a8a8ec401460426e7`）。每次执行重新读取 live refs，不能继续把 PR #20 当作未合并工作分支。
 
-上游 discovery HEAD 已 rebaseline 到 `42f8a36d43b8c805bc821905bea4cfeb3af1d41d`（tree `6ac9bbc1b44edcb119b1a724e7b0a321c3b7b8fa`）；`3a15bf1fe34b6950916215a11b50eadfce4bbb41`、`36a0c87ca096c48ccf6193aa2c31707fdcafcc7c` 与更早 baseline 均为历史证据。机器 lock/inventory/ledger/dossiers 已重绑 live identity，但 source completeness 仍 open，旧 Actions 不得证明新 baseline 完整。
+上游 discovery HEAD 已 rebaseline 到 `863cf10d9f34fb0b1b35b35da1bda75acfc58d2e`（tree `5030985204963cbbd362ced7412d231b04ebd0cc`）；`42f8a36d43b8c805bc821905bea4cfeb3af1d41d` 与更早 authority 仅作历史证据。当前 recursive denominator 16,123；read-through 5,583；unread 10,540；unknown 15,844；source closure 仍 open，predecessor Actions 不得证明新 baseline。
 
 ## Next task / completion
 
@@ -66,4 +66,4 @@ Revision 3 读取：main `860f03a8553c779fe006c7826f190c3014a571dc`；PR #20 已
 
 先做新基线全量差异与 current owner 对照，再按已明确责任推进真实实现。遇到阻塞记录解除条件并推进不依赖该阻塞的下一项，不能放宽 gate。此次只修订文档，未完成模块迁移或 UI 改造；全产品完成以 FBCP-001 AC-01 至 AC-50 全部通过为准。
 
-Current live authority (2026-10-09): `telegramdesktop/tdesktop@42f8a36d43b8c805bc821905bea4cfeb3af1d41d` (root tree `6ac9bbc1b44edcb119b1a724e7b0a321c3b7b8fa`), four commits ahead of historical `3a15bf1fe34b6950916215a11b50eadfce4bbb41`; exactly nine existing paths changed, no add/delete/gitlink change, recursive denominator remains 16,120, and source closure remains open.
+Current live authority (2026-10-09): `telegramdesktop/tdesktop@863cf10d9f34fb0b1b35b35da1bda75acfc58d2e` (root tree `5030985204963cbbd362ced7412d231b04ebd0cc`), three commits ahead of historical `42f8a36d43b8c805bc821905bea4cfeb3af1d41d`; 15 root paths changed (12 modified, 3 added), recursive denominator is 16,123, read-through is 5,583, unread is 10,540, unknown is 15,844, omitted is 0, and source closure remains open.

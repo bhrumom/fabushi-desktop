@@ -1,193 +1,193 @@
 {
-  "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+  "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
   "start": 5541,
   "end": 5571,
   "entries": [
     {
       "order": 5541,
+      "path": "Telegram/SourceFiles/settings/business/settings_greeting.cpp",
+      "blob": "1f96ca1a1f6ba0cc46f5d4f795443d4736a713c9",
+      "consumer_symbol": "Greeting automation"
+    },
+    {
+      "order": 5542,
+      "path": "Telegram/SourceFiles/settings/business/settings_greeting.h",
+      "blob": "2bb9afd591157169ad920ded2259ec581506bce2",
+      "consumer_symbol": "Greeting automation"
+    },
+    {
+      "order": 5543,
+      "path": "Telegram/SourceFiles/settings/business/settings_location.cpp",
+      "blob": "57098491a079246685255abe8167d2befb8c6d71",
+      "consumer_symbol": "Business location"
+    },
+    {
+      "order": 5544,
       "path": "Telegram/SourceFiles/settings/business/settings_location.h",
       "blob": "31e03325320a0e6caea799a179ffa29177281c4d",
       "consumer_symbol": "Business location route"
     },
     {
-      "order": 5542,
+      "order": 5545,
       "path": "Telegram/SourceFiles/settings/business/settings_quick_replies.cpp",
       "blob": "28a6aa7c564c5040d84c8dd844cf64146907189b",
       "consumer_symbol": "Quick replies"
     },
     {
-      "order": 5543,
+      "order": 5546,
       "path": "Telegram/SourceFiles/settings/business/settings_quick_replies.h",
       "blob": "4765c4f59717db121893cdb4ea53c649bc16892f",
       "consumer_symbol": "Quick replies route/name editor"
     },
     {
-      "order": 5544,
+      "order": 5547,
       "path": "Telegram/SourceFiles/settings/business/settings_recipients_helper.cpp",
       "blob": "d18687cb5864a303f8b6fcc3adaa3ed5f2280e47",
       "consumer_symbol": "Business recipients policy"
     },
     {
-      "order": 5545,
+      "order": 5548,
       "path": "Telegram/SourceFiles/settings/business/settings_recipients_helper.h",
       "blob": "a5528dfa6947d6fff31a89df95bdf0492de800ab",
       "consumer_symbol": "Business recipients/shortcut limits"
     },
     {
-      "order": 5546,
+      "order": 5549,
       "path": "Telegram/SourceFiles/settings/business/settings_shortcut_messages.cpp",
       "blob": "5c5938b3a964f0ea2cae3f6b03609d67b2dfcbc1",
       "consumer_symbol": "Shortcut message templates"
     },
     {
-      "order": 5547,
+      "order": 5550,
       "path": "Telegram/SourceFiles/settings/business/settings_shortcut_messages.h",
       "blob": "325b126025502b5c82a5683b69075b909b313ec3",
       "consumer_symbol": "Shortcut message templates route"
     },
     {
-      "order": 5548,
+      "order": 5551,
       "path": "Telegram/SourceFiles/settings/business/settings_working_hours.cpp",
       "blob": "4e5fa10302ccbc2e32a9d6d768fb77b8124e92a3",
       "consumer_symbol": "Business working hours"
     },
     {
-      "order": 5549,
+      "order": 5552,
       "path": "Telegram/SourceFiles/settings/business/settings_working_hours.h",
       "blob": "213ef14880f01992c1c0836ab9f2dc288e72707e",
       "consumer_symbol": "Business working hours route"
     },
     {
-      "order": 5550,
+      "order": 5553,
       "path": "Telegram/SourceFiles/settings/cloud_password/settings_cloud_password_common.cpp",
       "blob": "010cac892937041bf5b02b525ed60353c77e4ed5",
       "consumer_symbol": "2SV shared UI/security flow"
     },
     {
-      "order": 5551,
+      "order": 5554,
       "path": "Telegram/SourceFiles/settings/cloud_password/settings_cloud_password_common.h",
       "blob": "1340e1bde8dd4667ce3093340e91aa46ec7bebe5",
       "consumer_symbol": "2SV transient step state"
     },
     {
-      "order": 5552,
+      "order": 5555,
       "path": "Telegram/SourceFiles/settings/cloud_password/settings_cloud_password_email.cpp",
       "blob": "dca036d7a9d5b1acdd4b7eb88e30d45a7f2df2a8",
       "consumer_symbol": "2SV recovery email setup"
     },
     {
-      "order": 5553,
+      "order": 5556,
       "path": "Telegram/SourceFiles/settings/cloud_password/settings_cloud_password_email.h",
       "blob": "c018138a97ce5e95723d5f7d69934920ca459fd0",
       "consumer_symbol": "2SV recovery email route"
     },
     {
-      "order": 5554,
+      "order": 5557,
       "path": "Telegram/SourceFiles/settings/cloud_password/settings_cloud_password_email_confirm.cpp",
       "blob": "d5628d378e965e5cfb9216a949661cf1c3393c1e",
       "consumer_symbol": "2SV recovery email/code confirmation"
     },
     {
-      "order": 5555,
+      "order": 5558,
       "path": "Telegram/SourceFiles/settings/cloud_password/settings_cloud_password_email_confirm.h",
       "blob": "aee1541926f0e2969affd179095b9a0e71350fd0",
       "consumer_symbol": "2SV email confirmation route"
     },
     {
-      "order": 5556,
+      "order": 5559,
       "path": "Telegram/SourceFiles/settings/cloud_password/settings_cloud_password_hint.cpp",
       "blob": "ce2c069d790c86083dd208b5399cebb8d1c90c31",
       "consumer_symbol": "2SV password hint/recovery continuation"
     },
     {
-      "order": 5557,
+      "order": 5560,
       "path": "Telegram/SourceFiles/settings/cloud_password/settings_cloud_password_hint.h",
       "blob": "6a4df10972f1579f4839d91c4d0c439190ced707",
       "consumer_symbol": "2SV hint route"
     },
     {
-      "order": 5558,
+      "order": 5561,
       "path": "Telegram/SourceFiles/settings/cloud_password/settings_cloud_password_input.cpp",
       "blob": "c827d6c0fc1f20f8c0d6d0411357a226862325fd",
       "consumer_symbol": "2SV create/check/change/recover/reset state machine"
     },
     {
-      "order": 5559,
+      "order": 5562,
       "path": "Telegram/SourceFiles/settings/cloud_password/settings_cloud_password_input.h",
       "blob": "0c1ae4f89cd6bfafe99d691a46c43d8ba76bdf8d",
       "consumer_symbol": "2SV password input routes"
     },
     {
-      "order": 5560,
+      "order": 5563,
       "path": "Telegram/SourceFiles/settings/cloud_password/settings_cloud_password_login_email.cpp",
       "blob": "49865c8044c7c75921586313b77bd331d7c901f5",
       "consumer_symbol": "Login email setup/code request"
     },
     {
-      "order": 5561,
+      "order": 5564,
       "path": "Telegram/SourceFiles/settings/cloud_password/settings_cloud_password_login_email.h",
       "blob": "4076096c145d1697fcde96f4258d3fdee84dcd02",
       "consumer_symbol": "Login email route"
     },
     {
-      "order": 5562,
+      "order": 5565,
       "path": "Telegram/SourceFiles/settings/cloud_password/settings_cloud_password_login_email_confirm.cpp",
       "blob": "90f2d4e1f2167b20471660df9a62449f861be3a0",
       "consumer_symbol": "Login email code verification"
     },
     {
-      "order": 5563,
+      "order": 5566,
       "path": "Telegram/SourceFiles/settings/cloud_password/settings_cloud_password_login_email_confirm.h",
       "blob": "6acfb5322745addd7246e86c60315f9738f5b1cc",
       "consumer_symbol": "Login email confirmation route"
     },
     {
-      "order": 5564,
+      "order": 5567,
       "path": "Telegram/SourceFiles/settings/cloud_password/settings_cloud_password_manage.cpp",
       "blob": "b292086e1d06ef95feb78ec43e308444709ea9bc",
       "consumer_symbol": "2SV manage/disable session"
     },
     {
-      "order": 5565,
+      "order": 5568,
       "path": "Telegram/SourceFiles/settings/cloud_password/settings_cloud_password_manage.h",
       "blob": "a542287083b4614072d1aed25ce2faccca75b0c7",
       "consumer_symbol": "2SV manage route"
     },
     {
-      "order": 5566,
+      "order": 5569,
       "path": "Telegram/SourceFiles/settings/cloud_password/settings_cloud_password_start.cpp",
       "blob": "0f0f813daee9e7f5508fc4b5c408a7dfda767657",
       "consumer_symbol": "2SV enrollment start"
     },
     {
-      "order": 5567,
+      "order": 5570,
       "path": "Telegram/SourceFiles/settings/cloud_password/settings_cloud_password_start.h",
       "blob": "f8a521918cb8dac5dff8e0fc08e6f402e5b57d83",
       "consumer_symbol": "2SV start route"
     },
     {
-      "order": 5568,
+      "order": 5571,
       "path": "Telegram/SourceFiles/settings/cloud_password/settings_cloud_password_step.cpp",
       "blob": "165c325a8515c5df9f8e210ef4fcf3fae29d71e1",
       "consumer_symbol": "2SV navigation/error invalidation"
-    },
-    {
-      "order": 5569,
-      "path": "Telegram/SourceFiles/settings/cloud_password/settings_cloud_password_step.h",
-      "blob": "6fe8332febd7a36344b47562396e14935048290a",
-      "consumer_symbol": "2SV shared step/navigation contract"
-    },
-    {
-      "order": 5570,
-      "path": "Telegram/SourceFiles/settings/cloud_password/settings_cloud_password_validate_icon.cpp",
-      "blob": "f189cda2d9ab43a7f2991ac8b3270f313c3c66d7",
-      "consumer_symbol": "2SV success presentation"
-    },
-    {
-      "order": 5571,
-      "path": "Telegram/SourceFiles/settings/cloud_password/settings_cloud_password_validate_icon.h",
-      "blob": "54280d7360ea0a9fa601525fac4f4c6a0d9dc557",
-      "consumer_symbol": "2SV success presentation contract"
     }
   ]
 }

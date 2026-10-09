@@ -1,91 +1,91 @@
 {
-  "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+  "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
   "start": 5043,
   "end": 5056,
   "entries": [
     {
       "order": 5043,
+      "path": "Telegram/SourceFiles/media/audio/media_audio_capture.cpp",
+      "blob": "c816566339622e87a10184c566d9806872b1dfff",
+      "consumer_symbol": "Media::Capture::Instance"
+    },
+    {
+      "order": 5044,
+      "path": "Telegram/SourceFiles/media/audio/media_audio_capture.h",
+      "blob": "fb79b39dde4ad3343b54edb17d70bebc5e1d49fb",
+      "consumer_symbol": "Media::Capture::Instance"
+    },
+    {
+      "order": 5045,
+      "path": "Telegram/SourceFiles/media/audio/media_audio_capture_common.h",
+      "blob": "e276ad4e94a9347940818a70fb0fd202f8ea694e",
+      "consumer_symbol": "Media::Capture::Result"
+    },
+    {
+      "order": 5046,
       "path": "Telegram/SourceFiles/media/audio/media_audio_edit.cpp",
       "blob": "393d7d09a0968e44772c98811222242a021a1eee",
       "consumer_symbol": "media_audio_edit"
     },
     {
-      "order": 5044,
+      "order": 5047,
       "path": "Telegram/SourceFiles/media/audio/media_audio_edit.h",
       "blob": "6d360ffde1d8b1c8b810d757c593ce0a4d21815b",
       "consumer_symbol": "media_audio_edit"
     },
     {
-      "order": 5045,
+      "order": 5048,
       "path": "Telegram/SourceFiles/media/audio/media_audio_ffmpeg_loader.cpp",
       "blob": "de930359f81f28a10ef6503dc2ab7914c341936f",
       "consumer_symbol": "media_audio_ffmpeg_loader"
     },
     {
-      "order": 5046,
+      "order": 5049,
       "path": "Telegram/SourceFiles/media/audio/media_audio_ffmpeg_loader.h",
       "blob": "d5ccc90947789bd7dfdd57ee9ad8a5d5865c35ca",
       "consumer_symbol": "media_audio_ffmpeg_loader"
     },
     {
-      "order": 5047,
+      "order": 5050,
       "path": "Telegram/SourceFiles/media/audio/media_audio_loader.cpp",
       "blob": "7451de9945dd688347cc5a44417a850b1224b88e",
       "consumer_symbol": "media_audio_loader"
     },
     {
-      "order": 5048,
+      "order": 5051,
       "path": "Telegram/SourceFiles/media/audio/media_audio_loader.h",
       "blob": "3082ef1f3486a190ea680b1baae40076fda3facd",
       "consumer_symbol": "media_audio_loader"
     },
     {
-      "order": 5049,
+      "order": 5052,
       "path": "Telegram/SourceFiles/media/audio/media_audio_loaders.cpp",
       "blob": "3e0cc74e63ac061a9cef7a2ec8b0d01bf759a087",
       "consumer_symbol": "media_audio_loaders"
     },
     {
-      "order": 5050,
+      "order": 5053,
       "path": "Telegram/SourceFiles/media/audio/media_audio_loaders.h",
       "blob": "d8b732235d3c39cf56995aa81961ef1a128934e8",
       "consumer_symbol": "media_audio_loaders"
     },
     {
-      "order": 5051,
+      "order": 5054,
       "path": "Telegram/SourceFiles/media/audio/media_audio_local_cache.cpp",
       "blob": "77dc25597fc48c6886dcae4883ad6ac6007424d3",
       "consumer_symbol": "media_audio_local_cache"
     },
     {
-      "order": 5052,
+      "order": 5055,
       "path": "Telegram/SourceFiles/media/audio/media_audio_local_cache.h",
       "blob": "53f4295d30fc63d566e89d222667d85888c35760",
       "consumer_symbol": "media_audio_local_cache"
     },
     {
-      "order": 5053,
+      "order": 5056,
       "path": "Telegram/SourceFiles/media/audio/media_audio_track.cpp",
       "blob": "93de568275faa860dee86e4adf18abda2b19a9be",
       "consumer_symbol": "media_audio_track"
-    },
-    {
-      "order": 5054,
-      "path": "Telegram/SourceFiles/media/audio/media_audio_track.h",
-      "blob": "a4476a28eecb2b8b5ca4e2b16d8f1f77fbac03ec",
-      "consumer_symbol": "media_audio_track"
-    },
-    {
-      "order": 5055,
-      "path": "Telegram/SourceFiles/media/audio/media_child_ffmpeg_loader.cpp",
-      "blob": "96efc7c937cd52f611e2d6de97c9bce1d9204374",
-      "consumer_symbol": "media_child_ffmpeg_loader"
-    },
-    {
-      "order": 5056,
-      "path": "Telegram/SourceFiles/media/audio/media_child_ffmpeg_loader.h",
-      "blob": "65354d967ef06442759cef55236d8867fdbe3755",
-      "consumer_symbol": "media_child_ffmpeg_loader"
     }
   ]
 }

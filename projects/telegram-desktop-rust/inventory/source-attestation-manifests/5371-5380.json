@@ -1,67 +1,67 @@
 {
-  "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+  "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
   "start": 5371,
   "end": 5380,
   "entries": [
     {
       "order": 5371,
+      "path": "Telegram/SourceFiles/payments/ui/payments.style",
+      "blob": "e537343e6709b7ed86215306fc2c27a616592952",
+      "consumer_symbol": "payment panel semantic presentation contract"
+    },
+    {
+      "order": 5372,
+      "path": "Telegram/SourceFiles/payments/ui/payments_edit_card.cpp",
+      "blob": "0c2aac434e9ee4ca29e465274dadc087abda60e3",
+      "consumer_symbol": "Payments::Ui::EditCard / validators / collect"
+    },
+    {
+      "order": 5373,
+      "path": "Telegram/SourceFiles/payments/ui/payments_edit_card.h",
+      "blob": "ae4cce54b415fead818a50e40143b82e2c09ae4c",
+      "consumer_symbol": "Payments::Ui::EditCard contract"
+    },
+    {
+      "order": 5374,
       "path": "Telegram/SourceFiles/payments/ui/payments_edit_information.cpp",
       "blob": "aa409b72c29041d49cf78081d3a08d4b5284d854",
       "consumer_symbol": "Payments::Ui::EditInformation"
     },
     {
-      "order": 5372,
+      "order": 5375,
       "path": "Telegram/SourceFiles/payments/ui/payments_edit_information.h",
       "blob": "6755939a01414f1b7d87263e71a6fc3f5ce920ce",
       "consumer_symbol": "Payments::Ui::EditInformation contract"
     },
     {
-      "order": 5373,
+      "order": 5376,
       "path": "Telegram/SourceFiles/payments/ui/payments_field.cpp",
       "blob": "25892dae53a71e59e7cd7117548cafc9083da659",
       "consumer_symbol": "Payments::Ui::Field"
     },
     {
-      "order": 5374,
+      "order": 5377,
       "path": "Telegram/SourceFiles/payments/ui/payments_field.h",
       "blob": "26711ddd935cfb79adc6a053aebbfcd3fad89793",
       "consumer_symbol": "Payments::Ui::Field contract"
     },
     {
-      "order": 5375,
+      "order": 5378,
       "path": "Telegram/SourceFiles/payments/ui/payments_form_summary.cpp",
       "blob": "bb178a0530e4e53bcaca8f0324b5cec5a5984661",
       "consumer_symbol": "Payments::Ui::FormSummary"
     },
     {
-      "order": 5376,
+      "order": 5379,
       "path": "Telegram/SourceFiles/payments/ui/payments_form_summary.h",
       "blob": "ed7ba7373af3010fe8c5a127bcecca2866541156",
       "consumer_symbol": "Payments::Ui::FormSummary contract"
     },
     {
-      "order": 5377,
+      "order": 5380,
       "path": "Telegram/SourceFiles/payments/ui/payments_panel.cpp",
       "blob": "adf27afecbee264df8933d4645fc1c12da84fe31",
       "consumer_symbol": "Payments::Ui::Panel"
-    },
-    {
-      "order": 5378,
-      "path": "Telegram/SourceFiles/payments/ui/payments_panel.h",
-      "blob": "db6f345c6fb03f5978c524c29f4628c74df7d141",
-      "consumer_symbol": "Payments::Ui::Panel contract"
-    },
-    {
-      "order": 5379,
-      "path": "Telegram/SourceFiles/payments/ui/payments_panel_data.h",
-      "blob": "1021e7b56daeb362417b38e0c346d6ff8cf930fe",
-      "consumer_symbol": "Payments panel data contracts"
-    },
-    {
-      "order": 5380,
-      "path": "Telegram/SourceFiles/payments/ui/payments_panel_delegate.h",
-      "blob": "fd73fd1441682bd829c606951992452d67107264",
-      "consumer_symbol": "Payments::Ui::PanelDelegate"
     }
   ]
 }

@@ -1,25 +1,25 @@
 {
-  "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+  "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
   "start": 5031,
   "end": 5033,
   "entries": [
     {
       "order": 5031,
-      "path": "Telegram/SourceFiles/main/session/send_as_peers.h",
-      "blob": "df09f6b4616cbf31cbf958c0523dea2df74701ff",
-      "consumer_symbol": "send_as_peers"
+      "path": "Telegram/SourceFiles/main/main_session_settings.cpp",
+      "blob": "dacb8da60af47634856d65c210d99701e3387bbc",
+      "consumer_symbol": "main_session_settings"
     },
     {
       "order": 5032,
-      "path": "Telegram/SourceFiles/main/session/session_show.cpp",
-      "blob": "1f740d441385950d8dbcdab4761e9bf626cec9f7",
-      "consumer_symbol": "session_show"
+      "path": "Telegram/SourceFiles/main/main_session_settings.h",
+      "blob": "ff7a07a82243d3fa7d8e1f0353740d8d764dfe68",
+      "consumer_symbol": "main_session_settings"
     },
     {
       "order": 5033,
-      "path": "Telegram/SourceFiles/main/session/session_show.h",
-      "blob": "16f8e6f9136725de93615ef54366d67579da54c9",
-      "consumer_symbol": "session_show"
+      "path": "Telegram/SourceFiles/main/session/send_as_peers.cpp",
+      "blob": "86113c3885f9c5728f888f3ab422cdf4ae0b7ea4",
+      "consumer_symbol": "send_as_peers"
     }
   ]
 }

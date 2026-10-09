@@ -4,8 +4,8 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
-    "tree": "6ac9bbc1b44edcb119b1a724e7b0a321c3b7b8fa"
+    "commit": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+    "tree": "5030985204963cbbd362ced7412d231b04ebd0cc"
   },
   "range": {
     "first_order": 5301,
@@ -15,6 +15,111 @@
   "rows": [
     {
       "recursive_order": 5301,
+      "source_path": "Telegram/SourceFiles/overview/overview_layout.cpp",
+      "source_blob_sha": "ceae87bc8148b76426a3e1e9d427f99f04659429",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "shared-media item lifecycle for photo/video/voice/document/link/GIF: media load/unload ownership, bounded thumbnail/crop work, async generation fencing, sensitive/spoiler reveal, story pinned/hidden state, download/upload/play progress, link safety, GIF visibility/power-saving and selection/click behavior",
+      "upstream_owner": "Overview::Layout",
+      "state_machine": "canonical message/search/media truth -> derived collection item/resource state -> visible/selected/loading/playing/revealed interaction -> unload/reload or action -> derived state rebuilt from canonical owners",
+      "side_effects": "Applicable behavior maps to canonical Message/SearchIndex/MediaCache, Conversation/shared-media collection, MediaViewer/Resource and design-system owners; Qt layout and source styling are not copied.",
+      "failure_cases": "selection/action semantics diverge; stale async thumbnail overwrites current item; heavy media never unloads; oversized image work spikes memory; sensitive media reveals implicitly; download/play state lies; unsafe link opens; GIF remains active offscreen",
+      "ui_disposition": "Reuse canonical Checkbox, ResultRow, Conversation/Search collection, MediaViewer, LoadingState/ErrorState and semantic tokens. No Telegram-/Overview-named public component and no expansion of legacy sand-* naming.",
+      "fabushi_canonical_owner": "canonical Fabushi Message/SearchIndex/MediaCache + ConversationWorkspace shared-media collection + MediaViewer/Resource + secure external-link owners",
+      "fabushi_target": "MAPPED OPEN UI/RESOURCE REPLACEMENT. Existing SearchIndex Media/Files/Links scopes and MediaCache own data/resource truth; MediaViewer owns open playback. Audit/implement missing collection selection, heavy-resource visibility/unload, async stale-result fencing, safe-link and status interactions in canonical surfaces only.",
+      "platform_differences": "React/Electron canonical collection/media/resource surfaces replace Qt painter/layout/style mechanics; durable truth remains in current messaging/search/resource owners.",
+      "production_evidence": "projects/telegram-desktop-rust/dossiers/web-proxy-overview-5291-5300-complete-read.md; owner audit includes frontend/src/recovered/contracts/desktop-bridge.ts, source/shared/rpc/coordinator.ts, native/mahayana-messaging/src/search.rs, native/mahayana-messaging/src/media_cache.rs and frontend/src/recovered/features/conversation/workspace/media-viewer.tsx; responsibility remains mapped-open.",
+      "test_evidence": "Exact-head unit/property/contract/integration/E2E/temporal/fault/a11y/visual/performance/security/soak evidence remains required before unknown closure.",
+      "disposition": "mapped-open-ui-resource-replacement",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "Overview::Layout::{ItemBase,RadialProgressItem,Photo,Video,Voice,Document,Link,Gif}",
+      "consumer_evidence": [
+        "Complete direct exact-source read of Telegram/SourceFiles/overview/overview_layout.cpp at accepted blob ceae87bc8148b76426a3e1e9d427f99f04659429."
+      ],
+      "reachability_status": "accepted-tree source owner/input proven; replacement responsibility remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram C++/Qt runtime or source styling copied.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "verified_blob_sha": "ceae87bc8148b76426a3e1e9d427f99f04659429",
+        "file_type": "blob",
+        "recursive_order": 5301
+      },
+      "notes": "Read-complete and owner-audited only. Unknown remains open; omitted=false. Predecessor head a5c76249 passed authority/runtime/chat-parity, but this new read-through commit requires its own exact-head Actions."
+    },
+    {
+      "recursive_order": 5302,
+      "source_path": "Telegram/SourceFiles/overview/overview_layout.h",
+      "source_blob_sha": "c6aba8cac455f3e01805ab835fc6968d5b8c142c",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "typed shared-media layout/item contracts for selection, radial progress/status, media options, heavy-resource lifecycle, external loading/cancel and photo/video/voice/document/link/GIF item state",
+      "upstream_owner": "Overview::Layout",
+      "state_machine": "canonical message/search/media truth -> derived collection item/resource state -> visible/selected/loading/playing/revealed interaction -> unload/reload or action -> derived state rebuilt from canonical owners",
+      "side_effects": "Applicable behavior maps to canonical Message/SearchIndex/MediaCache, Conversation/shared-media collection, MediaViewer/Resource and design-system owners; Qt layout and source styling are not copied.",
+      "failure_cases": "selection/action semantics diverge; stale async thumbnail overwrites current item; heavy media never unloads; oversized image work spikes memory; sensitive media reveals implicitly; download/play state lies; unsafe link opens; GIF remains active offscreen",
+      "ui_disposition": "Reuse canonical Checkbox, ResultRow, Conversation/Search collection, MediaViewer, LoadingState/ErrorState and semantic tokens. No Telegram-/Overview-named public component and no expansion of legacy sand-* naming.",
+      "fabushi_canonical_owner": "canonical Fabushi Message/SearchIndex/MediaCache + shared-media collection/MediaViewer owners",
+      "fabushi_target": "MAPPED OPEN UI/RESOURCE REPLACEMENT. Keep authoritative media/message state outside renderer items; derived UI/resource state must remain reconstructable and cancellable.",
+      "platform_differences": "React/Electron canonical collection/media/resource surfaces replace Qt painter/layout/style mechanics; durable truth remains in current messaging/search/resource owners.",
+      "production_evidence": "projects/telegram-desktop-rust/dossiers/web-proxy-overview-5291-5300-complete-read.md; owner audit includes frontend/src/recovered/contracts/desktop-bridge.ts, source/shared/rpc/coordinator.ts, native/mahayana-messaging/src/search.rs, native/mahayana-messaging/src/media_cache.rs and frontend/src/recovered/features/conversation/workspace/media-viewer.tsx; responsibility remains mapped-open.",
+      "test_evidence": "Exact-head unit/property/contract/integration/E2E/temporal/fault/a11y/visual/performance/security/soak evidence remains required before unknown closure.",
+      "disposition": "mapped-open-ui-resource-replacement",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "Overview::Layout item contracts",
+      "consumer_evidence": [
+        "Complete direct exact-source read of Telegram/SourceFiles/overview/overview_layout.h at accepted blob c6aba8cac455f3e01805ab835fc6968d5b8c142c."
+      ],
+      "reachability_status": "accepted-tree source owner/input proven; replacement responsibility remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram C++/Qt runtime or source styling copied.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "verified_blob_sha": "c6aba8cac455f3e01805ab835fc6968d5b8c142c",
+        "file_type": "blob",
+        "recursive_order": 5302
+      },
+      "notes": "Read-complete and owner-audited only. Unknown remains open; omitted=false. Predecessor head a5c76249 passed authority/runtime/chat-parity, but this new read-through commit requires its own exact-head Actions."
+    },
+    {
+      "recursive_order": 5303,
+      "source_path": "Telegram/SourceFiles/overview/overview_layout_delegate.h",
+      "source_blob_sha": "0d016974b102bedf989f9a65a10a48f0587bed62",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "shared-media layout delegate boundary for heavy-item register/unregister, visibility/repaint, media retention policy and typed photo/document open actions",
+      "upstream_owner": "Overview::Layout",
+      "state_machine": "canonical message/search/media truth -> derived collection item/resource state -> visible/selected/loading/playing/revealed interaction -> unload/reload or action -> derived state rebuilt from canonical owners",
+      "side_effects": "Applicable behavior maps to canonical Message/SearchIndex/MediaCache, Conversation/shared-media collection, MediaViewer/Resource and design-system owners; Qt layout and source styling are not copied.",
+      "failure_cases": "selection/action semantics diverge; stale async thumbnail overwrites current item; heavy media never unloads; oversized image work spikes memory; sensitive media reveals implicitly; download/play state lies; unsafe link opens; GIF remains active offscreen",
+      "ui_disposition": "Reuse canonical Checkbox, ResultRow, Conversation/Search collection, MediaViewer, LoadingState/ErrorState and semantic tokens. No Telegram-/Overview-named public component and no expansion of legacy sand-* naming.",
+      "fabushi_canonical_owner": "canonical Fabushi media/resource lifecycle + Conversation/Search collection + MediaViewer action owners",
+      "fabushi_target": "MAPPED OPEN UI/RESOURCE REPLACEMENT. Reuse existing Resource/MediaViewer/action boundaries; do not add a Telegram-style delegate owner.",
+      "platform_differences": "React/Electron canonical collection/media/resource surfaces replace Qt painter/layout/style mechanics; durable truth remains in current messaging/search/resource owners.",
+      "production_evidence": "projects/telegram-desktop-rust/dossiers/web-proxy-overview-5291-5300-complete-read.md; owner audit includes frontend/src/recovered/contracts/desktop-bridge.ts, source/shared/rpc/coordinator.ts, native/mahayana-messaging/src/search.rs, native/mahayana-messaging/src/media_cache.rs and frontend/src/recovered/features/conversation/workspace/media-viewer.tsx; responsibility remains mapped-open.",
+      "test_evidence": "Exact-head unit/property/contract/integration/E2E/temporal/fault/a11y/visual/performance/security/soak evidence remains required before unknown closure.",
+      "disposition": "mapped-open-ui-resource-replacement",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "Overview::Layout::Delegate",
+      "consumer_evidence": [
+        "Complete direct exact-source read of Telegram/SourceFiles/overview/overview_layout_delegate.h at accepted blob 0d016974b102bedf989f9a65a10a48f0587bed62."
+      ],
+      "reachability_status": "accepted-tree source owner/input proven; replacement responsibility remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram C++/Qt runtime or source styling copied.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "verified_blob_sha": "0d016974b102bedf989f9a65a10a48f0587bed62",
+        "file_type": "blob",
+        "recursive_order": 5303
+      },
+      "notes": "Read-complete and owner-audited only. Unknown remains open; omitted=false. Predecessor head a5c76249 passed authority/runtime/chat-parity, but this new read-through commit requires its own exact-head Actions."
+    },
+    {
+      "recursive_order": 5304,
       "source_path": "Telegram/SourceFiles/passport/passport.style",
       "source_blob_sha": "df494e425fcd317c372953b9c1ae98c869ecf1ef",
       "read_complete": true,
@@ -40,16 +145,16 @@
       "reachability_status": "accepted-tree source owner/input proven; applicability and canonical replacement closure remain open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; source crypto/protocol/UI is not copied wholesale.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-new-head-evidence-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "df494e425fcd317c372953b9c1ae98c869ecf1ef",
         "file_type": "blob",
-        "recursive_order": 5301
+        "recursive_order": 5304
       },
       "notes": "Read-complete and responsibility-decomposed only. unknown remains open and omitted=false."
     },
     {
-      "recursive_order": 5302,
+      "recursive_order": 5305,
       "source_path": "Telegram/SourceFiles/passport/passport_edit_identity_box.cpp",
       "source_blob_sha": "18be2ad425d6bc7590fcb69b4c8d3e1c60b0f815",
       "read_complete": true,
@@ -75,16 +180,16 @@
       "reachability_status": "accepted-tree source owner/input proven; applicability and canonical replacement closure remain open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; source crypto/protocol/UI is not copied wholesale.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-new-head-evidence-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "18be2ad425d6bc7590fcb69b4c8d3e1c60b0f815",
         "file_type": "blob",
-        "recursive_order": 5302
+        "recursive_order": 5305
       },
       "notes": "Read-complete and responsibility-decomposed only. unknown remains open and omitted=false."
     },
     {
-      "recursive_order": 5303,
+      "recursive_order": 5306,
       "source_path": "Telegram/SourceFiles/passport/passport_edit_identity_box.h",
       "source_blob_sha": "377a7dbf8182ee9798aa373f98cc88122bb754ff",
       "read_complete": true,
@@ -110,16 +215,16 @@
       "reachability_status": "accepted-tree source owner/input proven; applicability and canonical replacement closure remain open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; source crypto/protocol/UI is not copied wholesale.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-new-head-evidence-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "377a7dbf8182ee9798aa373f98cc88122bb754ff",
         "file_type": "blob",
-        "recursive_order": 5303
+        "recursive_order": 5306
       },
       "notes": "Read-complete and responsibility-decomposed only. unknown remains open and omitted=false."
     },
     {
-      "recursive_order": 5304,
+      "recursive_order": 5307,
       "source_path": "Telegram/SourceFiles/passport/passport_encryption.cpp",
       "source_blob_sha": "82c4466b05d57d26d2a637225c4b544b933fb9bb",
       "read_complete": true,
@@ -145,16 +250,16 @@
       "reachability_status": "accepted-tree source owner/input proven; applicability and canonical replacement closure remain open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; source crypto/protocol/UI is not copied wholesale.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-new-head-evidence-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "82c4466b05d57d26d2a637225c4b544b933fb9bb",
         "file_type": "blob",
-        "recursive_order": 5304
+        "recursive_order": 5307
       },
       "notes": "Read-complete and responsibility-decomposed only. unknown remains open and omitted=false."
     },
     {
-      "recursive_order": 5305,
+      "recursive_order": 5308,
       "source_path": "Telegram/SourceFiles/passport/passport_encryption.h",
       "source_blob_sha": "522e34f5a7e03b775451db30522a1d94d072a0ab",
       "read_complete": true,
@@ -180,16 +285,16 @@
       "reachability_status": "accepted-tree source owner/input proven; applicability and canonical replacement closure remain open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; source crypto/protocol/UI is not copied wholesale.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-new-head-evidence-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "522e34f5a7e03b775451db30522a1d94d072a0ab",
         "file_type": "blob",
-        "recursive_order": 5305
+        "recursive_order": 5308
       },
       "notes": "Read-complete and responsibility-decomposed only. unknown remains open and omitted=false."
     },
     {
-      "recursive_order": 5306,
+      "recursive_order": 5309,
       "source_path": "Telegram/SourceFiles/passport/passport_form_controller.cpp",
       "source_blob_sha": "e27dad38083a1c86d14871db776fe45f9ccf2818",
       "read_complete": true,
@@ -215,16 +320,16 @@
       "reachability_status": "accepted-tree source owner/input proven; applicability and canonical replacement closure remain open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; source crypto/protocol/UI is not copied wholesale.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-new-head-evidence-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "e27dad38083a1c86d14871db776fe45f9ccf2818",
         "file_type": "blob",
-        "recursive_order": 5306
+        "recursive_order": 5309
       },
       "notes": "Read-complete and responsibility-decomposed only. unknown remains open and omitted=false."
     },
     {
-      "recursive_order": 5307,
+      "recursive_order": 5310,
       "source_path": "Telegram/SourceFiles/passport/passport_form_controller.h",
       "source_blob_sha": "6a3e65bd535b853e6734aa4b57bc47602f0980c7",
       "read_complete": true,
@@ -250,114 +355,9 @@
       "reachability_status": "accepted-tree source owner/input proven; applicability and canonical replacement closure remain open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; source crypto/protocol/UI is not copied wholesale.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-new-head-evidence-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "6a3e65bd535b853e6734aa4b57bc47602f0980c7",
-        "file_type": "blob",
-        "recursive_order": 5307
-      },
-      "notes": "Read-complete and responsibility-decomposed only. unknown remains open and omitted=false."
-    },
-    {
-      "recursive_order": 5308,
-      "source_path": "Telegram/SourceFiles/passport/passport_form_row.cpp",
-      "source_blob_sha": "e07e2aede2b5c46840be0d5ded7dfe89cb348e67",
-      "read_complete": true,
-      "responsibility_decomposition_complete": true,
-      "responsibility": "authorization scope row projection with canonical ready/missing status, title/description and click feedback",
-      "upstream_owner": "Passport",
-      "state_machine": "authorization request -> validate allowed scopes/schema -> unlock/derive credential secret -> decrypt/edit/verify/upload values -> validate completeness/errors -> save/authorize or cancel/restart -> revoke/transient state cleanup",
-      "side_effects": "Only source-neutral security, account/identity, provider-authorization, file/resource and canonical form responsibilities are candidates. Telegram Passport protocol/UI is not introduced as a second product subsystem.",
-      "failure_cases": "invalid scope accepted; malformed or stale secret/value accepted; sensitive data persisted outside approved secret boundary; stale upload/verification callback mutates current edit; unbounded scan/upload state; unsafe callback URL; incomplete/error state appears ready; cancel/restart leaks transient credentials",
-      "ui_disposition": "Reuse canonical Fabushi Form/Dialog/ListRow/TextField/Button/Status/ErrorState/attachment patterns and semantic tokens. No Passport- or Telegram-named public component.",
-      "fabushi_canonical_owner": "canonical Fabushi ListRow/Status plus form validation owner",
-      "fabushi_target": "MAPPED OPEN. First determine which responsibilities are actually applicable to Fabushi account/provider/plugin authorization and identity flows, then extend existing canonical owners. Do not copy Telegram Passport crypto/protocol or establish a second Identity/account runtime.",
-      "platform_differences": "Telegram Passport/MTProto secure-value protocol is source-specific. Applicable principles are scoped authorization, secure secret handling, bounded resource upload, stale-work cancellation, verification/recovery, callback validation and truthful form completeness.",
-      "production_evidence": "Owner audit found no justification for a Passport product root. Existing canonical account/identity, provider authorization/OAuth, credentials/security, recovery, attachment/resource and canonical form owners must absorb applicable behavior.",
-      "test_evidence": "Exact-head unit/contract/integration/security/temporal/fault/UI/a11y evidence remains required before any unknown closure.",
-      "disposition": "mapped-open-ui-semantic-replacement",
-      "unknown_closed": false,
-      "omitted": false,
-      "consumer_symbol": "Passport::FormRow",
-      "consumer_evidence": [
-        "Complete direct exact-source read of Telegram/SourceFiles/passport/passport_form_row.cpp at accepted blob e07e2aede2b5c46840be0d5ded7dfe89cb348e67."
-      ],
-      "reachability_status": "accepted-tree source owner/input proven; applicability and canonical replacement closure remain open",
-      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; source crypto/protocol/UI is not copied wholesale.",
-      "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-new-head-evidence-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
-        "verified_blob_sha": "e07e2aede2b5c46840be0d5ded7dfe89cb348e67",
-        "file_type": "blob",
-        "recursive_order": 5308
-      },
-      "notes": "Read-complete and responsibility-decomposed only. unknown remains open and omitted=false."
-    },
-    {
-      "recursive_order": 5309,
-      "source_path": "Telegram/SourceFiles/passport/passport_form_row.h",
-      "source_blob_sha": "b5525f0f9139f34c56776b239d260d289d7e6904",
-      "read_complete": true,
-      "responsibility_decomposition_complete": true,
-      "responsibility": "header placeholder with no additional product behavior beyond associated row implementation",
-      "upstream_owner": "Passport",
-      "state_machine": "authorization request -> validate allowed scopes/schema -> unlock/derive credential secret -> decrypt/edit/verify/upload values -> validate completeness/errors -> save/authorize or cancel/restart -> revoke/transient state cleanup",
-      "side_effects": "Only source-neutral security, account/identity, provider-authorization, file/resource and canonical form responsibilities are candidates. Telegram Passport protocol/UI is not introduced as a second product subsystem.",
-      "failure_cases": "invalid scope accepted; malformed or stale secret/value accepted; sensitive data persisted outside approved secret boundary; stale upload/verification callback mutates current edit; unbounded scan/upload state; unsafe callback URL; incomplete/error state appears ready; cancel/restart leaks transient credentials",
-      "ui_disposition": "Reuse canonical Fabushi Form/Dialog/ListRow/TextField/Button/Status/ErrorState/attachment patterns and semantic tokens. No Passport- or Telegram-named public component.",
-      "fabushi_canonical_owner": "canonical Fabushi ListRow/Status",
-      "fabushi_target": "MAPPED OPEN. First determine which responsibilities are actually applicable to Fabushi account/provider/plugin authorization and identity flows, then extend existing canonical owners. Do not copy Telegram Passport crypto/protocol or establish a second Identity/account runtime.",
-      "platform_differences": "Telegram Passport/MTProto secure-value protocol is source-specific. Applicable principles are scoped authorization, secure secret handling, bounded resource upload, stale-work cancellation, verification/recovery, callback validation and truthful form completeness.",
-      "production_evidence": "Owner audit found no justification for a Passport product root. Existing canonical account/identity, provider authorization/OAuth, credentials/security, recovery, attachment/resource and canonical form owners must absorb applicable behavior.",
-      "test_evidence": "Exact-head unit/contract/integration/security/temporal/fault/UI/a11y evidence remains required before any unknown closure.",
-      "disposition": "mapped-open-ui-semantic-replacement",
-      "unknown_closed": false,
-      "omitted": false,
-      "consumer_symbol": "Passport form row header",
-      "consumer_evidence": [
-        "Complete direct exact-source read of Telegram/SourceFiles/passport/passport_form_row.h at accepted blob b5525f0f9139f34c56776b239d260d289d7e6904."
-      ],
-      "reachability_status": "accepted-tree source owner/input proven; applicability and canonical replacement closure remain open",
-      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; source crypto/protocol/UI is not copied wholesale.",
-      "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-new-head-evidence-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
-        "verified_blob_sha": "b5525f0f9139f34c56776b239d260d289d7e6904",
-        "file_type": "blob",
-        "recursive_order": 5309
-      },
-      "notes": "Read-complete and responsibility-decomposed only. unknown remains open and omitted=false."
-    },
-    {
-      "recursive_order": 5310,
-      "source_path": "Telegram/SourceFiles/passport/passport_form_view_controller.cpp",
-      "source_blob_sha": "cd038acb504f9215f0282db28e8e4d47d6186236",
-      "read_complete": true,
-      "responsibility_decomposition_complete": true,
-      "responsibility": "secure form schema validation and projection: type-to-scope mapping, requirement legality, one-of document scopes, inline details, completeness/error aggregation and safe ready-summary formatting",
-      "upstream_owner": "Passport",
-      "state_machine": "authorization request -> validate allowed scopes/schema -> unlock/derive credential secret -> decrypt/edit/verify/upload values -> validate completeness/errors -> save/authorize or cancel/restart -> revoke/transient state cleanup",
-      "side_effects": "Only source-neutral security, account/identity, provider-authorization, file/resource and canonical form responsibilities are candidates. Telegram Passport protocol/UI is not introduced as a second product subsystem.",
-      "failure_cases": "invalid scope accepted; malformed or stale secret/value accepted; sensitive data persisted outside approved secret boundary; stale upload/verification callback mutates current edit; unbounded scan/upload state; unsafe callback URL; incomplete/error state appears ready; cancel/restart leaks transient credentials",
-      "ui_disposition": "Reuse canonical Fabushi Form/Dialog/ListRow/TextField/Button/Status/ErrorState/attachment patterns and semantic tokens. No Passport- or Telegram-named public component.",
-      "fabushi_canonical_owner": "canonical Fabushi form/schema validation + account/identity/provider authorization UI projection",
-      "fabushi_target": "MAPPED OPEN. First determine which responsibilities are actually applicable to Fabushi account/provider/plugin authorization and identity flows, then extend existing canonical owners. Do not copy Telegram Passport crypto/protocol or establish a second Identity/account runtime.",
-      "platform_differences": "Telegram Passport/MTProto secure-value protocol is source-specific. Applicable principles are scoped authorization, secure secret handling, bounded resource upload, stale-work cancellation, verification/recovery, callback validation and truthful form completeness.",
-      "production_evidence": "Owner audit found no justification for a Passport product root. Existing canonical account/identity, provider authorization/OAuth, credentials/security, recovery, attachment/resource and canonical form owners must absorb applicable behavior.",
-      "test_evidence": "Exact-head unit/contract/integration/security/temporal/fault/UI/a11y evidence remains required before any unknown closure.",
-      "disposition": "mapped-open-secure-form-schema",
-      "unknown_closed": false,
-      "omitted": false,
-      "consumer_symbol": "Passport scope/view controller functions",
-      "consumer_evidence": [
-        "Complete direct exact-source read of Telegram/SourceFiles/passport/passport_form_view_controller.cpp at accepted blob cd038acb504f9215f0282db28e8e4d47d6186236."
-      ],
-      "reachability_status": "accepted-tree source owner/input proven; applicability and canonical replacement closure remain open",
-      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; source crypto/protocol/UI is not copied wholesale.",
-      "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-new-head-evidence-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
-        "verified_blob_sha": "cd038acb504f9215f0282db28e8e4d47d6186236",
         "file_type": "blob",
         "recursive_order": 5310
       },

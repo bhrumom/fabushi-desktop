@@ -4,8 +4,8 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
-    "tree": "6ac9bbc1b44edcb119b1a724e7b0a321c3b7b8fa"
+    "commit": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+    "tree": "5030985204963cbbd362ced7412d231b04ebd0cc"
   },
   "range": {
     "first_order": 5161,
@@ -15,75 +15,75 @@
   "rows": [
     {
       "recursive_order": 5161,
-      "source_path": "Telegram/SourceFiles/media/view/media_view_overlay_rhi.cpp",
-      "source_blob_sha": "fe61046cbc094e7a2cafd7eeba09c42a75284ddf",
+      "source_path": "Telegram/SourceFiles/media/view/media_view_overlay_raster.cpp",
+      "source_blob_sha": "96191417734cdb34355dfd79f6e19359bb28c94c",
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "responsibility": "QRhi media-overlay implementation for image/video/story/control/recognition composition, RGBA/YUV420/NV12/native-texture upload, device-pixel scaling, cache invalidation, draw ordering and resource teardown",
-      "upstream_owner": "Media::View::OverlayWidget::RendererRhi implementation",
-      "state_machine": "renderer/device init -> pipeline/resource creation -> current frame/content upload or zero-copy binding -> ordered overlay composition -> source/theme/DPR/device invalidation -> deterministic release",
-      "side_effects": "Fabushi keeps a single canonical MediaViewer. Chromium/Electron owns decoded-frame GPU composition and platform texture lifetime; the renderer surface still releases stale media, preserves control/input ownership and survives source/fullscreen/display changes without a second Telegram renderer.",
-      "failure_cases": "stale frame/texture after source or device-factor change; unsupported/native frame binding failure; YUV/NV12 conversion divergence; resource leak on renderer/device teardown; recognition/control overlay drift",
-      "ui_disposition": "Reuse canonical MediaViewer and canonical controls. Qt QRhi shaders/textures are replaced by Chromium/Electron media/compositor surfaces; no Telegram-named renderer/component is introduced.",
-      "fabushi_canonical_owner": "frontend/src/recovered/features/conversation/workspace/media-viewer.tsx plus Chromium/Electron media compositor",
-      "fabushi_target": "PARTIAL IMPLEMENTATION: canonical MediaViewer exposes Chromium native video playback controls, defers video pointer/wheel ownership to the media element, pauses outgoing video on source replacement/unmount and preserves fullscreen Escape behavior. Low-level QRhi/YUV/native-texture work is platform-replaced by Chromium/Electron; recognition/story/group-call rendering responsibilities remain mapped-open until later source owners and exact-head runtime evidence are closed.",
-      "platform_differences": "Telegram directly owns QRhi resources, shaders, YUV/NV12 textures and macOS native texture cache. Fabushi delegates those low-level responsibilities to Chromium/Electron while retaining application-level lifecycle, a11y, keyboard, error and source-replacement contracts in the one canonical MediaViewer.",
-      "production_evidence": "projects/telegram-desktop-rust/dossiers/media-view-rhi-5161-5162-complete-read.md; frontend/src/recovered/features/conversation/workspace/media-viewer.tsx; partial production implementation pending exact-head GitHub Actions evidence.",
-      "test_evidence": "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts CONTRACT-TDRP-MEDIAVIEW-NATIVE-PLAYBACK-001 plus exact-head renderer/typecheck/Electron E2E; verification pending.",
+      "responsibility": "Software media overlay renderer fallback with clipping, rotation, story crop, controls fade and transparent background semantics",
+      "upstream_owner": "Canonical MediaViewer software renderer owner",
+      "state_machine": "clip/geometry + content -> software transform/crop -> layered controls/metadata paint -> restore painter state",
+      "side_effects": "Feeds only existing canonical Fabushi MediaViewer/player/platform rendering owners; Telegram Qt/OpenGL/Metal/RPL mechanics remain reference adapters and do not create a parallel product owner.",
+      "failure_cases": "clip leakage; painter opacity/composition not restored; story crop mismatch; hide workaround stale frame",
+      "ui_disposition": "Reuse canonical Fabushi MediaViewer/player controls, Popover/Dialog/LoadingState/Status and existing platform rendering composition with a11y, responsive, keyboard and lifecycle behavior preserved; no Telegram-named component is introduced.",
+      "fabushi_canonical_owner": "Canonical MediaViewer software renderer owner",
+      "fabushi_target": "OPEN: audit current shipping Canonical MediaViewer software renderer owner; implement missing lifecycle/concurrency/resource/platform/UI semantics and obtain focused exact-head production evidence before promotion.",
+      "platform_differences": "Telegram Qt/C++/OpenGL/Metal/RPL mechanics are reference details; preserve applicable state, timing, cancellation, lifetime, rendering correctness and visible behavior in existing Fabushi Rust/TypeScript/Electron/platform composition.",
+      "production_evidence": "projects/telegram-desktop-rust/dossiers/media-view-rendering-5151-5160-complete-read.md; direct exact-source read only; implementation remains open.",
+      "test_evidence": "Current-head Source authority attestation plus focused unit/contract/integration, lifecycle/fault, a11y/visual/performance and platform evidence as applicable.",
       "disposition": "mapped-open-media-view-rendering",
       "unknown_closed": false,
       "omitted": false,
-      "consumer_symbol": "Media::View::OverlayWidget::RendererRhi",
+      "consumer_symbol": "Media::View::OverlayWidget::RendererSW",
       "consumer_evidence": [
-        "Complete direct exact-source read of media_view_overlay_rhi.cpp lines 1-1895 at accepted blob fe61046c; mapped to the canonical MediaViewer + Chromium/Electron compositor boundary."
+        "Complete direct exact-source read of Telegram/SourceFiles/media/view/media_view_overlay_raster.cpp; mapped to Canonical MediaViewer software renderer owner."
       ],
-      "reachability_status": "accepted-tree-source-owner-proven; partial shipping implementation added; exact-head verification and remaining media-view responsibilities open",
-      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior is reimplemented through existing Fabushi/Chromium owners rather than source-copied.",
+      "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-new-head-actions-attestation",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
-        "verified_blob_sha": "fe61046cbc094e7a2cafd7eeba09c42a75284ddf",
-        "byte_size": 54432,
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "verified_blob_sha": "96191417734cdb34355dfd79f6e19359bb28c94c",
+        "byte_size": null,
         "file_type": "blob",
         "recursive_order": 5161
       },
-      "notes": "Read-complete. Partial production implementation is real but unknown remains open until the full responsibility and exact-head verification gates close."
+      "notes": "Read-complete only; no implementation, verification, baseline-ready or release state is promoted."
     },
     {
       "recursive_order": 5162,
-      "source_path": "Telegram/SourceFiles/media/view/media_view_overlay_rhi.h",
-      "source_blob_sha": "059d22ff5f5bb9b013b79c91c56c9c825062bae1",
+      "source_path": "Telegram/SourceFiles/media/view/media_view_overlay_raster.h",
+      "source_blob_sha": "7a75930cd33226596ea34cd225c6211fa5cec6e6",
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "responsibility": "QRhi overlay-renderer ownership contract for pipelines, buffers, textures, frame caches, control atlases, story sibling textures, macOS native texture cache and initialize/render/release lifecycle",
-      "upstream_owner": "Media::View::OverlayWidget::RendererRhi declaration",
-      "state_machine": "owner construction -> renderer initialize -> repeated render with bounded caches/draw slots -> palette/story/device invalidation -> releaseResources/destruction",
-      "side_effects": "Defines the lifetime boundary the Fabushi platform replacement must preserve: one renderer owner, bounded per-frame resources, cache invalidation and deterministic teardown.",
-      "failure_cases": "renderer reinitialized against a new device without release; stale controls/story cache; unbounded per-draw resource growth; native texture cache survives teardown",
-      "ui_disposition": "Keep the existing source-neutral MediaViewer and canonical controls; browser compositor/media-element ownership replaces Qt QRhi declarations and must not become a parallel Telegram runtime.",
-      "fabushi_canonical_owner": "frontend/src/recovered/features/conversation/workspace/media-viewer.tsx plus Chromium/Electron media compositor",
-      "fabushi_target": "PARTIAL IMPLEMENTATION: browser-native video playback/compositor ownership is reachable from canonical MediaViewer and its media-element lifecycle is fenced on replacement/unmount. Remaining renderer-adjacent story/recognition/call semantics stay mapped-open.",
-      "platform_differences": "Qt QRhi object ownership is not copied. Chromium/Electron is the platform renderer; Fabushi owns only product lifecycle/input/accessibility/error semantics around that renderer.",
-      "production_evidence": "projects/telegram-desktop-rust/dossiers/media-view-rhi-5161-5162-complete-read.md; frontend/src/recovered/features/conversation/workspace/media-viewer.tsx; partial production implementation pending exact-head GitHub Actions evidence.",
-      "test_evidence": "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts CONTRACT-TDRP-MEDIAVIEW-NATIVE-PLAYBACK-001 plus exact-head Actions pending.",
+      "responsibility": "Software overlay renderer interface/state for fallback painting and cached control visuals",
+      "upstream_owner": "Canonical MediaViewer software renderer owner",
+      "state_machine": "fallback paint lifecycle -> per-surface renderer callbacks -> cached control image lifecycle",
+      "side_effects": "Feeds only existing canonical Fabushi MediaViewer/player/platform rendering owners; Telegram Qt/OpenGL/Metal/RPL mechanics remain reference adapters and do not create a parallel product owner.",
+      "failure_cases": "dangling painter/clip pointers; stale control image cache; transform mismatch",
+      "ui_disposition": "Reuse canonical Fabushi MediaViewer/player controls, Popover/Dialog/LoadingState/Status and existing platform rendering composition with a11y, responsive, keyboard and lifecycle behavior preserved; no Telegram-named component is introduced.",
+      "fabushi_canonical_owner": "Canonical MediaViewer software renderer owner",
+      "fabushi_target": "OPEN: audit current shipping Canonical MediaViewer software renderer owner; implement missing lifecycle/concurrency/resource/platform/UI semantics and obtain focused exact-head production evidence before promotion.",
+      "platform_differences": "Telegram Qt/C++/OpenGL/Metal/RPL mechanics are reference details; preserve applicable state, timing, cancellation, lifetime, rendering correctness and visible behavior in existing Fabushi Rust/TypeScript/Electron/platform composition.",
+      "production_evidence": "projects/telegram-desktop-rust/dossiers/media-view-rendering-5151-5160-complete-read.md; direct exact-source read only; implementation remains open.",
+      "test_evidence": "Current-head Source authority attestation plus focused unit/contract/integration, lifecycle/fault, a11y/visual/performance and platform evidence as applicable.",
       "disposition": "mapped-open-media-view-rendering",
       "unknown_closed": false,
       "omitted": false,
-      "consumer_symbol": "Media::View::OverlayWidget::RendererRhi",
+      "consumer_symbol": "Media::View::OverlayWidget::RendererSW",
       "consumer_evidence": [
-        "Complete direct exact-source read of media_view_overlay_rhi.h at accepted blob 059d22ff; mapped to canonical MediaViewer + Chromium/Electron compositor lifetime boundary."
+        "Complete direct exact-source read of Telegram/SourceFiles/media/view/media_view_overlay_raster.h; mapped to Canonical MediaViewer software renderer owner."
       ],
-      "reachability_status": "accepted-tree-source-owner-proven; partial shipping implementation added; exact-head verification and remaining media-view responsibilities open",
-      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented/platform-substituted rather than source-copied.",
+      "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-new-head-actions-attestation",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
-        "verified_blob_sha": "059d22ff5f5bb9b013b79c91c56c9c825062bae1",
-        "byte_size": 6349,
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "verified_blob_sha": "7a75930cd33226596ea34cd225c6211fa5cec6e6",
+        "byte_size": null,
         "file_type": "blob",
         "recursive_order": 5162
       },
-      "notes": "Read-complete. Partial implementation does not grant unknown closure, baseline-ready, verification or release credit."
+      "notes": "Read-complete only; no implementation, verification, baseline-ready or release state is promoted."
     }
   ]
 }

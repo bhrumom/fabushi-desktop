@@ -1,61 +1,61 @@
 {
-  "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+  "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
   "start": 5065,
   "end": 5073,
   "entries": [
     {
       "order": 5065,
+      "path": "Telegram/SourceFiles/media/clip/media_clip_implementation.h",
+      "blob": "be5daf47b2b78eace52d002e5ca0953009d8b8e0",
+      "consumer_symbol": "media_clip_implementation"
+    },
+    {
+      "order": 5066,
+      "path": "Telegram/SourceFiles/media/clip/media_clip_reader.cpp",
+      "blob": "bf4ef6f2a3960b0cb4194d87c8c2ba5c20fac664",
+      "consumer_symbol": "media_clip_reader"
+    },
+    {
+      "order": 5067,
+      "path": "Telegram/SourceFiles/media/clip/media_clip_reader.h",
+      "blob": "d67f467a16693236b806512a9e7d0e671330ff88",
+      "consumer_symbol": "media_clip_reader"
+    },
+    {
+      "order": 5068,
       "path": "Telegram/SourceFiles/media/media_audio_waveform.cpp",
       "blob": "5d08b59f5353956756b236544d23417089f4b80e",
       "consumer_symbol": "media_audio_waveform"
     },
     {
-      "order": 5066,
+      "order": 5069,
       "path": "Telegram/SourceFiles/media/media_audio_waveform.h",
       "blob": "7e132e3c3d362ad01a88c1386cb5a2fb407570ef",
       "consumer_symbol": "media_audio_waveform"
     },
     {
-      "order": 5067,
+      "order": 5070,
       "path": "Telegram/SourceFiles/media/media_common.h",
       "blob": "6cfb6290ce9df59f16220192916ef3bfd6750bb7",
       "consumer_symbol": "media_common"
     },
     {
-      "order": 5068,
+      "order": 5071,
       "path": "Telegram/SourceFiles/media/media_video_canvas.cpp",
       "blob": "3adebe10fec8b70a69b0aeb888e3c50050018055",
       "consumer_symbol": "media_video_canvas"
     },
     {
-      "order": 5069,
+      "order": 5072,
       "path": "Telegram/SourceFiles/media/media_video_canvas.h",
       "blob": "403bbacdbb746ba5f6edc0fe2d6a17d30addb1e2",
       "consumer_symbol": "media_video_canvas"
     },
     {
-      "order": 5070,
+      "order": 5073,
       "path": "Telegram/SourceFiles/media/media_video_encode.cpp",
       "blob": "cbe23f283713e9d1dc47217d5650d6755f974db6",
       "consumer_symbol": "media_video_encode"
-    },
-    {
-      "order": 5071,
-      "path": "Telegram/SourceFiles/media/media_video_encode.h",
-      "blob": "b3628f27958a36c2e21472e1c3e5dd86d61a28e6",
-      "consumer_symbol": "media_video_encode"
-    },
-    {
-      "order": 5072,
-      "path": "Telegram/SourceFiles/media/media_video_frames.cpp",
-      "blob": "fe18a5c42c36260d6d4c451098b8e12f3f53f98a",
-      "consumer_symbol": "media_video_frames"
-    },
-    {
-      "order": 5073,
-      "path": "Telegram/SourceFiles/media/media_video_frames.h",
-      "blob": "3b3bca3e246c28ac6f67820a5a7286c3b7cc0d77",
-      "consumer_symbol": "media_video_frames"
     }
   ]
 }

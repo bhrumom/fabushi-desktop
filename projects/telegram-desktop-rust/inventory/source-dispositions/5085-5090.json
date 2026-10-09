@@ -1,11 +1,11 @@
 {
-  "format_version": 1,
+  "format_version": 2,
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
-    "tree": "6ac9bbc1b44edcb119b1a724e7b0a321c3b7b8fa"
+    "commit": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+    "tree": "5030985204963cbbd362ced7412d231b04ebd0cc"
   },
   "range": {
     "first_order": 5085,
@@ -15,6 +15,114 @@
   "rows": [
     {
       "recursive_order": 5085,
+      "source_path": "Telegram/SourceFiles/media/player/media_player_instance.h",
+      "source_blob_sha": "7751f6a4090f31430fd57d18cc3c8d36c8e3c8f1",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Media player state/playlist/seeking/event ownership contract",
+      "upstream_owner": "Canonical Media playback state/playlist owner",
+      "state_machine": "session/current media -> exact playlist context -> shared-media slices -> stream play/pause/seek -> repeat/order/shuffle/auto-next -> call pause/resume -> finish/error/clear -> persisted long-media position/telemetry/power-state cleanup",
+      "side_effects": "playback UI, playlist, streaming and telemetry stay subordinate to one canonical Media player owner and existing Conversation/Message/session stores; source UI names are not copied into public Fabushi APIs",
+      "failure_cases": "session switch/item delete, stale playlist slice, migration/topic/monoforum mismatch, shuffle deleted item/history drift, seek unknown duration, stream not/openable fallback, call resume race, autoplay disabled, stale power blocker/float GIF pause, position stored for short/finished media",
+      "ui_disposition": "Reuse canonical Fabushi Toolbar, IconButton, Button, Slider-equivalent canonical control, Menu, Popover, Tooltip, Status, LoadingState, ErrorState, Toast, TranscriptEntry and Media preview/viewer surfaces. Preserve a11y, keyboard/focus, hover/active/disabled, light/dark and responsive behavior; do not introduce TelegramPlayer* public components.",
+      "fabushi_canonical_owner": "Canonical Media playback state/playlist owner",
+      "fabushi_target": "OPEN: audit current shipping Canonical Media playback state/playlist owner; close missing state/lifetime/UI/a11y/service behavior and exact-head contract/integration/E2E evidence before implementation or release promotion.",
+      "platform_differences": "Qt widgets/reactive streams, Telegram shared-media viewers and MTProto reporting are behavioral reference. Fabushi must preserve product state, focus/visibility, playlist/session context, service retry and lifecycle semantics in existing React/Electron/Rust/service owners.",
+      "production_evidence": "projects/telegram-desktop-rust/dossiers/media-player-core-5074-5084-complete-read.md; direct exact-source read only; implementation/verification remains open.",
+      "test_evidence": "Current-head Source authority attestation for 5074-5084 required after commit; player UI/state/playlist/float/telemetry production tests remain open.",
+      "disposition": "mapped-open-player-state",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "media_player_instance",
+      "consumer_evidence": [
+        "Complete direct exact-source read of Telegram/SourceFiles/media/player/media_player_instance.h; state, UI, session/service ownership, errors and teardown are mapped in the linked dossier to Canonical Media playback state/playlist owner."
+      ],
+      "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "verified_blob_sha": "7751f6a4090f31430fd57d18cc3c8d36c8e3c8f1",
+        "byte_size": 9942,
+        "file_type": "blob",
+        "recursive_order": 5085
+      },
+      "notes": "Read-complete only. No mapped row is promoted to implemented/verified/release-ready by source accounting."
+    },
+    {
+      "recursive_order": 5086,
+      "source_path": "Telegram/SourceFiles/media/player/media_player_listen_tracker.cpp",
+      "source_blob_sha": "6ca1718a0c10c890028f281cdfa14221d1d0e1f0",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Bounded music listen-duration reporting with pause timeout and file-reference refresh retry",
+      "upstream_owner": "Canonical Media playback telemetry/service owner",
+      "state_machine": "song track state -> accumulate active listened ms -> pause starts 60s flush timer -> stop/switch/finalize -> report only >=3s -> refresh file reference once changed and retry",
+      "side_effects": "playback UI, playlist, streaming and telemetry stay subordinate to one canonical Media player owner and existing Conversation/Message/session stores; source UI names are not copied into public Fabushi APIs",
+      "failure_cases": "short listen, repeated pause, stale document/context, file-reference 400, finalization double count",
+      "ui_disposition": "Reuse canonical Fabushi Toolbar, IconButton, Button, Slider-equivalent canonical control, Menu, Popover, Tooltip, Status, LoadingState, ErrorState, Toast, TranscriptEntry and Media preview/viewer surfaces. Preserve a11y, keyboard/focus, hover/active/disabled, light/dark and responsive behavior; do not introduce TelegramPlayer* public components.",
+      "fabushi_canonical_owner": "Canonical Media playback telemetry/service owner",
+      "fabushi_target": "OPEN: audit current shipping Canonical Media playback telemetry/service owner; close missing state/lifetime/UI/a11y/service behavior and exact-head contract/integration/E2E evidence before implementation or release promotion.",
+      "platform_differences": "Qt widgets/reactive streams, Telegram shared-media viewers and MTProto reporting are behavioral reference. Fabushi must preserve product state, focus/visibility, playlist/session context, service retry and lifecycle semantics in existing React/Electron/Rust/service owners.",
+      "production_evidence": "projects/telegram-desktop-rust/dossiers/media-player-core-5074-5084-complete-read.md; direct exact-source read only; implementation/verification remains open.",
+      "test_evidence": "Current-head Source authority attestation for 5074-5084 required after commit; player UI/state/playlist/float/telemetry production tests remain open.",
+      "disposition": "mapped-open-listen-tracker",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "media_player_listen_tracker",
+      "consumer_evidence": [
+        "Complete direct exact-source read of Telegram/SourceFiles/media/player/media_player_listen_tracker.cpp; state, UI, session/service ownership, errors and teardown are mapped in the linked dossier to Canonical Media playback telemetry/service owner."
+      ],
+      "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "verified_blob_sha": "6ca1718a0c10c890028f281cdfa14221d1d0e1f0",
+        "byte_size": 2578,
+        "file_type": "blob",
+        "recursive_order": 5086
+      },
+      "notes": "Read-complete only. No mapped row is promoted to implemented/verified/release-ready by source accounting."
+    },
+    {
+      "recursive_order": 5087,
+      "source_path": "Telegram/SourceFiles/media/player/media_player_listen_tracker.h",
+      "source_blob_sha": "5ffc1d4eab3990c7063b79b38941700ff3aa6909",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Music listen reporting accumulation/finalization contract",
+      "upstream_owner": "Canonical Media playback telemetry/service owner",
+      "state_machine": "song track state -> accumulate active listened ms -> pause starts 60s flush timer -> stop/switch/finalize -> report only >=3s -> refresh file reference once changed and retry",
+      "side_effects": "playback UI, playlist, streaming and telemetry stay subordinate to one canonical Media player owner and existing Conversation/Message/session stores; source UI names are not copied into public Fabushi APIs",
+      "failure_cases": "short listen, repeated pause, stale document/context, file-reference 400, finalization double count",
+      "ui_disposition": "Reuse canonical Fabushi Toolbar, IconButton, Button, Slider-equivalent canonical control, Menu, Popover, Tooltip, Status, LoadingState, ErrorState, Toast, TranscriptEntry and Media preview/viewer surfaces. Preserve a11y, keyboard/focus, hover/active/disabled, light/dark and responsive behavior; do not introduce TelegramPlayer* public components.",
+      "fabushi_canonical_owner": "Canonical Media playback telemetry/service owner",
+      "fabushi_target": "OPEN: audit current shipping Canonical Media playback telemetry/service owner; close missing state/lifetime/UI/a11y/service behavior and exact-head contract/integration/E2E evidence before implementation or release promotion.",
+      "platform_differences": "Qt widgets/reactive streams, Telegram shared-media viewers and MTProto reporting are behavioral reference. Fabushi must preserve product state, focus/visibility, playlist/session context, service retry and lifecycle semantics in existing React/Electron/Rust/service owners.",
+      "production_evidence": "projects/telegram-desktop-rust/dossiers/media-player-core-5074-5084-complete-read.md; direct exact-source read only; implementation/verification remains open.",
+      "test_evidence": "Current-head Source authority attestation for 5074-5084 required after commit; player UI/state/playlist/float/telemetry production tests remain open.",
+      "disposition": "mapped-open-listen-tracker",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "media_player_listen_tracker",
+      "consumer_evidence": [
+        "Complete direct exact-source read of Telegram/SourceFiles/media/player/media_player_listen_tracker.h; state, UI, session/service ownership, errors and teardown are mapped in the linked dossier to Canonical Media playback telemetry/service owner."
+      ],
+      "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "verified_blob_sha": "5ffc1d4eab3990c7063b79b38941700ff3aa6909",
+        "byte_size": 748,
+        "file_type": "blob",
+        "recursive_order": 5087
+      },
+      "notes": "Read-complete only. No mapped row is promoted to implemented/verified/release-ready by source accounting."
+    },
+    {
+      "recursive_order": 5088,
       "source_path": "Telegram/SourceFiles/media/player/media_player_panel.cpp",
       "source_blob_sha": "65baa116915c96f2d6fe2c0dc75c278b6ac0a590",
       "read_complete": true,
@@ -40,17 +148,17 @@
       "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-current-head-actions-attestation",
-        "accepted_upstream": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "65baa116915c96f2d6fe2c0dc75c278b6ac0a590",
         "byte_size": 12488,
         "file_type": "blob",
-        "recursive_order": 5085
+        "recursive_order": 5088
       },
       "notes": "Read-complete only; no implementation, verification or release state is promoted."
     },
     {
-      "recursive_order": 5086,
+      "recursive_order": 5089,
       "source_path": "Telegram/SourceFiles/media/player/media_player_panel.h",
       "source_blob_sha": "6df3d14f3299df109804d17d4d73b7348c59a0e1",
       "read_complete": true,
@@ -76,17 +184,17 @@
       "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-current-head-actions-attestation",
-        "accepted_upstream": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "6df3d14f3299df109804d17d4d73b7348c59a0e1",
         "byte_size": 2712,
         "file_type": "blob",
-        "recursive_order": 5086
+        "recursive_order": 5089
       },
       "notes": "Read-complete only; no implementation, verification or release state is promoted."
     },
     {
-      "recursive_order": 5087,
+      "recursive_order": 5090,
       "source_path": "Telegram/SourceFiles/media/player/media_player_volume_controller.cpp",
       "source_blob_sha": "51818c7d111d8592015d049f4231c95f10f86200",
       "read_complete": true,
@@ -112,118 +220,10 @@
       "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-current-head-actions-attestation",
-        "accepted_upstream": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "51818c7d111d8592015d049f4231c95f10f86200",
         "byte_size": 3373,
-        "file_type": "blob",
-        "recursive_order": 5087
-      },
-      "notes": "Read-complete only; no implementation, verification or release state is promoted."
-    },
-    {
-      "recursive_order": 5088,
-      "source_path": "Telegram/SourceFiles/media/player/media_player_volume_controller.h",
-      "source_blob_sha": "49b4c8cb47ff6c92f8ea4119ec8160a61e0014a2",
-      "read_complete": true,
-      "responsibility_decomposition_complete": true,
-      "responsibility": "Player volume controller/dropdown contract",
-      "upstream_owner": "Canonical Media player volume/settings control owner",
-      "state_machine": "current song volume -> slider/wheel projection -> live mixer+setting updates -> finished change remembers nonzero volume and schedules persistence -> external setting changes update only when slider is not actively changing",
-      "side_effects": "UI consumes the single canonical Media player/session/settings state; no independent playlist, message or playback owner is introduced.",
-      "failure_cases": "slider fighting external update, muted zero overwriting remembered volume, wheel route mismatch, setting/mixer divergence",
-      "ui_disposition": "Reuse canonical Fabushi Toolbar, IconButton, Button, Menu, Popover, DetailPanel, ListRow/ResultRow, Tooltip, Status, LoadingState, ErrorState and Media progress controls; preserve a11y, focus, hover/disabled, light/dark and narrow responsive behavior.",
-      "fabushi_canonical_owner": "Canonical Media player volume/settings control owner",
-      "fabushi_target": "OPEN: audit current shipping Canonical Media player volume/settings control owner; close missing context/lifetime/responsive/a11y/settings behavior and exact-head production evidence before promotion.",
-      "platform_differences": "Qt widgets/Info mementos/settings callbacks are behavioral reference; preserve exact session/context, responsive, accessibility and persistence semantics in existing Fabushi owners.",
-      "production_evidence": "projects/telegram-desktop-rust/dossiers/media-player-panel-widget-5085-5090-complete-read.md; direct exact-source read only; implementation remains open.",
-      "test_evidence": "Current-head Source authority attestation plus production contract/integration/E2E evidence required.",
-      "disposition": "mapped-open-player-volume",
-      "unknown_closed": false,
-      "omitted": false,
-      "consumer_symbol": "media_player_volume_controller",
-      "consumer_evidence": [
-        "Complete direct exact-source read of Telegram/SourceFiles/media/player/media_player_volume_controller.h; mapped to Canonical Media player volume/settings control owner."
-      ],
-      "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
-      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
-      "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-current-head-actions-attestation",
-        "accepted_upstream": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
-        "verified_blob_sha": "49b4c8cb47ff6c92f8ea4119ec8160a61e0014a2",
-        "byte_size": 1113,
-        "file_type": "blob",
-        "recursive_order": 5088
-      },
-      "notes": "Read-complete only; no implementation, verification or release state is promoted."
-    },
-    {
-      "recursive_order": 5089,
-      "source_path": "Telegram/SourceFiles/media/player/media_player_widget.cpp",
-      "source_blob_sha": "c5c5ec97030b6412aa46bb2ce471316de8cd5c26",
-      "read_complete": true,
-      "responsibility_decomposition_complete": true,
-      "responsibility": "Responsive accessible player top-bar projection and interaction lifecycle over canonical playback state",
-      "upstream_owner": "Canonical Media player Toolbar owner",
-      "state_machine": "canonical player state -> choose Voice over Song while voice remains active -> project title/time/loading/play-pause-cancel/seek/prev-next/repeat/order/speed/volume -> hover/narrow responsive controls and playlist/dropdown arbitration -> exact item navigation -> close/type transition",
-      "side_effects": "UI consumes the single canonical Media player/session/settings state; no independent playlist, message or playback owner is introduced.",
-      "failure_cases": "Voice/Song type race, stale cross-session item, seek with no known duration, loading state still seekable, conflicting dropdowns, narrow controls inaccessible, wrong prev/next availability, mute remembered-volume loss, voice close incorrectly closing active song player",
-      "ui_disposition": "Reuse canonical Fabushi Toolbar, IconButton, Button, Menu, Popover, DetailPanel, ListRow/ResultRow, Tooltip, Status, LoadingState, ErrorState and Media progress controls; preserve a11y, focus, hover/disabled, light/dark and narrow responsive behavior.",
-      "fabushi_canonical_owner": "Canonical Media player Toolbar owner",
-      "fabushi_target": "OPEN: audit current shipping Canonical Media player Toolbar owner; close missing context/lifetime/responsive/a11y/settings behavior and exact-head production evidence before promotion.",
-      "platform_differences": "Qt widgets/Info mementos/settings callbacks are behavioral reference; preserve exact session/context, responsive, accessibility and persistence semantics in existing Fabushi owners.",
-      "production_evidence": "projects/telegram-desktop-rust/dossiers/media-player-panel-widget-5085-5090-complete-read.md; direct exact-source read only; implementation remains open.",
-      "test_evidence": "Current-head Source authority attestation plus production contract/integration/E2E evidence required.",
-      "disposition": "mapped-open-player-topbar",
-      "unknown_closed": false,
-      "omitted": false,
-      "consumer_symbol": "media_player_widget",
-      "consumer_evidence": [
-        "Complete direct exact-source read of Telegram/SourceFiles/media/player/media_player_widget.cpp; mapped to Canonical Media player Toolbar owner."
-      ],
-      "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
-      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
-      "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-current-head-actions-attestation",
-        "accepted_upstream": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
-        "verified_blob_sha": "c5c5ec97030b6412aa46bb2ce471316de8cd5c26",
-        "byte_size": 24422,
-        "file_type": "blob",
-        "recursive_order": 5089
-      },
-      "notes": "Read-complete only; no implementation, verification or release state is promoted."
-    },
-    {
-      "recursive_order": 5090,
-      "source_path": "Telegram/SourceFiles/media/player/media_player_widget.h",
-      "source_blob_sha": "a6a8fe7ee1658176f712768d7357839402639e0f",
-      "read_complete": true,
-      "responsibility_decomposition_complete": true,
-      "responsibility": "Player top-bar UI state, interaction and playlist-toggle contract",
-      "upstream_owner": "Canonical Media player Toolbar owner",
-      "state_machine": "canonical player state -> choose Voice over Song while voice remains active -> project title/time/loading/play-pause-cancel/seek/prev-next/repeat/order/speed/volume -> hover/narrow responsive controls and playlist/dropdown arbitration -> exact item navigation -> close/type transition",
-      "side_effects": "UI consumes the single canonical Media player/session/settings state; no independent playlist, message or playback owner is introduced.",
-      "failure_cases": "Voice/Song type race, stale cross-session item, seek with no known duration, loading state still seekable, conflicting dropdowns, narrow controls inaccessible, wrong prev/next availability, mute remembered-volume loss, voice close incorrectly closing active song player",
-      "ui_disposition": "Reuse canonical Fabushi Toolbar, IconButton, Button, Menu, Popover, DetailPanel, ListRow/ResultRow, Tooltip, Status, LoadingState, ErrorState and Media progress controls; preserve a11y, focus, hover/disabled, light/dark and narrow responsive behavior.",
-      "fabushi_canonical_owner": "Canonical Media player Toolbar owner",
-      "fabushi_target": "OPEN: audit current shipping Canonical Media player Toolbar owner; close missing context/lifetime/responsive/a11y/settings behavior and exact-head production evidence before promotion.",
-      "platform_differences": "Qt widgets/Info mementos/settings callbacks are behavioral reference; preserve exact session/context, responsive, accessibility and persistence semantics in existing Fabushi owners.",
-      "production_evidence": "projects/telegram-desktop-rust/dossiers/media-player-panel-widget-5085-5090-complete-read.md; direct exact-source read only; implementation remains open.",
-      "test_evidence": "Current-head Source authority attestation plus production contract/integration/E2E evidence required.",
-      "disposition": "mapped-open-player-topbar",
-      "unknown_closed": false,
-      "omitted": false,
-      "consumer_symbol": "media_player_widget",
-      "consumer_evidence": [
-        "Complete direct exact-source read of Telegram/SourceFiles/media/player/media_player_widget.h; mapped to Canonical Media player Toolbar owner."
-      ],
-      "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
-      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
-      "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-current-head-actions-attestation",
-        "accepted_upstream": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
-        "verified_blob_sha": "a6a8fe7ee1658176f712768d7357839402639e0f",
-        "byte_size": 4984,
         "file_type": "blob",
         "recursive_order": 5090
       },

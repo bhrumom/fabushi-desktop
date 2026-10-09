@@ -4,8 +4,8 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
-    "tree": "6ac9bbc1b44edcb119b1a724e7b0a321c3b7b8fa"
+    "commit": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+    "tree": "5030985204963cbbd362ced7412d231b04ebd0cc"
   },
   "range": {
     "first_order": 5291,
@@ -15,6 +15,111 @@
   "rows": [
     {
       "recursive_order": 5291,
+      "source_path": "Telegram/SourceFiles/mtproto/type_utils.h",
+      "source_blob_sha": "fd6cdd1e5631f7a7f9690c1ffa8cb438ba6b8036",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "source-specific TL boolean conversion helpers with no independent product state owner",
+      "upstream_owner": "MTProto type helpers",
+      "state_machine": "current request/session generation -> bounded send/connect/bootstrap/frame operation -> correlated success/error/ack/retry/cancel settlement -> stale generation rejection -> deterministic cleanup",
+      "side_effects": "Applicable responsibilities map to existing Fabushi Coordinator/Host/backend transport, request settlement/idempotency, reconnect/retry, typed error, bootstrap/config and network security owners. Telegram MTProto wire/frame/provider details are not copied.",
+      "failure_cases": "RAII/cancel leaks pending request; stale callback crosses session generation; reconnect duplicates side effects; retry/backoff unbounded; ack/replay state lost; bootstrap trusts malformed/unbounded data; frame parser accepts unknown/oversized payload",
+      "ui_disposition": "No Telegram-specific UI. Canonical Fabushi loading/error/network/settings surfaces may reflect source-neutral state only.",
+      "fabushi_canonical_owner": "existing Fabushi Coordinator/Host/backend transport + request settlement/idempotency/reconnect + network/bootstrap/config/security owners",
+      "fabushi_target": "MAPPED OPEN WITH PLATFORM/PROTOCOL REPLACEMENT. Audit and close equivalent request lifetime, cancellation, dependency ordering, reconnect/retry, replay/idempotency, bounded buffering/bootstrap and generation fencing in current Fabushi; do not add MTProto/WebProxy runtime.",
+      "platform_differences": "Fabushi first-party transport and platform config replace Telegram MTProto/Qt provider/frame mechanics. Equivalence is behavioral and must be proven in current owners.",
+      "production_evidence": "projects/telegram-desktop-rust/dossiers/mtproto-session-bootstrap-frame-5281-5290-complete-read.md; current Fabushi replacement evidence remains to be audited.",
+      "test_evidence": "Exact-head unit/contract/integration/fault-recovery/E2E/packaged evidence remains required.",
+      "disposition": "mapped-open-platform-protocol-replacement",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "MTProto type helpers",
+      "consumer_evidence": [
+        "Complete direct exact-source read of Telegram/SourceFiles/mtproto/type_utils.h at accepted blob fd6cdd1e."
+      ],
+      "reachability_status": "accepted-tree source owner/input proven; replacement responsibility remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram transport source copied.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "verified_blob_sha": "fd6cdd1e5631f7a7f9690c1ffa8cb438ba6b8036",
+        "file_type": "blob",
+        "recursive_order": 5291
+      },
+      "notes": "Read-complete only. Unknown remains open; omitted=false."
+    },
+    {
+      "recursive_order": 5292,
+      "source_path": "Telegram/SourceFiles/mtproto/web_proxy/web_proxy_frame.cpp",
+      "source_blob_sha": "bd1d7b310f40203f9da914efc8bdd6711035884b",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "bounded multiplexed proxy frame serialization/parser: known type validation, 24-bit stream identity, payload cap, batch cap and partial-buffer retention",
+      "upstream_owner": "MTP::WebProxy",
+      "state_machine": "current request/session generation -> bounded send/connect/bootstrap/frame operation -> correlated success/error/ack/retry/cancel settlement -> stale generation rejection -> deterministic cleanup",
+      "side_effects": "Applicable responsibilities map to existing Fabushi Coordinator/Host/backend transport, request settlement/idempotency, reconnect/retry, typed error, bootstrap/config and network security owners. Telegram MTProto wire/frame/provider details are not copied.",
+      "failure_cases": "RAII/cancel leaks pending request; stale callback crosses session generation; reconnect duplicates side effects; retry/backoff unbounded; ack/replay state lost; bootstrap trusts malformed/unbounded data; frame parser accepts unknown/oversized payload",
+      "ui_disposition": "No Telegram-specific UI. Canonical Fabushi loading/error/network/settings surfaces may reflect source-neutral state only.",
+      "fabushi_canonical_owner": "existing Fabushi Coordinator/Host/backend transport + request settlement/idempotency/reconnect + network/bootstrap/config/security owners",
+      "fabushi_target": "MAPPED OPEN WITH PLATFORM/PROTOCOL REPLACEMENT. Audit and close equivalent request lifetime, cancellation, dependency ordering, reconnect/retry, replay/idempotency, bounded buffering/bootstrap and generation fencing in current Fabushi; do not add MTProto/WebProxy runtime.",
+      "platform_differences": "Fabushi first-party transport and platform config replace Telegram MTProto/Qt provider/frame mechanics. Equivalence is behavioral and must be proven in current owners.",
+      "production_evidence": "projects/telegram-desktop-rust/dossiers/mtproto-session-bootstrap-frame-5281-5290-complete-read.md; current Fabushi replacement evidence remains to be audited.",
+      "test_evidence": "Exact-head unit/contract/integration/fault-recovery/E2E/packaged evidence remains required.",
+      "disposition": "mapped-open-platform-protocol-replacement",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "MTP::WebProxy",
+      "consumer_evidence": [
+        "Complete direct exact-source read of Telegram/SourceFiles/mtproto/web_proxy/web_proxy_frame.cpp at accepted blob bd1d7b31."
+      ],
+      "reachability_status": "accepted-tree source owner/input proven; replacement responsibility remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram transport source copied.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "verified_blob_sha": "bd1d7b310f40203f9da914efc8bdd6711035884b",
+        "file_type": "blob",
+        "recursive_order": 5292
+      },
+      "notes": "Read-complete only. Unknown remains open; omitted=false."
+    },
+    {
+      "recursive_order": 5293,
+      "source_path": "Telegram/SourceFiles/mtproto/web_proxy/web_proxy_frame.h",
+      "source_blob_sha": "a5ba491fed67d70aee88e6ec2e3ac47c991e78f3",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "typed web-proxy frame/window protocol contract and hard resource limits",
+      "upstream_owner": "MTP::WebProxy",
+      "state_machine": "current request/session generation -> bounded send/connect/bootstrap/frame operation -> correlated success/error/ack/retry/cancel settlement -> stale generation rejection -> deterministic cleanup",
+      "side_effects": "Applicable responsibilities map to existing Fabushi Coordinator/Host/backend transport, request settlement/idempotency, reconnect/retry, typed error, bootstrap/config and network security owners. Telegram MTProto wire/frame/provider details are not copied.",
+      "failure_cases": "RAII/cancel leaks pending request; stale callback crosses session generation; reconnect duplicates side effects; retry/backoff unbounded; ack/replay state lost; bootstrap trusts malformed/unbounded data; frame parser accepts unknown/oversized payload",
+      "ui_disposition": "No Telegram-specific UI. Canonical Fabushi loading/error/network/settings surfaces may reflect source-neutral state only.",
+      "fabushi_canonical_owner": "existing Fabushi Coordinator/Host/backend transport + request settlement/idempotency/reconnect + network/bootstrap/config/security owners",
+      "fabushi_target": "MAPPED OPEN WITH PLATFORM/PROTOCOL REPLACEMENT. Audit and close equivalent request lifetime, cancellation, dependency ordering, reconnect/retry, replay/idempotency, bounded buffering/bootstrap and generation fencing in current Fabushi; do not add MTProto/WebProxy runtime.",
+      "platform_differences": "Fabushi first-party transport and platform config replace Telegram MTProto/Qt provider/frame mechanics. Equivalence is behavioral and must be proven in current owners.",
+      "production_evidence": "projects/telegram-desktop-rust/dossiers/mtproto-session-bootstrap-frame-5281-5290-complete-read.md; current Fabushi replacement evidence remains to be audited.",
+      "test_evidence": "Exact-head unit/contract/integration/fault-recovery/E2E/packaged evidence remains required.",
+      "disposition": "mapped-open-platform-protocol-replacement",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "MTP::WebProxy",
+      "consumer_evidence": [
+        "Complete direct exact-source read of Telegram/SourceFiles/mtproto/web_proxy/web_proxy_frame.h at accepted blob a5ba491f."
+      ],
+      "reachability_status": "accepted-tree source owner/input proven; replacement responsibility remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram transport source copied.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "verified_blob_sha": "a5ba491fed67d70aee88e6ec2e3ac47c991e78f3",
+        "file_type": "blob",
+        "recursive_order": 5293
+      },
+      "notes": "Read-complete only. Unknown remains open; omitted=false."
+    },
+    {
+      "recursive_order": 5294,
       "source_path": "Telegram/SourceFiles/mtproto/web_proxy/web_proxy_transport.cpp",
       "source_blob_sha": "e25ad970e84686e9aca061d02c274048793b5ad4",
       "read_complete": true,
@@ -40,16 +145,16 @@
       "reachability_status": "accepted-tree source owner/input proven; replacement responsibility remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram C++/Qt runtime or source styling copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-predecessor-head-attested-new-head-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "e25ad970e84686e9aca061d02c274048793b5ad4",
         "file_type": "blob",
-        "recursive_order": 5291
+        "recursive_order": 5294
       },
       "notes": "Read-complete and owner-audited only. Unknown remains open; omitted=false. Predecessor head a5c76249 passed authority/runtime/chat-parity, but this new read-through commit requires its own exact-head Actions."
     },
     {
-      "recursive_order": 5292,
+      "recursive_order": 5295,
       "source_path": "Telegram/SourceFiles/mtproto/web_proxy/web_proxy_transport.h",
       "source_blob_sha": "f58850d2bc2ceabd93113d7725903e1c0d92d71b",
       "read_complete": true,
@@ -75,16 +180,16 @@
       "reachability_status": "accepted-tree source owner/input proven; replacement responsibility remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram C++/Qt runtime or source styling copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-predecessor-head-attested-new-head-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "f58850d2bc2ceabd93113d7725903e1c0d92d71b",
         "file_type": "blob",
-        "recursive_order": 5292
+        "recursive_order": 5295
       },
       "notes": "Read-complete and owner-audited only. Unknown remains open; omitted=false. Predecessor head a5c76249 passed authority/runtime/chat-parity, but this new read-through commit requires its own exact-head Actions."
     },
     {
-      "recursive_order": 5293,
+      "recursive_order": 5296,
       "source_path": "Telegram/SourceFiles/mtproto/web_proxy/web_proxy_webview.cpp",
       "source_blob_sha": "8a2efc8fb15e400366f199cd956effc8ad362da8",
       "read_complete": true,
@@ -110,16 +215,16 @@
       "reachability_status": "accepted-tree source owner/input proven; replacement responsibility remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram C++/Qt runtime or source styling copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-predecessor-head-attested-new-head-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "8a2efc8fb15e400366f199cd956effc8ad362da8",
         "file_type": "blob",
-        "recursive_order": 5293
+        "recursive_order": 5296
       },
       "notes": "Read-complete and owner-audited only. Unknown remains open; omitted=false. Predecessor head a5c76249 passed authority/runtime/chat-parity, but this new read-through commit requires its own exact-head Actions."
     },
     {
-      "recursive_order": 5294,
+      "recursive_order": 5297,
       "source_path": "Telegram/SourceFiles/mtproto/web_proxy/web_proxy_webview.h",
       "source_blob_sha": "57d8a5d6e91e275759774ad7a32961ce14406fd9",
       "read_complete": true,
@@ -145,16 +250,16 @@
       "reachability_status": "accepted-tree source owner/input proven; replacement responsibility remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram C++/Qt runtime or source styling copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-predecessor-head-attested-new-head-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "57d8a5d6e91e275759774ad7a32961ce14406fd9",
         "file_type": "blob",
-        "recursive_order": 5294
+        "recursive_order": 5297
       },
       "notes": "Read-complete and owner-audited only. Unknown remains open; omitted=false. Predecessor head a5c76249 passed authority/runtime/chat-parity, but this new read-through commit requires its own exact-head Actions."
     },
     {
-      "recursive_order": 5295,
+      "recursive_order": 5298,
       "source_path": "Telegram/SourceFiles/overview/overview.style",
       "source_blob_sha": "d51f1de1d1cd811c6c5d3679ec9bec73fdfccd0f",
       "read_complete": true,
@@ -180,16 +285,16 @@
       "reachability_status": "accepted-tree source owner/input proven; replacement responsibility remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram C++/Qt runtime or source styling copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-predecessor-head-attested-new-head-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "d51f1de1d1cd811c6c5d3679ec9bec73fdfccd0f",
         "file_type": "blob",
-        "recursive_order": 5295
+        "recursive_order": 5298
       },
       "notes": "Read-complete and owner-audited only. Unknown remains open; omitted=false. Predecessor head a5c76249 passed authority/runtime/chat-parity, but this new read-through commit requires its own exact-head Actions."
     },
     {
-      "recursive_order": 5296,
+      "recursive_order": 5299,
       "source_path": "Telegram/SourceFiles/overview/overview_checkbox.cpp",
       "source_blob_sha": "9722aa21fed56c788bceed284f7438e9074c51ab",
       "read_complete": true,
@@ -215,16 +320,16 @@
       "reachability_status": "accepted-tree source owner/input proven; replacement responsibility remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram C++/Qt runtime or source styling copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-predecessor-head-attested-new-head-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "9722aa21fed56c788bceed284f7438e9074c51ab",
         "file_type": "blob",
-        "recursive_order": 5296
+        "recursive_order": 5299
       },
       "notes": "Read-complete and owner-audited only. Unknown remains open; omitted=false. Predecessor head a5c76249 passed authority/runtime/chat-parity, but this new read-through commit requires its own exact-head Actions."
     },
     {
-      "recursive_order": 5297,
+      "recursive_order": 5300,
       "source_path": "Telegram/SourceFiles/overview/overview_checkbox.h",
       "source_blob_sha": "2da919e232b94811d6991bb8c641536b9c589f6c",
       "read_complete": true,
@@ -250,114 +355,9 @@
       "reachability_status": "accepted-tree source owner/input proven; replacement responsibility remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram C++/Qt runtime or source styling copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-predecessor-head-attested-new-head-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "2da919e232b94811d6991bb8c641536b9c589f6c",
-        "file_type": "blob",
-        "recursive_order": 5297
-      },
-      "notes": "Read-complete and owner-audited only. Unknown remains open; omitted=false. Predecessor head a5c76249 passed authority/runtime/chat-parity, but this new read-through commit requires its own exact-head Actions."
-    },
-    {
-      "recursive_order": 5298,
-      "source_path": "Telegram/SourceFiles/overview/overview_layout.cpp",
-      "source_blob_sha": "ceae87bc8148b76426a3e1e9d427f99f04659429",
-      "read_complete": true,
-      "responsibility_decomposition_complete": true,
-      "responsibility": "shared-media item lifecycle for photo/video/voice/document/link/GIF: media load/unload ownership, bounded thumbnail/crop work, async generation fencing, sensitive/spoiler reveal, story pinned/hidden state, download/upload/play progress, link safety, GIF visibility/power-saving and selection/click behavior",
-      "upstream_owner": "Overview::Layout",
-      "state_machine": "canonical message/search/media truth -> derived collection item/resource state -> visible/selected/loading/playing/revealed interaction -> unload/reload or action -> derived state rebuilt from canonical owners",
-      "side_effects": "Applicable behavior maps to canonical Message/SearchIndex/MediaCache, Conversation/shared-media collection, MediaViewer/Resource and design-system owners; Qt layout and source styling are not copied.",
-      "failure_cases": "selection/action semantics diverge; stale async thumbnail overwrites current item; heavy media never unloads; oversized image work spikes memory; sensitive media reveals implicitly; download/play state lies; unsafe link opens; GIF remains active offscreen",
-      "ui_disposition": "Reuse canonical Checkbox, ResultRow, Conversation/Search collection, MediaViewer, LoadingState/ErrorState and semantic tokens. No Telegram-/Overview-named public component and no expansion of legacy sand-* naming.",
-      "fabushi_canonical_owner": "canonical Fabushi Message/SearchIndex/MediaCache + ConversationWorkspace shared-media collection + MediaViewer/Resource + secure external-link owners",
-      "fabushi_target": "MAPPED OPEN UI/RESOURCE REPLACEMENT. Existing SearchIndex Media/Files/Links scopes and MediaCache own data/resource truth; MediaViewer owns open playback. Audit/implement missing collection selection, heavy-resource visibility/unload, async stale-result fencing, safe-link and status interactions in canonical surfaces only.",
-      "platform_differences": "React/Electron canonical collection/media/resource surfaces replace Qt painter/layout/style mechanics; durable truth remains in current messaging/search/resource owners.",
-      "production_evidence": "projects/telegram-desktop-rust/dossiers/web-proxy-overview-5291-5300-complete-read.md; owner audit includes frontend/src/recovered/contracts/desktop-bridge.ts, source/shared/rpc/coordinator.ts, native/mahayana-messaging/src/search.rs, native/mahayana-messaging/src/media_cache.rs and frontend/src/recovered/features/conversation/workspace/media-viewer.tsx; responsibility remains mapped-open.",
-      "test_evidence": "Exact-head unit/property/contract/integration/E2E/temporal/fault/a11y/visual/performance/security/soak evidence remains required before unknown closure.",
-      "disposition": "mapped-open-ui-resource-replacement",
-      "unknown_closed": false,
-      "omitted": false,
-      "consumer_symbol": "Overview::Layout::{ItemBase,RadialProgressItem,Photo,Video,Voice,Document,Link,Gif}",
-      "consumer_evidence": [
-        "Complete direct exact-source read of Telegram/SourceFiles/overview/overview_layout.cpp at accepted blob ceae87bc8148b76426a3e1e9d427f99f04659429."
-      ],
-      "reachability_status": "accepted-tree source owner/input proven; replacement responsibility remains open",
-      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram C++/Qt runtime or source styling copied.",
-      "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-predecessor-head-attested-new-head-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
-        "verified_blob_sha": "ceae87bc8148b76426a3e1e9d427f99f04659429",
-        "file_type": "blob",
-        "recursive_order": 5298
-      },
-      "notes": "Read-complete and owner-audited only. Unknown remains open; omitted=false. Predecessor head a5c76249 passed authority/runtime/chat-parity, but this new read-through commit requires its own exact-head Actions."
-    },
-    {
-      "recursive_order": 5299,
-      "source_path": "Telegram/SourceFiles/overview/overview_layout.h",
-      "source_blob_sha": "c6aba8cac455f3e01805ab835fc6968d5b8c142c",
-      "read_complete": true,
-      "responsibility_decomposition_complete": true,
-      "responsibility": "typed shared-media layout/item contracts for selection, radial progress/status, media options, heavy-resource lifecycle, external loading/cancel and photo/video/voice/document/link/GIF item state",
-      "upstream_owner": "Overview::Layout",
-      "state_machine": "canonical message/search/media truth -> derived collection item/resource state -> visible/selected/loading/playing/revealed interaction -> unload/reload or action -> derived state rebuilt from canonical owners",
-      "side_effects": "Applicable behavior maps to canonical Message/SearchIndex/MediaCache, Conversation/shared-media collection, MediaViewer/Resource and design-system owners; Qt layout and source styling are not copied.",
-      "failure_cases": "selection/action semantics diverge; stale async thumbnail overwrites current item; heavy media never unloads; oversized image work spikes memory; sensitive media reveals implicitly; download/play state lies; unsafe link opens; GIF remains active offscreen",
-      "ui_disposition": "Reuse canonical Checkbox, ResultRow, Conversation/Search collection, MediaViewer, LoadingState/ErrorState and semantic tokens. No Telegram-/Overview-named public component and no expansion of legacy sand-* naming.",
-      "fabushi_canonical_owner": "canonical Fabushi Message/SearchIndex/MediaCache + shared-media collection/MediaViewer owners",
-      "fabushi_target": "MAPPED OPEN UI/RESOURCE REPLACEMENT. Keep authoritative media/message state outside renderer items; derived UI/resource state must remain reconstructable and cancellable.",
-      "platform_differences": "React/Electron canonical collection/media/resource surfaces replace Qt painter/layout/style mechanics; durable truth remains in current messaging/search/resource owners.",
-      "production_evidence": "projects/telegram-desktop-rust/dossiers/web-proxy-overview-5291-5300-complete-read.md; owner audit includes frontend/src/recovered/contracts/desktop-bridge.ts, source/shared/rpc/coordinator.ts, native/mahayana-messaging/src/search.rs, native/mahayana-messaging/src/media_cache.rs and frontend/src/recovered/features/conversation/workspace/media-viewer.tsx; responsibility remains mapped-open.",
-      "test_evidence": "Exact-head unit/property/contract/integration/E2E/temporal/fault/a11y/visual/performance/security/soak evidence remains required before unknown closure.",
-      "disposition": "mapped-open-ui-resource-replacement",
-      "unknown_closed": false,
-      "omitted": false,
-      "consumer_symbol": "Overview::Layout item contracts",
-      "consumer_evidence": [
-        "Complete direct exact-source read of Telegram/SourceFiles/overview/overview_layout.h at accepted blob c6aba8cac455f3e01805ab835fc6968d5b8c142c."
-      ],
-      "reachability_status": "accepted-tree source owner/input proven; replacement responsibility remains open",
-      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram C++/Qt runtime or source styling copied.",
-      "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-predecessor-head-attested-new-head-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
-        "verified_blob_sha": "c6aba8cac455f3e01805ab835fc6968d5b8c142c",
-        "file_type": "blob",
-        "recursive_order": 5299
-      },
-      "notes": "Read-complete and owner-audited only. Unknown remains open; omitted=false. Predecessor head a5c76249 passed authority/runtime/chat-parity, but this new read-through commit requires its own exact-head Actions."
-    },
-    {
-      "recursive_order": 5300,
-      "source_path": "Telegram/SourceFiles/overview/overview_layout_delegate.h",
-      "source_blob_sha": "0d016974b102bedf989f9a65a10a48f0587bed62",
-      "read_complete": true,
-      "responsibility_decomposition_complete": true,
-      "responsibility": "shared-media layout delegate boundary for heavy-item register/unregister, visibility/repaint, media retention policy and typed photo/document open actions",
-      "upstream_owner": "Overview::Layout",
-      "state_machine": "canonical message/search/media truth -> derived collection item/resource state -> visible/selected/loading/playing/revealed interaction -> unload/reload or action -> derived state rebuilt from canonical owners",
-      "side_effects": "Applicable behavior maps to canonical Message/SearchIndex/MediaCache, Conversation/shared-media collection, MediaViewer/Resource and design-system owners; Qt layout and source styling are not copied.",
-      "failure_cases": "selection/action semantics diverge; stale async thumbnail overwrites current item; heavy media never unloads; oversized image work spikes memory; sensitive media reveals implicitly; download/play state lies; unsafe link opens; GIF remains active offscreen",
-      "ui_disposition": "Reuse canonical Checkbox, ResultRow, Conversation/Search collection, MediaViewer, LoadingState/ErrorState and semantic tokens. No Telegram-/Overview-named public component and no expansion of legacy sand-* naming.",
-      "fabushi_canonical_owner": "canonical Fabushi media/resource lifecycle + Conversation/Search collection + MediaViewer action owners",
-      "fabushi_target": "MAPPED OPEN UI/RESOURCE REPLACEMENT. Reuse existing Resource/MediaViewer/action boundaries; do not add a Telegram-style delegate owner.",
-      "platform_differences": "React/Electron canonical collection/media/resource surfaces replace Qt painter/layout/style mechanics; durable truth remains in current messaging/search/resource owners.",
-      "production_evidence": "projects/telegram-desktop-rust/dossiers/web-proxy-overview-5291-5300-complete-read.md; owner audit includes frontend/src/recovered/contracts/desktop-bridge.ts, source/shared/rpc/coordinator.ts, native/mahayana-messaging/src/search.rs, native/mahayana-messaging/src/media_cache.rs and frontend/src/recovered/features/conversation/workspace/media-viewer.tsx; responsibility remains mapped-open.",
-      "test_evidence": "Exact-head unit/property/contract/integration/E2E/temporal/fault/a11y/visual/performance/security/soak evidence remains required before unknown closure.",
-      "disposition": "mapped-open-ui-resource-replacement",
-      "unknown_closed": false,
-      "omitted": false,
-      "consumer_symbol": "Overview::Layout::Delegate",
-      "consumer_evidence": [
-        "Complete direct exact-source read of Telegram/SourceFiles/overview/overview_layout_delegate.h at accepted blob 0d016974b102bedf989f9a65a10a48f0587bed62."
-      ],
-      "reachability_status": "accepted-tree source owner/input proven; replacement responsibility remains open",
-      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram C++/Qt runtime or source styling copied.",
-      "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-predecessor-head-attested-new-head-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
-        "verified_blob_sha": "0d016974b102bedf989f9a65a10a48f0587bed62",
         "file_type": "blob",
         "recursive_order": 5300
       },

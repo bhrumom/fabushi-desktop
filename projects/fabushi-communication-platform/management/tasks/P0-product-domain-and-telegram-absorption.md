@@ -13,7 +13,7 @@ Execution: all executable verification only GitHub Actions
 
 重新读取 main、PR #20 状态和 current canonical exact HEAD。PR #20 在本次规范读取时已合并；不能继续从历史 open/draft 认知开始，也不能回退到旧实现分支。既有 Bot 架构/验收硬门继续有效。
 
-重新读取 tdesktop discovery HEAD。当前 accepted discovery HEAD 为 `42f8a36d43b8c805bc821905bea4cfeb3af1d41d`（root tree `6ac9bbc1b44edcb119b1a724e7b0a321c3b7b8fa`；相对 `3a15bf1fe34b6950916215a11b50eadfce4bbb41` 前进 4 commits，修改 9 个既有路径，无 add/delete/gitlink，recursive path set 保持 16,120）。`3a15bf1fe34b6950916215a11b50eadfce4bbb41` 与更早 authority 仅作历史证据。既有 recursive/build-time authority 必须由 current-head GitHub Actions 重取证；`baseline_ready` 在递归/外部来源及逐责任迁移未闭合前不得为 true。
+重新读取 tdesktop discovery HEAD。当前 accepted discovery HEAD 为 `863cf10d9f34fb0b1b35b35da1bda75acfc58d2e`（root tree `5030985204963cbbd362ced7412d231b04ebd0cc`）；`42f8a36d43b8c805bc821905bea4cfeb3af1d41d` 与更早 authority 仅作历史证据。当前 recursive denominator 16,123；read-through 5,583；unread 10,540；unknown 15,844；source closure 仍 open，predecessor Actions 不得证明新 baseline。
 
 ## B. Inventory all files and understand all modules
 
@@ -104,4 +104,4 @@ P0 只在以下均完成时通过：
 
 P0 通过只是实施输入闭合，不是产品已完成。某项 blocked 时继续无依赖阻塞的研究、合同、已批准实现或证据收集；不能伪造 P0/既有 Bot gate 已通过来启动依赖它的工作。需要用户支持先检查相同通知及回复，按指定渠道通知一次，再推进其他内容。
 
-Current live authority (2026-10-09): `telegramdesktop/tdesktop@42f8a36d43b8c805bc821905bea4cfeb3af1d41d` (root tree `6ac9bbc1b44edcb119b1a724e7b0a321c3b7b8fa`), four commits ahead of historical `3a15bf1fe34b6950916215a11b50eadfce4bbb41`; exactly nine existing paths changed, no add/delete/gitlink change, recursive denominator remains 16,120, and source closure remains open.
+Current live authority (2026-10-09): `telegramdesktop/tdesktop@863cf10d9f34fb0b1b35b35da1bda75acfc58d2e` (root tree `5030985204963cbbd362ced7412d231b04ebd0cc`), three commits ahead of historical `42f8a36d43b8c805bc821905bea4cfeb3af1d41d`; 15 root paths changed (12 modified, 3 added), recursive denominator is 16,123, read-through is 5,583, unread is 10,540, unknown is 15,844, omitted is 0, and source closure remains open.

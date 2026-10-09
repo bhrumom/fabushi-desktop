@@ -70,3 +70,6 @@ Accounting: full-read `226`, unread `15,586`, unknown `15,730`, omitted `0`. No 
 Twenty exact TGS blobs were streamed/decompressed. Statistics boosts/earn, stop, and toast resources were tied to exact production consumers. Swipe-action archive/delete/disabled/mute/pin/read/unarchive/ungroup/unmute/unpin/unread assets were fully read, but a focused exact-source scan did not yet prove the runtime registry/path builder, so those rows remain explicitly consumer-open; generic words such as `mute`, `read` or `delete` are not accepted as asset evidence.
 
 Accounting: full-read `246`, unread `15,566`, unknown `15,730`, omitted `0`.
+
+
+> 2026-10-09 rebaseline: changed source in this domain was re-read at `863cf10d9f34fb0b1b35b35da1bda75acfc58d2e` / `5030985204963cbbd362ced7412d231b04ebd0cc`. Prior changed-blob identity is historical-only; current decomposition is in `live-863cf10d-wallet-editor-bot-menu-rebaseline.md`.

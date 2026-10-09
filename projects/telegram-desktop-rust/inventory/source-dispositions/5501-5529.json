@@ -4,8 +4,8 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
-    "tree": "6ac9bbc1b44edcb119b1a724e7b0a321c3b7b8fa"
+    "commit": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+    "tree": "5030985204963cbbd362ced7412d231b04ebd0cc"
   },
   "range": {
     "first_order": 5501,
@@ -15,6 +15,111 @@
   "rows": [
     {
       "recursive_order": 5501,
+      "source_path": "Telegram/SourceFiles/platform/win/tray_win.cpp",
+      "source_blob_sha": "be54999ea3ad5d30d187ae2f9cd31a53b99f012b",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "tray creation/menu/click lifecycle, delayed post-menu callbacks, unread/muted/support-mode icon counters, taskbar dark/monochrome policy and persisted first-use tooltip",
+      "upstream_owner": "Telegram Windows platform adapter",
+      "state_machine": "platform capability/input -> source-neutral canonical owner -> native adapter/result -> lifecycle/scope cleanup",
+      "side_effects": "Maps to canonical tray/Menu/Badge/theme owner; native/platform state remains an adapter and cannot become a second product/runtime truth owner.",
+      "failure_cases": "unsupported capability reported available; stale async/native callback crosses owner or lifecycle; platform adapter duplicates canonical product truth; failure/cancellation is treated as success",
+      "ui_disposition": "Reuse canonical Menu/Badge/Status/tray surfaces; native tray is a projection, never unread or command truth.",
+      "fabushi_canonical_owner": "canonical tray/Menu/Badge/theme owner",
+      "fabushi_target": "MAPPED OPEN. Extend existing source-neutral canonical owner only.",
+      "platform_differences": "OS APIs, shell/framework mechanics and native data structures are platform adapters; capability, permission, action, state, recovery, privacy, a11y and security semantics remain canonical Fabushi responsibilities.",
+      "production_evidence": "Canonical owner candidate identified; exact responsibility implementation plus same-head production evidence remain open.",
+      "test_evidence": "Exact-head contract/integration/fault/security/privacy/a11y/E2E/packaged evidence required as applicable before unknown closure.",
+      "disposition": "mapped-open-canonical-platform-capability-replacement",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "Windows tray/taskbar UX",
+      "consumer_evidence": [
+        "Complete direct exact-source read of Telegram/SourceFiles/platform/win/tray_win.cpp at accepted blob be54999ea3ad5d30d187ae2f9cd31a53b99f012b."
+      ],
+      "reachability_status": "accepted-tree source owner/input proven; canonical implementation closure remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram platform runtime retained.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "verified_blob_sha": "be54999ea3ad5d30d187ae2f9cd31a53b99f012b",
+        "file_type": "blob",
+        "recursive_order": 5501
+      },
+      "notes": "Read-complete. unknown remains open; omitted=false."
+    },
+    {
+      "recursive_order": 5502,
+      "source_path": "Telegram/SourceFiles/platform/win/tray_win.h",
+      "source_blob_sha": "2618c73452e8cd4247d7bbde6bcdf17041846876",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Windows tray lifecycle, menu action streams, counter/icon generation and taskbar-theme refresh contract",
+      "upstream_owner": "Telegram Windows platform adapter",
+      "state_machine": "platform capability/input -> source-neutral canonical owner -> native adapter/result -> lifecycle/scope cleanup",
+      "side_effects": "Maps to canonical tray/Menu/Badge/theme owner; native/platform state remains an adapter and cannot become a second product/runtime truth owner.",
+      "failure_cases": "unsupported capability reported available; stale async/native callback crosses owner or lifecycle; platform adapter duplicates canonical product truth; failure/cancellation is treated as success",
+      "ui_disposition": "Reuse canonical Menu/Badge/Status/tray surfaces; native tray is a projection, never unread or command truth.",
+      "fabushi_canonical_owner": "canonical tray/Menu/Badge/theme owner",
+      "fabushi_target": "MAPPED OPEN. Extend existing source-neutral canonical owner only.",
+      "platform_differences": "OS APIs, shell/framework mechanics and native data structures are platform adapters; capability, permission, action, state, recovery, privacy, a11y and security semantics remain canonical Fabushi responsibilities.",
+      "production_evidence": "Canonical owner candidate identified; exact responsibility implementation plus same-head production evidence remain open.",
+      "test_evidence": "Exact-head contract/integration/fault/security/privacy/a11y/E2E/packaged evidence required as applicable before unknown closure.",
+      "disposition": "mapped-open-canonical-platform-capability-replacement",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "Windows tray/taskbar UX",
+      "consumer_evidence": [
+        "Complete direct exact-source read of Telegram/SourceFiles/platform/win/tray_win.h at accepted blob 2618c73452e8cd4247d7bbde6bcdf17041846876."
+      ],
+      "reachability_status": "accepted-tree source owner/input proven; canonical implementation closure remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram platform runtime retained.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "verified_blob_sha": "2618c73452e8cd4247d7bbde6bcdf17041846876",
+        "file_type": "blob",
+        "recursive_order": 5502
+      },
+      "notes": "Read-complete. unknown remains open; omitted=false."
+    },
+    {
+      "recursive_order": 5503,
+      "source_path": "Telegram/SourceFiles/platform/win/wallet_protection_win.cpp",
+      "source_blob_sha": "4d2689c52c704eb7289473c1e77b556d47a41963",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "TPM-gated hardware-attested Windows Hello enrollment/unwrap/remove, versioned challenge payload, HKDF wrap-key derivation, secure signature zeroing and explicit Absent/Cancelled/Unavailable/Corrupt fail-closed semantics",
+      "upstream_owner": "Telegram Windows platform adapter",
+      "state_machine": "capability/input -> authenticated native credential operation -> exact canonical account/wallet transition -> bounded callback -> secret cleanup/retirement",
+      "side_effects": "Maps to canonical wallet/account/auth security owner; native/platform state remains an adapter and cannot become a second product/runtime truth owner.",
+      "failure_cases": "unsupported or unsigned environment accepted; credential scope/attestation not verified; cancellation confused with absence; secret bytes retained; corrupt wrap treated as success; stale callback mutates retired state",
+      "ui_disposition": "Reuse canonical Button/IconButton/TextField/Dialog/Menu/ConversationRow/Composer/MediaViewer surfaces as applicable; no Telegram- or platform-named product UI root.",
+      "fabushi_canonical_owner": "canonical wallet/account/auth security owner",
+      "fabushi_target": "MAPPED OPEN. Extend existing source-neutral canonical owner only.",
+      "platform_differences": "OS APIs, shell/framework mechanics and native data structures are platform adapters; capability, permission, action, state, recovery, privacy, a11y and security semantics remain canonical Fabushi responsibilities.",
+      "production_evidence": "No Windows Hello wallet-equivalence evidence is granted by source reading; hardware attestation, key derivation, secret zeroing and failure classification remain open.",
+      "test_evidence": "Exact-head contract/integration/fault/security/privacy/a11y/E2E/packaged evidence required as applicable before unknown closure.",
+      "disposition": "mapped-open-canonical-platform-capability-replacement",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "Windows Hello wallet protection",
+      "consumer_evidence": [
+        "Complete direct exact-source read of Telegram/SourceFiles/platform/win/wallet_protection_win.cpp at accepted blob 4d2689c52c704eb7289473c1e77b556d47a41963."
+      ],
+      "reachability_status": "accepted-tree source owner/input proven; canonical implementation closure remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram platform runtime retained.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "verified_blob_sha": "4d2689c52c704eb7289473c1e77b556d47a41963",
+        "file_type": "blob",
+        "recursive_order": 5503
+      },
+      "notes": "Read-complete. unknown remains open; omitted=false."
+    },
+    {
+      "recursive_order": 5504,
       "source_path": "Telegram/SourceFiles/platform/win/wallet_protection_win.h",
       "source_blob_sha": "c692cfa2b2a19150e1927dab7d4f32e942cd056c",
       "read_complete": true,
@@ -41,15 +146,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram-derived parallel runtime/UI owner retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "c692cfa2b2a19150e1927dab7d4f32e942cd056c",
         "file_type": "blob",
-        "recursive_order": 5501
+        "recursive_order": 5504
       },
       "notes": "Read-complete. unknown remains open; omitted=false."
     },
     {
-      "recursive_order": 5502,
+      "recursive_order": 5505,
       "source_path": "Telegram/SourceFiles/platform/win/webauthn_win.cpp",
       "source_blob_sha": "4c9bdd4ba247ca351cba1c5c9bca3b937eb2f71a",
       "read_complete": true,
@@ -76,15 +181,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram-derived parallel runtime/UI owner retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "4c9bdd4ba247ca351cba1c5c9bca3b937eb2f71a",
         "file_type": "blob",
-        "recursive_order": 5502
+        "recursive_order": 5505
       },
       "notes": "Read-complete. unknown remains open; omitted=false."
     },
     {
-      "recursive_order": 5503,
+      "recursive_order": 5506,
       "source_path": "Telegram/SourceFiles/platform/win/windows_app_user_model_id.cpp",
       "source_blob_sha": "3d051f4ce0afcf33207141b0d0355f1accee7ba7",
       "read_complete": true,
@@ -111,15 +216,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram-derived parallel runtime/UI owner retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "3d051f4ce0afcf33207141b0d0355f1accee7ba7",
         "file_type": "blob",
-        "recursive_order": 5503
+        "recursive_order": 5506
       },
       "notes": "Read-complete. unknown remains open; omitted=false."
     },
     {
-      "recursive_order": 5504,
+      "recursive_order": 5507,
       "source_path": "Telegram/SourceFiles/platform/win/windows_app_user_model_id.h",
       "source_blob_sha": "76a7a331296c8067c17a9b6f958d66e91dabf2ef",
       "read_complete": true,
@@ -146,15 +251,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram-derived parallel runtime/UI owner retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "76a7a331296c8067c17a9b6f958d66e91dabf2ef",
         "file_type": "blob",
-        "recursive_order": 5504
+        "recursive_order": 5507
       },
       "notes": "Read-complete. unknown remains open; omitted=false."
     },
     {
-      "recursive_order": 5505,
+      "recursive_order": 5508,
       "source_path": "Telegram/SourceFiles/platform/win/windows_autostart_task.cpp",
       "source_blob_sha": "b6eba5a26a32134b2d0ac86adb0a0ba9ca0b8b34",
       "read_complete": true,
@@ -181,15 +286,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram-derived parallel runtime/UI owner retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "b6eba5a26a32134b2d0ac86adb0a0ba9ca0b8b34",
         "file_type": "blob",
-        "recursive_order": 5505
+        "recursive_order": 5508
       },
       "notes": "Read-complete. unknown remains open; omitted=false."
     },
     {
-      "recursive_order": 5506,
+      "recursive_order": 5509,
       "source_path": "Telegram/SourceFiles/platform/win/windows_autostart_task.h",
       "source_blob_sha": "6f8fe00f10fe5fbe690bdd0465b597febde92f5f",
       "read_complete": true,
@@ -216,15 +321,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram-derived parallel runtime/UI owner retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "6f8fe00f10fe5fbe690bdd0465b597febde92f5f",
         "file_type": "blob",
-        "recursive_order": 5506
+        "recursive_order": 5509
       },
       "notes": "Read-complete. unknown remains open; omitted=false."
     },
     {
-      "recursive_order": 5507,
+      "recursive_order": 5510,
       "source_path": "Telegram/SourceFiles/platform/win/windows_dlls.cpp",
       "source_blob_sha": "ded5dd0d13f10096145cbf476d28fcbc5f03ca60",
       "read_complete": true,
@@ -251,15 +356,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram-derived parallel runtime/UI owner retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "ded5dd0d13f10096145cbf476d28fcbc5f03ca60",
         "file_type": "blob",
-        "recursive_order": 5507
+        "recursive_order": 5510
       },
       "notes": "Read-complete. unknown remains open; omitted=false."
     },
     {
-      "recursive_order": 5508,
+      "recursive_order": 5511,
       "source_path": "Telegram/SourceFiles/platform/win/windows_dlls.h",
       "source_blob_sha": "6ed503c8d3b86e0e582918113ce7f98e98692e53",
       "read_complete": true,
@@ -286,15 +391,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram-derived parallel runtime/UI owner retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "6ed503c8d3b86e0e582918113ce7f98e98692e53",
         "file_type": "blob",
-        "recursive_order": 5508
+        "recursive_order": 5511
       },
       "notes": "Read-complete. unknown remains open; omitted=false."
     },
     {
-      "recursive_order": 5509,
+      "recursive_order": 5512,
       "source_path": "Telegram/SourceFiles/platform/win/windows_quiethours.idl",
       "source_blob_sha": "15e6e85bb4dd046e7c3c9a24d38702fd39c57daf",
       "read_complete": true,
@@ -321,15 +426,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram-derived parallel runtime/UI owner retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "15e6e85bb4dd046e7c3c9a24d38702fd39c57daf",
         "file_type": "blob",
-        "recursive_order": 5509
+        "recursive_order": 5512
       },
       "notes": "Read-complete. unknown remains open; omitted=false."
     },
     {
-      "recursive_order": 5510,
+      "recursive_order": 5513,
       "source_path": "Telegram/SourceFiles/platform/win/windows_taskbar_buttons.cpp",
       "source_blob_sha": "0e09d09ff93c1b465b64f1b391f754655725fb48",
       "read_complete": true,
@@ -356,15 +461,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram-derived parallel runtime/UI owner retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "0e09d09ff93c1b465b64f1b391f754655725fb48",
         "file_type": "blob",
-        "recursive_order": 5510
+        "recursive_order": 5513
       },
       "notes": "Read-complete. unknown remains open; omitted=false."
     },
     {
-      "recursive_order": 5511,
+      "recursive_order": 5514,
       "source_path": "Telegram/SourceFiles/platform/win/windows_taskbar_buttons.h",
       "source_blob_sha": "706c427e3682ef6bf5c9cee035e7a77a51e063d3",
       "read_complete": true,
@@ -391,15 +496,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram-derived parallel runtime/UI owner retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "706c427e3682ef6bf5c9cee035e7a77a51e063d3",
         "file_type": "blob",
-        "recursive_order": 5511
+        "recursive_order": 5514
       },
       "notes": "Read-complete. unknown remains open; omitted=false."
     },
     {
-      "recursive_order": 5512,
+      "recursive_order": 5515,
       "source_path": "Telegram/SourceFiles/platform/win/windows_toast_activator.cpp",
       "source_blob_sha": "415d4c7b1c060510fa0122281cc8b18b8da98778",
       "read_complete": true,
@@ -426,15 +531,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram-derived parallel runtime/UI owner retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "415d4c7b1c060510fa0122281cc8b18b8da98778",
         "file_type": "blob",
-        "recursive_order": 5512
+        "recursive_order": 5515
       },
       "notes": "Read-complete. unknown remains open; omitted=false."
     },
     {
-      "recursive_order": 5513,
+      "recursive_order": 5516,
       "source_path": "Telegram/SourceFiles/platform/win/windows_toast_activator.h",
       "source_blob_sha": "0c859421f6eccbed3ba6b71c07b375478a6eba0e",
       "read_complete": true,
@@ -461,15 +566,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram-derived parallel runtime/UI owner retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "0c859421f6eccbed3ba6b71c07b375478a6eba0e",
         "file_type": "blob",
-        "recursive_order": 5513
+        "recursive_order": 5516
       },
       "notes": "Read-complete. unknown remains open; omitted=false."
     },
     {
-      "recursive_order": 5514,
+      "recursive_order": 5517,
       "source_path": "Telegram/SourceFiles/platform/win/windows_toastactivator.idl",
       "source_blob_sha": "7d9dbd6b44fce03ade54d65244e8e7d3fc384272",
       "read_complete": true,
@@ -496,15 +601,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram-derived parallel runtime/UI owner retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "7d9dbd6b44fce03ade54d65244e8e7d3fc384272",
         "file_type": "blob",
-        "recursive_order": 5514
+        "recursive_order": 5517
       },
       "notes": "Read-complete. unknown remains open; omitted=false."
     },
     {
-      "recursive_order": 5515,
+      "recursive_order": 5518,
       "source_path": "Telegram/SourceFiles/poll/poll_link_box.cpp",
       "source_blob_sha": "ee58e3bcfc91f342439d259ff1835fede77d7a5d",
       "read_complete": true,
@@ -531,15 +636,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram-derived parallel runtime/UI owner retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "ee58e3bcfc91f342439d259ff1835fede77d7a5d",
         "file_type": "blob",
-        "recursive_order": 5515
+        "recursive_order": 5518
       },
       "notes": "Read-complete. unknown remains open; omitted=false."
     },
     {
-      "recursive_order": 5516,
+      "recursive_order": 5519,
       "source_path": "Telegram/SourceFiles/poll/poll_link_box.h",
       "source_blob_sha": "1accb9726ab61fbac9f66a104bc148b6670e6d0d",
       "read_complete": true,
@@ -566,15 +671,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram-derived parallel runtime/UI owner retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "1accb9726ab61fbac9f66a104bc148b6670e6d0d",
         "file_type": "blob",
-        "recursive_order": 5516
+        "recursive_order": 5519
       },
       "notes": "Read-complete. unknown remains open; omitted=false."
     },
     {
-      "recursive_order": 5517,
+      "recursive_order": 5520,
       "source_path": "Telegram/SourceFiles/poll/poll_link_thumbnail.cpp",
       "source_blob_sha": "007453e029fe2ae9ae8c55a6a58049c60485adb2",
       "read_complete": true,
@@ -601,15 +706,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram-derived parallel runtime/UI owner retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "007453e029fe2ae9ae8c55a6a58049c60485adb2",
         "file_type": "blob",
-        "recursive_order": 5517
+        "recursive_order": 5520
       },
       "notes": "Read-complete. unknown remains open; omitted=false."
     },
     {
-      "recursive_order": 5518,
+      "recursive_order": 5521,
       "source_path": "Telegram/SourceFiles/poll/poll_link_thumbnail.h",
       "source_blob_sha": "f14a98e1d04e107456789ef3bf49e9008b07ad13",
       "read_complete": true,
@@ -636,15 +741,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram-derived parallel runtime/UI owner retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "f14a98e1d04e107456789ef3bf49e9008b07ad13",
         "file_type": "blob",
-        "recursive_order": 5518
+        "recursive_order": 5521
       },
       "notes": "Read-complete. unknown remains open; omitted=false."
     },
     {
-      "recursive_order": 5519,
+      "recursive_order": 5522,
       "source_path": "Telegram/SourceFiles/poll/poll_media_upload.cpp",
       "source_blob_sha": "b95fa6fa7121389f62d53701c66e13070e10314c",
       "read_complete": true,
@@ -671,15 +776,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram-derived parallel runtime/UI owner retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "b95fa6fa7121389f62d53701c66e13070e10314c",
         "file_type": "blob",
-        "recursive_order": 5519
+        "recursive_order": 5522
       },
       "notes": "Read-complete. unknown remains open; omitted=false."
     },
     {
-      "recursive_order": 5520,
+      "recursive_order": 5523,
       "source_path": "Telegram/SourceFiles/poll/poll_media_upload.h",
       "source_blob_sha": "81bf0b7a7bcf04662841dd868bd9085a47929323",
       "read_complete": true,
@@ -706,15 +811,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram-derived parallel runtime/UI owner retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "81bf0b7a7bcf04662841dd868bd9085a47929323",
         "file_type": "blob",
-        "recursive_order": 5520
+        "recursive_order": 5523
       },
       "notes": "Read-complete. unknown remains open; omitted=false."
     },
     {
-      "recursive_order": 5521,
+      "recursive_order": 5524,
       "source_path": "Telegram/SourceFiles/profile/profile.style",
       "source_blob_sha": "0e535f334f8f381f2f079590252e2d94439384ef",
       "read_complete": true,
@@ -741,15 +846,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram-derived parallel runtime/UI owner retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "0e535f334f8f381f2f079590252e2d94439384ef",
         "file_type": "blob",
-        "recursive_order": 5521
+        "recursive_order": 5524
       },
       "notes": "Read-complete. unknown remains open; omitted=false."
     },
     {
-      "recursive_order": 5522,
+      "recursive_order": 5525,
       "source_path": "Telegram/SourceFiles/profile/profile_back_button.cpp",
       "source_blob_sha": "9b22f55cb9d30f60d8a289d5b8e9b0a463aed909",
       "read_complete": true,
@@ -776,15 +881,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram-derived parallel runtime/UI owner retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "9b22f55cb9d30f60d8a289d5b8e9b0a463aed909",
         "file_type": "blob",
-        "recursive_order": 5522
+        "recursive_order": 5525
       },
       "notes": "Read-complete. unknown remains open; omitted=false."
     },
     {
-      "recursive_order": 5523,
+      "recursive_order": 5526,
       "source_path": "Telegram/SourceFiles/profile/profile_back_button.h",
       "source_blob_sha": "b55163294df9d1767afbee6af59d234e2c84770f",
       "read_complete": true,
@@ -811,15 +916,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram-derived parallel runtime/UI owner retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "b55163294df9d1767afbee6af59d234e2c84770f",
         "file_type": "blob",
-        "recursive_order": 5523
+        "recursive_order": 5526
       },
       "notes": "Read-complete. unknown remains open; omitted=false."
     },
     {
-      "recursive_order": 5524,
+      "recursive_order": 5527,
       "source_path": "Telegram/SourceFiles/profile/profile_block_widget.cpp",
       "source_blob_sha": "8c77b0f693a15d0cbdff8b77e0b8d6361170337f",
       "read_complete": true,
@@ -846,15 +951,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram-derived parallel runtime/UI owner retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "8c77b0f693a15d0cbdff8b77e0b8d6361170337f",
         "file_type": "blob",
-        "recursive_order": 5524
+        "recursive_order": 5527
       },
       "notes": "Read-complete. unknown remains open; omitted=false."
     },
     {
-      "recursive_order": 5525,
+      "recursive_order": 5528,
       "source_path": "Telegram/SourceFiles/profile/profile_block_widget.h",
       "source_blob_sha": "68c6ecbf55f9e687b5f6f2f7dd21a695aaf39b57",
       "read_complete": true,
@@ -881,15 +986,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram-derived parallel runtime/UI owner retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "68c6ecbf55f9e687b5f6f2f7dd21a695aaf39b57",
         "file_type": "blob",
-        "recursive_order": 5525
+        "recursive_order": 5528
       },
       "notes": "Read-complete. unknown remains open; omitted=false."
     },
     {
-      "recursive_order": 5526,
+      "recursive_order": 5529,
       "source_path": "Telegram/SourceFiles/profile/profile_cover_drop_area.cpp",
       "source_blob_sha": "04045987bbb8f50af87d273a38061037f3a2ba87",
       "read_complete": true,
@@ -916,113 +1021,8 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram-derived parallel runtime/UI owner retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "04045987bbb8f50af87d273a38061037f3a2ba87",
-        "file_type": "blob",
-        "recursive_order": 5526
-      },
-      "notes": "Read-complete. unknown remains open; omitted=false."
-    },
-    {
-      "recursive_order": 5527,
-      "source_path": "Telegram/SourceFiles/profile/profile_cover_drop_area.h",
-      "source_blob_sha": "ee5b45551884b36f66dbb996e8948e1b1f752a90",
-      "read_complete": true,
-      "responsibility_decomposition_complete": true,
-      "responsibility": "profile cover drop-area show/hide animation contract",
-      "upstream_owner": "Telegram profile/settings UI/state",
-      "state_machine": "input/state -> canonical source-neutral owner -> derived platform/UI projection -> bounded lifecycle cleanup",
-      "side_effects": "Maps to canonical ProfileSection/resource-drop owner; adapter/view state cannot become a second product truth owner.",
-      "failure_cases": "stale native/UI callback crosses lifecycle; unsupported capability reported available; derived view/platform state duplicates canonical truth; error/cancel path is treated as success",
-      "ui_disposition": "Reuse canonical ProfileSection/Toolbar/IconButton/ListRow/Avatar/TextField resource-drop surfaces with a11y/light-dark/responsive evidence.",
-      "fabushi_canonical_owner": "canonical ProfileSection/resource-drop owner",
-      "fabushi_target": "MAPPED OPEN. Extend existing source-neutral canonical owner only.",
-      "platform_differences": "OS/framework/native data types and Telegram-specific protocol calls are source implementation details; product semantics, ownership, fencing, recovery, accessibility and security remain canonical Fabushi responsibilities.",
-      "production_evidence": "Canonical owner candidate identified; exact production equivalence plus same-head evidence remain open.",
-      "test_evidence": "MEDIUM risk: exact-head contract/integration/fault/security/a11y/E2E/packaged evidence required as applicable before unknown closure.",
-      "disposition": "mapped-open-canonical-capability-replacement",
-      "unknown_closed": false,
-      "omitted": false,
-      "consumer_symbol": "Profile cover drop area",
-      "consumer_evidence": [
-        "Complete direct exact-source read of Telegram/SourceFiles/profile/profile_cover_drop_area.h at accepted blob ee5b45551884b36f66dbb996e8948e1b1f752a90."
-      ],
-      "reachability_status": "accepted-tree source owner/input proven; canonical implementation closure remains open",
-      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram-derived parallel runtime/UI owner retained.",
-      "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
-        "verified_blob_sha": "ee5b45551884b36f66dbb996e8948e1b1f752a90",
-        "file_type": "blob",
-        "recursive_order": 5527
-      },
-      "notes": "Read-complete. unknown remains open; omitted=false."
-    },
-    {
-      "recursive_order": 5528,
-      "source_path": "Telegram/SourceFiles/settings.cpp",
-      "source_blob_sha": "770e63b0209500ae56494a2aeff7a26ab5ab64aa",
-      "read_complete": true,
-      "responsibility_decomposition_complete": true,
-      "responsibility": "legacy global defaults for launch/update/tray/dialog paths/passcode throttling/scale/recent input/download/session connection state",
-      "upstream_owner": "Telegram profile/settings UI/state",
-      "state_machine": "input/state -> canonical source-neutral owner -> derived platform/UI projection -> bounded lifecycle cleanup",
-      "side_effects": "Maps to canonical settings/persistence/security/lifecycle owners; adapter/view state cannot become a second product truth owner.",
-      "failure_cases": "stale native/UI callback crosses lifecycle; unsupported capability reported available; derived view/platform state duplicates canonical truth; error/cancel path is treated as success",
-      "ui_disposition": "Reuse canonical design-system surfaces where user-visible; native platform controls remain bounded adapters.",
-      "fabushi_canonical_owner": "canonical settings/persistence/security/lifecycle owners",
-      "fabushi_target": "MAPPED OPEN. Extend existing source-neutral canonical owner only.",
-      "platform_differences": "OS/framework/native data types and Telegram-specific protocol calls are source implementation details; product semantics, ownership, fencing, recovery, accessibility and security remain canonical Fabushi responsibilities.",
-      "production_evidence": "Canonical owner candidate identified; exact production equivalence plus same-head evidence remain open.",
-      "test_evidence": "HIGH risk: exact-head contract/integration/fault/security/a11y/E2E/packaged evidence required as applicable before unknown closure.",
-      "disposition": "mapped-open-canonical-capability-replacement",
-      "unknown_closed": false,
-      "omitted": false,
-      "consumer_symbol": "Application settings state",
-      "consumer_evidence": [
-        "Complete direct exact-source read of Telegram/SourceFiles/settings.cpp at accepted blob 770e63b0209500ae56494a2aeff7a26ab5ab64aa."
-      ],
-      "reachability_status": "accepted-tree source owner/input proven; canonical implementation closure remains open",
-      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram-derived parallel runtime/UI owner retained.",
-      "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
-        "verified_blob_sha": "770e63b0209500ae56494a2aeff7a26ab5ab64aa",
-        "file_type": "blob",
-        "recursive_order": 5528
-      },
-      "notes": "Read-complete. unknown remains open; omitted=false."
-    },
-    {
-      "recursive_order": 5529,
-      "source_path": "Telegram/SourceFiles/settings.h",
-      "source_blob_sha": "a6993209a7086cf854205fa455767eb4383e0a57",
-      "read_complete": true,
-      "responsibility_decomposition_complete": true,
-      "responsibility": "settings accessors, secure working-directory permissions, passcode retry backoff and display-scale validation contract",
-      "upstream_owner": "Telegram profile/settings UI/state",
-      "state_machine": "input/state -> canonical source-neutral owner -> derived platform/UI projection -> bounded lifecycle cleanup",
-      "side_effects": "Maps to canonical settings/persistence/security/lifecycle owners; adapter/view state cannot become a second product truth owner.",
-      "failure_cases": "stale native/UI callback crosses lifecycle; unsupported capability reported available; derived view/platform state duplicates canonical truth; error/cancel path is treated as success",
-      "ui_disposition": "Reuse canonical design-system surfaces where user-visible; native platform controls remain bounded adapters.",
-      "fabushi_canonical_owner": "canonical settings/persistence/security/lifecycle owners",
-      "fabushi_target": "MAPPED OPEN. Extend existing source-neutral canonical owner only.",
-      "platform_differences": "OS/framework/native data types and Telegram-specific protocol calls are source implementation details; product semantics, ownership, fencing, recovery, accessibility and security remain canonical Fabushi responsibilities.",
-      "production_evidence": "Canonical owner candidate identified; exact production equivalence plus same-head evidence remain open.",
-      "test_evidence": "HIGH risk: exact-head contract/integration/fault/security/a11y/E2E/packaged evidence required as applicable before unknown closure.",
-      "disposition": "mapped-open-canonical-capability-replacement",
-      "unknown_closed": false,
-      "omitted": false,
-      "consumer_symbol": "Application settings state",
-      "consumer_evidence": [
-        "Complete direct exact-source read of Telegram/SourceFiles/settings.h at accepted blob a6993209a7086cf854205fa455767eb4383e0a57."
-      ],
-      "reachability_status": "accepted-tree source owner/input proven; canonical implementation closure remains open",
-      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram-derived parallel runtime/UI owner retained.",
-      "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
-        "verified_blob_sha": "a6993209a7086cf854205fa455767eb4383e0a57",
         "file_type": "blob",
         "recursive_order": 5529
       },

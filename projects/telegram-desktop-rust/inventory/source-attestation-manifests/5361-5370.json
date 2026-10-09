@@ -1,67 +1,67 @@
 {
-  "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+  "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
   "start": 5361,
   "end": 5370,
   "entries": [
     {
       "order": 5361,
+      "path": "Telegram/SourceFiles/payments/stripe/stripe_decode.h",
+      "blob": "5b0b0e152461495d02bfba7600c31ccecf5a51ab",
+      "consumer_symbol": "Stripe decode contract"
+    },
+    {
+      "order": 5362,
+      "path": "Telegram/SourceFiles/payments/stripe/stripe_error.cpp",
+      "blob": "c5be7e010471ae42531b863f2601163f1da02e92",
+      "consumer_symbol": "Stripe::Error::DecodedObjectFromResponse"
+    },
+    {
+      "order": 5363,
+      "path": "Telegram/SourceFiles/payments/stripe/stripe_error.h",
+      "blob": "36247d3875ff6d66ed59f45158ea6dec32c11472",
+      "consumer_symbol": "Stripe::Error contract"
+    },
+    {
+      "order": 5364,
       "path": "Telegram/SourceFiles/payments/stripe/stripe_form_encodable.h",
       "blob": "7cae5e25071e6385c8cf2011bed2ed411467ed3c",
       "consumer_symbol": "Stripe::FormEncodable / MakeEncodable"
     },
     {
-      "order": 5362,
+      "order": 5365,
       "path": "Telegram/SourceFiles/payments/stripe/stripe_form_encoder.cpp",
       "blob": "2f8f61f081b224c94ccf6952ae2411d96e50a6fd",
       "consumer_symbol": "Stripe::FormEncoder::formEncodedDataForObject"
     },
     {
-      "order": 5363,
+      "order": 5366,
       "path": "Telegram/SourceFiles/payments/stripe/stripe_form_encoder.h",
       "blob": "79e28471d86567fc68094f58f1ce54bf8de467f4",
       "consumer_symbol": "Stripe::FormEncoder"
     },
     {
-      "order": 5364,
+      "order": 5367,
       "path": "Telegram/SourceFiles/payments/stripe/stripe_payment_configuration.h",
       "blob": "a42e7921a81e4702066426e1814db2cc206c2b63",
       "consumer_symbol": "Stripe::PaymentConfiguration"
     },
     {
-      "order": 5365,
+      "order": 5368,
       "path": "Telegram/SourceFiles/payments/stripe/stripe_pch.h",
       "blob": "b7c2e9fee1b35daddac7fe1245728bfd3f55b5df",
       "consumer_symbol": "stripe_pch include contract"
     },
     {
-      "order": 5366,
+      "order": 5369,
       "path": "Telegram/SourceFiles/payments/stripe/stripe_token.cpp",
       "blob": "d91e48be38e76943d6c2f3e94036952773d9f0cb",
       "consumer_symbol": "Stripe::Token::DecodedObjectFromAPIResponse"
     },
     {
-      "order": 5367,
+      "order": 5370,
       "path": "Telegram/SourceFiles/payments/stripe/stripe_token.h",
       "blob": "f22aefe60667314bbc096c126d02765b1d842e9a",
       "consumer_symbol": "Stripe::Token"
-    },
-    {
-      "order": 5368,
-      "path": "Telegram/SourceFiles/payments/ui/payments.style",
-      "blob": "e537343e6709b7ed86215306fc2c27a616592952",
-      "consumer_symbol": "payment panel semantic presentation contract"
-    },
-    {
-      "order": 5369,
-      "path": "Telegram/SourceFiles/payments/ui/payments_edit_card.cpp",
-      "blob": "0c2aac434e9ee4ca29e465274dadc087abda60e3",
-      "consumer_symbol": "Payments::Ui::EditCard / validators / collect"
-    },
-    {
-      "order": 5370,
-      "path": "Telegram/SourceFiles/payments/ui/payments_edit_card.h",
-      "blob": "ae4cce54b415fead818a50e40143b82e2c09ae4c",
-      "consumer_symbol": "Payments::Ui::EditCard contract"
     }
   ]
 }

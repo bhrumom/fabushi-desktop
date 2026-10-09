@@ -4,8 +4,8 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
-    "tree": "6ac9bbc1b44edcb119b1a724e7b0a321c3b7b8fa"
+    "commit": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+    "tree": "5030985204963cbbd362ced7412d231b04ebd0cc"
   },
   "range": {
     "first_order": 5261,
@@ -15,6 +15,114 @@
   "rows": [
     {
       "recursive_order": 5261,
+      "source_path": "Telegram/SourceFiles/mtproto/facade.cpp",
+      "source_blob_sha": "2ff96d0ac1ae3a495c9d699e965d4ee9a61a3350",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "global protocol pause/unpause hook",
+      "upstream_owner": "MTP facade",
+      "state_machine": "construct typed protocol/security/diagnostic value -> validate/bound operation -> publish result or explicit failure -> deterministic cleanup",
+      "side_effects": "Applicable responsibilities map to current Fabushi transport/session/auth/resource observability and idempotency owners. Telegram-specific DC shifts, wire serialization, RSA helpers and TLS disguise are protocol-specific replacement details and are not copied.",
+      "failure_cases": "malformed/untrusted protocol data accepted; crypto/diagnostic state leaks; request correlation drift",
+      "ui_disposition": "No Telegram-specific UI/runtime. Only existing canonical status/loading/error surfaces may reflect these states.",
+      "fabushi_canonical_owner": "existing Fabushi Coordinator/Host/backend transport, request settlement/idempotency, attachment transfer, authentication/credential and observability owners",
+      "fabushi_target": "MAPPED OPEN WITH PLATFORM/PROTOCOL REPLACEMENT. Audit and prove equivalent single-authority request/session lifecycle, cancellation/dependency/retry/idempotency, proxy/DNS transport behavior, credential lifecycle and bounded diagnostics in current Fabushi; do not add MTProto as a parallel stack.",
+      "platform_differences": "Fabushi protocols and Electron/Node/Rust networking replace Telegram MTProto/Qt socket/DC machinery. Equivalence is responsibility-based and requires shipping implementation plus tests, not source-level similarity.",
+      "production_evidence": "projects/telegram-desktop-rust/dossiers/mtproto-instance-sockets-5241-5260-complete-read.md; existing Fabushi replacement evidence remains to be audited.",
+      "test_evidence": "Current transport/auth/idempotency tests can be reused only after responsibility mapping; exact-head focused/integration/E2E/packaged evidence remains required.",
+      "disposition": "mapped-open-platform-protocol-replacement",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "MTP facade",
+      "consumer_evidence": [
+        "Complete direct exact-source read of Telegram/SourceFiles/mtproto/facade.cpp at accepted blob 2ff96d0a."
+      ],
+      "reachability_status": "accepted-tree source owner proven; replacement responsibility remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no MTProto source copied.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "verified_blob_sha": "2ff96d0ac1ae3a495c9d699e965d4ee9a61a3350",
+        "byte_size": 737,
+        "file_type": "blob",
+        "recursive_order": 5261
+      },
+      "notes": "Read-complete only. Protocol/platform replacement remains unknown-open; omitted=false."
+    },
+    {
+      "recursive_order": 5262,
+      "source_path": "Telegram/SourceFiles/mtproto/facade.h",
+      "source_blob_sha": "39e2f732c7df32af37ebf8222e887aec7e11b256",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "typed shifted endpoint roles for config/logout/update/download/upload/group-call/media plus connection/request state constants",
+      "upstream_owner": "MTP facade",
+      "state_machine": "construct typed protocol/security/diagnostic value -> validate/bound operation -> publish result or explicit failure -> deterministic cleanup",
+      "side_effects": "Applicable responsibilities map to current Fabushi transport/session/auth/resource observability and idempotency owners. Telegram-specific DC shifts, wire serialization, RSA helpers and TLS disguise are protocol-specific replacement details and are not copied.",
+      "failure_cases": "malformed/untrusted protocol data accepted; crypto/diagnostic state leaks; request correlation drift",
+      "ui_disposition": "No Telegram-specific UI/runtime. Only existing canonical status/loading/error surfaces may reflect these states.",
+      "fabushi_canonical_owner": "existing Fabushi Coordinator/Host/backend transport, request settlement/idempotency, attachment transfer, authentication/credential and observability owners",
+      "fabushi_target": "MAPPED OPEN WITH PLATFORM/PROTOCOL REPLACEMENT. Audit and prove equivalent single-authority request/session lifecycle, cancellation/dependency/retry/idempotency, proxy/DNS transport behavior, credential lifecycle and bounded diagnostics in current Fabushi; do not add MTProto as a parallel stack.",
+      "platform_differences": "Fabushi protocols and Electron/Node/Rust networking replace Telegram MTProto/Qt socket/DC machinery. Equivalence is responsibility-based and requires shipping implementation plus tests, not source-level similarity.",
+      "production_evidence": "projects/telegram-desktop-rust/dossiers/mtproto-instance-sockets-5241-5260-complete-read.md; existing Fabushi replacement evidence remains to be audited.",
+      "test_evidence": "Current transport/auth/idempotency tests can be reused only after responsibility mapping; exact-head focused/integration/E2E/packaged evidence remains required.",
+      "disposition": "mapped-open-platform-protocol-replacement",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "MTP facade",
+      "consumer_evidence": [
+        "Complete direct exact-source read of Telegram/SourceFiles/mtproto/facade.h at accepted blob 39e2f732."
+      ],
+      "reachability_status": "accepted-tree source owner proven; replacement responsibility remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no MTProto source copied.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "verified_blob_sha": "39e2f732c7df32af37ebf8222e887aec7e11b256",
+        "byte_size": 3675,
+        "file_type": "blob",
+        "recursive_order": 5262
+      },
+      "notes": "Read-complete only. Protocol/platform replacement remains unknown-open; omitted=false."
+    },
+    {
+      "recursive_order": 5263,
+      "source_path": "Telegram/SourceFiles/mtproto/mtp_instance.cpp",
+      "source_blob_sha": "d25fe3b72298fab371854f80186ee8e4777ea087",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "authoritative protocol instance: config/proxy/DC/session/key owners, request registration/correlation/dependencies/delay/cancel/retry, auth export/import, logout, key destruction, state/error callbacks and config refresh",
+      "upstream_owner": "MTP::Instance::Private",
+      "state_machine": "construct single protocol authority -> load config/credentials -> start main/auxiliary sessions -> register/correlate/send requests -> settle success/error/default handling or delay/retry/migrate -> cancel dependent work -> refresh/restart/logout/destroy keys -> retire sessions deterministically",
+      "side_effects": "Applicable responsibilities map to current Fabushi transport/session/auth/resource observability and idempotency owners. Telegram-specific DC shifts, wire serialization, RSA helpers and TLS disguise are protocol-specific replacement details and are not copied.",
+      "failure_cases": "multiple request/session authorities; request callback survives cancellation; delayed/dependent request resends after owner removal; config/proxy refresh misses sessions; auth migration/key destroy races; logout leaves guest sessions; stale session reset mutates new identity",
+      "ui_disposition": "No Telegram-specific UI/runtime. Only existing canonical status/loading/error surfaces may reflect these states.",
+      "fabushi_canonical_owner": "existing Fabushi Coordinator/Host/backend transport, request settlement/idempotency, attachment transfer, authentication/credential and observability owners",
+      "fabushi_target": "MAPPED OPEN WITH PLATFORM/PROTOCOL REPLACEMENT. Audit and prove equivalent single-authority request/session lifecycle, cancellation/dependency/retry/idempotency, proxy/DNS transport behavior, credential lifecycle and bounded diagnostics in current Fabushi; do not add MTProto as a parallel stack.",
+      "platform_differences": "Fabushi protocols and Electron/Node/Rust networking replace Telegram MTProto/Qt socket/DC machinery. Equivalence is responsibility-based and requires shipping implementation plus tests, not source-level similarity.",
+      "production_evidence": "projects/telegram-desktop-rust/dossiers/mtproto-instance-sockets-5241-5260-complete-read.md; existing Fabushi replacement evidence remains to be audited.",
+      "test_evidence": "Current transport/auth/idempotency tests can be reused only after responsibility mapping; exact-head focused/integration/E2E/packaged evidence remains required.",
+      "disposition": "mapped-open-platform-protocol-replacement",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "MTP::Instance::Private",
+      "consumer_evidence": [
+        "Complete direct exact-source read of Telegram/SourceFiles/mtproto/mtp_instance.cpp at accepted blob d25fe3b7."
+      ],
+      "reachability_status": "accepted-tree source owner proven; replacement responsibility remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no MTProto source copied.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "verified_blob_sha": "d25fe3b72298fab371854f80186ee8e4777ea087",
+        "byte_size": 62672,
+        "file_type": "blob",
+        "recursive_order": 5263
+      },
+      "notes": "Read-complete only. Protocol/platform replacement remains unknown-open; omitted=false."
+    },
+    {
+      "recursive_order": 5264,
       "source_path": "Telegram/SourceFiles/mtproto/mtp_instance.h",
       "source_blob_sha": "eeb56d29cc8316bd6600c26b6f8edf3a912601eb",
       "read_complete": true,
@@ -40,17 +148,17 @@
       "reachability_status": "accepted-tree source owner proven; replacement responsibility remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no MTProto source copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-new-head-actions-attestation",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "eeb56d29cc8316bd6600c26b6f8edf3a912601eb",
         "byte_size": 6564,
         "file_type": "blob",
-        "recursive_order": 5261
+        "recursive_order": 5264
       },
       "notes": "Read-complete only. Protocol/platform replacement remains unknown-open; omitted=false."
     },
     {
-      "recursive_order": 5262,
+      "recursive_order": 5265,
       "source_path": "Telegram/SourceFiles/mtproto/mtproto_auth_key.cpp",
       "source_blob_sha": "cb4a4e5c3b94ed33d126068792536a08800615f2",
       "read_complete": true,
@@ -76,17 +184,17 @@
       "reachability_status": "accepted-tree source owner proven; replacement responsibility remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no MTProto source copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-new-head-actions-attestation",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "cb4a4e5c3b94ed33d126068792536a08800615f2",
         "byte_size": 5489,
         "file_type": "blob",
-        "recursive_order": 5262
+        "recursive_order": 5265
       },
       "notes": "Read-complete only. Protocol/platform replacement remains unknown-open; omitted=false."
     },
     {
-      "recursive_order": 5263,
+      "recursive_order": 5266,
       "source_path": "Telegram/SourceFiles/mtproto/mtproto_auth_key.h",
       "source_blob_sha": "31d0e3db369b309b8f2e9ea1d6b83b6a6d51b20c",
       "read_complete": true,
@@ -112,17 +220,17 @@
       "reachability_status": "accepted-tree source owner proven; replacement responsibility remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no MTProto source copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-new-head-actions-attestation",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "31d0e3db369b309b8f2e9ea1d6b83b6a6d51b20c",
         "byte_size": 4267,
         "file_type": "blob",
-        "recursive_order": 5263
+        "recursive_order": 5266
       },
       "notes": "Read-complete only. Protocol/platform replacement remains unknown-open; omitted=false."
     },
     {
-      "recursive_order": 5264,
+      "recursive_order": 5267,
       "source_path": "Telegram/SourceFiles/mtproto/mtproto_concurrent_sender.cpp",
       "source_blob_sha": "89ad7d9625f0858574961c6d90c412bf2ce092e8",
       "read_complete": true,
@@ -148,17 +256,17 @@
       "reachability_status": "accepted-tree source owner proven; replacement responsibility remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no MTProto source copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-new-head-actions-attestation",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "89ad7d9625f0858574961c6d90c412bf2ce092e8",
         "byte_size": 5083,
         "file_type": "blob",
-        "recursive_order": 5264
+        "recursive_order": 5267
       },
       "notes": "Read-complete only. Protocol/platform replacement remains unknown-open; omitted=false."
     },
     {
-      "recursive_order": 5265,
+      "recursive_order": 5268,
       "source_path": "Telegram/SourceFiles/mtproto/mtproto_concurrent_sender.h",
       "source_blob_sha": "f96d0fe3ac1f1ca88fea447f62aaf3596e999712",
       "read_complete": true,
@@ -184,17 +292,17 @@
       "reachability_status": "accepted-tree source owner proven; replacement responsibility remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no MTProto source copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-new-head-actions-attestation",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "f96d0fe3ac1f1ca88fea447f62aaf3596e999712",
         "byte_size": 12164,
         "file_type": "blob",
-        "recursive_order": 5265
+        "recursive_order": 5268
       },
       "notes": "Read-complete only. Protocol/platform replacement remains unknown-open; omitted=false."
     },
     {
-      "recursive_order": 5266,
+      "recursive_order": 5269,
       "source_path": "Telegram/SourceFiles/mtproto/mtproto_config.cpp",
       "source_blob_sha": "e8fc605ca197d2bc82a9f73da18eeb945967a99f",
       "read_complete": true,
@@ -220,17 +328,17 @@
       "reachability_status": "accepted-tree source owner proven; replacement responsibility remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no MTProto source copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-new-head-actions-attestation",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "e8fc605ca197d2bc82a9f73da18eeb945967a99f",
         "byte_size": 10217,
         "file_type": "blob",
-        "recursive_order": 5266
+        "recursive_order": 5269
       },
       "notes": "Read-complete only. Protocol/platform replacement remains unknown-open; omitted=false."
     },
     {
-      "recursive_order": 5267,
+      "recursive_order": 5270,
       "source_path": "Telegram/SourceFiles/mtproto/mtproto_config.h",
       "source_blob_sha": "289230b64480cb8401239782a1ca3203067baeb1",
       "read_complete": true,
@@ -256,118 +364,10 @@
       "reachability_status": "accepted-tree source owner proven; replacement responsibility remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no MTProto source copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-new-head-actions-attestation",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "289230b64480cb8401239782a1ca3203067baeb1",
         "byte_size": 2438,
-        "file_type": "blob",
-        "recursive_order": 5267
-      },
-      "notes": "Read-complete only. Protocol/platform replacement remains unknown-open; omitted=false."
-    },
-    {
-      "recursive_order": 5268,
-      "source_path": "Telegram/SourceFiles/mtproto/mtproto_dc_options.cpp",
-      "source_blob_sha": "d8499fc1df2ed7fdb88da687a04b824d243ff49a",
-      "read_complete": true,
-      "responsibility_decomposition_complete": true,
-      "responsibility": "endpoint/CDN-key authority: environment defaults, validated mutation/serialization, change events, proxy/media/CDN filtering and endpoint selection",
-      "upstream_owner": "MTP::DcOptions",
-      "state_machine": "construct/restore authoritative transport-security state -> validate and bind request/session/config generation -> execute bounded operation -> settle success/failure/cancellation -> retire stale or disposed work",
-      "side_effects": "Applicable responsibilities map to current Fabushi Coordinator/Host/backend transport, credential, configuration, request-settlement/idempotency and observability owners. Telegram MTProto wire/DC/AES/DH mechanics are protocol-specific implementation details and are not copied.",
-      "failure_cases": "stale callback crosses owner lifetime; duplicate or out-of-order settlement; cancellation fails to retire work; malformed persisted config/endpoint/key accepted; credential or crypto state reused past validity; protocol-specific fallback becomes a second runtime",
-      "ui_disposition": "No Telegram-specific UI/runtime. Existing canonical loading/error/status surfaces may project only source-neutral state from current owners.",
-      "fabushi_canonical_owner": "existing Fabushi Coordinator/Host/backend transport, request settlement/idempotency, credential/auth, configuration and observability owners",
-      "fabushi_target": "MAPPED OPEN WITH PLATFORM/PROTOCOL REPLACEMENT. Audit and close equivalent single-authority request/session/config/key lifecycle, weak/stale fencing, dependency ordering, cancellation, retry/idempotency and credential validity in current Fabushi; do not add MTProto as a parallel stack.",
-      "platform_differences": "Fabushi first-party HTTP/WebSocket/Rust/Node/backend protocols and platform credential stores replace Telegram MTProto/Qt/DC/crypto machinery. Equivalence is responsibility-based and requires shipping implementation plus exact-head tests.",
-      "production_evidence": "projects/telegram-desktop-rust/dossiers/mtproto-control-security-5261-5270-complete-read.md; existing Fabushi replacement evidence remains to be audited.",
-      "test_evidence": "Current transport/auth/config/idempotency tests can be reused only after exact responsibility mapping; focused/integration/E2E/packaged evidence remains required.",
-      "disposition": "mapped-open-platform-protocol-replacement",
-      "unknown_closed": false,
-      "omitted": false,
-      "consumer_symbol": "MTP::DcOptions",
-      "consumer_evidence": [
-        "Complete direct exact-source read of Telegram/SourceFiles/mtproto/mtproto_dc_options.cpp at accepted blob d8499fc1."
-      ],
-      "reachability_status": "accepted-tree source owner proven; replacement responsibility remains open",
-      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no MTProto source copied.",
-      "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-new-head-actions-attestation",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
-        "verified_blob_sha": "d8499fc1df2ed7fdb88da687a04b824d243ff49a",
-        "byte_size": 21275,
-        "file_type": "blob",
-        "recursive_order": 5268
-      },
-      "notes": "Read-complete only. Protocol/platform replacement remains unknown-open; omitted=false."
-    },
-    {
-      "recursive_order": 5269,
-      "source_path": "Telegram/SourceFiles/mtproto/mtproto_dc_options.h",
-      "source_blob_sha": "4e0b979c4a84661f3365196ab8702dc8cb60fd03",
-      "read_complete": true,
-      "responsibility_decomposition_complete": true,
-      "responsibility": "typed endpoint, environment and DC-kind lookup contract with concurrent read/write ownership",
-      "upstream_owner": "MTP::DcOptions",
-      "state_machine": "construct/restore authoritative transport-security state -> validate and bind request/session/config generation -> execute bounded operation -> settle success/failure/cancellation -> retire stale or disposed work",
-      "side_effects": "Applicable responsibilities map to current Fabushi Coordinator/Host/backend transport, credential, configuration, request-settlement/idempotency and observability owners. Telegram MTProto wire/DC/AES/DH mechanics are protocol-specific implementation details and are not copied.",
-      "failure_cases": "stale callback crosses owner lifetime; duplicate or out-of-order settlement; cancellation fails to retire work; malformed persisted config/endpoint/key accepted; credential or crypto state reused past validity; protocol-specific fallback becomes a second runtime",
-      "ui_disposition": "No Telegram-specific UI/runtime. Existing canonical loading/error/status surfaces may project only source-neutral state from current owners.",
-      "fabushi_canonical_owner": "existing Fabushi Coordinator/Host/backend transport, request settlement/idempotency, credential/auth, configuration and observability owners",
-      "fabushi_target": "MAPPED OPEN WITH PLATFORM/PROTOCOL REPLACEMENT. Audit and close equivalent single-authority request/session/config/key lifecycle, weak/stale fencing, dependency ordering, cancellation, retry/idempotency and credential validity in current Fabushi; do not add MTProto as a parallel stack.",
-      "platform_differences": "Fabushi first-party HTTP/WebSocket/Rust/Node/backend protocols and platform credential stores replace Telegram MTProto/Qt/DC/crypto machinery. Equivalence is responsibility-based and requires shipping implementation plus exact-head tests.",
-      "production_evidence": "projects/telegram-desktop-rust/dossiers/mtproto-control-security-5261-5270-complete-read.md; existing Fabushi replacement evidence remains to be audited.",
-      "test_evidence": "Current transport/auth/config/idempotency tests can be reused only after exact responsibility mapping; focused/integration/E2E/packaged evidence remains required.",
-      "disposition": "mapped-open-platform-protocol-replacement",
-      "unknown_closed": false,
-      "omitted": false,
-      "consumer_symbol": "MTP::DcOptions",
-      "consumer_evidence": [
-        "Complete direct exact-source read of Telegram/SourceFiles/mtproto/mtproto_dc_options.h at accepted blob 4e0b979c."
-      ],
-      "reachability_status": "accepted-tree source owner proven; replacement responsibility remains open",
-      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no MTProto source copied.",
-      "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-new-head-actions-attestation",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
-        "verified_blob_sha": "4e0b979c4a84661f3365196ab8702dc8cb60fd03",
-        "byte_size": 3924,
-        "file_type": "blob",
-        "recursive_order": 5269
-      },
-      "notes": "Read-complete only. Protocol/platform replacement remains unknown-open; omitted=false."
-    },
-    {
-      "recursive_order": 5270,
-      "source_path": "Telegram/SourceFiles/mtproto/mtproto_dh_utils.cpp",
-      "source_blob_sha": "db9c0542fa1f2d86c27da38f511d56ac2accc21c",
-      "read_complete": true,
-      "responsibility_decomposition_complete": true,
-      "responsibility": "Diffie-Hellman safety boundary: prime/generator validation, bounded modular exponentiation and authenticated key material derivation",
-      "upstream_owner": "MTP DH utilities",
-      "state_machine": "construct/restore authoritative transport-security state -> validate and bind request/session/config generation -> execute bounded operation -> settle success/failure/cancellation -> retire stale or disposed work",
-      "side_effects": "Applicable responsibilities map to current Fabushi Coordinator/Host/backend transport, credential, configuration, request-settlement/idempotency and observability owners. Telegram MTProto wire/DC/AES/DH mechanics are protocol-specific implementation details and are not copied.",
-      "failure_cases": "stale callback crosses owner lifetime; duplicate or out-of-order settlement; cancellation fails to retire work; malformed persisted config/endpoint/key accepted; credential or crypto state reused past validity; protocol-specific fallback becomes a second runtime",
-      "ui_disposition": "No Telegram-specific UI/runtime. Existing canonical loading/error/status surfaces may project only source-neutral state from current owners.",
-      "fabushi_canonical_owner": "existing Fabushi Coordinator/Host/backend transport, request settlement/idempotency, credential/auth, configuration and observability owners",
-      "fabushi_target": "MAPPED OPEN WITH PLATFORM/PROTOCOL REPLACEMENT. Audit and close equivalent single-authority request/session/config/key lifecycle, weak/stale fencing, dependency ordering, cancellation, retry/idempotency and credential validity in current Fabushi; do not add MTProto as a parallel stack.",
-      "platform_differences": "Fabushi first-party HTTP/WebSocket/Rust/Node/backend protocols and platform credential stores replace Telegram MTProto/Qt/DC/crypto machinery. Equivalence is responsibility-based and requires shipping implementation plus exact-head tests.",
-      "production_evidence": "projects/telegram-desktop-rust/dossiers/mtproto-control-security-5261-5270-complete-read.md; existing Fabushi replacement evidence remains to be audited.",
-      "test_evidence": "Current transport/auth/config/idempotency tests can be reused only after exact responsibility mapping; focused/integration/E2E/packaged evidence remains required.",
-      "disposition": "mapped-open-platform-protocol-replacement",
-      "unknown_closed": false,
-      "omitted": false,
-      "consumer_symbol": "MTP DH utilities",
-      "consumer_evidence": [
-        "Complete direct exact-source read of Telegram/SourceFiles/mtproto/mtproto_dh_utils.cpp at accepted blob db9c0542."
-      ],
-      "reachability_status": "accepted-tree source owner proven; replacement responsibility remains open",
-      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no MTProto source copied.",
-      "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-new-head-actions-attestation",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
-        "verified_blob_sha": "db9c0542fa1f2d86c27da38f511d56ac2accc21c",
-        "byte_size": 5536,
         "file_type": "blob",
         "recursive_order": 5270
       },

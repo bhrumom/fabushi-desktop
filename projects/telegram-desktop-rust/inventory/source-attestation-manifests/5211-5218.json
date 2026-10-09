@@ -1,55 +1,55 @@
 {
-  "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+  "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
   "start": 5211,
   "end": 5218,
   "entries": [
     {
       "order": 5211,
-      "path": "Telegram/SourceFiles/menu/menu_sponsored.cpp",
-      "blob": "b8ac0c895319e3ab8f8310db9b2c3a960d307f70",
-      "consumer_symbol": "sponsored message information/about/privacy/revenue menu, multistep report results, hide-ads/Premium behavior and dark/media menu projection"
+      "path": "Telegram/SourceFiles/menu/menu_send.cpp",
+      "blob": "1bbd5494928f7fa08192cb56bd40146dc0ec4d5f",
+      "consumer_symbol": "SendMenu"
     },
     {
       "order": 5212,
-      "path": "Telegram/SourceFiles/menu/menu_sponsored.h",
-      "blob": "987630e4bb07f903761c8d9b3fa4f024a1364e4a",
-      "consumer_symbol": "typed sponsored menu phrase/settings/report action boundary"
+      "path": "Telegram/SourceFiles/menu/menu_send.h",
+      "blob": "8f6c908d85fd448441f5b451617d502a6fa3c568",
+      "consumer_symbol": "SendMenu"
     },
     {
       "order": 5213,
-      "path": "Telegram/SourceFiles/menu/menu_timecode_action.cpp",
-      "blob": "06f166111c821bd00d30fcdbd9b351bbfd92e90a",
-      "consumer_symbol": "reply-with-timecode menu action and timecode presentation"
+      "path": "Telegram/SourceFiles/menu/menu_send_details.h",
+      "blob": "cf57a6cd8c6b90aece73443572b84c464f016a30",
+      "consumer_symbol": "SendMenu::Details / Type"
     },
     {
       "order": 5214,
-      "path": "Telegram/SourceFiles/menu/menu_timecode_action.h",
-      "blob": "ac8b77cdd980e886f9870c36f7a903003b64c431",
-      "consumer_symbol": "typed timecode action construction contract"
+      "path": "Telegram/SourceFiles/menu/menu_sponsored.cpp",
+      "blob": "b8ac0c895319e3ab8f8310db9b2c3a960d307f70",
+      "consumer_symbol": "Menu::FillSponsored / ShowSponsored"
     },
     {
       "order": 5215,
-      "path": "Telegram/SourceFiles/menu/menu_ttl.cpp",
-      "blob": "9c4db841f8625a5d2d258d802b7ca93152607b57",
-      "consumer_symbol": "auto-delete duration presets/custom picker/disable flow, explanatory copy and menu/dialog composition"
+      "path": "Telegram/SourceFiles/menu/menu_sponsored.h",
+      "blob": "987630e4bb07f903761c8d9b3fa4f024a1364e4a",
+      "consumer_symbol": "Menu::SponsoredMenuSettings"
     },
     {
       "order": 5216,
-      "path": "Telegram/SourceFiles/menu/menu_ttl.h",
-      "blob": "86437e7d9526929fe8c5a6a832ab5760e96c235c",
-      "consumer_symbol": "typed TTL menu/picker arguments and callback contract"
+      "path": "Telegram/SourceFiles/menu/menu_timecode_action.cpp",
+      "blob": "06f166111c821bd00d30fcdbd9b351bbfd92e90a",
+      "consumer_symbol": "Menu::TimecodeAction"
     },
     {
       "order": 5217,
-      "path": "Telegram/SourceFiles/menu/menu_ttl_validator.cpp",
-      "blob": "c09369c7b514091874fbde29dc91d3f98b97cad6",
-      "consumer_symbol": "TTL eligibility/permission rules, request de-duplication, server SetHistoryTTL mutation, applied updates and success toast"
+      "path": "Telegram/SourceFiles/menu/menu_timecode_action.h",
+      "blob": "ac8b77cdd980e886f9870c36f7a903003b64c431",
+      "consumer_symbol": "Menu::AddTimecodeAction"
     },
     {
       "order": 5218,
-      "path": "Telegram/SourceFiles/menu/menu_ttl_validator.h",
-      "blob": "fa360b50a9e87efdaf1b825eb2311c8f287ac181",
-      "consumer_symbol": "typed TTL eligibility/action boundary"
+      "path": "Telegram/SourceFiles/menu/menu_ttl.cpp",
+      "blob": "9c4db841f8625a5d2d258d802b7ca93152607b57",
+      "consumer_symbol": "TTLMenu"
     }
   ]
 }

@@ -1,397 +1,397 @@
 {
-  "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+  "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
   "start": 5411,
   "end": 5475,
   "entries": [
     {
       "order": 5411,
+      "path": "Telegram/SourceFiles/platform/linux/webauthn_linux.cpp",
+      "blob": "c24e63bab5b7cb57aa65ef92f93cfc08011d6364",
+      "consumer_symbol": "Platform::WebAuthn"
+    },
+    {
+      "order": 5412,
+      "path": "Telegram/SourceFiles/platform/mac/current_geo_location_mac.h",
+      "blob": "6bb8195430d9cf504d93db967807da5e11ae73eb",
+      "consumer_symbol": "platform current geo location contract"
+    },
+    {
+      "order": 5413,
+      "path": "Telegram/SourceFiles/platform/mac/current_geo_location_mac.mm",
+      "blob": "0ea55446387b2043b3112f75edbdd41af369b241",
+      "consumer_symbol": "LocationDelegate / ResolveCurrentExactLocation / ResolveLocationAddress"
+    },
+    {
+      "order": 5414,
       "path": "Telegram/SourceFiles/platform/mac/file_bookmark_mac.h",
       "blob": "e72a8b2c547e79d3d242b47e5538d397a3c02079",
       "consumer_symbol": "File permission/bookmark contract"
     },
     {
-      "order": 5412,
+      "order": 5415,
       "path": "Telegram/SourceFiles/platform/mac/file_bookmark_mac.mm",
       "blob": "9e9a1744bc3952ceecb69eeb844612ce970072c1",
       "consumer_symbol": "File permission/bookmark contract"
     },
     {
-      "order": 5413,
+      "order": 5416,
       "path": "Telegram/SourceFiles/platform/mac/file_utilities_mac.h",
       "blob": "79df822dd3df26e4c453c738a4523e3829f54625",
       "consumer_symbol": "Platform file utilities"
     },
     {
-      "order": 5414,
+      "order": 5417,
       "path": "Telegram/SourceFiles/platform/mac/file_utilities_mac.mm",
       "blob": "e35b2e4bead884a65b2172a6cdc83d9bb55e7fe0",
       "consumer_symbol": "Platform file utilities"
     },
     {
-      "order": 5415,
+      "order": 5418,
       "path": "Telegram/SourceFiles/platform/mac/global_menu_mac.h",
       "blob": "4e946908a9bfe8862d92e449eebc77d8b07ad0c3",
       "consumer_symbol": "Application menu"
     },
     {
-      "order": 5416,
+      "order": 5419,
       "path": "Telegram/SourceFiles/platform/mac/global_menu_mac.mm",
       "blob": "bafcca0e65562f312708e0e9e20432d1a3372f2a",
       "consumer_symbol": "Application menu"
     },
     {
-      "order": 5417,
+      "order": 5420,
       "path": "Telegram/SourceFiles/platform/mac/integration_mac.h",
       "blob": "11b203214a0f6ce2dc248d575a3bbb2fb14fee98",
       "consumer_symbol": "Platform integration"
     },
     {
-      "order": 5418,
+      "order": 5421,
       "path": "Telegram/SourceFiles/platform/mac/integration_mac.mm",
       "blob": "6a60a46d104a11ea8b69f51f0bd514fe0d204cce",
       "consumer_symbol": "Platform integration"
     },
     {
-      "order": 5419,
+      "order": 5422,
       "path": "Telegram/SourceFiles/platform/mac/launcher_mac.h",
       "blob": "edb966a014e06cd69b2841a6459e89323da7cd95",
       "consumer_symbol": "Platform launcher/updater handoff"
     },
     {
-      "order": 5420,
+      "order": 5423,
       "path": "Telegram/SourceFiles/platform/mac/launcher_mac.mm",
       "blob": "8fecc6bfc5d4b850faa8c3b14dab486b11e5a714",
       "consumer_symbol": "Platform launcher/updater handoff"
     },
     {
-      "order": 5421,
+      "order": 5424,
       "path": "Telegram/SourceFiles/platform/mac/mac_iconv_helper.c",
       "blob": "71759717a56e635f87da34eb8fbe12605f2616bc",
       "consumer_symbol": "iconv compatibility"
     },
     {
-      "order": 5422,
+      "order": 5425,
       "path": "Telegram/SourceFiles/platform/mac/main_window_mac.h",
       "blob": "dcc064c34ff333459392d9eacff06cdd7eafb10c",
       "consumer_symbol": "Platform main window"
     },
     {
-      "order": 5423,
+      "order": 5426,
       "path": "Telegram/SourceFiles/platform/mac/main_window_mac.mm",
       "blob": "eb0fc4620029aad336b5960c2e02263baeba4f27",
       "consumer_symbol": "Platform main window"
     },
     {
-      "order": 5424,
+      "order": 5427,
       "path": "Telegram/SourceFiles/platform/mac/native_event_mac.h",
       "blob": "e2b85ef35018c942734d51f3a143770842287d34",
       "consumer_symbol": "Native input event"
     },
     {
-      "order": 5425,
+      "order": 5428,
       "path": "Telegram/SourceFiles/platform/mac/native_event_mac.mm",
       "blob": "934afa2f94b35743ece30ac74383861fd682bca3",
       "consumer_symbol": "Native input event"
     },
     {
-      "order": 5426,
+      "order": 5429,
       "path": "Telegram/SourceFiles/platform/mac/notifications_manager_mac.h",
       "blob": "6af0292384ef85b834a05d2dc7d98b219712f061",
       "consumer_symbol": "OS notification manager"
     },
     {
-      "order": 5427,
+      "order": 5430,
       "path": "Telegram/SourceFiles/platform/mac/notifications_manager_mac.mm",
       "blob": "23b944732cc28f48712f38e7b6f5d8e059b37e44",
       "consumer_symbol": "OS notification manager"
     },
     {
-      "order": 5428,
+      "order": 5431,
       "path": "Telegram/SourceFiles/platform/mac/notifications_manager_mac_un.h",
       "blob": "ae9243cc8e6e7c246a47ddab4945cde47a65530a",
       "consumer_symbol": "OS notification manager"
     },
     {
-      "order": 5429,
+      "order": 5432,
       "path": "Telegram/SourceFiles/platform/mac/notifications_manager_mac_un.mm",
       "blob": "b11c39f67eaf424f72c7e4cd0734ec8ba7b82ab5",
       "consumer_symbol": "OS notification manager"
     },
     {
-      "order": 5430,
+      "order": 5433,
       "path": "Telegram/SourceFiles/platform/mac/overlay_widget_mac.h",
       "blob": "e99cf01909ea747c6df08135007f792923b3867c",
       "consumer_symbol": "Overlay/window chrome"
     },
     {
-      "order": 5431,
+      "order": 5434,
       "path": "Telegram/SourceFiles/platform/mac/overlay_widget_mac.mm",
       "blob": "272d7911a128ff419c0be867c868d8d3871970c8",
       "consumer_symbol": "Overlay/window chrome"
     },
     {
-      "order": 5432,
+      "order": 5435,
       "path": "Telegram/SourceFiles/platform/mac/specific_mac.h",
       "blob": "f6180527b7d89c561cc314eee7ae752090324b33",
       "consumer_symbol": "Platform-specific lifecycle"
     },
     {
-      "order": 5433,
+      "order": 5436,
       "path": "Telegram/SourceFiles/platform/mac/specific_mac.mm",
       "blob": "bcdc2585f38b769d68727b429f93ac1ec9ab428f",
       "consumer_symbol": "Platform-specific lifecycle"
     },
     {
-      "order": 5434,
+      "order": 5437,
       "path": "Telegram/SourceFiles/platform/mac/specific_mac_p.h",
       "blob": "35eb05d5394f02f67ed079d8278408914a9ff7ce",
       "consumer_symbol": "Platform-specific lifecycle"
     },
     {
-      "order": 5435,
+      "order": 5438,
       "path": "Telegram/SourceFiles/platform/mac/specific_mac_p.mm",
       "blob": "f62f7f3dfc981bc4ec41c17bd5e8fc707ad0f3c3",
       "consumer_symbol": "Platform-specific lifecycle"
     },
     {
-      "order": 5436,
+      "order": 5439,
       "path": "Telegram/SourceFiles/platform/mac/text_recognition_mac.h",
       "blob": "34db1906d51260ac196a6989c90013b664d2c45a",
       "consumer_symbol": "Text recognition"
     },
     {
-      "order": 5437,
+      "order": 5440,
       "path": "Telegram/SourceFiles/platform/mac/text_recognition_mac.mm",
       "blob": "863fc5422b3c0619a55eccc9aee717206c1fe6bb",
       "consumer_symbol": "Text recognition"
     },
     {
-      "order": 5438,
+      "order": 5441,
       "path": "Telegram/SourceFiles/platform/mac/touchbar/items/mac_formatter_item.h",
       "blob": "a537929c8422e997a2df5f9cb060aafda5a6f838",
       "consumer_symbol": "Touch Bar projection"
     },
     {
-      "order": 5439,
+      "order": 5442,
       "path": "Telegram/SourceFiles/platform/mac/touchbar/items/mac_formatter_item.mm",
       "blob": "c719f700698dbe30fd5ae4d7149a0a29c60dd778",
       "consumer_symbol": "Touch Bar projection"
     },
     {
-      "order": 5440,
+      "order": 5443,
       "path": "Telegram/SourceFiles/platform/mac/touchbar/items/mac_pinned_chats_item.h",
       "blob": "c6a4b886fcda1c588acc6aa00867d63564c52728",
       "consumer_symbol": "Touch Bar projection"
     },
     {
-      "order": 5441,
+      "order": 5444,
       "path": "Telegram/SourceFiles/platform/mac/touchbar/items/mac_pinned_chats_item.mm",
       "blob": "747ef0d4038e67a1c75dd72feeeee94cfa78f9c7",
       "consumer_symbol": "Touch Bar projection"
     },
     {
-      "order": 5442,
+      "order": 5445,
       "path": "Telegram/SourceFiles/platform/mac/touchbar/items/mac_scrubber_item.h",
       "blob": "27b04467cc8e59ff327afa865a12829e263a2faa",
       "consumer_symbol": "Touch Bar projection"
     },
     {
-      "order": 5443,
+      "order": 5446,
       "path": "Telegram/SourceFiles/platform/mac/touchbar/items/mac_scrubber_item.mm",
       "blob": "dae3f233e6d4ccc13704647086b291ded9f0fee9",
       "consumer_symbol": "Touch Bar projection"
     },
     {
-      "order": 5444,
+      "order": 5447,
       "path": "Telegram/SourceFiles/platform/mac/touchbar/mac_touchbar_audio.h",
       "blob": "ec4596c67e380a5a4ba1e2ae1a057730b68e39d0",
       "consumer_symbol": "Touch Bar projection"
     },
     {
-      "order": 5445,
+      "order": 5448,
       "path": "Telegram/SourceFiles/platform/mac/touchbar/mac_touchbar_audio.mm",
       "blob": "b20f59919b95f54b25db2985078f08389d163313",
       "consumer_symbol": "Touch Bar projection"
     },
     {
-      "order": 5446,
+      "order": 5449,
       "path": "Telegram/SourceFiles/platform/mac/touchbar/mac_touchbar_common.h",
       "blob": "52b54de1275bc31c75f643de786bb10aa77b0cc3",
       "consumer_symbol": "Touch Bar projection"
     },
     {
-      "order": 5447,
+      "order": 5450,
       "path": "Telegram/SourceFiles/platform/mac/touchbar/mac_touchbar_common.mm",
       "blob": "3f749a22b4023cbee9f80c796fc481ee7f44aa19",
       "consumer_symbol": "Touch Bar projection"
     },
     {
-      "order": 5448,
+      "order": 5451,
       "path": "Telegram/SourceFiles/platform/mac/touchbar/mac_touchbar_controls.h",
       "blob": "0df4a61368d0af76b14b91adfd7747e363b0e6b4",
       "consumer_symbol": "Touch Bar projection"
     },
     {
-      "order": 5449,
+      "order": 5452,
       "path": "Telegram/SourceFiles/platform/mac/touchbar/mac_touchbar_controls.mm",
       "blob": "fe384385e10a2733f12070486df6f02dc59aaf26",
       "consumer_symbol": "Touch Bar projection"
     },
     {
-      "order": 5450,
+      "order": 5453,
       "path": "Telegram/SourceFiles/platform/mac/touchbar/mac_touchbar_main.h",
       "blob": "f03546eafcce4ceed822e37b5ba50a764e42ba6d",
       "consumer_symbol": "Touch Bar projection"
     },
     {
-      "order": 5451,
+      "order": 5454,
       "path": "Telegram/SourceFiles/platform/mac/touchbar/mac_touchbar_main.mm",
       "blob": "f5c305827204667406b2a1b60c6513583fbc2dc2",
       "consumer_symbol": "Touch Bar projection"
     },
     {
-      "order": 5452,
+      "order": 5455,
       "path": "Telegram/SourceFiles/platform/mac/touchbar/mac_touchbar_manager.h",
       "blob": "786f116d60829b14e4498f13c64f32bd832795a1",
       "consumer_symbol": "Touch Bar projection"
     },
     {
-      "order": 5453,
+      "order": 5456,
       "path": "Telegram/SourceFiles/platform/mac/touchbar/mac_touchbar_manager.mm",
       "blob": "011d7826ce87f0995086ee1bc9cbaac089116091",
       "consumer_symbol": "Touch Bar projection"
     },
     {
-      "order": 5454,
+      "order": 5457,
       "path": "Telegram/SourceFiles/platform/mac/touchbar/mac_touchbar_media_view.h",
       "blob": "d40e3124df36aabb88ae370fbeaa1b0ca1a70fff",
       "consumer_symbol": "Touch Bar projection"
     },
     {
-      "order": 5455,
+      "order": 5458,
       "path": "Telegram/SourceFiles/platform/mac/touchbar/mac_touchbar_media_view.mm",
       "blob": "97c49c66af9ec3d3702e5819db03a3f7379bdc42",
       "consumer_symbol": "Touch Bar projection"
     },
     {
-      "order": 5456,
+      "order": 5459,
       "path": "Telegram/SourceFiles/platform/mac/translate_provider_mac.h",
       "blob": "996f5d484f7010731d155ea65a10ae5958ed1391",
       "consumer_symbol": "Translate provider"
     },
     {
-      "order": 5457,
+      "order": 5460,
       "path": "Telegram/SourceFiles/platform/mac/translate_provider_mac.mm",
       "blob": "514e751196cc95d91a9f9d01bb7f354db925121f",
       "consumer_symbol": "Translate provider"
     },
     {
-      "order": 5458,
+      "order": 5461,
       "path": "Telegram/SourceFiles/platform/mac/tray_mac.h",
       "blob": "7e03bddf0b81e4a8e682ffe7d46baf8f28550037",
       "consumer_symbol": "Tray"
     },
     {
-      "order": 5459,
+      "order": 5462,
       "path": "Telegram/SourceFiles/platform/mac/tray_mac.mm",
       "blob": "d81ca0ae562a97715801b750f5e688636ec267ad",
       "consumer_symbol": "Tray"
     },
     {
-      "order": 5460,
+      "order": 5463,
       "path": "Telegram/SourceFiles/platform/mac/wallet_protection_mac.h",
       "blob": "a758f63b7d495d9bb305900877bd8c471b0582a1",
       "consumer_symbol": "Wallet protection"
     },
     {
-      "order": 5461,
+      "order": 5464,
       "path": "Telegram/SourceFiles/platform/mac/wallet_protection_mac.mm",
       "blob": "690fde305d7947d821c8db08e582df8814aee4e5",
       "consumer_symbol": "Wallet protection"
     },
     {
-      "order": 5462,
+      "order": 5465,
       "path": "Telegram/SourceFiles/platform/mac/webauthn_mac.mm",
       "blob": "bc0999a4ec3a3b385c75e8ce39aafed22cac2015",
       "consumer_symbol": "WebAuthn"
     },
     {
-      "order": 5463,
+      "order": 5466,
       "path": "Telegram/SourceFiles/platform/mac/window_title_mac.mm",
       "blob": "5453e5431a2a382cc1d1a2670bb3a8f280fd7f4f",
       "consumer_symbol": "Window title"
     },
     {
-      "order": 5464,
+      "order": 5467,
       "path": "Telegram/SourceFiles/platform/platform_current_geo_location.h",
       "blob": "269ee81f320a9a6538b318880d79d489afa81fec",
       "consumer_symbol": "Current location"
     },
     {
-      "order": 5465,
+      "order": 5468,
       "path": "Telegram/SourceFiles/platform/platform_file_bookmark.h",
       "blob": "dffc792b80ba86680b83ae6ebef4ed18bf44fb2c",
       "consumer_symbol": "File bookmark"
     },
     {
-      "order": 5466,
+      "order": 5469,
       "path": "Telegram/SourceFiles/platform/platform_file_utilities.cpp",
       "blob": "e6c3863cd64de77e365884561fbc1a942af73de9",
       "consumer_symbol": "Platform file utilities"
     },
     {
-      "order": 5467,
+      "order": 5470,
       "path": "Telegram/SourceFiles/platform/platform_file_utilities.h",
       "blob": "0b4fc5cf1c67254776f26a887c6537119213572f",
       "consumer_symbol": "Platform file utilities"
     },
     {
-      "order": 5468,
+      "order": 5471,
       "path": "Telegram/SourceFiles/platform/platform_integration.cpp",
       "blob": "d2f832eeb63b3a246d2ef684a707601a1b3fe2b8",
       "consumer_symbol": "Platform integration"
     },
     {
-      "order": 5469,
+      "order": 5472,
       "path": "Telegram/SourceFiles/platform/platform_integration.h",
       "blob": "36ad0b7b792f2dec89a5aa0bfb81360131654b8b",
       "consumer_symbol": "Platform integration"
     },
     {
-      "order": 5470,
+      "order": 5473,
       "path": "Telegram/SourceFiles/platform/platform_launcher.h",
       "blob": "172730e67832a59006f40a9acf5668636bd65fa7",
       "consumer_symbol": "Platform launcher"
     },
     {
-      "order": 5471,
+      "order": 5474,
       "path": "Telegram/SourceFiles/platform/platform_main_window.h",
       "blob": "e52de1edc18013c6b8ffe308ffbb1811e6736e71",
       "consumer_symbol": "Platform main window"
     },
     {
-      "order": 5472,
+      "order": 5475,
       "path": "Telegram/SourceFiles/platform/platform_notifications_manager.h",
       "blob": "da41f6010ee720a5a6f8101cfa54d6af67449c25",
       "consumer_symbol": "OS notification manager"
-    },
-    {
-      "order": 5473,
-      "path": "Telegram/SourceFiles/platform/platform_overlay_widget.cpp",
-      "blob": "03fb75e3155758a619e46cfd1c212671e574d0f1",
-      "consumer_symbol": "Overlay/window chrome"
-    },
-    {
-      "order": 5474,
-      "path": "Telegram/SourceFiles/platform/platform_overlay_widget.h",
-      "blob": "5b599858aacb68cebc7e118663973a46d1d5619f",
-      "consumer_symbol": "Overlay/window chrome"
-    },
-    {
-      "order": 5475,
-      "path": "Telegram/SourceFiles/platform/platform_specific.h",
-      "blob": "b309f2aec46c72fa494a329d456cd6715c2f8790",
-      "consumer_symbol": "Platform-specific lifecycle"
     }
   ]
 }

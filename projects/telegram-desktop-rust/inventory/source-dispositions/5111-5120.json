@@ -1,11 +1,11 @@
 {
-  "format_version": 1,
+  "format_version": 2,
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
-    "tree": "6ac9bbc1b44edcb119b1a724e7b0a321c3b7b8fa"
+    "commit": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+    "tree": "5030985204963cbbd362ced7412d231b04ebd0cc"
   },
   "range": {
     "first_order": 5111,
@@ -15,6 +15,114 @@
   "rows": [
     {
       "recursive_order": 5111,
+      "source_path": "Telegram/SourceFiles/media/stories/media_stories_share.cpp",
+      "source_blob_sha": "cac84bc4f383fdc260e046ead9ee1fa96738a2f8",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Story/share-at-time forwarding eligibility, recipient permission filtering, direct-link copy and paid/send settlement contract",
+      "upstream_owner": "Canonical ForwardMessageDialog/Share flow owner",
+      "state_machine": "resolve exact Story/message -> derive link-vs-media sharing capability -> permission/money filter recipients -> optional comment/count/payment check -> canonical forward/send or copy-link -> settle dialog",
+      "side_effects": "Consumes existing canonical Story/Conversation/Message/Media/Participant/service truth and derived view state only; no Telegram-specific runtime, second Composer, forwarding transport, viewer store or reaction truth is introduced.",
+      "failure_cases": "deleted Story forwarded, recipient lacks media/inline right, call Story without copyable link exposed, payment count wrong, timestamp lost, duplicate share transport",
+      "ui_disposition": "Reuse canonical Composer, Toolbar, IconButton, Button, Avatar, ListRow/ResultRow, Menu/ContextMenu, Popover, Dialog, DetailPanel, Tooltip, Status, LoadingState and ErrorState with semantic tokens; preserve keyboard/focus/a11y, light/dark and responsive behavior.",
+      "fabushi_canonical_owner": "Canonical ForwardMessageDialog/Share flow owner",
+      "fabushi_target": "OPEN: audit current shipping Canonical ForwardMessageDialog/Share flow owner; close missing state/lifecycle/service/UI/a11y/responsive behavior and exact-head production evidence before promotion.",
+      "platform_differences": "Qt/RPL widgets and Telegram send APIs are behavioral references. Re-express semantics in current Fabushi React/TypeScript UI plus canonical Coordinator/Host/Rust service owners; do not port MTProto or source-specific transport.",
+      "production_evidence": "projects/telegram-desktop-rust/dossiers/media-stories-reply-share-views-sibling-5101-5110-complete-read.md; direct exact-source read only; implementation remains open.",
+      "test_evidence": "Current-head Source authority attestation plus focused production unit/contract/integration/E2E/a11y evidence required.",
+      "disposition": "mapped-open-story-share-flow",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "Media::Stories::PrepareShareBox",
+      "consumer_evidence": [
+        "Complete direct exact-source read of Telegram/SourceFiles/media/stories/media_stories_share.cpp; mapped to Canonical ForwardMessageDialog/Share flow owner."
+      ],
+      "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "verified_blob_sha": "cac84bc4f383fdc260e046ead9ee1fa96738a2f8",
+        "byte_size": 9787,
+        "file_type": "blob",
+        "recursive_order": 5111
+      },
+      "notes": "Read-complete only; no implementation, verification, baseline-ready or release state is promoted."
+    },
+    {
+      "recursive_order": 5112,
+      "source_path": "Telegram/SourceFiles/media/stories/media_stories_share.h",
+      "source_blob_sha": "c7149b0ca980a85c8592676f1cbc91abd1c6bafa",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Story and timestamped-message share flow API contract",
+      "upstream_owner": "Canonical ForwardMessageDialog/Share flow owner",
+      "state_machine": "share request -> canonical dialog descriptor -> permission-filtered execution/copy -> close",
+      "side_effects": "Consumes existing canonical Story/Conversation/Message/Media/Participant/service truth and derived view state only; no Telegram-specific runtime, second Composer, forwarding transport, viewer store or reaction truth is introduced.",
+      "failure_cases": "source-specific dialog becomes parallel forwarding owner, timestamp or Story identity omitted",
+      "ui_disposition": "Reuse canonical Composer, Toolbar, IconButton, Button, Avatar, ListRow/ResultRow, Menu/ContextMenu, Popover, Dialog, DetailPanel, Tooltip, Status, LoadingState and ErrorState with semantic tokens; preserve keyboard/focus/a11y, light/dark and responsive behavior.",
+      "fabushi_canonical_owner": "Canonical ForwardMessageDialog/Share flow owner",
+      "fabushi_target": "OPEN: audit current shipping Canonical ForwardMessageDialog/Share flow owner; close missing state/lifecycle/service/UI/a11y/responsive behavior and exact-head production evidence before promotion.",
+      "platform_differences": "Qt/RPL widgets and Telegram send APIs are behavioral references. Re-express semantics in current Fabushi React/TypeScript UI plus canonical Coordinator/Host/Rust service owners; do not port MTProto or source-specific transport.",
+      "production_evidence": "projects/telegram-desktop-rust/dossiers/media-stories-reply-share-views-sibling-5101-5110-complete-read.md; direct exact-source read only; implementation remains open.",
+      "test_evidence": "Current-head Source authority attestation plus focused production unit/contract/integration/E2E/a11y evidence required.",
+      "disposition": "mapped-open-story-share-flow",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "Media::Stories::PrepareShareBox",
+      "consumer_evidence": [
+        "Complete direct exact-source read of Telegram/SourceFiles/media/stories/media_stories_share.h; mapped to Canonical ForwardMessageDialog/Share flow owner."
+      ],
+      "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "verified_blob_sha": "c7149b0ca980a85c8592676f1cbc91abd1c6bafa",
+        "byte_size": 824,
+        "file_type": "blob",
+        "recursive_order": 5112
+      },
+      "notes": "Read-complete only; no implementation, verification, baseline-ready or release state is promoted."
+    },
+    {
+      "recursive_order": 5113,
+      "source_path": "Telegram/SourceFiles/media/stories/media_stories_sibling.cpp",
+      "source_blob_sha": "a9d875c9e44a94909bb84c4aeb6e70c7f47403d3",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Adjacent Story preview identity, lazy photo/video thumbnail loading, streamed fallback and hover/fade presentation lifecycle",
+      "upstream_owner": "Canonical Story sibling navigation/preview owner",
+      "state_machine": "adjacent Story source identity -> resolve shown id -> blurred preview -> async good photo/video thumbnail or streamed fallback -> fade to good preview -> hover/name projection -> replacement/disposal",
+      "side_effects": "Consumes existing canonical Story/Conversation/Message/Media/Participant/service truth and derived view state only; no Telegram-specific runtime, second Composer, forwarding transport, viewer store or reaction truth is introduced.",
+      "failure_cases": "wrong adjacent Story after source reorder, async thumbnail settles into replaced sibling, stream failure loops, null/zero geometry crashes text/image drawing",
+      "ui_disposition": "Reuse canonical Composer, Toolbar, IconButton, Button, Avatar, ListRow/ResultRow, Menu/ContextMenu, Popover, Dialog, DetailPanel, Tooltip, Status, LoadingState and ErrorState with semantic tokens; preserve keyboard/focus/a11y, light/dark and responsive behavior.",
+      "fabushi_canonical_owner": "Canonical Story sibling navigation/preview owner",
+      "fabushi_target": "OPEN: audit current shipping Canonical Story sibling navigation/preview owner; close missing state/lifecycle/service/UI/a11y/responsive behavior and exact-head production evidence before promotion.",
+      "platform_differences": "Qt/RPL widgets and Telegram send APIs are behavioral references. Re-express semantics in current Fabushi React/TypeScript UI plus canonical Coordinator/Host/Rust service owners; do not port MTProto or source-specific transport.",
+      "production_evidence": "projects/telegram-desktop-rust/dossiers/media-stories-reply-share-views-sibling-5101-5110-complete-read.md; direct exact-source read only; implementation remains open.",
+      "test_evidence": "Current-head Source authority attestation plus focused production unit/contract/integration/E2E/a11y evidence required.",
+      "disposition": "mapped-open-story-sibling-preview",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "Media::Stories::Sibling",
+      "consumer_evidence": [
+        "Complete direct exact-source read of Telegram/SourceFiles/media/stories/media_stories_sibling.cpp; mapped to Canonical Story sibling navigation/preview owner."
+      ],
+      "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "verified_blob_sha": "a9d875c9e44a94909bb84c4aeb6e70c7f47403d3",
+        "byte_size": 11460,
+        "file_type": "blob",
+        "recursive_order": 5113
+      },
+      "notes": "Read-complete only; no implementation, verification, baseline-ready or release state is promoted."
+    },
+    {
+      "recursive_order": 5114,
       "source_path": "Telegram/SourceFiles/media/stories/media_stories_sibling.h",
       "source_blob_sha": "24f334cae788ee6a1dc0b07cd313e81b77ca1ae2",
       "read_complete": true,
@@ -40,17 +148,17 @@
       "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-current-head-actions-attestation",
-        "accepted_upstream": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "24f334cae788ee6a1dc0b07cd313e81b77ca1ae2",
         "byte_size": 1826,
         "file_type": "blob",
-        "recursive_order": 5111
+        "recursive_order": 5114
       },
       "notes": "Read-complete only; no implementation, verification, baseline-ready or release state is promoted."
     },
     {
-      "recursive_order": 5112,
+      "recursive_order": 5115,
       "source_path": "Telegram/SourceFiles/media/stories/media_stories_slider.cpp",
       "source_blob_sha": "bdb547186edc53fbfd64dd1434f861a27fb3be0d",
       "read_complete": true,
@@ -76,17 +184,17 @@
       "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-current-head-actions-attestation",
-        "accepted_upstream": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "bdb547186edc53fbfd64dd1434f861a27fb3be0d",
         "byte_size": 4123,
         "file_type": "blob",
-        "recursive_order": 5112
+        "recursive_order": 5115
       },
       "notes": "Read-complete only; no implementation, verification, baseline-ready or release state is promoted."
     },
     {
-      "recursive_order": 5113,
+      "recursive_order": 5116,
       "source_path": "Telegram/SourceFiles/media/stories/media_stories_slider.h",
       "source_blob_sha": "37dbca0504c3423a14665c5b692f2dc2699d5469",
       "read_complete": true,
@@ -112,17 +220,17 @@
       "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-current-head-actions-attestation",
-        "accepted_upstream": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "37dbca0504c3423a14665c5b692f2dc2699d5469",
         "byte_size": 1260,
         "file_type": "blob",
-        "recursive_order": 5113
+        "recursive_order": 5116
       },
       "notes": "Read-complete only; no implementation, verification, baseline-ready or release state is promoted."
     },
     {
-      "recursive_order": 5114,
+      "recursive_order": 5117,
       "source_path": "Telegram/SourceFiles/media/stories/media_stories_stealth.cpp",
       "source_blob_sha": "8bd47aaf5b5b454a6f2ac0b4641b285646d4a9b3",
       "read_complete": true,
@@ -148,17 +256,17 @@
       "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-current-head-actions-attestation",
-        "accepted_upstream": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "8bd47aaf5b5b454a6f2ac0b4641b285646d4a9b3",
         "byte_size": 12452,
         "file_type": "blob",
-        "recursive_order": 5114
+        "recursive_order": 5117
       },
       "notes": "Read-complete only; no implementation, verification, baseline-ready or release state is promoted."
     },
     {
-      "recursive_order": 5115,
+      "recursive_order": 5118,
       "source_path": "Telegram/SourceFiles/media/stories/media_stories_stealth.h",
       "source_blob_sha": "649cfa1eb5abcad11706741753bb70232fe43c7a",
       "read_complete": true,
@@ -184,17 +292,17 @@
       "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-current-head-actions-attestation",
-        "accepted_upstream": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "649cfa1eb5abcad11706741753bb70232fe43c7a",
         "byte_size": 1018,
         "file_type": "blob",
-        "recursive_order": 5115
+        "recursive_order": 5118
       },
       "notes": "Read-complete only; no implementation, verification, baseline-ready or release state is promoted."
     },
     {
-      "recursive_order": 5116,
+      "recursive_order": 5119,
       "source_path": "Telegram/SourceFiles/media/stories/media_stories_view.cpp",
       "source_blob_sha": "8fe4a5de24fd67abe0b64da0a45ec4e0fd901b30",
       "read_complete": true,
@@ -220,17 +328,17 @@
       "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-current-head-actions-attestation",
-        "accepted_upstream": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "8fe4a5de24fd67abe0b64da0a45ec4e0fd901b30",
         "byte_size": 4465,
         "file_type": "blob",
-        "recursive_order": 5116
+        "recursive_order": 5119
       },
       "notes": "Read-complete only; no implementation, verification, baseline-ready or release state is promoted."
     },
     {
-      "recursive_order": 5117,
+      "recursive_order": 5120,
       "source_path": "Telegram/SourceFiles/media/stories/media_stories_view.h",
       "source_blob_sha": "0f3e59e99503aa4924937ac715eccdbcd0966fa3",
       "read_complete": true,
@@ -256,118 +364,10 @@
       "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-current-head-actions-attestation",
-        "accepted_upstream": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "0f3e59e99503aa4924937ac715eccdbcd0966fa3",
         "byte_size": 3670,
-        "file_type": "blob",
-        "recursive_order": 5117
-      },
-      "notes": "Read-complete only; no implementation, verification, baseline-ready or release state is promoted."
-    },
-    {
-      "recursive_order": 5118,
-      "source_path": "Telegram/SourceFiles/media/streaming/media_streaming_audio_track.cpp",
-      "source_blob_sha": "36d6b68cd4d47b1665beed2634a36f196b220cbd",
-      "read_complete": true,
-      "responsibility_decomposition_complete": true,
-      "responsibility": "Streaming audio decode-to-mixer lifecycle with exact-seek first-frame handling, readiness, buffering, pause/resume/speed/volume, position and terminal/error settlement",
-      "upstream_owner": "Canonical Media streaming audio track/runtime owner",
-      "state_machine": "validated stream/options -> packet decode and first-frame exact-seek alignment -> mixer init/ready -> enqueue/buffer -> playing/paused/resumed with speed+volume -> position/waiting updates -> stop/end/error teardown",
-      "side_effects": "Consumes and extends existing canonical Story/Media playback state and platform media services only; no Telegram-specific product runtime, second Story store or parallel player truth is introduced.",
-      "failure_cases": "invalid data accepted, first-frame seek drift, mixer id mismatch, stale player update mutates track, end/error position not settled, stop not irreversible",
-      "ui_disposition": "No source-specific UI root. Streaming behavior feeds existing canonical MediaViewer/player controls and must preserve their a11y/responsive UI contracts.",
-      "fabushi_canonical_owner": "Canonical Media streaming audio track/runtime owner",
-      "fabushi_target": "OPEN: audit current shipping Canonical Media streaming audio track/runtime owner; close missing state/lifecycle/concurrency/platform/UI integration behavior and exact-head production evidence before promotion.",
-      "platform_differences": "FFmpeg/Qt mixer specifics are source implementation details; preserve decode, timing, buffering, cancellation, error and thread-ownership semantics in Fabushi canonical media runtime/platform adapters.",
-      "production_evidence": "projects/telegram-desktop-rust/dossiers/media-stories-final-streaming-core-5111-5120-complete-read.md; direct exact-source read only; implementation remains open.",
-      "test_evidence": "Current-head Source authority attestation plus focused production unit/contract/integration/E2E/performance evidence required.",
-      "disposition": "mapped-open-media-streaming-audio",
-      "unknown_closed": false,
-      "omitted": false,
-      "consumer_symbol": "Media::Streaming::AudioTrack",
-      "consumer_evidence": [
-        "Complete direct exact-source read of Telegram/SourceFiles/media/streaming/media_streaming_audio_track.cpp; mapped to Canonical Media streaming audio track/runtime owner."
-      ],
-      "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
-      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
-      "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-current-head-actions-attestation",
-        "accepted_upstream": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
-        "verified_blob_sha": "36d6b68cd4d47b1665beed2634a36f196b220cbd",
-        "byte_size": 6191,
-        "file_type": "blob",
-        "recursive_order": 5118
-      },
-      "notes": "Read-complete only; no implementation, verification, baseline-ready or release state is promoted."
-    },
-    {
-      "recursive_order": 5119,
-      "source_path": "Telegram/SourceFiles/media/streaming/media_streaming_audio_track.h",
-      "source_blob_sha": "1863f3d9f85a06154ddabd9d809edd7db8b6d190",
-      "read_complete": true,
-      "responsibility_decomposition_complete": true,
-      "responsibility": "Streaming audio cross-thread ownership, callback/readiness and main-thread control contract",
-      "upstream_owner": "Canonical Media streaming audio track/runtime owner",
-      "state_machine": "decode-thread immutable stream + thread-safe callbacks -> ready boundary -> main-thread playback controls/subscription -> destructor stop",
-      "side_effects": "Consumes and extends existing canonical Story/Media playback state and platform media services only; no Telegram-specific product runtime, second Story store or parallel player truth is introduced.",
-      "failure_cases": "control before ready, cross-thread mutable race, callback lifetime leak, destructor leaves mixer source",
-      "ui_disposition": "No source-specific UI root. Streaming behavior feeds existing canonical MediaViewer/player controls and must preserve their a11y/responsive UI contracts.",
-      "fabushi_canonical_owner": "Canonical Media streaming audio track/runtime owner",
-      "fabushi_target": "OPEN: audit current shipping Canonical Media streaming audio track/runtime owner; close missing state/lifecycle/concurrency/platform/UI integration behavior and exact-head production evidence before promotion.",
-      "platform_differences": "FFmpeg/Qt mixer specifics are source implementation details; preserve decode, timing, buffering, cancellation, error and thread-ownership semantics in Fabushi canonical media runtime/platform adapters.",
-      "production_evidence": "projects/telegram-desktop-rust/dossiers/media-stories-final-streaming-core-5111-5120-complete-read.md; direct exact-source read only; implementation remains open.",
-      "test_evidence": "Current-head Source authority attestation plus focused production unit/contract/integration/E2E/performance evidence required.",
-      "disposition": "mapped-open-media-streaming-audio",
-      "unknown_closed": false,
-      "omitted": false,
-      "consumer_symbol": "Media::Streaming::AudioTrack",
-      "consumer_evidence": [
-        "Complete direct exact-source read of Telegram/SourceFiles/media/streaming/media_streaming_audio_track.h; mapped to Canonical Media streaming audio track/runtime owner."
-      ],
-      "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
-      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
-      "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-current-head-actions-attestation",
-        "accepted_upstream": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
-        "verified_blob_sha": "1863f3d9f85a06154ddabd9d809edd7db8b6d190",
-        "byte_size": 2684,
-        "file_type": "blob",
-        "recursive_order": 5119
-      },
-      "notes": "Read-complete only; no implementation, verification, baseline-ready or release state is promoted."
-    },
-    {
-      "recursive_order": 5120,
-      "source_path": "Telegram/SourceFiles/media/streaming/media_streaming_common.h",
-      "source_blob_sha": "1495fa982a1c8d61078ffcbacee52be8181aded9",
-      "read_complete": true,
-      "responsibility_decomposition_complete": true,
-      "responsibility": "Canonical streaming playback options, track/update/error/frame request/format contracts and resource bounds",
-      "upstream_owner": "Canonical Media streaming model/protocol owner",
-      "state_machine": "PlaybackOptions -> audio/video/inspection pipeline -> typed Information/Preloaded/Playback/Waiting/Speed/Muted/Finished/Error updates -> FrameRequest/FrameWithInfo projection",
-      "side_effects": "Consumes and extends existing canonical Story/Media playback state and platform media services only; no Telegram-specific product runtime, second Story store or parallel player truth is introduced.",
-      "failure_cases": "unsupported duration/speed/volume admitted, unbounded frame area, unknown time confused with zero, native/YUV/ARGB frame contract mismatch, stale update variant misclassified",
-      "ui_disposition": "No source-specific UI root. Streaming behavior feeds existing canonical MediaViewer/player controls and must preserve their a11y/responsive UI contracts.",
-      "fabushi_canonical_owner": "Canonical Media streaming model/protocol owner",
-      "fabushi_target": "OPEN: audit current shipping Canonical Media streaming model/protocol owner; close missing state/lifecycle/concurrency/platform/UI integration behavior and exact-head production evidence before promotion.",
-      "platform_differences": "FFmpeg/Qt mixer specifics are source implementation details; preserve decode, timing, buffering, cancellation, error and thread-ownership semantics in Fabushi canonical media runtime/platform adapters.",
-      "production_evidence": "projects/telegram-desktop-rust/dossiers/media-stories-final-streaming-core-5111-5120-complete-read.md; direct exact-source read only; implementation remains open.",
-      "test_evidence": "Current-head Source authority attestation plus focused production unit/contract/integration/E2E/performance evidence required.",
-      "disposition": "mapped-open-media-streaming-contracts",
-      "unknown_closed": false,
-      "omitted": false,
-      "consumer_symbol": "Media::Streaming common contracts",
-      "consumer_evidence": [
-        "Complete direct exact-source read of Telegram/SourceFiles/media/streaming/media_streaming_common.h; mapped to Canonical Media streaming model/protocol owner."
-      ],
-      "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
-      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
-      "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-current-head-actions-attestation",
-        "accepted_upstream": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
-        "verified_blob_sha": "1495fa982a1c8d61078ffcbacee52be8181aded9",
-        "byte_size": 4385,
         "file_type": "blob",
         "recursive_order": 5120
       },

@@ -4,8 +4,8 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
-    "tree": "6ac9bbc1b44edcb119b1a724e7b0a321c3b7b8fa"
+    "commit": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+    "tree": "5030985204963cbbd362ced7412d231b04ebd0cc"
   },
   "range": {
     "first_order": 5178,
@@ -15,6 +15,114 @@
   "rows": [
     {
       "recursive_order": 5178,
+      "source_path": "Telegram/SourceFiles/media/view/media_view_playback_controls.h",
+      "source_blob_sha": "1c06dfb6b62c643829c9ef0099e75fe2d15228fe",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Typed playback delegate/state contract spanning play/pause/seek/volume/speed/quality/fullscreen/PiP and loading/timestamp presentation",
+      "upstream_owner": "Media::View::PlaybackControls",
+      "state_machine": "media track/loading state -> project play/pause/time/buffered/volume/speed/quality/fullscreen/PiP controls -> drag/seek transition -> settle authoritative player state",
+      "side_effects": "Updates user-visible playback, loading and media preference state; must preserve input ownership and accessibility.",
+      "failure_cases": "seek state races; controls steal gallery input; loading/buffered progress lies; volume/speed/quality not durable; fullscreen/PiP state diverges",
+      "ui_disposition": "Reuse the one canonical Fabushi MediaViewer and canonical controls. Chromium/Electron owns native media decode/compositor/PiP primitives; no Telegram-specific PiP/player/renderer component is introduced.",
+      "fabushi_canonical_owner": "canonical MediaViewer playback state/control contract",
+      "fabushi_target": "MAPPED OPEN. Canonical MediaViewer now exposes native play/pause/seek/volume/fullscreen/PiP controls and persists volume/mute plus hashed resumable position. Explicit speed/quality/timestamp policy, buffered/loading projection contracts and packaged cross-platform evidence remain open.",
+      "platform_differences": "Qt/OpenGL/QRhi/raster rendering and native window mechanics are platform details. Preserve product state/lifecycle/input/security/accessibility semantics through Electron/Chromium and existing Fabushi owners.",
+      "production_evidence": "projects/telegram-desktop-rust/dossiers/media-view-pip-playback-5165-5177-complete-read.md; frontend/src/recovered/features/conversation/workspace/media-viewer.tsx contains partial playback implementation only. Production follow-up: frontend/src/recovered/features/conversation/workspace/media-viewer.tsx persists source-neutral volume/mute preferences and hashed per-source resumable playback position with replacement/unmount/pause/ended lifecycle fencing.",
+      "test_evidence": "CONTRACT-TDRP-MEDIAVIEW-NATIVE-PLAYBACK-001 covers the current partial playback/input lifecycle; exact-head and later PiP/persistence/progress/packaged evidence remains required. CONTRACT-TDRP-MEDIAVIEW-PLAYBACK-PERSISTENCE-001 binds hashed-key, restoration, throttled timeupdate, close/replacement and fail-soft storage semantics.",
+      "disposition": "mapped-open-media-view-pip-playback",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "Media::View::PlaybackControls",
+      "consumer_evidence": [
+        "Complete direct exact-source read of Telegram/SourceFiles/media/view/media_view_playback_controls.h at accepted blob 1c06dfb6; mapped to canonical MediaViewer playback state/control contract."
+      ],
+      "reachability_status": "accepted-tree-source-owner-proven; partial product implementation exists; complete responsibility verification remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior is reimplemented/platform-substituted rather than source-copied.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "verified_blob_sha": "1c06dfb6b62c643829c9ef0099e75fe2d15228fe",
+        "byte_size": 4778,
+        "file_type": "blob",
+        "recursive_order": 5178
+      },
+      "notes": "Read-complete. No unknown, verification, baseline-ready or release credit is granted by source reading alone. Current production slice also implements volume/mute persistence and resumable playback position; the broader mapped responsibility remains open."
+    },
+    {
+      "recursive_order": 5179,
+      "source_path": "Telegram/SourceFiles/media/view/media_view_playback_progress.cpp",
+      "source_blob_sha": "e3f55f4e2ff83d0f1b956247d596ae95af2d6068",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Playback and buffered/available progress state machine with loading transitions and bounded animation",
+      "upstream_owner": "Media::View::PlaybackProgress",
+      "state_machine": "media track/loading state -> project play/pause/time/buffered/volume/speed/quality/fullscreen/PiP controls -> drag/seek transition -> settle authoritative player state",
+      "side_effects": "Updates user-visible playback, loading and media preference state; must preserve input ownership and accessibility.",
+      "failure_cases": "seek state races; controls steal gallery input; loading/buffered progress lies; volume/speed/quality not durable; fullscreen/PiP state diverges",
+      "ui_disposition": "Reuse the one canonical Fabushi MediaViewer and canonical controls. Chromium/Electron owns native media decode/compositor/PiP primitives; no Telegram-specific PiP/player/renderer component is introduced.",
+      "fabushi_canonical_owner": "Chromium media buffered/currentTime state plus canonical loading/progress presentation",
+      "fabushi_target": "MAPPED OPEN. Native Chromium playback controls and source-replacement/unmount/input fencing are implemented in the canonical MediaViewer. Explicit persisted media preferences, deterministic PiP geometry/ownership, speed/quality policy, buffered/loading projection and packaged PiP/system-media evidence remain open.",
+      "platform_differences": "Qt/OpenGL/QRhi/raster rendering and native window mechanics are platform details. Preserve product state/lifecycle/input/security/accessibility semantics through Electron/Chromium and existing Fabushi owners.",
+      "production_evidence": "projects/telegram-desktop-rust/dossiers/media-view-pip-playback-5165-5177-complete-read.md; frontend/src/recovered/features/conversation/workspace/media-viewer.tsx contains partial playback implementation only.",
+      "test_evidence": "CONTRACT-TDRP-MEDIAVIEW-NATIVE-PLAYBACK-001 covers the current partial playback/input lifecycle; exact-head and later PiP/persistence/progress/packaged evidence remains required.",
+      "disposition": "mapped-open-media-view-pip-playback",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "Media::View::PlaybackProgress",
+      "consumer_evidence": [
+        "Complete direct exact-source read of Telegram/SourceFiles/media/view/media_view_playback_progress.cpp at accepted blob e3f55f4e; mapped to Chromium media buffered/currentTime state plus canonical loading/progress presentation."
+      ],
+      "reachability_status": "accepted-tree-source-owner-proven; partial product implementation exists; complete responsibility verification remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior is reimplemented/platform-substituted rather than source-copied.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "verified_blob_sha": "e3f55f4e2ff83d0f1b956247d596ae95af2d6068",
+        "byte_size": 4536,
+        "file_type": "blob",
+        "recursive_order": 5179
+      },
+      "notes": "Read-complete. No unknown, verification, baseline-ready or release credit is granted by source reading alone."
+    },
+    {
+      "recursive_order": 5180,
+      "source_path": "Telegram/SourceFiles/media/view/media_view_playback_progress.h",
+      "source_blob_sha": "d68097c96d76e63f73b9e636d6275d6c2c501ad2",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Playback progress value/available/loading contract and animation ownership",
+      "upstream_owner": "Media::View::PlaybackProgress",
+      "state_machine": "media track/loading state -> project play/pause/time/buffered/volume/speed/quality/fullscreen/PiP controls -> drag/seek transition -> settle authoritative player state",
+      "side_effects": "Updates user-visible playback, loading and media preference state; must preserve input ownership and accessibility.",
+      "failure_cases": "seek state races; controls steal gallery input; loading/buffered progress lies; volume/speed/quality not durable; fullscreen/PiP state diverges",
+      "ui_disposition": "Reuse the one canonical Fabushi MediaViewer and canonical controls. Chromium/Electron owns native media decode/compositor/PiP primitives; no Telegram-specific PiP/player/renderer component is introduced.",
+      "fabushi_canonical_owner": "Chromium media buffered/currentTime state plus canonical loading/progress presentation",
+      "fabushi_target": "MAPPED OPEN. Native Chromium playback controls and source-replacement/unmount/input fencing are implemented in the canonical MediaViewer. Explicit persisted media preferences, deterministic PiP geometry/ownership, speed/quality policy, buffered/loading projection and packaged PiP/system-media evidence remain open.",
+      "platform_differences": "Qt/OpenGL/QRhi/raster rendering and native window mechanics are platform details. Preserve product state/lifecycle/input/security/accessibility semantics through Electron/Chromium and existing Fabushi owners.",
+      "production_evidence": "projects/telegram-desktop-rust/dossiers/media-view-pip-playback-5165-5177-complete-read.md; frontend/src/recovered/features/conversation/workspace/media-viewer.tsx contains partial playback implementation only.",
+      "test_evidence": "CONTRACT-TDRP-MEDIAVIEW-NATIVE-PLAYBACK-001 covers the current partial playback/input lifecycle; exact-head and later PiP/persistence/progress/packaged evidence remains required.",
+      "disposition": "mapped-open-media-view-pip-playback",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "Media::View::PlaybackProgress",
+      "consumer_evidence": [
+        "Complete direct exact-source read of Telegram/SourceFiles/media/view/media_view_playback_progress.h at accepted blob d68097c9; mapped to Chromium media buffered/currentTime state plus canonical loading/progress presentation."
+      ],
+      "reachability_status": "accepted-tree-source-owner-proven; partial product implementation exists; complete responsibility verification remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior is reimplemented/platform-substituted rather than source-copied.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "verified_blob_sha": "d68097c96d76e63f73b9e636d6275d6c2c501ad2",
+        "byte_size": 1623,
+        "file_type": "blob",
+        "recursive_order": 5180
+      },
+      "notes": "Read-complete. No unknown, verification, baseline-ready or release credit is granted by source reading alone."
+    },
+    {
+      "recursive_order": 5181,
       "source_path": "Telegram/SourceFiles/media/view/media_view_playback_sponsored.cpp",
       "source_blob_sha": "2ab75fe28143baaa92424b62311c0e727afddb6d",
       "read_complete": true,
@@ -40,17 +148,17 @@
       "reachability_status": "accepted-tree source owner proven; product responsibility remains mapped-open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; source is analyzed for responsibility and not mechanically copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-new-head-actions-attestation",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "2ab75fe28143baaa92424b62311c0e727afddb6d",
         "byte_size": 19882,
         "file_type": "blob",
-        "recursive_order": 5178
+        "recursive_order": 5181
       },
       "notes": "Read-complete only. Unknown remains open and omitted remains false."
     },
     {
-      "recursive_order": 5179,
+      "recursive_order": 5182,
       "source_path": "Telegram/SourceFiles/media/view/media_view_playback_sponsored.h",
       "source_blob_sha": "84fe4b9c429709a92e3bc60f5c689c2747fe5e69",
       "read_complete": true,
@@ -76,17 +184,17 @@
       "reachability_status": "accepted-tree source owner proven; product responsibility remains mapped-open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; source is analyzed for responsibility and not mechanically copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-new-head-actions-attestation",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "84fe4b9c429709a92e3bc60f5c689c2747fe5e69",
         "byte_size": 1833,
         "file_type": "blob",
-        "recursive_order": 5179
+        "recursive_order": 5182
       },
       "notes": "Read-complete only. Unknown remains open and omitted remains false."
     },
     {
-      "recursive_order": 5180,
+      "recursive_order": 5183,
       "source_path": "Telegram/SourceFiles/media/view/media_view_recognition_selection.cpp",
       "source_blob_sha": "c182d3ca390a8ad4fc6e5d2403fb0daea4f3f6a7",
       "read_complete": true,
@@ -112,118 +220,10 @@
       "reachability_status": "accepted-tree source owner proven; product responsibility remains mapped-open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; source is analyzed for responsibility and not mechanically copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-new-head-actions-attestation",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "c182d3ca390a8ad4fc6e5d2403fb0daea4f3f6a7",
         "byte_size": 9904,
-        "file_type": "blob",
-        "recursive_order": 5180
-      },
-      "notes": "Read-complete only. Unknown remains open and omitted remains false."
-    },
-    {
-      "recursive_order": 5181,
-      "source_path": "Telegram/SourceFiles/media/view/media_view_recognition_selection.h",
-      "source_blob_sha": "c3627e4435f7b9a2a536dd78af1fd42c4353d59b",
-      "read_complete": true,
-      "responsibility_decomposition_complete": true,
-      "responsibility": "Typed OCR selection anchor/focus/span/result contract",
-      "upstream_owner": "Media::View::RecognitionSelection",
-      "state_machine": "recognition result -> hit-test position -> anchor/focus drag -> spans -> copy/clear -> source replacement",
-      "side_effects": "Exposes selectable/copyable recognized text over media and must fence selection to the current recognition result.",
-      "failure_cases": "selection spans wrong OCR item/character; stale selection crosses image/result replacement; copied text order incorrect",
-      "ui_disposition": "Reuse canonical source-neutral Fabushi surfaces and platform services. Do not create Telegram-named Sponsored/Recognition/VideoStream UI or a parallel media runtime.",
-      "fabushi_canonical_owner": "Canonical MediaViewer plus platform text-recognition service/selection overlay; mapped-open.",
-      "fabushi_target": "MAPPED OPEN. Direct source read/decomposition complete; no full shipping implementation/verification claim is made for this responsibility.",
-      "platform_differences": "Telegram-specific rendering/widget mechanics are not copied; preserve applicable product/state semantics through canonical Fabushi owners.",
-      "production_evidence": "projects/telegram-desktop-rust/dossiers/media-view-sponsored-recognition-stream-5178-5183-complete-read.md; no closure evidence yet.",
-      "test_evidence": "Future focused/unit/integration/E2E/packaged evidence required before unknown closure.",
-      "disposition": "mapped-open-media-view-followup",
-      "unknown_closed": false,
-      "omitted": false,
-      "consumer_symbol": "Media::View::RecognitionSelection",
-      "consumer_evidence": [
-        "Complete direct exact-source read of Telegram/SourceFiles/media/view/media_view_recognition_selection.h at accepted blob c3627e44."
-      ],
-      "reachability_status": "accepted-tree source owner proven; product responsibility remains mapped-open",
-      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; source is analyzed for responsibility and not mechanically copied.",
-      "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-new-head-actions-attestation",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
-        "verified_blob_sha": "c3627e4435f7b9a2a536dd78af1fd42c4353d59b",
-        "byte_size": 1901,
-        "file_type": "blob",
-        "recursive_order": 5181
-      },
-      "notes": "Read-complete only. Unknown remains open and omitted remains false."
-    },
-    {
-      "recursive_order": 5182,
-      "source_path": "Telegram/SourceFiles/media/view/media_view_video_stream.cpp",
-      "source_blob_sha": "e22ec2f8fc0e0358b6db8a381702211c4f6da4b1",
-      "read_complete": true,
-      "responsibility_decomposition_complete": true,
-      "responsibility": "Live/group video stream adapter: group-call lifetime, permission/failure close, video viewport/messages/loading, borrowed rendering, active-frame state, comments and volume",
-      "upstream_owner": "Media::View::VideoStream",
-      "state_machine": "live stream construct/register -> active-frame/loading/messages -> borrowed/platform render -> geometry/comment/volume updates -> call finish/failure close -> teardown",
-      "side_effects": "Coordinates call-owned live video, messages/comments, volume and close lifecycle inside media view.",
-      "failure_cases": "live stream outlives call/viewer; duplicate renderer owner; missing permissions/failure close; stale geometry/comments/volume",
-      "ui_disposition": "Reuse canonical source-neutral Fabushi surfaces and platform services. Do not create Telegram-named Sponsored/Recognition/VideoStream UI or a parallel media runtime.",
-      "fabushi_canonical_owner": "Existing Fabushi call/live-media/platform owners must absorb applicable stream/session/volume/lifecycle behavior; borrowed Qt renderer mechanics are platform-replaced.",
-      "fabushi_target": "MAPPED OPEN. Direct source read/decomposition complete; no full shipping implementation/verification claim is made for this responsibility.",
-      "platform_differences": "Qt borrowed OpenGL/raster rendering is a platform mechanism replaced by Electron/Chromium/native call rendering; session/lifetime/volume/comment behavior still requires equivalent product composition.",
-      "production_evidence": "projects/telegram-desktop-rust/dossiers/media-view-sponsored-recognition-stream-5178-5183-complete-read.md; no closure evidence yet.",
-      "test_evidence": "Future focused/unit/integration/E2E/packaged evidence required before unknown closure.",
-      "disposition": "mapped-open-media-view-followup",
-      "unknown_closed": false,
-      "omitted": false,
-      "consumer_symbol": "Media::View::VideoStream",
-      "consumer_evidence": [
-        "Complete direct exact-source read of Telegram/SourceFiles/media/view/media_view_video_stream.cpp at accepted blob e22ec2f8."
-      ],
-      "reachability_status": "accepted-tree source owner proven; product responsibility remains mapped-open",
-      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; source is analyzed for responsibility and not mechanically copied.",
-      "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-new-head-actions-attestation",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
-        "verified_blob_sha": "e22ec2f8fc0e0358b6db8a381702211c4f6da4b1",
-        "byte_size": 10777,
-        "file_type": "blob",
-        "recursive_order": 5182
-      },
-      "notes": "Read-complete only. Unknown remains open and omitted remains false."
-    },
-    {
-      "recursive_order": 5183,
-      "source_path": "Telegram/SourceFiles/media/view/media_view_video_stream.h",
-      "source_blob_sha": "0685e7ac8d381f61309682aae915f3df2dd2a81f",
-      "read_complete": true,
-      "responsibility_decomposition_complete": true,
-      "responsibility": "Typed live video stream close/geometry/comment/volume/lifetime contract",
-      "upstream_owner": "Media::View::VideoStream",
-      "state_machine": "live stream construct/register -> active-frame/loading/messages -> borrowed/platform render -> geometry/comment/volume updates -> call finish/failure close -> teardown",
-      "side_effects": "Coordinates call-owned live video, messages/comments, volume and close lifecycle inside media view.",
-      "failure_cases": "live stream outlives call/viewer; duplicate renderer owner; missing permissions/failure close; stale geometry/comments/volume",
-      "ui_disposition": "Reuse canonical source-neutral Fabushi surfaces and platform services. Do not create Telegram-named Sponsored/Recognition/VideoStream UI or a parallel media runtime.",
-      "fabushi_canonical_owner": "Existing source-neutral live-media/call owners; mapped-open until concrete shipping composition and evidence are found.",
-      "fabushi_target": "MAPPED OPEN. Direct source read/decomposition complete; no full shipping implementation/verification claim is made for this responsibility.",
-      "platform_differences": "Qt borrowed OpenGL/raster rendering is a platform mechanism replaced by Electron/Chromium/native call rendering; session/lifetime/volume/comment behavior still requires equivalent product composition.",
-      "production_evidence": "projects/telegram-desktop-rust/dossiers/media-view-sponsored-recognition-stream-5178-5183-complete-read.md; no closure evidence yet.",
-      "test_evidence": "Future focused/unit/integration/E2E/packaged evidence required before unknown closure.",
-      "disposition": "mapped-open-media-view-followup",
-      "unknown_closed": false,
-      "omitted": false,
-      "consumer_symbol": "Media::View::VideoStream",
-      "consumer_evidence": [
-        "Complete direct exact-source read of Telegram/SourceFiles/media/view/media_view_video_stream.h at accepted blob 0685e7ac."
-      ],
-      "reachability_status": "accepted-tree source owner proven; product responsibility remains mapped-open",
-      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; source is analyzed for responsibility and not mechanically copied.",
-      "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-new-head-actions-attestation",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
-        "verified_blob_sha": "0685e7ac8d381f61309682aae915f3df2dd2a81f",
-        "byte_size": 2528,
         "file_type": "blob",
         "recursive_order": 5183
       },

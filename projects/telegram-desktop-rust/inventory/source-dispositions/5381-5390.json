@@ -4,8 +4,8 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
-    "tree": "6ac9bbc1b44edcb119b1a724e7b0a321c3b7b8fa"
+    "commit": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+    "tree": "5030985204963cbbd362ced7412d231b04ebd0cc"
   },
   "range": {
     "first_order": 5381,
@@ -15,6 +15,111 @@
   "rows": [
     {
       "recursive_order": 5381,
+      "source_path": "Telegram/SourceFiles/payments/ui/payments_panel.h",
+      "source_blob_sha": "db6f345c6fb03f5978c524c29f4628c74df7d141",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "typed checkout panel lifecycle contract",
+      "upstream_owner": "Telegram payment UI",
+      "state_machine": "canonical invoice/payment state -> bounded input/projection -> command/provider boundary -> success/error -> canonical payment/reaction state",
+      "side_effects": "Applicable behavior maps to canonical payment surface; source-specific runtime/UI is not copied.",
+      "failure_cases": "missing/invalid checkout data accepted; malformed provider result; stale payment/reaction projection; duplicate checkout state owner",
+      "ui_disposition": "Reuse canonical Button/IconButton/TextField/Checkbox/Radio/Dialog/Status/LoadingState/ErrorState/Toast and semantic tokens; no Telegram payment/reaction root.",
+      "fabushi_canonical_owner": "canonical payment surface",
+      "fabushi_target": "MAPPED OPEN. Extend existing source-neutral owners only.",
+      "platform_differences": "Stripe/Telegram wire/presentation remains source-specific; portable validation/lifecycle maps to canonical owners.",
+      "production_evidence": "Current exact Fabushi owner audit exists; responsibility-level exact-head implementation/evidence remains open.",
+      "test_evidence": "Applicable exact-head tests required before unknown closure.",
+      "disposition": "mapped-open-canonical-payment-checkout-replacement",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "Payments::Ui::Panel contract",
+      "consumer_evidence": [
+        "Complete direct exact-source read of Telegram/SourceFiles/payments/ui/payments_panel.h at accepted blob db6f345c6fb03f5978c524c29f4628c74df7d141."
+      ],
+      "reachability_status": "accepted-tree source owner/input proven; canonical applicability/implementation closure remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior rewritten into source-neutral Fabushi owners; no Telegram runtime/UI root retained.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "verified_blob_sha": "db6f345c6fb03f5978c524c29f4628c74df7d141",
+        "file_type": "blob",
+        "recursive_order": 5381
+      },
+      "notes": "Read-complete. unknown remains open; omitted=false."
+    },
+    {
+      "recursive_order": 5382,
+      "source_path": "Telegram/SourceFiles/payments/ui/payments_panel_data.h",
+      "source_blob_sha": "1021e7b56daeb362417b38e0c346d6ff8cf930fe",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "checkout UI data/value contracts",
+      "upstream_owner": "Telegram payment UI",
+      "state_machine": "canonical invoice/payment state -> bounded input/projection -> command/provider boundary -> success/error -> canonical payment/reaction state",
+      "side_effects": "Applicable behavior maps to native payment + canonical renderer projection; source-specific runtime/UI is not copied.",
+      "failure_cases": "missing/invalid checkout data accepted; malformed provider result; stale payment/reaction projection; duplicate checkout state owner",
+      "ui_disposition": "Reuse canonical Button/IconButton/TextField/Checkbox/Radio/Dialog/Status/LoadingState/ErrorState/Toast and semantic tokens; no Telegram payment/reaction root.",
+      "fabushi_canonical_owner": "native payment + canonical renderer projection",
+      "fabushi_target": "MAPPED OPEN. Extend existing source-neutral owners only.",
+      "platform_differences": "Stripe/Telegram wire/presentation remains source-specific; portable validation/lifecycle maps to canonical owners.",
+      "production_evidence": "Current exact Fabushi owner audit exists; responsibility-level exact-head implementation/evidence remains open.",
+      "test_evidence": "Applicable exact-head tests required before unknown closure.",
+      "disposition": "mapped-open-canonical-payment-checkout-replacement",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "Payments panel data contracts",
+      "consumer_evidence": [
+        "Complete direct exact-source read of Telegram/SourceFiles/payments/ui/payments_panel_data.h at accepted blob 1021e7b56daeb362417b38e0c346d6ff8cf930fe."
+      ],
+      "reachability_status": "accepted-tree source owner/input proven; canonical applicability/implementation closure remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior rewritten into source-neutral Fabushi owners; no Telegram runtime/UI root retained.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "verified_blob_sha": "1021e7b56daeb362417b38e0c346d6ff8cf930fe",
+        "file_type": "blob",
+        "recursive_order": 5382
+      },
+      "notes": "Read-complete. unknown remains open; omitted=false."
+    },
+    {
+      "recursive_order": 5383,
+      "source_path": "Telegram/SourceFiles/payments/ui/payments_panel_delegate.h",
+      "source_blob_sha": "fd73fd1441682bd829c606951992452d67107264",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "typed checkout command/delegate boundary",
+      "upstream_owner": "Telegram payment UI",
+      "state_machine": "canonical invoice/payment state -> bounded input/projection -> command/provider boundary -> success/error -> canonical payment/reaction state",
+      "side_effects": "Applicable behavior maps to canonical payment command/event; source-specific runtime/UI is not copied.",
+      "failure_cases": "missing/invalid checkout data accepted; malformed provider result; stale payment/reaction projection; duplicate checkout state owner",
+      "ui_disposition": "Reuse canonical Button/IconButton/TextField/Checkbox/Radio/Dialog/Status/LoadingState/ErrorState/Toast and semantic tokens; no Telegram payment/reaction root.",
+      "fabushi_canonical_owner": "canonical payment command/event",
+      "fabushi_target": "MAPPED OPEN. Extend existing source-neutral owners only.",
+      "platform_differences": "Stripe/Telegram wire/presentation remains source-specific; portable validation/lifecycle maps to canonical owners.",
+      "production_evidence": "Current exact Fabushi owner audit exists; responsibility-level exact-head implementation/evidence remains open.",
+      "test_evidence": "Applicable exact-head tests required before unknown closure.",
+      "disposition": "mapped-open-canonical-payment-checkout-replacement",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "Payments::Ui::PanelDelegate",
+      "consumer_evidence": [
+        "Complete direct exact-source read of Telegram/SourceFiles/payments/ui/payments_panel_delegate.h at accepted blob fd73fd1441682bd829c606951992452d67107264."
+      ],
+      "reachability_status": "accepted-tree source owner/input proven; canonical applicability/implementation closure remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior rewritten into source-neutral Fabushi owners; no Telegram runtime/UI root retained.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "verified_blob_sha": "fd73fd1441682bd829c606951992452d67107264",
+        "file_type": "blob",
+        "recursive_order": 5383
+      },
+      "notes": "Read-complete. unknown remains open; omitted=false."
+    },
+    {
+      "recursive_order": 5384,
       "source_path": "Telegram/SourceFiles/payments/ui/payments_reaction_box.cpp",
       "source_blob_sha": "47c85912697337895114fdef25af7d582079ec97",
       "read_complete": true,
@@ -41,15 +146,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior rewritten into source-neutral Fabushi owners; no Telegram runtime/UI root retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "47c85912697337895114fdef25af7d582079ec97",
         "file_type": "blob",
-        "recursive_order": 5381
+        "recursive_order": 5384
       },
       "notes": "Read-complete. unknown remains open; omitted=false."
     },
     {
-      "recursive_order": 5382,
+      "recursive_order": 5385,
       "source_path": "Telegram/SourceFiles/payments/ui/payments_reaction_box.h",
       "source_blob_sha": "3d3416ebfd10bbb0cd33b2a578563e949440494f",
       "read_complete": true,
@@ -76,15 +181,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior rewritten into source-neutral Fabushi owners; no Telegram runtime/UI root retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "3d3416ebfd10bbb0cd33b2a578563e949440494f",
         "file_type": "blob",
-        "recursive_order": 5382
+        "recursive_order": 5385
       },
       "notes": "Read-complete. unknown remains open; omitted=false."
     },
     {
-      "recursive_order": 5383,
+      "recursive_order": 5386,
       "source_path": "Telegram/SourceFiles/platform/linux/current_geo_location_linux.cpp",
       "source_blob_sha": "fe26b13df9e2991cfcdfb1bf3fdb5c06622b516d",
       "read_complete": true,
@@ -111,15 +216,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior rewritten into source-neutral Fabushi owners; no Telegram runtime/UI root retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "fe26b13df9e2991cfcdfb1bf3fdb5c06622b516d",
         "file_type": "blob",
-        "recursive_order": 5383
+        "recursive_order": 5386
       },
       "notes": "Read-complete. unknown remains open; omitted=false."
     },
     {
-      "recursive_order": 5384,
+      "recursive_order": 5387,
       "source_path": "Telegram/SourceFiles/platform/linux/current_geo_location_linux.h",
       "source_blob_sha": "6bb8195430d9cf504d93db967807da5e11ae73eb",
       "read_complete": true,
@@ -146,15 +251,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior rewritten into source-neutral Fabushi owners; no Telegram runtime/UI root retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "6bb8195430d9cf504d93db967807da5e11ae73eb",
         "file_type": "blob",
-        "recursive_order": 5384
+        "recursive_order": 5387
       },
       "notes": "Read-complete. unknown remains open; omitted=false."
     },
     {
-      "recursive_order": 5385,
+      "recursive_order": 5388,
       "source_path": "Telegram/SourceFiles/platform/linux/file_utilities_linux.cpp",
       "source_blob_sha": "8c9dc7ae5b59748b5fdc66cbd1ef2bfd432f1b9a",
       "read_complete": true,
@@ -181,15 +286,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior rewritten into source-neutral Fabushi owners; no Telegram runtime/UI root retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "8c9dc7ae5b59748b5fdc66cbd1ef2bfd432f1b9a",
         "file_type": "blob",
-        "recursive_order": 5385
+        "recursive_order": 5388
       },
       "notes": "Read-complete. unknown remains open; omitted=false."
     },
     {
-      "recursive_order": 5386,
+      "recursive_order": 5389,
       "source_path": "Telegram/SourceFiles/platform/linux/file_utilities_linux.h",
       "source_blob_sha": "1f65cf3e6350e6e4516c92ed0f9cb5223f34d90a",
       "read_complete": true,
@@ -216,15 +321,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior rewritten into source-neutral Fabushi owners; no Telegram runtime/UI root retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "1f65cf3e6350e6e4516c92ed0f9cb5223f34d90a",
         "file_type": "blob",
-        "recursive_order": 5386
+        "recursive_order": 5389
       },
       "notes": "Read-complete. unknown remains open; omitted=false."
     },
     {
-      "recursive_order": 5387,
+      "recursive_order": 5390,
       "source_path": "Telegram/SourceFiles/platform/linux/integration_linux.cpp",
       "source_blob_sha": "2cfd1f662284cf3a70666fad923d7e74e1d6684e",
       "read_complete": true,
@@ -251,113 +356,8 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior rewritten into source-neutral Fabushi owners; no Telegram runtime/UI root retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "2cfd1f662284cf3a70666fad923d7e74e1d6684e",
-        "file_type": "blob",
-        "recursive_order": 5387
-      },
-      "notes": "Read-complete. unknown remains open; omitted=false."
-    },
-    {
-      "recursive_order": 5388,
-      "source_path": "Telegram/SourceFiles/platform/linux/integration_linux.h",
-      "source_blob_sha": "11b203214a0f6ce2dc248d575a3bbb2fb14fee98",
-      "read_complete": true,
-      "responsibility_decomposition_complete": true,
-      "responsibility": "typed platform integration factory",
-      "upstream_owner": "Telegram Linux platform adapter",
-      "state_machine": "platform event/request -> thin OS adapter -> canonical Fabushi lifecycle/state owner -> bounded success/failure projection",
-      "side_effects": "Applicable behavior maps to Electron platform adapter; source-specific runtime/UI is not copied.",
-      "failure_cases": "service/sandbox/portal failure treated as success; stale activation/notification identity; updater/security bypass; second platform state owner",
-      "ui_disposition": "Project through existing canonical UI only; no Linux product root.",
-      "fabushi_canonical_owner": "Electron platform adapter",
-      "fabushi_target": "MAPPED OPEN. Extend existing source-neutral owners only.",
-      "platform_differences": "Linux DBus/portal/system APIs remain thin adapters; canonical state stays cross-platform.",
-      "production_evidence": "Current exact Fabushi owner audit exists; responsibility-level exact-head implementation/evidence remains open.",
-      "test_evidence": "Applicable exact-head tests required before unknown closure.",
-      "disposition": "mapped-open-canonical-platform-adapter-replacement",
-      "unknown_closed": false,
-      "omitted": false,
-      "consumer_symbol": "Platform::CreateIntegration",
-      "consumer_evidence": [
-        "Complete direct exact-source read of Telegram/SourceFiles/platform/linux/integration_linux.h at accepted blob 11b203214a0f6ce2dc248d575a3bbb2fb14fee98."
-      ],
-      "reachability_status": "accepted-tree source owner/input proven; canonical applicability/implementation closure remains open",
-      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior rewritten into source-neutral Fabushi owners; no Telegram runtime/UI root retained.",
-      "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
-        "verified_blob_sha": "11b203214a0f6ce2dc248d575a3bbb2fb14fee98",
-        "file_type": "blob",
-        "recursive_order": 5388
-      },
-      "notes": "Read-complete. unknown remains open; omitted=false."
-    },
-    {
-      "recursive_order": 5389,
-      "source_path": "Telegram/SourceFiles/platform/linux/launcher_linux.cpp",
-      "source_blob_sha": "1414bad71e0417da957b9934df3787160be07f49",
-      "read_complete": true,
-      "responsibility_decomposition_complete": true,
-      "responsibility": "update/relaunch/protected-install validation and secure update-log lifecycle",
-      "upstream_owner": "Telegram Linux platform adapter",
-      "state_machine": "platform event/request -> thin OS adapter -> canonical Fabushi lifecycle/state owner -> bounded success/failure projection",
-      "side_effects": "Applicable behavior maps to source/electron-main/update + packaging; source-specific runtime/UI is not copied.",
-      "failure_cases": "service/sandbox/portal failure treated as success; stale activation/notification identity; updater/security bypass; second platform state owner",
-      "ui_disposition": "Project through existing canonical UI only; no Linux product root.",
-      "fabushi_canonical_owner": "source/electron-main/update + packaging",
-      "fabushi_target": "MAPPED OPEN. Extend existing source-neutral owners only.",
-      "platform_differences": "Linux DBus/portal/system APIs remain thin adapters; canonical state stays cross-platform.",
-      "production_evidence": "Current exact Fabushi owner audit exists; responsibility-level exact-head implementation/evidence remains open.",
-      "test_evidence": "Applicable exact-head tests required before unknown closure.",
-      "disposition": "mapped-open-canonical-platform-adapter-replacement",
-      "unknown_closed": false,
-      "omitted": false,
-      "consumer_symbol": "Platform::Launcher / launchUpdater / installProtectedUpdate",
-      "consumer_evidence": [
-        "Complete direct exact-source read of Telegram/SourceFiles/platform/linux/launcher_linux.cpp at accepted blob 1414bad71e0417da957b9934df3787160be07f49."
-      ],
-      "reachability_status": "accepted-tree source owner/input proven; canonical applicability/implementation closure remains open",
-      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior rewritten into source-neutral Fabushi owners; no Telegram runtime/UI root retained.",
-      "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
-        "verified_blob_sha": "1414bad71e0417da957b9934df3787160be07f49",
-        "file_type": "blob",
-        "recursive_order": 5389
-      },
-      "notes": "Read-complete. unknown remains open; omitted=false."
-    },
-    {
-      "recursive_order": 5390,
-      "source_path": "Telegram/SourceFiles/platform/linux/launcher_linux.h",
-      "source_blob_sha": "cc7c6b15466ed13f163bbc1512bcd6447f2c461e",
-      "read_complete": true,
-      "responsibility_decomposition_complete": true,
-      "responsibility": "typed launcher/update lifecycle boundary",
-      "upstream_owner": "Telegram Linux platform adapter",
-      "state_machine": "platform event/request -> thin OS adapter -> canonical Fabushi lifecycle/state owner -> bounded success/failure projection",
-      "side_effects": "Applicable behavior maps to source/electron-main/update + packaging; source-specific runtime/UI is not copied.",
-      "failure_cases": "service/sandbox/portal failure treated as success; stale activation/notification identity; updater/security bypass; second platform state owner",
-      "ui_disposition": "Project through existing canonical UI only; no Linux product root.",
-      "fabushi_canonical_owner": "source/electron-main/update + packaging",
-      "fabushi_target": "MAPPED OPEN. Extend existing source-neutral owners only.",
-      "platform_differences": "Linux DBus/portal/system APIs remain thin adapters; canonical state stays cross-platform.",
-      "production_evidence": "Current exact Fabushi owner audit exists; responsibility-level exact-head implementation/evidence remains open.",
-      "test_evidence": "Applicable exact-head tests required before unknown closure.",
-      "disposition": "mapped-open-canonical-platform-adapter-replacement",
-      "unknown_closed": false,
-      "omitted": false,
-      "consumer_symbol": "Platform::Launcher contract",
-      "consumer_evidence": [
-        "Complete direct exact-source read of Telegram/SourceFiles/platform/linux/launcher_linux.h at accepted blob cc7c6b15466ed13f163bbc1512bcd6447f2c461e."
-      ],
-      "reachability_status": "accepted-tree source owner/input proven; canonical applicability/implementation closure remains open",
-      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior rewritten into source-neutral Fabushi owners; no Telegram runtime/UI root retained.",
-      "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
-        "verified_blob_sha": "cc7c6b15466ed13f163bbc1512bcd6447f2c461e",
         "file_type": "blob",
         "recursive_order": 5390
       },

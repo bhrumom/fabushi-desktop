@@ -1,67 +1,67 @@
 {
-  "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+  "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
   "start": 5381,
   "end": 5390,
   "entries": [
     {
       "order": 5381,
+      "path": "Telegram/SourceFiles/payments/ui/payments_panel.h",
+      "blob": "db6f345c6fb03f5978c524c29f4628c74df7d141",
+      "consumer_symbol": "Payments::Ui::Panel contract"
+    },
+    {
+      "order": 5382,
+      "path": "Telegram/SourceFiles/payments/ui/payments_panel_data.h",
+      "blob": "1021e7b56daeb362417b38e0c346d6ff8cf930fe",
+      "consumer_symbol": "Payments panel data contracts"
+    },
+    {
+      "order": 5383,
+      "path": "Telegram/SourceFiles/payments/ui/payments_panel_delegate.h",
+      "blob": "fd73fd1441682bd829c606951992452d67107264",
+      "consumer_symbol": "Payments::Ui::PanelDelegate"
+    },
+    {
+      "order": 5384,
       "path": "Telegram/SourceFiles/payments/ui/payments_reaction_box.cpp",
       "blob": "47c85912697337895114fdef25af7d582079ec97",
       "consumer_symbol": "Payments::Ui::ReactionBox"
     },
     {
-      "order": 5382,
+      "order": 5385,
       "path": "Telegram/SourceFiles/payments/ui/payments_reaction_box.h",
       "blob": "3d3416ebfd10bbb0cd33b2a578563e949440494f",
       "consumer_symbol": "Payments::Ui::ReactionBox contract"
     },
     {
-      "order": 5383,
+      "order": 5386,
       "path": "Telegram/SourceFiles/platform/linux/current_geo_location_linux.cpp",
       "blob": "fe26b13df9e2991cfcdfb1bf3fdb5c06622b516d",
       "consumer_symbol": "Platform::ResolveCurrentExactLocation"
     },
     {
-      "order": 5384,
+      "order": 5387,
       "path": "Telegram/SourceFiles/platform/linux/current_geo_location_linux.h",
       "blob": "6bb8195430d9cf504d93db967807da5e11ae73eb",
       "consumer_symbol": "platform current geo location contract"
     },
     {
-      "order": 5385,
+      "order": 5388,
       "path": "Telegram/SourceFiles/platform/linux/file_utilities_linux.cpp",
       "blob": "8c9dc7ae5b59748b5fdc66cbd1ef2bfd432f1b9a",
       "consumer_symbol": "Platform::File::Unfused::UnsafeShowOpenWith"
     },
     {
-      "order": 5386,
+      "order": 5389,
       "path": "Telegram/SourceFiles/platform/linux/file_utilities_linux.h",
       "blob": "1f65cf3e6350e6e4516c92ed0f9cb5223f34d90a",
       "consumer_symbol": "Platform file utility contract"
     },
     {
-      "order": 5387,
+      "order": 5390,
       "path": "Telegram/SourceFiles/platform/linux/integration_linux.cpp",
       "blob": "2cfd1f662284cf3a70666fad923d7e74e1d6684e",
       "consumer_symbol": "Platform::LinuxIntegration"
-    },
-    {
-      "order": 5388,
-      "path": "Telegram/SourceFiles/platform/linux/integration_linux.h",
-      "blob": "11b203214a0f6ce2dc248d575a3bbb2fb14fee98",
-      "consumer_symbol": "Platform::CreateIntegration"
-    },
-    {
-      "order": 5389,
-      "path": "Telegram/SourceFiles/platform/linux/launcher_linux.cpp",
-      "blob": "1414bad71e0417da957b9934df3787160be07f49",
-      "consumer_symbol": "Platform::Launcher / launchUpdater / installProtectedUpdate"
-    },
-    {
-      "order": 5390,
-      "path": "Telegram/SourceFiles/platform/linux/launcher_linux.h",
-      "blob": "cc7c6b15466ed13f163bbc1512bcd6447f2c461e",
-      "consumer_symbol": "Platform::Launcher contract"
     }
   ]
 }

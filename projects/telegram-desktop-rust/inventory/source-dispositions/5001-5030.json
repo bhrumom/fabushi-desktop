@@ -1,11 +1,11 @@
 {
-  "format_version": 1,
+  "format_version": 2,
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
-    "tree": "6ac9bbc1b44edcb119b1a724e7b0a321c3b7b8fa"
+    "commit": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+    "tree": "5030985204963cbbd362ced7412d231b04ebd0cc"
   },
   "range": {
     "first_order": 5001,
@@ -15,6 +15,114 @@
   "rows": [
     {
       "recursive_order": 5001,
+      "source_path": "Telegram/SourceFiles/lang/translate_mtproto_provider.h",
+      "source_blob_sha": "9121450ecc4b620e33873fbc95902c1ae9899088",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Translation provider/service abstraction lifecycle",
+      "upstream_owner": "Canonical Translation service gateway",
+      "state_machine": "message/text + source/target language -> provider selection/batch request -> translated TextWithEntities or typed error",
+      "side_effects": "keeps provider abstraction and message-id optimization; MTProto/platform/custom URL remain replaceable adapters outside canonical product contract",
+      "failure_cases": "provider/network failure, batch cardinality mismatch, stale message text, entity conversion loss, unsupported provider",
+      "ui_disposition": "Reuse canonical Fabushi Button/IconButton/TextField/TextArea/SearchField/Checkbox/Radio/Switch/Tabs/Menu/ContextMenu/Tooltip/Popover/Dialog/AlertDialog/Avatar/Badge/Status/ListRow/ConversationRow/ParticipantRow/ResultRow/Toolbar/EmptyState/LoadingState/ErrorState/Toast/Banner/Composer/TranscriptEntry/ProfileSection/DetailPanel/Picker/CreationFlow/CommandPalette/UniversalSearch primitives as applicable; IV/Markdown/Lang source names do not become shipping public component names.",
+      "fabushi_canonical_owner": "Canonical Translation service gateway",
+      "fabushi_target": "OPEN: bind current shipping Canonical Translation service gateway and close translation provider/service abstraction lifecycle; production/service/UI/contract/integration/E2E evidence required before implementation/release promotion.",
+      "platform_differences": "Telegram Qt/C++/MTProto/MicroTeX mechanics are behavioral reference only; Fabushi preserves applicable reader/parser/resource/localization/translation lifecycle and UX semantics in source-neutral Rust/TypeScript/Electron/service owners.",
+      "production_evidence": "projects/telegram-desktop-rust/dossiers/rich-reader-localization-translation-4901-5000-complete-read.md; direct exact-source read only; implementation/verification remains open.",
+      "test_evidence": "Current-head Source authority attestation for 4901-5000 required after this commit; product/release evidence remains open.",
+      "disposition": "mapped-open-translation-service",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "translate_mtproto_provider",
+      "consumer_evidence": [
+        "Direct exact-source read completed for Telegram/SourceFiles/lang/translate_mtproto_provider.h; state/consumer/resource/service/security/failure and teardown boundaries were decomposed into Canonical Translation service gateway."
+      ],
+      "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "verified_blob_sha": "9121450ecc4b620e33873fbc95902c1ae9899088",
+        "byte_size": 492,
+        "file_type": "blob",
+        "recursive_order": 5001
+      },
+      "notes": "Read-complete records source understanding only. It does not close unknown accounting, implementation_status, coverage_matrix_status or release_gate_status."
+    },
+    {
+      "recursive_order": 5002,
+      "source_path": "Telegram/SourceFiles/lang/translate_provider.cpp",
+      "source_blob_sha": "ff6e43e1ecdf39869bb7c9d04cc2a1d1cca58ec5",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Translation provider/service abstraction lifecycle",
+      "upstream_owner": "Canonical Translation service gateway",
+      "state_machine": "message/text + source/target language -> provider selection/batch request -> translated TextWithEntities or typed error",
+      "side_effects": "keeps provider abstraction and message-id optimization; MTProto/platform/custom URL remain replaceable adapters outside canonical product contract",
+      "failure_cases": "provider/network failure, batch cardinality mismatch, stale message text, entity conversion loss, unsupported provider",
+      "ui_disposition": "Reuse canonical Fabushi Button/IconButton/TextField/TextArea/SearchField/Checkbox/Radio/Switch/Tabs/Menu/ContextMenu/Tooltip/Popover/Dialog/AlertDialog/Avatar/Badge/Status/ListRow/ConversationRow/ParticipantRow/ResultRow/Toolbar/EmptyState/LoadingState/ErrorState/Toast/Banner/Composer/TranscriptEntry/ProfileSection/DetailPanel/Picker/CreationFlow/CommandPalette/UniversalSearch primitives as applicable; IV/Markdown/Lang source names do not become shipping public component names.",
+      "fabushi_canonical_owner": "Canonical Translation service gateway",
+      "fabushi_target": "OPEN: bind current shipping Canonical Translation service gateway and close translation provider/service abstraction lifecycle; production/service/UI/contract/integration/E2E evidence required before implementation/release promotion.",
+      "platform_differences": "Telegram Qt/C++/MTProto/MicroTeX mechanics are behavioral reference only; Fabushi preserves applicable reader/parser/resource/localization/translation lifecycle and UX semantics in source-neutral Rust/TypeScript/Electron/service owners.",
+      "production_evidence": "projects/telegram-desktop-rust/dossiers/rich-reader-localization-translation-4901-5000-complete-read.md; direct exact-source read only; implementation/verification remains open.",
+      "test_evidence": "Current-head Source authority attestation for 4901-5000 required after this commit; product/release evidence remains open.",
+      "disposition": "mapped-open-translation-service",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "translate_provider",
+      "consumer_evidence": [
+        "Direct exact-source read completed for Telegram/SourceFiles/lang/translate_provider.cpp; state/consumer/resource/service/security/failure and teardown boundaries were decomposed into Canonical Translation service gateway."
+      ],
+      "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "verified_blob_sha": "ff6e43e1ecdf39869bb7c9d04cc2a1d1cca58ec5",
+        "byte_size": 1996,
+        "file_type": "blob",
+        "recursive_order": 5002
+      },
+      "notes": "Read-complete records source understanding only. It does not close unknown accounting, implementation_status, coverage_matrix_status or release_gate_status."
+    },
+    {
+      "recursive_order": 5003,
+      "source_path": "Telegram/SourceFiles/lang/translate_provider.h",
+      "source_blob_sha": "e420c260af1492248ccf95ec2fb4386ccb634f08",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Translation provider/service abstraction lifecycle",
+      "upstream_owner": "Canonical Translation service gateway",
+      "state_machine": "message/text + source/target language -> provider selection/batch request -> translated TextWithEntities or typed error",
+      "side_effects": "keeps provider abstraction and message-id optimization; MTProto/platform/custom URL remain replaceable adapters outside canonical product contract",
+      "failure_cases": "provider/network failure, batch cardinality mismatch, stale message text, entity conversion loss, unsupported provider",
+      "ui_disposition": "Reuse canonical Fabushi Button/IconButton/TextField/TextArea/SearchField/Checkbox/Radio/Switch/Tabs/Menu/ContextMenu/Tooltip/Popover/Dialog/AlertDialog/Avatar/Badge/Status/ListRow/ConversationRow/ParticipantRow/ResultRow/Toolbar/EmptyState/LoadingState/ErrorState/Toast/Banner/Composer/TranscriptEntry/ProfileSection/DetailPanel/Picker/CreationFlow/CommandPalette/UniversalSearch primitives as applicable; IV/Markdown/Lang source names do not become shipping public component names.",
+      "fabushi_canonical_owner": "Canonical Translation service gateway",
+      "fabushi_target": "OPEN: bind current shipping Canonical Translation service gateway and close translation provider/service abstraction lifecycle; production/service/UI/contract/integration/E2E evidence required before implementation/release promotion.",
+      "platform_differences": "Telegram Qt/C++/MTProto/MicroTeX mechanics are behavioral reference only; Fabushi preserves applicable reader/parser/resource/localization/translation lifecycle and UX semantics in source-neutral Rust/TypeScript/Electron/service owners.",
+      "production_evidence": "projects/telegram-desktop-rust/dossiers/rich-reader-localization-translation-4901-5000-complete-read.md; direct exact-source read only; implementation/verification remains open.",
+      "test_evidence": "Current-head Source authority attestation for 4901-5000 required after this commit; product/release evidence remains open.",
+      "disposition": "mapped-open-translation-service",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "translate_provider",
+      "consumer_evidence": [
+        "Direct exact-source read completed for Telegram/SourceFiles/lang/translate_provider.h; state/consumer/resource/service/security/failure and teardown boundaries were decomposed into Canonical Translation service gateway."
+      ],
+      "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "verified_blob_sha": "e420c260af1492248ccf95ec2fb4386ccb634f08",
+        "byte_size": 695,
+        "file_type": "blob",
+        "recursive_order": 5003
+      },
+      "notes": "Read-complete records source understanding only. It does not close unknown accounting, implementation_status, coverage_matrix_status or release_gate_status."
+    },
+    {
+      "recursive_order": 5004,
       "source_path": "Telegram/SourceFiles/lang/translate_url_provider.cpp",
       "source_blob_sha": "d9c5bb00d4d61f5d8067915ed86c348df800b64c",
       "read_complete": true,
@@ -40,17 +148,17 @@
       "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-current-head-actions-attestation",
-        "accepted_upstream": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "d9c5bb00d4d61f5d8067915ed86c348df800b64c",
         "byte_size": 6603,
         "file_type": "blob",
-        "recursive_order": 5001
+        "recursive_order": 5004
       },
       "notes": "Read-complete records source understanding only. It does not close unknown accounting, implementation_status, coverage_matrix_status or release_gate_status."
     },
     {
-      "recursive_order": 5002,
+      "recursive_order": 5005,
       "source_path": "Telegram/SourceFiles/lang/translate_url_provider.h",
       "source_blob_sha": "8bb1efbb03c6621ee9ffae1eadc13cde54b976fd",
       "read_complete": true,
@@ -76,17 +184,17 @@
       "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-current-head-actions-attestation",
-        "accepted_upstream": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "8bb1efbb03c6621ee9ffae1eadc13cde54b976fd",
         "byte_size": 422,
         "file_type": "blob",
-        "recursive_order": 5002
+        "recursive_order": 5005
       },
       "notes": "Read-complete records source understanding only. It does not close unknown accounting, implementation_status, coverage_matrix_status or release_gate_status."
     },
     {
-      "recursive_order": 5003,
+      "recursive_order": 5006,
       "source_path": "Telegram/SourceFiles/layout/abstract_layout_item.cpp",
       "source_blob_sha": "adda49fb28495d6d5ebdc96edb23ef0207df7343",
       "read_complete": true,
@@ -112,17 +220,17 @@
       "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-current-head-actions-attestation",
-        "accepted_upstream": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "adda49fb28495d6d5ebdc96edb23ef0207df7343",
         "byte_size": 1196,
         "file_type": "blob",
-        "recursive_order": 5003
+        "recursive_order": 5006
       },
       "notes": "Read-complete records source understanding only. It does not close unknown accounting, implementation_status, coverage_matrix_status or release_gate_status."
     },
     {
-      "recursive_order": 5004,
+      "recursive_order": 5007,
       "source_path": "Telegram/SourceFiles/layout/abstract_layout_item.h",
       "source_blob_sha": "99bd0b4ccdbd8ef6d2e24b8a3db05162aa754434",
       "read_complete": true,
@@ -148,17 +256,17 @@
       "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-current-head-actions-attestation",
-        "accepted_upstream": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "99bd0b4ccdbd8ef6d2e24b8a3db05162aa754434",
         "byte_size": 1369,
         "file_type": "blob",
-        "recursive_order": 5004
+        "recursive_order": 5007
       },
       "notes": "Read-complete records source understanding only. It does not close unknown accounting, implementation_status, coverage_matrix_status or release_gate_status."
     },
     {
-      "recursive_order": 5005,
+      "recursive_order": 5008,
       "source_path": "Telegram/SourceFiles/layout/layout_document_generic_preview.cpp",
       "source_blob_sha": "feb86a51b1ec6159848934f30ccd0c4847b48021",
       "read_complete": true,
@@ -184,17 +292,17 @@
       "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-current-head-actions-attestation",
-        "accepted_upstream": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "feb86a51b1ec6159848934f30ccd0c4847b48021",
         "byte_size": 3830,
         "file_type": "blob",
-        "recursive_order": 5005
+        "recursive_order": 5008
       },
       "notes": "Read-complete records source understanding only. It does not close unknown accounting, implementation_status, coverage_matrix_status or release_gate_status."
     },
     {
-      "recursive_order": 5006,
+      "recursive_order": 5009,
       "source_path": "Telegram/SourceFiles/layout/layout_document_generic_preview.h",
       "source_blob_sha": "46d5e43d308d0d1f831e9a2a0fc44d3e8859859c",
       "read_complete": true,
@@ -220,17 +328,17 @@
       "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-current-head-actions-attestation",
-        "accepted_upstream": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "46d5e43d308d0d1f831e9a2a0fc44d3e8859859c",
         "byte_size": 710,
         "file_type": "blob",
-        "recursive_order": 5006
+        "recursive_order": 5009
       },
       "notes": "Read-complete records source understanding only. It does not close unknown accounting, implementation_status, coverage_matrix_status or release_gate_status."
     },
     {
-      "recursive_order": 5007,
+      "recursive_order": 5010,
       "source_path": "Telegram/SourceFiles/layout/layout_item_base.cpp",
       "source_blob_sha": "77f2d8e47e9d75a85acb96da0ea65545a1281d04",
       "read_complete": true,
@@ -256,17 +364,17 @@
       "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-current-head-actions-attestation",
-        "accepted_upstream": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "77f2d8e47e9d75a85acb96da0ea65545a1281d04",
         "byte_size": 597,
         "file_type": "blob",
-        "recursive_order": 5007
+        "recursive_order": 5010
       },
       "notes": "Read-complete records source understanding only. It does not close unknown accounting, implementation_status, coverage_matrix_status or release_gate_status."
     },
     {
-      "recursive_order": 5008,
+      "recursive_order": 5011,
       "source_path": "Telegram/SourceFiles/layout/layout_item_base.h",
       "source_blob_sha": "0a97d67d8a172be43d58311c99e0a82cb1b66147",
       "read_complete": true,
@@ -292,17 +400,17 @@
       "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-current-head-actions-attestation",
-        "accepted_upstream": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "0a97d67d8a172be43d58311c99e0a82cb1b66147",
         "byte_size": 829,
         "file_type": "blob",
-        "recursive_order": 5008
+        "recursive_order": 5011
       },
       "notes": "Read-complete records source understanding only. It does not close unknown accounting, implementation_status, coverage_matrix_status or release_gate_status."
     },
     {
-      "recursive_order": 5009,
+      "recursive_order": 5012,
       "source_path": "Telegram/SourceFiles/layout/layout_mosaic.cpp",
       "source_blob_sha": "334aa7c55d769bcf7302efd588ee5b9ab607e675",
       "read_complete": true,
@@ -328,17 +436,17 @@
       "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-current-head-actions-attestation",
-        "accepted_upstream": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "334aa7c55d769bcf7302efd588ee5b9ab607e675",
         "byte_size": 9113,
         "file_type": "blob",
-        "recursive_order": 5009
+        "recursive_order": 5012
       },
       "notes": "Read-complete records source understanding only. It does not close unknown accounting, implementation_status, coverage_matrix_status or release_gate_status."
     },
     {
-      "recursive_order": 5010,
+      "recursive_order": 5013,
       "source_path": "Telegram/SourceFiles/layout/layout_mosaic.h",
       "source_blob_sha": "1f3d7e4df257643d4d00886a3b3c77e2552c48a6",
       "read_complete": true,
@@ -364,17 +472,17 @@
       "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-current-head-actions-attestation",
-        "accepted_upstream": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "1f3d7e4df257643d4d00886a3b3c77e2552c48a6",
         "byte_size": 4433,
         "file_type": "blob",
-        "recursive_order": 5010
+        "recursive_order": 5013
       },
       "notes": "Read-complete records source understanding only. It does not close unknown accounting, implementation_status, coverage_matrix_status or release_gate_status."
     },
     {
-      "recursive_order": 5011,
+      "recursive_order": 5014,
       "source_path": "Telegram/SourceFiles/layout/layout_position.cpp",
       "source_blob_sha": "2631e2caf18b4e75e8851fecfbbdcbf40e1f84c4",
       "read_complete": true,
@@ -400,17 +508,17 @@
       "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-current-head-actions-attestation",
-        "accepted_upstream": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "2631e2caf18b4e75e8851fecfbbdcbf40e1f84c4",
         "byte_size": 748,
         "file_type": "blob",
-        "recursive_order": 5011
+        "recursive_order": 5014
       },
       "notes": "Read-complete records source understanding only. It does not close unknown accounting, implementation_status, coverage_matrix_status or release_gate_status."
     },
     {
-      "recursive_order": 5012,
+      "recursive_order": 5015,
       "source_path": "Telegram/SourceFiles/layout/layout_position.h",
       "source_blob_sha": "c9266cf9399783bce90b31c77bd71e9d5ff75569",
       "read_complete": true,
@@ -436,17 +544,17 @@
       "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-current-head-actions-attestation",
-        "accepted_upstream": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "c9266cf9399783bce90b31c77bd71e9d5ff75569",
         "byte_size": 520,
         "file_type": "blob",
-        "recursive_order": 5012
+        "recursive_order": 5015
       },
       "notes": "Read-complete records source understanding only. It does not close unknown accounting, implementation_status, coverage_matrix_status or release_gate_status."
     },
     {
-      "recursive_order": 5013,
+      "recursive_order": 5016,
       "source_path": "Telegram/SourceFiles/layout/layout_selection.cpp",
       "source_blob_sha": "52d0b3f099e57ccbf15c3d099700b2d43a2eac99",
       "read_complete": true,
@@ -472,17 +580,17 @@
       "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-current-head-actions-attestation",
-        "accepted_upstream": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "52d0b3f099e57ccbf15c3d099700b2d43a2eac99",
         "byte_size": 1388,
         "file_type": "blob",
-        "recursive_order": 5013
+        "recursive_order": 5016
       },
       "notes": "Read-complete records source understanding only. It does not close unknown accounting, implementation_status, coverage_matrix_status or release_gate_status."
     },
     {
-      "recursive_order": 5014,
+      "recursive_order": 5017,
       "source_path": "Telegram/SourceFiles/layout/layout_selection.h",
       "source_blob_sha": "3a7be49fcaa2209eb166ab8c67e966fce2148a26",
       "read_complete": true,
@@ -508,17 +616,17 @@
       "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-current-head-actions-attestation",
-        "accepted_upstream": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "3a7be49fcaa2209eb166ab8c67e966fce2148a26",
         "byte_size": 796,
         "file_type": "blob",
-        "recursive_order": 5014
+        "recursive_order": 5017
       },
       "notes": "Read-complete records source understanding only. It does not close unknown accounting, implementation_status, coverage_matrix_status or release_gate_status."
     },
     {
-      "recursive_order": 5015,
+      "recursive_order": 5018,
       "source_path": "Telegram/SourceFiles/logs.cpp",
       "source_blob_sha": "0ec028f00b8dc2ecc4680d9ba1ffde830408dfe3",
       "read_complete": true,
@@ -544,17 +652,17 @@
       "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-current-head-actions-attestation",
-        "accepted_upstream": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "0ec028f00b8dc2ecc4680d9ba1ffde830408dfe3",
         "byte_size": 17182,
         "file_type": "blob",
-        "recursive_order": 5015
+        "recursive_order": 5018
       },
       "notes": "Read-complete records source understanding only. It does not close unknown accounting, implementation_status, coverage_matrix_status or release_gate_status."
     },
     {
-      "recursive_order": 5016,
+      "recursive_order": 5019,
       "source_path": "Telegram/SourceFiles/logs.h",
       "source_blob_sha": "460bb0502f859308a81852e72df8c4735097f688",
       "read_complete": true,
@@ -580,17 +688,17 @@
       "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-current-head-actions-attestation",
-        "accepted_upstream": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "460bb0502f859308a81852e72df8c4735097f688",
         "byte_size": 1474,
         "file_type": "blob",
-        "recursive_order": 5016
+        "recursive_order": 5019
       },
       "notes": "Read-complete records source understanding only. It does not close unknown accounting, implementation_status, coverage_matrix_status or release_gate_status."
     },
     {
-      "recursive_order": 5017,
+      "recursive_order": 5020,
       "source_path": "Telegram/SourceFiles/main.cpp",
       "source_blob_sha": "0b0156c535505224e76e9a8474a8a4d5c6b887a7",
       "read_complete": true,
@@ -616,17 +724,17 @@
       "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-current-head-actions-attestation",
-        "accepted_upstream": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "0b0156c535505224e76e9a8474a8a4d5c6b887a7",
         "byte_size": 892,
         "file_type": "blob",
-        "recursive_order": 5017
+        "recursive_order": 5020
       },
       "notes": "Read-complete records source understanding only. It does not close unknown accounting, implementation_status, coverage_matrix_status or release_gate_status."
     },
     {
-      "recursive_order": 5018,
+      "recursive_order": 5021,
       "source_path": "Telegram/SourceFiles/main/main_account.cpp",
       "source_blob_sha": "2721c7ac12effe454d398610d26d638fadaa1f68",
       "read_complete": true,
@@ -652,17 +760,17 @@
       "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-current-head-actions-attestation",
-        "accepted_upstream": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "2721c7ac12effe454d398610d26d638fadaa1f68",
         "byte_size": 17082,
         "file_type": "blob",
-        "recursive_order": 5018
+        "recursive_order": 5021
       },
       "notes": "Read-complete records source understanding only. It does not close unknown accounting, implementation_status, coverage_matrix_status or release_gate_status."
     },
     {
-      "recursive_order": 5019,
+      "recursive_order": 5022,
       "source_path": "Telegram/SourceFiles/main/main_account.h",
       "source_blob_sha": "eb05f1b40489aea6278eb8225006023af6c73cea",
       "read_complete": true,
@@ -688,17 +796,17 @@
       "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-current-head-actions-attestation",
-        "accepted_upstream": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "eb05f1b40489aea6278eb8225006023af6c73cea",
         "byte_size": 4830,
         "file_type": "blob",
-        "recursive_order": 5019
+        "recursive_order": 5022
       },
       "notes": "Read-complete records source understanding only. It does not close unknown accounting, implementation_status, coverage_matrix_status or release_gate_status."
     },
     {
-      "recursive_order": 5020,
+      "recursive_order": 5023,
       "source_path": "Telegram/SourceFiles/main/main_app_config.cpp",
       "source_blob_sha": "f1f59194b9b296be70bf7a8a08d0ea4b82aef269",
       "read_complete": true,
@@ -724,17 +832,17 @@
       "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-current-head-actions-attestation",
-        "accepted_upstream": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "f1f59194b9b296be70bf7a8a08d0ea4b82aef269",
         "byte_size": 19905,
         "file_type": "blob",
-        "recursive_order": 5020
+        "recursive_order": 5023
       },
       "notes": "Read-complete records source understanding only. It does not close unknown accounting, implementation_status, coverage_matrix_status or release_gate_status."
     },
     {
-      "recursive_order": 5021,
+      "recursive_order": 5024,
       "source_path": "Telegram/SourceFiles/main/main_app_config.h",
       "source_blob_sha": "f6195a8be9939731afca2da4dec09e88ea218f79",
       "read_complete": true,
@@ -760,17 +868,17 @@
       "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-current-head-actions-attestation",
-        "accepted_upstream": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "f6195a8be9939731afca2da4dec09e88ea218f79",
         "byte_size": 7235,
         "file_type": "blob",
-        "recursive_order": 5021
+        "recursive_order": 5024
       },
       "notes": "Read-complete records source understanding only. It does not close unknown accounting, implementation_status, coverage_matrix_status or release_gate_status."
     },
     {
-      "recursive_order": 5022,
+      "recursive_order": 5025,
       "source_path": "Telegram/SourceFiles/main/main_app_config_values.cpp",
       "source_blob_sha": "bd2b1f0705204f42fe79f95ca3d5243de5987300",
       "read_complete": true,
@@ -796,17 +904,17 @@
       "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-current-head-actions-attestation",
-        "accepted_upstream": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "bd2b1f0705204f42fe79f95ca3d5243de5987300",
         "byte_size": 855,
         "file_type": "blob",
-        "recursive_order": 5022
+        "recursive_order": 5025
       },
       "notes": "Read-complete records source understanding only. It does not close unknown accounting, implementation_status, coverage_matrix_status or release_gate_status."
     },
     {
-      "recursive_order": 5023,
+      "recursive_order": 5026,
       "source_path": "Telegram/SourceFiles/main/main_app_config_values.h",
       "source_blob_sha": "fc1f8e76ad91a38059c5019fad6be55d973d6073",
       "read_complete": true,
@@ -832,17 +940,17 @@
       "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-current-head-actions-attestation",
-        "accepted_upstream": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "fc1f8e76ad91a38059c5019fad6be55d973d6073",
         "byte_size": 433,
         "file_type": "blob",
-        "recursive_order": 5023
+        "recursive_order": 5026
       },
       "notes": "Read-complete records source understanding only. It does not close unknown accounting, implementation_status, coverage_matrix_status or release_gate_status."
     },
     {
-      "recursive_order": 5024,
+      "recursive_order": 5027,
       "source_path": "Telegram/SourceFiles/main/main_domain.cpp",
       "source_blob_sha": "4b94ea13354dd3788fc76a722d2f0078c955859f",
       "read_complete": true,
@@ -868,17 +976,17 @@
       "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-current-head-actions-attestation",
-        "accepted_upstream": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "4b94ea13354dd3788fc76a722d2f0078c955859f",
         "byte_size": 16336,
         "file_type": "blob",
-        "recursive_order": 5024
+        "recursive_order": 5027
       },
       "notes": "Read-complete records source understanding only. It does not close unknown accounting, implementation_status, coverage_matrix_status or release_gate_status."
     },
     {
-      "recursive_order": 5025,
+      "recursive_order": 5028,
       "source_path": "Telegram/SourceFiles/main/main_domain.h",
       "source_blob_sha": "7f85abc8fdcc141064a2a2e818f1b81a90dcec6a",
       "read_complete": true,
@@ -904,17 +1012,17 @@
       "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-current-head-actions-attestation",
-        "accepted_upstream": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "7f85abc8fdcc141064a2a2e818f1b81a90dcec6a",
         "byte_size": 5867,
         "file_type": "blob",
-        "recursive_order": 5025
+        "recursive_order": 5028
       },
       "notes": "Read-complete records source understanding only. It does not close unknown accounting, implementation_status, coverage_matrix_status or release_gate_status."
     },
     {
-      "recursive_order": 5026,
+      "recursive_order": 5029,
       "source_path": "Telegram/SourceFiles/main/main_session.cpp",
       "source_blob_sha": "2b9d58946e87458dfef61a2afbe255b0611a7cf1",
       "read_complete": true,
@@ -940,17 +1048,17 @@
       "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-current-head-actions-attestation",
-        "accepted_upstream": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "2b9d58946e87458dfef61a2afbe255b0611a7cf1",
         "byte_size": 18110,
         "file_type": "blob",
-        "recursive_order": 5026
+        "recursive_order": 5029
       },
       "notes": "Read-complete records source understanding only. It does not close unknown accounting, implementation_status, coverage_matrix_status or release_gate_status."
     },
     {
-      "recursive_order": 5027,
+      "recursive_order": 5030,
       "source_path": "Telegram/SourceFiles/main/main_session.h",
       "source_blob_sha": "00aa65140f0fc11e80c7e0e899939f79668cbce7",
       "read_complete": true,
@@ -976,118 +1084,10 @@
       "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-current-head-actions-attestation",
-        "accepted_upstream": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "00aa65140f0fc11e80c7e0e899939f79668cbce7",
         "byte_size": 11408,
-        "file_type": "blob",
-        "recursive_order": 5027
-      },
-      "notes": "Read-complete records source understanding only. It does not close unknown accounting, implementation_status, coverage_matrix_status or release_gate_status."
-    },
-    {
-      "recursive_order": 5028,
-      "source_path": "Telegram/SourceFiles/main/main_session_settings.cpp",
-      "source_blob_sha": "dacb8da60af47634856d65c210d99701e3387bbc",
-      "read_complete": true,
-      "responsibility_decomposition_complete": true,
-      "responsibility": "Session preference serialization and backward-compatibility lifecycle",
-      "upstream_owner": "Canonical Session settings persistence owner",
-      "state_machine": "typed session preferences -> versioned serialization -> backward-compatible decode/migration -> reactive getters/setters -> delayed persistence",
-      "side_effects": "session preferences including archive/support/notification volume/transcription/security hints remain in one versioned canonical settings owner",
-      "failure_cases": "corrupt/truncated stream, invalid enum/range, legacy migration drift, lost per-thread setting, stale security/auth-review state",
-      "ui_disposition": "Reuse canonical Fabushi Button/IconButton/TextField/TextArea/SearchField/Checkbox/Radio/Switch/Tabs/Menu/ContextMenu/Tooltip/Popover/Dialog/AlertDialog/Avatar/Badge/Status/ListRow/ConversationRow/ParticipantRow/ResultRow/Toolbar/EmptyState/LoadingState/ErrorState/Toast/Banner/Composer/TranscriptEntry/ProfileSection/DetailPanel/Picker/CreationFlow/CommandPalette/UniversalSearch primitives as applicable; source-derived names do not become shipping public component names.",
-      "fabushi_canonical_owner": "Canonical Session settings persistence owner",
-      "fabushi_target": "OPEN: bind current shipping Canonical Session settings persistence owner and close session preference serialization and backward-compatibility lifecycle; production/service/UI/contract/integration/E2E evidence required before implementation/release promotion.",
-      "platform_differences": "Telegram Qt/C++/MTProto mechanics are behavioral reference only; Fabushi preserves applicable state, service, security, persistence, lifecycle and UI semantics in canonical Rust/TypeScript/Electron/service owners.",
-      "production_evidence": "projects/telegram-desktop-rust/dossiers/translation-layout-account-session-5001-5030-complete-read.md; direct exact-source read only; implementation/verification remains open.",
-      "test_evidence": "Current-head Source authority attestation for 5001-5030 is required after this commit; product/release evidence remains open.",
-      "disposition": "mapped-open-session-settings",
-      "unknown_closed": false,
-      "omitted": false,
-      "consumer_symbol": "main_session_settings",
-      "consumer_evidence": [
-        "Direct exact-source read completed for Telegram/SourceFiles/main/main_session_settings.cpp; concrete state/consumer/resource/service/security/failure and teardown boundaries were decomposed into Canonical Session settings persistence owner."
-      ],
-      "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
-      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
-      "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-current-head-actions-attestation",
-        "accepted_upstream": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
-        "verified_blob_sha": "dacb8da60af47634856d65c210d99701e3387bbc",
-        "byte_size": 33197,
-        "file_type": "blob",
-        "recursive_order": 5028
-      },
-      "notes": "Read-complete records source understanding only. It does not close unknown accounting, implementation_status, coverage_matrix_status or release_gate_status."
-    },
-    {
-      "recursive_order": 5029,
-      "source_path": "Telegram/SourceFiles/main/main_session_settings.h",
-      "source_blob_sha": "ff7a07a82243d3fa7d8e1f0353740d8d764dfe68",
-      "read_complete": true,
-      "responsibility_decomposition_complete": true,
-      "responsibility": "Session preference serialization and backward-compatibility lifecycle",
-      "upstream_owner": "Canonical Session settings persistence owner",
-      "state_machine": "typed session preferences -> versioned serialization -> backward-compatible decode/migration -> reactive getters/setters -> delayed persistence",
-      "side_effects": "session preferences including archive/support/notification volume/transcription/security hints remain in one versioned canonical settings owner",
-      "failure_cases": "corrupt/truncated stream, invalid enum/range, legacy migration drift, lost per-thread setting, stale security/auth-review state",
-      "ui_disposition": "Reuse canonical Fabushi Button/IconButton/TextField/TextArea/SearchField/Checkbox/Radio/Switch/Tabs/Menu/ContextMenu/Tooltip/Popover/Dialog/AlertDialog/Avatar/Badge/Status/ListRow/ConversationRow/ParticipantRow/ResultRow/Toolbar/EmptyState/LoadingState/ErrorState/Toast/Banner/Composer/TranscriptEntry/ProfileSection/DetailPanel/Picker/CreationFlow/CommandPalette/UniversalSearch primitives as applicable; source-derived names do not become shipping public component names.",
-      "fabushi_canonical_owner": "Canonical Session settings persistence owner",
-      "fabushi_target": "OPEN: bind current shipping Canonical Session settings persistence owner and close session preference serialization and backward-compatibility lifecycle; production/service/UI/contract/integration/E2E evidence required before implementation/release promotion.",
-      "platform_differences": "Telegram Qt/C++/MTProto mechanics are behavioral reference only; Fabushi preserves applicable state, service, security, persistence, lifecycle and UI semantics in canonical Rust/TypeScript/Electron/service owners.",
-      "production_evidence": "projects/telegram-desktop-rust/dossiers/translation-layout-account-session-5001-5030-complete-read.md; direct exact-source read only; implementation/verification remains open.",
-      "test_evidence": "Current-head Source authority attestation for 5001-5030 is required after this commit; product/release evidence remains open.",
-      "disposition": "mapped-open-session-settings",
-      "unknown_closed": false,
-      "omitted": false,
-      "consumer_symbol": "main_session_settings",
-      "consumer_evidence": [
-        "Direct exact-source read completed for Telegram/SourceFiles/main/main_session_settings.h; concrete state/consumer/resource/service/security/failure and teardown boundaries were decomposed into Canonical Session settings persistence owner."
-      ],
-      "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
-      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
-      "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-current-head-actions-attestation",
-        "accepted_upstream": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
-        "verified_blob_sha": "ff7a07a82243d3fa7d8e1f0353740d8d764dfe68",
-        "byte_size": 7926,
-        "file_type": "blob",
-        "recursive_order": 5029
-      },
-      "notes": "Read-complete records source understanding only. It does not close unknown accounting, implementation_status, coverage_matrix_status or release_gate_status."
-    },
-    {
-      "recursive_order": 5030,
-      "source_path": "Telegram/SourceFiles/main/session/send_as_peers.cpp",
-      "source_blob_sha": "86113c3885f9c5728f888f3ab422cdf4ae0b7ea4",
-      "read_complete": true,
-      "responsibility_decomposition_complete": true,
-      "responsibility": "Send-as identity eligibility and refresh lifecycle",
-      "upstream_owner": "Canonical message send identity/permissions owner",
-      "state_machine": "conversation/thread context -> cached send-as identities/default -> rights/story/premium refresh with TTL -> canonical send identity selection -> server mutation/update",
-      "side_effects": "send identity and capability checks remain server-derived and scoped to canonical composer/message-send owner",
-      "failure_cases": "stale rights/default identity, expired cache, missing peer, premium/paid-reaction eligibility drift, server mutation failure",
-      "ui_disposition": "Reuse canonical Fabushi Button/IconButton/TextField/TextArea/SearchField/Checkbox/Radio/Switch/Tabs/Menu/ContextMenu/Tooltip/Popover/Dialog/AlertDialog/Avatar/Badge/Status/ListRow/ConversationRow/ParticipantRow/ResultRow/Toolbar/EmptyState/LoadingState/ErrorState/Toast/Banner/Composer/TranscriptEntry/ProfileSection/DetailPanel/Picker/CreationFlow/CommandPalette/UniversalSearch primitives as applicable; source-derived names do not become shipping public component names.",
-      "fabushi_canonical_owner": "Canonical message send identity/permissions owner",
-      "fabushi_target": "OPEN: bind current shipping Canonical message send identity/permissions owner and close send-as identity eligibility and refresh lifecycle; production/service/UI/contract/integration/E2E evidence required before implementation/release promotion.",
-      "platform_differences": "Telegram Qt/C++/MTProto mechanics are behavioral reference only; Fabushi preserves applicable state, service, security, persistence, lifecycle and UI semantics in canonical Rust/TypeScript/Electron/service owners.",
-      "production_evidence": "projects/telegram-desktop-rust/dossiers/translation-layout-account-session-5001-5030-complete-read.md; direct exact-source read only; implementation/verification remains open.",
-      "test_evidence": "Current-head Source authority attestation for 5001-5030 is required after this commit; product/release evidence remains open.",
-      "disposition": "mapped-open-send-identity",
-      "unknown_closed": false,
-      "omitted": false,
-      "consumer_symbol": "send_as_peers",
-      "consumer_evidence": [
-        "Direct exact-source read completed for Telegram/SourceFiles/main/session/send_as_peers.cpp; concrete state/consumer/resource/service/security/failure and teardown boundaries were decomposed into Canonical message send identity/permissions owner."
-      ],
-      "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
-      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
-      "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-current-head-actions-attestation",
-        "accepted_upstream": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
-        "verified_blob_sha": "86113c3885f9c5728f888f3ab422cdf4ae0b7ea4",
-        "byte_size": 5207,
         "file_type": "blob",
         "recursive_order": 5030
       },

@@ -4,8 +4,8 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
-    "tree": "6ac9bbc1b44edcb119b1a724e7b0a321c3b7b8fa"
+    "commit": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+    "tree": "5030985204963cbbd362ced7412d231b04ebd0cc"
   },
   "range": {
     "first_order": 5184,
@@ -15,6 +15,114 @@
   "rows": [
     {
       "recursive_order": 5184,
+      "source_path": "Telegram/SourceFiles/media/view/media_view_recognition_selection.h",
+      "source_blob_sha": "c3627e4435f7b9a2a536dd78af1fd42c4353d59b",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Typed OCR selection anchor/focus/span/result contract",
+      "upstream_owner": "Media::View::RecognitionSelection",
+      "state_machine": "recognition result -> hit-test position -> anchor/focus drag -> spans -> copy/clear -> source replacement",
+      "side_effects": "Exposes selectable/copyable recognized text over media and must fence selection to the current recognition result.",
+      "failure_cases": "selection spans wrong OCR item/character; stale selection crosses image/result replacement; copied text order incorrect",
+      "ui_disposition": "Reuse canonical source-neutral Fabushi surfaces and platform services. Do not create Telegram-named Sponsored/Recognition/VideoStream UI or a parallel media runtime.",
+      "fabushi_canonical_owner": "Canonical MediaViewer plus platform text-recognition service/selection overlay; mapped-open.",
+      "fabushi_target": "MAPPED OPEN. Direct source read/decomposition complete; no full shipping implementation/verification claim is made for this responsibility.",
+      "platform_differences": "Telegram-specific rendering/widget mechanics are not copied; preserve applicable product/state semantics through canonical Fabushi owners.",
+      "production_evidence": "projects/telegram-desktop-rust/dossiers/media-view-sponsored-recognition-stream-5178-5183-complete-read.md; no closure evidence yet.",
+      "test_evidence": "Future focused/unit/integration/E2E/packaged evidence required before unknown closure.",
+      "disposition": "mapped-open-media-view-followup",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "Media::View::RecognitionSelection",
+      "consumer_evidence": [
+        "Complete direct exact-source read of Telegram/SourceFiles/media/view/media_view_recognition_selection.h at accepted blob c3627e44."
+      ],
+      "reachability_status": "accepted-tree source owner proven; product responsibility remains mapped-open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; source is analyzed for responsibility and not mechanically copied.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "verified_blob_sha": "c3627e4435f7b9a2a536dd78af1fd42c4353d59b",
+        "byte_size": 1901,
+        "file_type": "blob",
+        "recursive_order": 5184
+      },
+      "notes": "Read-complete only. Unknown remains open and omitted remains false."
+    },
+    {
+      "recursive_order": 5185,
+      "source_path": "Telegram/SourceFiles/media/view/media_view_video_stream.cpp",
+      "source_blob_sha": "e22ec2f8fc0e0358b6db8a381702211c4f6da4b1",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Live/group video stream adapter: group-call lifetime, permission/failure close, video viewport/messages/loading, borrowed rendering, active-frame state, comments and volume",
+      "upstream_owner": "Media::View::VideoStream",
+      "state_machine": "live stream construct/register -> active-frame/loading/messages -> borrowed/platform render -> geometry/comment/volume updates -> call finish/failure close -> teardown",
+      "side_effects": "Coordinates call-owned live video, messages/comments, volume and close lifecycle inside media view.",
+      "failure_cases": "live stream outlives call/viewer; duplicate renderer owner; missing permissions/failure close; stale geometry/comments/volume",
+      "ui_disposition": "Reuse canonical source-neutral Fabushi surfaces and platform services. Do not create Telegram-named Sponsored/Recognition/VideoStream UI or a parallel media runtime.",
+      "fabushi_canonical_owner": "Existing Fabushi call/live-media/platform owners must absorb applicable stream/session/volume/lifecycle behavior; borrowed Qt renderer mechanics are platform-replaced.",
+      "fabushi_target": "MAPPED OPEN. Direct source read/decomposition complete; no full shipping implementation/verification claim is made for this responsibility.",
+      "platform_differences": "Qt borrowed OpenGL/raster rendering is a platform mechanism replaced by Electron/Chromium/native call rendering; session/lifetime/volume/comment behavior still requires equivalent product composition.",
+      "production_evidence": "projects/telegram-desktop-rust/dossiers/media-view-sponsored-recognition-stream-5178-5183-complete-read.md; no closure evidence yet.",
+      "test_evidence": "Future focused/unit/integration/E2E/packaged evidence required before unknown closure.",
+      "disposition": "mapped-open-media-view-followup",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "Media::View::VideoStream",
+      "consumer_evidence": [
+        "Complete direct exact-source read of Telegram/SourceFiles/media/view/media_view_video_stream.cpp at accepted blob e22ec2f8."
+      ],
+      "reachability_status": "accepted-tree source owner proven; product responsibility remains mapped-open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; source is analyzed for responsibility and not mechanically copied.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "verified_blob_sha": "e22ec2f8fc0e0358b6db8a381702211c4f6da4b1",
+        "byte_size": 10777,
+        "file_type": "blob",
+        "recursive_order": 5185
+      },
+      "notes": "Read-complete only. Unknown remains open and omitted remains false."
+    },
+    {
+      "recursive_order": 5186,
+      "source_path": "Telegram/SourceFiles/media/view/media_view_video_stream.h",
+      "source_blob_sha": "0685e7ac8d381f61309682aae915f3df2dd2a81f",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Typed live video stream close/geometry/comment/volume/lifetime contract",
+      "upstream_owner": "Media::View::VideoStream",
+      "state_machine": "live stream construct/register -> active-frame/loading/messages -> borrowed/platform render -> geometry/comment/volume updates -> call finish/failure close -> teardown",
+      "side_effects": "Coordinates call-owned live video, messages/comments, volume and close lifecycle inside media view.",
+      "failure_cases": "live stream outlives call/viewer; duplicate renderer owner; missing permissions/failure close; stale geometry/comments/volume",
+      "ui_disposition": "Reuse canonical source-neutral Fabushi surfaces and platform services. Do not create Telegram-named Sponsored/Recognition/VideoStream UI or a parallel media runtime.",
+      "fabushi_canonical_owner": "Existing source-neutral live-media/call owners; mapped-open until concrete shipping composition and evidence are found.",
+      "fabushi_target": "MAPPED OPEN. Direct source read/decomposition complete; no full shipping implementation/verification claim is made for this responsibility.",
+      "platform_differences": "Qt borrowed OpenGL/raster rendering is a platform mechanism replaced by Electron/Chromium/native call rendering; session/lifetime/volume/comment behavior still requires equivalent product composition.",
+      "production_evidence": "projects/telegram-desktop-rust/dossiers/media-view-sponsored-recognition-stream-5178-5183-complete-read.md; no closure evidence yet.",
+      "test_evidence": "Future focused/unit/integration/E2E/packaged evidence required before unknown closure.",
+      "disposition": "mapped-open-media-view-followup",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "Media::View::VideoStream",
+      "consumer_evidence": [
+        "Complete direct exact-source read of Telegram/SourceFiles/media/view/media_view_video_stream.h at accepted blob 0685e7ac."
+      ],
+      "reachability_status": "accepted-tree source owner proven; product responsibility remains mapped-open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; source is analyzed for responsibility and not mechanically copied.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "verified_blob_sha": "0685e7ac8d381f61309682aae915f3df2dd2a81f",
+        "byte_size": 2528,
+        "file_type": "blob",
+        "recursive_order": 5186
+      },
+      "notes": "Read-complete only. Unknown remains open and omitted remains false."
+    },
+    {
+      "recursive_order": 5187,
       "source_path": "Telegram/SourceFiles/menu/gift_resale_filter.cpp",
       "source_blob_sha": "5926e0ba75e719b34365a08bc15b8e74405591a2",
       "read_complete": true,
@@ -40,17 +148,17 @@
       "reachability_status": "accepted-tree source owner proven; responsibility remains mapped-open except already-existing partial canonical behavior explicitly noted",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior is decomposed/reimplemented into source-neutral canonical owners rather than mechanically copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-new-head-actions-attestation",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "5926e0ba75e719b34365a08bc15b8e74405591a2",
         "byte_size": 3469,
         "file_type": "blob",
-        "recursive_order": 5184
+        "recursive_order": 5187
       },
       "notes": "Read-complete only. unknown_closed=false and omitted=false. Any existing partial Fabushi behavior is evidence for that slice only, not the whole upstream responsibility."
     },
     {
-      "recursive_order": 5185,
+      "recursive_order": 5188,
       "source_path": "Telegram/SourceFiles/menu/gift_resale_filter.h",
       "source_blob_sha": "43a74e4af47a98c673ffb344e4b385f3f3af2179",
       "read_complete": true,
@@ -76,17 +184,17 @@
       "reachability_status": "accepted-tree source owner proven; responsibility remains mapped-open except already-existing partial canonical behavior explicitly noted",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior is decomposed/reimplemented into source-neutral canonical owners rather than mechanically copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-new-head-actions-attestation",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "43a74e4af47a98c673ffb344e4b385f3f3af2179",
         "byte_size": 1261,
         "file_type": "blob",
-        "recursive_order": 5185
+        "recursive_order": 5188
       },
       "notes": "Read-complete only. unknown_closed=false and omitted=false. Any existing partial Fabushi behavior is evidence for that slice only, not the whole upstream responsibility."
     },
     {
-      "recursive_order": 5186,
+      "recursive_order": 5189,
       "source_path": "Telegram/SourceFiles/menu/menu_action_with_thumbnail.cpp",
       "source_blob_sha": "c3547489797078f3715b9fac82b0b59ef568c86d",
       "read_complete": true,
@@ -112,17 +220,17 @@
       "reachability_status": "accepted-tree source owner proven; responsibility remains mapped-open except already-existing partial canonical behavior explicitly noted",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior is decomposed/reimplemented into source-neutral canonical owners rather than mechanically copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-new-head-actions-attestation",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "c3547489797078f3715b9fac82b0b59ef568c86d",
         "byte_size": 1195,
         "file_type": "blob",
-        "recursive_order": 5186
+        "recursive_order": 5189
       },
       "notes": "Read-complete only. unknown_closed=false and omitted=false. Any existing partial Fabushi behavior is evidence for that slice only, not the whole upstream responsibility."
     },
     {
-      "recursive_order": 5187,
+      "recursive_order": 5190,
       "source_path": "Telegram/SourceFiles/menu/menu_action_with_thumbnail.h",
       "source_blob_sha": "42831204b1935cc0d3e29c60e112621814bdfeb1",
       "read_complete": true,
@@ -148,17 +256,17 @@
       "reachability_status": "accepted-tree source owner proven; responsibility remains mapped-open except already-existing partial canonical behavior explicitly noted",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior is decomposed/reimplemented into source-neutral canonical owners rather than mechanically copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-new-head-actions-attestation",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "42831204b1935cc0d3e29c60e112621814bdfeb1",
         "byte_size": 804,
         "file_type": "blob",
-        "recursive_order": 5187
+        "recursive_order": 5190
       },
       "notes": "Read-complete only. unknown_closed=false and omitted=false. Any existing partial Fabushi behavior is evidence for that slice only, not the whole upstream responsibility."
     },
     {
-      "recursive_order": 5188,
+      "recursive_order": 5191,
       "source_path": "Telegram/SourceFiles/menu/menu_antispam_validator.cpp",
       "source_blob_sha": "ccc1f0cd18ef845e21f5a259255f7eca8d088441",
       "read_complete": true,
@@ -184,17 +292,17 @@
       "reachability_status": "accepted-tree source owner proven; responsibility remains mapped-open except already-existing partial canonical behavior explicitly noted",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior is decomposed/reimplemented into source-neutral canonical owners rather than mechanically copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-new-head-actions-attestation",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "ccc1f0cd18ef845e21f5a259255f7eca8d088441",
         "byte_size": 5744,
         "file_type": "blob",
-        "recursive_order": 5188
+        "recursive_order": 5191
       },
       "notes": "Read-complete only. unknown_closed=false and omitted=false. Any existing partial Fabushi behavior is evidence for that slice only, not the whole upstream responsibility."
     },
     {
-      "recursive_order": 5189,
+      "recursive_order": 5192,
       "source_path": "Telegram/SourceFiles/menu/menu_antispam_validator.h",
       "source_blob_sha": "05e0dae2815614e565a88aaec4a3125534fb6fd8",
       "read_complete": true,
@@ -220,17 +328,17 @@
       "reachability_status": "accepted-tree source owner proven; responsibility remains mapped-open except already-existing partial canonical behavior explicitly noted",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior is decomposed/reimplemented into source-neutral canonical owners rather than mechanically copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-new-head-actions-attestation",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "05e0dae2815614e565a88aaec4a3125534fb6fd8",
         "byte_size": 1156,
         "file_type": "blob",
-        "recursive_order": 5189
+        "recursive_order": 5192
       },
       "notes": "Read-complete only. unknown_closed=false and omitted=false. Any existing partial Fabushi behavior is evidence for that slice only, not the whole upstream responsibility."
     },
     {
-      "recursive_order": 5190,
+      "recursive_order": 5193,
       "source_path": "Telegram/SourceFiles/menu/menu_check_item.cpp",
       "source_blob_sha": "f0e5f46f8c2cf0776d2bcfc189acb87e0fdc9272",
       "read_complete": true,
@@ -256,17 +364,17 @@
       "reachability_status": "accepted-tree source owner proven; responsibility remains mapped-open except already-existing partial canonical behavior explicitly noted",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior is decomposed/reimplemented into source-neutral canonical owners rather than mechanically copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-new-head-actions-attestation",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "f0e5f46f8c2cf0776d2bcfc189acb87e0fdc9272",
         "byte_size": 977,
         "file_type": "blob",
-        "recursive_order": 5190
+        "recursive_order": 5193
       },
       "notes": "Read-complete only. unknown_closed=false and omitted=false. Any existing partial Fabushi behavior is evidence for that slice only, not the whole upstream responsibility."
     },
     {
-      "recursive_order": 5191,
+      "recursive_order": 5194,
       "source_path": "Telegram/SourceFiles/menu/menu_check_item.h",
       "source_blob_sha": "181b4469536d6230eb78aeec3953395c4621eec5",
       "read_complete": true,
@@ -292,17 +400,17 @@
       "reachability_status": "accepted-tree source owner proven; responsibility remains mapped-open except already-existing partial canonical behavior explicitly noted",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior is decomposed/reimplemented into source-neutral canonical owners rather than mechanically copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-new-head-actions-attestation",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "181b4469536d6230eb78aeec3953395c4621eec5",
         "byte_size": 611,
         "file_type": "blob",
-        "recursive_order": 5191
+        "recursive_order": 5194
       },
       "notes": "Read-complete only. unknown_closed=false and omitted=false. Any existing partial Fabushi behavior is evidence for that slice only, not the whole upstream responsibility."
     },
     {
-      "recursive_order": 5192,
+      "recursive_order": 5195,
       "source_path": "Telegram/SourceFiles/menu/menu_checked_action.cpp",
       "source_blob_sha": "57199fb056e5d89b548a326ec8baa87539aa9ed3",
       "read_complete": true,
@@ -328,17 +436,17 @@
       "reachability_status": "accepted-tree source owner proven; responsibility remains mapped-open except already-existing partial canonical behavior explicitly noted",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior is decomposed/reimplemented into source-neutral canonical owners rather than mechanically copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-new-head-actions-attestation",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "57199fb056e5d89b548a326ec8baa87539aa9ed3",
         "byte_size": 5720,
         "file_type": "blob",
-        "recursive_order": 5192
+        "recursive_order": 5195
       },
       "notes": "Read-complete only. unknown_closed=false and omitted=false. Any existing partial Fabushi behavior is evidence for that slice only, not the whole upstream responsibility."
     },
     {
-      "recursive_order": 5193,
+      "recursive_order": 5196,
       "source_path": "Telegram/SourceFiles/menu/menu_checked_action.h",
       "source_blob_sha": "654a0def6f3e372e450b06c9081bee9687d1b915",
       "read_complete": true,
@@ -364,17 +472,17 @@
       "reachability_status": "accepted-tree source owner proven; responsibility remains mapped-open except already-existing partial canonical behavior explicitly noted",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior is decomposed/reimplemented into source-neutral canonical owners rather than mechanically copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-new-head-actions-attestation",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "654a0def6f3e372e450b06c9081bee9687d1b915",
         "byte_size": 1081,
         "file_type": "blob",
-        "recursive_order": 5193
+        "recursive_order": 5196
       },
       "notes": "Read-complete only. unknown_closed=false and omitted=false. Any existing partial Fabushi behavior is evidence for that slice only, not the whole upstream responsibility."
     },
     {
-      "recursive_order": 5194,
+      "recursive_order": 5197,
       "source_path": "Telegram/SourceFiles/menu/menu_dock.cpp",
       "source_blob_sha": "932d31ce111ef0541007a5f5789c58c7d6dee63c",
       "read_complete": true,
@@ -400,17 +508,17 @@
       "reachability_status": "accepted-tree source owner proven; responsibility remains mapped-open except already-existing partial canonical behavior explicitly noted",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior is decomposed/reimplemented into source-neutral canonical owners rather than mechanically copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-new-head-actions-attestation",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "932d31ce111ef0541007a5f5789c58c7d6dee63c",
         "byte_size": 2448,
         "file_type": "blob",
-        "recursive_order": 5194
+        "recursive_order": 5197
       },
       "notes": "Read-complete only. unknown_closed=false and omitted=false. Any existing partial Fabushi behavior is evidence for that slice only, not the whole upstream responsibility."
     },
     {
-      "recursive_order": 5195,
+      "recursive_order": 5198,
       "source_path": "Telegram/SourceFiles/menu/menu_dock.h",
       "source_blob_sha": "d7e2982a1f1367cb3f67b811070ab1a9bb5318a9",
       "read_complete": true,
@@ -436,17 +544,17 @@
       "reachability_status": "accepted-tree source owner proven; responsibility remains mapped-open except already-existing partial canonical behavior explicitly noted",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior is decomposed/reimplemented into source-neutral canonical owners rather than mechanically copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-new-head-actions-attestation",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "d7e2982a1f1367cb3f67b811070ab1a9bb5318a9",
         "byte_size": 342,
         "file_type": "blob",
-        "recursive_order": 5195
+        "recursive_order": 5198
       },
       "notes": "Read-complete only. unknown_closed=false and omitted=false. Any existing partial Fabushi behavior is evidence for that slice only, not the whole upstream responsibility."
     },
     {
-      "recursive_order": 5196,
+      "recursive_order": 5199,
       "source_path": "Telegram/SourceFiles/menu/menu_emoji_status.cpp",
       "source_blob_sha": "80ffdca9ab68586846feafd4045853c855f42c93",
       "read_complete": true,
@@ -472,17 +580,17 @@
       "reachability_status": "accepted-tree source owner proven; responsibility remains mapped-open except already-existing partial canonical behavior explicitly noted",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior is decomposed/reimplemented into source-neutral canonical owners rather than mechanically copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-new-head-actions-attestation",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "80ffdca9ab68586846feafd4045853c855f42c93",
         "byte_size": 2633,
         "file_type": "blob",
-        "recursive_order": 5196
+        "recursive_order": 5199
       },
       "notes": "Read-complete only. unknown_closed=false and omitted=false. Any existing partial Fabushi behavior is evidence for that slice only, not the whole upstream responsibility."
     },
     {
-      "recursive_order": 5197,
+      "recursive_order": 5200,
       "source_path": "Telegram/SourceFiles/menu/menu_emoji_status.h",
       "source_blob_sha": "6c1153d06ea3a91be5e4914ce407e59b917f2bd8",
       "read_complete": true,
@@ -508,17 +616,17 @@
       "reachability_status": "accepted-tree source owner proven; responsibility remains mapped-open except already-existing partial canonical behavior explicitly noted",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior is decomposed/reimplemented into source-neutral canonical owners rather than mechanically copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-new-head-actions-attestation",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "6c1153d06ea3a91be5e4914ce407e59b917f2bd8",
         "byte_size": 628,
         "file_type": "blob",
-        "recursive_order": 5197
+        "recursive_order": 5200
       },
       "notes": "Read-complete only. unknown_closed=false and omitted=false. Any existing partial Fabushi behavior is evidence for that slice only, not the whole upstream responsibility."
     },
     {
-      "recursive_order": 5198,
+      "recursive_order": 5201,
       "source_path": "Telegram/SourceFiles/menu/menu_item_download_files.cpp",
       "source_blob_sha": "2d35114a47d12b164a36ca703807892d29115a0d",
       "read_complete": true,
@@ -544,17 +652,17 @@
       "reachability_status": "accepted-tree source owner proven; responsibility remains mapped-open except already-existing partial canonical behavior explicitly noted",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior is decomposed/reimplemented into source-neutral canonical owners rather than mechanically copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-new-head-actions-attestation",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "2d35114a47d12b164a36ca703807892d29115a0d",
         "byte_size": 7960,
         "file_type": "blob",
-        "recursive_order": 5198
+        "recursive_order": 5201
       },
       "notes": "Read-complete only. unknown_closed=false and omitted=false. Any existing partial Fabushi behavior is evidence for that slice only, not the whole upstream responsibility."
     },
     {
-      "recursive_order": 5199,
+      "recursive_order": 5202,
       "source_path": "Telegram/SourceFiles/menu/menu_item_download_files.h",
       "source_blob_sha": "7e271f647a21236cc6225c983af8c892134c2243",
       "read_complete": true,
@@ -580,17 +688,17 @@
       "reachability_status": "accepted-tree source owner proven; responsibility remains mapped-open except already-existing partial canonical behavior explicitly noted",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior is decomposed/reimplemented into source-neutral canonical owners rather than mechanically copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-new-head-actions-attestation",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "7e271f647a21236cc6225c983af8c892134c2243",
         "byte_size": 945,
         "file_type": "blob",
-        "recursive_order": 5199
+        "recursive_order": 5202
       },
       "notes": "Read-complete only. unknown_closed=false and omitted=false. Any existing partial Fabushi behavior is evidence for that slice only, not the whole upstream responsibility."
     },
     {
-      "recursive_order": 5200,
+      "recursive_order": 5203,
       "source_path": "Telegram/SourceFiles/menu/menu_item_rate_transcribe.cpp",
       "source_blob_sha": "b59d062c4a5fa9a7f40674d15620e5e65d112db7",
       "read_complete": true,
@@ -616,17 +724,17 @@
       "reachability_status": "accepted-tree source owner proven; responsibility remains mapped-open except already-existing partial canonical behavior explicitly noted",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior is decomposed/reimplemented into source-neutral canonical owners rather than mechanically copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-new-head-actions-attestation",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "b59d062c4a5fa9a7f40674d15620e5e65d112db7",
         "byte_size": 6292,
         "file_type": "blob",
-        "recursive_order": 5200
+        "recursive_order": 5203
       },
       "notes": "Read-complete only. unknown_closed=false and omitted=false. Any existing partial Fabushi behavior is evidence for that slice only, not the whole upstream responsibility."
     },
     {
-      "recursive_order": 5201,
+      "recursive_order": 5204,
       "source_path": "Telegram/SourceFiles/menu/menu_item_rate_transcribe.h",
       "source_blob_sha": "c1ac40d99a2fb4941f5308970295f68817b5cf21",
       "read_complete": true,
@@ -652,17 +760,17 @@
       "reachability_status": "accepted-tree source owner proven; responsibility remains mapped-open except already-existing partial canonical behavior explicitly noted",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior is decomposed/reimplemented into source-neutral canonical owners rather than mechanically copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-new-head-actions-attestation",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "c1ac40d99a2fb4941f5308970295f68817b5cf21",
         "byte_size": 1085,
         "file_type": "blob",
-        "recursive_order": 5201
+        "recursive_order": 5204
       },
       "notes": "Read-complete only. unknown_closed=false and omitted=false. Any existing partial Fabushi behavior is evidence for that slice only, not the whole upstream responsibility."
     },
     {
-      "recursive_order": 5202,
+      "recursive_order": 5205,
       "source_path": "Telegram/SourceFiles/menu/menu_item_rate_transcribe_session.cpp",
       "source_blob_sha": "872695ecf0507ac749ecf909ed3bb87d6eb85ba6",
       "read_complete": true,
@@ -688,17 +796,17 @@
       "reachability_status": "accepted-tree source owner proven; responsibility remains mapped-open except already-existing partial canonical behavior explicitly noted",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior is decomposed/reimplemented into source-neutral canonical owners rather than mechanically copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-new-head-actions-attestation",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "872695ecf0507ac749ecf909ed3bb87d6eb85ba6",
         "byte_size": 1173,
         "file_type": "blob",
-        "recursive_order": 5202
+        "recursive_order": 5205
       },
       "notes": "Read-complete only. unknown_closed=false and omitted=false. Any existing partial Fabushi behavior is evidence for that slice only, not the whole upstream responsibility."
     },
     {
-      "recursive_order": 5203,
+      "recursive_order": 5206,
       "source_path": "Telegram/SourceFiles/menu/menu_item_rate_transcribe_session.h",
       "source_blob_sha": "92ce16aeb22999c9235c71192102e24389ea7c69",
       "read_complete": true,
@@ -724,17 +832,17 @@
       "reachability_status": "accepted-tree source owner proven; responsibility remains mapped-open except already-existing partial canonical behavior explicitly noted",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior is decomposed/reimplemented into source-neutral canonical owners rather than mechanically copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-new-head-actions-attestation",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "92ce16aeb22999c9235c71192102e24389ea7c69",
         "byte_size": 466,
         "file_type": "blob",
-        "recursive_order": 5203
+        "recursive_order": 5206
       },
       "notes": "Read-complete only. unknown_closed=false and omitted=false. Any existing partial Fabushi behavior is evidence for that slice only, not the whole upstream responsibility."
     },
     {
-      "recursive_order": 5204,
+      "recursive_order": 5207,
       "source_path": "Telegram/SourceFiles/menu/menu_mark_as_read.cpp",
       "source_blob_sha": "4620f9209c6c14b721f6d9fcf849ce0c9daabcee",
       "read_complete": true,
@@ -760,17 +868,17 @@
       "reachability_status": "accepted-tree source owner proven; responsibility remains mapped-open except already-existing partial canonical behavior explicitly noted",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior is decomposed/reimplemented into source-neutral canonical owners rather than mechanically copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-new-head-actions-attestation",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "4620f9209c6c14b721f6d9fcf849ce0c9daabcee",
         "byte_size": 6808,
         "file_type": "blob",
-        "recursive_order": 5204
+        "recursive_order": 5207
       },
       "notes": "Read-complete only. unknown_closed=false and omitted=false. Any existing partial Fabushi behavior is evidence for that slice only, not the whole upstream responsibility."
     },
     {
-      "recursive_order": 5205,
+      "recursive_order": 5208,
       "source_path": "Telegram/SourceFiles/menu/menu_mark_as_read.h",
       "source_blob_sha": "16ed26d31c79912c4f0ced2ce701f36ecb34986e",
       "read_complete": true,
@@ -796,17 +904,17 @@
       "reachability_status": "accepted-tree source owner proven; responsibility remains mapped-open except already-existing partial canonical behavior explicitly noted",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior is decomposed/reimplemented into source-neutral canonical owners rather than mechanically copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-new-head-actions-attestation",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "16ed26d31c79912c4f0ced2ce701f36ecb34986e",
         "byte_size": 1398,
         "file_type": "blob",
-        "recursive_order": 5205
+        "recursive_order": 5208
       },
       "notes": "Read-complete only. unknown_closed=false and omitted=false. Any existing partial Fabushi behavior is evidence for that slice only, not the whole upstream responsibility."
     },
     {
-      "recursive_order": 5206,
+      "recursive_order": 5209,
       "source_path": "Telegram/SourceFiles/menu/menu_mute.cpp",
       "source_blob_sha": "95e9a0ba38dd01c6b12c9c6c7f05aa43e5c27aa9",
       "read_complete": true,
@@ -832,17 +940,17 @@
       "reachability_status": "accepted-tree source owner proven; responsibility remains mapped-open except already-existing partial canonical behavior explicitly noted",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior is decomposed/reimplemented into source-neutral canonical owners rather than mechanically copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-new-head-actions-attestation",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "95e9a0ba38dd01c6b12c9c6c7f05aa43e5c27aa9",
         "byte_size": 10892,
         "file_type": "blob",
-        "recursive_order": 5206
+        "recursive_order": 5209
       },
       "notes": "Read-complete only. unknown_closed=false and omitted=false. Any existing partial Fabushi behavior is evidence for that slice only, not the whole upstream responsibility."
     },
     {
-      "recursive_order": 5207,
+      "recursive_order": 5210,
       "source_path": "Telegram/SourceFiles/menu/menu_mute.h",
       "source_blob_sha": "d214af65117aaa89bd822be25b30ac99d547274e",
       "read_complete": true,
@@ -868,118 +976,10 @@
       "reachability_status": "accepted-tree source owner proven; responsibility remains mapped-open except already-existing partial canonical behavior explicitly noted",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior is decomposed/reimplemented into source-neutral canonical owners rather than mechanically copied.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-new-head-actions-attestation",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "d214af65117aaa89bd822be25b30ac99d547274e",
         "byte_size": 2072,
-        "file_type": "blob",
-        "recursive_order": 5207
-      },
-      "notes": "Read-complete only. unknown_closed=false and omitted=false. Any existing partial Fabushi behavior is evidence for that slice only, not the whole upstream responsibility."
-    },
-    {
-      "recursive_order": 5208,
-      "source_path": "Telegram/SourceFiles/menu/menu_send.cpp",
-      "source_blob_sha": "1bbd5494928f7fa08192cb56bd40146dc0ec4d5f",
-      "read_complete": true,
-      "responsibility_decomposition_complete": true,
-      "responsibility": "send/silent/schedule/send-when-online plus media quality/spoiler/caption/cover/price/effects and unread shortcut menus",
-      "upstream_owner": "SendMenu",
-      "state_machine": "domain state/eligibility -> canonical menu projection -> guarded user action -> authoritative service mutation -> visible settlement/error/undo where applicable -> menu teardown",
-      "side_effects": "User-visible menu/action semantics and domain mutations must remain attached to existing Fabushi canonical service/state owners; generic menu rendering itself is not a second domain truth.",
-      "failure_cases": "stale eligibility or checked state; duplicate service owner; mutation presented as settled before authoritative completion; inaccessible keyboard/focus behavior; menu action survives owner/session replacement; platform-only action appears on unsupported platform.",
-      "ui_disposition": "Use canonical Menu/ContextMenu/ListRow/Checkbox/Switch/Dialog/AlertDialog/Toast/Button primitives as appropriate. Do not introduce TelegramButton, GroupMenuItem, or other Telegram-derived UI owners.",
-      "fabushi_canonical_owner": "canonical ConversationComposer/submission + Coordinator/Host send owner + Menu; existing silent/scheduled slice must be reused",
-      "fabushi_target": "MAPPED OPEN WITH EXISTING PARTIAL IMPLEMENTATION. Fabushi already has canonical Human silent/scheduled send semantics in the existing composer/submission/Coordinator/Host path; that production slice must be reused and extended for any remaining applicable SendMenu responsibilities. No read-only closure is claimed.",
-      "platform_differences": "Qt widget/menu mechanics are presentation details; preserve applicable state, service, a11y, light/dark, lifecycle and error semantics through existing Fabushi components/owners.",
-      "production_evidence": "Existing evidence includes frontend/src/production/human-silent-scheduled-message.contract.test.ts and canonical ProductionRenderer/composer/submission/Coordinator/Host paths for the already-implemented silent/scheduled subset; remaining responsibilities are open.",
-      "test_evidence": "frontend/src/production/human-silent-scheduled-message.contract.test.ts plus exact-head required Actions for the existing subset; additional focused/E2E evidence required for remaining applicable actions.",
-      "disposition": "mapped-open-menu-domain-responsibility",
-      "unknown_closed": false,
-      "omitted": false,
-      "consumer_symbol": "SendMenu",
-      "consumer_evidence": [
-        "Complete direct exact-source read of Telegram/SourceFiles/menu/menu_send.cpp at accepted blob 1bbd5494; mapped to canonical ConversationComposer/submission + Coordinator/Host send owner + Menu; existing silent/scheduled slice must be reused."
-      ],
-      "reachability_status": "accepted-tree source owner proven; responsibility remains mapped-open except already-existing partial canonical behavior explicitly noted",
-      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior is decomposed/reimplemented into source-neutral canonical owners rather than mechanically copied.",
-      "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-new-head-actions-attestation",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
-        "verified_blob_sha": "1bbd5494928f7fa08192cb56bd40146dc0ec4d5f",
-        "byte_size": 30851,
-        "file_type": "blob",
-        "recursive_order": 5208
-      },
-      "notes": "Read-complete only. unknown_closed=false and omitted=false. Any existing partial Fabushi behavior is evidence for that slice only, not the whole upstream responsibility."
-    },
-    {
-      "recursive_order": 5209,
-      "source_path": "Telegram/SourceFiles/menu/menu_send.h",
-      "source_blob_sha": "8f6c908d85fd448441f5b451617d502a6fa3c568",
-      "read_complete": true,
-      "responsibility_decomposition_complete": true,
-      "responsibility": "typed send action/result/menu/shortcut contract",
-      "upstream_owner": "SendMenu",
-      "state_machine": "domain state/eligibility -> canonical menu projection -> guarded user action -> authoritative service mutation -> visible settlement/error/undo where applicable -> menu teardown",
-      "side_effects": "User-visible menu/action semantics and domain mutations must remain attached to existing Fabushi canonical service/state owners; generic menu rendering itself is not a second domain truth.",
-      "failure_cases": "stale eligibility or checked state; duplicate service owner; mutation presented as settled before authoritative completion; inaccessible keyboard/focus behavior; menu action survives owner/session replacement; platform-only action appears on unsupported platform.",
-      "ui_disposition": "Use canonical Menu/ContextMenu/ListRow/Checkbox/Switch/Dialog/AlertDialog/Toast/Button primitives as appropriate. Do not introduce TelegramButton, GroupMenuItem, or other Telegram-derived UI owners.",
-      "fabushi_canonical_owner": "canonical composer/submission transport owner + Menu",
-      "fabushi_target": "MAPPED OPEN WITH EXISTING PARTIAL IMPLEMENTATION. Fabushi already has canonical Human silent/scheduled send semantics in the existing composer/submission/Coordinator/Host path; that production slice must be reused and extended for any remaining applicable SendMenu responsibilities. No read-only closure is claimed.",
-      "platform_differences": "Qt widget/menu mechanics are presentation details; preserve applicable state, service, a11y, light/dark, lifecycle and error semantics through existing Fabushi components/owners.",
-      "production_evidence": "Existing evidence includes frontend/src/production/human-silent-scheduled-message.contract.test.ts and canonical ProductionRenderer/composer/submission/Coordinator/Host paths for the already-implemented silent/scheduled subset; remaining responsibilities are open.",
-      "test_evidence": "frontend/src/production/human-silent-scheduled-message.contract.test.ts plus exact-head required Actions for the existing subset; additional focused/E2E evidence required for remaining applicable actions.",
-      "disposition": "mapped-open-menu-domain-responsibility",
-      "unknown_closed": false,
-      "omitted": false,
-      "consumer_symbol": "SendMenu",
-      "consumer_evidence": [
-        "Complete direct exact-source read of Telegram/SourceFiles/menu/menu_send.h at accepted blob 8f6c908d; mapped to canonical composer/submission transport owner + Menu."
-      ],
-      "reachability_status": "accepted-tree source owner proven; responsibility remains mapped-open except already-existing partial canonical behavior explicitly noted",
-      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior is decomposed/reimplemented into source-neutral canonical owners rather than mechanically copied.",
-      "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-new-head-actions-attestation",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
-        "verified_blob_sha": "8f6c908d85fd448441f5b451617d502a6fa3c568",
-        "byte_size": 2203,
-        "file_type": "blob",
-        "recursive_order": 5209
-      },
-      "notes": "Read-complete only. unknown_closed=false and omitted=false. Any existing partial Fabushi behavior is evidence for that slice only, not the whole upstream responsibility."
-    },
-    {
-      "recursive_order": 5210,
-      "source_path": "Telegram/SourceFiles/menu/menu_send_details.h",
-      "source_blob_sha": "cf57a6cd8c6b90aece73443572b84c464f016a30",
-      "read_complete": true,
-      "responsibility_decomposition_complete": true,
-      "responsibility": "typed send-menu mode/details contract including SilentOnly, Scheduled and ScheduledToUser",
-      "upstream_owner": "SendMenu::Details / Type",
-      "state_machine": "domain state/eligibility -> canonical menu projection -> guarded user action -> authoritative service mutation -> visible settlement/error/undo where applicable -> menu teardown",
-      "side_effects": "User-visible menu/action semantics and domain mutations must remain attached to existing Fabushi canonical service/state owners; generic menu rendering itself is not a second domain truth.",
-      "failure_cases": "stale eligibility or checked state; duplicate service owner; mutation presented as settled before authoritative completion; inaccessible keyboard/focus behavior; menu action survives owner/session replacement; platform-only action appears on unsupported platform.",
-      "ui_disposition": "Use canonical Menu/ContextMenu/ListRow/Checkbox/Switch/Dialog/AlertDialog/Toast/Button primitives as appropriate. Do not introduce TelegramButton, GroupMenuItem, or other Telegram-derived UI owners.",
-      "fabushi_canonical_owner": "canonical composer/submission transport owner",
-      "fabushi_target": "MAPPED OPEN WITH EXISTING PARTIAL IMPLEMENTATION. Fabushi already has canonical Human silent/scheduled send semantics in the existing composer/submission/Coordinator/Host path; that production slice must be reused and extended for any remaining applicable SendMenu responsibilities. No read-only closure is claimed.",
-      "platform_differences": "Qt widget/menu mechanics are presentation details; preserve applicable state, service, a11y, light/dark, lifecycle and error semantics through existing Fabushi components/owners.",
-      "production_evidence": "Existing evidence includes frontend/src/production/human-silent-scheduled-message.contract.test.ts and canonical ProductionRenderer/composer/submission/Coordinator/Host paths for the already-implemented silent/scheduled subset; remaining responsibilities are open.",
-      "test_evidence": "frontend/src/production/human-silent-scheduled-message.contract.test.ts plus exact-head required Actions for the existing subset; additional focused/E2E evidence required for remaining applicable actions.",
-      "disposition": "mapped-open-menu-domain-responsibility",
-      "unknown_closed": false,
-      "omitted": false,
-      "consumer_symbol": "SendMenu::Details / Type",
-      "consumer_evidence": [
-        "Complete direct exact-source read of Telegram/SourceFiles/menu/menu_send_details.h at accepted blob cf57a6cd; mapped to canonical composer/submission transport owner."
-      ],
-      "reachability_status": "accepted-tree source owner proven; responsibility remains mapped-open except already-existing partial canonical behavior explicitly noted",
-      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior is decomposed/reimplemented into source-neutral canonical owners rather than mechanically copied.",
-      "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-pending-new-head-actions-attestation",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
-        "verified_blob_sha": "cf57a6cd8c6b90aece73443572b84c464f016a30",
-        "byte_size": 1274,
         "file_type": "blob",
         "recursive_order": 5210
       },

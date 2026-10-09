@@ -1,0 +1,122 @@
+{
+  "format_version": 2,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+    "tree": "5030985204963cbbd362ced7412d231b04ebd0cc"
+  },
+  "range": {
+    "first_order": 5581,
+    "last_order": 5583,
+    "entries": 3
+  },
+  "rows": [
+    {
+      "recursive_order": 5581,
+      "source_path": "Telegram/SourceFiles/settings/sections/settings_advanced.h",
+      "source_blob_sha": "ceed08440fb2f897b14693545b4e2f8e8401f0ea",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Advanced settings route/contracts",
+      "upstream_owner": "Telegram settings section/design-system",
+      "state_machine": "load canonical settings/capabilities -> expose capability-gated controls -> mutate canonical network/storage/window/tray/update/archive policy -> persist -> platform projection/recovery",
+      "side_effects": "Maps to canonical settings/platform/network/storage/update owners; settings widgets/lists are projections and cannot become a second truth owner.",
+      "failure_cases": "capability exposed where unsupported; tray/taskbar state becomes inconsistent; autostart failure persisted as enabled; update/storage/network settings bypass canonical policy; local-passcode minimized-start protection lost",
+      "ui_disposition": "Reuse canonical Switch/Button/Checkbox/Radio/Menu/Dialog/AlertDialog/ListRow/EmptyState/LoadingState/ErrorState/UniversalSearch/settings surfaces with keyboard/a11y/light-dark/responsive evidence.",
+      "fabushi_canonical_owner": "canonical settings/platform/network/storage/update owners",
+      "fabushi_target": "MAPPED OPEN. Reuse/extend existing source-neutral owner; no Telegram-derived settings runtime.",
+      "platform_differences": "Platform-specific shell APIs and Telegram API identifiers are adapters; capability truth, settings persistence, account security and privacy semantics remain canonical Fabushi responsibilities.",
+      "production_evidence": "Source read proves responsibility only. Existing Fabushi platform/settings/security slices may partially overlap but complete same-head equivalence has not been proven for this row.",
+      "test_evidence": "HIGH risk: exact-head unit/contract/integration/fault/security/a11y/E2E evidence required before closure.",
+      "disposition": "mapped-open-canonical-settings-capability",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "Advanced settings route/contracts",
+      "consumer_evidence": [
+        "Complete direct exact-source read of Telegram/SourceFiles/settings/sections/settings_advanced.h at accepted blob ceed08440fb2f897b14693545b4e2f8e8401f0ea."
+      ],
+      "reachability_status": "accepted-tree responsibility proven; canonical implementation/evidence closure open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no source-named settings owner retained.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "verified_blob_sha": "ceed08440fb2f897b14693545b4e2f8e8401f0ea",
+        "file_type": "blob",
+        "recursive_order": 5581
+      },
+      "notes": "Read-complete; unknown remains open; omitted=false."
+    },
+    {
+      "recursive_order": 5582,
+      "source_path": "Telegram/SourceFiles/settings/sections/settings_blocked_peers.cpp",
+      "source_blob_sha": "f06bb447090fd1bfa1a10e68c0606235677c5f3e",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Blocked peers management",
+      "upstream_owner": "Telegram settings section/design-system",
+      "state_machine": "load canonical blocked slice -> reactive peer block updates -> add/block/unblock/list/empty-state -> canonical privacy state",
+      "side_effects": "Maps to canonical conversation identity/privacy/block owner; settings widgets/lists are projections and cannot become a second truth owner.",
+      "failure_cases": "blocked state diverges from server; empty/count state stale; wrong peer unblocked/blocked; list pagination/reactive change loses entries",
+      "ui_disposition": "Reuse canonical Switch/Button/Checkbox/Radio/Menu/Dialog/AlertDialog/ListRow/EmptyState/LoadingState/ErrorState/UniversalSearch/settings surfaces with keyboard/a11y/light-dark/responsive evidence.",
+      "fabushi_canonical_owner": "canonical conversation identity/privacy/block owner",
+      "fabushi_target": "MAPPED OPEN. Reuse/extend existing source-neutral owner; no Telegram-derived settings runtime.",
+      "platform_differences": "Platform-specific shell APIs and Telegram API identifiers are adapters; capability truth, settings persistence, account security and privacy semantics remain canonical Fabushi responsibilities.",
+      "production_evidence": "Source read proves responsibility only. Existing Fabushi platform/settings/security slices may partially overlap but complete same-head equivalence has not been proven for this row.",
+      "test_evidence": "CRITICAL risk: exact-head unit/contract/integration/fault/security/a11y/E2E evidence required before closure.",
+      "disposition": "mapped-open-canonical-settings-capability",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "Blocked peers management",
+      "consumer_evidence": [
+        "Complete direct exact-source read of Telegram/SourceFiles/settings/sections/settings_blocked_peers.cpp at accepted blob f06bb447090fd1bfa1a10e68c0606235677c5f3e."
+      ],
+      "reachability_status": "accepted-tree responsibility proven; canonical implementation/evidence closure open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no source-named settings owner retained.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "verified_blob_sha": "f06bb447090fd1bfa1a10e68c0606235677c5f3e",
+        "file_type": "blob",
+        "recursive_order": 5582
+      },
+      "notes": "Read-complete; unknown remains open; omitted=false."
+    },
+    {
+      "recursive_order": 5583,
+      "source_path": "Telegram/SourceFiles/settings/sections/settings_blocked_peers.h",
+      "source_blob_sha": "d520ced1687a5e9b882f8ecb04aa2ea8789bedcc",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Blocked peers settings route",
+      "upstream_owner": "Telegram settings section/design-system",
+      "state_machine": "load canonical blocked slice -> reactive peer block updates -> add/block/unblock/list/empty-state -> canonical privacy state",
+      "side_effects": "Maps to canonical conversation identity/privacy/block owner; settings widgets/lists are projections and cannot become a second truth owner.",
+      "failure_cases": "blocked state diverges from server; empty/count state stale; wrong peer unblocked/blocked; list pagination/reactive change loses entries",
+      "ui_disposition": "Reuse canonical Switch/Button/Checkbox/Radio/Menu/Dialog/AlertDialog/ListRow/EmptyState/LoadingState/ErrorState/UniversalSearch/settings surfaces with keyboard/a11y/light-dark/responsive evidence.",
+      "fabushi_canonical_owner": "canonical conversation identity/privacy/block owner",
+      "fabushi_target": "MAPPED OPEN. Reuse/extend existing source-neutral owner; no Telegram-derived settings runtime.",
+      "platform_differences": "Platform-specific shell APIs and Telegram API identifiers are adapters; capability truth, settings persistence, account security and privacy semantics remain canonical Fabushi responsibilities.",
+      "production_evidence": "Source read proves responsibility only. Existing Fabushi platform/settings/security slices may partially overlap but complete same-head equivalence has not been proven for this row.",
+      "test_evidence": "HIGH risk: exact-head unit/contract/integration/fault/security/a11y/E2E evidence required before closure.",
+      "disposition": "mapped-open-canonical-settings-capability",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "Blocked peers settings route",
+      "consumer_evidence": [
+        "Complete direct exact-source read of Telegram/SourceFiles/settings/sections/settings_blocked_peers.h at accepted blob d520ced1687a5e9b882f8ecb04aa2ea8789bedcc."
+      ],
+      "reachability_status": "accepted-tree responsibility proven; canonical implementation/evidence closure open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no source-named settings owner retained.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "verified_blob_sha": "d520ced1687a5e9b882f8ecb04aa2ea8789bedcc",
+        "file_type": "blob",
+        "recursive_order": 5583
+      },
+      "notes": "Read-complete; unknown remains open; omitted=false."
+    }
+  ]
+}

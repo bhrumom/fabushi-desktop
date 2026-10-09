@@ -1,43 +1,43 @@
 {
-  "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+  "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
   "start": 5178,
   "end": 5183,
   "entries": [
     {
       "order": 5178,
-      "path": "Telegram/SourceFiles/media/view/media_view_playback_sponsored.cpp",
-      "blob": "2ab75fe28143baaa92424b62311c0e727afddb6d",
-      "consumer_symbol": "Sponsored-video insertion lifecycle: request, delayed display, pause-aware countdown, close/Premium promotion, impression/click/report and state persistence"
+      "path": "Telegram/SourceFiles/media/view/media_view_playback_controls.h",
+      "blob": "1c06dfb6b62c643829c9ef0099e75fe2d15228fe",
+      "consumer_symbol": "Media::View::PlaybackControls"
     },
     {
       "order": 5179,
-      "path": "Telegram/SourceFiles/media/view/media_view_playback_sponsored.h",
-      "blob": "84fe4b9c429709a92e3bc60f5c689c2747fe5e69",
-      "consumer_symbol": "Sponsored-video typed state/lifecycle contract"
+      "path": "Telegram/SourceFiles/media/view/media_view_playback_progress.cpp",
+      "blob": "e3f55f4e2ff83d0f1b956247d596ae95af2d6068",
+      "consumer_symbol": "Media::View::PlaybackProgress"
     },
     {
       "order": 5180,
-      "path": "Telegram/SourceFiles/media/view/media_view_recognition_selection.cpp",
-      "blob": "c182d3ca390a8ad4fc6e5d2403fb0daea4f3f6a7",
-      "consumer_symbol": "OCR/text-recognition hit testing, character/ink bounds, multi-span selection and copied selected text"
+      "path": "Telegram/SourceFiles/media/view/media_view_playback_progress.h",
+      "blob": "d68097c96d76e63f73b9e636d6275d6c2c501ad2",
+      "consumer_symbol": "Media::View::PlaybackProgress"
     },
     {
       "order": 5181,
-      "path": "Telegram/SourceFiles/media/view/media_view_recognition_selection.h",
-      "blob": "c3627e4435f7b9a2a536dd78af1fd42c4353d59b",
-      "consumer_symbol": "Typed OCR selection anchor/focus/span/result contract"
+      "path": "Telegram/SourceFiles/media/view/media_view_playback_sponsored.cpp",
+      "blob": "2ab75fe28143baaa92424b62311c0e727afddb6d",
+      "consumer_symbol": "Media::View::PlaybackSponsored"
     },
     {
       "order": 5182,
-      "path": "Telegram/SourceFiles/media/view/media_view_video_stream.cpp",
-      "blob": "e22ec2f8fc0e0358b6db8a381702211c4f6da4b1",
-      "consumer_symbol": "Live/group video stream adapter: group-call lifetime, permission/failure close, video viewport/messages/loading, borrowed rendering, active-frame state, comments and volume"
+      "path": "Telegram/SourceFiles/media/view/media_view_playback_sponsored.h",
+      "blob": "84fe4b9c429709a92e3bc60f5c689c2747fe5e69",
+      "consumer_symbol": "Media::View::PlaybackSponsored"
     },
     {
       "order": 5183,
-      "path": "Telegram/SourceFiles/media/view/media_view_video_stream.h",
-      "blob": "0685e7ac8d381f61309682aae915f3df2dd2a81f",
-      "consumer_symbol": "Typed live video stream close/geometry/comment/volume/lifetime contract"
+      "path": "Telegram/SourceFiles/media/view/media_view_recognition_selection.cpp",
+      "blob": "c182d3ca390a8ad4fc6e5d2403fb0daea4f3f6a7",
+      "consumer_symbol": "Media::View::RecognitionSelection"
     }
   ]
 }

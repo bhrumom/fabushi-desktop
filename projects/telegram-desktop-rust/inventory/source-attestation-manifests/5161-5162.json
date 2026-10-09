@@ -1,19 +1,19 @@
 {
-  "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+  "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
   "start": 5161,
   "end": 5162,
   "entries": [
     {
       "order": 5161,
-      "path": "Telegram/SourceFiles/media/view/media_view_overlay_rhi.cpp",
-      "blob": "fe61046cbc094e7a2cafd7eeba09c42a75284ddf",
-      "consumer_symbol": "Media::View::OverlayWidget::RendererRhi"
+      "path": "Telegram/SourceFiles/media/view/media_view_overlay_raster.cpp",
+      "blob": "96191417734cdb34355dfd79f6e19359bb28c94c",
+      "consumer_symbol": "Media::View::OverlayWidget::RendererSW"
     },
     {
       "order": 5162,
-      "path": "Telegram/SourceFiles/media/view/media_view_overlay_rhi.h",
-      "blob": "059d22ff5f5bb9b013b79c91c56c9c825062bae1",
-      "consumer_symbol": "Media::View::OverlayWidget::RendererRhi"
+      "path": "Telegram/SourceFiles/media/view/media_view_overlay_raster.h",
+      "blob": "7a75930cd33226596ea34cd225c6211fa5cec6e6",
+      "consumer_symbol": "Media::View::OverlayWidget::RendererSW"
     }
   ]
 }

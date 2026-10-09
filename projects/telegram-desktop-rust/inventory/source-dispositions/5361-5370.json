@@ -4,8 +4,8 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
-    "tree": "6ac9bbc1b44edcb119b1a724e7b0a321c3b7b8fa"
+    "commit": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+    "tree": "5030985204963cbbd362ced7412d231b04ebd0cc"
   },
   "range": {
     "first_order": 5361,
@@ -15,6 +15,111 @@
   "rows": [
     {
       "recursive_order": 5361,
+      "source_path": "Telegram/SourceFiles/payments/stripe/stripe_decode.h",
+      "source_blob_sha": "5b0b0e152461495d02bfba7600c31ccecf5a51ab",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "typed required-field decode helper contract",
+      "upstream_owner": "Stripe source adapter/model",
+      "state_machine": "ephemeral payment input/provider response -> local structural validation -> source-neutral provider command -> typed provider result/error -> canonical payment UI projection",
+      "side_effects": "Applicable behavior maps into native/mahayana-messaging PaymentProvider/payment + canonical form-validation/security/error projection owners; card/provider implementation remains adapter-only and non-shipping as a second runtime.",
+      "failure_cases": "invalid card accepted; incomplete input submitted; expired card accepted; malformed provider JSON treated as success; raw card data persisted beyond tokenization; provider parameter/error taxonomy lost or exposed unsafely",
+      "ui_disposition": "Reuse canonical TextField/Status/ErrorState/Toast/payment form controls; no Stripe-specific UI component root.",
+      "fabushi_canonical_owner": "native/mahayana-messaging PaymentProvider/payment + canonical form-validation/security/error projection owners",
+      "fabushi_target": "MAPPED OPEN. Extend existing source-neutral payment/provider/form-validation/security owners only.",
+      "platform_differences": "Stripe SDK constants/wire encoding are source-specific; validation-state semantics, bounded ephemeral credential handling, strict decode and typed errors are portable.",
+      "production_evidence": "Current exact Fabushi audit proves PaymentProvider/payment owners exist; responsibility-level implementation and same-head evidence remain open.",
+      "test_evidence": "Exact-head unit/property/security/fault/UI validation evidence required before unknown closure.",
+      "disposition": "mapped-open-canonical-payment-validation-provider-replacement",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "Stripe decode contract",
+      "consumer_evidence": [
+        "Complete direct exact-source read of Telegram/SourceFiles/payments/stripe/stripe_decode.h at accepted blob 5b0b0e152461495d02bfba7600c31ccecf5a51ab."
+      ],
+      "reachability_status": "accepted-tree source owner/input proven; canonical applicability/implementation closure remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; Stripe SDK/runtime is not copied.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "verified_blob_sha": "5b0b0e152461495d02bfba7600c31ccecf5a51ab",
+        "file_type": "blob",
+        "recursive_order": 5361
+      },
+      "notes": "Read-complete only. unknown remains open; omitted=false."
+    },
+    {
+      "recursive_order": 5362,
+      "source_path": "Telegram/SourceFiles/payments/stripe/stripe_error.cpp",
+      "source_blob_sha": "c5be7e010471ae42531b863f2601163f1da02e92",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "structured API/invalid-request/card/unknown error decoding with parameter normalization and card-specific reason mapping",
+      "upstream_owner": "Stripe source adapter/model",
+      "state_machine": "ephemeral payment input/provider response -> local structural validation -> source-neutral provider command -> typed provider result/error -> canonical payment UI projection",
+      "side_effects": "Applicable behavior maps into native/mahayana-messaging PaymentProvider/payment + canonical form-validation/security/error projection owners; card/provider implementation remains adapter-only and non-shipping as a second runtime.",
+      "failure_cases": "invalid card accepted; incomplete input submitted; expired card accepted; malformed provider JSON treated as success; raw card data persisted beyond tokenization; provider parameter/error taxonomy lost or exposed unsafely",
+      "ui_disposition": "Reuse canonical TextField/Status/ErrorState/Toast/payment form controls; no Stripe-specific UI component root.",
+      "fabushi_canonical_owner": "native/mahayana-messaging PaymentProvider/payment + canonical form-validation/security/error projection owners",
+      "fabushi_target": "MAPPED OPEN. Extend existing source-neutral payment/provider/form-validation/security owners only.",
+      "platform_differences": "Stripe SDK constants/wire encoding are source-specific; validation-state semantics, bounded ephemeral credential handling, strict decode and typed errors are portable.",
+      "production_evidence": "Current exact Fabushi audit proves PaymentProvider/payment owners exist; responsibility-level implementation and same-head evidence remain open.",
+      "test_evidence": "Exact-head unit/property/security/fault/UI validation evidence required before unknown closure.",
+      "disposition": "mapped-open-canonical-payment-validation-provider-replacement",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "Stripe::Error::DecodedObjectFromResponse",
+      "consumer_evidence": [
+        "Complete direct exact-source read of Telegram/SourceFiles/payments/stripe/stripe_error.cpp at accepted blob c5be7e010471ae42531b863f2601163f1da02e92."
+      ],
+      "reachability_status": "accepted-tree source owner/input proven; canonical applicability/implementation closure remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; Stripe SDK/runtime is not copied.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "verified_blob_sha": "c5be7e010471ae42531b863f2601163f1da02e92",
+        "file_type": "blob",
+        "recursive_order": 5362
+      },
+      "notes": "Read-complete only. unknown remains open; omitted=false."
+    },
+    {
+      "recursive_order": 5363,
+      "source_path": "Telegram/SourceFiles/payments/stripe/stripe_error.h",
+      "source_blob_sha": "36247d3875ff6d66ed59f45158ea6dec32c11472",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "typed provider/network/card/cancellation/checkout error taxonomy",
+      "upstream_owner": "Stripe source adapter/model",
+      "state_machine": "ephemeral payment input/provider response -> local structural validation -> source-neutral provider command -> typed provider result/error -> canonical payment UI projection",
+      "side_effects": "Applicable behavior maps into native/mahayana-messaging PaymentProvider/payment + canonical form-validation/security/error projection owners; card/provider implementation remains adapter-only and non-shipping as a second runtime.",
+      "failure_cases": "invalid card accepted; incomplete input submitted; expired card accepted; malformed provider JSON treated as success; raw card data persisted beyond tokenization; provider parameter/error taxonomy lost or exposed unsafely",
+      "ui_disposition": "Reuse canonical TextField/Status/ErrorState/Toast/payment form controls; no Stripe-specific UI component root.",
+      "fabushi_canonical_owner": "native/mahayana-messaging PaymentProvider/payment + canonical form-validation/security/error projection owners",
+      "fabushi_target": "MAPPED OPEN. Extend existing source-neutral payment/provider/form-validation/security owners only.",
+      "platform_differences": "Stripe SDK constants/wire encoding are source-specific; validation-state semantics, bounded ephemeral credential handling, strict decode and typed errors are portable.",
+      "production_evidence": "Current exact Fabushi audit proves PaymentProvider/payment owners exist; responsibility-level implementation and same-head evidence remain open.",
+      "test_evidence": "Exact-head unit/property/security/fault/UI validation evidence required before unknown closure.",
+      "disposition": "mapped-open-canonical-payment-validation-provider-replacement",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "Stripe::Error contract",
+      "consumer_evidence": [
+        "Complete direct exact-source read of Telegram/SourceFiles/payments/stripe/stripe_error.h at accepted blob 36247d3875ff6d66ed59f45158ea6dec32c11472."
+      ],
+      "reachability_status": "accepted-tree source owner/input proven; canonical applicability/implementation closure remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; Stripe SDK/runtime is not copied.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+        "verified_blob_sha": "36247d3875ff6d66ed59f45158ea6dec32c11472",
+        "file_type": "blob",
+        "recursive_order": 5363
+      },
+      "notes": "Read-complete only. unknown remains open; omitted=false."
+    },
+    {
+      "recursive_order": 5364,
       "source_path": "Telegram/SourceFiles/payments/stripe/stripe_form_encodable.h",
       "source_blob_sha": "7cae5e25071e6385c8cf2011bed2ed411467ed3c",
       "read_complete": true,
@@ -41,15 +146,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior rewritten into source-neutral Fabushi owners; no Telegram runtime/UI root retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "7cae5e25071e6385c8cf2011bed2ed411467ed3c",
         "file_type": "blob",
-        "recursive_order": 5361
+        "recursive_order": 5364
       },
       "notes": "Read-complete. unknown remains open; omitted=false."
     },
     {
-      "recursive_order": 5362,
+      "recursive_order": 5365,
       "source_path": "Telegram/SourceFiles/payments/stripe/stripe_form_encoder.cpp",
       "source_blob_sha": "2f8f61f081b224c94ccf6952ae2411d96e50a6fd",
       "read_complete": true,
@@ -76,15 +181,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior rewritten into source-neutral Fabushi owners; no Telegram runtime/UI root retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "2f8f61f081b224c94ccf6952ae2411d96e50a6fd",
         "file_type": "blob",
-        "recursive_order": 5362
+        "recursive_order": 5365
       },
       "notes": "Read-complete. unknown remains open; omitted=false."
     },
     {
-      "recursive_order": 5363,
+      "recursive_order": 5366,
       "source_path": "Telegram/SourceFiles/payments/stripe/stripe_form_encoder.h",
       "source_blob_sha": "79e28471d86567fc68094f58f1ce54bf8de467f4",
       "read_complete": true,
@@ -111,15 +216,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior rewritten into source-neutral Fabushi owners; no Telegram runtime/UI root retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "79e28471d86567fc68094f58f1ce54bf8de467f4",
         "file_type": "blob",
-        "recursive_order": 5363
+        "recursive_order": 5366
       },
       "notes": "Read-complete. unknown remains open; omitted=false."
     },
     {
-      "recursive_order": 5364,
+      "recursive_order": 5367,
       "source_path": "Telegram/SourceFiles/payments/stripe/stripe_payment_configuration.h",
       "source_blob_sha": "a42e7921a81e4702066426e1814db2cc206c2b63",
       "read_complete": true,
@@ -146,15 +251,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior rewritten into source-neutral Fabushi owners; no Telegram runtime/UI root retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "a42e7921a81e4702066426e1814db2cc206c2b63",
         "file_type": "blob",
-        "recursive_order": 5364
+        "recursive_order": 5367
       },
       "notes": "Read-complete. unknown remains open; omitted=false."
     },
     {
-      "recursive_order": 5365,
+      "recursive_order": 5368,
       "source_path": "Telegram/SourceFiles/payments/stripe/stripe_pch.h",
       "source_blob_sha": "b7c2e9fee1b35daddac7fe1245728bfd3f55b5df",
       "read_complete": true,
@@ -181,15 +286,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior rewritten into source-neutral Fabushi owners; no Telegram runtime/UI root retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "b7c2e9fee1b35daddac7fe1245728bfd3f55b5df",
         "file_type": "blob",
-        "recursive_order": 5365
+        "recursive_order": 5368
       },
       "notes": "Read-complete. unknown remains open; omitted=false."
     },
     {
-      "recursive_order": 5366,
+      "recursive_order": 5369,
       "source_path": "Telegram/SourceFiles/payments/stripe/stripe_token.cpp",
       "source_blob_sha": "d91e48be38e76943d6c2f3e94036952773d9f0cb",
       "read_complete": true,
@@ -216,15 +321,15 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior rewritten into source-neutral Fabushi owners; no Telegram runtime/UI root retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "d91e48be38e76943d6c2f3e94036952773d9f0cb",
         "file_type": "blob",
-        "recursive_order": 5366
+        "recursive_order": 5369
       },
       "notes": "Read-complete. unknown remains open; omitted=false."
     },
     {
-      "recursive_order": 5367,
+      "recursive_order": 5370,
       "source_path": "Telegram/SourceFiles/payments/stripe/stripe_token.h",
       "source_blob_sha": "f22aefe60667314bbc096c126d02765b1d842e9a",
       "read_complete": true,
@@ -251,113 +356,8 @@
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior rewritten into source-neutral Fabushi owners; no Telegram runtime/UI root retained.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
         "verified_blob_sha": "f22aefe60667314bbc096c126d02765b1d842e9a",
-        "file_type": "blob",
-        "recursive_order": 5367
-      },
-      "notes": "Read-complete. unknown remains open; omitted=false."
-    },
-    {
-      "recursive_order": 5368,
-      "source_path": "Telegram/SourceFiles/payments/ui/payments.style",
-      "source_blob_sha": "e537343e6709b7ed86215306fc2c27a616592952",
-      "read_complete": true,
-      "responsibility_decomposition_complete": true,
-      "responsibility": "checkout visual hierarchy and state styling",
-      "upstream_owner": "Telegram payment UI",
-      "state_machine": "canonical invoice/payment state -> bounded input/projection -> command/provider boundary -> success/error -> canonical payment/reaction state",
-      "side_effects": "Applicable behavior maps to canonical payment surface + semantic tokens; source-specific runtime/UI is not copied.",
-      "failure_cases": "missing/invalid checkout data accepted; malformed provider result; stale payment/reaction projection; duplicate checkout state owner",
-      "ui_disposition": "Reuse canonical Button/IconButton/TextField/Checkbox/Radio/Dialog/Status/LoadingState/ErrorState/Toast and semantic tokens; no Telegram payment/reaction root.",
-      "fabushi_canonical_owner": "canonical payment surface + semantic tokens",
-      "fabushi_target": "MAPPED OPEN. Extend existing source-neutral owners only.",
-      "platform_differences": "Stripe/Telegram wire/presentation remains source-specific; portable validation/lifecycle maps to canonical owners.",
-      "production_evidence": "Current exact Fabushi owner audit exists; responsibility-level exact-head implementation/evidence remains open.",
-      "test_evidence": "Applicable exact-head tests required before unknown closure.",
-      "disposition": "mapped-open-canonical-payment-checkout-replacement",
-      "unknown_closed": false,
-      "omitted": false,
-      "consumer_symbol": "payment panel semantic presentation contract",
-      "consumer_evidence": [
-        "Complete direct exact-source read of Telegram/SourceFiles/payments/ui/payments.style at accepted blob e537343e6709b7ed86215306fc2c27a616592952."
-      ],
-      "reachability_status": "accepted-tree source owner/input proven; canonical applicability/implementation closure remains open",
-      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior rewritten into source-neutral Fabushi owners; no Telegram runtime/UI root retained.",
-      "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
-        "verified_blob_sha": "e537343e6709b7ed86215306fc2c27a616592952",
-        "file_type": "blob",
-        "recursive_order": 5368
-      },
-      "notes": "Read-complete. unknown remains open; omitted=false."
-    },
-    {
-      "recursive_order": 5369,
-      "source_path": "Telegram/SourceFiles/payments/ui/payments_edit_card.cpp",
-      "source_blob_sha": "0c2aac434e9ee4ca29e465274dadc087abda60e3",
-      "read_complete": true,
-      "responsibility_decomposition_complete": true,
-      "responsibility": "card edit validation/focus/save-information lifecycle",
-      "upstream_owner": "Telegram payment UI",
-      "state_machine": "canonical invoice/payment state -> bounded input/projection -> command/provider boundary -> success/error -> canonical payment/reaction state",
-      "side_effects": "Applicable behavior maps to canonical payment form + PaymentProvider/security; source-specific runtime/UI is not copied.",
-      "failure_cases": "missing/invalid checkout data accepted; malformed provider result; stale payment/reaction projection; duplicate checkout state owner",
-      "ui_disposition": "Reuse canonical Button/IconButton/TextField/Checkbox/Radio/Dialog/Status/LoadingState/ErrorState/Toast and semantic tokens; no Telegram payment/reaction root.",
-      "fabushi_canonical_owner": "canonical payment form + PaymentProvider/security",
-      "fabushi_target": "MAPPED OPEN. Extend existing source-neutral owners only.",
-      "platform_differences": "Stripe/Telegram wire/presentation remains source-specific; portable validation/lifecycle maps to canonical owners.",
-      "production_evidence": "Current exact Fabushi owner audit exists; responsibility-level exact-head implementation/evidence remains open.",
-      "test_evidence": "Applicable exact-head tests required before unknown closure.",
-      "disposition": "mapped-open-canonical-payment-checkout-replacement",
-      "unknown_closed": false,
-      "omitted": false,
-      "consumer_symbol": "Payments::Ui::EditCard / validators / collect",
-      "consumer_evidence": [
-        "Complete direct exact-source read of Telegram/SourceFiles/payments/ui/payments_edit_card.cpp at accepted blob 0c2aac434e9ee4ca29e465274dadc087abda60e3."
-      ],
-      "reachability_status": "accepted-tree source owner/input proven; canonical applicability/implementation closure remains open",
-      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior rewritten into source-neutral Fabushi owners; no Telegram runtime/UI root retained.",
-      "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
-        "verified_blob_sha": "0c2aac434e9ee4ca29e465274dadc087abda60e3",
-        "file_type": "blob",
-        "recursive_order": 5369
-      },
-      "notes": "Read-complete. unknown remains open; omitted=false."
-    },
-    {
-      "recursive_order": 5370,
-      "source_path": "Telegram/SourceFiles/payments/ui/payments_edit_card.h",
-      "source_blob_sha": "ae4cce54b415fead818a50e40143b82e2c09ae4c",
-      "read_complete": true,
-      "responsibility_decomposition_complete": true,
-      "responsibility": "typed card editor presentation contract",
-      "upstream_owner": "Telegram payment UI",
-      "state_machine": "canonical invoice/payment state -> bounded input/projection -> command/provider boundary -> success/error -> canonical payment/reaction state",
-      "side_effects": "Applicable behavior maps to canonical payment form; source-specific runtime/UI is not copied.",
-      "failure_cases": "missing/invalid checkout data accepted; malformed provider result; stale payment/reaction projection; duplicate checkout state owner",
-      "ui_disposition": "Reuse canonical Button/IconButton/TextField/Checkbox/Radio/Dialog/Status/LoadingState/ErrorState/Toast and semantic tokens; no Telegram payment/reaction root.",
-      "fabushi_canonical_owner": "canonical payment form",
-      "fabushi_target": "MAPPED OPEN. Extend existing source-neutral owners only.",
-      "platform_differences": "Stripe/Telegram wire/presentation remains source-specific; portable validation/lifecycle maps to canonical owners.",
-      "production_evidence": "Current exact Fabushi owner audit exists; responsibility-level exact-head implementation/evidence remains open.",
-      "test_evidence": "Applicable exact-head tests required before unknown closure.",
-      "disposition": "mapped-open-canonical-payment-checkout-replacement",
-      "unknown_closed": false,
-      "omitted": false,
-      "consumer_symbol": "Payments::Ui::EditCard contract",
-      "consumer_evidence": [
-        "Complete direct exact-source read of Telegram/SourceFiles/payments/ui/payments_edit_card.h at accepted blob ae4cce54b415fead818a50e40143b82e2c09ae4c."
-      ],
-      "reachability_status": "accepted-tree source owner/input proven; canonical applicability/implementation closure remains open",
-      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior rewritten into source-neutral Fabushi owners; no Telegram runtime/UI root retained.",
-      "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
-        "verified_blob_sha": "ae4cce54b415fead818a50e40143b82e2c09ae4c",
         "file_type": "blob",
         "recursive_order": 5370
       },

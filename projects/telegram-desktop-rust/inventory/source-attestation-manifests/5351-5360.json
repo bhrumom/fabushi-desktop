@@ -1,67 +1,67 @@
 {
-  "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+  "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
   "start": 5351,
   "end": 5360,
   "entries": [
     {
       "order": 5351,
+      "path": "Telegram/SourceFiles/payments/stripe/stripe_api_client.cpp",
+      "blob": "853dc1498c4b8a3089934ded1a033073b0a91028",
+      "consumer_symbol": "Stripe::APIClient"
+    },
+    {
+      "order": 5352,
+      "path": "Telegram/SourceFiles/payments/stripe/stripe_api_client.h",
+      "blob": "8fc26eb822dfd093597796e947e19ed87bd9d36a",
+      "consumer_symbol": "Stripe::APIClient contract"
+    },
+    {
+      "order": 5353,
+      "path": "Telegram/SourceFiles/payments/stripe/stripe_callbacks.h",
+      "blob": "8e0d0a2a5a3b95c45ee0b0390cc89429f22a773b",
+      "consumer_symbol": "Stripe::TokenCompletionCallback"
+    },
+    {
+      "order": 5354,
       "path": "Telegram/SourceFiles/payments/stripe/stripe_card.cpp",
       "blob": "ca2c864a9165cbf5d1f42783a865907dca3f5dd3",
       "consumer_symbol": "Stripe::Card"
     },
     {
-      "order": 5352,
+      "order": 5355,
       "path": "Telegram/SourceFiles/payments/stripe/stripe_card.h",
       "blob": "30ff47b643781f58c83b7d0e2923ed54100970e2",
       "consumer_symbol": "Stripe::Card contract"
     },
     {
-      "order": 5353,
+      "order": 5356,
       "path": "Telegram/SourceFiles/payments/stripe/stripe_card_params.cpp",
       "blob": "81b72c4e0328648616a3212c9fd0927ac076ca25",
       "consumer_symbol": "Stripe::CardParams::formFieldValues"
     },
     {
-      "order": 5354,
+      "order": 5357,
       "path": "Telegram/SourceFiles/payments/stripe/stripe_card_params.h",
       "blob": "d107dc57f784162ca5656065b6800f29146bae8d",
       "consumer_symbol": "Stripe::CardParams"
     },
     {
-      "order": 5355,
+      "order": 5358,
       "path": "Telegram/SourceFiles/payments/stripe/stripe_card_validator.cpp",
       "blob": "599a3922df18c67499b091ece51754e904d37acc",
       "consumer_symbol": "Stripe::ValidateCard / ValidateExpireDate / ValidateCvc / CardNumberFormat"
     },
     {
-      "order": 5356,
+      "order": 5359,
       "path": "Telegram/SourceFiles/payments/stripe/stripe_card_validator.h",
       "blob": "68fdf5ad13954fa6c799132ddab4fd0c5e4e25ce",
       "consumer_symbol": "Stripe validation contract"
     },
     {
-      "order": 5357,
+      "order": 5360,
       "path": "Telegram/SourceFiles/payments/stripe/stripe_decode.cpp",
       "blob": "acd2dac0b0b89c4b10ca10a975fa07926640fedd",
       "consumer_symbol": "Stripe::ContainsFields"
-    },
-    {
-      "order": 5358,
-      "path": "Telegram/SourceFiles/payments/stripe/stripe_decode.h",
-      "blob": "5b0b0e152461495d02bfba7600c31ccecf5a51ab",
-      "consumer_symbol": "Stripe decode contract"
-    },
-    {
-      "order": 5359,
-      "path": "Telegram/SourceFiles/payments/stripe/stripe_error.cpp",
-      "blob": "c5be7e010471ae42531b863f2601163f1da02e92",
-      "consumer_symbol": "Stripe::Error::DecodedObjectFromResponse"
-    },
-    {
-      "order": 5360,
-      "path": "Telegram/SourceFiles/payments/stripe/stripe_error.h",
-      "blob": "36247d3875ff6d66ed59f45158ea6dec32c11472",
-      "consumer_symbol": "Stripe::Error contract"
     }
   ]
 }

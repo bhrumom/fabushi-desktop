@@ -1,67 +1,67 @@
 {
-  "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+  "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
   "start": 5291,
   "end": 5300,
   "entries": [
     {
       "order": 5291,
+      "path": "Telegram/SourceFiles/mtproto/type_utils.h",
+      "blob": "fd6cdd1e5631f7a7f9690c1ffa8cb438ba6b8036",
+      "consumer_symbol": "MTProto type helpers"
+    },
+    {
+      "order": 5292,
+      "path": "Telegram/SourceFiles/mtproto/web_proxy/web_proxy_frame.cpp",
+      "blob": "bd1d7b310f40203f9da914efc8bdd6711035884b",
+      "consumer_symbol": "MTP::WebProxy"
+    },
+    {
+      "order": 5293,
+      "path": "Telegram/SourceFiles/mtproto/web_proxy/web_proxy_frame.h",
+      "blob": "a5ba491fed67d70aee88e6ec2e3ac47c991e78f3",
+      "consumer_symbol": "MTP::WebProxy"
+    },
+    {
+      "order": 5294,
       "path": "Telegram/SourceFiles/mtproto/web_proxy/web_proxy_transport.cpp",
       "blob": "e25ad970e84686e9aca061d02c274048793b5ad4",
       "consumer_symbol": "MTP::WebProxy::Transport / Transport::Private"
     },
     {
-      "order": 5292,
+      "order": 5295,
       "path": "Telegram/SourceFiles/mtproto/web_proxy/web_proxy_transport.h",
       "blob": "f58850d2bc2ceabd93113d7725903e1c0d92d71b",
       "consumer_symbol": "MTP::WebProxy::Transport public contract"
     },
     {
-      "order": 5293,
+      "order": 5296,
       "path": "Telegram/SourceFiles/mtproto/web_proxy/web_proxy_webview.cpp",
       "blob": "8a2efc8fb15e400366f199cd956effc8ad362da8",
       "consumer_symbol": "MTP::WebProxy::WebviewCarrier"
     },
     {
-      "order": 5294,
+      "order": 5297,
       "path": "Telegram/SourceFiles/mtproto/web_proxy/web_proxy_webview.h",
       "blob": "57d8a5d6e91e275759774ad7a32961ce14406fd9",
       "consumer_symbol": "MTP::WebProxy::WebviewCarrier public contract"
     },
     {
-      "order": 5295,
+      "order": 5298,
       "path": "Telegram/SourceFiles/overview/overview.style",
       "blob": "d51f1de1d1cd811c6c5d3679ec9bec73fdfccd0f",
       "consumer_symbol": "Overview shared-media style contract"
     },
     {
-      "order": 5296,
+      "order": 5299,
       "path": "Telegram/SourceFiles/overview/overview_checkbox.cpp",
       "blob": "9722aa21fed56c788bceed284f7438e9074c51ab",
       "consumer_symbol": "Overview::Layout::Checkbox"
     },
     {
-      "order": 5297,
+      "order": 5300,
       "path": "Telegram/SourceFiles/overview/overview_checkbox.h",
       "blob": "2da919e232b94811d6991bb8c641536b9c589f6c",
       "consumer_symbol": "Overview::Layout::Checkbox public contract"
-    },
-    {
-      "order": 5298,
-      "path": "Telegram/SourceFiles/overview/overview_layout.cpp",
-      "blob": "ceae87bc8148b76426a3e1e9d427f99f04659429",
-      "consumer_symbol": "Overview::Layout::{ItemBase,RadialProgressItem,Photo,Video,Voice,Document,Link,Gif}"
-    },
-    {
-      "order": 5299,
-      "path": "Telegram/SourceFiles/overview/overview_layout.h",
-      "blob": "c6aba8cac455f3e01805ab835fc6968d5b8c142c",
-      "consumer_symbol": "Overview::Layout item contracts"
-    },
-    {
-      "order": 5300,
-      "path": "Telegram/SourceFiles/overview/overview_layout_delegate.h",
-      "blob": "0d016974b102bedf989f9a65a10a48f0587bed62",
-      "consumer_symbol": "Overview::Layout::Delegate"
     }
   ]
 }
