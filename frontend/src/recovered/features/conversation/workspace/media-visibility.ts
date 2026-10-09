@@ -3,6 +3,49 @@ export const DERIVED_MEDIA_THUMBNAIL_ROOT_MARGIN = "0px 320px";
 
 export type DerivedMediaVisibilityListener = (isNearViewport: boolean) => void;
 
+export interface DerivedMediaViewportRect {
+  readonly top: number;
+  readonly right: number;
+  readonly bottom: number;
+  readonly left: number;
+}
+
+function parsePixelRootMargin(rootMargin: string): readonly [number, number, number, number] | null {
+  const values = rootMargin.trim().split(/\s+/).filter(Boolean).map((part) => {
+    const match = /^(-?(?:\d+\.?\d*|\.\d+))px$/.exec(part);
+    return match == null ? Number.NaN : Number(match[1]);
+  });
+  if (values.length < 1 || values.length > 4 || values.some((value) => !Number.isFinite(value))) return null;
+  const [top, second, third, fourth] = values;
+  if (values.length === 1) return [top!, top!, top!, top!];
+  if (values.length === 2) return [top!, second!, top!, second!];
+  if (values.length === 3) return [top!, second!, third!, second!];
+  return [top!, second!, third!, fourth!];
+}
+
+export function isDerivedMediaNearViewport(
+  rect: DerivedMediaViewportRect,
+  viewportWidth: number,
+  viewportHeight: number,
+  rootMargin: string,
+): boolean {
+  const margins = parsePixelRootMargin(rootMargin);
+  if (margins == null || !Number.isFinite(viewportWidth) || !Number.isFinite(viewportHeight)) return true;
+  const [top, right, bottom, left] = margins;
+  const width = Math.max(0, viewportWidth);
+  const height = Math.max(0, viewportHeight);
+  return rect.bottom >= -top
+    && rect.top <= height + bottom
+    && rect.right >= -left
+    && rect.left <= width + right;
+}
+
+export function initialDerivedMediaVisibility(element: Element, rootMargin: string): boolean {
+  if (typeof IntersectionObserver === "undefined" || typeof window === "undefined") return true;
+  const rect = element.getBoundingClientRect();
+  return isDerivedMediaNearViewport(rect, window.innerWidth, window.innerHeight, rootMargin);
+}
+
 interface VisibilityBucket {
   observer: IntersectionObserver;
   listeners: Map<Element, Set<DerivedMediaVisibilityListener>>;
