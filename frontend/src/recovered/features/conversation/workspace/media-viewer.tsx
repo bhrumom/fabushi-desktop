@@ -266,8 +266,18 @@ function MediaCard({ attachment, kind, media, loading, observe, role, onOpen, on
   const label = attachment.name || attachmentBasename(attachment.path);
   const attachmentLabel = role === "assistant" ? "Agent attachment" : "User attachment";
   const userMediaStyle = attachment.sourceKind === "user-attachment" ? { maxWidth: 320 } : undefined;
-  if (media?.kind === "image" && onOpen != null) return <button aria-label="Media preview" className="sand-attachment" data-attachment-label={attachmentLabel} data-media-source={attachment.path} onClick={(event) => onOpen(event.currentTarget)} ref={observe} type="button"><img alt={label} className="sand-attachment__image" draggable={false} height={attachment.height ?? undefined} src={media.dataUrl} style={userMediaStyle} width={attachment.width ?? undefined} /></button>;
-  if (media?.kind === "video" && onOpen != null) return <button aria-label="Media preview" className="sand-attachment" data-attachment-label={attachmentLabel} data-media-source={attachment.path} onClick={(event) => onOpen(event.currentTarget)} ref={observe} type="button"><video aria-label={label} className="sand-attachment__video" height={attachment.height ?? undefined} muted preload="metadata" src={media.src} style={userMediaStyle} width={attachment.width ?? undefined} /></button>;
+  if (isPreviewable(kind) && onOpen != null) {
+    const preview = kind === "image" && media?.kind === "image"
+      ? <img alt={label} className="sand-attachment__image" draggable={false} height={attachment.height ?? undefined} src={media.dataUrl} style={userMediaStyle} width={attachment.width ?? undefined} />
+      : kind === "video" && media?.kind === "video"
+        ? <video aria-label={label} className="sand-attachment__video" height={attachment.height ?? undefined} muted preload="metadata" src={media.src} style={userMediaStyle} width={attachment.width ?? undefined} />
+        : <span aria-live={loading ? "polite" : undefined}>{loading ? "Loading media…" : label}</span>;
+    // The preview button owns activation/focus identity. Derived media may be
+    // released and reacquired as visibility changes, but replacing this node
+    // would retire keyboard focus and can feed IntersectionObserver ref churn
+    // back into visibility state. Only the preview payload is lifecycle-bound.
+    return <button aria-label="Media preview" className="sand-attachment" data-attachment-label={attachmentLabel} data-media-source={attachment.path} data-media-state={loading ? "loading" : media == null ? "unavailable" : "ready"} onClick={(event) => onOpen(event.currentTarget)} ref={observe} type="button">{preview}</button>;
+  }
   if (media?.kind === "audio") return <audio aria-label={label} className="sand-attachment" data-attachment-label={attachmentLabel} controls preload="metadata" ref={observe} src={media.src} />;
   if (kind === "pdf" && onOpenPdf != null) return <button aria-label={`Open ${label}`} className="sand-file-attachment-chip sand-message-attachment" data-attachment-label={attachmentLabel} data-kind={kind} onClick={(event) => onOpenPdf(event.currentTarget)} ref={observe} type="button" title={attachment.path}><span aria-hidden="true">▤</span><span><strong>{label}</strong><small>{kind}{attachment.size == null ? "" : ` · ${formatAttachmentBytes(attachment.size)}`}</small></span></button>;
   if (loading) return <span aria-label="Loading media…" className="sand-attachment" data-attachment-label={attachmentLabel} ref={observe} role="status">Loading media…</span>;
