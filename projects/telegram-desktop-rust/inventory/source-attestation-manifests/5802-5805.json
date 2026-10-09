@@ -1,6 +1,6 @@
 {
-  "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
-  "accepted_tree": "4ddb5182fc1ae238e4dc62a396614614b5b35f97",
+  "accepted_upstream": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
+  "accepted_tree": "6b616494f3465324e749a04dcd1c9d508657a998",
   "deterministic_order_basis": "non-directory/blob rank in accepted recursive tree",
   "start": 5802,
   "end": 5805,
@@ -14,7 +14,7 @@
     {
       "order": 5803,
       "path": "Telegram/SourceFiles/test/test_menu.h",
-      "blob": "295278972a57df6a9120c406dbd610bcef11798f",
+      "blob": "183f2143b122ba978eed8b1de98d88ebb76df16a",
       "consumer_symbol": "test_menu"
     },
     {

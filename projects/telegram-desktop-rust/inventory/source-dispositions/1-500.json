@@ -4,8 +4,8 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "b0d1fe5e08c963402b8b71648c70a2bf68e6fab2",
-    "tree": "e279373aec283ebfcc6e3bb7385e51205acd84a2"
+    "commit": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
+    "tree": "6b616494f3465324e749a04dcd1c9d508657a998"
   },
   "range": {
     "first_order": 1,
@@ -226,10 +226,10 @@
     {
       "recursive_order": 11,
       "source_path": ".agents/shared/test-loop.md",
-      "source_blob_sha": "1075d1ee38bfb0a596dcb9a737b17be0607d8d02",
+      "source_blob_sha": "51c4b9c59100c1fbd65c6dd89782b75f33c98600",
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "responsibility": "Professional task-test loop authority for background macOS launch, bounded evidence collection, occlusion/exposure handling, crash/death diagnostics and console-input safeguards.",
+      "responsibility": "Professional task-test loop authority for non-activating/background macOS launch, fresh console-lock evidence, bounded evidence collection, occlusion/exposure handling, crash/death diagnostics, and a run-wide App Nap opt-out/hold contract so timing-sensitive evidence keeps painting without stealing activation.",
       "upstream_owner": "Canonical development-only professional test orchestration owner",
       "state_machine": "bounded test/recovery state machine",
       "side_effects": "run development test campaigns and preserve evidence",
@@ -238,17 +238,17 @@
       "fabushi_canonical_owner": "Canonical development-only professional test orchestration owner",
       "fabushi_target": "none",
       "platform_differences": "platform-specific evidence drivers only",
-      "production_evidence": "Exact cf478d37 changed blob re-read and rebound; source/tooling read does not itself verify the shipping product.",
-      "test_evidence": "Fresh exact-descendant GitHub Actions evidence required; no threshold reduction, fake product fallback, or source-specific product owner is allowed.",
+      "production_evidence": "Exact live 65e23ba7 changed-prefix blob re-read/reconciled; reading alone gives no new shipping/release credit.",
+      "test_evidence": "Fresh exact-descendant GitHub Actions evidence required; predecessor b0400d/b0d1fe5e runs remain historical-only.",
       "disposition": "development-only-non-applicable-with-canonical-test-replacement",
       "unknown_closed": true,
       "omitted": false,
-      "notes": "Changed accepted-prefix blob explicitly re-read under cf478d37. Existing applicability/unknown/omitted classification is retained only where the responsibility class remains the same.",
+      "notes": "Changed accepted-prefix blob explicitly re-read under live 65e23ba7; classification retained only after responsibility re-decomposition; omitted remains false.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-required",
-        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
-        "verified_blob_sha": "1075d1ee38bfb0a596dcb9a737b17be0607d8d02",
-        "byte_size": 74740,
+        "accepted_upstream": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
+        "verified_blob_sha": "51c4b9c59100c1fbd65c6dd89782b75f33c98600",
+        "byte_size": 76031,
         "file_type": "blob",
         "recursive_order": 11
       }
@@ -1429,10 +1429,10 @@
     {
       "recursive_order": 67,
       "source_path": ".github/workflows/mac_packaged.yml",
-      "source_blob_sha": "24d2f2c4b69ff4f6af3bb5152f9ad3f7465f7c4b",
+      "source_blob_sha": "6e9f0b5bddfc3146bbed0bcd56a465bd584b89fc",
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "responsibility": "Build a packaged macOS Telegram.app against packaged Homebrew/RNNoise/WebRTC/TDE2E dependencies and upload the app artifact.",
+      "responsibility": "Build packaged macOS Telegram.app with pinned build inputs, including a cached Rust static-library bundle that composes tlottie and wallet-engine with exact source/patch/toolchain refs, then upload the packaged app artifact.",
       "upstream_owner": "macOS packaged build qualification",
       "state_machine": "trigger -> validate inputs/environment -> perform scoped repository/build/release action -> publish result or fail closed",
       "side_effects": "CI/build/release artifacts or repository automation only",
@@ -1441,11 +1441,12 @@
       "fabushi_canonical_owner": ".github/workflows/release-macos-main.yml",
       "fabushi_target": ".github/workflows/release-macos-main.yml",
       "platform_differences": "macOS packaged dependency path",
-      "production_evidence": "Exact 191-line upstream read; Fabushi release-macos-main is stronger because it packages/signs/notarizes/staples and runs installed real packaged acceptance.",
-      "test_evidence": "same-head Fabushi workflow evidence required where the responsibility is applicable",
+      "production_evidence": "Exact live 65e23ba7 changed-prefix blob re-read/reconciled; reading alone gives no new shipping/release credit.",
+      "test_evidence": "Fresh exact-descendant GitHub Actions evidence required; predecessor b0400d/b0d1fe5e runs remain historical-only.",
       "disposition": "applicable-replaced-by-stronger-canonical-owner",
       "unknown_closed": true,
-      "omitted": false
+      "omitted": false,
+      "notes": "Changed accepted-prefix blob explicitly re-read under live 65e23ba7; classification retained only after responsibility re-decomposition; omitted remains false."
     },
     {
       "recursive_order": 68,

@@ -4,8 +4,8 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "b0d1fe5e08c963402b8b71648c70a2bf68e6fab2",
-    "tree": "e279373aec283ebfcc6e3bb7385e51205acd84a2"
+    "commit": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
+    "tree": "6b616494f3465324e749a04dcd1c9d508657a998"
   },
   "range": {
     "first_order": 5772,
@@ -16,10 +16,10 @@
     {
       "recursive_order": 5772,
       "source_path": "Telegram/SourceFiles/test/test_console_lock.cpp",
-      "source_blob_sha": "0a1fcffab5bdd7a9f90ace3b9c8a69b5806e7808",
+      "source_blob_sha": "a03d89fe3e80128dae36b4d1c29df149fd10357b",
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "responsibility": "Windows console-lock precondition and diagnostic gate for professional desktop tests: classify locked/unlocked/unknown without treating platform/precondition failures as product outcomes.",
+      "responsibility": "Fresh cross-platform console-lock evidence: Windows reads WTS session flags; macOS reads CGSessionCopyCurrentDictionary lock/on-console booleans with privacy-safe diagnostics; other platforms are not-applicable. ConsoleLockGate intentionally gates only positively locked Windows runs.",
       "upstream_owner": "tdesktop task-test harness / Windows platform precondition reader",
       "state_machine": "resolve process session -> query active console/session info -> validate WTSINFOEX level/bytes -> classify lock state or unknown -> emit privacy-safe diagnostics -> gate only when positively locked",
       "side_effects": "Test-only OS session metadata read; no product mutation, no clipboard/content capture, no credential access.",
@@ -28,22 +28,23 @@
       "fabushi_canonical_owner": "Canonical cross-platform desktop test precondition/privacy evidence harness",
       "fabushi_target": "MAPPED OPEN.",
       "platform_differences": "Windows uses WTS session metadata. Older Windows versions with reversed documented flags must remain unknown/fail-safe. Non-Windows is explicit not-applicable and must not fire a false lock gate.",
-      "production_evidence": "Exact accepted blob read; equivalent Fabushi test-harness implementation/evidence remains open.",
-      "test_evidence": "Windows locked/unlocked/unknown fixtures; malformed/short response; unsupported legacy Windows; non-Windows N/A; diagnostics must contain metadata/reason only and no user content.",
+      "production_evidence": "Exact live 65e23ba7 changed-prefix blob re-read/reconciled; reading alone gives no new shipping/release credit.",
+      "test_evidence": "Fresh exact-descendant GitHub Actions evidence required; predecessor b0400d/b0d1fe5e runs remain historical-only.",
       "disposition": "mapped-open-test-harness",
       "unknown_closed": false,
       "omitted": false,
       "consumer_evidence": [],
       "reachability_status": "accepted-tree exact blob responsibility proven; professional test-harness closure open",
       "license_and_provenance": "tdesktop provenance retained.",
-      "notes": "Reading closes no unknown. Positive locked state may block a test action; unknown is diagnostic and must not be silently promoted to unlocked.",
+      "notes": "Changed accepted-prefix blob explicitly re-read under live 65e23ba7; classification retained only after responsibility re-decomposition; omitted remains false.",
       "consumer_symbol": "ReadConsoleLock / ConsoleLockGate",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-required",
-        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
-        "verified_blob_sha": "0a1fcffab5bdd7a9f90ace3b9c8a69b5806e7808",
+        "accepted_upstream": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
+        "verified_blob_sha": "a03d89fe3e80128dae36b4d1c29df149fd10357b",
         "file_type": "blob",
-        "recursive_order": 5772
+        "recursive_order": 5772,
+        "byte_size": 6961
       }
     }
   ]

@@ -3,25 +3,25 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_repository": "telegramdesktop/tdesktop",
-  "upstream_commit": "b0d1fe5e08c963402b8b71648c70a2bf68e6fab2",
+  "upstream_commit": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
   "discovery": {
     "evidence_run_id": 37837273028,
     "evidence_head_sha": "3929d875d414f522f9b71b7fe6db33b81ccf4451",
     "artifact_id": 11576650430,
     "artifact_digest": "sha256:f300c0c9308470331da3b1bdadc5cef774757f04e95099d8e519bfaa1d6475e0",
     "candidate_file": "build-time-acquisition-candidates.txt",
-    "candidate_lines_total": 325,
+    "candidate_lines_total": 330,
     "immutable_commit_pin_occurrences_classified": 0,
     "candidate_lines_pending_classification": 0,
-    "note": "42f8a36d changes build_mac.py only among acquisition-scan-adjacent paths; new PkgInfo/localization filesystem operations add no URL/Action/clone/mutable ref/dependency pin. Binding sets are unchanged; prior resolver artifacts are historical-only and current-head provenance regeneration is required.",
-    "candidate_lines_classified": 325,
-    "disposition_closure_status": "complete-current-325-candidate-classification",
+    "note": "Live 65e23ba7 mac_packaged.yml adds/repositions Rust/tlottie/wallet-engine packaging acquisitions; exact sparse scan finds 330 candidates. Fresh descendant resolver artifact required.",
+    "candidate_lines_classified": 330,
+    "disposition_closure_status": "complete-current-330-candidate-classification",
     "recursive_authority_closure_status": "open",
     "recursive_child_input_occurrences_recorded": 11,
     "recursive_child_unique_repositories_recorded": 9,
     "recursive_child_unique_external_nested_scans_pending": 0,
     "recursive_child_unique_external_nested_scans_complete": 3,
-    "evidence_status": "historical-scanner-evidence-revalidated-by-path-stable-36a0c87-delta; current-head artifact pending"
+    "evidence_status": "current-source-classification-reconciled; exact-head resolver artifact pending"
   },
   "immutable_commit_pin_occurrences": [],
   "candidate_disposition_groups": [
@@ -367,23 +367,28 @@
     {
       "source_path": ".github/workflows/mac_packaged.yml",
       "source_lines": [
-        71,
-        81,
-        98,
-        99,
+        75,
+        85,
+        102,
         103,
-        112,
-        121,
-        130,
-        139,
-        151,
-        184
+        107,
+        117,
+        125,
+        132,
+        140,
+        167,
+        176,
+        185,
+        194,
+        203,
+        215,
+        248
       ],
       "disposition": "desktop-ci-build-test-packaging-acquisition",
       "rationale": "Current upstream desktop CI/canary/platform packaging dependency or artifact flow; exact workflow source is authoritative for CI evidence, but third-party reference immutability is reviewed separately.",
-      "accepted_upstream_commit": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
-      "accepted_upstream_tree": "b031c2cd84aa0cbbb149a7e5693c41ef14d643f3",
-      "source_blob_sha": "24d2f2c4b69ff4f6af3bb5152f9ad3f7465f7c4b",
+      "accepted_upstream_commit": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
+      "accepted_upstream_tree": "6b616494f3465324e749a04dcd1c9d508657a998",
+      "source_blob_sha": "6e9f0b5bddfc3146bbed0bcd56a465bd584b89fc",
       "scanner_evidence": {
         "runner": "github-actions",
         "run_id": 37837273028,
@@ -392,9 +397,9 @@
         "artifact_digest": "sha256:f300c0c9308470331da3b1bdadc5cef774757f04e95099d8e519bfaa1d6475e0",
         "candidate_file": "build-time-acquisition-candidates.txt",
         "evidence_head_sha": "3929d875d414f522f9b71b7fe6db33b81ccf4451",
-        "upstream_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db"
+        "upstream_commit": "65e23ba7137ea4129b6bc1b2616104a1f59495ef"
       },
-      "provenance_policy": "Each listed line is classified against this immutable accepted source blob. Inline 40-hex action/source pins or sha256 image digests remain immutable references; version tags, master refs, package-manager resolution and bare download/clone URLs remain provenance-open until separately resolved. Classification does not convert mutable third-party references into immutable evidence."
+      "provenance_policy": "Each listed line is classified against this immutable accepted source blob. Inline 40-hex action/source pins or sha256 image digests remain immutable references; version tags, master refs, package-manager resolution and bare download/clone URLs remain provenance-open until separately resolved. Classification does not convert mutable third-party references into immutable evidence. Live 65e23 re-read includes pinned Rust/toolchain/source fetches and the fourth actions/cache occurrence."
     },
     {
       "source_path": ".github/workflows/master_updater.yml",
@@ -2508,7 +2513,7 @@
   ],
   "github_action_ref_resolutions": {
     "status": "snapshot-resolved-observed-action-graph-shipping-mutable-refs-still-open",
-    "accepted_upstream": "b0d1fe5e08c963402b8b71648c70a2bf68e6fab2",
+    "accepted_upstream": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
     "evidence": {
       "runner": "github-actions",
       "run_id": 37895845999,
@@ -2519,7 +2524,7 @@
       "artifact_digest": "sha256:097d945ec3b1913789ce8bde71cf533bdbec787bb753217c63287c056f588cf3",
       "artifact_member": "build-time-github-action-ref-resolutions.json"
     },
-    "top_level_occurrences": 88,
+    "top_level_occurrences": 89,
     "unique_top_level_refs": 27,
     "mutable_top_level_unique_refs": 15,
     "mutable_top_level_refs": [
@@ -3201,56 +3206,6 @@
         "reference_kind": "mutable-ref-resolved-snapshot"
       },
       {
-        "source_path": ".github/workflows/mac_packaged.yml",
-        "source_line": 103,
-        "raw": "uses: actions/cache@v6",
-        "repository": "actions/cache",
-        "action_path": "",
-        "ref": "v6",
-        "resolved_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
-        "reference_kind": "mutable-ref-resolved-snapshot"
-      },
-      {
-        "source_path": ".github/workflows/mac_packaged.yml",
-        "source_line": 121,
-        "raw": "uses: actions/cache@v6",
-        "repository": "actions/cache",
-        "action_path": "",
-        "ref": "v6",
-        "resolved_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
-        "reference_kind": "mutable-ref-resolved-snapshot"
-      },
-      {
-        "source_path": ".github/workflows/mac_packaged.yml",
-        "source_line": 139,
-        "raw": "uses: actions/cache@v6",
-        "repository": "actions/cache",
-        "action_path": "",
-        "ref": "v6",
-        "resolved_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
-        "reference_kind": "mutable-ref-resolved-snapshot"
-      },
-      {
-        "source_path": ".github/workflows/mac_packaged.yml",
-        "source_line": 184,
-        "raw": "- uses: actions/upload-artifact@v7",
-        "repository": "actions/upload-artifact",
-        "action_path": "",
-        "ref": "v7",
-        "resolved_commit": "cf430e030ddbb5b0abf93d22962f4752f3646cd9",
-        "reference_kind": "mutable-ref-resolved-snapshot"
-      },
-      {
-        "source_path": ".github/workflows/mac_packaged.yml",
-        "source_line": 71,
-        "raw": "uses: actions/checkout@v7",
-        "repository": "actions/checkout",
-        "action_path": "",
-        "ref": "v7",
-        "resolved_commit": "3d3c42e5aac5ba805825da76410c181273ba90b1",
-        "reference_kind": "mutable-ref-resolved-snapshot"
-      },
-      {
         "source_path": ".github/workflows/master_updater.yml",
         "source_line": 11,
         "raw": "- uses: desktop-app/action_code_updater@master",
@@ -3419,6 +3374,66 @@
         "ref": "main",
         "resolved_commit": "4ffc7888bffd451b357355dc214d43bb9f23917e",
         "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/mac_packaged.yml",
+        "source_line": 75,
+        "raw": "uses: actions/checkout@v7",
+        "repository": "actions/checkout",
+        "action_path": "",
+        "ref": "v7",
+        "resolved_commit": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/mac_packaged.yml",
+        "source_line": 107,
+        "raw": "uses: actions/cache@v6",
+        "repository": "actions/cache",
+        "action_path": "",
+        "ref": "v6",
+        "resolved_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/mac_packaged.yml",
+        "source_line": 167,
+        "raw": "uses: actions/cache@v6",
+        "repository": "actions/cache",
+        "action_path": "",
+        "ref": "v6",
+        "resolved_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/mac_packaged.yml",
+        "source_line": 185,
+        "raw": "uses: actions/cache@v6",
+        "repository": "actions/cache",
+        "action_path": "",
+        "ref": "v6",
+        "resolved_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/mac_packaged.yml",
+        "source_line": 203,
+        "raw": "uses: actions/cache@v6",
+        "repository": "actions/cache",
+        "action_path": "",
+        "ref": "v6",
+        "resolved_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/mac_packaged.yml",
+        "source_line": 248,
+        "raw": "- uses: actions/upload-artifact@v7",
+        "repository": "actions/upload-artifact",
+        "action_path": "",
+        "ref": "v7",
+        "resolved_commit": "cf430e030ddbb5b0abf93d22962f4752f3646cd9",
+        "reference_kind": "mutable-ref-resolved-snapshot"
       }
     ],
     "transitive": [
@@ -3453,11 +3468,11 @@
     ],
     "unresolved": [],
     "note": "Observed GitHub Action uses refs are bound to exact commit snapshots for this accepted source/head. Mutable source refs remain open until the accepted build definition itself is immutably pinned; this does not close non-Action provenance.",
-    "rebaseline_status": "42f8a36d changes build_mac.py only among acquisition-scan-adjacent paths; new PkgInfo/localization filesystem operations add no URL/Action/clone/mutable ref/dependency pin. Binding sets are unchanged; prior resolver artifacts are historical-only and current-head provenance regeneration is required."
+    "rebaseline_status": "Live 65e23ba7 adds one macOS packaged actions/cache occurrence and shifts all mac_packaged source lines; fresh exact-head resolver evidence pending."
   },
   "github_clone_ref_resolutions": {
     "status": "snapshot-resolved-literal-github-clone-refs-source-refs-still-open",
-    "accepted_upstream": "b0d1fe5e08c963402b8b71648c70a2bf68e6fab2",
+    "accepted_upstream": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
     "evidence": {
       "runner": "github-actions",
       "run_id": 37895845999,
@@ -3769,13 +3784,13 @@
       }
     ],
     "note": "Only literal GitHub git clone -b refs are included. Variable refs, bare clones, later fetch/checkout pins, GitLab/Chromium remotes, package managers, and downloads are intentionally excluded for separate contextual resolution. Every included literal ref resolved successfully on this run; ref mutability and all excluded contextual/package/download inputs remain open.",
-    "rebaseline_status": "42f8a36d changes build_mac.py only among acquisition-scan-adjacent paths; new PkgInfo/localization filesystem operations add no URL/Action/clone/mutable ref/dependency pin. Binding sets are unchanged; prior resolver artifacts are historical-only and current-head provenance regeneration is required."
+    "rebaseline_status": "Live 65e23ba7 changes mac_packaged variable-ref fetches but adds no literal GitHub clone -b resolver occurrence; fresh exact-head resolver evidence pending."
   },
   "github_action_immutable_authority": {
     "status": "complete-current-top-level-mutable-action-authority-bindings",
-    "accepted_upstream": "b0d1fe5e08c963402b8b71648c70a2bf68e6fab2",
+    "accepted_upstream": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
     "policy": "Every mutable top-level GitHub Action occurrence in accepted Telegram source is bound by source path/line/ref to an exact 40-hex commit. The mutable upstream spelling is source evidence only; Fabushi provenance authority is the bound commit. A source/ref/resolution change must fail validation until this binding is explicitly reviewed and updated.",
-    "mutable_occurrences": 40,
+    "mutable_occurrences": 41,
     "mutable_unique_refs": 15,
     "unbound_occurrences": 0,
     "bindings": [
@@ -3989,61 +4004,6 @@
         "source_ref_remains_mutable": true
       },
       {
-        "source_path": ".github/workflows/mac_packaged.yml",
-        "source_line": 103,
-        "raw": "uses: actions/cache@v6",
-        "repository": "actions/cache",
-        "action_path": "",
-        "mutable_ref": "v6",
-        "authority_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
-        "authority_kind": "fabushi-immutable-override-binding",
-        "source_ref_remains_mutable": true
-      },
-      {
-        "source_path": ".github/workflows/mac_packaged.yml",
-        "source_line": 121,
-        "raw": "uses: actions/cache@v6",
-        "repository": "actions/cache",
-        "action_path": "",
-        "mutable_ref": "v6",
-        "authority_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
-        "authority_kind": "fabushi-immutable-override-binding",
-        "source_ref_remains_mutable": true
-      },
-      {
-        "source_path": ".github/workflows/mac_packaged.yml",
-        "source_line": 139,
-        "raw": "uses: actions/cache@v6",
-        "repository": "actions/cache",
-        "action_path": "",
-        "mutable_ref": "v6",
-        "authority_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
-        "authority_kind": "fabushi-immutable-override-binding",
-        "source_ref_remains_mutable": true
-      },
-      {
-        "source_path": ".github/workflows/mac_packaged.yml",
-        "source_line": 184,
-        "raw": "- uses: actions/upload-artifact@v7",
-        "repository": "actions/upload-artifact",
-        "action_path": "",
-        "mutable_ref": "v7",
-        "authority_commit": "cf430e030ddbb5b0abf93d22962f4752f3646cd9",
-        "authority_kind": "fabushi-immutable-override-binding",
-        "source_ref_remains_mutable": true
-      },
-      {
-        "source_path": ".github/workflows/mac_packaged.yml",
-        "source_line": 71,
-        "raw": "uses: actions/checkout@v7",
-        "repository": "actions/checkout",
-        "action_path": "",
-        "mutable_ref": "v7",
-        "authority_commit": "3d3c42e5aac5ba805825da76410c181273ba90b1",
-        "authority_kind": "fabushi-immutable-override-binding",
-        "source_ref_remains_mutable": true
-      },
-      {
         "source_path": ".github/workflows/master_updater.yml",
         "source_line": 11,
         "raw": "- uses: desktop-app/action_code_updater@master",
@@ -4218,6 +4178,72 @@
         "authority_commit": "4ffc7888bffd451b357355dc214d43bb9f23917e",
         "authority_kind": "fabushi-immutable-override-binding",
         "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": ".github/workflows/mac_packaged.yml",
+        "source_line": 75,
+        "raw": "uses: actions/checkout@v7",
+        "repository": "actions/checkout",
+        "action_path": "",
+        "mutable_ref": "v7",
+        "authority_commit": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "authority_kind": "fabushi-immutable-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": ".github/workflows/mac_packaged.yml",
+        "source_line": 107,
+        "raw": "uses: actions/cache@v6",
+        "repository": "actions/cache",
+        "action_path": "",
+        "mutable_ref": "v6",
+        "authority_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "authority_kind": "fabushi-immutable-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": ".github/workflows/mac_packaged.yml",
+        "source_line": 167,
+        "raw": "uses: actions/cache@v6",
+        "repository": "actions/cache",
+        "action_path": "",
+        "mutable_ref": "v6",
+        "authority_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "authority_kind": "fabushi-immutable-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": ".github/workflows/mac_packaged.yml",
+        "source_line": 185,
+        "raw": "uses: actions/cache@v6",
+        "repository": "actions/cache",
+        "action_path": "",
+        "mutable_ref": "v6",
+        "authority_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "authority_kind": "fabushi-immutable-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": ".github/workflows/mac_packaged.yml",
+        "source_line": 203,
+        "raw": "uses: actions/cache@v6",
+        "repository": "actions/cache",
+        "action_path": "",
+        "mutable_ref": "v6",
+        "authority_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "authority_kind": "fabushi-immutable-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": ".github/workflows/mac_packaged.yml",
+        "source_line": 248,
+        "raw": "- uses: actions/upload-artifact@v7",
+        "repository": "actions/upload-artifact",
+        "action_path": "",
+        "mutable_ref": "v7",
+        "authority_commit": "cf430e030ddbb5b0abf93d22962f4752f3646cd9",
+        "authority_kind": "fabushi-immutable-override-binding",
+        "source_ref_remains_mutable": true
       }
     ],
     "resolver_evidence": {
@@ -4230,11 +4256,11 @@
       "artifact_digest": "sha256:097d945ec3b1913789ce8bde71cf533bdbec787bb753217c63287c056f588cf3",
       "artifact_member": "build-time-github-action-ref-resolutions.json"
     },
-    "rebaseline_status": "42f8a36d changes build_mac.py only among acquisition-scan-adjacent paths; new PkgInfo/localization filesystem operations add no URL/Action/clone/mutable ref/dependency pin. Binding sets are unchanged; prior resolver artifacts are historical-only and current-head provenance regeneration is required."
+    "rebaseline_status": "Live 65e23ba7 adds one macOS packaged actions/cache occurrence and shifts all mac_packaged source lines; fresh exact-head resolver evidence pending."
   },
   "github_clone_immutable_authority": {
     "status": "complete-current-literal-github-clone-authority-bindings",
-    "accepted_upstream": "b0d1fe5e08c963402b8b71648c70a2bf68e6fab2",
+    "accepted_upstream": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
     "policy": "Every literal GitHub git clone -b occurrence resolved by the accepted-source scanner is bound by source path/line/repository/ref to an exact 40-hex commit. The mutable tag/ref in Telegram source remains evidence only; Fabushi provenance authority is the bound commit.",
     "mutable_occurrences": 33,
     "mutable_unique_refs": 33,
@@ -4581,6 +4607,6 @@
       "artifact_digest": "sha256:097d945ec3b1913789ce8bde71cf533bdbec787bb753217c63287c056f588cf3",
       "artifact_member": "build-time-github-clone-ref-resolutions.json"
     },
-    "rebaseline_status": "42f8a36d changes build_mac.py only among acquisition-scan-adjacent paths; new PkgInfo/localization filesystem operations add no URL/Action/clone/mutable ref/dependency pin. Binding sets are unchanged; prior resolver artifacts are historical-only and current-head provenance regeneration is required."
+    "rebaseline_status": "Live 65e23ba7 changes mac_packaged variable-ref fetches but adds no literal GitHub clone -b resolver occurrence; fresh exact-head resolver evidence pending."
   }
 }

@@ -4,8 +4,8 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "b0d1fe5e08c963402b8b71648c70a2bf68e6fab2",
-    "tree": "e279373aec283ebfcc6e3bb7385e51205acd84a2"
+    "commit": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
+    "tree": "6b616494f3465324e749a04dcd1c9d508657a998"
   },
   "range": {
     "first_order": 5501,
@@ -86,10 +86,10 @@
     {
       "recursive_order": 5503,
       "source_path": "Telegram/SourceFiles/platform/win/wallet_protection_win.cpp",
-      "source_blob_sha": "4d2689c52c704eb7289473c1e77b556d47a41963",
+      "source_blob_sha": "ce7ab60fdf41e736a67aad56db9854b02fbd4077",
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "responsibility": "TPM-gated hardware-attested Windows Hello enrollment/unwrap/remove, versioned challenge payload, HKDF wrap-key derivation, secure signature zeroing and explicit Absent/Cancelled/Unavailable/Corrupt fail-closed semantics",
+      "responsibility": "Windows Hello wallet protection: availability is TPM/Hello gated, but enrollment accepts the credential Windows creates without requiring online attestation; versioned challenge + deterministic signature/HKDF wrap-key derivation, secure cleanup, unwrap/remove, and explicit fail-closed error states remain the protection boundary.",
       "upstream_owner": "Telegram Windows platform adapter",
       "state_machine": "capability/input -> authenticated native credential operation -> exact canonical account/wallet transition -> bounded callback -> secret cleanup/retirement",
       "side_effects": "Maps to canonical wallet/account/auth security owner; native/platform state remains an adapter and cannot become a second product/runtime truth owner.",
@@ -98,8 +98,8 @@
       "fabushi_canonical_owner": "canonical wallet/account/auth security owner",
       "fabushi_target": "MAPPED OPEN. Extend existing source-neutral canonical owner only.",
       "platform_differences": "OS APIs, shell/framework mechanics and native data structures are platform adapters; capability, permission, action, state, recovery, privacy, a11y and security semantics remain canonical Fabushi responsibilities.",
-      "production_evidence": "No Windows Hello wallet-equivalence evidence is granted by source reading; hardware attestation, key derivation, secret zeroing and failure classification remain open.",
-      "test_evidence": "Exact-head contract/integration/fault/security/privacy/a11y/E2E/packaged evidence required as applicable before unknown closure.",
+      "production_evidence": "Exact live 65e23ba7 changed-prefix blob re-read/reconciled; reading alone gives no new shipping/release credit.",
+      "test_evidence": "Fresh exact-descendant GitHub Actions evidence required; predecessor b0400d/b0d1fe5e runs remain historical-only.",
       "disposition": "mapped-open-canonical-platform-capability-replacement",
       "unknown_closed": false,
       "omitted": false,
@@ -110,13 +110,14 @@
       "reachability_status": "accepted-tree source owner/input proven; canonical implementation closure remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram platform runtime retained.",
       "source_binary_evidence": {
-        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
-        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
-        "verified_blob_sha": "4d2689c52c704eb7289473c1e77b556d47a41963",
+        "evidence_status": "live-github-tree-bound-current-head-actions-required",
+        "accepted_upstream": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
+        "verified_blob_sha": "ce7ab60fdf41e736a67aad56db9854b02fbd4077",
         "file_type": "blob",
-        "recursive_order": 5503
+        "recursive_order": 5503,
+        "byte_size": 23676
       },
-      "notes": "Read-complete. unknown remains open; omitted=false."
+      "notes": "Changed accepted-prefix blob explicitly re-read under live 65e23ba7; classification retained only after responsibility re-decomposition; omitted remains false."
     },
     {
       "recursive_order": 5504,

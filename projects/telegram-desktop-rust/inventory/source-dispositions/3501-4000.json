@@ -4,8 +4,8 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "b0d1fe5e08c963402b8b71648c70a2bf68e6fab2",
-    "tree": "e279373aec283ebfcc6e3bb7385e51205acd84a2"
+    "commit": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
+    "tree": "6b616494f3465324e749a04dcd1c9d508657a998"
   },
   "range": {
     "first_order": 3501,
@@ -1906,10 +1906,10 @@
     {
       "recursive_order": 3546,
       "source_path": "Telegram/SourceFiles/calls/calls.style",
-      "source_blob_sha": "5ff93a9517e61a9ca582d9e29645111ccedcce1a",
+      "source_blob_sha": "461bcf282a8299442b75f49a5a9bd9cc4186c8bd",
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "responsibility": "Calls / UI styles",
+      "responsibility": "Calls/UI styles, including the canonical wide group-call content top offset shared by title drag geometry and member layout.",
       "upstream_owner": "Canonical Calls owner",
       "state_machine": "call surface style tokens only: current state -> user/network/media event -> permission/security validation -> pending/cancellable transition -> accepted transport/media/service result -> canonical state update -> UI/media effect; stale results must be fenced.",
       "side_effects": "Network/media device/payment/security/message mutations remain owned by Canonical Calls owner; UI uses canonical Fabushi components and the existing Calls/Media/Conversation composition.",
@@ -1918,8 +1918,8 @@
       "fabushi_canonical_owner": "Canonical Calls owner",
       "fabushi_target": "OPEN: bind shipping Fabushi consumers and implement any missing call surface style tokens only, including state persistence/restart, cancellation/concurrency, permissions/security/service dependencies, responsive/keyboard/a11y/light-dark and visual evidence.",
       "platform_differences": "Telegram Qt/WebRTC/tgvoip source is behavioral evidence; Fabushi preserves applicable call/media/security semantics in its own Electron/Rust/native/service composition.",
-      "production_evidence": "projects/telegram-desktop-rust/dossiers/gifts-auth-calls-3501-3600-complete-read.md; source read only; implementation/verification open.",
-      "test_evidence": "Accepted-tree recursive inventory run 37869950664 job 113625536646 artifact 11589926169; current-head functional/temporal/fault/security/media/UI/a11y/visual evidence remains open.",
+      "production_evidence": "Exact live 65e23ba7 changed-prefix blob re-read/reconciled; reading alone gives no new shipping/release credit.",
+      "test_evidence": "Fresh exact-descendant GitHub Actions evidence required; predecessor b0400d/b0d1fe5e runs remain historical-only.",
       "disposition": "mapped-open-calls",
       "unknown_closed": false,
       "omitted": false,
@@ -1935,15 +1935,15 @@
         "artifact_id": 11589926169,
         "artifact_digest": "sha256:990d44ffe92f535566b001de15d5a2fc5b95830f6061a5209d0fc208f80dc30f",
         "artifact_member": "upstream-recursive-inventory.json",
-        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+        "accepted_upstream": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
         "evidence_contract": "exact accepted-tree recursive inventory object/size/type binding",
-        "verified_blob_sha": "5ff93a9517e61a9ca582d9e29645111ccedcce1a",
-        "byte_size": 55232,
+        "verified_blob_sha": "461bcf282a8299442b75f49a5a9bd9cc4186c8bd",
+        "byte_size": 55286,
         "file_type": "git blob",
         "recursive_order": 3546,
-        "evidence_status": "live-github-tree-bound-current-head-actions-pending"
+        "evidence_status": "live-github-tree-bound-current-head-actions-required"
       },
-      "notes": "Read-complete does not promote implementation_status or release verification."
+      "notes": "Changed accepted-prefix blob explicitly re-read under live 65e23ba7; classification retained only after responsibility re-decomposition; omitted remains false."
     },
     {
       "recursive_order": 3547,
@@ -4258,10 +4258,10 @@
     {
       "recursive_order": 3602,
       "source_path": "Telegram/SourceFiles/calls/group/calls_group_panel.cpp",
-      "source_blob_sha": "9fb9b2f00c96f240f4c148f396effefa245ce899",
+      "source_blob_sha": "b2d3a68a0019def9662b5c58c62e6da394228006",
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "responsibility": "Calls / Group UI",
+      "responsibility": "Group-call panel layout/interaction owner; wide mode consistently uses the canonical wide-content top offset for draggable title area, member geometry, and centered title placement.",
       "upstream_owner": "Canonical Calls owner",
       "state_machine": "group-call panel/control/view state: current canonical state -> user/service/media/build event -> validation/permission/cancellation boundary -> accepted result -> canonical owner state/output projection; stale or failed work must not overwrite newer state.",
       "side_effects": "Network/media/device/build/persistence/UI side effects remain owned by Canonical Calls owner; this row does not create a second product owner.",
@@ -4270,8 +4270,8 @@
       "fabushi_canonical_owner": "Canonical Calls owner",
       "fabushi_target": "OPEN: bind shipping Fabushi consumers and implement/verify any missing group-call panel/control/view state, including persistence/restart, concurrency/cancellation, security/service dependencies and canonical UI evidence where applicable.",
       "platform_differences": "Telegram Qt/C++/platform/build shape is source evidence only; Fabushi preserves applicable responsibility/state semantics in its existing Electron/Rust/service/build composition.",
-      "production_evidence": "projects/telegram-desktop-rust/dossiers/calls-composer-core-3601-3700-complete-read.md; exact-source read only; implementation/verification remains open.",
-      "test_evidence": "Accepted-tree recursive inventory run 37869950664 job 113625536646 artifact 11589926169; current-head product/test execution remains open.",
+      "production_evidence": "Exact live 65e23ba7 changed-prefix blob re-read/reconciled; reading alone gives no new shipping/release credit.",
+      "test_evidence": "Fresh exact-descendant GitHub Actions evidence required; predecessor b0400d/b0d1fe5e runs remain historical-only.",
       "disposition": "mapped-open-calls-group-panel",
       "unknown_closed": false,
       "omitted": false,
@@ -4287,15 +4287,15 @@
         "artifact_id": 11589926169,
         "artifact_digest": "sha256:990d44ffe92f535566b001de15d5a2fc5b95830f6061a5209d0fc208f80dc30f",
         "artifact_member": "upstream-recursive-inventory.json",
-        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+        "accepted_upstream": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
         "evidence_contract": "exact accepted-tree recursive inventory object/size/type binding",
-        "verified_blob_sha": "9fb9b2f00c96f240f4c148f396effefa245ce899",
-        "byte_size": 85281,
+        "verified_blob_sha": "b2d3a68a0019def9662b5c58c62e6da394228006",
+        "byte_size": 85287,
         "file_type": "git blob",
         "recursive_order": 3602,
-        "evidence_status": "live-github-tree-bound-current-head-actions-pending"
+        "evidence_status": "live-github-tree-bound-current-head-actions-required"
       },
-      "notes": "Read-complete does not promote implementation_status or release verification."
+      "notes": "Changed accepted-prefix blob explicitly re-read under live 65e23ba7; classification retained only after responsibility re-decomposition; omitted remains false."
     },
     {
       "recursive_order": 3603,

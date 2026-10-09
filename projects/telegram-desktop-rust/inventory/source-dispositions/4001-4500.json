@@ -4,8 +4,8 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "b0d1fe5e08c963402b8b71648c70a2bf68e6fab2",
-    "tree": "e279373aec283ebfcc6e3bb7385e51205acd84a2"
+    "commit": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
+    "tree": "6b616494f3465324e749a04dcd1c9d508657a998"
   },
   "range": {
     "first_order": 4001,
@@ -3502,10 +3502,10 @@
     {
       "recursive_order": 4084,
       "source_path": "Telegram/SourceFiles/editor/controllers/stickers_panel_controller.cpp",
-      "source_blob_sha": "63112443ab09b11c92ceb2160f176516d548143d",
+      "source_blob_sha": "1daa47a2289d9258374f8a26913f1d2f9a15cff5",
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "responsibility": "Media editor sticker/media picker",
+      "responsibility": "Media editor sticker/media picker configuration; the editor attachment panel exposes photo/audio choices but intentionally suppresses the link button.",
       "upstream_owner": "Canonical Media Editor + Composer Media owner",
       "state_machine": "sticker/photo/audio/link request streams, panel visibility/move and media pause lifecycle: authoritative/reactive input -> validated scoped state -> canonical owner mutation -> UI/service projection -> cancellation/teardown; stale, duplicate and re-entrant work is fenced.",
       "side_effects": "UI/media/search/navigation/settings side effects stay with Canonical Media Editor + Composer Media owner; source structure is not copied as a parallel owner.",
@@ -3514,8 +3514,8 @@
       "fabushi_canonical_owner": "Canonical Media Editor + Composer Media owner",
       "fabushi_target": "OPEN: bind existing shipping owner and close missing sticker/photo/audio/link request streams, panel visibility/move and media pause lifecycle with typed state, lifecycle, a11y/visual/performance and integration evidence.",
       "platform_differences": "Telegram Qt/C++/MTProto mechanics are reference behavior; Fabushi preserves applicable responsibility and state semantics in canonical Rust/TypeScript/Electron owners.",
-      "production_evidence": "projects/telegram-desktop-rust/dossiers/dialogs-editor-4001-4100-complete-read.md; exact-source read only; implementation/verification remains open.",
-      "test_evidence": "Accepted-tree Source authority run 37872749663 job 113634587680 artifact 11591390327; current-head implementation evidence remains open.",
+      "production_evidence": "Exact live 65e23ba7 changed-prefix blob re-read/reconciled; reading alone gives no new shipping/release credit.",
+      "test_evidence": "Fresh exact-descendant GitHub Actions evidence required; predecessor b0400d/b0d1fe5e runs remain historical-only.",
       "disposition": "mapped-open-editor-stickers",
       "unknown_closed": false,
       "omitted": false,
@@ -3531,15 +3531,15 @@
         "artifact_id": 11591390327,
         "artifact_digest": "sha256:9e8d9d297b9f957c5c60e069a3ede35c517d56e18662bcf7573946663b971d65",
         "artifact_member": "upstream-recursive-inventory.json",
-        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+        "accepted_upstream": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
         "evidence_contract": "exact accepted-tree recursive inventory object/size/type binding",
-        "verified_blob_sha": "63112443ab09b11c92ceb2160f176516d548143d",
-        "byte_size": 3246,
+        "verified_blob_sha": "1daa47a2289d9258374f8a26913f1d2f9a15cff5",
+        "byte_size": 3247,
         "file_type": "blob",
         "recursive_order": 4084,
-        "evidence_status": "live-github-tree-bound-current-head-actions-pending"
+        "evidence_status": "live-github-tree-bound-current-head-actions-required"
       },
-      "notes": "Read-complete does not promote implementation_status or release verification."
+      "notes": "Changed accepted-prefix blob explicitly re-read under live 65e23ba7; classification retained only after responsibility re-decomposition; omitted remains false."
     },
     {
       "recursive_order": 4085,
@@ -18157,10 +18157,10 @@
     {
       "recursive_order": 4433,
       "source_path": "Telegram/SourceFiles/history/view/history_view_reply.cpp",
-      "source_blob_sha": "69601e7cf831896ab06efdbf556ce4d4634cef1c",
+      "source_blob_sha": "2b3a9caab878f746a776857ac717f3480dc8d5dc",
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "responsibility": "Reply preview/action lifecycle",
+      "responsibility": "Reply preview/action lifecycle and geometry; sender-name width tracks quote/background-emoji right-side icons, invalidates when peer background emoji presence changes, and uses one shared icon-skip calculation for optimal sizing, resize and paint.",
       "upstream_owner": "Canonical TranscriptEntry/Composer reply owner",
       "state_machine": "reply target resolution/preview/button/navigation/loading and stale target lifecycle: authoritative/message/UI/media input -> validated scoped state -> canonical projection/action -> async resource/service settlement -> unload/destroy/cancel convergence.",
       "side_effects": "Conversation/media/network/call/payment/UI side effects stay with Canonical TranscriptEntry/Composer reply owner; no Telegram-shaped parallel owner.",
@@ -18169,8 +18169,8 @@
       "fabushi_canonical_owner": "Canonical TranscriptEntry/Composer reply owner",
       "fabushi_target": "OPEN: bind shipping owner and close missing reply target resolution/preview/button/navigation/loading and stale target lifecycle with lifecycle/resource bounds, persistence/restart where applicable, concurrency, security/payment/service, a11y/visual/performance and tests.",
       "platform_differences": "Telegram Qt/C++/MTProto mechanics are reference behavior; Fabushi preserves applicable semantics in canonical Rust/TypeScript/Electron/service owners.",
-      "production_evidence": "projects/telegram-desktop-rust/dossiers/history-media-4401-4500-complete-read.md; exact-source read only; implementation/verification remains open.",
-      "test_evidence": "Accepted-tree Source authority run 37872749663 job 113634587680 artifact 11591390327; current-head product evidence remains open.",
+      "production_evidence": "Exact live 65e23ba7 changed-prefix blob re-read/reconciled; reading alone gives no new shipping/release credit.",
+      "test_evidence": "Fresh exact-descendant GitHub Actions evidence required; predecessor b0400d/b0d1fe5e runs remain historical-only.",
       "disposition": "mapped-open-history-reply",
       "unknown_closed": false,
       "omitted": false,
@@ -18186,23 +18186,23 @@
         "artifact_id": 11591390327,
         "artifact_digest": "sha256:9e8d9d297b9f957c5c60e069a3ede35c517d56e18662bcf7573946663b971d65",
         "artifact_member": "upstream-recursive-inventory.json",
-        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+        "accepted_upstream": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
         "evidence_contract": "exact accepted-tree recursive inventory object/size/type binding",
-        "verified_blob_sha": "69601e7cf831896ab06efdbf556ce4d4634cef1c",
-        "byte_size": 33985,
+        "verified_blob_sha": "2b3a9caab878f746a776857ac717f3480dc8d5dc",
+        "byte_size": 34214,
         "file_type": "blob",
         "recursive_order": 4433,
-        "evidence_status": "live-github-tree-bound-current-head-actions-pending"
+        "evidence_status": "live-github-tree-bound-current-head-actions-required"
       },
-      "notes": "Read-complete does not promote implementation_status or release verification."
+      "notes": "Changed accepted-prefix blob explicitly re-read under live 65e23ba7; classification retained only after responsibility re-decomposition; omitted remains false."
     },
     {
       "recursive_order": 4434,
       "source_path": "Telegram/SourceFiles/history/view/history_view_reply.h",
-      "source_blob_sha": "e21d2676f0d933bb98c293004ef3f533a0e2d7d0",
+      "source_blob_sha": "b0396f3e0bc4d5838db776e10dd83eaa7563d40e",
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "responsibility": "Reply preview/action lifecycle",
+      "responsibility": "Reply preview/action lifecycle contract, including cached background-emoji state plus helpers that make right-side icon width part of sender-name geometry/invalidation.",
       "upstream_owner": "Canonical TranscriptEntry/Composer reply owner",
       "state_machine": "reply target resolution/preview/button/navigation/loading and stale target lifecycle: authoritative/message/UI/media input -> validated scoped state -> canonical projection/action -> async resource/service settlement -> unload/destroy/cancel convergence.",
       "side_effects": "Conversation/media/network/call/payment/UI side effects stay with Canonical TranscriptEntry/Composer reply owner; no Telegram-shaped parallel owner.",
@@ -18211,8 +18211,8 @@
       "fabushi_canonical_owner": "Canonical TranscriptEntry/Composer reply owner",
       "fabushi_target": "OPEN: bind shipping owner and close missing reply target resolution/preview/button/navigation/loading and stale target lifecycle with lifecycle/resource bounds, persistence/restart where applicable, concurrency, security/payment/service, a11y/visual/performance and tests.",
       "platform_differences": "Telegram Qt/C++/MTProto mechanics are reference behavior; Fabushi preserves applicable semantics in canonical Rust/TypeScript/Electron/service owners.",
-      "production_evidence": "projects/telegram-desktop-rust/dossiers/history-media-4401-4500-complete-read.md; exact-source read only; implementation/verification remains open.",
-      "test_evidence": "Accepted-tree Source authority run 37872749663 job 113634587680 artifact 11591390327; current-head product evidence remains open.",
+      "production_evidence": "Exact live 65e23ba7 changed-prefix blob re-read/reconciled; reading alone gives no new shipping/release credit.",
+      "test_evidence": "Fresh exact-descendant GitHub Actions evidence required; predecessor b0400d/b0d1fe5e runs remain historical-only.",
       "disposition": "mapped-open-history-reply",
       "unknown_closed": false,
       "omitted": false,
@@ -18228,15 +18228,15 @@
         "artifact_id": 11591390327,
         "artifact_digest": "sha256:9e8d9d297b9f957c5c60e069a3ede35c517d56e18662bcf7573946663b971d65",
         "artifact_member": "upstream-recursive-inventory.json",
-        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+        "accepted_upstream": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
         "evidence_contract": "exact accepted-tree recursive inventory object/size/type binding",
-        "verified_blob_sha": "e21d2676f0d933bb98c293004ef3f533a0e2d7d0",
-        "byte_size": 4729,
+        "verified_blob_sha": "b0396f3e0bc4d5838db776e10dd83eaa7563d40e",
+        "byte_size": 4855,
         "file_type": "blob",
         "recursive_order": 4434,
-        "evidence_status": "live-github-tree-bound-current-head-actions-pending"
+        "evidence_status": "live-github-tree-bound-current-head-actions-required"
       },
-      "notes": "Read-complete does not promote implementation_status or release verification."
+      "notes": "Changed accepted-prefix blob explicitly re-read under live 65e23ba7; classification retained only after responsibility re-decomposition; omitted remains false."
     },
     {
       "recursive_order": 4435,

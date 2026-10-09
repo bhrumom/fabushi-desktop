@@ -4,8 +4,8 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "b0d1fe5e08c963402b8b71648c70a2bf68e6fab2",
-    "tree": "e279373aec283ebfcc6e3bb7385e51205acd84a2"
+    "commit": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
+    "tree": "6b616494f3465324e749a04dcd1c9d508657a998"
   },
   "range": {
     "first_order": 5802,
@@ -50,10 +50,10 @@
     {
       "recursive_order": 5803,
       "source_path": "Telegram/SourceFiles/test/test_menu.h",
-      "source_blob_sha": "295278972a57df6a9120c406dbd610bcef11798f",
+      "source_blob_sha": "183f2143b122ba978eed8b1de98d88ebb76df16a",
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "responsibility": "Public popup/context-menu evidence contract for prepared-frame refusal, QPointer-safe lifetime readings, exact trigger refusals, isolated queued callback delivery and staged cleanup.",
+      "responsibility": "Public popup/context-menu evidence contract for prepared-frame refusal, QPointer-safe lifetime, exact trigger/queued-callback cleanup, and shared console-lock diagnostics; the lock gate is Windows-only while macOS lock state is printed but does not skip the popup proof.",
       "upstream_owner": "tdesktop task-test harness / test_menu",
       "state_machine": "bounded professional-test setup -> exact same-owner observation/reconciliation -> named refusal/pending or stable match -> teardown",
       "side_effects": "TEST/EVIDENCE ONLY; no second product owner or production fallback.",
@@ -62,21 +62,21 @@
       "fabushi_canonical_owner": "Canonical source-neutral professional GitHub Actions test/evidence harness",
       "fabushi_target": "MAPPED OPEN: bind to existing professional UI/message lifecycle evidence harness and obtain current exact-head cross-platform evidence.",
       "platform_differences": "Preserve same-turn identity, isolated callback, stable-id, bounded diagnostics and cleanup semantics.",
-      "production_evidence": "Exact live 811b83a1 blob identity/order read; source reading does not verify shipping product.",
-      "test_evidence": "Current descendant HEAD must execute the relevant professional harness plus normal Rust desktop runtime and Desktop Chat Parity CI.",
+      "production_evidence": "Exact live 65e23ba7 changed-prefix blob re-read/reconciled; reading alone gives no new shipping/release credit.",
+      "test_evidence": "Fresh exact-descendant GitHub Actions evidence required; predecessor b0400d/b0d1fe5e runs remain historical-only.",
       "disposition": "mapped-open-test-harness",
       "unknown_closed": false,
       "omitted": false,
       "consumer_evidence": [],
       "reachability_status": "accepted-tree exact blob responsibility proven; professional test-harness closure open",
       "license_and_provenance": "tdesktop provenance retained; responsibility is mapped/reimplemented rather than source-copied.",
-      "notes": "Read and decomposed under live 811b83a1 deterministic recursive authority. Reading closes no unknown and grants no production/release credit.",
+      "notes": "Changed accepted-prefix blob explicitly re-read under live 65e23ba7; classification retained only after responsibility re-decomposition; omitted remains false.",
       "consumer_symbol": "test_menu",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-required",
-        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
-        "verified_blob_sha": "295278972a57df6a9120c406dbd610bcef11798f",
-        "byte_size": 21401,
+        "accepted_upstream": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
+        "verified_blob_sha": "183f2143b122ba978eed8b1de98d88ebb76df16a",
+        "byte_size": 21519,
         "file_type": "blob",
         "recursive_order": 5803
       }

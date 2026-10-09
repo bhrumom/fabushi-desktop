@@ -4,8 +4,8 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "b0d1fe5e08c963402b8b71648c70a2bf68e6fab2",
-    "tree": "e279373aec283ebfcc6e3bb7385e51205acd84a2",
+    "commit": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
+    "tree": "6b616494f3465324e749a04dcd1c9d508657a998",
     "baseline_identity_accepted": false
   },
   "inventory": {
@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15846,
-    "unread_minimum": 10295,
+    "unread_minimum": 10289,
     "omitted_known": 0,
-    "note": "Live b0d1fe5e recursive census 16,125; accepted-tree blob order exact through 5,830; unknown 15,846, unread 10,295, omitted 0."
+    "note": "Live 65e23ba7 recursive census 16,125; changed accepted-prefix blobs reconciled; exact read-through 5836; unknown 15846, unread 10289, omitted 0."
   },
   "latest_recursive_evidence": {
     "run_id": 37967712462,
@@ -48,25 +48,42 @@
   },
   "note": "Live authority exact through deterministic blob order 5,830; unread_minimum is 10,295; unknown remains 15,846; omitted remains 0.",
   "rebaseline": {
-    "from_commit": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
-    "to_commit": "b0d1fe5e08c963402b8b71648c70a2bf68e6fab2",
-    "ahead_by": 1,
-    "changed_paths": 1,
-    "changed_authority_paths": [
-      "Telegram/SourceFiles/media/view/media_view_overlay_widget.cpp"
+    "from_commit": "b0d1fe5e08c963402b8b71648c70a2bf68e6fab2",
+    "to_commit": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
+    "ahead_by": 10,
+    "changed_paths": 25,
+    "changed_prefix_orders": [
+      11,
+      67,
+      3546,
+      3602,
+      4084,
+      4433,
+      4434,
+      5503,
+      5759,
+      5762,
+      5763,
+      5764,
+      5765,
+      5772,
+      5773,
+      5800,
+      5801,
+      5803
     ],
-    "current_head_source_authority_evidence": "Fresh exact-head Source authority evidence required for b0d1fe5e descendant; a8a139b8 evidence proves predecessor 811b83a1 authority only.",
-    "current_source_read_through": 5830,
-    "first_unread_order": 5831,
-    "first_unread_path": "Telegram/SourceFiles/test/test_toast_capture.cpp"
+    "current_source_read_through": 5836,
+    "first_unread_order": 5837,
+    "first_unread_path": "Telegram/SourceFiles/test/test_wallet_intercept.cpp",
+    "current_head_source_authority_evidence": "fresh descendant exact-head Actions required; b0400d/b0d1fe5 evidence is predecessor-only"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
-    "upstream_commit": "b0d1fe5e08c963402b8b71648c70a2bf68e6fab2",
+    "upstream_commit": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
     "deterministic_prefix_closed": 57,
     "development_only_non_applicable": 69,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 5830
+    "read_through": 5836
   }
 }
