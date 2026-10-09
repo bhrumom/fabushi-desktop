@@ -1,4 +1,4 @@
-Live Revision 9 authority (2026-10-10): telegramdesktop/tdesktop@65e23ba7137ea4129b6bc1b2616104a1f59495ef (root tree 6b616494f3465324e749a04dcd1c9d508657a998). Root non-directory=6,653; recursive non-directory=16,125; read-through=6,125; first unread=6,126 Telegram/SourceFiles/ui/effects/premium_star_model.cpp@499d751aa9aff7726ef010dafa65750c1c03b24f; unread=10,000; unknown=15,846; omitted=0. Reading alone never closes unknown. Fresh descendant exact-head GitHub Actions evidence is required.
+Live Revision 9 authority (2026-10-10): telegramdesktop/tdesktop@65e23ba7137ea4129b6bc1b2616104a1f59495ef (root tree 6b616494f3465324e749a04dcd1c9d508657a998). Root non-directory=6,653; recursive non-directory=16,125; read-through=6,145; first unread=6,146 Telegram/SourceFiles/ui/effects/shake_animation.cpp@38fbd6f01a62676f83bbd44dd1c5f697b9cae9ba; unread=9,980; unknown=15,846; omitted=0. Reading alone never closes unknown. Fresh descendant exact-head GitHub Actions evidence is required.
 
 # Telegram Desktop → Fabushi 全量等价重写 — Status
 
@@ -153,3 +153,8 @@ Orders **6,105-6,125** are exact-blob read/decomposed across validated 3D asset 
 ### Platform-obsolescence Banner implementation slice
 
 The accepted orders **6,071-6,072** now have a source-neutral implementation slice: shared status primitives expose one canonical `SandBanner`, and `frontend/src/production/platform-obsolescence-policy.ts` preserves the exact civil-date **7/30/90-day** dismissal rule with fail-open handling for corrupt/future persisted dates and an adapter for canonical client persistence. This deliberately does **not** invent an OS-support cutoff: the current Desktop bridge has no authoritative `WhenSystemBecomesOutdated` equivalent, so platform cutoff/reason sourcing and root shipping composition remain mapped-open. The focused contract is wired into the existing renderer GitHub Actions gate; no local build/test was used. Unknown remains unchanged.
+
+
+### Source closure through 6,145
+
+Orders **6,126-6,145** are exact-blob read/decomposed across Premium Star assets/particles/GPU renderer, colored collectible decoration, responsive commerce top-bar capability fallbacks, reaction fly presentation, Checkbox/Avatar selection rendering, scroll-edge shadows, and send-action status animations. Send-action types include record/upload/round/speaking/choose-sticker with typing fallback; same-family restart and speaking finish/restart transitions remain visual projections over authoritative conversation state, and animation-disabled mode resolves to static frames. All responsibilities map to source-neutral canonical owners; reading does not reduce unknown. Accounting: **6,145/16,125 read; 9,980 unread; 15,846 unknown; 0 omitted**. First unread is 6,146 `ui/effects/shake_animation.cpp@38fbd6f0…`.
