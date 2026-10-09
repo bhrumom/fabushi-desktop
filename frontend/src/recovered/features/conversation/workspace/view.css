@@ -135,9 +135,11 @@ html[data-platform="darwin"] .sand-agents-sidebar__new-actions {
   border-radius: 18px;
 }
 .sand-message-action-anchor { position: relative; width: fit-content; max-width: 100%; }
-/* Keep an open message action/reaction surface above the sticky composer (z-index: 3). */
-.sand-message-action-anchor--menu-open { z-index: 4; }
-.sand-message-hover-actions { position: absolute; right: 0; bottom: -30px; z-index: 4; display: flex; gap: 4px; opacity: 0; pointer-events: none; transition: opacity .12s ease; }
+/* Keep an open message action/reaction surface above both the sticky composer and
+ * the fixed native drag carrier (z-index: 4999), otherwise a picker scrolled into
+ * the titlebar band can be visible while the drag region steals pointer input. */
+.sand-message-action-anchor--menu-open { z-index: 5001; }
+.sand-message-hover-actions { position: absolute; right: 0; bottom: -30px; z-index: 5001; display: flex; gap: 4px; opacity: 0; pointer-events: none; transition: opacity .12s ease; }
 .sand-message-action-anchor:hover .sand-message-hover-actions,
 .sand-message-action-anchor:focus-within .sand-message-hover-actions,
 .sand-message-action-anchor--menu-open .sand-message-hover-actions { opacity: 1; pointer-events: auto; }

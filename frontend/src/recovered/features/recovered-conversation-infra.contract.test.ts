@@ -694,6 +694,11 @@ test("CONTRACT-TDRP-MEDIAVIEW-WINDOW-CHROME-REPLACEMENT-001 media preview replac
   assert.match(source, /event\.key === "Escape"[\s\S]{0,160}onClose\(\)/);
   assert.match(source, /const previousOverflow = document\.body\.style\.overflow;[\s\S]{0,140}document\.body\.style\.overflow = "hidden"/);
   assert.match(source, /document\.body\.style\.overflow = previousOverflow;[\s\S]{0,100}restoreFocus\(\)/);
+  assert.match(source, /data-media-source=\{attachment\.path\}/);
+  assert.match(source, /trigger == null \|\| !trigger\.isConnected[\s\S]{0,420}querySelectorAll<HTMLButtonElement>\("button\[data-media-source\]"\)[\s\S]{0,220}candidate\.dataset\.mediaSource === source/);
+  assert.match(source, /requestAnimationFrame\(focusCurrentTrigger\)/);
+  assert.match(styles, /\.sand-message-action-anchor--menu-open \{ z-index: 5001; \}/);
+  assert.match(styles, /\.sand-message-hover-actions \{[^}]*z-index: 5001;/);
   assert.doesNotMatch(source, /BrowserWindow|window\.(?:minimize|maximize|unmaximize|restore)\s*\(/);
   assert.match(styles, /\.sand-media-viewer \{ position: fixed; inset: 0;[\s\S]{0,180}overflow: hidden;/);
   assert.match(styles, /\.sand-media-viewer__close \{ pointer-events: auto; \}/);

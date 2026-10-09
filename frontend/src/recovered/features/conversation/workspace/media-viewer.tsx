@@ -266,8 +266,8 @@ function MediaCard({ attachment, kind, media, loading, observe, role, onOpen, on
   const label = attachment.name || attachmentBasename(attachment.path);
   const attachmentLabel = role === "assistant" ? "Agent attachment" : "User attachment";
   const userMediaStyle = attachment.sourceKind === "user-attachment" ? { maxWidth: 320 } : undefined;
-  if (media?.kind === "image" && onOpen != null) return <button aria-label="Media preview" className="sand-attachment" data-attachment-label={attachmentLabel} onClick={(event) => onOpen(event.currentTarget)} ref={observe} type="button"><img alt={label} className="sand-attachment__image" draggable={false} height={attachment.height ?? undefined} src={media.dataUrl} style={userMediaStyle} width={attachment.width ?? undefined} /></button>;
-  if (media?.kind === "video" && onOpen != null) return <button aria-label="Media preview" className="sand-attachment" data-attachment-label={attachmentLabel} onClick={(event) => onOpen(event.currentTarget)} ref={observe} type="button"><video aria-label={label} className="sand-attachment__video" height={attachment.height ?? undefined} muted preload="metadata" src={media.src} style={userMediaStyle} width={attachment.width ?? undefined} /></button>;
+  if (media?.kind === "image" && onOpen != null) return <button aria-label="Media preview" className="sand-attachment" data-attachment-label={attachmentLabel} data-media-source={attachment.path} onClick={(event) => onOpen(event.currentTarget)} ref={observe} type="button"><img alt={label} className="sand-attachment__image" draggable={false} height={attachment.height ?? undefined} src={media.dataUrl} style={userMediaStyle} width={attachment.width ?? undefined} /></button>;
+  if (media?.kind === "video" && onOpen != null) return <button aria-label="Media preview" className="sand-attachment" data-attachment-label={attachmentLabel} data-media-source={attachment.path} onClick={(event) => onOpen(event.currentTarget)} ref={observe} type="button"><video aria-label={label} className="sand-attachment__video" height={attachment.height ?? undefined} muted preload="metadata" src={media.src} style={userMediaStyle} width={attachment.width ?? undefined} /></button>;
   if (media?.kind === "audio") return <audio aria-label={label} className="sand-attachment" data-attachment-label={attachmentLabel} controls preload="metadata" ref={observe} src={media.src} />;
   if (kind === "pdf" && onOpenPdf != null) return <button aria-label={`Open ${label}`} className="sand-file-attachment-chip sand-message-attachment" data-attachment-label={attachmentLabel} data-kind={kind} onClick={(event) => onOpenPdf(event.currentTarget)} ref={observe} type="button" title={attachment.path}><span aria-hidden="true">▤</span><span><strong>{label}</strong><small>{kind}{attachment.size == null ? "" : ` · ${formatAttachmentBytes(attachment.size)}`}</small></span></button>;
   if (loading) return <span aria-label="Loading media…" className="sand-attachment" data-attachment-label={attachmentLabel} ref={observe} role="status">Loading media…</span>;
@@ -308,10 +308,24 @@ export function TranscriptAttachmentGallery({ attachments, adjacency, role, reso
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const [openPdf, setOpenPdf] = useState<DraftAttachment | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const triggerSourceRef = useRef<string | null>(null);
+  const galleryRef = useRef<HTMLDivElement | null>(null);
   const close = useCallback(() => setOpenIndex(null), []);
-  const restoreFocus = useCallback(() => { triggerRef.current?.focus(); }, []);
+  const restoreFocus = useCallback(() => {
+    const focusCurrentTrigger = () => {
+      let trigger = triggerRef.current;
+      if (trigger == null || !trigger.isConnected) {
+        const source = triggerSourceRef.current;
+        trigger = source == null ? null : [...(galleryRef.current?.querySelectorAll<HTMLButtonElement>("button[data-media-source]") ?? [])].find((candidate) => candidate.dataset.mediaSource === source) ?? null;
+        triggerRef.current = trigger;
+      }
+      trigger?.focus({ preventScroll: true });
+    };
+    if (typeof requestAnimationFrame === "function") requestAnimationFrame(focusCurrentTrigger);
+    else queueMicrotask(focusCurrentTrigger);
+  }, []);
   return <>
-    <div aria-label={role === "assistant" ? "Agent attachments" : "Attachments"} className="sand-message-attachments" data-role={role} role="group"><div className="sand-message-attachments__strip">{galleryAttachments.map((attachment) => <AttachmentItem adjacency={adjacency} attachment={attachment} downloadAttachment={downloadAttachment} key={`${attachment.path}:${attachment.name}`} mediaAttachments={mediaAttachments} onOpen={(mediaIndex, trigger) => { triggerRef.current = trigger; setOpenIndex(mediaIndex); }} onOpenPdf={(pdf, trigger) => { triggerRef.current = trigger; setOpenPdf(pdf); }} readAttachmentBytes={readAttachmentBytes} resolveMedia={resolveMedia} role={role} />)}</div></div>
+    <div aria-label={role === "assistant" ? "Agent attachments" : "Attachments"} className="sand-message-attachments" data-role={role} ref={galleryRef} role="group"><div className="sand-message-attachments__strip">{galleryAttachments.map((attachment) => <AttachmentItem adjacency={adjacency} attachment={attachment} downloadAttachment={downloadAttachment} key={`${attachment.path}:${attachment.name}`} mediaAttachments={mediaAttachments} onOpen={(mediaIndex, trigger) => { triggerRef.current = trigger; triggerSourceRef.current = mediaAttachments[mediaIndex]?.path ?? null; setOpenIndex(mediaIndex); }} onOpenPdf={(pdf, trigger) => { triggerRef.current = trigger; triggerSourceRef.current = null; setOpenPdf(pdf); }} readAttachmentBytes={readAttachmentBytes} resolveMedia={resolveMedia} role={role} />)}</div></div>
     {openIndex == null || resolveMedia == null ? null : <MediaViewer attachments={mediaAttachments} onClose={close} resolveMedia={resolveMedia} restoreFocus={restoreFocus} startIndex={openIndex} />}
     {openPdf == null || readAttachmentBytes == null || downloadAttachment == null ? null : <PdfAttachmentViewer name={openPdf.name || attachmentBasename(openPdf.path)} onClose={() => setOpenPdf(null)} onDownload={() => downloadAttachment(openPdf.path, openPdf.name || attachmentBasename(openPdf.path))} readBytes={readAttachmentBytes} restoreFocus={() => triggerRef.current?.focus()} source={openPdf.path} isOpen />}
   </>;
