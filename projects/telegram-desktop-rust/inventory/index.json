@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15841,
-    "unread_minimum": 10800,
+    "unread_minimum": 10770,
     "omitted_known": 0,
-    "note": "Live 42f8a36d recursive census remains 16,120. Read-through 5,320; 279 unknown-closed; unknown 15,841, unread 10,800, omitted 0. Orders 5311-5320 are exact-blob read-complete and mapped-open to canonical account/identity/provider-authorization/resource/form owners."
+    "note": "Live 42f8a36d recursive census remains 16,120. Read-through 5,350; 279 unknown-closed; unknown 15,841, unread 10,770, omitted 0. Orders 5321-5350 are exact-blob read-complete and mapped-open to canonical account/identity/payment/payment-provider/wallet/reaction/external-URL/security owners."
   },
   "latest_recursive_evidence": {
     "run_id": 37872749663,
@@ -46,7 +46,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live 42f8a36d authority exact through order 5,320; unread_minimum is 10,800; unknown remains 15,841; omitted remains 0. Fresh same-head Actions evidence required.",
+  "note": "Live 42f8a36d authority exact through order 5,350; unread_minimum is 10,770; unknown remains 15,841; omitted remains 0. Fresh same-head Actions evidence required.",
   "rebaseline": {
     "from_commit": "3a15bf1fe34b6950916215a11b50eadfce4bbb41",
     "to_commit": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
@@ -64,7 +64,7 @@
       "changelog.txt"
     ],
     "current_head_source_authority_evidence": "Predecessor-head success before orders 5291-5300: run 37917685269 job 113777882511 at a5c76249c4f79f9d3355b8c78f0a99e9ce6763bf, artifact 11610602313, digest sha256:32c47f1a0a30d0d19c1986f21bb2e3afea4a7728e9062ee463979699c04c46e2. The new branch head requires fresh same-head GitHub Actions.",
-    "current_source_read_through": 5320
+    "current_source_read_through": 5350
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -73,6 +73,6 @@
     "development_only_non_applicable": 66,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 5320
+    "read_through": 5350
   }
 }
