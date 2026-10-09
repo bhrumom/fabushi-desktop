@@ -93,7 +93,7 @@ release candidate 只有在 independent acceptance 为 ACCEPT、0 open P0/P1/blo
 
 Current live authority (2026-10-09): `telegramdesktop/tdesktop@42f8a36d43b8c805bc821905bea4cfeb3af1d41d` (root tree `6ac9bbc1b44edcb119b1a724e7b0a321c3b7b8fa`), four commits ahead of historical `3a15bf1fe34b6950916215a11b50eadfce4bbb41`; exactly nine existing paths changed, no add/delete/gitlink change, recursive denominator remains 16,120, and source closure remains open.
 
-Current source accounting: deterministic read-through `5360/16120`; unread `10760`; unknown `15841`; unknown-closed `279`; omitted `0`. Orders 5001-5360 are exact-blob read-complete. Media-view/menu responsibilities and MTProto-derived transport/session/auth/config/security/proxy/error/schema/reconnect/bootstrap responsibilities remain mapped-open except for explicitly cited existing partial Fabushi slices; MTProto wire/socket/DC mechanics are source-neutral platform/protocol replacements, not a second runtime and not omitted. Unknown stays unchanged until complete responsibility and exact-head verification gates close; no baseline-ready or release credit is granted.
+Current source accounting: deterministic read-through `5400/16120`; unread `10720`; unknown `15841`; unknown-closed `279`; omitted `0`. Orders 5001-5400 are exact-blob read-complete. Media-view/menu responsibilities and MTProto-derived transport/session/auth/config/security/proxy/error/schema/reconnect/bootstrap responsibilities remain mapped-open except for explicitly cited existing partial Fabushi slices; MTProto wire/socket/DC mechanics are source-neutral platform/protocol replacements, not a second runtime and not omitted. Unknown stays unchanged until complete responsibility and exact-head verification gates close; no baseline-ready or release credit is granted.
 
 
 ### Read-through 5291-5300
@@ -127,3 +127,20 @@ Orders 5341-5350 are exact-blob read-complete. Provider card/token/error decodin
 ### Read-through 5351-5360
 
 Orders 5351-5360 are exact-blob read-complete. Stripe card metadata/input validation/decode/error responsibilities are mapped-open to canonical PaymentProvider/payment, form-validation, security and error-projection owners. Stripe SDK/wire behavior is not copied as a second runtime. Unknown remains 15,841; omitted remains 0.
+
+
+### Read-through 5361-5370
+
+Orders 5361-5370 are exact-blob read-complete. Provider form encoding/configuration/token decode and checkout card-editor behavior map to canonical PaymentProvider/payment, security, form-validation and canonical payment UI owners. No Stripe runtime or Stripe-specific UI root is introduced. Unknown remains 15,841; omitted remains 0.
+
+### Read-through 5371-5380
+
+Orders 5371-5380 are exact-blob read-complete. Requested customer information, payment-field normalization, checkout summary and panel orchestration map to canonical payment, form, webview/security and command owners. Commit `39da06252e33ef7f8d53061514f8234108ee609e` adds fail-closed source-neutral invoice-requested customer validation before charging plus a focused Rust contract; exact-head Actions and remaining UI/provider responsibilities stay open. Unknown remains 15,841; omitted remains 0.
+
+### Read-through 5381-5390
+
+Orders 5381-5390 are exact-blob read-complete. Paid-reaction amount/identity/anonymity/balance maps to canonical Reaction/Wallet/payment/Dialog; Linux location, XDG Open-With, activation/sleep/lock/theme and protected update/relaunch map to existing platform and update/packaging owners. Unknown remains 15,841; omitted remains 0.
+
+### Read-through 5391-5400
+
+Orders 5391-5400 are exact-blob read-complete. Global menu/unread badge/focus state, native notification capability negotiation/actions/inline reply/activation-token/exact-scope cleanup, DBus/Flatpak schemas, autostart/single-instance/scheme launch and platform capability deltas map to existing application-menu, notification, deep-link, lifecycle, settings and packaging owners. Native Linux services remain thin adapters. Unknown remains 15,841; omitted remains 0.
