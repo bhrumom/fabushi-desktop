@@ -521,7 +521,14 @@ mod tests {
             )
             .unwrap();
         let duplicate = ledger
-            .transfer("pay:1", &buyer, &seller, usd(250), None, 4)
+            .transfer(
+                "pay:1",
+                &buyer,
+                &seller,
+                usd(250),
+                Some("invoice:1".into()),
+                4,
+            )
             .unwrap();
         assert_eq!(duplicate.id, transfer.id);
         assert_eq!(ledger.accounts[&buyer].balance("USD"), 750);
