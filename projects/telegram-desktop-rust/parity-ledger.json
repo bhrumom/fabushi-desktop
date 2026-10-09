@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16123,
     "unknown": 15844,
-    "unread": 10540,
+    "unread": 10538,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -3149,7 +3149,7 @@
         "typed Story actions",
         "comments/reaction projection"
       ],
-      "platform_delta": "Qt façade becomes typed React capability contract backed by existing Rust Story owner.",
+      "platform_delta": "Qt fa\u00e7ade becomes typed React capability contract backed by existing Rust Story owner.",
       "existing_owner": "Canonical Story owner + ProductShell capability surface + existing domain action owners",
       "fabushi_target_paths": [
         "native/mahayana-messaging/src/story.rs",
@@ -3397,14 +3397,14 @@
         "first async result mutates a replaced Story",
         "comments/reactions use second store"
       ],
-      "ui_disposition": "Delegation semantics retained; Qt controller façade itself is not ported.",
+      "ui_disposition": "Delegation semantics retained; Qt controller fa\u00e7ade itself is not ported.",
       "non_ui_responsibilities": [
         "Single action path",
         "pause reason continuity",
         "lifetime fencing",
         "comments/reaction authoritative projection"
       ],
-      "platform_delta": "Use typed hooks/controllers in existing ProductShell surface rather than C++ façade.",
+      "platform_delta": "Use typed hooks/controllers in existing ProductShell surface rather than C++ fa\u00e7ade.",
       "existing_owner": "Canonical Story owner + Resource playback + ProductShell action composition",
       "fabushi_target_paths": [
         "native/mahayana-messaging/src/story.rs",
@@ -13497,6 +13497,6 @@
     "development_only_non_applicable": 66,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 5583
+    "read_through": 5585
   }
 }

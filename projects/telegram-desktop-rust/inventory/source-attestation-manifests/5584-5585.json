@@ -1,0 +1,19 @@
+{
+  "accepted_upstream": "863cf10d9f34fb0b1b35b35da1bda75acfc58d2e",
+  "start": 5584,
+  "end": 5585,
+  "entries": [
+    {
+      "order": 5584,
+      "path": "Telegram/SourceFiles/settings/sections/settings_business.cpp",
+      "blob": "66f2e398dc6e41616c64b122d11c4a829c3cce7f",
+      "consumer_symbol": "BusinessId"
+    },
+    {
+      "order": 5585,
+      "path": "Telegram/SourceFiles/settings/sections/settings_business.h",
+      "blob": "2ed90195c3c4231283145e8a5df430490ac74657",
+      "consumer_symbol": "ShowBusiness"
+    }
+  ]
+}
