@@ -324,6 +324,8 @@ jobs:
           frontend/src/recovered/features/window-chrome/app-alert/controller.contract.test.ts
           frontend/src/recovered/features/window-chrome/model.contract.test.ts
           frontend/src/recovered/ui/overlay-dismissal.contract.test.ts
+          frontend/src/recovered/ui/button-state.contract.test.ts
+          frontend/src/recovered/ui/in-flight-command.contract.test.ts
           frontend/src/recovered/features/recovered-foundations.contract.test.ts
           frontend/src/recovered/features/recovered-runtime-models.contract.test.ts
           frontend/src/recovered/features/access-cover.contract.test.ts

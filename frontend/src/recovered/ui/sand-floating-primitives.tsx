@@ -1,4 +1,4 @@
-import { createContext, cloneElement, isValidElement, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type ReactElement, type ReactNode, type RefObject } from "react";
+import { Children, createContext, cloneElement, isValidElement, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type ReactElement, type ReactNode, type RefObject } from "react";
 import { createPortal } from "react-dom";
 
 import "./sand-floating-primitives.css";
@@ -393,17 +393,26 @@ export interface SandContextMenuProps {
 
 export function SandContextMenu({ children, content, ariaLabel = "Menu", open, onOpenChange, closeOnSelect = true, virtualFocus = false }: SandContextMenuProps): ReactNode {
   const [point, setPoint] = useState(open ?? null);
+  const hasContent = Children.count(content) > 0;
   const currentPoint = open === undefined ? point : open;
-  const set = (next: { readonly x: number; readonly y: number } | null) => { if (open === undefined) setPoint(next); onOpenChange?.(next); };
+  const menuOpen = currentPoint != null && hasContent;
+  const set = (next: { readonly x: number; readonly y: number } | null) => {
+    const bounded = hasContent ? next : null;
+    if (open === undefined) setPoint(bounded);
+    onOpenChange?.(bounded);
+  };
   const anchorRef = useRef<HTMLElement | null>(null);
   const surfaceRef = useRef<HTMLDivElement | null>(null);
-  const context = useMemo<FloatingContextValue>(() => ({ anchorRef, close: () => set(null), closeOnEscape: true, closeOnOutsidePress: true, open: currentPoint != null, offset: 0, placement: "bottom-start", returnFocus: true, setAnchor: (node) => { anchorRef.current = node; }, setOpen: (next) => { if (!next) set(null); }, surfaceRef }), [currentPoint, onOpenChange]);
+  const context = useMemo<FloatingContextValue>(() => ({ anchorRef, close: () => set(null), closeOnEscape: true, closeOnOutsidePress: true, open: menuOpen, offset: 0, placement: "bottom-start", returnFocus: true, setAnchor: (node) => { anchorRef.current = node; }, setOpen: (next) => { if (!next) set(null); }, surfaceRef }), [hasContent, menuOpen, onOpenChange]);
   useDismissal(context);
   const trigger = cloneWithRef(children, (node) => { anchorRef.current = node; }, {
-    onContextMenu: (event: ReactMouseEvent) => { (children.props as { onContextMenu?: (event: ReactMouseEvent) => void }).onContextMenu?.(event); if (!event.defaultPrevented) { event.preventDefault(); set({ x: event.clientX, y: event.clientY }); } },
-    onKeyDown: (event: ReactKeyboardEvent) => { (children.props as { onKeyDown?: (event: ReactKeyboardEvent) => void }).onKeyDown?.(event); if (!event.defaultPrevented && event.shiftKey && event.key === "F10") { event.preventDefault(); const rect = (event.currentTarget as HTMLElement).getBoundingClientRect(); set({ x: rect.left, y: rect.bottom }); } },
+    "aria-expanded": menuOpen,
+    "aria-haspopup": "menu",
+    "data-context-menu-open": menuOpen || undefined,
+    onContextMenu: (event: ReactMouseEvent) => { (children.props as { onContextMenu?: (event: ReactMouseEvent) => void }).onContextMenu?.(event); if (!event.defaultPrevented && hasContent) { event.preventDefault(); set({ x: event.clientX, y: event.clientY }); } },
+    onKeyDown: (event: ReactKeyboardEvent) => { (children.props as { onKeyDown?: (event: ReactKeyboardEvent) => void }).onKeyDown?.(event); if (!event.defaultPrevented && hasContent && event.shiftKey && event.key === "F10") { event.preventDefault(); const rect = (event.currentTarget as HTMLElement).getBoundingClientRect(); set({ x: rect.left, y: rect.bottom }); } },
   } as never);
-  return <FloatingContext.Provider value={context}><div data-context-menu-trigger="true">{trigger}</div><FloatingSurface ariaLabel={ariaLabel} className="ui-menu__content" dataComponent="menu-popup" role="menu" style={{ left: currentPoint?.x ?? 8, top: currentPoint?.y ?? 8 }}>{content}</FloatingSurface></FloatingContext.Provider>;
+  return <FloatingContext.Provider value={context}><div data-context-menu-open={menuOpen || undefined} data-context-menu-trigger="true">{trigger}</div><FloatingSurface ariaLabel={ariaLabel} className="ui-menu__content" dataComponent="menu-popup" role="menu" style={{ left: currentPoint?.x ?? 8, top: currentPoint?.y ?? 8 }}>{content}</FloatingSurface></FloatingContext.Provider>;
 }
 
 export interface SandSelectOption<T extends string | number = string> {

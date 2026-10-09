@@ -78,6 +78,7 @@ import { ORG_CHART_GATE, orgChartAvailability } from "../recovered/features/org-
 import { createAgentNetworkTrigger } from "../recovered/features/org-chart/workspace/network-trigger";
 import { AccountMenu } from "../recovered/features/account/session/menu";
 import { SandBadge, SandButton, SandIcon, SandIconButton } from "../recovered/ui/sand-kit-primitives";
+import { createInFlightCommandFence } from "../recovered/ui/in-flight-command";
 import { OverlayDialog } from "../recovered/ui/overlay-primitives";
 import { SandTextField } from "../recovered/ui/sand-form-primitives";
 import { SignInStatus } from "../recovered/features/account/session/sign-in-status";
@@ -965,6 +966,9 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const [entriesByAgent, setEntriesByAgent] = useState<Record<string, ConversationTranscriptEntry[]>>({});
   const [transcriptLoadError, setTranscriptLoadError] = useState<TranscriptLoadErrorState | null>(null);
   const [busy, setBusy] = useState(false);
+  const [createAgentPending, setCreateAgentPending] = useState(false);
+  const [humanHandoffPending, setHumanHandoffPending] = useState(false);
+  const [commandFence] = useState(() => createInFlightCommandFence());
   const [notice, setNotice] = useState<string | null>(null);
   const [scheduleComposerOpen, setScheduleComposerOpen] = useState(false);
   const [scheduleComposerValue, setScheduleComposerValue] = useState("");
@@ -2283,8 +2287,11 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       setNotice("Send at least one Human message before handing the conversation to an Agent.");
       return;
     }
+    const commandLease = commandFence.acquire("human-handoff");
+    if (commandLease == null) return;
     const clientNonce = makeClientNonce();
     const now = Date.now();
+    setHumanHandoffPending(true);
     setBusy(true);
     try {
       await client.call("sendPrompt", {
@@ -2306,9 +2313,11 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     } catch (error) {
       setNotice(error instanceof Error ? error.message : String(error));
     } finally {
+      commandLease.release();
+      setHumanHandoffPending(false);
       setBusy(false);
     }
-  }, [activeAgent, activeIsHuman, client, entries, humanHandoffAgentId]);
+  }, [activeAgent, activeIsHuman, client, commandFence, entries, humanHandoffAgentId]);
 
   const loadOlderTranscript = useCallback(() => transcriptPaginationController.loadOlder(), [transcriptPaginationController]);
   const paletteLinks = useMemo(
@@ -3422,7 +3431,10 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
 
   const createAgent = async () => {
     if (client == null) return;
+    const commandLease = commandFence.acquire("create-agent");
+    if (commandLease == null) return;
     const name = newAgentName.trim() || "New chat";
+    setCreateAgentPending(true);
     setBusy(true);
     try {
       const result = await client.call("createAgent", {
@@ -3440,7 +3452,11 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       setNewAgentDialogOpen(false);
       if (projected != null) await openAgent(projected.id);
     } catch (error) { setNotice(error instanceof Error ? error.message : String(error)); }
-    finally { setBusy(false); }
+    finally {
+      commandLease.release();
+      setCreateAgentPending(false);
+      setBusy(false);
+    }
   };
 
   createAgentRef.current = openNewAgentDialog;
@@ -4237,7 +4253,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
               <select aria-label="Agent for Human handoff" disabled={busy || availableHandoffAgents.length === 0} onChange={(event) => setHumanHandoffAgentId(event.currentTarget.value)} value={humanHandoffAgentId}>
                 {availableHandoffAgents.length === 0 ? <option value="">No Agent available</option> : availableHandoffAgents.map((agent) => <option key={agent.id} value={agent.id}>{agent.name}</option>)}
               </select>
-              <SandButton disabled={busy || humanHandoffAgentId.length === 0} onClick={() => void handoffHumanConversationToAgent()} size="sm" variant="secondary">Ask Agent</SandButton>
+              <SandButton disabled={busy || humanHandoffAgentId.length === 0} onClick={() => void handoffHumanConversationToAgent()} pending={humanHandoffPending} size="sm" variant="secondary">Ask Agent</SandButton>
             </div>
           </div> : <ConversationAgentHeader
             agent={activeAgent}
@@ -4339,10 +4355,10 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       <OverlayDialog
         className="sand-new-agent-dialog"
         label="Create agent"
-        onClose={() => { if (!busy) setNewAgentDialogOpen(false); }}
+        onClose={() => { if (!busy && !createAgentPending) setNewAgentDialogOpen(false); }}
         open={newAgentDialogOpen}
       >
-        <form onSubmit={(event) => { event.preventDefault(); if (!busy) void createAgent(); }}>
+        <form onSubmit={(event) => { event.preventDefault(); if (!busy && !createAgentPending) void createAgent(); }}>
           <header>
             <div>
               <h2>Create agent</h2>
@@ -4393,7 +4409,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
           </div>
           <footer>
             <SandButton disabled={busy} onClick={() => setNewAgentDialogOpen(false)} size="sm" variant="secondary">Cancel</SandButton>
-            <SandButton disabled={busy || newAgentName.trim().length === 0} size="sm" type="submit">Create</SandButton>
+            <SandButton disabled={busy || newAgentName.trim().length === 0} pending={createAgentPending} size="sm" type="submit">Create</SandButton>
           </footer>
         </form>
       </OverlayDialog>

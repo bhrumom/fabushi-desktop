@@ -1,6 +1,7 @@
 import { forwardRef, type ButtonHTMLAttributes, type CSSProperties, type HTMLAttributes, type ReactNode } from "react";
 
 import "./sand-kit-primitives.css";
+import { resolveButtonInteractionState } from "./button-state";
 import { sandIconGlyph, sandIconStyle } from "./sand-icon-registry";
 import type { SandIconColor, SandIconName, SandIconPlatform, SandIconSize, SandIconVariant } from "./sand-icon-registry";
 
@@ -82,6 +83,7 @@ function joinClasses(...classes: readonly (string | undefined)[]): string {
 export interface SandButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "color"> {
   readonly children?: ReactNode;
   readonly pending?: boolean;
+  readonly subtitle?: ReactNode;
   readonly leadingIcon?: SandIconName;
   readonly trailingIcon?: SandIconName;
   readonly variant?: SandButtonVariant;
@@ -99,25 +101,33 @@ export const SandButton = forwardRef<HTMLButtonElement, SandButtonProps>(functio
   shape = "rectangular",
   size = "md",
   sentiment = "neutral",
+  subtitle,
   trailingIcon,
   variant = "primary",
   type = "button",
   ...buttonProps
 }, ref): ReactNode {
+  const interaction = resolveButtonInteractionState({ disabled, pending });
   return <button
     {...buttonProps}
-    aria-busy={pending || buttonProps["aria-busy"] || undefined}
-    className={joinClasses(KIT_BUTTON_BASE, size === "sm" ? KIT_BUTTON_SM : undefined, BUTTON_SIZE_CLASSES[size], BUTTON_SHAPE_CLASSES[shape], BUTTON_SENTIMENT_CLASSES[sentiment][variant], buttonProps["aria-pressed"] === true ? SELECTED_CLASSES : undefined, className)}
+    aria-busy={interaction.ariaBusy ?? buttonProps["aria-busy"] ?? undefined}
+    className={joinClasses(KIT_BUTTON_BASE, size === "sm" ? KIT_BUTTON_SM : undefined, BUTTON_SIZE_CLASSES[size], BUTTON_SHAPE_CLASSES[shape], BUTTON_SENTIMENT_CLASSES[sentiment][variant], buttonProps["aria-pressed"] === true || buttonProps["aria-expanded"] === true ? SELECTED_CLASSES : undefined, className)}
+    data-pending={interaction.pending || undefined}
     data-sentiment={sentiment}
     data-shape={shape}
     data-size={size}
     data-variant={variant}
-    disabled={disabled || pending}
+    disabled={interaction.disabled}
     ref={ref}
     type={type}
   >
     {leadingIcon == null ? null : <SandIcon name={leadingIcon} />}
-    <span className="sand-euugli sand-b3r6kr sand-lyipyv">{children}</span>
+    <span className="sand-euugli sand-b3r6kr sand-lyipyv ui-button-label" data-two-line={subtitle != null || undefined}>
+      {subtitle == null ? children : <>
+        <span className="ui-button-label__title">{children}</span>
+        <span className="ui-button-label__subtitle">{subtitle}</span>
+      </>}
+    </span>
     {trailingIcon == null ? null : <SandIcon name={trailingIcon} />}
   </button>;
 });
@@ -151,17 +161,19 @@ export const SandIconButton = forwardRef<HTMLButtonElement, SandIconButtonProps>
   ...buttonProps
 }, ref): ReactNode {
   const resolvedLabel = label ?? buttonProps["aria-label"] ?? "";
+  const interaction = resolveButtonInteractionState({ disabled, pending });
   return <button
     {...buttonProps}
-    aria-busy={pending || buttonProps["aria-busy"] || undefined}
+    aria-busy={interaction.ariaBusy ?? buttonProps["aria-busy"] ?? undefined}
     aria-label={resolvedLabel}
     aria-pressed={selected || buttonProps["aria-pressed"] || undefined}
-    className={joinClasses(ICON_BUTTON_BASE, ICON_SIZE_CLASSES[size], ICON_SHAPE_CLASSES[shape], ICON_VARIANT_CLASSES[variant], selected || buttonProps["aria-pressed"] === true ? SELECTED_CLASSES : undefined, className)}
+    className={joinClasses(ICON_BUTTON_BASE, ICON_SIZE_CLASSES[size], ICON_SHAPE_CLASSES[shape], ICON_VARIANT_CLASSES[variant], selected || buttonProps["aria-pressed"] === true || buttonProps["aria-expanded"] === true ? SELECTED_CLASSES : undefined, className)}
+    data-pending={interaction.pending || undefined}
     data-sentiment={sentiment}
     data-shape={shape}
     data-size={size}
     data-variant={variant}
-    disabled={disabled || pending}
+    disabled={interaction.disabled}
     ref={ref}
     title={title ?? resolvedLabel}
     type={type}
