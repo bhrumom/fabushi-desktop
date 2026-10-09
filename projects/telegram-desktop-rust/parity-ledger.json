@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15846,
-    "unread": 10277,
+    "unread": 10266,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,11 +13478,11 @@
     "to_commit": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
     "ahead_by": 10,
     "changed_paths": 25,
-    "source_read_reconciliation": "18 changed blobs inside prior prefix re-read/reconciled; orders 5831-5848 read/decomposed; read-through=5848, unread=10277, unknown=15846, omitted=0.",
+    "source_read_reconciliation": "18 changed blobs inside prior prefix re-read/reconciled; orders 5831-5859 read/decomposed; read-through=5859, unread=10266, unknown=15846, omitted=0.",
     "source_authority_evidence": "fresh descendant exact-head Actions required",
-    "current_source_read_through": 5848,
-    "first_unread_order": 5849,
-    "first_unread_path": "Telegram/SourceFiles/tests/test_main.cpp"
+    "current_source_read_through": 5859,
+    "first_unread_order": 5860,
+    "first_unread_path": "Telegram/SourceFiles/ui/boxes/about_cocoon_box.cpp"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,7 +13491,7 @@
     "development_only_non_applicable": 69,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 5848
+    "read_through": 5859
   },
   "historical_exact_head_evidence": {
     "status": "historical-only",

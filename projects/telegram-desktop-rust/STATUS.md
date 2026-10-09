@@ -1,4 +1,4 @@
-Live Revision 9 authority (2026-10-10): telegramdesktop/tdesktop@65e23ba7137ea4129b6bc1b2616104a1f59495ef (root tree 6b616494f3465324e749a04dcd1c9d508657a998). Root non-directory=6,653; recursive non-directory=16,125; read-through=5,848; first unread=5,849 Telegram/SourceFiles/tests/test_main.cpp@ba1ac4268d10c463c7c07b993d49b4cb945e5dc3; unread=10,277; unknown=15,846; omitted=0. The b0d1fe5e→65e23ba7 delta is ten commits / 25 modified paths; all 18 changed blobs inside the prior prefix were explicitly re-read and reconciled before retaining prefix credit. Orders 5,831-5,848 were then read/decomposed on the same live authority. Fresh descendant exact-head GitHub Actions evidence is required; b0400d+b0d1fe5 runs are predecessor-only.
+Live Revision 9 authority (2026-10-10): telegramdesktop/tdesktop@65e23ba7137ea4129b6bc1b2616104a1f59495ef (root tree 6b616494f3465324e749a04dcd1c9d508657a998). Root non-directory=6,653; recursive non-directory=16,125; read-through=5,859; first unread=5,860 Telegram/SourceFiles/ui/boxes/about_cocoon_box.cpp@4aab8e79a2fbbb0cf7feffffcb6cacf246e0275b; unread=10,266; unknown=15,846; omitted=0. The b0d1fe5e→65e23ba7 delta is ten commits / 25 modified paths; all 18 changed blobs inside the prior prefix were explicitly re-read and reconciled before retaining prefix credit. Orders 5,831-5,859 are read/decomposed on the same live authority. Fresh descendant exact-head GitHub Actions evidence is required; predecessor runs remain evidence only for their own HEAD.
 
 # Telegram Desktop → Fabushi 全量等价重写 — Status
 
@@ -83,3 +83,8 @@ Orders 5,825–5,830 are exact-blob read-complete/responsibility-decomposed UI e
 ### Source closure through 5,848
 
 Under live `65e23ba7` authority, orders **5,837–5,848** were completely read and exact-blob dispositioned. Accounting is now **5,848/16,125 read, 10,277 unread, 15,846 unknown, 0 omitted**; these test/evidence-only rows do not reduce global unknown. Fresh exact-head Actions are required.
+
+
+### Source closure through 5,859
+
+Under live `65e23ba7` authority, orders **5,849–5,859** are now exact-blob read-complete/responsibility-decomposed. Tests 5,849–5,854 are professional evidence-only responsibilities; Tray 5,855–5,859 remains mapped-open production work pending canonical source-neutral owner/composition and exact-head evidence. Accounting: **5,859/16,125 read, 10,266 unread, 15,846 unknown, 0 omitted**. First unread is 5,860 `ui/boxes/about_cocoon_box.cpp@4aab8e79…`. No baseline-ready or release credit is granted.
