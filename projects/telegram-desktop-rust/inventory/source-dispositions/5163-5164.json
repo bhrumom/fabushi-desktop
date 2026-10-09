@@ -1,0 +1,89 @@
+{
+  "format_version": 2,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+    "tree": "6ac9bbc1b44edcb119b1a724e7b0a321c3b7b8fa"
+  },
+  "range": {
+    "first_order": 5163,
+    "last_order": 5164,
+    "entries": 2
+  },
+  "rows": [
+    {
+      "recursive_order": 5163,
+      "source_path": "Telegram/SourceFiles/media/view/media_view_overlay_widget.cpp",
+      "source_blob_sha": "03138e6eeb429ca38a1b8edafa0a9a7d9742cb1a",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Top-level media-view product lifecycle and state machine: typed open context, gallery/shared-media navigation, loading/streaming, playback controls, seek/speed/quality/fullscreen/PiP, call-aware pause/resume, system media controls, TTL/single-view burn, screenshot protection, save/share/delete/recognition, keyboard/touch/gesture input, hide/teardown and resource continuity",
+      "upstream_owner": "Media::View::OverlayWidget production controller",
+      "state_machine": "typed OpenRequest/context -> resolve/display static or streamed media -> controls/input/navigation/streaming updates -> optional fullscreen/PiP/quality transitions -> error/retry or close/hide -> persist eligible playback/window state -> burn/cleanup protected ephemeral state -> deterministic teardown",
+      "side_effects": "Persists media-view window/PiP geometry, playback speed/quality/last position where allowed; coordinates media loading and power-save blocker; drives screenshot protection and TTL read/burn; pauses/resumes around calls; exposes save/share/delete/recognition; owns keyboard/touch/gesture arbitration and clears transient timers/selections/stream state on hide.",
+      "failure_cases": "stale media or async recognition survives source/session replacement; playback position/quality lost or resurrected incorrectly; call pause resumes when it should not; failed stream loops without fail-closed fallback; PiP/fullscreen transition duplicates player ownership; TTL media survives close; screenshot protection drops on native handle changes; hidden viewer retains timers/stream/resources; viewer shortcuts steal control input.",
+      "ui_disposition": "Decompose into existing canonical MediaViewer/ConversationWorkspace, Chromium media element/compositor, canonical permissions/resource owners and platform adapters. Do not introduce Telegram OverlayWidget or a second media runtime. Canonical controls/components and source-neutral names only.",
+      "fabushi_canonical_owner": "frontend/src/recovered/features/conversation/workspace/media-viewer.tsx with existing ConversationWorkspace/resource/runtime/platform composition",
+      "fabushi_target": "MAPPED OPEN. This cycle added reachable Chromium native playback controls and replacement/unmount playback fencing in the canonical MediaViewer. Remaining persistence, call interruption, explicit speed/quality policy, system-media-control integration, PiP geometry, TTL/single-view, screenshot-protection and recognition/service responsibilities require existing-owner implementation plus focused exact-head evidence.",
+      "platform_differences": "Qt window/RHI/event-filter mechanics are not copied. Electron/Chromium supplies media rendering/fullscreen/PiP primitives; Fabushi must preserve product lifecycle, durable state, security, input, error and accessibility semantics through its existing source-neutral owners.",
+      "production_evidence": "projects/telegram-desktop-rust/dossiers/media-view-overlay-lifecycle-5163-5164-complete-read.md; frontend/src/recovered/features/conversation/workspace/media-viewer.tsx contains partial native playback implementation; remaining responsibilities open.",
+      "test_evidence": "CONTRACT-TDRP-MEDIAVIEW-NATIVE-PLAYBACK-001 covers the partial canonical playback/input lifecycle; later focused unit/integration/E2E/packaged security/TTL/PiP/system-media evidence remains required.",
+      "disposition": "mapped-open-media-view-lifecycle",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "Media::View::OverlayWidget",
+      "consumer_evidence": [
+        "Complete direct exact-source read of accepted blob 03138e6e across lines 1-9064, including construction/window lifecycle, shared-media navigation, streaming creation/update/error, playback delegates, system controls, keyboard/touch/gesture handling, TTL/screenshot protection and clearBeforeHide/clearAfterHide."
+      ],
+      "reachability_status": "accepted-tree-source-owner-proven; partial canonical implementation exists; broad product responsibility remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; behavior is decomposed/reimplemented rather than C++ copied.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-pending-new-head-actions-attestation",
+        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "verified_blob_sha": "03138e6eeb429ca38a1b8edafa0a9a7d9742cb1a",
+        "byte_size": 254132,
+        "file_type": "blob",
+        "recursive_order": 5163
+      },
+      "notes": "Read-complete only for source accounting; broad mixed responsibility remains mapped-open and receives no unknown/verification/release credit."
+    },
+    {
+      "recursive_order": 5164,
+      "source_path": "Telegram/SourceFiles/media/view/media_view_overlay_widget.h",
+      "source_blob_sha": "40d67d4c05ba47710d8cdd3d6f8e844ffa1a05e3",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Typed public/private contract and authoritative state inventory for media-view lifecycle, playback/PiP/system-controls delegates, streaming/session/context ownership, controls visibility/input state, TTL/security, recognition, stories/group-call bridges and teardown",
+      "upstream_owner": "Media::View::OverlayWidget declaration/state boundary",
+      "state_machine": "construct authoritative state -> bind session/context/media identity -> mutate only through typed display/playback/navigation/security/input transitions -> retire session/media/timers/resources on replacement/hide/destruction",
+      "side_effects": "Defines ownership for current photo/document/quality/stream/PiP/session/context, playback position, controls, TTL timers, screenshot-protection flag, recognition request identity, call/story stream, and persistent window/playback settings.",
+      "failure_cases": "parallel owner for the same media identity; stale session/media pointer; pending timer/recognition result crosses replacement; hidden state remains authoritative; platform window recreation loses security state; controls/stream/PiP disagree on playback ownership.",
+      "ui_disposition": "Map state and effects into existing source-neutral canonical owners. Chromium/Electron remains renderer/player primitive; canonical MediaViewer remains the product UI owner; no Telegram-named component/store/runtime.",
+      "fabushi_canonical_owner": "frontend/src/recovered/features/conversation/workspace/media-viewer.tsx plus existing Fabushi resource/security/platform/runtime owners",
+      "fabushi_target": "MAPPED OPEN. Header confirms the broader responsibilities observed in 5163; only the current native playback/input/lifecycle subset is implemented this cycle.",
+      "platform_differences": "C++/Qt object fields and window event filters are reference mechanics. Preserve equivalent state ownership, lifetime/security and visible behavior in current Electron/TypeScript/Rust composition.",
+      "production_evidence": "projects/telegram-desktop-rust/dossiers/media-view-overlay-lifecycle-5163-5164-complete-read.md; partial canonical MediaViewer implementation; no broad completion claim.",
+      "test_evidence": "Current focused playback contract plus future exact-head lifecycle/security/PiP/system-media/TTL/recognition tests required.",
+      "disposition": "mapped-open-media-view-lifecycle",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "Media::View::OverlayWidget",
+      "consumer_evidence": [
+        "Complete direct exact-source read of accepted blob 40d67d4c lines 1-912; used to bind controller state/lifecycle ownership without creating a Telegram-specific owner."
+      ],
+      "reachability_status": "accepted-tree-source-owner-proven; broad shipping verification remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibilities are reimplemented in source-neutral canonical owners.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-pending-new-head-actions-attestation",
+        "accepted_upstream": "42f8a36d43b8c805bc821905bea4cfeb3af1d41d",
+        "verified_blob_sha": "40d67d4c05ba47710d8cdd3d6f8e844ffa1a05e3",
+        "byte_size": 27968,
+        "file_type": "blob",
+        "recursive_order": 5164
+      },
+      "notes": "Read-complete. Unknown remains open because the declared controller responsibility is intentionally broader than the partial playback implementation."
+    }
+  ]
+}
