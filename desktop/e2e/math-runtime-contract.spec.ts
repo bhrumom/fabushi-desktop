@@ -6,6 +6,7 @@ import {
   MAX_ASSISTANT_MATH_EXPRESSION_LENGTH,
   MAX_ASSISTANT_MATH_MARKUP_BYTES,
   MAX_ASSISTANT_MATH_SIZE_EM,
+  normalizeAssistantMathLocalizedDigits,
   renderKatexMarkup,
   type KatexRuntime,
 } from '../../frontend/src/recovered/features/conversation/workspace/math-runtime';
@@ -29,6 +30,28 @@ test('canonical math renderer keeps expansion, size, and trust budgets on strict
   }
   expect(calls[0]?.throwOnError).toBe(true);
   expect(calls[1]).toMatchObject({ throwOnError: false, strict: 'ignore' });
+});
+
+test('canonical math renderer normalizes every accepted localized decimal block before strict and recovery renders', () => {
+  const localizedDigitBlockStarts = [
+    0x0660, 0x06f0, 0x0966, 0x09e6, 0x0a66, 0x0ae6, 0x0b66, 0x0c66, 0x0d66, 0x0e50,
+    0x0ed0, 0x0f20, 0x1040, 0x17e0, 0x1810, 0x1b50, 0x1bb0, 0x1c40, 0x1c50, 0xa8d0,
+  ] as const;
+  const localizedSevens = localizedDigitBlockStarts.map((start) => String.fromCodePoint(start + 7)).join('');
+  expect(normalizeAssistantMathLocalizedDigits(`${localizedSevens}${String.fromCodePoint(0x066b)}X`))
+    .toBe(`${'7'.repeat(localizedDigitBlockStarts.length)}.X`);
+
+  const seenExpressions: string[] = [];
+  const runtime: KatexRuntime = {
+    renderToString(expression) {
+      seenExpressions.push(expression);
+      if (seenExpressions.length === 1) throw new Error('strict localized-number probe');
+      return `<span class="katex">${expression}</span>`;
+    },
+  };
+  const localizedExpression = String.fromCodePoint(0x0661, 0x066b, 0x06f2);
+  expect(renderKatexMarkup(runtime, localizedExpression, false)).toContain('1.2');
+  expect(seenExpressions).toEqual(['1.2', '1.2']);
 });
 
 test('canonical math renderer rejects over-budget input before invoking the runtime', () => {
