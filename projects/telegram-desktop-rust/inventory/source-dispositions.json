@@ -1303,16 +1303,16 @@
       "entries": 10
     },
     {
-      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/8126-8152.json",
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/8126-8135.json",
       "first_order": 8126,
-      "last_order": 8152,
-      "entries": 27
+      "last_order": 8135,
+      "entries": 10
     },
     {
-      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/8153-8162.json",
-      "first_order": 8153,
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/8136-8162.json",
+      "first_order": 8136,
       "last_order": 8162,
-      "entries": 10
+      "entries": 27
     }
   ],
   "rebaseline_overrides": {

@@ -8,8 +8,8 @@
     "tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6"
   },
   "range": {
-    "first_order": 8126,
-    "last_order": 8152,
+    "first_order": 8136,
+    "last_order": 8162,
     "entries": 27
   },
   "rows": [
@@ -32,7 +32,7 @@
       "production_evidence": "mapping evidence only; source behavior remains mapped-open until canonical production implementation and current exact-head tests exist",
       "test_evidence": "Full pinned file was read from hime-ime/hime@9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5; returned Git blob identity b9364ceec2381329caa5b51fa653ba728b3e46ac matched accepted recursive inventory. No local build/test used.",
       "notes": "responsibility_cluster=phonetic-keyboard-settings; reading closes no unknown",
-      "recursive_order": 8126,
+      "recursive_order": 8136,
       "source_path": "Telegram/ThirdParty/hime::src/hime-setup-pho.c",
       "source_blob_sha": "b9364ceec2381329caa5b51fa653ba728b3e46ac",
       "source_identity": {
@@ -54,7 +54,7 @@
         "component_commit": "9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5",
         "verified_blob_sha": "b9364ceec2381329caa5b51fa653ba728b3e46ac",
         "file_type": "blob",
-        "recursive_order": 8126
+        "recursive_order": 8136
       }
     },
     {
@@ -76,7 +76,7 @@
       "production_evidence": "mapping evidence only; source behavior remains mapped-open until canonical production implementation and current exact-head tests exist",
       "test_evidence": "Full pinned file was read from hime-ime/hime@9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5; returned Git blob identity db81f815c47f82c6a1c4b29dba30b346896a4421 matched accepted recursive inventory. No local build/test used.",
       "notes": "responsibility_cluster=settings-command-orchestration; reading closes no unknown",
-      "recursive_order": 8127,
+      "recursive_order": 8137,
       "source_path": "Telegram/ThirdParty/hime::src/hime-setup.c",
       "source_blob_sha": "db81f815c47f82c6a1c4b29dba30b346896a4421",
       "source_identity": {
@@ -98,7 +98,7 @@
         "component_commit": "9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5",
         "verified_blob_sha": "db81f815c47f82c6a1c4b29dba30b346896a4421",
         "file_type": "blob",
-        "recursive_order": 8127
+        "recursive_order": 8137
       }
     },
     {
@@ -120,7 +120,7 @@
       "production_evidence": "mapping evidence only; source behavior remains mapped-open until canonical production implementation and current exact-head tests exist",
       "test_evidence": "Full pinned file was read from hime-ime/hime@9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5; returned Git blob identity c9b3d8c79befcf7e6df3bdf33efef5acf64d956d matched accepted recursive inventory. No local build/test used.",
       "notes": "responsibility_cluster=clipboard-script-transform; reading closes no unknown",
-      "recursive_order": 8128,
+      "recursive_order": 8138,
       "source_path": "Telegram/ThirdParty/hime::src/hime-sim2trad.c",
       "source_blob_sha": "c9b3d8c79befcf7e6df3bdf33efef5acf64d956d",
       "source_identity": {
@@ -142,7 +142,7 @@
         "component_commit": "9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5",
         "verified_blob_sha": "c9b3d8c79befcf7e6df3bdf33efef5acf64d956d",
         "file_type": "blob",
-        "recursive_order": 8128
+        "recursive_order": 8138
       }
     },
     {
@@ -164,7 +164,7 @@
       "production_evidence": "mapping evidence only; source behavior remains mapped-open until canonical production implementation and current exact-head tests exist",
       "test_evidence": "Full pinned file was read from hime-ime/hime@9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5; returned Git blob identity 27bb05eef50bf5a73f838e9bf0cc50b1952401fc matched accepted recursive inventory. No local build/test used.",
       "notes": "responsibility_cluster=phrase-db-edit-integrity; reading closes no unknown",
-      "recursive_order": 8129,
+      "recursive_order": 8139,
       "source_path": "Telegram/ThirdParty/hime::src/hime-ts-edit.c",
       "source_blob_sha": "27bb05eef50bf5a73f838e9bf0cc50b1952401fc",
       "source_identity": {
@@ -186,7 +186,7 @@
         "component_commit": "9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5",
         "verified_blob_sha": "27bb05eef50bf5a73f838e9bf0cc50b1952401fc",
         "file_type": "blob",
-        "recursive_order": 8129
+        "recursive_order": 8139
       }
     },
     {
@@ -208,7 +208,7 @@
       "production_evidence": "mapping evidence only; source behavior remains mapped-open until canonical production implementation and current exact-head tests exist",
       "test_evidence": "Full pinned file was read from hime-ime/hime@9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5; returned Git blob identity f1142f599823ae23003929b8254864e38acb11dc matched accepted recursive inventory. No local build/test used.",
       "notes": "responsibility_cluster=phrase-db-binary-compiler; reading closes no unknown",
-      "recursive_order": 8130,
+      "recursive_order": 8140,
       "source_path": "Telegram/ThirdParty/hime::src/hime-tsa2d32.c",
       "source_blob_sha": "f1142f599823ae23003929b8254864e38acb11dc",
       "source_identity": {
@@ -230,7 +230,7 @@
         "component_commit": "9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5",
         "verified_blob_sha": "f1142f599823ae23003929b8254864e38acb11dc",
         "file_type": "blob",
-        "recursive_order": 8130
+        "recursive_order": 8140
       }
     },
     {
@@ -252,7 +252,7 @@
       "production_evidence": "mapping evidence only; source behavior remains mapped-open until canonical production implementation and current exact-head tests exist",
       "test_evidence": "Full pinned file was read from hime-ime/hime@9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5; returned Git blob identity 225ebf7b3d84ccbbaa4d461c9c22a0bccb81b447 matched accepted recursive inventory. No local build/test used.",
       "notes": "responsibility_cluster=phrase-db-binary-export; reading closes no unknown",
-      "recursive_order": 8131,
+      "recursive_order": 8141,
       "source_path": "Telegram/ThirdParty/hime::src/hime-tsd2a32.c",
       "source_blob_sha": "225ebf7b3d84ccbbaa4d461c9c22a0bccb81b447",
       "source_identity": {
@@ -274,7 +274,7 @@
         "component_commit": "9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5",
         "verified_blob_sha": "225ebf7b3d84ccbbaa4d461c9c22a0bccb81b447",
         "file_type": "blob",
-        "recursive_order": 8131
+        "recursive_order": 8141
       }
     },
     {
@@ -296,7 +296,7 @@
       "production_evidence": "mapping evidence only; source behavior remains mapped-open until canonical production implementation and current exact-head tests exist",
       "test_evidence": "Full pinned file was read from hime-ime/hime@9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5; returned Git blob identity 1b9d8e22394666f066cb6c0be0c0fac3052d75ec matched accepted recursive inventory. No local build/test used.",
       "notes": "responsibility_cluster=phrase-key-mapping; reading closes no unknown",
-      "recursive_order": 8132,
+      "recursive_order": 8142,
       "source_path": "Telegram/ThirdParty/hime::src/hime-tsin2gtab-phrase.c",
       "source_blob_sha": "1b9d8e22394666f066cb6c0be0c0fac3052d75ec",
       "source_identity": {
@@ -318,7 +318,7 @@
         "component_commit": "9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5",
         "verified_blob_sha": "1b9d8e22394666f066cb6c0be0c0fac3052d75ec",
         "file_type": "blob",
-        "recursive_order": 8132
+        "recursive_order": 8142
       }
     },
     {
@@ -340,7 +340,7 @@
       "production_evidence": "mapping evidence only; source behavior remains mapped-open until canonical production implementation and current exact-head tests exist",
       "test_evidence": "Full pinned file was read from hime-ime/hime@9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5; returned Git blob identity 34c53f858cdc163402a8dafe1096fb74ef1b722d matched accepted recursive inventory. No local build/test used.",
       "notes": "responsibility_cluster=phrase-learning-dedupe; reading closes no unknown",
-      "recursive_order": 8133,
+      "recursive_order": 8143,
       "source_path": "Telegram/ThirdParty/hime::src/hime-tslearn.c",
       "source_blob_sha": "34c53f858cdc163402a8dafe1096fb74ef1b722d",
       "source_identity": {
@@ -362,7 +362,7 @@
         "component_commit": "9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5",
         "verified_blob_sha": "34c53f858cdc163402a8dafe1096fb74ef1b722d",
         "file_type": "blob",
-        "recursive_order": 8133
+        "recursive_order": 8143
       }
     },
     {
@@ -384,7 +384,7 @@
       "production_evidence": "mapping evidence only; source behavior remains mapped-open until canonical production implementation and current exact-head tests exist",
       "test_evidence": "Full pinned file was read from hime-ime/hime@9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5; returned Git blob identity f8dcf4fe7c481be976cff8299326a27288f689cb matched accepted recursive inventory. No local build/test used.",
       "notes": "responsibility_cluster=central-input-lifecycle; reading closes no unknown",
-      "recursive_order": 8134,
+      "recursive_order": 8144,
       "source_path": "Telegram/ThirdParty/hime::src/hime.c",
       "source_blob_sha": "f8dcf4fe7c481be976cff8299326a27288f689cb",
       "source_identity": {
@@ -406,7 +406,7 @@
         "component_commit": "9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5",
         "verified_blob_sha": "f8dcf4fe7c481be976cff8299326a27288f689cb",
         "file_type": "blob",
-        "recursive_order": 8134
+        "recursive_order": 8144
       }
     },
     {
@@ -428,7 +428,7 @@
       "production_evidence": "mapping evidence only; source behavior remains mapped-open until canonical production implementation and current exact-head tests exist",
       "test_evidence": "Full pinned file was read from hime-ime/hime@9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5; returned Git blob identity 87847c131fe6b4bbf2db48fd49f2003afcd02ea6 matched accepted recursive inventory. No local build/test used.",
       "notes": "responsibility_cluster=input-contract-constants; reading closes no unknown",
-      "recursive_order": 8135,
+      "recursive_order": 8145,
       "source_path": "Telegram/ThirdParty/hime::src/hime.h",
       "source_blob_sha": "87847c131fe6b4bbf2db48fd49f2003afcd02ea6",
       "source_identity": {
@@ -450,7 +450,7 @@
         "component_commit": "9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5",
         "verified_blob_sha": "87847c131fe6b4bbf2db48fd49f2003afcd02ea6",
         "file_type": "blob",
-        "recursive_order": 8135
+        "recursive_order": 8145
       }
     },
     {
@@ -472,7 +472,7 @@
       "production_evidence": "mapping evidence only; source behavior remains mapped-open until canonical production implementation and current exact-head tests exist",
       "test_evidence": "Full pinned file was read from hime-ime/hime@9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5; returned Git blob identity 70ee7496a59cce68579434bac502d336256c4314 matched accepted recursive inventory. No local build/test used.",
       "notes": "responsibility_cluster=local-input-endpoint-identity; reading closes no unknown",
-      "recursive_order": 8136,
+      "recursive_order": 8146,
       "source_path": "Telegram/ThirdParty/hime::src/im-addr.c",
       "source_blob_sha": "70ee7496a59cce68579434bac502d336256c4314",
       "source_identity": {
@@ -494,7 +494,7 @@
         "component_commit": "9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5",
         "verified_blob_sha": "70ee7496a59cce68579434bac502d336256c4314",
         "file_type": "blob",
-        "recursive_order": 8136
+        "recursive_order": 8146
       }
     },
     {
@@ -516,7 +516,7 @@
       "production_evidence": "mapping evidence only; source behavior remains mapped-open until canonical production implementation and current exact-head tests exist",
       "test_evidence": "Full pinned file was read from hime-ime/hime@9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5; returned Git blob identity a391ed7715a02a7c52071ef768e07d698769d07c matched accepted recursive inventory. No local build/test used.",
       "notes": "responsibility_cluster=input-client-build-contract; reading closes no unknown",
-      "recursive_order": 8137,
+      "recursive_order": 8147,
       "source_path": "Telegram/ThirdParty/hime::src/im-client/Makefile",
       "source_blob_sha": "a391ed7715a02a7c52071ef768e07d698769d07c",
       "source_identity": {
@@ -538,7 +538,7 @@
         "component_commit": "9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5",
         "verified_blob_sha": "a391ed7715a02a7c52071ef768e07d698769d07c",
         "file_type": "blob",
-        "recursive_order": 8137
+        "recursive_order": 8147
       }
     },
     {
@@ -560,7 +560,7 @@
       "production_evidence": "mapping evidence only; source behavior remains mapped-open until canonical production implementation and current exact-head tests exist",
       "test_evidence": "Full pinned file was read from hime-ime/hime@9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5; returned Git blob identity ed56f2032f37011eef70d83372b4005fa0adc474 matched accepted recursive inventory. No local build/test used.",
       "notes": "responsibility_cluster=typed-preedit-attributes; reading closes no unknown",
-      "recursive_order": 8138,
+      "recursive_order": 8148,
       "source_path": "Telegram/ThirdParty/hime::src/im-client/hime-im-client-attr.h",
       "source_blob_sha": "ed56f2032f37011eef70d83372b4005fa0adc474",
       "source_identity": {
@@ -582,7 +582,7 @@
         "component_commit": "9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5",
         "verified_blob_sha": "ed56f2032f37011eef70d83372b4005fa0adc474",
         "file_type": "blob",
-        "recursive_order": 8138
+        "recursive_order": 8148
       }
     },
     {
@@ -604,7 +604,7 @@
       "production_evidence": "mapping evidence only; source behavior remains mapped-open until canonical production implementation and current exact-head tests exist",
       "test_evidence": "Full pinned file was read from hime-ime/hime@9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5; returned Git blob identity 6ab3f720e7919d7bd86cc4e5fa71504e8b580a6d matched accepted recursive inventory. No local build/test used.",
       "notes": "responsibility_cluster=input-client-reconnect-framing; reading closes no unknown",
-      "recursive_order": 8139,
+      "recursive_order": 8149,
       "source_path": "Telegram/ThirdParty/hime::src/im-client/hime-im-client.c",
       "source_blob_sha": "6ab3f720e7919d7bd86cc4e5fa71504e8b580a6d",
       "source_identity": {
@@ -626,7 +626,7 @@
         "component_commit": "9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5",
         "verified_blob_sha": "6ab3f720e7919d7bd86cc4e5fa71504e8b580a6d",
         "file_type": "blob",
-        "recursive_order": 8139
+        "recursive_order": 8149
       }
     },
     {
@@ -648,7 +648,7 @@
       "production_evidence": "mapping evidence only; source behavior remains mapped-open until canonical production implementation and current exact-head tests exist",
       "test_evidence": "Full pinned file was read from hime-ime/hime@9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5; returned Git blob identity 865336f85ce8c3d5f7276f55e9da532227195cc6 matched accepted recursive inventory. No local build/test used.",
       "notes": "responsibility_cluster=input-client-api-contract; reading closes no unknown",
-      "recursive_order": 8140,
+      "recursive_order": 8150,
       "source_path": "Telegram/ThirdParty/hime::src/im-client/hime-im-client.h",
       "source_blob_sha": "865336f85ce8c3d5f7276f55e9da532227195cc6",
       "source_identity": {
@@ -670,7 +670,7 @@
         "component_commit": "9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5",
         "verified_blob_sha": "865336f85ce8c3d5f7276f55e9da532227195cc6",
         "file_type": "blob",
-        "recursive_order": 8140
+        "recursive_order": 8150
       }
     },
     {
@@ -692,7 +692,7 @@
       "production_evidence": "mapping evidence only; source behavior remains mapped-open until canonical production implementation and current exact-head tests exist",
       "test_evidence": "Full pinned file was read from hime-ime/hime@9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5; returned Git blob identity 03c5ccdb66cfdb00825b5453149e3c2fc0c10b07 matched accepted recursive inventory. No local build/test used.",
       "notes": "responsibility_cluster=input-ipc-protocol; reading closes no unknown",
-      "recursive_order": 8141,
+      "recursive_order": 8151,
       "source_path": "Telegram/ThirdParty/hime::src/im-client/hime-protocol.h",
       "source_blob_sha": "03c5ccdb66cfdb00825b5453149e3c2fc0c10b07",
       "source_identity": {
@@ -714,7 +714,7 @@
         "component_commit": "9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5",
         "verified_blob_sha": "03c5ccdb66cfdb00825b5453149e3c2fc0c10b07",
         "file_type": "blob",
-        "recursive_order": 8141
+        "recursive_order": 8151
       }
     },
     {
@@ -736,7 +736,7 @@
       "production_evidence": "mapping evidence only; source behavior remains mapped-open until canonical production implementation and current exact-head tests exist",
       "test_evidence": "Full pinned file was read from hime-ime/hime@9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5; returned Git blob identity 2c41cfb086c36a149b109405ecae0a6bb880c006 matched accepted recursive inventory. No local build/test used.",
       "notes": "responsibility_cluster=input-control-command; reading closes no unknown",
-      "recursive_order": 8142,
+      "recursive_order": 8152,
       "source_path": "Telegram/ThirdParty/hime::src/im-client/hime-send.c",
       "source_blob_sha": "2c41cfb086c36a149b109405ecae0a6bb880c006",
       "source_identity": {
@@ -758,7 +758,7 @@
         "component_commit": "9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5",
         "verified_blob_sha": "2c41cfb086c36a149b109405ecae0a6bb880c006",
         "file_type": "blob",
-        "recursive_order": 8142
+        "recursive_order": 8152
       }
     },
     {
@@ -780,7 +780,7 @@
       "production_evidence": "mapping evidence only; source behavior remains mapped-open until canonical production implementation and current exact-head tests exist",
       "test_evidence": "Full pinned file was read from hime-ime/hime@9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5; returned Git blob identity 033e045d63dcce387d4b85327b42f240708dc73c matched accepted recursive inventory. No local build/test used.",
       "notes": "responsibility_cluster=input-server-dispatch; reading closes no unknown",
-      "recursive_order": 8143,
+      "recursive_order": 8153,
       "source_path": "Telegram/ThirdParty/hime::src/im-dispatch.c",
       "source_blob_sha": "033e045d63dcce387d4b85327b42f240708dc73c",
       "source_identity": {
@@ -802,7 +802,7 @@
         "component_commit": "9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5",
         "verified_blob_sha": "033e045d63dcce387d4b85327b42f240708dc73c",
         "file_type": "blob",
-        "recursive_order": 8143
+        "recursive_order": 8153
       }
     },
     {
@@ -824,7 +824,7 @@
       "production_evidence": "mapping evidence only; source behavior remains mapped-open until canonical production implementation and current exact-head tests exist",
       "test_evidence": "Full pinned file was read from hime-ime/hime@9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5; returned Git blob identity e97efd9abbe6fe4caa15719a9092802a4d06be84 matched accepted recursive inventory. No local build/test used.",
       "notes": "responsibility_cluster=input-server-transport-security; reading closes no unknown",
-      "recursive_order": 8144,
+      "recursive_order": 8154,
       "source_path": "Telegram/ThirdParty/hime::src/im-srv.c",
       "source_blob_sha": "e97efd9abbe6fe4caa15719a9092802a4d06be84",
       "source_identity": {
@@ -846,7 +846,7 @@
         "component_commit": "9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5",
         "verified_blob_sha": "e97efd9abbe6fe4caa15719a9092802a4d06be84",
         "file_type": "blob",
-        "recursive_order": 8144
+        "recursive_order": 8154
       }
     },
     {
@@ -868,7 +868,7 @@
       "production_evidence": "mapping evidence only; source behavior remains mapped-open until canonical production implementation and current exact-head tests exist",
       "test_evidence": "Full pinned file was read from hime-ime/hime@9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5; returned Git blob identity 2ed92bf92aaa3a6a240335d93dd2ff11736caa6d matched accepted recursive inventory. No local build/test used.",
       "notes": "responsibility_cluster=input-server-connection-state; reading closes no unknown",
-      "recursive_order": 8145,
+      "recursive_order": 8155,
       "source_path": "Telegram/ThirdParty/hime::src/im-srv.h",
       "source_blob_sha": "2ed92bf92aaa3a6a240335d93dd2ff11736caa6d",
       "source_identity": {
@@ -890,7 +890,7 @@
         "component_commit": "9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5",
         "verified_blob_sha": "2ed92bf92aaa3a6a240335d93dd2ff11736caa6d",
         "file_type": "blob",
-        "recursive_order": 8145
+        "recursive_order": 8155
       }
     },
     {
@@ -912,7 +912,7 @@
       "production_evidence": "mapping evidence only; source behavior remains mapped-open until canonical production implementation and current exact-head tests exist",
       "test_evidence": "Full pinned file was read from hime-ime/hime@9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5; returned Git blob identity 6e42a5b24cf3e3f2a89f983717e5839963b07199 matched accepted recursive inventory. No local build/test used.",
       "notes": "responsibility_cluster=keyboard-map-compiler; reading closes no unknown",
-      "recursive_order": 8146,
+      "recursive_order": 8156,
       "source_path": "Telegram/ThirdParty/hime::src/kbmcv.c",
       "source_blob_sha": "6e42a5b24cf3e3f2a89f983717e5839963b07199",
       "source_identity": {
@@ -934,7 +934,7 @@
         "component_commit": "9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5",
         "verified_blob_sha": "6e42a5b24cf3e3f2a89f983717e5839963b07199",
         "file_type": "blob",
-        "recursive_order": 8146
+        "recursive_order": 8156
       }
     },
     {
@@ -956,7 +956,7 @@
       "production_evidence": "mapping evidence only; source behavior remains mapped-open until canonical production implementation and current exact-head tests exist",
       "test_evidence": "Full pinned file was read from hime-ime/hime@9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5; returned Git blob identity 93c412e544a58509c8849b126978c8d7381ff72b matched accepted recursive inventory. No local build/test used.",
       "notes": "responsibility_cluster=locale-script-default; reading closes no unknown",
-      "recursive_order": 8147,
+      "recursive_order": 8157,
       "source_path": "Telegram/ThirdParty/hime::src/lang.c",
       "source_blob_sha": "93c412e544a58509c8849b126978c8d7381ff72b",
       "source_identity": {
@@ -978,7 +978,7 @@
         "component_commit": "9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5",
         "verified_blob_sha": "93c412e544a58509c8849b126978c8d7381ff72b",
         "file_type": "blob",
-        "recursive_order": 8147
+        "recursive_order": 8157
       }
     },
     {
@@ -1000,7 +1000,7 @@
       "production_evidence": "mapping evidence only; source behavior remains mapped-open until canonical production implementation and current exact-head tests exist",
       "test_evidence": "Full pinned file was read from hime-ime/hime@9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5; returned Git blob identity 1fb917d7450bb9f69bcfaa4c425c1dbb3560a2db matched accepted recursive inventory. No local build/test used.",
       "notes": "responsibility_cluster=locale-state-contract; reading closes no unknown",
-      "recursive_order": 8148,
+      "recursive_order": 8158,
       "source_path": "Telegram/ThirdParty/hime::src/lang.h",
       "source_blob_sha": "1fb917d7450bb9f69bcfaa4c425c1dbb3560a2db",
       "source_identity": {
@@ -1022,7 +1022,7 @@
         "component_commit": "9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5",
         "verified_blob_sha": "1fb917d7450bb9f69bcfaa4c425c1dbb3560a2db",
         "file_type": "blob",
-        "recursive_order": 8148
+        "recursive_order": 8158
       }
     },
     {
@@ -1044,7 +1044,7 @@
       "production_evidence": "mapping evidence only; source behavior remains mapped-open until canonical production implementation and current exact-head tests exist",
       "test_evidence": "Full pinned file was read from hime-ime/hime@9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5; returned Git blob identity a10585659fa7b1a8049bb3f506a250b42692b804 matched accepted recursive inventory. No local build/test used.",
       "notes": "responsibility_cluster=unicode-codec-validation; reading closes no unknown",
-      "recursive_order": 8149,
+      "recursive_order": 8159,
       "source_path": "Telegram/ThirdParty/hime::src/locale.c",
       "source_blob_sha": "a10585659fa7b1a8049bb3f506a250b42692b804",
       "source_identity": {
@@ -1066,7 +1066,7 @@
         "component_commit": "9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5",
         "verified_blob_sha": "a10585659fa7b1a8049bb3f506a250b42692b804",
         "file_type": "blob",
-        "recursive_order": 8149
+        "recursive_order": 8159
       }
     },
     {
@@ -1088,7 +1088,7 @@
       "production_evidence": "mapping evidence only; source behavior remains mapped-open until canonical production implementation and current exact-head tests exist",
       "test_evidence": "Full pinned file was read from hime-ime/hime@9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5; returned Git blob identity 46399669003bc32f84756b78c51dc5aaab18e663 matched accepted recursive inventory. No local build/test used.",
       "notes": "responsibility_cluster=checked-command-binding; reading closes no unknown",
-      "recursive_order": 8150,
+      "recursive_order": 8160,
       "source_path": "Telegram/ThirdParty/hime::src/mitem.h",
       "source_blob_sha": "46399669003bc32f84756b78c51dc5aaab18e663",
       "source_identity": {
@@ -1110,7 +1110,7 @@
         "component_commit": "9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5",
         "verified_blob_sha": "46399669003bc32f84756b78c51dc5aaab18e663",
         "file_type": "blob",
-        "recursive_order": 8150
+        "recursive_order": 8160
       }
     },
     {
@@ -1132,7 +1132,7 @@
       "production_evidence": "mapping evidence only; source behavior remains mapped-open until canonical production implementation and current exact-head tests exist",
       "test_evidence": "Full pinned file was read from hime-ime/hime@9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5; returned Git blob identity b5cc54229a5550eb92669d5c070478399e761d2a matched accepted recursive inventory. No local build/test used.",
       "notes": "responsibility_cluster=input-provider-build-selection; reading closes no unknown",
-      "recursive_order": 8151,
+      "recursive_order": 8161,
       "source_path": "Telegram/ThirdParty/hime::src/modules/Makefile",
       "source_blob_sha": "b5cc54229a5550eb92669d5c070478399e761d2a",
       "source_identity": {
@@ -1154,7 +1154,7 @@
         "component_commit": "9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5",
         "verified_blob_sha": "b5cc54229a5550eb92669d5c070478399e761d2a",
         "file_type": "blob",
-        "recursive_order": 8151
+        "recursive_order": 8161
       }
     },
     {
@@ -1176,7 +1176,7 @@
       "production_evidence": "mapping evidence only; source behavior remains mapped-open until canonical production implementation and current exact-head tests exist",
       "test_evidence": "Full pinned file was read from hime-ime/hime@9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5; returned Git blob identity 9af0838e7e50e65ff8c6420aea6e72065b779df9 matched accepted recursive inventory. No local build/test used.",
       "notes": "responsibility_cluster=japanese-ime-state-machine; reading closes no unknown",
-      "recursive_order": 8152,
+      "recursive_order": 8162,
       "source_path": "Telegram/ThirdParty/hime::src/modules/anthy.c",
       "source_blob_sha": "9af0838e7e50e65ff8c6420aea6e72065b779df9",
       "source_identity": {
@@ -1198,7 +1198,7 @@
         "component_commit": "9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5",
         "verified_blob_sha": "9af0838e7e50e65ff8c6420aea6e72065b779df9",
         "file_type": "blob",
-        "recursive_order": 8152
+        "recursive_order": 8162
       }
     }
   ]

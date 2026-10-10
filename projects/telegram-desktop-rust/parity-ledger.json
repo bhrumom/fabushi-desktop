@@ -13482,7 +13482,7 @@
     "source_authority_evidence": "GitHub Actions source-authority artifact 11681552029 (sha256:83a3108678dafcdda74afec1bcffffb9606f48315623fe24d4b5bf9a1e5d8fd4) at 7d155a0461bfe318da513ada5db7dfb65d71b71f materialized accepted Hime 7,949–8,012. 63 PNGs were visually inspected; pink COPYING text was read. Gray/pink artwork is theme-only replacement; Hime root mascot is branding and must not ship. Source reading only; descendant exact-head Actions required.",
     "current_source_read_through": 8162,
     "first_unread_order": 8163,
-    "first_unread_path": "Telegram/ThirdParty/hime::src/pho-kbm-name.h"
+    "first_unread_path": "Telegram/ThirdParty/hime::src/modules/chewing-conf.c"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13493,7 +13493,7 @@
     "omitted": 0,
     "read_through": 8162,
     "first_unread_order": 8163,
-    "first_unread_path": "Telegram/ThirdParty/hime::src/pho-kbm-name.h",
+    "first_unread_path": "Telegram/ThirdParty/hime::src/modules/chewing-conf.c",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
