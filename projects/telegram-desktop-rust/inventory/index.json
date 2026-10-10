@@ -46,7 +46,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live authority exact through deterministic source order 6,574; first unread 6,575 Telegram/codegen.",
+  "note": "Live authority exact through deterministic root source order 6,574; first unread 6,575 Telegram/codegen; unread_minimum is 9,551; unknown remains 15,846; omitted remains 0. Recursive gitlink child inventory remains part of the 16,125-entry census and is not falsely inserted into the root-prefix order.",
   "rebaseline": {
     "from_commit": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
     "to_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
