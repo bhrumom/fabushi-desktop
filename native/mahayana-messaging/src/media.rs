@@ -293,6 +293,16 @@ impl MediaResolveCoordinator {
         self.entries.get(media_id).map(|entry| entry.state)
     }
 
+    pub fn generation(&self, media_id: &str) -> Option<u64> {
+        self.entries.get(media_id).map(|entry| entry.generation)
+    }
+
+    pub fn is_current_flight(&self, lease: &MediaResolveLease) -> bool {
+        self.entries.get(&lease.media_id).is_some_and(|entry| {
+            entry.generation == lease.generation && entry.state == MediaResolveState::Flight
+        })
+    }
+
     /// Enqueue an unresolved item or promote an existing queued/flight claim.
     /// Finished/failed/cancelled entries start a fresh generation when
     /// enqueued again.
@@ -367,6 +377,45 @@ impl MediaResolveCoordinator {
         }))
     }
 
+    /// Starts the requested generation only when it is the highest-priority
+    /// queued item. This lets a concrete shipping fetch caller claim its own
+    /// work without stealing another caller's lease while preserving global
+    /// priority and concurrency ordering.
+    pub fn start_if_next(
+        &mut self,
+        media_id: &str,
+        generation: u64,
+        now_ms: i64,
+        timeout_ms: i64,
+    ) -> Result<Option<MediaResolveLease>, MediaResolveError> {
+        if timeout_ms <= 0 {
+            return Err(MediaResolveError::InvalidTimeout);
+        }
+        if self.in_flight() >= self.max_in_flight {
+            return Ok(None);
+        }
+        let candidate = self
+            .entries
+            .iter()
+            .filter(|(_, entry)| entry.state == MediaResolveState::Queued)
+            .min_by_key(|(candidate_id, entry)| {
+                (entry.priority, entry.sequence, (*candidate_id).clone())
+            })
+            .map(|(candidate_id, entry)| (candidate_id.clone(), entry.generation));
+        if candidate.as_ref().is_none_or(|(candidate_id, candidate_generation)| {
+            candidate_id != media_id || *candidate_generation != generation
+        }) {
+            return Ok(None);
+        }
+        let entry = self.entries.get_mut(media_id).expect("candidate exists");
+        entry.state = MediaResolveState::Flight;
+        entry.deadline_at_ms = Some(now_ms.saturating_add(timeout_ms));
+        Ok(Some(MediaResolveLease {
+            media_id: media_id.to_string(),
+            generation,
+        }))
+    }
+
     pub fn complete(&mut self, lease: &MediaResolveLease) -> bool {
         self.settle(lease, MediaResolveState::Done)
     }
@@ -376,18 +425,48 @@ impl MediaResolveCoordinator {
     }
 
     pub fn cancel(&mut self, media_id: &str) -> bool {
+        let Some(generation) = self.generation(media_id) else {
+            return false;
+        };
+        self.cancel_generation(media_id, generation)
+    }
+
+    pub fn cancel_generation(&mut self, media_id: &str, generation: u64) -> bool {
         let Some(entry) = self.entries.get_mut(media_id) else {
             return false;
         };
-        if matches!(
-            entry.state,
-            MediaResolveState::Done | MediaResolveState::Cancelled
-        ) {
+        if entry.generation != generation
+            || matches!(
+                entry.state,
+                MediaResolveState::Done | MediaResolveState::Failed | MediaResolveState::Cancelled
+            )
+        {
             return false;
         }
         entry.state = MediaResolveState::Cancelled;
         entry.deadline_at_ms = None;
         true
+    }
+
+    /// Fences every queued/in-flight generation during owner teardown. Late
+    /// platform callbacks retain their old leases and therefore cannot settle
+    /// or publish bytes after shutdown.
+    pub fn cancel_all(&mut self) -> Vec<MediaResolveLease> {
+        let current = self
+            .entries
+            .iter()
+            .filter(|(_, entry)| {
+                matches!(entry.state, MediaResolveState::Queued | MediaResolveState::Flight)
+            })
+            .map(|(media_id, entry)| MediaResolveLease {
+                media_id: media_id.clone(),
+                generation: entry.generation,
+            })
+            .collect::<Vec<_>>();
+        for lease in &current {
+            let _ = self.cancel_generation(&lease.media_id, lease.generation);
+        }
+        current
     }
 
     /// Fail every current in-flight generation whose deadline has elapsed and

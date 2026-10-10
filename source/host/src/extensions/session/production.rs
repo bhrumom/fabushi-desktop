@@ -2,12 +2,20 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, OnceLock};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use sha2::{Digest, Sha256};
 use uuid::Uuid;
 
-use fabushi_messaging_core::{Actor as MessagingActor, ActorId as MessagingActorId, ClientCommand as MessagingClientCommand, ClientEnvelope as MessagingClientEnvelope, FABUSHI_MESSAGING_PROTOCOL_VERSION, FileBlobStore as MessagingFileBlobStore, JsonFileStateStore as MessagingJsonFileStateStore, MessagingService, RequestContext as MessagingRequestContext, ServerEnvelope as MessagingServerEnvelope, ServerEvent as MessagingServerEvent, Story as MessagingStory, StoryId as MessagingStoryId};
+use fabushi_messaging_core::{
+    Actor as MessagingActor, ActorId as MessagingActorId,
+    ClientCommand as MessagingClientCommand, ClientEnvelope as MessagingClientEnvelope,
+    FABUSHI_MESSAGING_PROTOCOL_VERSION, FileBlobStore as MessagingFileBlobStore,
+    JsonFileStateStore as MessagingJsonFileStateStore, MediaResolveCoordinator,
+    MediaResolveLease, MediaResolvePriority, MediaResolveState, MessagingService,
+    RequestContext as MessagingRequestContext, ServerEnvelope as MessagingServerEnvelope,
+    ServerEvent as MessagingServerEvent, Story as MessagingStory, StoryId as MessagingStoryId,
+};
 
 use crate::agent_isolation::{
     AgentWorkerPool, ProductionAgentStoreWorkerBackend,
@@ -89,6 +97,18 @@ use super::native_messaging::{
 };
 
 pub const PRODUCTION_BLOB_BUSY_TIMEOUT_MS: u64 = 5_000;
+pub const REMOTE_RESOURCE_RESOLVE_MAX_IN_FLIGHT: usize = 10;
+pub const REMOTE_RESOURCE_RESOLVE_DEADLINE_MS: i64 = 60_000;
+const REMOTE_RESOURCE_RESOLVE_WAIT: Duration = Duration::from_millis(10);
+
+fn current_resource_time_ms() -> i64 {
+    let millis = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis();
+    millis.min(i64::MAX as u128) as i64
+}
+
 
 pub type ProductionAgentWorkerPool = AgentWorkerPool<ProductionAgentStoreWorkerBackend>;
 
@@ -161,6 +181,7 @@ pub struct ProductionSessionWorkers {
     native_messaging_error: Option<String>,
     call_session_store: Option<Arc<CallSessionStore>>,
     call_session_store_error: Option<String>,
+    remote_resource_resolver: Mutex<MediaResolveCoordinator>,
     busy_timeout_ms: u64,
 }
 
@@ -355,6 +376,10 @@ impl ProductionSessionWorkers {
             native_messaging_error,
             call_session_store,
             call_session_store_error,
+            remote_resource_resolver: Mutex::new(
+                MediaResolveCoordinator::new(REMOTE_RESOURCE_RESOLVE_MAX_IN_FLIGHT)
+                    .expect("remote resource resolve budget is non-zero"),
+            ),
             busy_timeout_ms,
         }
     }
@@ -1932,10 +1957,22 @@ impl ProductionSessionWorkers {
             .ok_or_else(|| "Human conversation is missing its peer identity".to_string())
     }
 
-    fn materialize_remote_human_attachment(
+    fn lock_remote_resource_resolver(
+        &self,
+    ) -> Result<std::sync::MutexGuard<'_, MediaResolveCoordinator>, String> {
+        self.remote_resource_resolver
+            .lock()
+            .map_err(|_| "remote Human attachment resolver lock was poisoned".to_string())
+    }
+
+    fn materialize_remote_human_attachment_with_fetch<F>(
         &self,
         attachment: &FabushiRemoteHumanAttachment,
-    ) -> Result<serde_json::Value, String> {
+        fetch: F,
+    ) -> Result<serde_json::Value, String>
+    where
+        F: FnOnce(&str, u64) -> Result<Vec<u8>, String>,
+    {
         let resource_id = attachment.resource_id.trim();
         if resource_id.is_empty()
             || resource_id.len() > 128
@@ -1958,7 +1995,7 @@ impl ProductionSessionWorkers {
             })
             .take(255)
             .collect::<String>();
-        if name.trim().is_empty() {
+        if name.trim().is_empty() || matches!(name.as_str(), "." | "..") {
             name = "attachment".into();
         }
         let resource_root = self
@@ -1966,38 +2003,175 @@ impl ProductionSessionWorkers {
             .join("human-message-resources")
             .join(resource_id);
         fs::create_dir_all(&resource_root).map_err(|error| {
-            format!(
-                "remote Human attachment directory could not be created: {error}"
-            )
+            format!("remote Human attachment directory could not be created: {error}")
         })?;
         let path = resource_root.join(name);
-        let ready = fs::metadata(&path)
-            .ok()
-            .is_some_and(|metadata| metadata.is_file() && metadata.len() == attachment.size);
-        if !ready {
-            let client = self
-                .shipping_native_messaging()?
-                .ok_or_else(|| "remote Human attachment requires shipping native messaging".to_string())?;
-            let bytes = client.download_direct_message_resource(resource_id, attachment.size)?;
-            let temporary_path = resource_root.join(".download.tmp");
-            fs::write(&temporary_path, &bytes).map_err(|error| {
-                format!("remote Human attachment could not be staged: {error}")
-            })?;
-            if let Err(error) = fs::rename(&temporary_path, &path) {
-                let _ = fs::remove_file(&temporary_path);
-                return Err(format!(
-                    "remote Human attachment could not be committed atomically: {error}"
-                ));
-            }
+        let projection = || {
+            serde_json::json!({
+                "path": path.to_string_lossy(),
+                "name": attachment.name,
+                "size": attachment.size,
+                "mimeType": attachment.content_type,
+                "resourceId": attachment.resource_id,
+                "remoteCreatedAt": attachment.created_at,
+            })
+        };
+        let existing = fs::metadata(&path).ok();
+        if existing
+            .as_ref()
+            .is_some_and(|metadata| metadata.is_file() && metadata.len() == attachment.size)
+        {
+            return Ok(projection());
         }
-        Ok(serde_json::json!({
-            "path": path.to_string_lossy(),
-            "name": attachment.name,
-            "size": attachment.size,
-            "mimeType": attachment.content_type,
-            "resourceId": attachment.resource_id,
-            "remoteCreatedAt": attachment.created_at,
-        }))
+        let needs_refresh = if let Some(metadata) = existing {
+            if !metadata.is_file() {
+                return Err("remote Human attachment destination is not a file".into());
+            }
+            match fs::remove_file(&path) {
+                Ok(()) => true,
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => false,
+                Err(error) => {
+                    return Err(format!(
+                        "stale remote Human attachment could not be removed: {error}"
+                    ));
+                }
+            }
+        } else {
+            false
+        };
+
+        let generation = {
+            let mut resolver = self.lock_remote_resource_resolver()?;
+            let _ = resolver.expire(current_resource_time_ms());
+            let result = if needs_refresh {
+                resolver.refresh(resource_id, MediaResolvePriority::UserVisible)
+            } else {
+                resolver.enqueue(resource_id, MediaResolvePriority::UserVisible)
+            };
+            result.map_err(|error| error.to_string())?
+        };
+        let wait_started = Instant::now();
+        let lease = loop {
+            if fs::metadata(&path)
+                .ok()
+                .is_some_and(|metadata| metadata.is_file() && metadata.len() == attachment.size)
+            {
+                return Ok(projection());
+            }
+            let now_ms = current_resource_time_ms();
+            let mut resolver = self.lock_remote_resource_resolver()?;
+            let expired = resolver.expire(now_ms);
+            if expired
+                .iter()
+                .any(|lease| lease.media_id == resource_id && lease.generation == generation)
+            {
+                return Err("remote Human attachment resolve deadline expired".into());
+            }
+            if resolver.generation(resource_id) != Some(generation) {
+                return Err("remote Human attachment resolve generation became stale".into());
+            }
+            match resolver.state(resource_id) {
+                Some(MediaResolveState::Queued) => {
+                    if let Some(lease) = resolver
+                        .start_if_next(
+                            resource_id,
+                            generation,
+                            now_ms,
+                            REMOTE_RESOURCE_RESOLVE_DEADLINE_MS,
+                        )
+                        .map_err(|error| error.to_string())?
+                    {
+                        break lease;
+                    }
+                }
+                Some(MediaResolveState::Flight) => {}
+                Some(MediaResolveState::Done) => {
+                    return Err("remote Human attachment resolved without a durable file".into());
+                }
+                Some(MediaResolveState::Failed) => {
+                    return Err("remote Human attachment resolve failed".into());
+                }
+                Some(MediaResolveState::Cancelled) => {
+                    return Err("remote Human attachment resolve was cancelled".into());
+                }
+                None => {
+                    return Err("remote Human attachment resolve state disappeared".into());
+                }
+            }
+            drop(resolver);
+            if wait_started.elapsed()
+                >= Duration::from_millis(REMOTE_RESOURCE_RESOLVE_DEADLINE_MS as u64)
+            {
+                let mut resolver = self.lock_remote_resource_resolver()?;
+                let _ = resolver.cancel_generation(resource_id, generation);
+                return Err("remote Human attachment queue deadline expired".into());
+            }
+            std::thread::sleep(REMOTE_RESOURCE_RESOLVE_WAIT);
+        };
+
+        let bytes = match fetch(resource_id, attachment.size) {
+            Ok(bytes) => bytes,
+            Err(error) => {
+                let mut resolver = self.lock_remote_resource_resolver()?;
+                let _ = resolver.fail(&lease);
+                return Err(error);
+            }
+        };
+        if bytes.len() as u64 != attachment.size {
+            let mut resolver = self.lock_remote_resource_resolver()?;
+            let _ = resolver.fail(&lease);
+            return Err(format!(
+                "remote Human attachment body length mismatch: expected {}, received {}",
+                attachment.size,
+                bytes.len()
+            ));
+        }
+
+        let temporary_path = resource_root.join(format!(".download.{}.tmp", lease.generation));
+        if let Err(error) = fs::write(&temporary_path, &bytes) {
+            let mut resolver = self.lock_remote_resource_resolver()?;
+            let _ = resolver.fail(&lease);
+            return Err(format!("remote Human attachment could not be staged: {error}"));
+        }
+
+        let mut resolver = self.lock_remote_resource_resolver()?;
+        let _ = resolver.expire(current_resource_time_ms());
+        if !resolver.is_current_flight(&lease) {
+            drop(resolver);
+            let _ = fs::remove_file(&temporary_path);
+            return Err("remote Human attachment completion was stale or cancelled".into());
+        }
+        if let Err(error) = fs::rename(&temporary_path, &path) {
+            let _ = resolver.fail(&lease);
+            drop(resolver);
+            let _ = fs::remove_file(&temporary_path);
+            return Err(format!(
+                "remote Human attachment could not be committed atomically: {error}"
+            ));
+        }
+        if !resolver.complete(&lease) {
+            drop(resolver);
+            let _ = fs::remove_file(&path);
+            return Err("remote Human attachment settlement became stale".into());
+        }
+        Ok(projection())
+    }
+
+    fn materialize_remote_human_attachment(
+        &self,
+        attachment: &FabushiRemoteHumanAttachment,
+    ) -> Result<serde_json::Value, String> {
+        self.materialize_remote_human_attachment_with_fetch(
+            attachment,
+            |resource_id, expected_size| {
+                let client = self
+                    .shipping_native_messaging()?
+                    .ok_or_else(|| {
+                        "remote Human attachment requires shipping native messaging".to_string()
+                    })?;
+                client.download_direct_message_resource(resource_id, expected_size)
+            },
+        )
     }
 
     fn materialize_remote_human_message(
@@ -3776,6 +3950,9 @@ impl ProductionSessionWorkers {
     }
 
     fn shutdown_inner(&self, checkpoint: bool) {
+        if let Ok(mut resolver) = self.remote_resource_resolver.lock() {
+            let _ = resolver.cancel_all();
+        }
         let agent_stores = self
             .agent_store_owners
             .lock()
@@ -3928,6 +4105,81 @@ mod sharebox_shipping_tests {
         );
         assert_eq!(restarted.read_human_conversation_transcript(&alpha).unwrap().len(), 1);
         restarted.shutdown();
+        let _ = fs::remove_dir_all(root);
+    }
+
+    fn remote_resource_fixture(resource_id: &str) -> FabushiRemoteHumanAttachment {
+        FabushiRemoteHumanAttachment {
+            resource_id: resource_id.to_string(),
+            name: "proof.bin".to_string(),
+            content_type: "application/octet-stream".to_string(),
+            size: 4,
+            created_at: "2026-10-10T00:00:00Z".to_string(),
+        }
+    }
+
+    #[test]
+    fn shipping_resource_refresh_rejects_the_old_generation_before_commit() {
+        let root = std::env::temp_dir().join(format!("fabushi-resource-refresh-{}", Uuid::new_v4()));
+        let workers = test_workers(&root);
+        let attachment = remote_resource_fixture("resource-refresh");
+
+        let stale = workers.materialize_remote_human_attachment_with_fetch(
+            &attachment,
+            |resource_id, _| {
+                workers
+                    .remote_resource_resolver
+                    .lock()
+                    .unwrap()
+                    .refresh(resource_id, MediaResolvePriority::UserVisible)
+                    .unwrap();
+                Ok(vec![1, 2, 3, 4])
+            },
+        );
+        assert!(stale
+            .unwrap_err()
+            .contains("stale or cancelled"));
+        let durable = root
+            .join("human-message-resources")
+            .join("resource-refresh")
+            .join("proof.bin");
+        assert!(!durable.exists(), "stale generation must not publish bytes");
+
+        let recovered = workers
+            .materialize_remote_human_attachment_with_fetch(&attachment, |_, _| {
+                Ok(vec![4, 3, 2, 1])
+            })
+            .expect("fresh generation should recover");
+        assert_eq!(
+            recovered.get("resourceId").and_then(serde_json::Value::as_str),
+            Some("resource-refresh")
+        );
+        assert_eq!(fs::read(&durable).unwrap(), [4_u8, 3, 2, 1]);
+        workers.shutdown();
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn shipping_resource_teardown_fences_late_fetch_completion() {
+        let root = std::env::temp_dir().join(format!("fabushi-resource-teardown-{}", Uuid::new_v4()));
+        let workers = test_workers(&root);
+        let attachment = remote_resource_fixture("resource-teardown");
+
+        let late = workers.materialize_remote_human_attachment_with_fetch(
+            &attachment,
+            |_, _| {
+                workers.shutdown();
+                Ok(vec![1, 2, 3, 4])
+            },
+        );
+        assert!(late
+            .unwrap_err()
+            .contains("stale or cancelled"));
+        assert!(!root
+            .join("human-message-resources")
+            .join("resource-teardown")
+            .join("proof.bin")
+            .exists());
         let _ = fs::remove_dir_all(root);
     }
 }

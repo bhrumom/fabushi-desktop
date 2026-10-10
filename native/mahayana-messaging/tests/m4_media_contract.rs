@@ -279,3 +279,56 @@ fn media_resolve_refresh_fences_stale_callbacks_and_cancel_is_terminal_for_a_lea
     );
 }
 
+
+
+#[test]
+fn media_resolve_targeted_claim_preserves_global_priority_order() {
+    let mut coordinator = MediaResolveCoordinator::new(1).unwrap();
+    let background_generation = coordinator
+        .enqueue("background", MediaResolvePriority::Background)
+        .unwrap();
+    let visible_generation = coordinator
+        .enqueue("visible", MediaResolvePriority::UserVisible)
+        .unwrap();
+
+    assert!(coordinator
+        .start_if_next("background", background_generation, 10, 1_000)
+        .unwrap()
+        .is_none());
+    let visible = coordinator
+        .start_if_next("visible", visible_generation, 10, 1_000)
+        .unwrap()
+        .expect("visible work should claim first");
+    assert!(coordinator.complete(&visible));
+    let background = coordinator
+        .start_if_next("background", background_generation, 20, 1_000)
+        .unwrap()
+        .expect("background work should claim after visible settles");
+    assert!(coordinator.complete(&background));
+}
+
+#[test]
+fn media_resolve_teardown_cancels_all_current_generations_and_fences_late_completion() {
+    let mut coordinator = MediaResolveCoordinator::new(2).unwrap();
+    let first_generation = coordinator
+        .enqueue("first", MediaResolvePriority::UserVisible)
+        .unwrap();
+    let second_generation = coordinator
+        .enqueue("second", MediaResolvePriority::Viewport)
+        .unwrap();
+    let first = coordinator
+        .start_if_next("first", first_generation, 10, 1_000)
+        .unwrap()
+        .expect("first lease");
+    let retired = coordinator.cancel_all();
+
+    assert!(retired.iter().any(|lease| {
+        lease.media_id == "first" && lease.generation == first_generation
+    }));
+    assert!(retired.iter().any(|lease| {
+        lease.media_id == "second" && lease.generation == second_generation
+    }));
+    assert_eq!(coordinator.state("first"), Some(MediaResolveState::Cancelled));
+    assert_eq!(coordinator.state("second"), Some(MediaResolveState::Cancelled));
+    assert!(!coordinator.complete(&first));
+}
