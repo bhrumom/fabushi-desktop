@@ -268,7 +268,7 @@
     "unknown_minimum": 15845,
     "unread_minimum": 9215,
     "omitted_known": 0,
-    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 6,910; unknown=15,845, unread=9,215, omitted=0. Orders 6,901-6,910 cover MicroTeX math font metrics/fallbacks/extensions/ligatures/kerns; all remain mapped-open."
+    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 6,910; unknown=15,845, unread=9,215, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
