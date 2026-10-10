@@ -76,9 +76,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 6858,
-    "first_unread_order": 6859,
-    "first_unread_path": "Telegram/ThirdParty/MicroTeX::src/core/meson.build",
+    "read_through": 6861,
+    "first_unread_order": 6862,
+    "first_unread_path": "Telegram/ThirdParty/MicroTeX::src/fonts/alphabet.cpp",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }
