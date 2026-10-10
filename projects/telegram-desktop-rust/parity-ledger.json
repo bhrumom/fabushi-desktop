@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 8610,
+    "unread": 8600,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,11 +13478,11 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Accepted prefix reaches 7,515/16,125; fcitx5-qt 7,428-7,515 exact-read/decomposed through Qt5 GUI-wrapper/config lifecycle and IM-module probing; unread=8,610, unknown=15,845, omitted=0. Reading closes no unknown.",
-    "source_authority_evidence": "Qt5 GUI wrapper preserves source-neutral Settings lifecycle semantics: config path normalization/probing, dirty/apply/reset state, async-save fencing, authoritative notification settlement, visible failure and close-after-success only. IM-module probing preserves requested/active platform input implementation observability. Qt/Fcitx presentation and helper executables remain replacement-only.",
-    "current_source_read_through": 7515,
-    "first_unread_order": 7516,
-    "first_unread_path": "Telegram/ThirdParty/fcitx5-qt::qt5/platforminputcontext/CMakeLists.txt"
+    "source_read_reconciliation": "Accepted prefix reaches 7,525/16,125; fcitx5-qt 7,428-7,525 exact-read/decomposed through Qt5 platform-input compatibility recovery; unread=8,600, unknown=15,845, omitted=0. Reading closes no unknown.",
+    "source_authority_evidence": "Fcitx4 transport is replacement-only. Canonical platform/recovery owners retain endpoint structure/process-liveness validation, unique connection identity, owner/filesystem watching, disconnect cleanup + immediate rediscovery, exact owner recheck and async input-context cleanup/event lifecycle.",
+    "current_source_read_through": 7525,
+    "first_unread_order": 7526,
+    "first_unread_path": "Telegram/ThirdParty/fcitx5-qt::qt5/platforminputcontext/fcitx5.json.in"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 7515,
-    "first_unread_order": 7516,
-    "first_unread_path": "Telegram/ThirdParty/fcitx5-qt::qt5/platforminputcontext/CMakeLists.txt",
+    "read_through": 7525,
+    "first_unread_order": 7526,
+    "first_unread_path": "Telegram/ThirdParty/fcitx5-qt::qt5/platforminputcontext/fcitx5.json.in",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
