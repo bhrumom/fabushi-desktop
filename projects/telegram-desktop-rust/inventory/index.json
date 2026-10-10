@@ -46,7 +46,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live authority exact through deterministic blob order 6,423; unknown remains fail-closed; fresh exact-head evidence required.",
+  "note": "Live authority exact through deterministic blob order 6,423; unread_minimum is 9,702; unknown remains 15,846; omitted remains 0; fresh exact-head evidence required.",
   "rebaseline": {
     "from_commit": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
     "to_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
