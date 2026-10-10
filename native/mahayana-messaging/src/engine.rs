@@ -5,7 +5,8 @@ use crate::community::{
     CommunityState, ForumTopicState, InviteLink, JoinRequest, MemberStatus,
 };
 use crate::connected_app::{
-    ConnectedAppClaimDecision, ConnectedAppError, ConnectedAppRequest, ConnectedAppSession,
+    ConnectedAppAccess, ConnectedAppClaimDecision, ConnectedAppError, ConnectedAppKeyError,
+    ConnectedAppLink, ConnectedAppManifest, ConnectedAppRequest, ConnectedAppSession,
     ConnectedAppState,
 };
 use crate::conversation::{
@@ -467,6 +468,51 @@ pub enum Command {
     UpsertConnectedAppSession {
         session: ConnectedAppSession,
     },
+    UpdateConnectedAppWalletAddress {
+        address: String,
+    },
+    CacheConnectedAppKeyReference {
+        session_id: u64,
+        client_id: String,
+        reference_id: String,
+    },
+    BeginConnectedAppDisconnect {
+        session_id: u64,
+    },
+    DeferConnectedAppClosing {
+        session_id: u64,
+        error: ConnectedAppKeyError,
+    },
+    SettleConnectedAppDisconnect {
+        session_id: u64,
+    },
+    BeginConnectedAppConnectFlow {
+        link: ConnectedAppLink,
+        ownership_domain: String,
+        reserved_platform_domain: String,
+        observed_at_ms: i64,
+    },
+    ResolveConnectedAppConnectAccess {
+        client_id: String,
+        access: ConnectedAppAccess,
+        observed_at_ms: i64,
+    },
+    PollConnectedAppManifest {
+        client_id: String,
+        observed_at_ms: i64,
+    },
+    AcceptConnectedAppManifest {
+        client_id: String,
+        manifest: ConnectedAppManifest,
+    },
+    PinConnectedAppConnectWallet {
+        client_id: String,
+        wallet_address: String,
+    },
+    RetryConnectedAppConnectSubmit {
+        client_id: String,
+        error_type: String,
+    },
     BeginConnectedAppSessionRefresh {
         observed_at_ms: i64,
         wallet_ready: bool,
@@ -513,6 +559,22 @@ pub enum Command {
         not_sent: Vec<u8>,
         answer: Vec<u8>,
         observed_at_ms: i64,
+    },
+    LinkConnectedAppClaimOperation {
+        session_id: u64,
+        request_id: String,
+        operation_id: String,
+    },
+    RecordConnectedAppClaimHandoff {
+        session_id: u64,
+        request_id: String,
+        operation_id: String,
+        signed_payload: String,
+    },
+    RecordConnectedAppClaimAnswer {
+        session_id: u64,
+        request_id: String,
+        answer: Vec<u8>,
     },
     CloseConnectedAppSession {
         session_id: u64,
@@ -3379,6 +3441,91 @@ impl MessagingEngine {
                 state.upsert_session(session)?;
                 Ok(vec![Event::ConnectedAppStateChanged { state }])
             }
+            Command::UpdateConnectedAppWalletAddress { address } => {
+                let mut state = self.state.connected_apps.clone();
+                state.update_wallet_address(&address)?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::CacheConnectedAppKeyReference {
+                session_id,
+                client_id,
+                reference_id,
+            } => {
+                let mut state = self.state.connected_apps.clone();
+                state.cache_key_reference(session_id, &client_id, &reference_id)?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::BeginConnectedAppDisconnect { session_id } => {
+                let mut state = self.state.connected_apps.clone();
+                state.begin_disconnect(session_id)?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::DeferConnectedAppClosing { session_id, error } => {
+                let mut state = self.state.connected_apps.clone();
+                state.defer_closing_for_key_error(session_id, error)?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::SettleConnectedAppDisconnect { session_id } => {
+                let mut state = self.state.connected_apps.clone();
+                state.settle_disconnect(session_id);
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::BeginConnectedAppConnectFlow {
+                link,
+                ownership_domain,
+                reserved_platform_domain,
+                observed_at_ms,
+            } => {
+                let mut state = self.state.connected_apps.clone();
+                state.begin_connect_flow(
+                    link,
+                    &ownership_domain,
+                    &reserved_platform_domain,
+                    observed_at_ms,
+                )?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::ResolveConnectedAppConnectAccess {
+                client_id,
+                access,
+                observed_at_ms,
+            } => {
+                let mut state = self.state.connected_apps.clone();
+                state.resolve_connect_access(&client_id, access, observed_at_ms)?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::PollConnectedAppManifest {
+                client_id,
+                observed_at_ms,
+            } => {
+                let mut state = self.state.connected_apps.clone();
+                state.poll_connect_manifest(&client_id, observed_at_ms)?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::AcceptConnectedAppManifest {
+                client_id,
+                manifest,
+            } => {
+                let mut state = self.state.connected_apps.clone();
+                state.accept_connect_manifest(&client_id, manifest)?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::PinConnectedAppConnectWallet {
+                client_id,
+                wallet_address,
+            } => {
+                let mut state = self.state.connected_apps.clone();
+                state.pin_connect_wallet(&client_id, &wallet_address)?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::RetryConnectedAppConnectSubmit {
+                client_id,
+                error_type,
+            } => {
+                let mut state = self.state.connected_apps.clone();
+                state.retry_connect_submit_failure(&client_id, &error_type)?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
             Command::BeginConnectedAppSessionRefresh {
                 observed_at_ms,
                 wallet_ready,
@@ -3471,6 +3618,39 @@ impl MessagingEngine {
                     answer,
                     observed_at_ms,
                 )?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::LinkConnectedAppClaimOperation {
+                session_id,
+                request_id,
+                operation_id,
+            } => {
+                let mut state = self.state.connected_apps.clone();
+                state.link_claim_operation(session_id, &request_id, &operation_id)?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::RecordConnectedAppClaimHandoff {
+                session_id,
+                request_id,
+                operation_id,
+                signed_payload,
+            } => {
+                let mut state = self.state.connected_apps.clone();
+                state.record_claim_handoff(
+                    session_id,
+                    &request_id,
+                    &operation_id,
+                    &signed_payload,
+                )?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::RecordConnectedAppClaimAnswer {
+                session_id,
+                request_id,
+                answer,
+            } => {
+                let mut state = self.state.connected_apps.clone();
+                state.record_claim_answer(session_id, &request_id, answer)?;
                 Ok(vec![Event::ConnectedAppStateChanged { state }])
             }
             Command::CloseConnectedAppSession {
@@ -5618,11 +5798,33 @@ mod connected_app_engine_tests {
                 session_id: 91,
                 request_id: "request-1".into(),
                 decision: ConnectedAppClaimDecision::Confirm,
+                operation_id: String::new(),
+                signed_payload: String::new(),
+                not_sent: vec![7],
+                answer: Vec::new(),
+                observed_at_ms: 200,
+            })
+            .unwrap();
+        engine
+            .execute(Command::LinkConnectedAppClaimOperation {
+                session_id: 91,
+                request_id: "request-1".into(),
+                operation_id: "operation-1".into(),
+            })
+            .unwrap();
+        engine
+            .execute(Command::RecordConnectedAppClaimHandoff {
+                session_id: 91,
+                request_id: "request-1".into(),
                 operation_id: "operation-1".into(),
                 signed_payload: "signed-payload".into(),
-                not_sent: vec![7],
+            })
+            .unwrap();
+        engine
+            .execute(Command::RecordConnectedAppClaimAnswer {
+                session_id: 91,
+                request_id: "request-1".into(),
                 answer: vec![1, 2, 3],
-                observed_at_ms: 200,
             })
             .unwrap();
 
@@ -5661,11 +5863,22 @@ mod connected_app_engine_tests {
             request_id: "wallet-request".into(),
             decision: ConnectedAppClaimDecision::Confirm,
             wallet_identity: wallet.clone(),
+            operation_id: String::new(),
+            signed_payload: String::new(),
+            not_sent: vec![6],
+            answer: Vec::new(),
+            observed_at_ms: 200,
+        }).unwrap();
+        engine.execute(Command::LinkConnectedAppClaimOperation {
+            session_id: 91,
+            request_id: "wallet-request".into(),
+            operation_id: "operation-wallet".into(),
+        }).unwrap();
+        engine.execute(Command::RecordConnectedAppClaimHandoff {
+            session_id: 91,
+            request_id: "wallet-request".into(),
             operation_id: "operation-wallet".into(),
             signed_payload: "signed-wallet".into(),
-            not_sent: vec![6],
-            answer: vec![9],
-            observed_at_ms: 200,
         }).unwrap();
         let encoded = serde_json::to_string(engine.state()).unwrap();
         let restored: MessagingState = serde_json::from_str(&encoded).unwrap();
@@ -6256,5 +6469,127 @@ mod wallet_live_engine_tests {
         let serialized = serde_json::to_string(engine.state()).unwrap();
         let restored: MessagingState = serde_json::from_str(&serialized).unwrap();
         assert_eq!(restored.wallet.runtime.live.generation, 0);
+    }
+}
+
+#[cfg(test)]
+mod connected_app_source_runtime_engine_tests {
+    use super::*;
+    use crate::connected_app::{
+        ConnectedAppConnectPhase, ConnectedAppLinkKind, CONNECTED_APP_CLIENT_ID_HEX_CHARS,
+    };
+
+    fn source_session() -> ConnectedAppSession {
+        ConnectedAppSession {
+            id: 191,
+            client_id: "app-client-source".into(),
+            manifest: Some(ConnectedAppManifest {
+                url: "https://dapp.example/manifest.json".into(),
+                name: "Dapp".into(),
+                icon_url: None,
+            }),
+            status: crate::connected_app::ConnectedAppSessionStatus::Active,
+            created_at_ms: 10,
+            updated_at_ms: 10,
+        }
+    }
+
+    #[test]
+    fn engine_wires_key_epoch_connect_disconnect_and_runtime_non_persistence() {
+        let mut engine = MessagingEngine::new();
+        engine
+            .execute(Command::UpsertConnectedAppSession {
+                session: source_session(),
+            })
+            .unwrap();
+        engine
+            .execute(Command::UpdateConnectedAppWalletAddress {
+                address: "EQ-one".into(),
+            })
+            .unwrap();
+        engine
+            .execute(Command::CacheConnectedAppKeyReference {
+                session_id: 191,
+                client_id: "app-client-source".into(),
+                reference_id: "vault-ref".into(),
+            })
+            .unwrap();
+        engine
+            .execute(Command::UpdateConnectedAppWalletAddress {
+                address: "EQ-two".into(),
+            })
+            .unwrap();
+        assert!(engine
+            .state()
+            .connected_apps
+            .key_runtime
+            .references
+            .is_empty());
+
+        let client = "c".repeat(CONNECTED_APP_CLIENT_ID_HEX_CHARS);
+        engine
+            .execute(Command::BeginConnectedAppConnectFlow {
+                link: ConnectedAppLink {
+                    kind: ConnectedAppLinkKind::Connect,
+                    client_id: client.clone(),
+                    manifest_url: "https://dapp.example/manifest.json".into(),
+                    proof_payload: None,
+                    trace_id: String::new(),
+                    return_target: String::new(),
+                },
+                ownership_domain: String::new(),
+                reserved_platform_domain: "platform.example".into(),
+                observed_at_ms: 100,
+            })
+            .unwrap();
+        engine
+            .execute(Command::ResolveConnectedAppConnectAccess {
+                client_id: client.clone(),
+                access: ConnectedAppAccess::Allowed,
+                observed_at_ms: 110,
+            })
+            .unwrap();
+        engine
+            .execute(Command::AcceptConnectedAppManifest {
+                client_id: client.clone(),
+                manifest: ConnectedAppManifest {
+                    url: "https://dapp.example/manifest.json".into(),
+                    name: "Dapp".into(),
+                    icon_url: None,
+                },
+            })
+            .unwrap();
+        assert_eq!(
+            engine.state().connected_apps.connect_runtime.flows[&client].phase,
+            ConnectedAppConnectPhase::Confirm
+        );
+
+        engine
+            .execute(Command::MarkConnectedAppSessionClosing {
+                session_id: 191,
+                observed_at_ms: 120,
+            })
+            .unwrap();
+        engine
+            .execute(Command::BeginConnectedAppDisconnect { session_id: 191 })
+            .unwrap();
+        engine
+            .execute(Command::DeferConnectedAppClosing {
+                session_id: 191,
+                error: ConnectedAppKeyError::Locked,
+            })
+            .unwrap();
+        assert!(engine
+            .state()
+            .connected_apps
+            .disconnect_runtime
+            .close_waiting
+            .contains(&191));
+
+        let encoded = serde_json::to_string(engine.state()).unwrap();
+        let restored: MessagingState = serde_json::from_str(&encoded).unwrap();
+        assert!(restored.connected_apps.key_runtime.references.is_empty());
+        assert!(restored.connected_apps.connect_runtime.flows.is_empty());
+        assert!(restored.connected_apps.disconnect_runtime.close_waiting.is_empty());
     }
 }
