@@ -18811,7 +18811,11 @@
       "omitted": false,
       "consumer_symbol": "read_audio",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:677:whoReadPlayed: icon{{ \"menu/read_audio\", windowBoldFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:678:whoReadPlayed: icon{{ \"menu/read_audio\", windowBoldFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:679:whoReadPlayedOver: icon{{ \"menu/read_audio\", windowBoldFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:680:whoReadPlayedDisabled: icon {{ \"menu/read_audio\", menuFgDisabled }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:691:reactionsTabPlayed: icon {{ \"menu/read_audio\", windowFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:692:reactionsTabPlayedSelected: icon {{ \"menu/read_audio\", activeButtonFg }};",
         "C++/product caller audit: who-read/played and reactions played tab."
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
@@ -18854,7 +18858,11 @@
       "omitted": false,
       "consumer_symbol": "read_audio",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:677:whoReadPlayed: icon{{ \"menu/read_audio\", windowBoldFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:678:whoReadPlayed: icon{{ \"menu/read_audio\", windowBoldFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:679:whoReadPlayedOver: icon{{ \"menu/read_audio\", windowBoldFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:680:whoReadPlayedDisabled: icon {{ \"menu/read_audio\", menuFgDisabled }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:691:reactionsTabPlayed: icon {{ \"menu/read_audio\", windowFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:692:reactionsTabPlayedSelected: icon {{ \"menu/read_audio\", activeButtonFg }};",
         "C++/product caller audit: who-read/played and reactions played tab."
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
@@ -18897,7 +18905,11 @@
       "omitted": false,
       "consumer_symbol": "read_audio",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:677:whoReadPlayed: icon{{ \"menu/read_audio\", windowBoldFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:678:whoReadPlayed: icon{{ \"menu/read_audio\", windowBoldFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:679:whoReadPlayedOver: icon{{ \"menu/read_audio\", windowBoldFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:680:whoReadPlayedDisabled: icon {{ \"menu/read_audio\", menuFgDisabled }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:691:reactionsTabPlayed: icon {{ \"menu/read_audio\", windowFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:692:reactionsTabPlayedSelected: icon {{ \"menu/read_audio\", activeButtonFg }};",
         "C++/product caller audit: who-read/played and reactions played tab."
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
