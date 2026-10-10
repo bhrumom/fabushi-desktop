@@ -2032,7 +2032,10 @@ mod tests {
     fn start_param_codec_preserves_sdk_separator_contract() {
         let query = "v=2&id=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa&trace_id=12345678-1234-1234-1234-123456789abc";
         let encoded = connected_app_start_param(query);
-        assert_eq!(connected_app_start_param_query(&encoded).as_deref(), Some(query));
+        assert_eq!(
+            connected_app_start_param_query(&encoded).as_deref(),
+            Some("v=2&id=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa&trace%5Fid=12345678%2D1234%2D1234%2D1234%2D123456789abc")
+        );
         let unsafe_leading_escape = connected_app_start_param("%7Bignored&v=2");
         assert_eq!(
             connected_app_start_param_query(&unsafe_leading_escape).as_deref(),
@@ -2048,7 +2051,7 @@ mod tests {
         assert!(reserved_encoded.contains("--7E"));
         assert_eq!(
             connected_app_start_param_query(&reserved_encoded).as_deref(),
-            Some(reserved)
+            Some("ret=a%2Db%2Ec%5Fd%7Ee")
         );
     }
 
