@@ -679,6 +679,47 @@ test("widget action lifecycle fences duplicate and stale rich-button settlement"
 });
 
 
+test("UNIT-TDRP-MATH-RESOURCE-BOUND-001 oversized assistant math fails before runtime loading or parsing", async () => {
+  const cache = createAssistantMathMarkupCache({ maxExpressionLength: 4 });
+  let loads = 0;
+  const loader = async (): Promise<KatexRuntime> => {
+    loads += 1;
+    return {
+      renderToString(expression) {
+        return `<span>${expression}</span>`;
+      },
+    };
+  };
+
+  await assert.rejects(
+    () => cache.load(loader, "12345", false),
+    /exceeds the 4-code-unit parsing limit/,
+  );
+  assert.equal(loads, 0, "oversized untrusted math must be rejected before loading KaTeX");
+});
+
+test("UNIT-TDRP-MATH-RESOURCE-BOUND-002 assistant math cache evicts least-recently-used markup under a byte budget", async () => {
+  const cache = createAssistantMathMarkupCache({ maxBytes: 500 });
+  let loads = 0;
+  const loader = async (): Promise<KatexRuntime> => {
+    loads += 1;
+    return {
+      renderToString(expression, options) {
+        return `<span>${options.displayMode ? "D" : "I"}:${expression}</span>`;
+      },
+    };
+  };
+
+  assert.equal(await cache.load(loader, "a", false), "<span>I:a</span>");
+  assert.equal(await cache.load(loader, "a", false), "<span>I:a</span>");
+  assert.equal(loads, 1, "a cache hit must reuse the resolved markup and refresh its LRU position");
+
+  assert.equal(await cache.load(loader, "b", false), "<span>I:b</span>");
+  assert.equal(loads, 2);
+  assert.equal(await cache.load(loader, "a", false), "<span>I:a</span>");
+  assert.equal(loads, 3, "the oldest entry must be rendered again after budget eviction");
+});
+
 test("assistant math cache shares renders, isolates loaders, and retries load failure", async () => {
   const cache = createAssistantMathMarkupCache();
   let loadsA = 0;
