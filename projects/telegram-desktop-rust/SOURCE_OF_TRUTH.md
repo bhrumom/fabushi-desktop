@@ -1,5 +1,5 @@
-Live Revision 9 authority (2026-10-10): telegramdesktop/tdesktop@28ac576967a1026ecc89a927360fa0e138d7c88c (root tree 9d8fa87ce68c832d2f4c99f372a5bb672463c3e1). Root non-directory=6,653; recursive non-directory=16,125; read-through=6,377; first unread=6,378 Telegram/SourceFiles/webauthn/org.bluez.xml@245e0b9bc27e1cfbb31bd78d750ae189adf5f0cc; unread=9,748; unknown=15,846; omitted=0. Reading alone never closes unknown. Fresh descendant exact-head GitHub Actions evidence is required.
-<!-- TDRP_CURRENT_SUMMARY read-through=6377 unread=9748 unknown=15846 omitted=0 first-unread=6378 path=Telegram/SourceFiles/webauthn/org.bluez.xml -->
+Live Revision 9 authority (2026-10-10): telegramdesktop/tdesktop@28ac576967a1026ecc89a927360fa0e138d7c88c (root tree 9d8fa87ce68c832d2f4c99f372a5bb672463c3e1). Root non-directory=6,653; recursive non-directory=16,125; read-through=6,380; first unread=6,381 Telegram/SourceFiles/window/main_window.cpp@ae2b4949734e6c8826310c96b65f51b630ab600d; unread=9,745; unknown=15,846; omitted=0. Reading alone never closes unknown. Fresh descendant exact-head GitHub Actions evidence is required.
+<!-- TDRP_CURRENT_SUMMARY read-through=6380 unread=9745 unknown=15846 omitted=0 first-unread=6381 path=Telegram/SourceFiles/window/main_window.cpp -->
 
 # Telegram 源码 → Fabushi 全量等价重写 — Source of Truth
 
@@ -515,3 +515,8 @@ Wallet unlock, user-address and vault files are exact-blob read/responsibility-d
 ### Revision 9 read-through 6368-6377
 
 The first CaBLE/WebAuthn tranche is exact-blob read/responsibility-decomposed. Existing Fabushi WebAuthn provider/signer/proxy is the canonical owner; full BLE/QR/tunnel/Noise/CTAP and ceremony UI parity stays mapped-open. `94aaee4` already closes one fail-open boundary by rejecting unknown ceremony kinds instead of treating them as login/get. Accounting: 6,377/16,125 read; 9,748 unread; 15,846 unknown; 0 omitted. First unread: 6,378 `Telegram/SourceFiles/webauthn/org.bluez.xml@245e0b9bc27e1cfbb31bd78d750ae189adf5f0cc`.
+
+
+### Revision 9 read-through 6378-6380
+
+BlueZ interface and common WebAuthn security-key/CaBLE orchestration are exact-blob read/responsibility-decomposed. Existing Fabushi WebAuthn provider/signer/proxy remains the canonical owner; device/PIN/cancellation/fallback/platform parity remains mapped-open. Accounting: 6,380/16,125 read; 9,745 unread; 15,846 unknown; 0 omitted. First unread: 6,381 `Telegram/SourceFiles/window/main_window.cpp@ae2b4949734e6c8826310c96b65f51b630ab600d`.
