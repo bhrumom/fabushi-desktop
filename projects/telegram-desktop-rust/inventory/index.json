@@ -46,7 +46,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live authority exact through recursive order 6,830; first unread is 6,831 Telegram/ThirdParty/MicroTeX::src/atom/atom_space.h; unread_minimum is 9,295; unknown remains 15,845; omitted remains 0.",
+  "note": "Live authority exact through recursive order 6,852; first unread is 6,853 Telegram/ThirdParty/MicroTeX::src/core/localized_num.cpp; unread_minimum is 9,273; unknown remains 15,845; omitted remains 0.",
   "rebaseline": {
     "from_commit": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
     "to_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
