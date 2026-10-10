@@ -8860,8 +8860,8 @@
       "omitted": false,
       "consumer_symbol": "edited_status",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:683:whenEdited: icon {{ \"menu/edited_status\", windowBoldFg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:684:whenEditedOver: icon {{ \"menu/edited_status\", windowBoldFg }};"
+        "Telegram/SourceFiles/ui/chat/chat.style:684:whenEdited: icon {{ \"menu/edited_status\", windowBoldFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:685:whenEditedOver: icon {{ \"menu/edited_status\", windowBoldFg }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained for semantic evidence only; Telegram artwork/branding is not imported.",
@@ -8879,7 +8879,7 @@
         "recursive_order": 1707,
         "evidence_status": "live-github-tree-bound-current-head-actions-pending"
       },
-      "notes": "Preserve edited provenance/time semantics, not icon presentation."
+      "notes": "Preserve edited provenance/time semantics, not icon presentation. Re-attested on accepted 6fed91ff: the consumer token is unchanged and now lives at chat.style lines 684/685 after an upstream style insertion."
     },
     {
       "recursive_order": 1708,
@@ -8903,8 +8903,8 @@
       "omitted": false,
       "consumer_symbol": "edited_status",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:683:whenEdited: icon {{ \"menu/edited_status\", windowBoldFg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:684:whenEditedOver: icon {{ \"menu/edited_status\", windowBoldFg }};"
+        "Telegram/SourceFiles/ui/chat/chat.style:684:whenEdited: icon {{ \"menu/edited_status\", windowBoldFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:685:whenEditedOver: icon {{ \"menu/edited_status\", windowBoldFg }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained for semantic evidence only; Telegram artwork/branding is not imported.",
@@ -8922,7 +8922,7 @@
         "recursive_order": 1708,
         "evidence_status": "live-github-tree-bound-current-head-actions-pending"
       },
-      "notes": "Preserve edited provenance/time semantics, not icon presentation."
+      "notes": "Preserve edited provenance/time semantics, not icon presentation. Re-attested on accepted 6fed91ff: the consumer token is unchanged and now lives at chat.style lines 684/685 after an upstream style insertion."
     },
     {
       "recursive_order": 1709,
@@ -8946,8 +8946,8 @@
       "omitted": false,
       "consumer_symbol": "edited_status",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:683:whenEdited: icon {{ \"menu/edited_status\", windowBoldFg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:684:whenEditedOver: icon {{ \"menu/edited_status\", windowBoldFg }};"
+        "Telegram/SourceFiles/ui/chat/chat.style:684:whenEdited: icon {{ \"menu/edited_status\", windowBoldFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:685:whenEditedOver: icon {{ \"menu/edited_status\", windowBoldFg }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained for semantic evidence only; Telegram artwork/branding is not imported.",
@@ -8965,7 +8965,7 @@
         "recursive_order": 1709,
         "evidence_status": "live-github-tree-bound-current-head-actions-pending"
       },
-      "notes": "Preserve edited provenance/time semantics, not icon presentation."
+      "notes": "Preserve edited provenance/time semantics, not icon presentation. Re-attested on accepted 6fed91ff: the consumer token is unchanged and now lives at chat.style lines 684/685 after an upstream style insertion."
     },
     {
       "recursive_order": 1710,
