@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 8668,
+    "unread_minimum": 8641,
     "omitted_known": 0,
-    "note": "Recursive source census 16,125; exact read/decomposition through 7,457; unread 8,668; unknown 15,845; omitted 0. cmark-gfm 7,242-7,403, expected 7,404-7,427, and fcitx5-qt build/license/input-capability/i18n entries 7,428-7,457 are read/decomposed; production equivalence remains mapped-open."
+    "note": "Recursive source census 16,125; exact read/decomposition through 7,484; unread 8,641; unknown 15,845; omitted 0. fcitx5-qt 7,428-7,484 is read through the complete Qt4 subtree; source-specific Qt4 transport is replacement-only, while input session/security/Unicode/preedit/key lifecycle semantics remain mapped-open."
   },
   "latest_recursive_evidence": {
     "run_id": 38064993530,
@@ -42,7 +42,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live authority 6fed91ff exact through recursive order 7,457; first unread is 7,458 Telegram/ThirdParty/fcitx5-qt::qt4/CMakeLists.txt; unread_minimum is 8,668; unknown remains 15,845; omitted remains 0.",
+  "note": "Live authority 6fed91ff exact through recursive order 7,484; first unread is 7,485 Telegram/ThirdParty/fcitx5-qt::qt5/CMakeLists.txt; unread_minimum is 8,641; unknown remains 15,845; omitted remains 0.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -60,10 +60,10 @@
       6541,
       6627
     ],
-    "current_source_read_through": 7457,
-    "first_unread_order": 7458,
-    "first_unread_path": "Telegram/ThirdParty/fcitx5-qt::qt4/CMakeLists.txt",
-    "current_head_source_authority_evidence": "Complete cmark-gfm 7,242-7,403, expected 7,404-7,427, and fcitx5-qt 7,428-7,457 exact-read. fcitx build/license/toolchain and i18n responsibilities map to existing Build/Release/localization owners; common/fcitxflags.h input-method capability semantics map to canonical TextField/Composer/input/a11y/security/platform owners. No unknown closed."
+    "current_source_read_through": 7484,
+    "first_unread_order": 7485,
+    "first_unread_path": "Telegram/ThirdParty/fcitx5-qt::qt5/CMakeLists.txt",
+    "current_head_source_authority_evidence": "fcitx5-qt exact-read through the complete Qt4 subtree 7,458-7,484. Qt4 ABI/plugin/DBus transport maps to existing platform/Build-Release replacement owners; service-owner fencing, async input-context lifecycle, sensitive surrounding-text policy, Unicode cursor/delete, preedit settlement and key liveness/compose semantics map to canonical TextField/Composer/input/security/platform owners. No unknown closed."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -72,9 +72,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 7457,
-    "first_unread_order": 7458,
-    "first_unread_path": "Telegram/ThirdParty/fcitx5-qt::qt4/CMakeLists.txt",
+    "read_through": 7484,
+    "first_unread_order": 7485,
+    "first_unread_path": "Telegram/ThirdParty/fcitx5-qt::qt5/CMakeLists.txt",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }
