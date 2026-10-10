@@ -14,28 +14,29 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 8113,
+    "unread_minimum": 8049,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through 8,012; unread 8,113; unknown 15,845; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition through 8,076; unread 8,049; unknown 15,845; omitted 0."
   },
   "latest_recursive_evidence": {
-    "run_id": 38083182324,
+    "run_id": 38084031087,
     "run_attempt": 1,
-    "job_id": 114304204365,
-    "head_sha": "7d155a0461bfe318da513ada5db7dfb65d71b71f",
-    "artifact_id": 11681552029,
-    "artifact_digest": "sha256:83a3108678dafcdda74afec1bcffffb9606f48315623fe24d4b5bf9a1e5d8fd4",
+    "job_id": 114306715771,
+    "head_sha": "46dfaf8102187cc46824362b143e9ac4f3d4b4b9",
+    "artifact_id": 11681780325,
+    "artifact_digest": "sha256:92d496e33e3f5fdd523a0033ce41bcac995dd829643116fda6581650fb38ced8",
     "artifact_files": [
       "upstream-recursive-inventory.json",
       "current-first-unread/window-manifest.json",
-      "current-first-unread/07949-hime-tray.png",
-      "current-first-unread/07973-hime.png",
-      "current-first-unread/07975-COPYING",
-      "current-first-unread/08012-sakura.png"
+      "current-first-unread/08013-scj.png",
+      "current-first-unread/08024-lgpl-2.1.txt",
+      "current-first-unread/08037-hime-setup.1",
+      "current-first-unread/08061-IC.c",
+      "current-first-unread/08076-i18nIMProto.c"
     ],
     "evidence_status": "historical-diagnostic-after-descendant-accounting-commit",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
-    "note": "Exact-head source authority at 7d155a materialized the 64-entry 7,949–8,012 review window; 63 PNGs were visually inspected and 7,975 COPYING text-read. Descendant exact-head Actions are required after accounting/production changes."
+    "note": "46dfaf source authority materialized 8,013–8,076; 11 PNGs were visually inspected and remaining entries text/source read. Descendant Actions required."
   },
   "closure_rules": {
     "executable_runner": "github-actions",
@@ -45,7 +46,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live authority exact through 8,012; first unread 8,013 Telegram/ThirdParty/hime::icons/pink/scj.png; unread_minimum is 8,113; unknown remains 15,845; omitted remains 0.",
+  "note": "Live authority exact through 8,076; first unread 8,077 Telegram/ThirdParty/hime::src/IMdkit/lib/i18nIc.c; unread_minimum 8,049; unknown 15,845; omitted 0.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -63,10 +64,10 @@
       6541,
       6627
     ],
-    "current_source_read_through": 8012,
-    "first_unread_order": 8013,
-    "first_unread_path": "Telegram/ThirdParty/hime::icons/pink/scj.png",
-    "current_head_source_authority_evidence": "GitHub Actions source-authority artifact 11681552029 (sha256:83a3108678dafcdda74afec1bcffffb9606f48315623fe24d4b5bf9a1e5d8fd4) at 7d155a0461bfe318da513ada5db7dfb65d71b71f materialized 7,949–8,012 with exact identity/mode/size/SHA-256; 63 PNGs were visually inspected and 7,975 COPYING text-read. Hime mascot/artwork remains replacement-only. Reading closes no unknown. Descendant exact-head Actions required."
+    "current_source_read_through": 8076,
+    "first_unread_order": 8077,
+    "first_unread_path": "Telegram/ThirdParty/hime::src/IMdkit/lib/i18nIc.c",
+    "current_head_source_authority_evidence": "Artifact 11681780325 (sha256:92d496e33e3f5fdd523a0033ce41bcac995dd829643116fda6581650fb38ced8) at 46dfaf8102187cc46824362b143e9ac4f3d4b4b9 materialized 8,013–8,076 with exact identity/mode/size/SHA-256; reading closes no unknown; descendant Actions required."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -75,9 +76,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 8012,
-    "first_unread_order": 8013,
-    "first_unread_path": "Telegram/ThirdParty/hime::icons/pink/scj.png",
+    "read_through": 8076,
+    "first_unread_order": 8077,
+    "first_unread_path": "Telegram/ThirdParty/hime::src/IMdkit/lib/i18nIc.c",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }
