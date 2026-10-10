@@ -13480,9 +13480,9 @@
     "changed_paths": 10,
     "source_read_reconciliation": "Accepted prefix reaches 7,659/16,125. Hime orders 7,643–7,659 cover build/CI/security/generated-input provenance and three functional Array input mapping resources; unread=8,466, unknown=15,845, omitted=0. Reading closes no unknown.",
     "source_authority_evidence": "fcitx5-qt Qt6 closure preserves aliases as composition-only and maps service-owner fencing, input lifecycle, quick-phrase persistence/failure settlement, Settings plugin/save and shortcut normalization to existing canonical owners.",
-    "current_source_read_through": 7642,
-    "first_unread_order": 7643,
-    "first_unread_path": "Telegram/ThirdParty/hime::.clang-format"
+    "current_source_read_through": 7659,
+    "first_unread_order": 7660,
+    "first_unread_path": "Telegram/ThirdParty/hime::data/array_license.pdf"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
