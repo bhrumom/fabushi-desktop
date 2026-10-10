@@ -633,9 +633,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 7525,
-    "first_unread_order": 7526,
-    "first_unread_path": "Telegram/ThirdParty/fcitx5-qt::qt5/platforminputcontext/fcitx5.json.in",
+    "read_through": 7565,
+    "first_unread_order": 7566,
+    "first_unread_path": "Telegram/ThirdParty/fcitx5-qt::qt6/dbusaddons/fcitxqtinputcontextproxy_p.h",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
