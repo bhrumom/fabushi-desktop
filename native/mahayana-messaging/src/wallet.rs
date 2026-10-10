@@ -1508,6 +1508,9 @@ pub const OUTBOUND_TRANSFER_MAX_BYTES: usize = 4 * 1024 * 1024;
 pub const OUTBOUND_TRANSFER_TOKEN_MAX_BYTES: usize = 1024 * 1024;
 pub const OUTBOUND_TRANSFER_LOOKUP_MAX_ATTEMPTS: u32 = 1024;
 pub const OUTBOUND_TRANSFER_COMMENT_MAX_BYTES: usize = 960;
+pub const OUTBOUND_TRANSFER_SERVER_ID_MAX_BYTES: usize = 1024;
+pub const OUTBOUND_TRANSFER_DOMAIN_MAX_BYTES: usize = 1024;
+pub const OUTBOUND_TRANSFER_SERVER_COMMENT_MAX_BYTES: usize = 64 * 1024;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -1530,6 +1533,72 @@ pub enum OutboundTransferTerminal {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct OutboundTransferProjection {
+    pub id: String,
+    pub counterparty: String,
+    pub counterparty_name: String,
+    pub comment: String,
+    pub collectible: String,
+    pub counterparty_actor_id: Option<ActorId>,
+    pub amount_nano: i64,
+    pub fee_nano: Option<i64>,
+    pub date_ms: Option<i64>,
+    pub peer_transfer: bool,
+    pub failed: bool,
+    pub comment_encrypted: bool,
+    pub gasless: bool,
+    pub counterparty_bounceable: bool,
+}
+
+impl Default for OutboundTransferProjection {
+    fn default() -> Self {
+        Self {
+            id: String::new(),
+            counterparty: String::new(),
+            counterparty_name: String::new(),
+            comment: String::new(),
+            collectible: String::new(),
+            counterparty_actor_id: None,
+            amount_nano: 0,
+            fee_nano: None,
+            date_ms: None,
+            peer_transfer: false,
+            failed: false,
+            comment_encrypted: false,
+            gasless: false,
+            counterparty_bounceable: false,
+        }
+    }
+}
+
+impl OutboundTransferProjection {
+    pub fn validate(&self) -> Result<(), OutboundTransferError> {
+        if self.id.trim().is_empty()
+            || self.id.as_bytes().len() > OUTBOUND_TRANSFER_SERVER_ID_MAX_BYTES
+            || (!self.counterparty.is_empty()
+                && (self.counterparty.as_bytes().len() > 128
+                    || validate_wallet_address(&self.counterparty).is_err()))
+            || self.counterparty_name.as_bytes().len() > OUTBOUND_TRANSFER_DOMAIN_MAX_BYTES
+            || self.comment.as_bytes().len() > OUTBOUND_TRANSFER_SERVER_COMMENT_MAX_BYTES
+            || (self.comment_encrypted && !self.comment.is_empty())
+            || (!self.collectible.is_empty()
+                && (self.collectible.as_bytes().len() > 128
+                    || validate_wallet_address(&self.collectible).is_err()))
+            || self.counterparty_actor_id.as_ref().is_some_and(|actor| !actor.is_valid())
+            || (self.counterparty_actor_id.is_some()
+                && !self.peer_transfer
+                && self.collectible.is_empty())
+            || self.amount_nano < 0
+            || self.date_ms.is_some_and(|value| value <= 0)
+        {
+            return Err(OutboundTransferError::InvalidProjection);
+        }
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct OutboundTransferRecord {
     pub record_id: String,
@@ -1540,6 +1609,10 @@ pub struct OutboundTransferRecord {
     pub destination: String,
     pub comment: String,
     pub collectible: Option<String>,
+    #[serde(default)]
+    pub recipient_actor_id: Option<ActorId>,
+    #[serde(default)]
+    pub served: Option<OutboundTransferProjection>,
     pub amount_nano: i64,
     pub posted_at_ms: i64,
     pub handoff: OutboundTransferHandoff,
@@ -1566,6 +1639,8 @@ impl OutboundTransferRecord {
             || self.destination.len() > 128
             || self.comment.as_bytes().len() > OUTBOUND_TRANSFER_COMMENT_MAX_BYTES
             || self.collectible.as_deref().is_some_and(|value| value.len() > 128)
+            || self.recipient_actor_id.as_ref().is_some_and(|actor| !actor.is_valid())
+            || self.served.as_ref().is_some_and(|projection| projection.validate().is_err())
             || self.amount_nano <= 0
             || self.posted_at_ms <= 0
             || self.lookup_attempts > OUTBOUND_TRANSFER_LOOKUP_MAX_ATTEMPTS
@@ -1586,6 +1661,7 @@ impl OutboundTransferRecord {
         if self.handoff == OutboundTransferHandoff::Preparation
             && (self.message_token.is_some()
                 || self.terminal != OutboundTransferTerminal::None
+                || self.served.is_some()
                 || self.lookup_attempts != 0
                 || self.lookup_stopped)
         {
@@ -1656,6 +1732,27 @@ impl OutboundTransferJournal {
         }
         record.handoff = OutboundTransferHandoff::Possible;
         record.message_token = Some(message_token);
+        record.validate()?;
+        require_transfer_journal_size(&candidate)?;
+        self.records = candidate;
+        Ok(())
+    }
+
+    pub fn record_served_projection(
+        &mut self,
+        record_id: &str,
+        projection: OutboundTransferProjection,
+    ) -> Result<(), OutboundTransferError> {
+        projection.validate()?;
+        let index = self.index(record_id)?;
+        let mut candidate = self.records.clone();
+        let record = &mut candidate[index];
+        if record.handoff != OutboundTransferHandoff::Possible
+            || record.terminal != OutboundTransferTerminal::None
+        {
+            return Err(OutboundTransferError::InvalidTransition);
+        }
+        record.served = Some(projection);
         record.validate()?;
         require_transfer_journal_size(&candidate)?;
         self.records = candidate;
@@ -1757,6 +1854,8 @@ fn require_transfer_journal_size(
 pub enum OutboundTransferError {
     #[error("outbound transfer journal record is invalid")]
     InvalidRecord,
+    #[error("outbound transfer served projection is invalid")]
+    InvalidProjection,
     #[error("outbound transfer journal identity already exists")]
     DuplicateIdentity,
     #[error("outbound transfer journal capacity was exceeded")]
@@ -4489,6 +4588,8 @@ mod wallet_runtime_tests {
             destination: quote.destination.clone(),
             comment: String::new(),
             collectible: None,
+            recipient_actor_id: None,
+            served: None,
             amount_nano: quote.amount_nano,
             posted_at_ms: 2_001,
             handoff: OutboundTransferHandoff::Preparation,
@@ -4675,6 +4776,8 @@ mod outbound_transfer_journal_tests {
             destination: "destination-address".into(),
             comment: "hello".into(),
             collectible: None,
+            recipient_actor_id: None,
+            served: None,
             amount_nano: 100_000_000,
             posted_at_ms: 100,
             handoff: OutboundTransferHandoff::Preparation,
@@ -4714,6 +4817,51 @@ mod outbound_transfer_journal_tests {
         duplicate.operation_id = "operation-b".into();
         journal.prepare(duplicate).unwrap();
         assert_eq!(journal.records.len(), 2);
+    }
+
+    #[test]
+    fn served_projection_is_durable_bounded_and_only_attaches_after_handoff() {
+        let mut journal = OutboundTransferJournal::default();
+        journal.prepare(prepared("record-1", "operation-1")).unwrap();
+        let projection = OutboundTransferProjection {
+            id: "server-message-1".into(),
+            counterparty: "EQ-peer".into(),
+            counterparty_name: "Peer".into(),
+            comment: String::new(),
+            collectible: String::new(),
+            counterparty_actor_id: None,
+            amount_nano: 100_000_000,
+            fee_nano: Some(1_000),
+            date_ms: Some(1_000),
+            peer_transfer: false,
+            failed: false,
+            comment_encrypted: true,
+            gasless: true,
+            counterparty_bounceable: false,
+        };
+        assert_eq!(
+            journal.record_served_projection("record-1", projection.clone()),
+            Err(OutboundTransferError::InvalidTransition)
+        );
+        journal
+            .mark_handoff_possible("record-1", vec![0x33; 32])
+            .unwrap();
+        journal
+            .record_served_projection("record-1", projection.clone())
+            .unwrap();
+        assert_eq!(journal.records[0].served.as_ref(), Some(&projection));
+
+        let encoded = serde_json::to_string(&journal).unwrap();
+        let restored: OutboundTransferJournal = serde_json::from_str(&encoded).unwrap();
+        assert_eq!(restored.records[0].served.as_ref(), Some(&projection));
+
+        let mut invalid = projection;
+        invalid.comment_encrypted = true;
+        invalid.comment = "private plaintext must not persist".into();
+        assert_eq!(
+            journal.record_served_projection("record-1", invalid),
+            Err(OutboundTransferError::InvalidProjection)
+        );
     }
 
     #[test]
