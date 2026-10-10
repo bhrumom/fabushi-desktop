@@ -1,5 +1,5 @@
 Live Revision 9 authority (2026-10-11): telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 (root tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6). Root non-directory=6,653; recursive non-directory=16,125; read-through=7,427; first unread=7,428 Telegram/ThirdParty/fcitx5-qt::.clang-format@04b3745d495e42f358142112a044b42c7600794b; unread=8,698; unknown=15,845; omitted=0. cmark-gfm 7,242-7,403 and the complete 24-entry pinned TartanLlama/expected component 7,404-7,427 are exact-read/responsibility-decomposed. expected semantics map to existing language-native typed settlement contracts and Build/Release owners; no Expected runtime or parallel product owner is introduced. Predecessor exact-head de430cbd failed Revision 9 validation on a malformed 38-character cmark stats.py blob identity; this descendant corrects that source record without weakening the gate. Production equivalence and descendant exact-head Actions evidence remain open; reading closes no unknown.
-<!-- TDRP_CURRENT_SUMMARY read-through=7403 unread=8722 unknown=15845 omitted=0 first-unread=7404 path=Telegram/ThirdParty/expected::.appveyor.yml -->
+<!-- TDRP_CURRENT_SUMMARY read-through=7427 unread=8698 unknown=15845 omitted=0 first-unread=7428 path=Telegram/ThirdParty/fcitx5-qt::.clang-format -->
 
 ### Revision 9 deterministic read-through — expected 7,404–7,427
 
