@@ -2340,14 +2340,14 @@
       "notes": "responsibility_cluster=performance-pathological-oracle; accepted direct gitlink entry; reading closes no unknown and authorizes no source-shaped parser/runtime; corrected malformed 38-character blob identity from predecessor de430cbd authority failure; accepted object verified against desktop-app/cmark-gfm@d7d4a24",
       "recursive_order": 7288,
       "source_path": "Telegram/ThirdParty/cmark-gfm::bench/stats.py",
-      "source_blob_sha": "c244b419f66624bd2d2d3cb028d1f65edabc22",
+      "source_blob_sha": "c244b419f66624bd2d2d2d3cb028d1f65edabc22",
       "source_identity": {
         "repository": "desktop-app/cmark-gfm",
         "commit": "d7d4a24a9ebfa7581994ea6df0297662bfeaf413",
         "scope": "direct-gitlink",
         "mount": "Telegram/ThirdParty/cmark-gfm",
         "path": "bench/stats.py",
-        "object": "c244b419f66624bd2d2d3cb028d1f65edabc22",
+        "object": "c244b419f66624bd2d2d2d3cb028d1f65edabc22",
         "mode": "100644",
         "type": "blob",
         "size": 491
@@ -2358,7 +2358,7 @@
         "accepted_upstream": "6fed91ffab9861771a75f29df65031b3c80b6941",
         "component_repository": "desktop-app/cmark-gfm",
         "component_commit": "d7d4a24a9ebfa7581994ea6df0297662bfeaf413",
-        "verified_blob_sha": "c244b419f66624bd2d2d3cb028d1f65edabc22",
+        "verified_blob_sha": "c244b419f66624bd2d2d2d3cb028d1f65edabc22",
         "file_type": "blob",
         "recursive_order": 7288
       }
