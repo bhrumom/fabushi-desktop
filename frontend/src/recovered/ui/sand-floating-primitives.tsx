@@ -1,4 +1,4 @@
-import { Children, createContext, cloneElement, isValidElement, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type ReactElement, type ReactNode, type RefObject } from "react";
+import { Children, createContext, cloneElement, isValidElement, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type ReactElement, type ReactNode, type Ref, type RefObject } from "react";
 import { createPortal } from "react-dom";
 
 import "./sand-floating-primitives.css";
@@ -103,8 +103,13 @@ function useContextValue<T>(context: React.Context<T>): T {
   return useContext(context);
 }
 
-function mergeRefs<T>(...refs: readonly (((node: T | null) => void) | undefined)[]): (node: T | null) => void {
-  return (node) => { for (const ref of refs) ref?.(node); };
+function mergeRefs<T>(...refs: readonly (Ref<T> | undefined)[]): (node: T | null) => void {
+  return (node) => {
+    for (const ref of refs) {
+      if (typeof ref === "function") ref(node);
+      else if (ref != null) ref.current = node;
+    }
+  };
 }
 
 function cloneWithRef(element: ReactElement, ref: (node: HTMLElement | null) => void, props: Record<string, unknown>): ReactElement {
