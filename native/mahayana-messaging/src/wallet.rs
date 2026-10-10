@@ -451,8 +451,15 @@ pub struct ProtectedWalletKey {
 #[serde(rename_all = "camelCase")]
 pub struct WalletKeyProtectionState {
     pub epoch: u64,
+    /// Unlock authority is process-local. Persisted state always restores
+    /// locked because the unwrapped wallet key never participates in serde.
+    #[serde(skip, default = "wallet_key_locked_default")]
     pub locked: bool,
     pub envelope: Option<ProtectedWalletKey>,
+}
+
+fn wallet_key_locked_default() -> bool {
+    true
 }
 
 impl Default for WalletKeyProtectionState {
@@ -3924,6 +3931,24 @@ mod wallet_runtime_tests {
         let unlocked = state.unlock(epoch, &provider).unwrap();
         assert_eq!(unlocked.expose(), wallet_key.expose());
         assert!(!state.locked);
+    }
+
+    #[test]
+    fn unlocked_state_never_survives_serialization_or_restart() {
+        let provider =
+            TestProtectionProvider::new("system", WalletKeyProtectionKind::System, 0x5a);
+        let wallet_key = WalletSecretBytes::new(vec![0x33; WALLET_KEY_BYTES]);
+        let mut state = WalletKeyProtectionState::default();
+        let epoch = state.install(0, &provider, &wallet_key).unwrap();
+        state.unlock(epoch, &provider).unwrap();
+        assert!(!state.locked);
+
+        let encoded = serde_json::to_string(&state).unwrap();
+        assert!(!encoded.contains("\"locked\""));
+        let restored: WalletKeyProtectionState = serde_json::from_str(&encoded).unwrap();
+        assert!(restored.locked);
+        assert_eq!(restored.epoch, epoch);
+        assert_eq!(restored.envelope, state.envelope);
     }
 
     #[test]
