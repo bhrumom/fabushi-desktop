@@ -35,6 +35,24 @@ export function safeEvidenceName(order, sourcePath) {
   return String(order).padStart(5, '0') + '-' + base;
 }
 
+export function selectCurrentReviewWindow(index, recursiveInventory, maxEntries = 16) {
+  const first = selectCurrentFirstUnread(index, recursiveInventory);
+  if (!Number.isInteger(maxEntries) || maxEntries < 1 || maxEntries > 64) {
+    throw new Error('review window must contain 1..64 entries');
+  }
+  const entries = [];
+  for (let offset = 0; offset < maxEntries; offset++) {
+    const entry = recursiveInventory.entries[first.order - 1 + offset];
+    if (!entry) break;
+    entries.push({
+      order: first.order + offset,
+      sourcePath: canonicalSourcePath(entry),
+      entry,
+    });
+  }
+  return entries;
+}
+
 function providerFor(repository) {
   if (repository.startsWith('gitlab.com/')) {
     return { kind: 'gitlab', project: repository.slice('gitlab.com/'.length) };
@@ -152,5 +170,75 @@ export async function materializeCurrentFirstUnread({
   return manifest;
 }
 
+export async function materializeCurrentReviewWindow({
+  indexPath = 'projects/telegram-desktop-rust/inventory/index.json',
+  recursivePath = 'artifacts/tdrp-authority/upstream-recursive-inventory.json',
+  outputRoot = outRoot,
+  maxBytes = 64 * 1024 * 1024,
+  maxEntries = Number(process.env.TDRP_SOURCE_REVIEW_WINDOW || 16),
+} = {}) {
+  const index = JSON.parse(fs.readFileSync(indexPath, 'utf8'));
+  const recursive = JSON.parse(fs.readFileSync(recursivePath, 'utf8'));
+  const selected = selectCurrentReviewWindow(index, recursive, maxEntries);
+  fs.mkdirSync(outputRoot, { recursive: true });
+  const manifests = [];
+
+  for (const { order, sourcePath, entry } of selected) {
+    const manifest = {
+      order,
+      source_path: sourcePath,
+      repository: entry.repository,
+      commit: entry.commit,
+      scope: entry.scope,
+      mount: entry.mount ?? null,
+      path: entry.path,
+      object: entry.object,
+      mode: entry.mode,
+      type: entry.type,
+      declared_size: entry.size ?? null,
+      status: 'metadata-only',
+      materialized_file: null,
+      verified_git_blob_sha: null,
+      sha256: null,
+      byte_length: null,
+      provider: providerFor(entry.repository).kind,
+    };
+    if (entry.type !== 'blob') {
+      manifest.status = 'non-blob-source-entry';
+    } else if (Number.isFinite(entry.size) && entry.size > maxBytes) {
+      manifest.status = 'blob-too-large-for-review-artifact';
+    } else {
+      const { bytes, provider } = await fetchEntryBytes(entry);
+      manifest.provider = provider;
+      if (bytes == null) {
+        manifest.status = 'unsupported-source-provider';
+      } else {
+        const actual = gitBlobSha(bytes);
+        if (actual !== entry.object) {
+          throw new Error('materialized source blob mismatch at order ' + order + ': expected=' + entry.object + ' actual=' + actual);
+        }
+        const fileName = safeEvidenceName(order, entry.path);
+        fs.writeFileSync(path.join(outputRoot, fileName), bytes);
+        manifest.status = 'materialized-exact-blob';
+        manifest.materialized_file = fileName;
+        manifest.verified_git_blob_sha = actual;
+        manifest.sha256 = crypto.createHash('sha256').update(bytes).digest('hex');
+        manifest.byte_length = bytes.length;
+      }
+    }
+    manifests.push(manifest);
+  }
+
+  const windowManifest = {
+    first_order: manifests[0]?.order ?? null,
+    last_order: manifests.at(-1)?.order ?? null,
+    entries: manifests,
+  };
+  fs.writeFileSync(path.join(outputRoot, 'window-manifest.json'), JSON.stringify(windowManifest, null, 2) + '\n');
+  if (manifests[0]) fs.writeFileSync(path.join(outputRoot, 'manifest.json'), JSON.stringify(manifests[0], null, 2) + '\n');
+  console.log(JSON.stringify(windowManifest, null, 2));
+  return windowManifest;
+}
+
 const isDirectRun = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
-if (isDirectRun) await materializeCurrentFirstUnread();
+if (isDirectRun) await materializeCurrentReviewWindow();

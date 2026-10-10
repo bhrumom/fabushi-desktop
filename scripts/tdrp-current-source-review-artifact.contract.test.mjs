@@ -5,6 +5,7 @@ import {
   gitBlobSha,
   safeEvidenceName,
   selectCurrentFirstUnread,
+  selectCurrentReviewWindow,
 } from './tdrp-current-source-review-artifact.mjs';
 
 test('gitBlobSha matches the canonical Git object identity for hello newline', () => {
@@ -42,4 +43,21 @@ test('selectCurrentFirstUnread binds the persisted cursor to the exact recursive
 
 test('safeEvidenceName cannot escape the authority artifact directory', () => {
   assert.equal(safeEvidenceName(7660, '../../array license.pdf'), '07660-array_license.pdf');
+});
+
+test('current review window is contiguous from the persisted first unread cursor', () => {
+  const index = { rebaseline: { first_unread_order: 2, first_unread_path: 'vendor/a::two' } };
+  const recursiveInventory = { entries: [
+    { scope: 'root', path: 'one' },
+    { scope: 'direct-gitlink', mount: 'vendor/a', path: 'two' },
+    { scope: 'direct-gitlink', mount: 'vendor/a', path: 'three' },
+    { scope: 'direct-gitlink', mount: 'vendor/a', path: 'four' },
+  ] };
+  const window = selectCurrentReviewWindow(index, recursiveInventory, 2);
+  assert.deepEqual(window.map(item => [item.order, item.sourcePath]), [
+    [2, 'vendor/a::two'],
+    [3, 'vendor/a::three'],
+  ]);
+  assert.throws(() => selectCurrentReviewWindow(index, recursiveInventory, 0), /1\.\.64/);
+  assert.throws(() => selectCurrentReviewWindow(index, recursiveInventory, 65), /1\.\.64/);
 });

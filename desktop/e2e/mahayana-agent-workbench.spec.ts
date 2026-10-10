@@ -1101,6 +1101,81 @@ test('two shipping Electron device sessions converge one Human conversation thro
   }
 });
 
+test('cross-conversation IME composition tail stays fenced to its original shipping Composer scope', async () => {
+  e2eHumanMessages = [];
+  e2eHumanMessageSequence = 1;
+  e2eHumanResourceSequence = 1;
+  e2eHumanResources = new Map<string, E2eHumanResource>();
+
+  const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-ime-scope-fence-'));
+  let app: ElectronApplication | null = null;
+
+  const createHumanConversation = async (page: Page, humanId: string, title: string): Promise<void> => {
+    await page.getByRole('button', { name: 'New Human chat', exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: 'New Human chat' });
+    await dialog.getByRole('textbox', { name: 'Human identity' }).fill(humanId);
+    await dialog.getByRole('textbox', { name: 'Conversation title' }).fill(title);
+    await dialog.getByRole('button', { name: 'Create', exact: true }).click();
+    await expect(page.getByRole('textbox', { name: 'Prompt' })).toHaveAttribute('contenteditable', 'true', { timeout: 15_000 });
+  };
+
+  const openConversation = async (page: Page, title: string): Promise<void> => {
+    const peer = page.getByRole('region', { name: 'Agent list' }).getByRole('button', { name: title, exact: true });
+    await expect(peer).toBeVisible({ timeout: 15_000 });
+    await peer.click();
+    await expect(page.getByRole('textbox', { name: 'Prompt' })).toHaveAttribute('contenteditable', 'true', { timeout: 15_000 });
+  };
+
+  try {
+    app = await launchDesktopApp(appDataDir);
+    const page = await app.firstWindow();
+    await completeBrowserLogin(page);
+    await openMahayanaConversation(page);
+
+    await createHumanConversation(page, 'human-ime-source-e2e', 'IME Source');
+    await createHumanConversation(page, 'human-ime-destination-e2e', 'IME Destination');
+    await openConversation(page, 'IME Source');
+
+    let prompt = page.getByRole('textbox', { name: 'Prompt' });
+    const sourceDraft = 'source draft survives an interrupted composition';
+    await prompt.pressSequentially(sourceDraft);
+    await expect(prompt).toContainText(sourceDraft);
+
+    // This synthetic start drives the same shipping TipTap composition handler
+    // exercised by the localization/IME acceptance below, but intentionally
+    // changes canonical conversation scope before compositionend.
+    await prompt.dispatchEvent('compositionstart', { data: '旧' });
+    await openConversation(page, 'IME Destination');
+
+    prompt = page.getByRole('textbox', { name: 'Prompt' });
+    await prompt.focus();
+    await page.keyboard.insertText('stale-tail-from-source-ime');
+    await prompt.dispatchEvent('compositionend', { data: '旧' });
+
+    // compositionend must settle the new scope back to its canonical external
+    // draft instead of accepting the old-scope native input tail.
+    await expect.poll(async () => (await prompt.textContent()) ?? '').toBe('');
+    await expect(page.getByRole('button', { name: 'Send message' })).toBeDisabled();
+
+    const destinationDraft = 'destination draft is independent';
+    await prompt.pressSequentially(destinationDraft);
+    await expect(prompt).toContainText(destinationDraft);
+
+    await openConversation(page, 'IME Source');
+    prompt = page.getByRole('textbox', { name: 'Prompt' });
+    await expect(prompt).toContainText(sourceDraft);
+    await expect(prompt).not.toContainText('stale-tail-from-source-ime');
+
+    await openConversation(page, 'IME Destination');
+    prompt = page.getByRole('textbox', { name: 'Prompt' });
+    await expect(prompt).toContainText(destinationDraft);
+    await expect(prompt).not.toContainText('stale-tail-from-source-ime');
+  } finally {
+    await app?.close().catch(() => undefined);
+    await rm(appDataDir, { recursive: true, force: true });
+  }
+});
+
 test('Settings localization, accessibility, bidirectional text, and IME stay on shipping Electron surfaces', async () => {
   const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-settings-a11y-i18n-'));
   let app: ElectronApplication | null = null;

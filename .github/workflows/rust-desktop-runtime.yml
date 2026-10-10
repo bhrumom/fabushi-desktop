@@ -1179,9 +1179,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: node scripts/validate-tdrp-revision9-authority.mjs
-      - name: Regression test current first-unread source review artifact helper
+      - name: Regression test current source review window helper
         run: node --test scripts/tdrp-current-source-review-artifact.contract.test.mjs
-      - name: Materialize current first-unread source review artifact
+      - name: Materialize current source review window artifact
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: node scripts/tdrp-current-source-review-artifact.mjs
