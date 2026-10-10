@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 8483,
+    "unread": 8466,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,7 +13478,7 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Accepted prefix reaches 7,642/16,125 and completes all 215 pinned fcitx5-qt entries; unread=8,483, unknown=15,845, omitted=0. Reading closes no unknown.",
+    "source_read_reconciliation": "Accepted prefix reaches 7,659/16,125. Hime orders 7,643–7,659 cover build/CI/security/generated-input provenance and three functional Array input mapping resources; unread=8,466, unknown=15,845, omitted=0. Reading closes no unknown.",
     "source_authority_evidence": "fcitx5-qt Qt6 closure preserves aliases as composition-only and maps service-owner fencing, input lifecycle, quick-phrase persistence/failure settlement, Settings plugin/save and shortcut normalization to existing canonical owners.",
     "current_source_read_through": 7642,
     "first_unread_order": 7643,
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 7642,
-    "first_unread_order": 7643,
-    "first_unread_path": "Telegram/ThirdParty/hime::.clang-format",
+    "read_through": 7659,
+    "first_unread_order": 7660,
+    "first_unread_path": "Telegram/ThirdParty/hime::data/array_license.pdf",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
