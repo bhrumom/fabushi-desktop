@@ -1,5 +1,5 @@
-Live Revision 9 authority (2026-10-10): telegramdesktop/tdesktop@65e23ba7137ea4129b6bc1b2616104a1f59495ef (root tree 6b616494f3465324e749a04dcd1c9d508657a998). Root non-directory=6,653; recursive non-directory=16,125; read-through=6,339; first unread=6,340 Telegram/SourceFiles/wallet/wallet_session.cpp@7000a36395819deea9ca8ba0cce227ff0e535f32; unread=9,786; unknown=15,846; omitted=0. Reading alone never closes unknown. Fresh descendant exact-head GitHub Actions evidence is required.
-<!-- TDRP_CURRENT_SUMMARY read-through=6339 unread=9786 unknown=15846 omitted=0 first-unread=6340 path=Telegram/SourceFiles/wallet/wallet_session.cpp -->
+Live Revision 9 authority (2026-10-10): telegramdesktop/tdesktop@65e23ba7137ea4129b6bc1b2616104a1f59495ef (root tree 6b616494f3465324e749a04dcd1c9d508657a998). Root non-directory=6,653; recursive non-directory=16,125; read-through=6,343; first unread=6,344 Telegram/SourceFiles/wallet/wallet_ton_connect.cpp@60bf68a9b983a55923488bdf8e69555003dd418a; unread=9,782; unknown=15,846; omitted=0. Reading alone never closes unknown. Fresh descendant exact-head GitHub Actions evidence is required.
+<!-- TDRP_CURRENT_SUMMARY read-through=6343 unread=9782 unknown=15846 omitted=0 first-unread=6344 path=Telegram/SourceFiles/wallet/wallet_ton_connect.cpp -->
 
 # Telegram Desktop → Fabushi 全量等价重写 — Status
 

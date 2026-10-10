@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15846,
-    "unread": 9786,
+    "unread": 9782,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,11 +13478,11 @@
     "to_commit": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
     "ahead_by": 10,
     "changed_paths": 25,
-    "source_read_reconciliation": "18 changed blobs inside prior prefix re-read/reconciled; orders 5831-6339 read/decomposed; read-through=6339/16125, unread=9786, unknown=15846, omitted=0.",
-    "source_authority_evidence": "Accepted Telegram authority 65e23ba7137ea4129b6bc1b2616104a1f59495ef / tree 6b616494f3465324e749a04dcd1c9d508657a998; exact-blob census through order 6339; wallet production parent 882728682058ea6235cf625c7e8a33f851fad1a3 has exact-head canonical messaging evidence in run 38016864748 artifact 11656926928 sha256:cb27c66d4893776f5105741254f86df84d25a707ff7cd9f256e708c76676b0fa; fresh descendant accounting-head Actions required.",
-    "current_source_read_through": 6339,
-    "first_unread_order": 6340,
-    "first_unread_path": "Telegram/SourceFiles/wallet/wallet_session.cpp"
+    "source_read_reconciliation": "18 changed blobs inside prior prefix re-read/reconciled; orders 5831-6343 read/decomposed; read-through=6343/16125, unread=9782, unknown=15846, omitted=0.",
+    "source_authority_evidence": "Accepted Telegram authority 65e23ba7137ea4129b6bc1b2616104a1f59495ef / tree 6b616494f3465324e749a04dcd1c9d508657a998; exact-blob census through order 6343; Wallet session/stream production work is present on the PR descendant, while fresh exact-head canonical messaging and source-authority Actions remain required.",
+    "current_source_read_through": 6343,
+    "first_unread_order": 6344,
+    "first_unread_path": "Telegram/SourceFiles/wallet/wallet_ton_connect.cpp"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 69,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 6339,
-    "first_unread_order": 6340,
-    "first_unread_path": "Telegram/SourceFiles/wallet/wallet_session.cpp"
+    "read_through": 6343,
+    "first_unread_order": 6344,
+    "first_unread_path": "Telegram/SourceFiles/wallet/wallet_ton_connect.cpp"
   },
   "historical_exact_head_evidence": {
     "status": "historical-only",

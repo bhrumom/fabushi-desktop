@@ -4290,7 +4290,10 @@ mod wallet_runtime_tests {
         let acquire = stream.start("EQ-wallet", 0).unwrap();
         let socket = stream.apply_url(acquire, 10, 120_000).unwrap();
         assert_eq!(stream.phase, WalletStreamPhase::Connecting);
-        assert_eq!(stream.renew_at_ms, Some(70_010));
+        // tdesktop scheduleRenew converts the relative expiry to a lifetime and
+        // renews at clamp(lifetime - 60s, lifetime / 2, 30min). For a 120s
+        // lifetime acquired at t=10ms, the authoritative renew deadline is 60_010ms.
+        assert_eq!(stream.renew_at_ms, Some(60_010));
         stream.connected(socket, 20).unwrap();
         stream.note_activity(socket, 25).unwrap();
         assert_eq!(
