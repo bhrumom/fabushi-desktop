@@ -11731,8 +11731,8 @@
       "omitted": false,
       "consumer_symbol": "header_mode_day",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:890:\\ticon: icon {{ \"menu/header_mode_day\", boxTitleCloseFg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:891:\\ticonOver: icon {{ \"menu/header_mode_day\", boxTitleCloseFgOver }};"
+        "Telegram/SourceFiles/ui/chat/chat.style:890:\ticon: icon {{ \"menu/header_mode_day\", boxTitleCloseFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:891:\ticonOver: icon {{ \"menu/header_mode_day\", boxTitleCloseFgOver }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained for semantic evidence only; Telegram artwork/branding is not imported.",
@@ -11774,8 +11774,8 @@
       "omitted": false,
       "consumer_symbol": "header_mode_day",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:890:\\ticon: icon {{ \"menu/header_mode_day\", boxTitleCloseFg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:891:\\ticonOver: icon {{ \"menu/header_mode_day\", boxTitleCloseFgOver }};"
+        "Telegram/SourceFiles/ui/chat/chat.style:890:\ticon: icon {{ \"menu/header_mode_day\", boxTitleCloseFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:891:\ticonOver: icon {{ \"menu/header_mode_day\", boxTitleCloseFgOver }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained for semantic evidence only; Telegram artwork/branding is not imported.",
@@ -11817,8 +11817,8 @@
       "omitted": false,
       "consumer_symbol": "header_mode_day",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:890:\\ticon: icon {{ \"menu/header_mode_day\", boxTitleCloseFg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:891:\\ticonOver: icon {{ \"menu/header_mode_day\", boxTitleCloseFgOver }};"
+        "Telegram/SourceFiles/ui/chat/chat.style:890:\ticon: icon {{ \"menu/header_mode_day\", boxTitleCloseFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:891:\ticonOver: icon {{ \"menu/header_mode_day\", boxTitleCloseFgOver }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained for semantic evidence only; Telegram artwork/branding is not imported.",
@@ -11860,8 +11860,8 @@
       "omitted": false,
       "consumer_symbol": "header_mode_night",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:882:\\ticon: icon {{ \"menu/header_mode_night\", boxTitleCloseFg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:883:\\ticonOver: icon {{ \"menu/header_mode_night\", boxTitleCloseFgOver }};"
+        "Telegram/SourceFiles/ui/chat/chat.style:882:\ticon: icon {{ \"menu/header_mode_night\", boxTitleCloseFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:883:\ticonOver: icon {{ \"menu/header_mode_night\", boxTitleCloseFgOver }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained for semantic evidence only; Telegram artwork/branding is not imported.",
@@ -11903,8 +11903,8 @@
       "omitted": false,
       "consumer_symbol": "header_mode_night",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:882:\\ticon: icon {{ \"menu/header_mode_night\", boxTitleCloseFg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:883:\\ticonOver: icon {{ \"menu/header_mode_night\", boxTitleCloseFgOver }};"
+        "Telegram/SourceFiles/ui/chat/chat.style:882:\ticon: icon {{ \"menu/header_mode_night\", boxTitleCloseFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:883:\ticonOver: icon {{ \"menu/header_mode_night\", boxTitleCloseFgOver }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained for semantic evidence only; Telegram artwork/branding is not imported.",
@@ -11946,8 +11946,8 @@
       "omitted": false,
       "consumer_symbol": "header_mode_night",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:882:\\ticon: icon {{ \"menu/header_mode_night\", boxTitleCloseFg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:883:\\ticonOver: icon {{ \"menu/header_mode_night\", boxTitleCloseFgOver }};"
+        "Telegram/SourceFiles/ui/chat/chat.style:882:\ticon: icon {{ \"menu/header_mode_night\", boxTitleCloseFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:883:\ticonOver: icon {{ \"menu/header_mode_night\", boxTitleCloseFgOver }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained for semantic evidence only; Telegram artwork/branding is not imported.",
