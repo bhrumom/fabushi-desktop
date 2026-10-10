@@ -3,12 +3,21 @@
 
 export const KATEX_ASSET = "/upstream/assets/katex-DHMw6HUq.js";
 export const MAX_ASSISTANT_MATH_EXPRESSION_LENGTH = 32 * 1024;
+export const MAX_ASSISTANT_MATH_EXPANSIONS = 1_000;
+export const MAX_ASSISTANT_MATH_SIZE_EM = 1_000;
 export const DEFAULT_ASSISTANT_MATH_CACHE_BUDGET_BYTES = 32 * 1024 * 1024;
 const ASSISTANT_MATH_CACHE_ENTRY_OVERHEAD_BYTES = 256;
 const UTF16_BYTES_PER_CODE_UNIT = 2;
 
 export interface KatexRuntime {
-  renderToString(expression: string, options: { displayMode: boolean; throwOnError: boolean; strict?: "ignore" }): string;
+  renderToString(expression: string, options: {
+    displayMode: boolean;
+    throwOnError: boolean;
+    strict?: "ignore";
+    maxExpand: number;
+    maxSize: number;
+    trust: false;
+  }): string;
 }
 
 interface KatexRuntimeModule {
@@ -42,11 +51,21 @@ export function renderKatexMarkup(
   maxExpressionLength = MAX_ASSISTANT_MATH_EXPRESSION_LENGTH,
 ): string {
   assertAssistantMathExpressionWithinLimit(expression, maxExpressionLength);
+  const safety = {
+    maxExpand: MAX_ASSISTANT_MATH_EXPANSIONS,
+    maxSize: MAX_ASSISTANT_MATH_SIZE_EM,
+    trust: false as const,
+  };
   try {
-    return runtime.renderToString(expression, { displayMode, throwOnError: true });
+    return runtime.renderToString(expression, { displayMode, throwOnError: true, ...safety });
   } catch (error) {
     try {
-      return runtime.renderToString(expression, { displayMode, strict: "ignore", throwOnError: false });
+      return runtime.renderToString(expression, {
+        displayMode,
+        strict: "ignore",
+        throwOnError: false,
+        ...safety,
+      });
     } catch {
       const opening = ["<", "span class=\"katex-error\" style=\"color:#cc0000\" title=\""].join("");
       const closing = ["\">", escapeHtml(expression), "<", "/span", ">"].join("");
