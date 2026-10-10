@@ -442,32 +442,64 @@ export interface SandContextMenuProps {
   readonly ariaLabel?: string;
   readonly open?: { readonly x: number; readonly y: number } | null;
   readonly onOpenChange?: (open: { readonly x: number; readonly y: number } | null) => void;
+  readonly shouldOpen?: (event: ReactMouseEvent) => boolean;
   readonly closeOnSelect?: boolean;
   readonly virtualFocus?: boolean;
 }
 
-export function SandContextMenu({ children, content, ariaLabel = "Menu", open, onOpenChange, closeOnSelect = true, virtualFocus = false }: SandContextMenuProps): ReactNode {
+export function SandContextMenu({ children, content, ariaLabel = "Menu", open, onOpenChange, shouldOpen, closeOnSelect = true, virtualFocus = false }: SandContextMenuProps): ReactNode {
   const [point, setPoint] = useState(open ?? null);
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const itemRefs = useRef(new Map<number, HTMLElement>());
   const hasContent = Children.count(content) > 0;
   const currentPoint = open === undefined ? point : open;
   const menuOpen = currentPoint != null && hasContent;
-  const set = (next: { readonly x: number; readonly y: number } | null) => {
+  const set = useCallback((next: { readonly x: number; readonly y: number } | null) => {
     const bounded = hasContent ? next : null;
     if (open === undefined) setPoint(bounded);
+    if (bounded == null) setActiveIndex(null);
     onOpenChange?.(bounded);
-  };
+  }, [hasContent, onOpenChange, open]);
   const anchorRef = useRef<HTMLElement | null>(null);
   const surfaceRef = useRef<HTMLDivElement | null>(null);
-  const context = useMemo<FloatingContextValue>(() => ({ anchorRef, close: () => set(null), closeOnEscape: true, closeOnOutsidePress: true, open: menuOpen, offset: 0, placement: "bottom-start", returnFocus: true, setAnchor: (node) => { anchorRef.current = node; }, setOpen: (next) => { if (!next) set(null); }, surfaceRef }), [hasContent, menuOpen, onOpenChange]);
-  useDismissal(context);
+  const floating = useMemo<FloatingContextValue>(() => ({ anchorRef, close: () => set(null), closeOnEscape: true, closeOnOutsidePress: true, open: menuOpen, offset: 0, placement: "bottom-start", returnFocus: true, setAnchor: (node) => { anchorRef.current = node; }, setOpen: (next) => { if (!next) set(null); }, surfaceRef }), [menuOpen, set]);
+  const menu = useMemo<MenuContextValue>(() => ({
+    ...floating,
+    activeIndex,
+    closeOnSelect,
+    focusItemOnOpen: false,
+    registerItem: (index, node) => {
+      if (node == null) itemRefs.current.delete(index);
+      else itemRefs.current.set(index, node);
+    },
+    setActiveIndex,
+    virtualFocus,
+  }), [activeIndex, closeOnSelect, floating, virtualFocus]);
+  useDismissal(floating);
   const trigger = cloneWithRef(children, (node) => { anchorRef.current = node; }, {
     "aria-expanded": menuOpen,
     "aria-haspopup": "menu",
     "data-context-menu-open": menuOpen || undefined,
-    onContextMenu: (event: ReactMouseEvent) => { (children.props as { onContextMenu?: (event: ReactMouseEvent) => void }).onContextMenu?.(event); if (!event.defaultPrevented && hasContent) { event.preventDefault(); set({ x: event.clientX, y: event.clientY }); } },
-    onKeyDown: (event: ReactKeyboardEvent) => { (children.props as { onKeyDown?: (event: ReactKeyboardEvent) => void }).onKeyDown?.(event); if (!event.defaultPrevented && hasContent && event.shiftKey && event.key === "F10") { event.preventDefault(); const rect = (event.currentTarget as HTMLElement).getBoundingClientRect(); set({ x: rect.left, y: rect.bottom }); } },
+    onContextMenu: (event: ReactMouseEvent) => {
+      (children.props as { onContextMenu?: (event: ReactMouseEvent) => void }).onContextMenu?.(event);
+      if (event.defaultPrevented || !hasContent || (shouldOpen != null && !shouldOpen(event))) return;
+      event.preventDefault();
+      set({ x: event.clientX, y: event.clientY });
+    },
+    onKeyDown: (event: ReactKeyboardEvent) => {
+      (children.props as { onKeyDown?: (event: ReactKeyboardEvent) => void }).onKeyDown?.(event);
+      if (event.defaultPrevented || !hasContent || !event.shiftKey || event.key !== "F10") return;
+      event.preventDefault();
+      const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+      set({ x: rect.left, y: rect.bottom });
+    },
   } as never);
-  return <FloatingContext.Provider value={context}><div data-context-menu-open={menuOpen || undefined} data-context-menu-trigger="true">{trigger}</div><FloatingSurface ariaLabel={ariaLabel} className="ui-menu__content" dataComponent="menu-popup" role="menu" style={{ left: currentPoint?.x ?? 8, top: currentPoint?.y ?? 8 }}>{content}</FloatingSurface></FloatingContext.Provider>;
+  return <MenuContext.Provider value={menu}>
+    <FloatingContext.Provider value={floating}>
+      <div data-context-menu-open={menuOpen || undefined} data-context-menu-trigger="true">{trigger}</div>
+      <SandMenuContent ariaLabel={ariaLabel} style={{ left: currentPoint?.x ?? 8, top: currentPoint?.y ?? 8 }}>{content}</SandMenuContent>
+    </FloatingContext.Provider>
+  </MenuContext.Provider>;
 }
 
 export interface SandSelectOption<T extends string | number = string> {

@@ -35,6 +35,7 @@ import { formatTranscriptToolCallName } from "./tool-call-label";
 import { copyTranscriptCodeText } from "./code-copy";
 import { isTranscriptNearBottom } from "./transcript-follow-state";
 import { isTranscriptDeliveryActionable, isTranscriptDeliveryBusy } from "./transcript-delivery-state";
+import { SandContextMenu, SandMenuContent, SandMenuItem, SandMenuRoot, SandMenuTrigger } from "../../../ui/sand-floating-primitives";
 
 function transcriptIds(id: string, hasTimestamp: boolean) {
   const base = `sand-conversation-entry-${encodeURIComponent(id)}`;
@@ -165,42 +166,33 @@ function MessageActionAnchor({ entry, isReadOnly, threadRootId, threadSummary, o
   const hasActions = isOrdinaryMessageActionable(entry, isReadOnly, onCopy, onForward);
   if (!hasActions) return <>{children}</>;
   const isThreadActionVisible = threadRootId == null;
-  const anchorRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [contextMenuPoint, setContextMenuPoint] = useState<{ x: number; y: number } | null>(null);
   const [reactionMenuOpen, setReactionMenuOpen] = useState(false);
   const [inlineCopy, setInlineCopy] = useState<TranscriptInlineCopyProjection | null>(null);
   const reactionActions = renderReactionActions?.((open) => {
     setReactionMenuOpen(open);
     if (open) {
       setMenuOpen(false);
+      setContextMenuPoint(null);
       setInlineCopy(null);
     }
   });
   const closeMenu = (restoreFocus: boolean) => {
     setMenuOpen(false);
+    setContextMenuPoint(null);
     setInlineCopy(null);
     if (restoreFocus) triggerRef.current?.focus();
   };
-
-  useEffect(() => {
-    if (!menuOpen) return;
-    const handlePointerDown = (event: PointerEvent) => {
-      if (!(event.target instanceof Node) || anchorRef.current?.contains(event.target)) return;
-      closeMenu(false);
-    };
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      event.preventDefault();
-      closeMenu(true);
-    };
-    document.addEventListener("pointerdown", handlePointerDown);
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("pointerdown", handlePointerDown);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [menuOpen]);
+  const updateMoreMenuOpen = (open: boolean) => {
+    setMenuOpen(open);
+    if (open) {
+      setContextMenuPoint(null);
+      setInlineCopy(null);
+      setReactionMenuOpen(false);
+    }
+  };
 
   const copy = () => {
     const projection = inlineCopy;
@@ -216,37 +208,46 @@ function MessageActionAnchor({ entry, isReadOnly, threadRootId, threadSummary, o
     }
   };
 
-  return (
-    <div
-      ref={anchorRef}
-      className={menuOpen || reactionMenuOpen ? "sand-message-action-anchor sand-message-action-anchor--menu-open" : "sand-message-action-anchor"}
-      onContextMenu={(event) => {
-        const projectedInlineCopy = projectTranscriptInlineCopyTarget(event.target);
-        if (projectedInlineCopy == null && isMessageContextTargetExcluded(event.target)) return;
-        event.preventDefault();
-        setInlineCopy(projectedInlineCopy);
-        setReactionMenuOpen(false);
-        setMenuOpen(true);
-      }}
-    >
-      {children}
-      {threadSummary != null && threadRootId == null && !isReadOnly && onOpenThread != null ? <ThreadAffordance onOpen={onOpenThread} role={entry.role} summary={threadSummary} /> : null}
-      <div aria-label={messageActionLabel(entry)} className="sand-message-hover-actions" role="toolbar">
-        {reactionActions}
-        {!isReadOnly && isThreadActionVisible && onReply != null ? <button aria-label={replyActionLabel(entry)} className="sand-message-hover-actions__button" onClick={() => onReply(entry)} type="button"><span aria-hidden="true" data-icon-name={replyActionIconName(entry)} /></button> : null}
-        <button aria-expanded={menuOpen} aria-haspopup="menu" aria-label="More message actions" className="sand-message-hover-actions__button" onClick={() => { setInlineCopy(null); setReactionMenuOpen(false); setMenuOpen((open) => !open); }} ref={triggerRef} type="button">
+  const menuItems = <>
+    {!isReadOnly && isThreadActionVisible && onReply != null ? <SandMenuItem index={0} onSelect={() => { onReply(entry); closeMenu(true); }}><span aria-hidden="true" data-icon-name={replyActionIconName(entry)} />Reply</SandMenuItem> : null}
+    {!isReadOnly && isThreadActionVisible && onStartThread != null ? <SandMenuItem index={1} onSelect={() => { onStartThread(entry); closeMenu(true); }}><span aria-hidden="true" data-icon-name="chat-bubbles" />Start a thread</SandMenuItem> : null}
+    {/* @evidence recovered/frontend/app/assets/index-UbX-y3il.js#byteOffset=6395536 (immutable Copy item is conditional on injected onCopy; UTF-8; SHA256 80464803b50f478598080bdc1b91da3996c6b74168e2351ea26f620f2ec62ba5) */}
+    {!isReadOnly && onForward != null ? <SandMenuItem index={2} onSelect={() => { onForward(entry); closeMenu(false); }}><span aria-hidden="true" data-icon-name="arrow-u-up-right" />Forward</SandMenuItem> : null}
+    {inlineCopy == null && onCopy == null ? null : <SandMenuItem index={3} onSelect={copy}><span aria-hidden="true" data-icon-name="copy" style={{ fontFamily: "cursor-icons" }}>{String.fromCodePoint(messageActionIconCodePoint("copy"))}</span>{inlineCopy?.label ?? "Copy"}</SandMenuItem>}
+  </>;
+
+  const anchor = <div className={menuOpen || contextMenuPoint != null || reactionMenuOpen ? "sand-message-action-anchor sand-message-action-anchor--menu-open" : "sand-message-action-anchor"}>
+    {children}
+    {threadSummary != null && threadRootId == null && !isReadOnly && onOpenThread != null ? <ThreadAffordance onOpen={onOpenThread} role={entry.role} summary={threadSummary} /> : null}
+    <div aria-label={messageActionLabel(entry)} className="sand-message-hover-actions" role="toolbar">
+      {reactionActions}
+      {!isReadOnly && isThreadActionVisible && onReply != null ? <button aria-label={replyActionLabel(entry)} className="sand-message-hover-actions__button" onClick={() => onReply(entry)} type="button"><span aria-hidden="true" data-icon-name={replyActionIconName(entry)} /></button> : null}
+      <SandMenuRoot onOpenChange={updateMoreMenuOpen} open={menuOpen} placement="top-end" returnFocus>
+        <SandMenuTrigger><button aria-label="More message actions" className="sand-message-hover-actions__button" onClick={() => { setInlineCopy(null); setReactionMenuOpen(false); }} ref={triggerRef} type="button">
           <span aria-hidden="true" data-icon-name="dots-3-horizontal" style={{ fontFamily: "cursor-icons" }}>{String.fromCodePoint(messageActionIconCodePoint("dots-3-horizontal"))}</span>
-        </button>
-        {menuOpen ? <div aria-label="More message actions" role="menu" style={{ position: "absolute", right: 0, bottom: "34px", display: "grid", minWidth: "150px", padding: "4px", background: "#20231f", border: "1px solid #343832", borderRadius: "8px", boxShadow: "0 12px 28px rgba(0, 0, 0, .35)" }}>
-          {!isReadOnly && isThreadActionVisible && onReply != null ? <button className="sand-message-hover-actions__button" onClick={() => { onReply(entry); closeMenu(true); }} role="menuitem" style={{ width: "100%", border: 0, borderRadius: "5px", textAlign: "left" }} type="button"><span aria-hidden="true" data-icon-name={replyActionIconName(entry)} />Reply</button> : null}
-          {!isReadOnly && isThreadActionVisible && onStartThread != null ? <button className="sand-message-hover-actions__button" onClick={() => { onStartThread(entry); closeMenu(true); }} role="menuitem" style={{ width: "100%", border: 0, borderRadius: "5px", textAlign: "left" }} type="button"><span aria-hidden="true" data-icon-name="chat-bubbles" />Start a thread</button> : null}
-          {/* @evidence recovered/frontend/app/assets/index-UbX-y3il.js#byteOffset=6395536 (immutable Copy item is conditional on injected onCopy; UTF-8; SHA256 80464803b50f478598080bdc1b91da3996c6b74168e2351ea26f620f2ec62ba5) */}
-          {!isReadOnly && onForward != null ? <button className="sand-message-hover-actions__button" onClick={() => { onForward(entry); closeMenu(false); }} role="menuitem" style={{ width: "100%", border: 0, borderRadius: "5px", textAlign: "left" }} type="button"><span aria-hidden="true" data-icon-name="arrow-u-up-right" />Forward</button> : null}
-          {inlineCopy == null && onCopy == null ? null : <button className="sand-message-hover-actions__button" onClick={copy} role="menuitem" style={{ width: "100%", border: 0, borderRadius: "5px", textAlign: "left" }} type="button"><span aria-hidden="true" data-icon-name="copy" style={{ fontFamily: "cursor-icons" }}>{String.fromCodePoint(messageActionIconCodePoint("copy"))}</span>{inlineCopy?.label ?? "Copy"}</button>}
-        </div> : null}
-      </div>
+        </button></SandMenuTrigger>
+        <SandMenuContent ariaLabel="More message actions">{menuItems}</SandMenuContent>
+      </SandMenuRoot>
     </div>
-  );
+  </div>;
+
+  return <SandContextMenu
+    ariaLabel="Message actions"
+    content={menuItems}
+    onOpenChange={(point) => {
+      setContextMenuPoint(point);
+      if (point == null) setInlineCopy(null);
+    }}
+    open={contextMenuPoint}
+    shouldOpen={(event) => {
+      const projectedInlineCopy = projectTranscriptInlineCopyTarget(event.target);
+      if (projectedInlineCopy == null && isMessageContextTargetExcluded(event.target)) return false;
+      setInlineCopy(projectedInlineCopy);
+      setMenuOpen(false);
+      setReactionMenuOpen(false);
+      return true;
+    }}
+  >{anchor}</SandContextMenu>;
 }
 
 function StreamingMessage() {

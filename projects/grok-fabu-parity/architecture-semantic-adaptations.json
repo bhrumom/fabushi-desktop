@@ -445,7 +445,7 @@
       "referencePath": "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "7bec004250e2200d22823acb5cff6d8ac06b433c",
+      "targetBlobSha": "362c9fd2961eed01dda1e30e30d676dc58421790",
       "behavioralEvidence": [
         "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
         "frontend/src/recovered/features/conversation/workspace/transcript-follow-state.ts",
@@ -1628,7 +1628,7 @@
       "referencePath": "frontend/src/recovered/ui/sand-floating-primitives.tsx",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "13a37937d614fbfbdb176eaba25d49949c40107b",
+      "targetBlobSha": "ba86930a9cd5add0d1ee2c7234956b90f1929deb",
       "behavioralEvidence": [
         "frontend/src/recovered/ui/sand-floating-primitives.tsx"
       ],

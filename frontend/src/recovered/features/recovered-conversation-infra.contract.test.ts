@@ -742,6 +742,21 @@ test("transcript rich links remain behind the canonical URL owner", () => {
 });
 
 
+test("CONTRACT-TDRP-IV-MESSAGE-CONTEXT-MENU-CANONICAL-001 transcript message actions consume the source-neutral canonical menu owner", () => {
+  const transcript = readFileSync(new URL("./conversation/workspace/transcript.tsx", import.meta.url), "utf8");
+  const floating = readFileSync(new URL("../ui/sand-floating-primitives.tsx", import.meta.url), "utf8");
+  assert.match(transcript, /SandContextMenu/);
+  assert.match(transcript, /SandMenuRoot/);
+  assert.match(transcript, /SandMenuContent/);
+  assert.match(transcript, /SandMenuItem/);
+  assert.match(transcript, /shouldOpen=\{\(event\) => \{/);
+  assert.match(transcript, /isMessageContextTargetExcluded\(event\.target\)/);
+  assert.doesNotMatch(transcript, /<button[^>]*role="menuitem"/);
+  assert.match(floating, /readonly shouldOpen\?: \(event: ReactMouseEvent\) => boolean/);
+  assert.match(floating, /<MenuContext\.Provider value=\{menu\}>/);
+  assert.match(floating, /<SandMenuContent ariaLabel=\{ariaLabel\}/);
+});
+
 test("CONTRACT-TDRP-IV-VIEW-POINTER-ACTIVATION-FENCE-001 content replacement invalidates stale transcript pointer actions", () => {
   const source = readFileSync(new URL("./conversation/workspace/transcript.tsx", import.meta.url), "utf8");
   assert.match(source, /pointerActivationRevisionRef = useRef\(0\)/);
