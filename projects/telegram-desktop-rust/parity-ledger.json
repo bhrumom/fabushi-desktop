@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 8357,
+    "unread": 8353,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,11 +13478,11 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Accepted prefix 7,768/16,125; Qt input test harness, release/test isolation, distro registration lifecycle, FDL provenance, filter install symmetry and output transforms read/decomposed; unread 8,357; unknown 15,845; omitted 0. Next is Hime pre-commit.",
-    "source_authority_evidence": "Accepted exact component blobs 7,743–7,768 read against pinned Hime commit; source-neutral responsibilities remain mapped to existing Build/Release, platform-input, Composer/Resource/settings and License/NOTICE owners. Descendant exact-head Actions required.",
-    "current_source_read_through": 7768,
-    "first_unread_order": 7769,
-    "first_unread_path": "Telegram/ThirdParty/hime::git-hooks/pre-commit"
+    "source_read_reconciliation": "Accepted prefix 7,772/16,125; Hime formatting gate, GPLv2 provenance, exact mode-120000 blue icon alias and symmetric icon packaging read/decomposed; unread 8,353; unknown 15,845; omitted 0. Next is first black binary icon.",
+    "source_authority_evidence": "Accepted exact Hime blobs 7,769–7,772 read; symlink identity explicitly mode=120000/content=blue. Descendant exact-head Actions and binary visual review for 7,773+ required.",
+    "current_source_read_through": 7772,
+    "first_unread_order": 7773,
+    "first_unread_path": "Telegram/ThirdParty/hime::icons/black/4corner.png"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 7768,
-    "first_unread_order": 7769,
-    "first_unread_path": "Telegram/ThirdParty/hime::git-hooks/pre-commit",
+    "read_through": 7772,
+    "first_unread_order": 7773,
+    "first_unread_path": "Telegram/ThirdParty/hime::icons/black/4corner.png",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
