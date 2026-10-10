@@ -1493,8 +1493,11 @@ pub const WALLET_LIVE_MAX_HIDDEN_PAGES: u8 = 20;
 pub enum WalletLivePresence {
     #[default]
     Unknown,
-    Existing,
+    Provisioning,
+    Missing,
     Unavailable,
+    AddressUnreadable,
+    Ready,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -2354,7 +2357,7 @@ mod wallet_runtime_tests {
         let first = live.begin_generation().unwrap();
         assert_eq!(first, 1);
         assert!(live.state_refresh_due(0));
-        live.apply_presence(first, WalletLivePresence::Existing, 1_000)
+        live.apply_presence(first, WalletLivePresence::Ready, 1_000)
             .unwrap();
         assert!(!live.state_unreachable);
         assert!(!live.state_refresh_due(1_000 + WALLET_LIVE_STATE_REFRESH_MS - 1));
@@ -2402,7 +2405,7 @@ mod wallet_runtime_tests {
         ledger
             .runtime
             .live
-            .apply_presence(generation, WalletLivePresence::Existing, 9_000)
+            .apply_presence(generation, WalletLivePresence::Ready, 9_000)
             .unwrap();
         ledger.runtime.live.mark_stream_resync(generation, 9_000).unwrap();
         let encoded = serde_json::to_string(&ledger).unwrap();
