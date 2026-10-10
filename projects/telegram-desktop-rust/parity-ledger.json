@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 8560,
+    "unread": 8483,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,11 +13478,11 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Accepted prefix reaches 7,565/16,125; fcitx5-qt 7,541-7,565 exact-read/decomposed across Qt5 widgets/config/shortcut semantics and Qt6 DBus/input contracts; unread=8,560, unknown=15,845, omitted=0. Reading closes no unknown.",
-    "source_authority_evidence": "Qt/Fcitx widget/plugin/DBus mechanics are replacement-only. Canonical Settings/Input owners retain fail-closed plugin identity/discovery, async save settlement, shortcut/key normalization, generated-input provenance and toolkit-version-neutral input lifecycle/state contracts.",
-    "current_source_read_through": 7565,
-    "first_unread_order": 7566,
-    "first_unread_path": "Telegram/ThirdParty/fcitx5-qt::qt6/dbusaddons/fcitxqtinputcontextproxy_p.h"
+    "source_read_reconciliation": "Accepted prefix reaches 7,642/16,125 and completes all 215 pinned fcitx5-qt entries; unread=8,483, unknown=15,845, omitted=0. Reading closes no unknown.",
+    "source_authority_evidence": "fcitx5-qt Qt6 closure preserves aliases as composition-only and maps service-owner fencing, input lifecycle, quick-phrase persistence/failure settlement, Settings plugin/save and shortcut normalization to existing canonical owners.",
+    "current_source_read_through": 7642,
+    "first_unread_order": 7643,
+    "first_unread_path": "Telegram/ThirdParty/hime::.clang-format"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 7565,
-    "first_unread_order": 7566,
-    "first_unread_path": "Telegram/ThirdParty/fcitx5-qt::qt6/dbusaddons/fcitxqtinputcontextproxy_p.h",
+    "read_through": 7642,
+    "first_unread_order": 7643,
+    "first_unread_path": "Telegram/ThirdParty/hime::.clang-format",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
