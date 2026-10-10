@@ -1,5 +1,5 @@
-Live Revision 9 authority (2026-10-10): telegramdesktop/tdesktop@65e23ba7137ea4129b6bc1b2616104a1f59495ef (root tree 6b616494f3465324e749a04dcd1c9d508657a998). Root non-directory=6,653; recursive non-directory=16,125; read-through=6,269; first unread=6,270 Telegram/SourceFiles/ui/widgets/marquee_label.cpp@ddb4fac4dc2eb2f4d990b283aad018416ce7d1d2; unread=9,856; unknown=15,846; omitted=0. Reading alone never closes unknown. Fresh descendant exact-head GitHub Actions evidence is required.
-<!-- TDRP_CURRENT_SUMMARY read-through=6269 unread=9856 unknown=15846 omitted=0 first-unread=6270 path=Telegram/SourceFiles/ui/widgets/marquee_label.cpp -->
+Live Revision 9 authority (2026-10-10): telegramdesktop/tdesktop@65e23ba7137ea4129b6bc1b2616104a1f59495ef (root tree 6b616494f3465324e749a04dcd1c9d508657a998). Root non-directory=6,653; recursive non-directory=16,125; read-through=6,270; first unread=6,271 Telegram/SourceFiles/ui/widgets/marquee_label.h@b2623a32af81775016bed793ed4c31d66da81a24; unread=9,855; unknown=15,846; omitted=0. Reading alone never closes unknown. Fresh descendant exact-head GitHub Actions evidence is required.
+<!-- TDRP_CURRENT_SUMMARY read-through=6270 unread=9855 unknown=15846 omitted=0 first-unread=6271 path=Telegram/SourceFiles/ui/widgets/marquee_label.h -->
 
 # Telegram Desktop → Fabushi 全量等价重写 — Status
 
@@ -214,3 +214,8 @@ Orders **6,252-6,261** are exact-blob read/decomposed across cross-fade text mot
 ### Read-through 6262-6269
 
 Orders **6,262-6,269** are exact-blob read/decomposed across glare Tooltip tracking/timer/teardown and motion, gradient Button glare/ripple/cache behavior, equal-width horizontal Button layout, and LevelMeter value projection. These are presentation responsibilities over existing source-neutral Tooltip/Button/layout/Status owners and must honor reduced-motion and lifecycle teardown. Reading alone does not reduce unknown. Accounting: **6,269 / 16,125 read**, **9,856 unread**, **15,846 unknown**, **0 omitted**. First unread is **6,270** `Telegram/SourceFiles/ui/widgets/marquee_label.cpp@ddb4fac4dc2eb2f4d990b283aad018416ce7d1d2`.
+
+
+### Read-through 6270
+
+Order **6,270** `Telegram/SourceFiles/ui/widgets/marquee_label.cpp@ddb4fac4dc2eb2f4d990b283aad018416ce7d1d2` is exact-blob read-complete/responsibility-decomposed. It owns overflowing text presentation with delayed wraparound marquee motion; animation is gated by visibility, active window, overflow, reduced-motion policy and selection/menu pause state. It also carries DPR/palette/text/geometry cache invalidation, selectable text with word/paragraph selection and edge-scroll, keyboard/mouse clipboard projection, outside-click/menu teardown, and StaticText accessibility. The responsibility maps only to source-neutral canonical text/Status, ContextMenu/Menu, clipboard, accessibility and reduced-motion owners and remains mapped-open pending shipping composition plus focused lifecycle/a11y evidence. Reading does not reduce unknown. Accounting: **6,270 / 16,125 read**, **9,855 unread**, **15,846 unknown**, **0 omitted**. First unread is **6,271** `Telegram/SourceFiles/ui/widgets/marquee_label.h@b2623a32af81775016bed793ed4c31d66da81a24`.
