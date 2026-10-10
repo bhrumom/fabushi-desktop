@@ -1483,6 +1483,161 @@ pub enum WalletAddressDirectoryError {
     InvalidPublicKey,
 }
 
+pub const WALLET_LIVE_STATE_REFRESH_MS: i64 = 60 * 1_000;
+pub const WALLET_LIVE_STREAM_RESYNC_MS: i64 = 30 * 1_000;
+pub const WALLET_LIVE_FAILURES_BEFORE_UNREACHABLE: u8 = 2;
+pub const WALLET_LIVE_MAX_HIDDEN_PAGES: u8 = 20;
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum WalletLivePresence {
+    #[default]
+    Unknown,
+    Existing,
+    Unavailable,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WalletLiveState {
+    pub generation: u64,
+    pub presence: WalletLivePresence,
+    pub state_unreachable: bool,
+    pub consecutive_state_failures: u8,
+    pub last_state_refresh_ms: Option<i64>,
+    pub last_stream_resync_ms: Option<i64>,
+    pub hidden_pages_without_visible_rows: u8,
+}
+
+impl WalletLiveState {
+    pub fn begin_generation(&mut self) -> Result<u64, WalletLiveError> {
+        self.generation = self
+            .generation
+            .checked_add(1)
+            .ok_or(WalletLiveError::GenerationOverflow)?;
+        self.presence = WalletLivePresence::Unknown;
+        self.state_unreachable = false;
+        self.consecutive_state_failures = 0;
+        self.last_state_refresh_ms = None;
+        self.last_stream_resync_ms = None;
+        self.hidden_pages_without_visible_rows = 0;
+        Ok(self.generation)
+    }
+
+    pub fn apply_presence(
+        &mut self,
+        generation: u64,
+        presence: WalletLivePresence,
+        observed_at_ms: i64,
+    ) -> Result<(), WalletLiveError> {
+        self.require_generation(generation)?;
+        require_live_timestamp(observed_at_ms)?;
+        self.presence = presence;
+        self.state_unreachable = false;
+        self.consecutive_state_failures = 0;
+        self.last_state_refresh_ms = Some(observed_at_ms);
+        Ok(())
+    }
+
+    pub fn note_state_failure(
+        &mut self,
+        generation: u64,
+        observed_at_ms: i64,
+    ) -> Result<(), WalletLiveError> {
+        self.require_generation(generation)?;
+        require_live_timestamp(observed_at_ms)?;
+        self.consecutive_state_failures = self.consecutive_state_failures.saturating_add(1);
+        self.state_unreachable =
+            self.consecutive_state_failures >= WALLET_LIVE_FAILURES_BEFORE_UNREACHABLE;
+        self.last_state_refresh_ms = Some(observed_at_ms);
+        Ok(())
+    }
+
+    pub fn state_refresh_due(&self, now_ms: i64) -> bool {
+        if now_ms < 0 {
+            return false;
+        }
+        self.last_state_refresh_ms
+            .is_none_or(|last| now_ms.saturating_sub(last) >= WALLET_LIVE_STATE_REFRESH_MS)
+    }
+
+    pub fn mark_stream_resync(
+        &mut self,
+        generation: u64,
+        observed_at_ms: i64,
+    ) -> Result<(), WalletLiveError> {
+        self.require_generation(generation)?;
+        require_live_timestamp(observed_at_ms)?;
+        self.last_stream_resync_ms = Some(observed_at_ms);
+        Ok(())
+    }
+
+    pub fn stream_resync_due(&self, now_ms: i64) -> bool {
+        if now_ms < 0 {
+            return false;
+        }
+        self.last_stream_resync_ms
+            .is_none_or(|last| now_ms.saturating_sub(last) >= WALLET_LIVE_STREAM_RESYNC_MS)
+    }
+
+    /// One empty hidden page spends from the bounded walk. The twentieth
+    /// consecutive empty answer is accepted, but refuses an automatic
+    /// twenty-first request until visible progress or an explicit user/runtime
+    /// re-arm resets the budget.
+    pub fn note_history_page(
+        &mut self,
+        generation: u64,
+        visible_rows: usize,
+    ) -> Result<bool, WalletLiveError> {
+        self.require_generation(generation)?;
+        if visible_rows > 0 {
+            self.hidden_pages_without_visible_rows = 0;
+            return Ok(true);
+        }
+        if self.hidden_pages_without_visible_rows >= WALLET_LIVE_MAX_HIDDEN_PAGES {
+            return Ok(false);
+        }
+        self.hidden_pages_without_visible_rows =
+            self.hidden_pages_without_visible_rows.saturating_add(1);
+        Ok(self.hidden_pages_without_visible_rows < WALLET_LIVE_MAX_HIDDEN_PAGES)
+    }
+
+    pub fn rearm_history_walk(&mut self, generation: u64) -> Result<(), WalletLiveError> {
+        self.require_generation(generation)?;
+        self.hidden_pages_without_visible_rows = 0;
+        Ok(())
+    }
+
+    fn require_generation(&self, generation: u64) -> Result<(), WalletLiveError> {
+        if generation == self.generation && generation != 0 {
+            Ok(())
+        } else {
+            Err(WalletLiveError::StaleGeneration {
+                current: self.generation,
+                received: generation,
+            })
+        }
+    }
+}
+
+fn require_live_timestamp(value: i64) -> Result<(), WalletLiveError> {
+    if value >= 0 {
+        Ok(())
+    } else {
+        Err(WalletLiveError::InvalidTimestamp)
+    }
+}
+
+#[derive(Debug, Error, Clone, PartialEq, Eq)]
+pub enum WalletLiveError {
+    #[error("wallet live generation overflowed")]
+    GenerationOverflow,
+    #[error("wallet live generation is stale: current {current}, received {received}")]
+    StaleGeneration { current: u64, received: u64 },
+    #[error("wallet live timestamp is invalid")]
+    InvalidTimestamp,
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WalletRuntimeState {
@@ -1492,6 +1647,11 @@ pub struct WalletRuntimeState {
     pub panel: WalletPanelState,
     pub outbound_transfers: OutboundTransferJournal,
     pub address_directory: WalletAddressDirectory,
+    /// Refresh generations, failure latches and hidden-page pacing are
+    /// deliberately runtime-only. Restart must rebuild them from the live
+    /// service rather than replaying stale network authority.
+    #[serde(skip, default)]
+    pub live: WalletLiveState,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -2186,6 +2346,71 @@ mod wallet_runtime_tests {
         let restored: WalletLedger = serde_json::from_str(&encoded).unwrap();
         assert_eq!(restored.runtime.rates.selected_currency, "JPY");
         assert!(restored.runtime.panel.visible);
+    }
+
+    #[test]
+    fn live_state_fences_generations_and_requires_two_failures_before_unreachable() {
+        let mut live = WalletLiveState::default();
+        let first = live.begin_generation().unwrap();
+        assert_eq!(first, 1);
+        assert!(live.state_refresh_due(0));
+        live.apply_presence(first, WalletLivePresence::Existing, 1_000)
+            .unwrap();
+        assert!(!live.state_unreachable);
+        assert!(!live.state_refresh_due(1_000 + WALLET_LIVE_STATE_REFRESH_MS - 1));
+
+        live.note_state_failure(first, 2_000).unwrap();
+        assert!(!live.state_unreachable);
+        live.note_state_failure(first, 3_000).unwrap();
+        assert!(live.state_unreachable);
+
+        let second = live.begin_generation().unwrap();
+        assert_eq!(second, 2);
+        assert_eq!(live.presence, WalletLivePresence::Unknown);
+        assert!(!live.state_unreachable);
+        assert_eq!(
+            live.note_state_failure(first, 4_000),
+            Err(WalletLiveError::StaleGeneration {
+                current: second,
+                received: first,
+            })
+        );
+    }
+
+    #[test]
+    fn live_hidden_history_walk_is_bounded_and_rearmable() {
+        let mut live = WalletLiveState::default();
+        let generation = live.begin_generation().unwrap();
+        for page in 1..=WALLET_LIVE_MAX_HIDDEN_PAGES {
+            let may_continue = live.note_history_page(generation, 0).unwrap();
+            assert_eq!(may_continue, page < WALLET_LIVE_MAX_HIDDEN_PAGES);
+        }
+        assert!(!live.note_history_page(generation, 0).unwrap());
+        assert!(live.note_history_page(generation, 1).unwrap());
+        assert_eq!(live.hidden_pages_without_visible_rows, 0);
+        for _ in 0..3 {
+            let _ = live.note_history_page(generation, 0).unwrap();
+        }
+        live.rearm_history_walk(generation).unwrap();
+        assert_eq!(live.hidden_pages_without_visible_rows, 0);
+    }
+
+    #[test]
+    fn live_state_is_not_restored_as_stale_network_authority() {
+        let mut ledger = WalletLedger::default();
+        let generation = ledger.runtime.live.begin_generation().unwrap();
+        ledger
+            .runtime
+            .live
+            .apply_presence(generation, WalletLivePresence::Existing, 9_000)
+            .unwrap();
+        ledger.runtime.live.mark_stream_resync(generation, 9_000).unwrap();
+        let encoded = serde_json::to_string(&ledger).unwrap();
+        assert!(!encoded.contains("\"live\""));
+        let restored: WalletLedger = serde_json::from_str(&encoded).unwrap();
+        assert_eq!(restored.runtime.live, WalletLiveState::default());
+        assert!(restored.runtime.live.state_refresh_due(9_001));
+        assert!(restored.runtime.live.stream_resync_due(9_001));
     }
 }
 
