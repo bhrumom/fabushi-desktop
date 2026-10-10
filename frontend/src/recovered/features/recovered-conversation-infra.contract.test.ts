@@ -759,6 +759,9 @@ test("CONTRACT-TDRP-IV-MESSAGE-CONTEXT-MENU-CANONICAL-001 all transcript message
   assert.match(floating, /readonly shouldOpen\?: \(event: ReactMouseEvent\) => boolean/);
   assert.match(floating, /<MenuContext\.Provider value=\{menu\}>/);
   assert.match(floating, /<SandMenuContent ariaLabel=\{ariaLabel\}/);
+  assert.match(floating, /function mergeRefs<T>\(\.\.\.refs: readonly \(Ref<T> \| undefined\)\[\]\)/);
+  assert.match(floating, /typeof ref === "function"\) ref\(node\)/);
+  assert.match(floating, /ref\.current = node/);
 });
 
 test("CONTRACT-TDRP-IV-VIEW-POINTER-ACTIVATION-FENCE-001 content replacement invalidates stale transcript pointer actions", () => {
