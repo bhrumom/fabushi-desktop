@@ -49,6 +49,7 @@ import {
   type ComposerDraftPersistence,
 } from "./conversation/workspace/draft-state.ts";
 import { createTranscriptAcknowledgementController } from "./conversation/workspace/acknowledgement.ts";
+import { promptEditorKeyAction, shouldHoldScopeFenceDuringComposition } from "./conversation/workspace/input-composition-state.ts";
 import {
   isForwardRecipientNavigationKey,
   isForwardSubmitShortcut,
@@ -1426,4 +1427,26 @@ test("CONTRACT-TDRP-IV-ARTICLE-MEDIA-LIFECYCLE-001 attachment cards and filmstri
   assert.doesNotMatch(source, /if \(media\?\.kind === "image" && onOpen != null\) return <button/);
   assert.doesNotMatch(source, /if \(media\?\.kind === "video" && onOpen != null\) return <button/);
   assert.match(source, /<MediaViewer attachments=\{mediaAttachments\}/);
+});
+
+
+test("UNIT-TDRP-INPUT-IME-COMPOSITION-001 prompt keyboard policy never submits or escapes through an active IME composition", () => {
+  assert.equal(promptEditorKeyAction({ key: "Enter", shiftKey: false, isComposing: true }, false), null);
+  assert.equal(promptEditorKeyAction({ key: "Enter", shiftKey: false, isComposing: false }, true), null);
+  assert.equal(promptEditorKeyAction({ key: "Escape", shiftKey: false, isComposing: true }, false), null);
+  assert.equal(promptEditorKeyAction({ key: "Enter", shiftKey: true, isComposing: false }, false), null);
+  assert.equal(promptEditorKeyAction({ key: "Enter", shiftKey: false, isComposing: false }, false), "submit");
+  assert.equal(promptEditorKeyAction({ key: "Escape", shiftKey: false, isComposing: false }, false), "escape");
+  assert.equal(shouldHoldScopeFenceDuringComposition(null), false);
+  assert.equal(shouldHoldScopeFenceDuringComposition("conversation:new-scope"), true);
+});
+
+test("CONTRACT-TDRP-INPUT-IME-SCOPE-001 old-scope native composition stays fenced until canonical new-scope content is restored", async () => {
+  const source = await readFile(new URL("./conversation/workspace/rich-text-editor.tsx", import.meta.url), "utf8");
+  assert.match(source, /const compositionScopeFence = useRef<string \| null>\(null\);/);
+  assert.match(source, /compositionScopeFence\.current = compositionActive\.current \? scopeKey : null;/);
+  assert.match(source, /if \(shouldHoldScopeFenceDuringComposition\(compositionScopeFence\.current\)\) return false;/);
+  assert.match(source, /setCompositionSettlementGeneration\(\(generation\) => generation \+ 1\);/);
+  assert.match(source, /editor\.commands\.setContent\(expected, \{ emitUpdate: false \}\);/);
+  assert.match(source, /scopeFence\.current\?\.scopeKey === settlingCompositionScope/);
 });

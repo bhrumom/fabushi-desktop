@@ -6,9 +6,10 @@ import { useEditor, EditorContent, type EditorContentProps } from "@tiptap/react
 import { StarterKit } from "@tiptap/starter-kit";
 import { Suggestion, type SuggestionMatch, type SuggestionOptions } from "@tiptap/suggestion";
 import { Plugin, PluginKey, TextSelection } from "@tiptap/pm/state";
-import { useEffect, useMemo, useRef, type RefObject } from "react";
+import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import type { EmojiEntry } from "../cards/transcript-card/emoji-catalog";
 import type { EditorMcpSuggestion, EditorMentionSuggestion, EditorSuggestionEntry, EditorWorkflowSuggestion } from "./editor-suggestion-provider";
+import { promptEditorKeyAction, shouldHoldScopeFenceDuringComposition } from "./input-composition-state";
 
 // Immutable editor closure: e9n/hft in index-UbX-y3il.js. The package graph
 // is intentionally owned by B6; this leaf only imports the released graph.
@@ -717,6 +718,8 @@ export function PromptRichTextEditor({ prompt, richText, scopeKey = "", clearGen
   const clearFence = useRef<{ generation: number; before: string } | null>(null);
   const scopeFence = useRef<{ scopeKey: string; before: string } | null>(null);
   const compositionActive = useRef(false);
+  const compositionScopeFence = useRef<string | null>(null);
+  const [compositionSettlementGeneration, setCompositionSettlementGeneration] = useState(0);
   const emittedChangeSerial = useRef(0);
   const observedScopeKey = useRef(scopeKey);
   const observedClearGeneration = useRef(clearGeneration);
@@ -737,28 +740,37 @@ export function PromptRichTextEditor({ prompt, richText, scopeKey = "", clearGen
       },
       handleDOMEvents: {
         compositionstart: () => {
+          // A composition that starts after a scope change is a fresh user-owned
+          // edit in the new scope. A composition already in progress when the
+          // scope changes is fenced separately below and must not be released by
+          // its trailing beforeinput/input events.
           compositionActive.current = true;
+          compositionScopeFence.current = null;
           scopeFence.current = null;
           return false;
         },
         compositionend: () => {
           compositionActive.current = false;
+          // Force the external-content reconciliation effect to run even when
+          // the parent props were last updated while composition was active.
+          setCompositionSettlementGeneration((generation) => generation + 1);
           return false;
         },
         beforeinput: () => {
-          // A real browser edit is the ownership handoff from the old scope to
-          // the newly selected Agent. Release the scope fence before TipTap
-          // creates the corresponding transaction so onUpdate can persist it.
+          // A real browser edit normally hands ownership from the old scope to
+          // the newly selected Agent. Do not perform that handoff for the tail
+          // of a composition that began in the previous scope.
+          if (shouldHoldScopeFenceDuringComposition(compositionScopeFence.current)) return false;
           scopeFence.current = null;
           return false;
         },
         input: (view) => {
           // Programmatic browser drivers and some IME/contenteditable paths can
           // commit the DOM before ProseMirror has emitted the corresponding
-          // transaction. Release the stale Agent-scope fence immediately, then
-          // rescue the canonical change only when onUpdate did not already emit
-          // it. This keeps visible DOM, TipTap state and persisted draft aligned
-          // without duplicating ordinary keyboard transactions.
+          // transaction. Keep an old-scope IME composition fenced through its
+          // final input event; reconciliation after compositionend restores the
+          // new scope's canonical external content.
+          if (shouldHoldScopeFenceDuringComposition(compositionScopeFence.current)) return false;
           const fenced = scopeFence.current;
           scopeFence.current = null;
           if (fenced != null) {
@@ -791,13 +803,13 @@ export function PromptRichTextEditor({ prompt, richText, scopeKey = "", clearGen
         }
       },
       handleKeyDown: (_view, event) => {
-        if (event.isComposing || compositionActive.current) return false;
-        if (event.key === "Escape") {
+        const action = promptEditorKeyAction(event, compositionActive.current);
+        if (action === "escape") {
           event.preventDefault();
           callbacks.current.onEscape();
           return true;
         }
-        if (event.key === "Enter" && !event.shiftKey) {
+        if (action === "submit") {
           event.preventDefault();
           if (callbacks.current.canSubmit) void callbacks.current.onSubmit();
           return true;
@@ -848,7 +860,10 @@ export function PromptRichTextEditor({ prompt, richText, scopeKey = "", clearGen
   if (observedScopeKey.current !== scopeKey) {
     observedScopeKey.current = scopeKey;
     clearFence.current = null;
-    if (editor != null) scopeFence.current = { scopeKey, before: JSON.stringify(editor.getJSON()) };
+    if (editor != null) {
+      scopeFence.current = { scopeKey, before: JSON.stringify(editor.getJSON()) };
+      compositionScopeFence.current = compositionActive.current ? scopeKey : null;
+    }
   }
 
   useEffect(() => {
@@ -888,10 +903,24 @@ export function PromptRichTextEditor({ prompt, richText, scopeKey = "", clearGen
 
   useEffect(() => {
     if (editor == null || compositionActive.current) return;
+    const settlingCompositionScope = compositionScopeFence.current;
+    const settleCompositionScopeFence = () => {
+      if (settlingCompositionScope == null || compositionScopeFence.current !== settlingCompositionScope) return;
+      compositionScopeFence.current = null;
+      if (scopeFence.current?.scopeKey === settlingCompositionScope) scopeFence.current = null;
+    };
     const previous = previousExternalContent.current;
     previousExternalContent.current = { prompt, richText };
     const expected = promptEditorContent(prompt, richText);
-    if (JSON.stringify(editor.getJSON()) === JSON.stringify(expected)) return;
+    if (JSON.stringify(editor.getJSON()) === JSON.stringify(expected)) {
+      // ProseMirror state can already match while the contenteditable DOM still
+      // contains the final native IME composition from the previous scope.
+      // Re-applying canonical external content forces DOM/state convergence
+      // before releasing the old-scope composition fence.
+      if (settlingCompositionScope != null) editor.commands.setContent(expected, { emitUpdate: false });
+      settleCompositionScopeFence();
+      return;
+    }
     const wasPopulated = previous.prompt.length > 0 || (previous.richText?.length ?? 0) > 0;
     const isEmpty = prompt.length === 0 && (richText == null || richText.length === 0);
     if (wasPopulated && isEmpty) {
@@ -903,11 +932,13 @@ export function PromptRichTextEditor({ prompt, richText, scopeKey = "", clearGen
       }).clearContent(false);
       if (preserveEditorFocus) clear.focus("end");
       clear.run();
+      settleCompositionScopeFence();
       return;
     }
     editor.commands.setContent(expected, { emitUpdate: false });
     editor.commands.focus("end");
-  }, [clearGeneration, editor, prompt, richText, scopeKey]);
+    settleCompositionScopeFence();
+  }, [clearGeneration, compositionSettlementGeneration, editor, prompt, richText, scopeKey]);
 
   useEffect(() => {
     if (editor == null) return;
