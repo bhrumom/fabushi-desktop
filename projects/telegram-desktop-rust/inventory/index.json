@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15846,
-    "unread_minimum": 9584,
+    "unread_minimum": 9551,
     "omitted_known": 0,
-    "note": "Live 28ac5769 recursive census 16,125; exact read-through 6,541; unknown 15,846, unread 9,584, omitted 0; build/release tooling 6,506-6,541 decomposed as release-security/provenance contracts."
+    "note": "Live 28ac5769 recursive census 16,125; exact read-through 6,574; unknown 15,846, unread 9,551, omitted 0; cmake/build-runtime composition 6,542-6,574 responsibility-decomposed."
   },
   "latest_recursive_evidence": {
     "run_id": 37998467124,
@@ -46,7 +46,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live authority exact through deterministic source order 6,541; first unread 6,542 Telegram/cmake/binobj2obj.py.",
+  "note": "Live authority exact through deterministic source order 6,574; first unread 6,575 Telegram/codegen.",
   "rebaseline": {
     "from_commit": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
     "to_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
@@ -58,10 +58,10 @@
       5722,
       5759
     ],
-    "current_source_read_through": 6541,
-    "first_unread_order": 6542,
-    "first_unread_path": "Telegram/cmake/binobj2obj.py",
-    "current_head_source_authority_evidence": "Accepted build/release source through 6,541 responsibility-decomposed; descendant Actions and release-candidate evidence required."
+    "current_source_read_through": 6574,
+    "first_unread_order": 6575,
+    "first_unread_path": "Telegram/codegen",
+    "current_head_source_authority_evidence": "Accepted exact blobs through 6,574 responsibility-decomposed; descendant Actions and release-candidate evidence required."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -70,6 +70,6 @@
     "development_only_non_applicable": 69,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 6541
+    "read_through": 6574
   }
 }
