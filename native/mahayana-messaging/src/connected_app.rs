@@ -197,18 +197,56 @@ impl ConnectedAppClaimRecord {
     }
 }
 
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct ConnectedAppSessionRefreshState {
+    pub generation: u64,
+    pub in_flight: bool,
+    pub requested_at_ms: Option<i64>,
+    pub changed_while_loading: BTreeMap<u64, ConnectedAppSession>,
+}
+
+impl ConnectedAppSessionRefreshState {
+    fn begin(&mut self, now_ms: i64, wallet_ready: bool) -> Result<Option<u64>, ConnectedAppError> {
+        if now_ms < 0 { return Err(ConnectedAppError::InvalidRefreshTimestamp); }
+        if !wallet_ready || self.in_flight { return Ok(None); }
+        if self.requested_at_ms.is_some_and(|last| now_ms.saturating_sub(last) < CONNECTED_APP_SESSION_REFRESH_FLOOR_MS) {
+            return Ok(None);
+        }
+        self.generation = self.generation.checked_add(1).ok_or(ConnectedAppError::RefreshGenerationOverflow)?;
+        self.in_flight = true;
+        self.requested_at_ms = Some(now_ms);
+        self.changed_while_loading.clear();
+        Ok(Some(self.generation))
+    }
+    fn require(&self, generation: u64) -> Result<(), ConnectedAppError> {
+        if self.in_flight && generation != 0 && generation == self.generation { Ok(()) }
+        else { Err(ConnectedAppError::StaleSessionRefresh { current: self.generation, received: generation }) }
+    }
+    fn settle(&mut self) { self.in_flight = false; self.changed_while_loading.clear(); }
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default, rename_all = "camelCase")]
 pub struct ConnectedAppState {
     pub sessions: BTreeMap<u64, ConnectedAppSession>,
     pub pending_requests: BTreeMap<String, ConnectedAppRequest>,
     pub claims: Vec<ConnectedAppClaimRecord>,
+    #[serde(skip, default)]
+    pub session_refresh: ConnectedAppSessionRefreshState,
 }
 
 impl ConnectedAppState {
     pub fn upsert_session(
         &mut self,
         session: ConnectedAppSession,
+    ) -> Result<(), ConnectedAppError> {
+        self.write_session(session, true)
+    }
+
+    fn write_session(
+        &mut self,
+        session: ConnectedAppSession,
+        track_refresh_change: bool,
     ) -> Result<(), ConnectedAppError> {
         session.validate()?;
         if let Some(previous) = self.sessions.get(&session.id) {
@@ -220,8 +258,80 @@ impl ConnectedAppState {
                 return Err(ConnectedAppError::InvalidSessionTransition);
             }
         }
-        self.sessions.insert(session.id, session);
+        if track_refresh_change && self.session_refresh.in_flight {
+            self.session_refresh.changed_while_loading.insert(session.id, session.clone());
+        }
+        if session.status == ConnectedAppSessionStatus::Closed {
+            self.sessions.remove(&session.id);
+            self.pending_requests.retain(|_, request| request.session_id != session.id);
+        } else {
+            self.sessions.insert(session.id, session);
+        }
         Ok(())
+    }
+
+    pub fn begin_session_refresh(
+        &mut self,
+        now_ms: i64,
+        wallet_ready: bool,
+    ) -> Result<Option<u64>, ConnectedAppError> {
+        self.session_refresh.begin(now_ms, wallet_ready)
+    }
+
+    pub fn apply_session_refresh(
+        &mut self,
+        generation: u64,
+        sessions: Vec<ConnectedAppSession>,
+        observed_at_ms: i64,
+    ) -> Result<(), ConnectedAppError> {
+        if observed_at_ms < 0 { return Err(ConnectedAppError::InvalidRefreshTimestamp); }
+        self.session_refresh.require(generation)?;
+        let mut remote = BTreeMap::new();
+        for session in sessions {
+            session.validate()?;
+            if session.status == ConnectedAppSessionStatus::Closed { continue; }
+            if remote.insert(session.id, session).is_some() {
+                return Err(ConnectedAppError::DuplicateSessionInRefresh);
+            }
+        }
+        let changed = std::mem::take(&mut self.session_refresh.changed_while_loading);
+        self.sessions = remote;
+        self.pending_requests.retain(|_, request| self.sessions.contains_key(&request.session_id));
+        for (_, local) in changed {
+            if local.status == ConnectedAppSessionStatus::Closed {
+                self.sessions.remove(&local.id);
+                self.pending_requests.retain(|_, request| request.session_id != local.id);
+            } else {
+                self.sessions.insert(local.id, local);
+            }
+        }
+        self.session_refresh.settle();
+        Ok(())
+    }
+
+    pub fn fail_session_refresh(&mut self, generation: u64) -> Result<(), ConnectedAppError> {
+        self.session_refresh.require(generation)?;
+        self.session_refresh.settle();
+        Ok(())
+    }
+
+    pub fn mark_session_closing(
+        &mut self,
+        session_id: u64,
+        observed_at_ms: i64,
+    ) -> Result<(), ConnectedAppError> {
+        let current = self.sessions.get(&session_id).cloned().ok_or(ConnectedAppError::SessionNotFound)?;
+        if observed_at_ms < current.updated_at_ms { return Err(ConnectedAppError::StaleMutation); }
+        let mut next = current;
+        next.status = ConnectedAppSessionStatus::Closing;
+        next.updated_at_ms = observed_at_ms;
+        self.write_session(next, true)
+    }
+
+    pub fn closing_session_ids(&self) -> Vec<u64> {
+        self.sessions.iter().filter_map(|(&id, session)| {
+            (session.status == ConnectedAppSessionStatus::Closing).then_some(id)
+        }).collect()
     }
 
     pub fn close_session(
@@ -229,18 +339,26 @@ impl ConnectedAppState {
         session_id: u64,
         closed_at_ms: i64,
     ) -> Result<(), ConnectedAppError> {
-        let session = self
-            .sessions
-            .get_mut(&session_id)
-            .ok_or(ConnectedAppError::SessionNotFound)?;
-        if closed_at_ms < session.updated_at_ms {
-            return Err(ConnectedAppError::StaleMutation);
+        let current = self.sessions.get(&session_id).cloned().ok_or(ConnectedAppError::SessionNotFound)?;
+        if closed_at_ms < current.updated_at_ms { return Err(ConnectedAppError::StaleMutation); }
+        let mut closed = current;
+        closed.status = ConnectedAppSessionStatus::Closed;
+        closed.updated_at_ms = closed_at_ms;
+        self.write_session(closed, true)
+    }
+
+    pub fn acknowledge_session_gone(
+        &mut self,
+        session_id: u64,
+        observed_at_ms: i64,
+    ) -> Result<(), ConnectedAppError> {
+        match self.sessions.get(&session_id).cloned() {
+            Some(session) => {
+                if observed_at_ms < session.updated_at_ms { return Err(ConnectedAppError::StaleMutation); }
+                self.close_session(session_id, observed_at_ms)
+            }
+            None => Ok(()),
         }
-        session.status = ConnectedAppSessionStatus::Closed;
-        session.updated_at_ms = closed_at_ms;
-        self.pending_requests
-            .retain(|_, request| request.session_id != session_id);
-        Ok(())
     }
 
     pub fn queue_request(
@@ -545,6 +663,14 @@ pub enum ConnectedAppError {
     InvalidSession,
     #[error("connected app session transition is invalid")]
     InvalidSessionTransition,
+    #[error("connected app session refresh timestamp is invalid")]
+    InvalidRefreshTimestamp,
+    #[error("connected app session refresh generation overflowed")]
+    RefreshGenerationOverflow,
+    #[error("connected app session refresh is stale: current {current}, received {received}")]
+    StaleSessionRefresh { current: u64, received: u64 },
+    #[error("connected app session refresh contains a duplicate session")]
+    DuplicateSessionInRefresh,
     #[error("connected app session was not found")]
     SessionNotFound,
     #[error("connected app session is closed")]
@@ -746,6 +872,47 @@ mod tests {
         assert_eq!(state.recoverable_claims_for_wallet(&rotated_revision, 500).len(), 1);
         let another_key = WalletTransferIdentity { public_key: vec![5; 32], ..wallet };
         assert!(state.recoverable_claims_for_wallet(&another_key, 500).is_empty());
+    }
+
+    #[test]
+    fn session_refresh_replays_local_changes_over_remote_snapshot() {
+        let mut state = ConnectedAppState::default();
+        let mut first = session(ConnectedAppSessionStatus::Active);
+        first.updated_at_ms = 10;
+        state.upsert_session(first.clone()).unwrap();
+        let generation = state.begin_session_refresh(100, true).unwrap().unwrap();
+        state.mark_session_closing(7, 120).unwrap();
+        let mut stale = first;
+        stale.updated_at_ms = 110;
+        state.apply_session_refresh(generation, vec![stale], 130).unwrap();
+        assert_eq!(state.sessions.get(&7).unwrap().status, ConnectedAppSessionStatus::Closing);
+        assert_eq!(state.closing_session_ids(), vec![7]);
+        assert!(!state.session_refresh.in_flight);
+    }
+
+    #[test]
+    fn session_refresh_is_ready_gated_rate_limited_and_stale_safe() {
+        let mut state = ConnectedAppState::default();
+        assert_eq!(state.begin_session_refresh(100, false).unwrap(), None);
+        let first = state.begin_session_refresh(100, true).unwrap().unwrap();
+        assert_eq!(state.begin_session_refresh(101, true).unwrap(), None);
+        state.fail_session_refresh(first).unwrap();
+        assert_eq!(state.begin_session_refresh(100 + CONNECTED_APP_SESSION_REFRESH_FLOOR_MS - 1, true).unwrap(), None);
+        let second = state.begin_session_refresh(100 + CONNECTED_APP_SESSION_REFRESH_FLOOR_MS, true).unwrap().unwrap();
+        assert_eq!(
+            state.apply_session_refresh(first, Vec::new(), 200),
+            Err(ConnectedAppError::StaleSessionRefresh { current: second, received: first })
+        );
+    }
+
+    #[test]
+    fn session_gone_is_idempotent_and_removes_active_map_entry() {
+        let mut state = ConnectedAppState::default();
+        state.upsert_session(session(ConnectedAppSessionStatus::Active)).unwrap();
+        state.mark_session_closing(7, 20).unwrap();
+        state.acknowledge_session_gone(7, 21).unwrap();
+        assert!(!state.sessions.contains_key(&7));
+        state.acknowledge_session_gone(7, 22).unwrap();
     }
 
     #[test]

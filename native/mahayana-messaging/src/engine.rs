@@ -467,6 +467,26 @@ pub enum Command {
     UpsertConnectedAppSession {
         session: ConnectedAppSession,
     },
+    BeginConnectedAppSessionRefresh {
+        observed_at_ms: i64,
+        wallet_ready: bool,
+    },
+    ApplyConnectedAppSessionRefresh {
+        generation: u64,
+        sessions: Vec<ConnectedAppSession>,
+        observed_at_ms: i64,
+    },
+    FailConnectedAppSessionRefresh {
+        generation: u64,
+    },
+    MarkConnectedAppSessionClosing {
+        session_id: u64,
+        observed_at_ms: i64,
+    },
+    AcknowledgeConnectedAppSessionGone {
+        session_id: u64,
+        observed_at_ms: i64,
+    },
     QueueConnectedAppRequest {
         request: ConnectedAppRequest,
         observed_at_ms: i64,
@@ -3359,6 +3379,44 @@ impl MessagingEngine {
                 state.upsert_session(session)?;
                 Ok(vec![Event::ConnectedAppStateChanged { state }])
             }
+            Command::BeginConnectedAppSessionRefresh {
+                observed_at_ms,
+                wallet_ready,
+            } => {
+                let mut state = self.state.connected_apps.clone();
+                state.begin_session_refresh(observed_at_ms, wallet_ready)?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::ApplyConnectedAppSessionRefresh {
+                generation,
+                sessions,
+                observed_at_ms,
+            } => {
+                let mut state = self.state.connected_apps.clone();
+                state.apply_session_refresh(generation, sessions, observed_at_ms)?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::FailConnectedAppSessionRefresh { generation } => {
+                let mut state = self.state.connected_apps.clone();
+                state.fail_session_refresh(generation)?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::MarkConnectedAppSessionClosing {
+                session_id,
+                observed_at_ms,
+            } => {
+                let mut state = self.state.connected_apps.clone();
+                state.mark_session_closing(session_id, observed_at_ms)?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::AcknowledgeConnectedAppSessionGone {
+                session_id,
+                observed_at_ms,
+            } => {
+                let mut state = self.state.connected_apps.clone();
+                state.acknowledge_session_gone(session_id, observed_at_ms)?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
             Command::QueueConnectedAppRequest {
                 request,
                 observed_at_ms,
@@ -5626,6 +5684,27 @@ mod connected_app_engine_tests {
     }
 
     #[test]
+    fn connected_app_refresh_preserves_local_closing_and_is_runtime_only() {
+        let mut engine = MessagingEngine::new();
+        engine.execute(Command::UpsertConnectedAppSession { session: connected_session() }).unwrap();
+        engine.execute(Command::BeginConnectedAppSessionRefresh { observed_at_ms: 100, wallet_ready: true }).unwrap();
+        let generation = engine.state().connected_apps.session_refresh.generation;
+        engine.execute(Command::MarkConnectedAppSessionClosing { session_id: 91, observed_at_ms: 120 }).unwrap();
+        let mut stale = connected_session();
+        stale.updated_at_ms = 110;
+        engine.execute(Command::ApplyConnectedAppSessionRefresh {
+            generation,
+            sessions: vec![stale],
+            observed_at_ms: 130,
+        }).unwrap();
+        assert_eq!(engine.state().connected_apps.sessions.get(&91).unwrap().status, ConnectedAppSessionStatus::Closing);
+        let encoded = serde_json::to_string(engine.state()).unwrap();
+        let restored: MessagingState = serde_json::from_str(&encoded).unwrap();
+        assert_eq!(restored.connected_apps.session_refresh.generation, 0);
+        assert!(!restored.connected_apps.session_refresh.in_flight);
+    }
+
+    #[test]
     fn closing_connected_app_session_cancels_owned_pending_requests() {
         let mut engine = MessagingEngine::new();
         engine
@@ -5653,10 +5732,7 @@ mod connected_app_engine_tests {
             })
             .unwrap();
         assert!(engine.state().connected_apps.pending_requests.is_empty());
-        assert_eq!(
-            engine.state().connected_apps.sessions.get(&91).unwrap().status,
-            ConnectedAppSessionStatus::Closed
-        );
+        assert!(!engine.state().connected_apps.sessions.contains_key(&91));
     }
 }
 
