@@ -5802,7 +5802,7 @@ mod connected_app_engine_tests {
             .execute(Command::QueueConnectedAppRequest {
                 request: ConnectedAppRequest {
                     session_id: 91,
-                    message_id: 904,
+                    message_id: 901,
                     request_id: "request-1".into(),
                     method: "sendTransaction".into(),
                     kind: ConnectedAppRequestKind::SendTransaction,
@@ -5815,7 +5815,7 @@ mod connected_app_engine_tests {
         engine
             .execute(Command::ResolveConnectedAppRequest {
                 session_id: 91,
-                    message_id: 905,
+                    message_id: 901,
                 request_id: "request-1".into(),
                 decision: ConnectedAppClaimDecision::Confirm,
                 operation_id: String::new(),
@@ -5867,7 +5867,7 @@ mod connected_app_engine_tests {
         engine.execute(Command::QueueConnectedAppRequest {
             request: ConnectedAppRequest {
                 session_id: 91,
-                    message_id: 906,
+                    message_id: 902,
                 request_id: "wallet-request".into(),
                 method: "sendTransaction".into(),
                 kind: ConnectedAppRequestKind::SendTransaction,

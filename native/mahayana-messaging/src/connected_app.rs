@@ -2040,7 +2040,7 @@ mod tests {
 
     #[test]
     fn display_name_is_single_line_bidi_safe_utf16_bounded_and_falls_back() {
-        let hostile = format!("  hello\n\u{202E}world {}  ", "馃榾".repeat(40));
+        let hostile = format!("  hello\n\u{202E}world {}  ", "\u{1F600}".repeat(40));
         let display = connected_app_display_name(&hostile, "fallback.example");
         assert!(!display.contains('\n'));
         assert!(!display.contains('\u{202E}'));
