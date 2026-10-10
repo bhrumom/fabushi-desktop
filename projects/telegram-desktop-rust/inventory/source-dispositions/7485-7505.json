@@ -846,7 +846,7 @@
         "mount": "Telegram/ThirdParty/fcitx5-qt",
         "path": "qt5/dbusaddons/gen_dbus.sh",
         "object": "e060cdd643aad681c1e27309bf4d2b77d0173564",
-        "mode": "100644",
+        "mode": "100755",
         "type": "blob",
         "size": 535
       },
@@ -860,22 +860,23 @@
         "file_type": "blob",
         "recursive_order": 7502
       },
-      "ui_disposition": "No DBus UI. Session state feeds canonical TextField/Composer/input projections only.",
-      "fabushi_canonical_owner": "existing canonical TextField/Composer/input session, platform/lifecycle, security/privacy and capability owners",
-      "platform_differences": "Replace Qt5 DBus/QObject transport with current Electron/web/platform input APIs, preserving lifecycle, stale-callback fencing, optional feature negotiation and virtual-keyboard state.",
-      "reachability_status": "exact blob read; source transport replacement-only, lifecycle semantics applicable and mapped-open",
-      "state_machine": "availability/owner -> async CreateInputContext -> signal/capability binding -> focus/key/preedit/surrounding/candidate/virtual-keyboard state -> owner loss/cleanup/recreate",
-      "side_effects": "input context creation/destruction, event propagation, virtual-keyboard query/visibility changes and optional action negotiation",
-      "failure_cases": "stale create/query/introspection completion; owner race; duplicate context; visibility regression after stale callback; sensitive text leak",
-      "fabushi_target": "existing source-neutral input session/platform lifecycle owner",
-      "production_evidence": "mapping only",
-      "test_evidence": "GitHub Actions fault-injection required for owner churn, stale async completion, virtual-keyboard query/event races, focus/preedit/surrounding/key transitions",
+      "ui_disposition": "No runtime UI responsibility. This executable build input generates DBus proxy/interface code from authoritative XML and must remain traceable as generated-input/build provenance.",
+      "fabushi_canonical_owner": "existing Build/Release, code-generation provenance and canonical input/platform contract owners",
+      "platform_differences": "The shell/qdbusxml2cpp mechanism is source-specific build tooling. Preserve deterministic generator inputs/outputs, executable mode, generated-code provenance and build failure semantics; runtime input-session lifecycle belongs to the generated interfaces/proxies and canonical Fabushi input owner.",
+      "reachability_status": "exact blob read; build/code-generation provenance responsibility mapped-open; not a runtime lifecycle owner",
+      "state_machine": "accepted XML inputs -> deterministic proxy/interface code generation -> compile/link consumption -> provenance validation; generator failure must fail the build",
+      "side_effects": "Generates proxy/interface source used by the DBus build graph; no direct runtime session state ownership.",
+      "failure_cases": "wrong/non-executable generator mode; stale XML input; generated output drift; untracked generated provenance; build silently using stale generated code",
+      "fabushi_target": "existing source-neutral Build/Release code-generation and provenance gates",
+      "production_evidence": "mapping only; exact-head generator/provenance validation required",
+      "test_evidence": "GitHub Actions must validate executable mode, accepted XML identities, deterministic generated-input provenance and fail-closed build behavior",
       "consumer_evidence": [
-        "Qt5 watcher/input proxies + InputContext1/InputMethod1 interfaces",
-        "canonical Fabushi input/platform lifecycle"
+        "DBus XML interface inputs",
+        "generated proxy/interface compilation units",
+        "Fabushi Build/Release provenance gates"
       ],
-      "notes": "responsibility_cluster=input-session-lifecycle; reading closes no unknown",
-      "responsibility": "Qt5 input-session lifecycle and event contract, including exact owner fencing, async create/cleanup, feature introspection and virtual-keyboard state reconciliation."
+      "notes": "responsibility_cluster=dbus-codegen-build-provenance; reading closes no unknown",
+      "responsibility": "DBus proxy/interface code generation and generated-input/build provenance; this script is not the input-session runtime lifecycle owner."
     },
     {
       "read_complete": true,
