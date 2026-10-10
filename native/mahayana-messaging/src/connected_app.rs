@@ -157,6 +157,8 @@ pub struct ConnectedAppClaimRecord {
     pub wallet_identity: Option<WalletTransferIdentity>,
     pub operation_id: String,
     pub signed_payload: String,
+    #[serde(default)]
+    pub not_sent: Vec<u8>,
     pub answer: Vec<u8>,
     pub created_at_ms: i64,
 }
@@ -164,14 +166,14 @@ pub struct ConnectedAppClaimRecord {
 impl ConnectedAppClaimRecord {
     pub fn validate(&self) -> Result<(), ConnectedAppError> {
         // Durable claims are recovery authority, not a best-effort cache.
-        // A confirmed transfer must always retain the encrypted "not sent"
-        // answer that recovery can safely publish when no handoff occurred.
-        // A non-transfer answer is already terminal and therefore must not
-        // carry transfer operation or signed-payload state.
+        // Confirm keeps the encrypted "not sent" response independently from
+        // the eventual success answer. This lets restart recovery distinguish
+        // "never handed off" from "already answered" without guessing.
         let decision_shape_valid = match self.decision {
-            ConnectedAppClaimDecision::Confirm => !self.answer.is_empty(),
+            ConnectedAppClaimDecision::Confirm => !self.not_sent.is_empty(),
             ConnectedAppClaimDecision::Answer => {
                 !self.answer.is_empty()
+                    && self.not_sent.is_empty()
                     && self.operation_id.is_empty()
                     && self.signed_payload.is_empty()
             }
@@ -183,6 +185,7 @@ impl ConnectedAppClaimRecord {
             || self.created_at_ms <= 0
             || self.operation_id.len() > CONNECTED_APP_OPERATION_ID_MAX_BYTES
             || self.signed_payload.len() > CONNECTED_APP_SIGNED_PAYLOAD_MAX_BYTES
+            || self.not_sent.len() > CONNECTED_APP_ANSWER_MAX_BYTES
             || self.answer.len() > CONNECTED_APP_ANSWER_MAX_BYTES
             || self.wallet_identity.as_ref().is_some_and(|identity| identity.validate().is_err())
             || (!self.signed_payload.is_empty() && self.operation_id.is_empty())
@@ -278,6 +281,32 @@ impl ConnectedAppState {
         answer: Vec<u8>,
         now_ms: i64,
     ) -> Result<ConnectedAppClaimRecord, ConnectedAppError> {
+        if decision == ConnectedAppClaimDecision::Confirm {
+            return Err(ConnectedAppError::MissingRecoveryFallback);
+        }
+        self.record_claim_with_recovery(
+            session_id,
+            request_id,
+            decision,
+            operation_id,
+            signed_payload,
+            Vec::new(),
+            answer,
+            now_ms,
+        )
+    }
+
+    pub fn record_claim_with_recovery(
+        &mut self,
+        session_id: u64,
+        request_id: &str,
+        decision: ConnectedAppClaimDecision,
+        operation_id: String,
+        signed_payload: String,
+        not_sent: Vec<u8>,
+        answer: Vec<u8>,
+        now_ms: i64,
+    ) -> Result<ConnectedAppClaimRecord, ConnectedAppError> {
         self.record_claim_internal(
             session_id,
             request_id,
@@ -285,6 +314,7 @@ impl ConnectedAppState {
             None,
             operation_id,
             signed_payload,
+            not_sent,
             answer,
             now_ms,
         )
@@ -301,6 +331,34 @@ impl ConnectedAppState {
         answer: Vec<u8>,
         now_ms: i64,
     ) -> Result<ConnectedAppClaimRecord, ConnectedAppError> {
+        if decision == ConnectedAppClaimDecision::Confirm {
+            return Err(ConnectedAppError::MissingRecoveryFallback);
+        }
+        self.record_wallet_claim_with_recovery(
+            session_id,
+            request_id,
+            decision,
+            wallet_identity,
+            operation_id,
+            signed_payload,
+            Vec::new(),
+            answer,
+            now_ms,
+        )
+    }
+
+    pub fn record_wallet_claim_with_recovery(
+        &mut self,
+        session_id: u64,
+        request_id: &str,
+        decision: ConnectedAppClaimDecision,
+        wallet_identity: WalletTransferIdentity,
+        operation_id: String,
+        signed_payload: String,
+        not_sent: Vec<u8>,
+        answer: Vec<u8>,
+        now_ms: i64,
+    ) -> Result<ConnectedAppClaimRecord, ConnectedAppError> {
         wallet_identity
             .validate()
             .map_err(|_| ConnectedAppError::InvalidWalletBinding)?;
@@ -311,6 +369,7 @@ impl ConnectedAppState {
             Some(wallet_identity),
             operation_id,
             signed_payload,
+            not_sent,
             answer,
             now_ms,
         )
@@ -324,6 +383,7 @@ impl ConnectedAppState {
         wallet_identity: Option<WalletTransferIdentity>,
         operation_id: String,
         signed_payload: String,
+        not_sent: Vec<u8>,
         answer: Vec<u8>,
         now_ms: i64,
     ) -> Result<ConnectedAppClaimRecord, ConnectedAppError> {
@@ -350,6 +410,7 @@ impl ConnectedAppState {
             wallet_identity,
             operation_id,
             signed_payload,
+            not_sent,
             answer,
             created_at_ms: now_ms,
         };
@@ -366,10 +427,11 @@ impl ConnectedAppState {
 
     pub fn prune_claims(&mut self, now_ms: i64) {
         self.claims.retain(|claim| {
-            now_ms
-                <= claim
-                    .expires_at_ms
-                    .saturating_add(CONNECTED_APP_CLAIM_RETENTION_MS)
+            claim.validate().is_ok()
+                && now_ms
+                    <= claim
+                        .expires_at_ms
+                        .saturating_add(CONNECTED_APP_CLAIM_RETENTION_MS)
         });
         self.pending_requests
             .retain(|_, request| request.expires_at_ms > now_ms);
@@ -379,10 +441,11 @@ impl ConnectedAppState {
         self.claims
             .iter()
             .filter(|claim| {
-                now_ms
-                    <= claim
-                        .expires_at_ms
-                        .saturating_add(CONNECTED_APP_CLAIM_RETENTION_MS)
+                claim.validate().is_ok()
+                    && now_ms
+                        <= claim
+                            .expires_at_ms
+                            .saturating_add(CONNECTED_APP_CLAIM_RETENTION_MS)
             })
             .cloned()
             .collect()
@@ -498,6 +561,8 @@ pub enum ConnectedAppError {
     RequestExpired,
     #[error("connected app claim is invalid")]
     InvalidClaim,
+    #[error("connected app confirm claim is missing its durable recovery fallback")]
+    MissingRecoveryFallback,
     #[error("connected app wallet binding is invalid")]
     InvalidWalletBinding,
     #[error("connected app claim store capacity was exceeded")]
@@ -587,12 +652,13 @@ mod tests {
         state.upsert_session(active).unwrap();
         state.queue_request(request("r1", 1_000), 100).unwrap();
         let claim = state
-            .record_claim(
+            .record_claim_with_recovery(
                 7,
                 "r1",
                 ConnectedAppClaimDecision::Confirm,
                 "operation-1".into(),
                 "signed-payload".into(),
+                vec![9],
                 vec![1, 2, 3],
                 200,
             )
@@ -601,12 +667,13 @@ mod tests {
         assert!(state.pending_requests.is_empty());
         assert_eq!(state.claims.len(), 1);
         assert_eq!(
-            state.record_claim(
+            state.record_claim_with_recovery(
                 7,
                 "r1",
                 ConnectedAppClaimDecision::Confirm,
                 String::new(),
                 String::new(),
+                vec![9],
                 Vec::new(),
                 201,
             ),
@@ -663,13 +730,14 @@ mod tests {
             public_key: vec![4; 32],
             revision: 9,
         };
-        state.record_wallet_claim(
+        state.record_wallet_claim_with_recovery(
             7,
             "wallet",
             ConnectedAppClaimDecision::Confirm,
             wallet.clone(),
             "operation-wallet".into(),
             "signed".into(),
+            vec![2],
             vec![1],
             200,
         ).unwrap();
@@ -691,12 +759,13 @@ mod tests {
             wallet_identity: None,
             operation_id: String::new(),
             signed_payload: String::new(),
-            answer: vec![1],
+            not_sent: vec![7],
+            answer: Vec::new(),
             created_at_ms: 100,
         };
         assert_eq!(
             ConnectedAppClaimRecord {
-                answer: Vec::new(),
+                not_sent: Vec::new(),
                 ..base.clone()
             }
             .validate(),
@@ -706,6 +775,8 @@ mod tests {
             ConnectedAppClaimRecord {
                 decision: ConnectedAppClaimDecision::Answer,
                 operation_id: "operation".into(),
+                not_sent: Vec::new(),
+                answer: vec![1],
                 ..base.clone()
             }
             .validate(),
@@ -715,6 +786,8 @@ mod tests {
             ConnectedAppClaimRecord {
                 decision: ConnectedAppClaimDecision::Answer,
                 signed_payload: "signed".into(),
+                not_sent: Vec::new(),
+                answer: vec![1],
                 ..base.clone()
             }
             .validate(),
@@ -730,10 +803,33 @@ mod tests {
         );
         ConnectedAppClaimRecord {
             decision: ConnectedAppClaimDecision::Answer,
+            not_sent: Vec::new(),
+            answer: vec![1],
             ..base
         }
         .validate()
         .unwrap();
+    }
+
+    #[test]
+    fn persisted_invalid_claims_are_pruned_and_never_recovered() {
+        let mut state = ConnectedAppState::default();
+        state.claims.push(ConnectedAppClaimRecord {
+            session_id: 7,
+            request_id: "persisted-invalid".into(),
+            trace_id: String::new(),
+            expires_at_ms: 1_000,
+            decision: ConnectedAppClaimDecision::Confirm,
+            wallet_identity: None,
+            operation_id: String::new(),
+            signed_payload: String::new(),
+            not_sent: Vec::new(),
+            answer: vec![1],
+            created_at_ms: 100,
+        });
+        assert!(state.recoverable_claims(200).is_empty());
+        state.prune_claims(200);
+        assert!(state.claims.is_empty());
     }
 
     #[test]
@@ -744,12 +840,13 @@ mod tests {
         state.upsert_session(active).unwrap();
         state.queue_request(request("r2", 1_000), 100).unwrap();
         assert_eq!(
-            state.record_claim(
+            state.record_claim_with_recovery(
                 7,
                 "r2",
                 ConnectedAppClaimDecision::Confirm,
                 String::new(),
                 "signed".into(),
+                vec![8],
                 Vec::new(),
                 200,
             ),

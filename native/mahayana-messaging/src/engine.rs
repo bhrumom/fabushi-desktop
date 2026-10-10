@@ -430,6 +430,8 @@ pub enum Command {
         decision: ConnectedAppClaimDecision,
         operation_id: String,
         signed_payload: String,
+        #[serde(default)]
+        not_sent: Vec<u8>,
         answer: Vec<u8>,
         observed_at_ms: i64,
     },
@@ -440,6 +442,8 @@ pub enum Command {
         wallet_identity: WalletTransferIdentity,
         operation_id: String,
         signed_payload: String,
+        #[serde(default)]
+        not_sent: Vec<u8>,
         answer: Vec<u8>,
         observed_at_ms: i64,
     },
@@ -3200,16 +3204,18 @@ impl MessagingEngine {
                 decision,
                 operation_id,
                 signed_payload,
+                not_sent,
                 answer,
                 observed_at_ms,
             } => {
                 let mut state = self.state.connected_apps.clone();
-                state.record_claim(
+                state.record_claim_with_recovery(
                     session_id,
                     &request_id,
                     decision,
                     operation_id,
                     signed_payload,
+                    not_sent,
                     answer,
                     observed_at_ms,
                 )?;
@@ -3222,17 +3228,19 @@ impl MessagingEngine {
                 wallet_identity,
                 operation_id,
                 signed_payload,
+                not_sent,
                 answer,
                 observed_at_ms,
             } => {
                 let mut state = self.state.connected_apps.clone();
-                state.record_wallet_claim(
+                state.record_wallet_claim_with_recovery(
                     session_id,
                     &request_id,
                     decision,
                     wallet_identity,
                     operation_id,
                     signed_payload,
+                    not_sent,
                     answer,
                     observed_at_ms,
                 )?;
@@ -5385,6 +5393,7 @@ mod connected_app_engine_tests {
                 decision: ConnectedAppClaimDecision::Confirm,
                 operation_id: "operation-1".into(),
                 signed_payload: "signed-payload".into(),
+                not_sent: vec![7],
                 answer: vec![1, 2, 3],
                 observed_at_ms: 200,
             })
@@ -5427,6 +5436,7 @@ mod connected_app_engine_tests {
             wallet_identity: wallet.clone(),
             operation_id: "operation-wallet".into(),
             signed_payload: "signed-wallet".into(),
+            not_sent: vec![6],
             answer: vec![9],
             observed_at_ms: 200,
         }).unwrap();
