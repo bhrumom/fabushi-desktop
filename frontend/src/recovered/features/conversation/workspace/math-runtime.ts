@@ -45,6 +45,7 @@ export interface KatexRuntime {
     maxExpand: number;
     maxSize: number;
     trust: false;
+    macros: Record<string, string>;
   }): string;
 }
 
@@ -111,8 +112,17 @@ export function renderKatexMarkup(
     maxSize: MAX_ASSISTANT_MATH_SIZE_EM,
     trust: false as const,
   };
-  const renderBounded = (options: Parameters<KatexRuntime["renderToString"]>[1]): string => {
-    const markup = runtime.renderToString(normalizedExpression, options);
+  const renderBounded = (
+    options: Omit<Parameters<KatexRuntime["renderToString"]>[1], "macros">,
+  ): string => {
+    // KaTeX may mutate the caller-provided macros map while processing
+    // \\def/\\gdef/\\newcommand-like input. Never share that mutable map
+    // across transcript entries or even between strict and recovery attempts:
+    // a failed strict parse must not seed the recovery parse or a later render.
+    const markup = runtime.renderToString(normalizedExpression, {
+      ...options,
+      macros: {},
+    });
     assertAssistantMathMarkupWithinLimit(markup, boundedMarkupBytes);
     return markup;
   };
