@@ -1,0 +1,49 @@
+{
+  "format_version": 2,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
+    "tree": "6b616494f3465324e749a04dcd1c9d508657a998"
+  },
+  "range": {
+    "first_order": 6270,
+    "last_order": 6270,
+    "entries": 1
+  },
+  "rows": [
+    {
+      "recursive_order": 6270,
+      "source_path": "Telegram/SourceFiles/ui/widgets/marquee_label.cpp",
+      "source_blob_sha": "ddb4fac4dc2eb2f4d990b283aad018416ce7d1d2",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "overflowing selectable text presentation with delayed wraparound marquee motion, DPR-aware tape/frame/fade caches, reduced-motion and visibility/window-activity gating, mouse/keyboard selection and copy, edge-scroll, outside-click selection teardown, context-menu copy projection, and StaticText accessibility",
+      "upstream_owner": "tdesktop visual text widget layer",
+      "state_machine": "text/geometry/palette/selectable state -> overflow detection -> delayed marquee while visible+active+motion-enabled+unpaused -> interaction pause/selection/menu -> copy/edge-scroll/outside-dismiss -> hide/inactive/reduced-motion/teardown reset",
+      "side_effects": "Presentation and clipboard interaction only; authoritative conversation/product text remains in existing Fabushi state owners.",
+      "failure_cases": "marquee survives hidden/inactive/reduced-motion state; stale DPR/palette/text/geometry cache; wrapped offset maps selection to wrong symbol; edge-scroll exceeds bounds; outside-click filter or menu callback survives teardown; copy emits wrong selection/full text; accessible name is stale",
+      "ui_disposition": "Reuse source-neutral canonical text/Status, ContextMenu/Menu, clipboard capability, accessibility and reduced-motion lifecycle owners; do not introduce a Telegram-named marquee or second text state owner.",
+      "fabushi_canonical_owner": "canonical text presentation + ContextMenu/clipboard + accessibility/motion policy",
+      "fabushi_target": "mapped-open; shipping composition, focused lifecycle/a11y tests and same-head evidence required",
+      "platform_differences": "Qt paint caches, timers and event filters map to React/Electron text/motion/selection primitives while preserving visibility, focus, selection, cache invalidation and teardown semantics.",
+      "production_evidence": "Exact accepted blob read/decomposed only; production closure remains open.",
+      "test_evidence": "Focused reduced-motion, a11y, selection/copy, context-menu, stale-callback and teardown evidence plus exact-head GitHub Actions required before closure.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_evidence": [],
+      "reachability_status": "accepted-tree exact blob responsibility proven; production closure open",
+      "license_and_provenance": "tdesktop provenance retained; source-neutral rewrite required.",
+      "notes": "Reading does not decrement global unknown.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-required",
+        "accepted_upstream": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
+        "verified_blob_sha": "ddb4fac4dc2eb2f4d990b283aad018416ce7d1d2",
+        "file_type": "blob",
+        "recursive_order": 6270
+      }
+    }
+  ]
+}
