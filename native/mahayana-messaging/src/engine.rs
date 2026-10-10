@@ -28,8 +28,8 @@ use crate::story::{
 };
 use crate::wallet::{
     LedgerEntry, OnrampProviderInfo, OutboundTransferError, OutboundTransferRecord,
-    OutboundTransferTerminal, WalletAccountId, WalletError, WalletLedger,
-    WalletOnrampError, WalletRateError, WalletRuntimeState,
+    OutboundTransferTerminal, WalletAccountId, WalletAddressDirectoryError, WalletError,
+    WalletLedger, WalletOnrampError, WalletRateError, WalletRuntimeState,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
@@ -321,6 +321,20 @@ pub enum Command {
         record_id: String,
         terminal: OutboundTransferTerminal,
         confirmed_hash: Option<Vec<u8>>,
+    },
+    ReconcileWalletUserAddress {
+        actor_id: ActorId,
+        serial: u64,
+        address: Option<String>,
+        public_key: Vec<u8>,
+    },
+    ReconcileWalletAddressOwner {
+        address: String,
+        actor_id: Option<ActorId>,
+        public_key: Vec<u8>,
+    },
+    SetWalletAddressServiceUnavailable {
+        unavailable: bool,
     },
     UpsertConnectedAppSession {
         session: ConnectedAppSession,
@@ -897,6 +911,8 @@ pub enum EngineError {
     WalletPanelNotVisible,
     #[error(transparent)]
     OutboundTransfer(#[from] OutboundTransferError),
+    #[error(transparent)]
+    WalletAddressDirectory(#[from] WalletAddressDirectoryError),
     #[error(transparent)]
     ConnectedApp(#[from] ConnectedAppError),
     #[error("Mini App {0} is not installed")]
@@ -2849,6 +2865,40 @@ impl MessagingEngine {
                 runtime
                     .outbound_transfers
                     .settle(&record_id, terminal, confirmed_hash)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::ReconcileWalletUserAddress {
+                actor_id,
+                serial,
+                address,
+                public_key,
+            } => {
+                self.require_actor(&actor_id)?;
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime
+                    .address_directory
+                    .apply_user_answer(actor_id, serial, address, public_key)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::ReconcileWalletAddressOwner {
+                address,
+                actor_id,
+                public_key,
+            } => {
+                if let Some(actor_id) = &actor_id {
+                    self.require_actor(actor_id)?;
+                }
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime
+                    .address_directory
+                    .apply_owner_answer(address, actor_id, public_key)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::SetWalletAddressServiceUnavailable { unavailable } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime
+                    .address_directory
+                    .set_service_unavailable(unavailable);
                 Ok(vec![Event::WalletRuntimeChanged { runtime }])
             }
             Command::UpsertConnectedAppSession { session } => {
@@ -5036,5 +5086,62 @@ mod outbound_transfer_engine_tests {
             .outbound_transfers
             .submission_unknown()
             .is_empty());
+    }
+}
+
+
+#[cfg(test)]
+mod wallet_address_engine_tests {
+    use super::*;
+    use crate::actor::{Actor, ActorKind};
+    use crate::wallet::WalletAddressKnowledge;
+
+    fn person(id: &str) -> Actor {
+        Actor {
+            id: ActorId(id.into()),
+            kind: ActorKind::Human,
+            display_name: id.into(),
+            username: None,
+            avatar_url: None,
+            bio: None,
+            created_at_ms: 1,
+        }
+    }
+
+    #[test]
+    fn address_reconciliation_is_server_authoritative_and_stale_safe() {
+        let mut engine = MessagingEngine::new();
+        let actor = person("person-address");
+        let actor_id = actor.id.clone();
+        engine.execute(Command::UpsertActor { actor }).unwrap();
+        engine
+            .execute(Command::ReconcileWalletUserAddress {
+                actor_id: actor_id.clone(),
+                serial: 2,
+                address: Some("EQ-current".into()),
+                public_key: vec![4; 32],
+            })
+            .unwrap();
+        engine
+            .execute(Command::ReconcileWalletUserAddress {
+                actor_id: actor_id.clone(),
+                serial: 1,
+                address: Some("EQ-stale".into()),
+                public_key: vec![3; 32],
+            })
+            .unwrap();
+        assert_eq!(
+            engine.state().wallet.runtime.address_directory.known(&actor_id).address,
+            "EQ-current"
+        );
+        engine
+            .execute(Command::SetWalletAddressServiceUnavailable {
+                unavailable: true,
+            })
+            .unwrap();
+        assert_eq!(
+            engine.state().wallet.runtime.address_directory.known(&ActorId("unknown".into())).knowledge,
+            WalletAddressKnowledge::Unknown
+        );
     }
 }

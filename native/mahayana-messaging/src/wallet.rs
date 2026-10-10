@@ -1313,6 +1313,176 @@ pub enum OutboundTransferError {
     InvalidConfirmation,
 }
 
+
+pub const WALLET_ADDRESS_RESOLVE_BATCH_MAX: usize = 100;
+pub const WALLET_ADDRESS_MAX_BYTES: usize = 128;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum WalletAddressKnowledge {
+    Unknown,
+    Absent,
+    Known,
+}
+
+impl Default for WalletAddressKnowledge {
+    fn default() -> Self {
+        Self::Unknown
+    }
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WalletUserAddress {
+    pub knowledge: WalletAddressKnowledge,
+    pub address: String,
+    pub public_key: Vec<u8>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WalletAddressOwner {
+    pub actor_id: Option<ActorId>,
+    pub address: String,
+    pub public_key: Vec<u8>,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct WalletAddressDirectory {
+    pub users: BTreeMap<ActorId, WalletUserAddress>,
+    pub owners: BTreeMap<String, WalletAddressOwner>,
+    pub newest_answer_serial: BTreeMap<ActorId, u64>,
+    pub service_unavailable: bool,
+}
+
+impl WalletAddressDirectory {
+    pub fn apply_user_answer(
+        &mut self,
+        actor_id: ActorId,
+        serial: u64,
+        address: Option<String>,
+        public_key: Vec<u8>,
+    ) -> Result<bool, WalletAddressDirectoryError> {
+        if serial == 0 {
+            return Err(WalletAddressDirectoryError::InvalidSerial);
+        }
+        if self
+            .newest_answer_serial
+            .get(&actor_id)
+            .is_some_and(|known| *known > serial)
+        {
+            return Ok(false);
+        }
+
+        let value = match address {
+            Some(address) => {
+                validate_wallet_address(&address)?;
+                if !public_key.is_empty() && public_key.len() != 32 {
+                    return Err(WalletAddressDirectoryError::InvalidPublicKey);
+                }
+                WalletUserAddress {
+                    knowledge: WalletAddressKnowledge::Known,
+                    address,
+                    public_key,
+                }
+            }
+            None => {
+                if !public_key.is_empty() {
+                    return Err(WalletAddressDirectoryError::InvalidPublicKey);
+                }
+                WalletUserAddress {
+                    knowledge: WalletAddressKnowledge::Absent,
+                    address: String::new(),
+                    public_key: Vec::new(),
+                }
+            }
+        };
+        self.newest_answer_serial.insert(actor_id.clone(), serial);
+        if value.knowledge == WalletAddressKnowledge::Known {
+            self.owners
+                .entry(value.address.clone())
+                .and_modify(|owner| {
+                    owner.actor_id = Some(actor_id.clone());
+                    if !value.public_key.is_empty() {
+                        owner.public_key = value.public_key.clone();
+                    }
+                })
+                .or_insert_with(|| WalletAddressOwner {
+                    actor_id: Some(actor_id.clone()),
+                    address: value.address.clone(),
+                    public_key: value.public_key.clone(),
+                });
+        }
+        self.users.insert(actor_id, value);
+        Ok(true)
+    }
+
+    pub fn apply_owner_answer(
+        &mut self,
+        address: String,
+        actor_id: Option<ActorId>,
+        public_key: Vec<u8>,
+    ) -> Result<(), WalletAddressDirectoryError> {
+        validate_wallet_address(&address)?;
+        if !public_key.is_empty() && public_key.len() != 32 {
+            return Err(WalletAddressDirectoryError::InvalidPublicKey);
+        }
+        let owner = WalletAddressOwner {
+            actor_id: actor_id.clone(),
+            address: address.clone(),
+            public_key: public_key.clone(),
+        };
+        self.owners.insert(address.clone(), owner);
+        if let Some(actor_id) = actor_id {
+            if let Some(user) = self.users.get_mut(&actor_id) {
+                if user.knowledge == WalletAddressKnowledge::Known && user.address == address {
+                    if !public_key.is_empty() {
+                        user.public_key = public_key;
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
+
+    /// Unavailable is an account/service fact. It deliberately does not turn
+    /// any unresolved actor into Absent, because the upstream contract keeps
+    /// those two facts separate.
+    pub fn set_service_unavailable(&mut self, unavailable: bool) {
+        self.service_unavailable = unavailable;
+    }
+
+    pub fn known(&self, actor_id: &ActorId) -> WalletUserAddress {
+        self.users.get(actor_id).cloned().unwrap_or_default()
+    }
+
+    pub fn owner(&self, address: &str) -> Option<&WalletAddressOwner> {
+        self.owners.get(address)
+    }
+}
+
+fn validate_wallet_address(address: &str) -> Result<(), WalletAddressDirectoryError> {
+    if address.is_empty()
+        || address.trim() != address
+        || address.as_bytes().len() > WALLET_ADDRESS_MAX_BYTES
+        || address.chars().any(char::is_control)
+    {
+        return Err(WalletAddressDirectoryError::InvalidAddress);
+    }
+    Ok(())
+}
+
+#[derive(Debug, Error, Clone, PartialEq, Eq)]
+pub enum WalletAddressDirectoryError {
+    #[error("wallet address directory serial is invalid")]
+    InvalidSerial,
+    #[error("wallet address is invalid")]
+    InvalidAddress,
+    #[error("wallet address public key is invalid")]
+    InvalidPublicKey,
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WalletRuntimeState {
@@ -1321,6 +1491,7 @@ pub struct WalletRuntimeState {
     pub onramp: WalletOnrampState,
     pub panel: WalletPanelState,
     pub outbound_transfers: OutboundTransferJournal,
+    pub address_directory: WalletAddressDirectory,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -2117,5 +2288,68 @@ mod outbound_transfer_journal_tests {
         let encoded = serde_json::to_string(&runtime).unwrap();
         let restored: WalletRuntimeState = serde_json::from_str(&encoded).unwrap();
         assert_eq!(restored.outbound_transfers.submission_unknown().len(), 1);
+    }
+}
+
+
+#[cfg(test)]
+mod wallet_address_directory_tests {
+    use super::*;
+
+    #[test]
+    fn stale_address_reply_never_overwrites_newer_answer() {
+        let mut directory = WalletAddressDirectory::default();
+        let actor = ActorId("person-1".into());
+        assert!(directory
+            .apply_user_answer(
+                actor.clone(),
+                2,
+                Some("EQ-current-address".into()),
+                vec![2; 32],
+            )
+            .unwrap());
+        assert!(!directory
+            .apply_user_answer(
+                actor.clone(),
+                1,
+                Some("EQ-stale-address".into()),
+                vec![1; 32],
+            )
+            .unwrap());
+        assert_eq!(directory.known(&actor).address, "EQ-current-address");
+        assert_eq!(directory.known(&actor).public_key, vec![2; 32]);
+    }
+
+    #[test]
+    fn unavailable_service_does_not_fabricate_absent_user_answers() {
+        let mut directory = WalletAddressDirectory::default();
+        let actor = ActorId("person-2".into());
+        directory.set_service_unavailable(true);
+        assert_eq!(
+            directory.known(&actor).knowledge,
+            WalletAddressKnowledge::Unknown
+        );
+        directory
+            .apply_user_answer(actor.clone(), 1, None, Vec::new())
+            .unwrap();
+        assert_eq!(
+            directory.known(&actor).knowledge,
+            WalletAddressKnowledge::Absent
+        );
+    }
+
+    #[test]
+    fn owner_reply_can_supply_public_key_for_undeployed_recipient() {
+        let mut directory = WalletAddressDirectory::default();
+        directory
+            .apply_owner_answer(
+                "EQ-recipient".into(),
+                None,
+                vec![9; 32],
+            )
+            .unwrap();
+        let owner = directory.owner("EQ-recipient").unwrap();
+        assert_eq!(owner.actor_id, None);
+        assert_eq!(owner.public_key, vec![9; 32]);
     }
 }
