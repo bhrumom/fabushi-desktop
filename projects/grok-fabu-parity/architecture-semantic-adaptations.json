@@ -1628,7 +1628,7 @@
       "referencePath": "frontend/src/recovered/ui/sand-floating-primitives.tsx",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "ba86930a9cd5add0d1ee2c7234956b90f1929deb",
+      "targetBlobSha": "c5e06263b2f2cceb7f09991f5ffe8b9e7d4b98e7",
       "behavioralEvidence": [
         "frontend/src/recovered/ui/sand-floating-primitives.tsx"
       ],
@@ -1637,7 +1637,7 @@
         ".github/workflows/rust-desktop-runtime.yml",
         "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts"
       ],
-      "rationale": "Preserves the frozen Grok floating/menu primitive structure while adapting the source-neutral canonical ContextMenu contract required by TDRP Revision 9: one live point-owned menu, empty-content refusal, right-click and Shift+F10 activation only when actions exist, explicit aria-haspopup/aria-expanded projection, and deterministic close/teardown through the existing FloatingContext dismissal lifecycle. This is an intentional semantic port, not a second Telegram-named menu owner. The same canonical floating owner now also accepts optional Tooltip auto-dismiss, outside-press/Escape dismissal and focus-return policy required by TDRP 6055/6067-6068, without creating a second tooltip lifecycle."
+      "rationale": "Preserves the frozen Grok floating/menu primitive structure while adapting the source-neutral canonical ContextMenu contract required by TDRP Revision 9: one live point-owned menu, empty-content refusal, right-click and Shift+F10 activation only when actions exist, explicit aria-haspopup/aria-expanded projection, and deterministic close/teardown through the existing FloatingContext dismissal lifecycle. This is an intentional semantic port, not a second Telegram-named menu owner. The same canonical floating owner now also accepts optional Tooltip auto-dismiss, outside-press/Escape dismissal and focus-return policy required by TDRP 6055/6067-6068, without creating a second tooltip lifecycle. Its ref composition is intentionally hardened to preserve both React callback refs and object refs when the canonical trigger is cloned, preventing the shipping ContextMenu wrapper from optional-calling an object ref as a function; the focused conversation-infra contract locks both ref forms without weakening the architecture gate."
     },
     {
       "referencePath": "frontend/src/recovered/ui/sand-kit-primitives.tsx",
