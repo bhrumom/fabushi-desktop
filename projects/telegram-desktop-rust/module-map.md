@@ -62,3 +62,7 @@ Updated: 2026-10-07
 0 omitted/unmapped files or responsibilities；所有 non-UI 产品责任 rewritten + wired + verified；所有 UI/platform/toolchain 替代有证明；法律来源记录保留；0 open in-scope blocker。数量相等、目录级 mapping、编译绿或旧 dossier 都不是完成证据。
 
 所有可执行验证只在 GitHub Actions。现有旧 baseline graph/ledger 先做差异审计，不得继承未验证的新基线状态。
+
+### TooManyCooks runtime authority — orders 7,057–7,154
+
+All 126 pinned TooManyCooks entries are exact-read. Runtime behavior maps to existing Coordinator/Host/Runner/canonical messaging/Build-Release owners; no TMC subsystem is created. Executor/priority, wait/wake/UAF, foreign callback lifetime, queue close/reclamation, CPU capacity/topology and build-quality responsibilities remain mapped-open pending focused GitHub Actions evidence.

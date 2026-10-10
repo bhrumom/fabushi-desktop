@@ -9,6 +9,8 @@ Canonical project: `projects/fabushi-communication-platform`
 Companion implementation contract: `docs/specs/telegram-desktop-rust-equivalence-migration.md` (TDRP-001 Revision 9)  
 Implementation status: **requirements updated; full migration not accepted**
 
+Live execution authority (2026-10-10): source authority remains `telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941`; deterministic read-through is 7,154/16,125, unread=8,971, unknown=15,845, omitted=0. Predecessor exact-head 4028b761 runs 38062398837/38062398841 completed/success, but this descendant source-accounting update requires fresh exact-head Actions. Full migration is not accepted.
+
 > **最终产品是一个完整的 Fabushi Bot：在现有 Fabushi 架构内，逐文件、逐模块理解 `telegramdesktop/tdesktop`，把其全部非 UI 代码职责用最合适的语言等价重写；原 UI 表现层由统一 Fabushi UI 替代，但 UI 中承载的功能与业务逻辑不得遗漏。最终同时具备现有 Bot 的全部能力和 Telegram Desktop 源码所体现的全部产品能力，而不是绑定 Telegram、添加入口、做 Provider 接入、选择性借鉴或局部 Demo。**
 
 本 Revision 落实 2026-10-07 用户要求。它替代 Revision 2 中“研究即可结束”“决定 Fabushi 是否需要再实现”“where accepted”以及把 blocked 当作最终功能验收结果的口径。旧研究、ledger、ADR 和历史证据保留供追溯，但必须按本 Revision 重新核对；不得自动升级为 implemented/verified。
@@ -403,3 +405,11 @@ Fabushi 自己拥有身份、会话、消息、同步、presence、blob/media、
 - Full source reference: https://github.com/telegramdesktop/tdesktop
 - Upstream README/license: https://github.com/telegramdesktop/tdesktop/blob/f23c37857220eb84f8559f0901ea26fb304b564b/README.md and LICENSE in the same exact tree.
 - Companion TDRP-001、当前 canonical Bot spec、原有 module dossiers/ledger/ADR 与 current-head production evidence。
+
+### Revision 9 deterministic read-through — TooManyCooks 7,057–7,154
+
+Pinned authority `tzcnt/TooManyCooks@b86af81982860c96295a7e95e4c60cb335615cef` is now exact-read through all **126** non-directory entries. Orders **7,057–7,154** revalidate the prior temporary 7,057–7,064 read and cover all remaining runtime headers, implementations and package inputs.
+
+Existing-owner-first audit found real shipping candidates: `GatewayHostSupervisor`; `HostRunnerComposition`; the frozen Host→Runner bridge; `RoutedProviderCancellation/RoutedProviderTaskRegistry`; `TurnSettlement`; canonical Mahayana messaging; `PressureCpuProfiler`; and existing GitHub Actions Build/Release owners. Applicable/open behavior includes executor/priority restoration, awaitable/fork/join lifetime, UAF-safe settlement, atomic wait/wake and teardown, foreign callback lifetime/cancellation, queue close/reclamation, CPU quota/topology/work-stealing capacity behavior, and sanitizer/fuzz/coverage/build-option consistency. Exact hwloc pinning is not presumed complete without a dedicated shipping worker-pool owner. vcpkg/CMake/version descriptors are build/provenance inputs, not a new product owner.
+
+No TMC/Telegram runtime/provider or duplicate Identity/Conversation/Message/Search/Settings/Marketplace is introduced. Accounting is **7,154/16,125 read; 8,971 unread; 15,845 unknown; 0 omitted**. Reading closes no unknown. Next deterministic entry is **7,155** `Telegram/ThirdParty/cld3::.github/workflows/main.yml@b26ff5ec0300683c819c0c7f17edfc21bfdd0fc3` in `google/cld3`.

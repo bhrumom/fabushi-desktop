@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 9069,
+    "unread": 8971,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,11 +13478,11 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Ten changed root blobs inside the accepted prefix were reconciled; deterministic recursive read-through=7056/16125, unread=9069, unknown=15845, omitted=0.",
-    "source_authority_evidence": "Accepted Telegram authority 6fed91ffab9861771a75f29df65031b3c80b6941 / tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; prefix reaches TooManyCooks conanfile.py order 7056. Sanitizer/topology/build and coroutine/executor lifecycle responsibilities remain mapped-open; fresh descendant exact-head Actions required.",
-    "current_source_read_through": 7056,
-    "first_unread_order": 7057,
-    "first_unread_path": "Telegram/ThirdParty/TooManyCooks::include/tmc/all_headers.hpp"
+    "source_read_reconciliation": "Accepted recursive prefix reaches 7,154/16,125 and completes pinned TooManyCooks; unread=8,971, unknown=15,845, omitted=0. Reading closes no unknown.",
+    "source_authority_evidence": "Orders 7,057-7,154 exact-read TooManyCooks runtime/build/package inputs and map them existing-owner-first to Coordinator/Host/Runner/canonical messaging/Build-Release; semantic verification remains open.",
+    "current_source_read_through": 7154,
+    "first_unread_order": 7155,
+    "first_unread_path": "Telegram/ThirdParty/cld3::.github/workflows/main.yml"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,71 +13491,71 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 7056,
-    "first_unread_order": 7057,
-    "first_unread_path": "Telegram/ThirdParty/TooManyCooks::include/tmc/all_headers.hpp",
+    "read_through": 7154,
+    "first_unread_order": 7155,
+    "first_unread_path": "Telegram/ThirdParty/cld3::.github/workflows/main.yml",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
     "status": "historical-only-after-descendant-commit",
-    "target_head": "274e39e8a47635b1587877ba5daa97a40ec72bd1",
+    "target_head": "4028b7613fc760d0f6ef7d4884cd620b409a9c0c",
     "runs": [
       {
-        "id": 38060966114,
+        "id": 38062398837,
         "workflow": "Rust desktop runtime",
-        "run_number": 7149,
+        "run_number": 7151,
         "attempt": 1,
         "conclusion": "success"
       },
       {
-        "id": 38060965952,
+        "id": 38062398841,
         "workflow": "Desktop Chat Parity CI",
-        "run_number": 4628,
+        "run_number": 4630,
         "attempt": 1,
         "conclusion": "success"
       }
     ],
     "jobs": [
       {
-        "id": 114239025476,
+        "id": 114243173201,
         "name": "Source authority / recursive inventory",
         "conclusion": "success"
       },
       {
-        "id": 114239025563,
+        "id": 114243173171,
         "name": "rust-host",
         "conclusion": "success"
       },
       {
-        "id": 114239025590,
-        "name": "Focused Electron chat E2E",
-        "conclusion": "success"
-      },
-      {
-        "id": 114239025551,
+        "id": 114243173186,
         "name": "Pressure profiler (macOS)",
         "conclusion": "success"
       },
       {
-        "id": 114239025636,
+        "id": 114243173229,
         "name": "Pressure profiler (Windows)",
+        "conclusion": "success"
+      },
+      {
+        "id": 114243200994,
+        "name": "Focused Electron chat E2E",
         "conclusion": "success"
       }
     ],
     "artifacts": [
       {
-        "id": 11673102130,
-        "digest": "sha256:de267e1ea4b5cb1bf34a65bf99b06cdc7d54d56dfcae34186f1404609e50c897"
+        "id": 11673552460,
+        "digest": "sha256:33cf046454569e14a5c3e2157dac152d9c6826353284227bdbf03d56160fc2b9"
       },
       {
-        "id": 11672819473,
-        "digest": "sha256:8b8c18d2eede37fbb6bd2576b6b5720a6a2b36ad1f46fdb171d837043e16edd6"
+        "id": 11673313447,
+        "digest": "sha256:59ff2da8f97f4048a16863df579fa38d72ebc167779faafc523475f47e4b560d"
       },
       {
-        "id": 11673395999,
-        "digest": "sha256:a6385e0577a5680a0a5a754959400baa12a189fd77021a9a9910fba06f652ec9"
+        "id": 11673707789,
+        "digest": "sha256:169d997c11c40f7074b60099dac91e764cc377472e5a934cde04cc395d545fc1"
       }
     ],
-    "note": "All listed runs/jobs/artifacts prove exact target HEAD 274e39e8 only. The QR descendant requires fresh exact-head Actions."
+    "note": "Valid for 4028b761 only; descendant requires fresh exact-head evidence."
   }
 }

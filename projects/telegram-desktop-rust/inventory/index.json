@@ -14,29 +14,25 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 9069,
+    "unread_minimum": 8971,
     "omitted_known": 0,
-    "note": "Recursive source census 16,125; unknown 15,845, unread 9,069, omitted 0. Exact read/responsibility decomposition extends through order 7,056; TooManyCooks build/quality/project authority exposes sanitizer/topology/configuration plus coroutine/executor lifecycle responsibilities that remain mapped-open under existing runtime and Build/Release owners. Reading closes no unknown."
+    "note": "Recursive source census 16,125; exact read/decomposition through 7,154; unread 8,971; unknown 15,845; omitted 0. Pinned TooManyCooks is fully read, but applicable runtime/quality responsibilities remain mapped-open."
   },
   "latest_recursive_evidence": {
-    "run_id": 38060966114,
+    "run_id": 38062398837,
     "run_attempt": 1,
-    "job_id": 114239025476,
-    "head_sha": "274e39e8a47635b1587877ba5daa97a40ec72bd1",
-    "artifact_id": 11673102130,
-    "artifact_digest": "sha256:de267e1ea4b5cb1bf34a65bf99b06cdc7d54d56dfcae34186f1404609e50c897",
+    "job_id": 114243173201,
+    "head_sha": "4028b7613fc760d0f6ef7d4884cd620b409a9c0c",
+    "artifact_id": 11673552460,
+    "artifact_digest": "sha256:33cf046454569e14a5c3e2157dac152d9c6826353284227bdbf03d56160fc2b9",
     "artifact_files": [
       "upstream-root-inventory.json",
       "upstream-recursive-inventory.json",
-      "authority-report.json",
-      "build-time-acquisition-candidates.txt",
-      "build-time-acquisition-summary.txt",
-      "build-time-github-action-ref-resolutions.json",
-      "build-time-github-clone-ref-resolutions.json"
+      "authority-report.json"
     ],
     "evidence_status": "historical-only-after-descendant-source-accounting-commit",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
-    "note": "Run 38060966114 / job 114239025476 / artifact 11673102130 proves accepted 6fed91ff source authority on target HEAD 274e39e8. The QR source-accounting descendant requires fresh exact-head Actions."
+    "note": "Exact predecessor authority evidence; descendant source-accounting commit requires fresh exact-head Actions."
   },
   "closure_rules": {
     "executable_runner": "github-actions",
@@ -64,10 +60,10 @@
       6541,
       6627
     ],
-    "current_source_read_through": 7056,
-    "first_unread_order": 7057,
-    "first_unread_path": "Telegram/ThirdParty/TooManyCooks::include/tmc/all_headers.hpp",
-    "current_head_source_authority_evidence": "Deterministic reading now covers TooManyCooks orders 7,029-7,056: sanitizer/platform/topology matrices, package/build contracts, coroutine/executor/priority/awaitable lifecycle authority and dependency configuration. No unknown is closed; source-neutral mapping remains open."
+    "current_source_read_through": 7154,
+    "first_unread_order": 7155,
+    "first_unread_path": "Telegram/ThirdParty/cld3::.github/workflows/main.yml",
+    "current_head_source_authority_evidence": "Orders 7,057-7,154 exact-read remaining TooManyCooks runtime/build/package authority. Existing-owner-first mapping remains open; no unknown was closed."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -76,9 +72,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 7056,
-    "first_unread_order": 7057,
-    "first_unread_path": "Telegram/ThirdParty/TooManyCooks::include/tmc/all_headers.hpp",
+    "read_through": 7154,
+    "first_unread_order": 7155,
+    "first_unread_path": "Telegram/ThirdParty/cld3::.github/workflows/main.yml",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }
