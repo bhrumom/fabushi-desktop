@@ -1859,6 +1859,116 @@ pub enum WalletSponsoredFeeError {
     StaleRequest,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WalletTransferQuote {
+    pub network_generation: u64,
+    pub identity: WalletTransferIdentity,
+    pub sponsored_terms_revision: u64,
+    pub amount_nano: i64,
+    pub destination: String,
+    pub fee_nano: i64,
+    pub paired: bool,
+}
+
+impl WalletSponsoredFeeState {
+    pub fn quote_transfer(
+        &mut self,
+        network_generation: u64,
+        identity: WalletTransferIdentity,
+        transfer_min_nano: i64,
+        configured_min_nano: i64,
+        amount_nano: i64,
+        destination: String,
+        fee_nano: i64,
+        now_ms: i64,
+    ) -> Result<WalletTransferQuote, WalletTransferQuoteError> {
+        self.sync_context(
+            network_generation,
+            identity.clone(),
+            transfer_min_nano,
+            configured_min_nano,
+            now_ms,
+        )?;
+        self.refresh_liveness(now_ms)?;
+        if amount_nano <= 0 || fee_nano < 0 || validate_wallet_address(&destination).is_err() {
+            return Err(WalletTransferQuoteError::InvalidTransfer);
+        }
+        if amount_nano < transfer_min_nano {
+            return Err(WalletTransferQuoteError::AmountBelowMinimum);
+        }
+        let paired = self.terms.eligible(amount_nano, &destination);
+        Ok(WalletTransferQuote {
+            network_generation,
+            identity,
+            sponsored_terms_revision: self.terms.revision,
+            amount_nano,
+            destination,
+            fee_nano,
+            paired,
+        })
+    }
+
+    pub fn authorize_quote(
+        &mut self,
+        quote: &WalletTransferQuote,
+        balance_nano: i64,
+        now_ms: i64,
+    ) -> Result<(), WalletTransferQuoteError> {
+        self.refresh_liveness(now_ms)?;
+        if balance_nano < 0 || quote.amount_nano <= 0 || quote.fee_nano < 0 {
+            return Err(WalletTransferQuoteError::InvalidTransfer);
+        }
+        if quote.network_generation != self.network_generation
+            || self.terms.identity.as_ref() != Some(&quote.identity)
+        {
+            return Err(WalletTransferQuoteError::StaleIdentity);
+        }
+        if quote.sponsored_terms_revision != self.terms.revision {
+            return Err(WalletTransferQuoteError::QuoteExpired);
+        }
+        let paired_now = self
+            .terms
+            .eligible(quote.amount_nano, &quote.destination);
+        if paired_now != quote.paired {
+            return Err(WalletTransferQuoteError::QuoteExpired);
+        }
+        if quote.amount_nano > balance_nano {
+            return Err(WalletTransferQuoteError::InsufficientBalance);
+        }
+        if !quote.paired {
+            let required = quote
+                .amount_nano
+                .checked_add(quote.fee_nano)
+                .ok_or(WalletTransferQuoteError::InsufficientFees)?;
+            if required > balance_nano {
+                return Err(WalletTransferQuoteError::InsufficientFees);
+            }
+        }
+        Ok(())
+    }
+}
+
+#[derive(Debug, Error, Clone, PartialEq, Eq)]
+pub enum WalletTransferQuoteError {
+    #[error("wallet transfer quote is invalid")]
+    InvalidTransfer,
+    #[error("wallet transfer amount is below the configured minimum")]
+    AmountBelowMinimum,
+    #[error("wallet transfer quote identity or network is stale")]
+    StaleIdentity,
+    #[error("wallet transfer quote has expired")]
+    QuoteExpired,
+    #[error("wallet transfer balance is insufficient")]
+    InsufficientBalance,
+    #[error("wallet transfer balance cannot reserve the normal fee")]
+    InsufficientFees,
+    #[error(transparent)]
+    SponsoredFee(#[from] WalletSponsoredFeeError),
+    #[error(transparent)]
+    OutboundTransfer(#[from] OutboundTransferError),
+}
+
 pub const WALLET_LIVE_STATE_REFRESH_MS: i64 = 60 * 1_000;
 pub const WALLET_LIVE_STREAM_RESYNC_MS: i64 = 30 * 1_000;
 pub const WALLET_LIVE_FAILURES_BEFORE_UNREACHABLE: u8 = 2;
@@ -2046,6 +2156,31 @@ pub struct WalletRuntimeState {
     /// service rather than replaying stale network authority.
     #[serde(skip, default)]
     pub live: WalletLiveState,
+}
+
+impl WalletRuntimeState {
+    pub fn journal_quoted_outbound_transfer(
+        &mut self,
+        record: OutboundTransferRecord,
+        quote: &WalletTransferQuote,
+        balance_nano: i64,
+        observed_at_ms: i64,
+    ) -> Result<(), WalletTransferQuoteError> {
+        self.sponsored_fees
+            .authorize_quote(quote, balance_nano, observed_at_ms)?;
+        if record.network != quote.identity.network
+            || record.address != quote.identity.address
+            || record.public_key != quote.identity.public_key
+            || record.destination != quote.destination
+            || record.amount_nano != quote.amount_nano
+            || record.paired != quote.paired
+        {
+            return Err(WalletTransferQuoteError::InvalidTransfer);
+        }
+        self.outbound_transfers
+            .prepare(record)
+            .map_err(WalletTransferQuoteError::OutboundTransfer)
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -3022,6 +3157,195 @@ mod wallet_runtime_tests {
             restored.runtime.sponsored_fees,
             WalletSponsoredFeeState::default()
         );
+    }
+
+    #[test]
+    fn sponsored_quote_expires_with_terms_and_only_paired_send_spends_full_balance() {
+        let identity = sponsored_identity("EQ-wallet", 8);
+        let mut runtime = WalletRuntimeState::default();
+        runtime.sponsored_fees.reset_for_network_generation(3);
+        let serial = runtime
+            .sponsored_fees
+            .begin_request(
+                3,
+                identity.clone(),
+                100_000_000,
+                100_000_000,
+                1_000,
+                false,
+            )
+            .unwrap()
+            .unwrap();
+        runtime
+            .sponsored_fees
+            .apply_info(
+                serial,
+                3,
+                &identity,
+                WalletSponsoredFeeInfo {
+                    relayer_address: "EQ-relayer".into(),
+                    min_amount_nano: 100_000_000,
+                    reset_at_ms: 90_000,
+                    left: 1,
+                    available: true,
+                },
+                2_000,
+            )
+            .unwrap();
+
+        let paired = runtime
+            .sponsored_fees
+            .quote_transfer(
+                3,
+                identity.clone(),
+                100_000_000,
+                100_000_000,
+                500_000_000,
+                "EQ-destination".into(),
+                25_000_000,
+                2_001,
+            )
+            .unwrap();
+        assert!(paired.paired);
+        runtime
+            .sponsored_fees
+            .authorize_quote(&paired, 500_000_000, 2_002)
+            .unwrap();
+
+        let normal = runtime
+            .sponsored_fees
+            .quote_transfer(
+                3,
+                identity.clone(),
+                100_000_000,
+                100_000_000,
+                500_000_000,
+                "EQ-wallet".into(),
+                25_000_000,
+                2_003,
+            )
+            .unwrap();
+        assert!(!normal.paired);
+        assert_eq!(
+            runtime
+                .sponsored_fees
+                .authorize_quote(&normal, 500_000_000, 2_004),
+            Err(WalletTransferQuoteError::InsufficientFees)
+        );
+
+        let refresh_serial = runtime
+            .sponsored_fees
+            .begin_request(
+                3,
+                identity.clone(),
+                100_000_000,
+                100_000_000,
+                17_001,
+                true,
+            )
+            .unwrap()
+            .unwrap();
+        runtime
+            .sponsored_fees
+            .apply_info(
+                refresh_serial,
+                3,
+                &identity,
+                WalletSponsoredFeeInfo {
+                    relayer_address: "EQ-relayer".into(),
+                    min_amount_nano: 200_000_000,
+                    reset_at_ms: 90_000,
+                    left: 1,
+                    available: true,
+                },
+                17_002,
+            )
+            .unwrap();
+        assert_eq!(
+            runtime
+                .sponsored_fees
+                .authorize_quote(&paired, 500_000_000, 17_003),
+            Err(WalletTransferQuoteError::QuoteExpired)
+        );
+    }
+
+    #[test]
+    fn quoted_transfer_reuses_durable_outbound_journal_and_rejects_pairing_drift() {
+        let identity = sponsored_identity("EQ-wallet", 2);
+        let mut runtime = WalletRuntimeState::default();
+        runtime.sponsored_fees.reset_for_network_generation(5);
+        let serial = runtime
+            .sponsored_fees
+            .begin_request(
+                5,
+                identity.clone(),
+                100_000_000,
+                100_000_000,
+                1_000,
+                false,
+            )
+            .unwrap()
+            .unwrap();
+        runtime
+            .sponsored_fees
+            .apply_info(
+                serial,
+                5,
+                &identity,
+                WalletSponsoredFeeInfo {
+                    relayer_address: "EQ-relayer".into(),
+                    min_amount_nano: 100_000_000,
+                    reset_at_ms: 100_000,
+                    left: 2,
+                    available: true,
+                },
+                2_000,
+            )
+            .unwrap();
+        let quote = runtime
+            .sponsored_fees
+            .quote_transfer(
+                5,
+                identity.clone(),
+                100_000_000,
+                100_000_000,
+                400_000_000,
+                "EQ-destination".into(),
+                20_000_000,
+                2_001,
+            )
+            .unwrap();
+        let mut record = OutboundTransferRecord {
+            record_id: "quoted-record".into(),
+            network: identity.network,
+            address: identity.address.clone(),
+            public_key: identity.public_key.clone(),
+            operation_id: "quoted-operation".into(),
+            destination: quote.destination.clone(),
+            comment: String::new(),
+            collectible: None,
+            amount_nano: quote.amount_nano,
+            posted_at_ms: 2_001,
+            handoff: OutboundTransferHandoff::Preparation,
+            terminal: OutboundTransferTerminal::None,
+            message_token: None,
+            confirmed_hash: None,
+            lookup_attempts: 0,
+            lookup_stopped: false,
+            paired: true,
+            bounce: false,
+        };
+        record.paired = false;
+        assert_eq!(
+            runtime.journal_quoted_outbound_transfer(record.clone(), &quote, 400_000_000, 2_002),
+            Err(WalletTransferQuoteError::InvalidTransfer)
+        );
+        record.paired = true;
+        runtime
+            .journal_quoted_outbound_transfer(record, &quote, 400_000_000, 2_003)
+            .unwrap();
+        assert_eq!(runtime.outbound_transfers.records.len(), 1);
+        assert!(runtime.outbound_transfers.records[0].paired);
     }
 
     #[test]
