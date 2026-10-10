@@ -742,16 +742,20 @@ test("transcript rich links remain behind the canonical URL owner", () => {
 });
 
 
-test("CONTRACT-TDRP-IV-MESSAGE-CONTEXT-MENU-CANONICAL-001 transcript message actions consume the source-neutral canonical menu owner", () => {
+test("CONTRACT-TDRP-IV-MESSAGE-CONTEXT-MENU-CANONICAL-001 all transcript message-action seams consume the source-neutral canonical menu owner", () => {
   const transcript = readFileSync(new URL("./conversation/workspace/transcript.tsx", import.meta.url), "utf8");
+  const cardActions = readFileSync(new URL("./conversation/cards/transcript-card/message-actions.tsx", import.meta.url), "utf8");
   const floating = readFileSync(new URL("../ui/sand-floating-primitives.tsx", import.meta.url), "utf8");
-  assert.match(transcript, /SandContextMenu/);
-  assert.match(transcript, /SandMenuRoot/);
-  assert.match(transcript, /SandMenuContent/);
-  assert.match(transcript, /SandMenuItem/);
-  assert.match(transcript, /shouldOpen=\{\(event\) => \{/);
-  assert.match(transcript, /isMessageContextTargetExcluded\(event\.target\)/);
-  assert.doesNotMatch(transcript, /<button[^>]*role="menuitem"/);
+  for (const source of [transcript, cardActions]) {
+    assert.match(source, /SandContextMenu/);
+    assert.match(source, /SandMenuRoot/);
+    assert.match(source, /SandMenuContent/);
+    assert.match(source, /SandMenuItem/);
+    assert.match(source, /shouldOpen=\{\(event\) => \{/);
+    assert.match(source, /isMessageContextTargetExcluded\(event\.target\)/);
+    assert.doesNotMatch(source, /<button[^>]*role="menuitem"/);
+    assert.doesNotMatch(source, /document\.addEventListener\("pointerdown"/);
+  }
   assert.match(floating, /readonly shouldOpen\?: \(event: ReactMouseEvent\) => boolean/);
   assert.match(floating, /<MenuContext\.Provider value=\{menu\}>/);
   assert.match(floating, /<SandMenuContent ariaLabel=\{ariaLabel\}/);

@@ -240,7 +240,7 @@
       "referencePath": "frontend/src/recovered/features/conversation/cards/transcript-card/message-actions.tsx",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "e6e55a282ea29abbfef15b76c4d6cad07c4a39a9",
+      "targetBlobSha": "02b188f9918c9050590001943e3dc5f624312d41",
       "behavioralEvidence": [
         "frontend/src/recovered/features/conversation/cards/transcript-card/message-actions.tsx",
         "frontend/src/recovered/features/conversation/cards/transcript-card/views/widget.tsx"
@@ -250,7 +250,7 @@
         ".github/workflows/rust-desktop-runtime.yml",
         ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "rationale": "Preserves TranscriptCardActionAnchor as the single message context-menu owner and extends that same owner with exact per-inline-action Copy Link/Copy Text projection. It does not introduce an IV/Telegram menu, does not bypass selection/read-only rules, clears transient copy state on menu lifecycle changes, and delegates clipboard settlement through the existing renderer capability. The existing inline-copy seam now accepts `Copy Email` beside `Copy Link`/`Copy Text`, so transcript email copy reuses the same canonical message context menu and clipboard settlement rather than creating an IV/Telegram context-menu owner."
+      "rationale": "TranscriptCardActionAnchor now consumes the same source-neutral SandContextMenu/SandMenuRoot/SandMenuContent/SandMenuItem owner as ordinary transcript messages, including reaction-menu mutual exclusion, inline Copy Link/Copy Email/Copy Text projection, focus restoration, selection/read-only fencing, and context-trigger eligibility. The prior card-specific document pointer/Escape listeners and hand-built role=menu/menuitem surface are removed, so card/send-message/user-attachment actions no longer form a second context-menu owner."
     },
     {
       "referencePath": "frontend/src/recovered/features/conversation/cards/transcript-card/protocol.ts",
