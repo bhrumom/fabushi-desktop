@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 9325,
+    "unread_minimum": 9295,
     "omitted_known": 0,
-    "note": "Recursive source census 16,125; unknown 15,845, unread 9,325, omitted 0. Exact read/responsibility decomposition extends through order 6,800, covering MicroTeX sample/resource manifests, Cyrillic mappings/metrics/fonts, Latin/math fonts/licenses and the beginning of Greek resources; implementation/verification closure remains open."
+    "note": "Recursive source census 16,125; unknown 15,845, unread 9,295, omitted 0. Exact read/responsibility decomposition extends through order 6,830, including MicroTeX Greek resources and atom rendering/safety contracts; implementation/verification closure remains open."
   },
   "latest_recursive_evidence": {
     "run_id": 37998467124,
@@ -46,7 +46,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live authority exact through recursive order 6,800; first unread is 6,801 Telegram/ThirdParty/MicroTeX::res/greek/fcmbpg.xml; unread_minimum is 9,325; unknown remains 15,845; omitted remains 0.",
+  "note": "Live authority exact through recursive order 6,830; first unread is 6,831 Telegram/ThirdParty/MicroTeX::src/atom/atom_space.h; unread_minimum is 9,295; unknown remains 15,845; omitted remains 0.",
   "rebaseline": {
     "from_commit": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
     "to_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
@@ -58,10 +58,10 @@
       5722,
       5759
     ],
-    "current_source_read_through": 6800,
-    "first_unread_order": 6801,
-    "first_unread_path": "Telegram/ThirdParty/MicroTeX::res/greek/fcmbpg.xml",
-    "current_head_source_authority_evidence": "Exact read/responsibility decomposition extends through recursive order 6,800. MicroTeX multilingual math resources map into existing canonical math visual-regression, Resource and Release provenance owners; production exact-head evidence remains pending."
+    "current_source_read_through": 6830,
+    "first_unread_order": 6831,
+    "first_unread_path": "Telegram/ThirdParty/MicroTeX::src/atom/atom_space.h",
+    "current_head_source_authority_evidence": "Exact read/responsibility decomposition extends through recursive order 6,830. MicroTeX atom safety responsibilities map into the existing canonical KaTeX owner; bounded expansion/size/trust invocation and a focused CI contract are implemented, exact-head verification pending."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -70,8 +70,8 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 6800,
-    "first_unread_order": 6801,
-    "first_unread_path": "Telegram/ThirdParty/MicroTeX::res/greek/fcmbpg.xml"
+    "read_through": 6830,
+    "first_unread_order": 6831,
+    "first_unread_path": "Telegram/ThirdParty/MicroTeX::src/atom/atom_space.h"
   }
 }
