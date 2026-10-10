@@ -14,26 +14,27 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 8209,
+    "unread_minimum": 8193,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through 7,916; unread 8,209; unknown 15,845; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition through 7,932; unread 8,193; unknown 15,845; omitted 0."
   },
   "latest_recursive_evidence": {
-    "run_id": 38077755131,
+    "run_id": 38081540911,
     "run_attempt": 1,
-    "job_id": 114288228333,
-    "head_sha": "1d0e4a8230c198993fd331387d72063936ad80e8",
-    "artifact_id": 11678742627,
-    "artifact_digest": "sha256:d4ffb4761f726207bad7475aedba43478c2e7407bbdc3b01085b3a1f324b77a1",
+    "job_id": 114299311128,
+    "head_sha": "11caed45b8b0a4e8215a6d93cc814b9f048c95a0",
+    "artifact_id": 11680279359,
+    "artifact_digest": "sha256:8a11aad8a061722e2f1a7024cb5fd3bdbfb3bfdaec01e2de86c9ab04f1d6ca82",
     "artifact_files": [
       "upstream-recursive-inventory.json",
       "current-first-unread/window-manifest.json",
-      "current-first-unread/07692-s-tsin.src",
-      "current-first-unread/07699-tsin.src"
+      "current-first-unread/07917-telecode.png",
+      "current-first-unread/07924-COPYING",
+      "current-first-unread/07932-dayi3.png"
     ],
     "evidence_status": "historical-diagnostic-after-descendant-accounting-commit",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
-    "note": "Predecessor exact-head source authority succeeded; descendant accounting requires fresh Actions."
+    "note": "Exact-head source authority succeeded at 11caed45 and materialized 7,917–7,932; this descendant accounting commit requires fresh Actions."
   },
   "closure_rules": {
     "executable_runner": "github-actions",
@@ -43,7 +44,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live authority exact through 7,916; first unread 7,917 Telegram/ThirdParty/hime::icons/dark/telecode.png; unread_minimum is 8,209; unknown remains 15,845; omitted remains 0.",
+  "note": "Live authority exact through 7,932; first unread 7,933 Telegram/ThirdParty/hime::icons/gray/en-kana-nippon.png; unread_minimum is 8,193; unknown remains 15,845; omitted remains 0.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -61,10 +62,10 @@
       6541,
       6627
     ],
-    "current_source_read_through": 7916,
-    "first_unread_order": 7917,
-    "first_unread_path": "Telegram/ThirdParty/hime::icons/dark/telecode.png",
-    "current_head_source_authority_evidence": "7,869–7,916 accepted Hime blobs were fetched from the pinned component commit, checked against Git tree identity/mode/size and visually/textually inspected; reading closes no unknown. Descendant exact-head Actions remain required."
+    "current_source_read_through": 7932,
+    "first_unread_order": 7933,
+    "first_unread_path": "Telegram/ThirdParty/hime::icons/gray/en-kana-nippon.png",
+    "current_head_source_authority_evidence": "GitHub Actions source-authority artifact 11680279359 (sha256:8a11aad8a061722e2f1a7024cb5fd3bdbfb3bfdaec01e2de86c9ab04f1d6ca82) at 11caed45b8b0a4e8215a6d93cc814b9f048c95a0 materialized 7,917–7,932 with manifest identity/mode/size/SHA-256; 15 PNGs were visually inspected and 7,924 COPYING was text-read. Reading closes no unknown. Descendant exact-head Actions are required after accounting."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -73,9 +74,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 7916,
-    "first_unread_order": 7917,
-    "first_unread_path": "Telegram/ThirdParty/hime::icons/dark/telecode.png",
+    "read_through": 7932,
+    "first_unread_order": 7933,
+    "first_unread_path": "Telegram/ThirdParty/hime::icons/gray/en-kana-nippon.png",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }

@@ -266,9 +266,9 @@
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
     "unknown_minimum": 15845,
-    "unread_minimum": 8209,
+    "unread_minimum": 8193,
     "omitted_known": 0,
-    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 7,916; unknown=15,845, unread=8,209, omitted=0."
+    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 7,932; unknown=15,845, unread=8,193, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -282,7 +282,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Source/product/release closure open. Exact read-through 7,916/16,125; unread 8,209; unknown 15,845; omitted 0; fresh descendant evidence required."
+    "note": "Source/product/release closure open. Exact read-through 7,932/16,125; unread 8,193; unknown 15,845; omitted 0; fresh descendant evidence required."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",
@@ -633,71 +633,109 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 7916,
-    "first_unread_order": 7917,
-    "first_unread_path": "Telegram/ThirdParty/hime::icons/dark/telecode.png",
+    "read_through": 7932,
+    "first_unread_order": 7933,
+    "first_unread_path": "Telegram/ThirdParty/hime::icons/gray/en-kana-nippon.png",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
-    "status": "historical-only-after-descendant-commit",
-    "target_head": "4028b7613fc760d0f6ef7d4884cd620b409a9c0c",
+    "status": "historical-only-after-descendant-accounting-commit",
+    "target_head": "11caed45b8b0a4e8215a6d93cc814b9f048c95a0",
     "runs": [
       {
-        "id": 38062398837,
+        "id": 38081540911,
         "workflow": "Rust desktop runtime",
-        "run_number": 7151,
+        "run_number": 7231,
         "attempt": 1,
         "conclusion": "success"
       },
       {
-        "id": 38062398841,
+        "id": 38081540910,
         "workflow": "Desktop Chat Parity CI",
-        "run_number": 4630,
+        "run_number": 4710,
         "attempt": 1,
         "conclusion": "success"
       }
     ],
     "jobs": [
       {
-        "id": 114243173201,
+        "id": 114299311128,
         "name": "Source authority / recursive inventory",
         "conclusion": "success"
       },
       {
-        "id": 114243173171,
+        "id": 114299311158,
         "name": "rust-host",
         "conclusion": "success"
       },
       {
-        "id": 114243173186,
-        "name": "Pressure profiler (macOS)",
+        "id": 114299310971,
+        "name": "Pressure profiler / windows-2025",
         "conclusion": "success"
       },
       {
-        "id": 114243173229,
-        "name": "Pressure profiler (Windows)",
+        "id": 114299311069,
+        "name": "Pressure profiler / macos-15",
         "conclusion": "success"
       },
       {
-        "id": 114243200994,
+        "id": 114299311211,
+        "name": "Pressure profiler / ubuntu-24.04",
+        "conclusion": "success"
+      },
+      {
+        "id": 114299311122,
+        "name": "Updater contract / windows-2025",
+        "conclusion": "success"
+      },
+      {
+        "id": 114299311150,
+        "name": "Updater contract / macos-15",
+        "conclusion": "success"
+      },
+      {
+        "id": 114299311239,
+        "name": "Updater contract / ubuntu-24.04",
+        "conclusion": "success"
+      },
+      {
+        "id": 114299311134,
+        "name": "renderer",
+        "conclusion": "success"
+      },
+      {
+        "id": 114299311121,
+        "name": "platform-worker",
+        "conclusion": "success"
+      },
+      {
+        "id": 114299298892,
         "name": "Focused Electron chat E2E",
+        "conclusion": "success"
+      },
+      {
+        "id": 114299299019,
+        "name": "Renderer typecheck and build",
         "conclusion": "success"
       }
     ],
     "artifacts": [
       {
-        "id": 11673552460,
-        "digest": "sha256:33cf046454569e14a5c3e2157dac152d9c6826353284227bdbf03d56160fc2b9"
+        "id": 11680354111,
+        "name": "rust-messaging-responsibilities-11caed45b8b0a4e8215a6d93cc814b9f048c95a0",
+        "digest": "sha256:ec3edbe6c59184544416e449c9c33dbb65bd95cb453ff6cff94e1a3e6d1b03cd"
       },
       {
-        "id": 11673313447,
-        "digest": "sha256:59ff2da8f97f4048a16863df579fa38d72ebc167779faafc523475f47e4b560d"
+        "id": 11680279359,
+        "name": "tdrp-revision9-authority-11caed45b8b0a4e8215a6d93cc814b9f048c95a0",
+        "digest": "sha256:8a11aad8a061722e2f1a7024cb5fd3bdbfb3bfdaec01e2de86c9ab04f1d6ca82"
       },
       {
-        "id": 11673707789,
-        "digest": "sha256:169d997c11c40f7074b60099dac91e764cc377472e5a934cde04cc395d545fc1"
+        "id": 11681160388,
+        "name": "desktop-chat-parity-playwright-11caed45b8b0a4e8215a6d93cc814b9f048c95a0",
+        "digest": "sha256:9e75061204c640085bbec1d8b597506fdfd4b1e92ac11f1318789fc97920b96e"
       }
     ],
-    "note": "Valid for 4028b761 only; descendant requires fresh exact-head evidence."
+    "note": "Valid exact-head evidence for 11caed45 only. This descendant accounting commit requires fresh GitHub Actions before acceptance."
   }
 }
