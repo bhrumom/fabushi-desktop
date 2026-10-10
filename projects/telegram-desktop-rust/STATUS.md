@@ -1,5 +1,5 @@
-Live Revision 9 authority (2026-10-10): telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 (root tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6). Root non-directory=6,653; recursive non-directory=16,125; read-through=6,892; first unread=6,893 Telegram/ThirdParty/MicroTeX::src/res/builtin/formula_mappings.res.cpp@51c4d0a62987eb97590bc2ef151b9b69b2f69127; unread=9,233; unknown=15,845; omitted=0. Orders 6,873-6,892 exact-read MicroTeX TeXFont/graphics/platform/render lifecycle and numeric-safety contracts; reading alone closes no unknown. Fresh descendant exact-head GitHub Actions evidence is required.
-<!-- TDRP_CURRENT_SUMMARY read-through=6892 unread=9233 unknown=15845 omitted=0 first-unread=6893 path=Telegram/ThirdParty/MicroTeX::src/res/builtin/formula_mappings.res.cpp -->
+Live Revision 9 authority (2026-10-10): telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 (root tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6). Root non-directory=6,653; recursive non-directory=16,125; read-through=6,900; first unread=6,901 Telegram/ThirdParty/MicroTeX::src/res/font/cmbsy10.def.cpp@6e72926a0156f2b06033d9995c7653b5d76b2a10; unread=9,225; unknown=15,845; omitted=0. Orders 6,893-6,900 exact-read MicroTeX builtin Unicode/formula mappings, symbol mappings/taxonomy, TeX layout parameters, resource build closure, font provenance and bi10/bx10 definitions; reading alone closes no unknown. Fresh descendant exact-head GitHub Actions evidence is required.
+<!-- TDRP_CURRENT_SUMMARY read-through=6900 unread=9225 unknown=15845 omitted=0 first-unread=6901 path=Telegram/ThirdParty/MicroTeX::src/res/font/cmbsy10.def.cpp -->
 
 # Telegram Desktop → Fabushi 全量等价重写 — Status
 
@@ -376,3 +376,8 @@ Orders **6,862-6,872** are exact-blob read-complete/responsibility-decomposed fo
 ### Revision 9 exact read-through 6873-6892 — MicroTeX rendering boundary
 
 Orders **6,873-6,892** are exact-blob read/decomposed for TeXFont, graphics primitives, resource init/release, platform adapters and render builder/draw lifecycle. Applicable target responsibilities are bounded numeric/color/raster behavior, resource provenance, platform-consistent failure semantics and guaranteed transform/color restoration; Cairo/GDI/Qt/Skia implementations themselves are not ported. Accounting: **6,892/16,125 read; 9,233 unread; 15,845 unknown; 0 omitted**. First unread: **6,893 `Telegram/ThirdParty/MicroTeX::src/res/builtin/formula_mappings.res.cpp`**.
+
+
+### Revision 9 exact read-through 6893-6900 — MicroTeX builtin resources and font provenance
+
+Orders **6,893-6,900** are exact-blob read/decomposed for Unicode/codepoint→formula normalization, symbol/text mappings, TeX spacing/layout constants, builtin symbol taxonomy, Meson resource closure, CTAN font provenance, and the first `bi10`/`bx10` font metric/style definitions. Existing-owner-first keeps one canonical Transcript math/KaTeX owner plus Build/Release provenance; no MicroTeX parser/font/resource runtime is introduced. These responsibilities remain **mapped-open**: source reading does not establish production equivalence, and `unknown` therefore stays **15,845**. Accounting: **6,900/16,125 read; 9,225 unread; 15,845 unknown; 0 omitted**. First unread: **6,901 `Telegram/ThirdParty/MicroTeX::src/res/font/cmbsy10.def.cpp@6e72926a0156f2b06033d9995c7653b5d76b2a10`**.

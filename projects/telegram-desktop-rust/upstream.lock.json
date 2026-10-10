@@ -266,9 +266,9 @@
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
     "unknown_minimum": 15845,
-    "unread_minimum": 9233,
+    "unread_minimum": 9225,
     "omitted_known": 0,
-    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 6,892; unknown=15,845, unread=9,233, omitted=0."
+    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 6,900; unknown=15,845, unread=9,225, omitted=0. Orders 6,893-6,900 cover MicroTeX builtin formula/symbol/layout resources, build closure, provenance and first font definitions; all remain mapped-open."
   },
   "acceptance": {
     "baseline_ready": false,
