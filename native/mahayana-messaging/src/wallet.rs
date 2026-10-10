@@ -1483,6 +1483,382 @@ pub enum WalletAddressDirectoryError {
     InvalidPublicKey,
 }
 
+pub const WALLET_SPONSORED_FEE_MIN_NANO_DEFAULT: i64 = 100_000_000;
+pub const WALLET_SPONSORED_FEE_REFRESH_MS: i64 = 60 * 1_000;
+pub const WALLET_SPONSORED_FEE_REFRESH_AHEAD_MS: i64 = 10 * 1_000;
+pub const WALLET_SPONSORED_FEE_REQUEST_TIMEOUT_MS: i64 = 15 * 1_000;
+pub const WALLET_SPONSORED_FEE_RETRY_MS: i64 = 15 * 1_000;
+const WALLET_SPONSORED_FEE_MIN_NANO_MAX: i64 = 1_i64 << 53;
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WalletTransferIdentity {
+    pub network: u8,
+    pub address: String,
+    pub public_key: Vec<u8>,
+    pub revision: u64,
+}
+
+impl WalletTransferIdentity {
+    fn validate(&self) -> Result<(), WalletSponsoredFeeError> {
+        if !matches!(self.network, 1 | 2)
+            || self.public_key.len() != 32
+            || validate_wallet_address(&self.address).is_err()
+        {
+            return Err(WalletSponsoredFeeError::InvalidIdentity);
+        }
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WalletSponsoredFeeInfo {
+    pub relayer_address: String,
+    pub min_amount_nano: i64,
+    pub reset_at_ms: i64,
+    pub left: i32,
+    pub available: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WalletSponsoredFeeTerms {
+    pub identity: Option<WalletTransferIdentity>,
+    pub info: Option<WalletSponsoredFeeInfo>,
+    pub transfer_min_nano: i64,
+    pub configured_min_nano: i64,
+    pub effective_min_nano: i64,
+    pub revision: u64,
+    pub fresh: bool,
+    pub usable: bool,
+}
+
+impl Default for WalletSponsoredFeeTerms {
+    fn default() -> Self {
+        Self {
+            identity: None,
+            info: None,
+            transfer_min_nano: WALLET_SPONSORED_FEE_MIN_NANO_DEFAULT,
+            configured_min_nano: WALLET_SPONSORED_FEE_MIN_NANO_DEFAULT,
+            effective_min_nano: WALLET_SPONSORED_FEE_MIN_NANO_DEFAULT,
+            revision: 0,
+            fresh: false,
+            usable: false,
+        }
+    }
+}
+
+impl WalletSponsoredFeeTerms {
+    pub fn eligible(&self, amount_nano: i64, destination: &str) -> bool {
+        self.usable
+            && amount_nano > 0
+            && amount_nano >= self.effective_min_nano
+            && validate_wallet_address(destination).is_ok()
+            && self
+                .identity
+                .as_ref()
+                .is_some_and(|identity| destination != identity.address)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WalletSponsoredFeeRequest {
+    pub serial: u64,
+    pub network_generation: u64,
+    pub identity: WalletTransferIdentity,
+    pub requested_at_ms: i64,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct WalletSponsoredFeeState {
+    pub network_generation: u64,
+    pub terms: WalletSponsoredFeeTerms,
+    pub active_request: Option<WalletSponsoredFeeRequest>,
+    pub last_requested_at_ms: Option<i64>,
+    pub expires_at_ms: Option<i64>,
+    pub last_failure_at_ms: Option<i64>,
+    pub refresh_wanted: bool,
+    next_serial: u64,
+}
+
+impl WalletSponsoredFeeState {
+    pub fn reset_for_network_generation(&mut self, network_generation: u64) {
+        *self = Self {
+            network_generation,
+            ..Self::default()
+        };
+    }
+
+    pub fn sync_context(
+        &mut self,
+        network_generation: u64,
+        identity: WalletTransferIdentity,
+        transfer_min_nano: i64,
+        configured_min_nano: i64,
+        now_ms: i64,
+    ) -> Result<(), WalletSponsoredFeeError> {
+        require_sponsored_timestamp(now_ms)?;
+        if network_generation == 0 {
+            return Err(WalletSponsoredFeeError::StaleNetworkGeneration {
+                current: self.network_generation,
+                received: network_generation,
+            });
+        }
+        identity.validate()?;
+        if self.network_generation != 0 && self.network_generation != network_generation {
+            return Err(WalletSponsoredFeeError::StaleNetworkGeneration {
+                current: self.network_generation,
+                received: network_generation,
+            });
+        }
+        if self.network_generation == 0 {
+            self.network_generation = network_generation;
+        }
+
+        if self.terms.identity.as_ref() != Some(&identity) {
+            let previous_revision = self.terms.revision;
+            self.active_request = None;
+            self.last_requested_at_ms = None;
+            self.expires_at_ms = None;
+            self.last_failure_at_ms = None;
+            self.refresh_wanted = false;
+            self.next_serial = 0;
+            self.terms = WalletSponsoredFeeTerms {
+                identity: Some(identity),
+                revision: previous_revision.saturating_add(1),
+                ..WalletSponsoredFeeTerms::default()
+            };
+        }
+
+        let transfer_min_nano = canonical_sponsored_minimum(transfer_min_nano);
+        let configured_min_nano = canonical_sponsored_minimum(configured_min_nano);
+        if self.terms.transfer_min_nano != transfer_min_nano
+            || self.terms.configured_min_nano != configured_min_nano
+        {
+            self.terms.transfer_min_nano = transfer_min_nano;
+            self.terms.configured_min_nano = configured_min_nano;
+            self.terms.revision = self.terms.revision.saturating_add(1);
+        }
+        self.refresh_liveness(now_ms)
+    }
+
+    pub fn request_due(&self, now_ms: i64) -> bool {
+        if now_ms < 0 || self.terms.identity.is_none() {
+            return false;
+        }
+        if let Some(request) = &self.active_request {
+            if now_ms.saturating_sub(request.requested_at_ms)
+                < WALLET_SPONSORED_FEE_REQUEST_TIMEOUT_MS
+            {
+                return false;
+            }
+        }
+        let fresh_now = self.fresh_at(now_ms);
+        let expiring = fresh_now
+            && self
+                .expires_at_ms
+                .is_some_and(|expires| now_ms >= expires.saturating_sub(WALLET_SPONSORED_FEE_REFRESH_AHEAD_MS));
+        let retry_allowed = self
+            .last_requested_at_ms
+            .is_none_or(|last| now_ms.saturating_sub(last) >= WALLET_SPONSORED_FEE_RETRY_MS);
+        retry_allowed && (!fresh_now || expiring || self.refresh_wanted)
+    }
+
+    pub fn begin_request(
+        &mut self,
+        network_generation: u64,
+        identity: WalletTransferIdentity,
+        transfer_min_nano: i64,
+        configured_min_nano: i64,
+        now_ms: i64,
+        force: bool,
+    ) -> Result<Option<u64>, WalletSponsoredFeeError> {
+        self.sync_context(
+            network_generation,
+            identity.clone(),
+            transfer_min_nano,
+            configured_min_nano,
+            now_ms,
+        )?;
+        self.refresh_wanted |= force;
+        if !self.request_due(now_ms) {
+            return Ok(None);
+        }
+        self.next_serial = self
+            .next_serial
+            .checked_add(1)
+            .ok_or(WalletSponsoredFeeError::SerialOverflow)?;
+        let serial = self.next_serial;
+        self.active_request = Some(WalletSponsoredFeeRequest {
+            serial,
+            network_generation,
+            identity,
+            requested_at_ms: now_ms,
+        });
+        self.last_requested_at_ms = Some(now_ms);
+        self.refresh_wanted = false;
+        Ok(Some(serial))
+    }
+
+    pub fn apply_info(
+        &mut self,
+        serial: u64,
+        network_generation: u64,
+        identity: &WalletTransferIdentity,
+        info: WalletSponsoredFeeInfo,
+        now_ms: i64,
+    ) -> Result<(), WalletSponsoredFeeError> {
+        require_sponsored_timestamp(now_ms)?;
+        self.require_request(serial, network_generation, identity)?;
+        self.active_request = None;
+        self.last_failure_at_ms = None;
+        self.expires_at_ms = Some(
+            now_ms
+                .checked_add(WALLET_SPONSORED_FEE_REFRESH_MS)
+                .ok_or(WalletSponsoredFeeError::InvalidTimestamp)?,
+        );
+        self.terms.identity = Some(identity.clone());
+        self.terms.info = Some(info);
+        self.terms.revision = self.terms.revision.saturating_add(1);
+        self.refresh_liveness(now_ms)
+    }
+
+    pub fn fail_request(
+        &mut self,
+        serial: u64,
+        network_generation: u64,
+        identity: &WalletTransferIdentity,
+        now_ms: i64,
+    ) -> Result<(), WalletSponsoredFeeError> {
+        require_sponsored_timestamp(now_ms)?;
+        self.require_request(serial, network_generation, identity)?;
+        self.active_request = None;
+        self.expires_at_ms = None;
+        self.last_failure_at_ms = Some(now_ms);
+        self.refresh_wanted = true;
+        self.terms.revision = self.terms.revision.saturating_add(1);
+        self.recompute_terms(now_ms);
+        Ok(())
+    }
+
+    pub fn refresh_liveness(&mut self, now_ms: i64) -> Result<(), WalletSponsoredFeeError> {
+        require_sponsored_timestamp(now_ms)?;
+        if self.active_request.as_ref().is_some_and(|request| {
+            now_ms.saturating_sub(request.requested_at_ms)
+                >= WALLET_SPONSORED_FEE_REQUEST_TIMEOUT_MS
+        }) {
+            self.active_request = None;
+            self.expires_at_ms = None;
+            self.last_failure_at_ms = Some(now_ms);
+            self.refresh_wanted = true;
+            self.terms.revision = self.terms.revision.saturating_add(1);
+        }
+        if !self.fresh_at(now_ms) {
+            self.expires_at_ms = None;
+        }
+        self.recompute_terms(now_ms);
+        Ok(())
+    }
+
+    fn fresh_at(&self, now_ms: i64) -> bool {
+        self.terms.identity.is_some()
+            && self.terms.info.is_some()
+            && self.expires_at_ms.is_some_and(|expires| expires > now_ms)
+            && self
+                .terms
+                .info
+                .as_ref()
+                .is_none_or(|info| info.reset_at_ms <= 0 || info.reset_at_ms > now_ms)
+    }
+
+    fn recompute_terms(&mut self, now_ms: i64) {
+        let before = self.terms.clone();
+        let mut effective = self
+            .terms
+            .transfer_min_nano
+            .max(self.terms.configured_min_nano);
+        if let Some(info) = &self.terms.info {
+            if info.min_amount_nano > 0 {
+                effective = effective.max(info.min_amount_nano);
+            }
+        }
+        self.terms.effective_min_nano = effective;
+        self.terms.fresh = self.fresh_at(now_ms);
+        self.terms.usable = self.terms.fresh
+            && self.terms.info.as_ref().is_some_and(|info| {
+                info.available
+                    && info.left > 0
+                    && info.reset_at_ms >= 0
+                    && info.min_amount_nano > 0
+                    && self.terms.identity.as_ref().is_some_and(|identity| {
+                        identity.network == 1
+                            && validate_wallet_address(&info.relayer_address).is_ok()
+                    })
+            });
+        if self.terms != before {
+            self.terms.revision = before.revision.saturating_add(1);
+        }
+    }
+
+    fn require_request(
+        &self,
+        serial: u64,
+        network_generation: u64,
+        identity: &WalletTransferIdentity,
+    ) -> Result<(), WalletSponsoredFeeError> {
+        if self.network_generation != network_generation {
+            return Err(WalletSponsoredFeeError::StaleNetworkGeneration {
+                current: self.network_generation,
+                received: network_generation,
+            });
+        }
+        match &self.active_request {
+            Some(request)
+                if request.serial == serial
+                    && request.network_generation == network_generation
+                    && &request.identity == identity
+                    && self.terms.identity.as_ref() == Some(identity) =>
+            {
+                Ok(())
+            }
+            _ => Err(WalletSponsoredFeeError::StaleRequest),
+        }
+    }
+}
+
+fn canonical_sponsored_minimum(value: i64) -> i64 {
+    if (1..=WALLET_SPONSORED_FEE_MIN_NANO_MAX).contains(&value) {
+        value
+    } else {
+        WALLET_SPONSORED_FEE_MIN_NANO_DEFAULT
+    }
+}
+
+fn require_sponsored_timestamp(value: i64) -> Result<(), WalletSponsoredFeeError> {
+    if value >= 0 {
+        Ok(())
+    } else {
+        Err(WalletSponsoredFeeError::InvalidTimestamp)
+    }
+}
+
+#[derive(Debug, Error, Clone, PartialEq, Eq)]
+pub enum WalletSponsoredFeeError {
+    #[error("wallet sponsored-fee identity is invalid")]
+    InvalidIdentity,
+    #[error("wallet sponsored-fee timestamp is invalid")]
+    InvalidTimestamp,
+    #[error("wallet sponsored-fee request serial overflowed")]
+    SerialOverflow,
+    #[error("wallet sponsored-fee network generation is stale: current {current}, received {received}")]
+    StaleNetworkGeneration { current: u64, received: u64 },
+    #[error("wallet sponsored-fee response does not own the active request")]
+    StaleRequest,
+}
+
 pub const WALLET_LIVE_STATE_REFRESH_MS: i64 = 60 * 1_000;
 pub const WALLET_LIVE_STREAM_RESYNC_MS: i64 = 30 * 1_000;
 pub const WALLET_LIVE_FAILURES_BEFORE_UNREACHABLE: u8 = 2;
@@ -1660,6 +2036,11 @@ pub struct WalletRuntimeState {
     pub panel: WalletPanelState,
     pub outbound_transfers: OutboundTransferJournal,
     pub address_directory: WalletAddressDirectory,
+    /// Sponsored-fee service offers, request serials, identity fences,
+    /// failures and expiry clocks are live network authority. Persisting
+    /// them would replay stale sponsorship after restart.
+    #[serde(skip, default)]
+    pub sponsored_fees: WalletSponsoredFeeState,
     /// Refresh generations, failure latches and hidden-page pacing are
     /// deliberately runtime-only. Restart must rebuild them from the live
     /// service rather than replaying stale network authority.
@@ -2359,6 +2740,288 @@ mod wallet_runtime_tests {
         let restored: WalletLedger = serde_json::from_str(&encoded).unwrap();
         assert_eq!(restored.runtime.rates.selected_currency, "JPY");
         assert!(restored.runtime.panel.visible);
+    }
+
+    fn sponsored_identity(address: &str, revision: u64) -> WalletTransferIdentity {
+        WalletTransferIdentity {
+            network: 1,
+            address: address.into(),
+            public_key: vec![7; 32],
+            revision,
+        }
+    }
+
+    #[test]
+    fn sponsored_fee_uses_maximum_minimum_and_requires_fresh_quota_and_relayer() {
+        let identity = sponsored_identity("EQ-wallet", 1);
+        let mut state = WalletSponsoredFeeState::default();
+        state.reset_for_network_generation(4);
+        assert_eq!(
+            state
+                .begin_request(
+                    4,
+                    identity.clone(),
+                    100_000_000,
+                    200_000_000,
+                    1_000,
+                    false,
+                )
+                .unwrap(),
+            Some(1)
+        );
+        state
+            .apply_info(
+                1,
+                4,
+                &identity,
+                WalletSponsoredFeeInfo {
+                    relayer_address: "EQ-relayer".into(),
+                    min_amount_nano: 300_000_000,
+                    reset_at_ms: 120_000,
+                    left: 2,
+                    available: true,
+                },
+                2_000,
+            )
+            .unwrap();
+        assert_eq!(state.terms.effective_min_nano, 300_000_000);
+        assert!(state.terms.fresh);
+        assert!(state.terms.usable);
+        assert!(state.terms.eligible(300_000_000, "EQ-destination"));
+        assert!(!state.terms.eligible(299_999_999, "EQ-destination"));
+        assert!(!state.terms.eligible(300_000_000, "EQ-wallet"));
+
+        assert_eq!(
+            state
+                .begin_request(
+                    4,
+                    identity.clone(),
+                    100_000_000,
+                    200_000_000,
+                    16_000,
+                    true,
+                )
+                .unwrap(),
+            Some(2)
+        );
+        state
+            .apply_info(
+                2,
+                4,
+                &identity,
+                WalletSponsoredFeeInfo {
+                    relayer_address: "EQ-relayer".into(),
+                    min_amount_nano: 350_000_000,
+                    reset_at_ms: 120_000,
+                    left: 0,
+                    available: true,
+                },
+                16_001,
+            )
+            .unwrap();
+        assert_eq!(state.terms.effective_min_nano, 350_000_000);
+        assert!(!state.terms.usable);
+
+        assert_eq!(
+            state
+                .begin_request(
+                    4,
+                    identity.clone(),
+                    100_000_000,
+                    200_000_000,
+                    31_000,
+                    true,
+                )
+                .unwrap(),
+            Some(3)
+        );
+        state
+            .apply_info(
+                3,
+                4,
+                &identity,
+                WalletSponsoredFeeInfo {
+                    relayer_address: " bad-relayer ".into(),
+                    min_amount_nano: 400_000_000,
+                    reset_at_ms: 120_000,
+                    left: 1,
+                    available: true,
+                },
+                31_001,
+            )
+            .unwrap();
+        assert!(!state.terms.usable);
+    }
+
+    #[test]
+    fn sponsored_fee_fences_serial_generation_identity_and_honors_time_windows() {
+        let identity = sponsored_identity("EQ-wallet", 1);
+        let other = sponsored_identity("EQ-other", 1);
+        let mut state = WalletSponsoredFeeState::default();
+        state.reset_for_network_generation(9);
+        assert_eq!(
+            state
+                .begin_request(
+                    9,
+                    identity.clone(),
+                    100_000_000,
+                    100_000_000,
+                    0,
+                    false,
+                )
+                .unwrap(),
+            Some(1)
+        );
+        assert_eq!(
+            state
+                .begin_request(
+                    9,
+                    identity.clone(),
+                    100_000_000,
+                    100_000_000,
+                    WALLET_SPONSORED_FEE_REQUEST_TIMEOUT_MS - 1,
+                    true,
+                )
+                .unwrap(),
+            None
+        );
+        state
+            .sync_context(
+                9,
+                identity.clone(),
+                100_000_000,
+                100_000_000,
+                WALLET_SPONSORED_FEE_REQUEST_TIMEOUT_MS,
+            )
+            .unwrap();
+        assert!(state.active_request.is_none());
+        assert!(state.last_failure_at_ms.is_some());
+        assert!(state.request_due(WALLET_SPONSORED_FEE_REQUEST_TIMEOUT_MS));
+        assert_eq!(
+            state
+                .begin_request(
+                    9,
+                    identity.clone(),
+                    100_000_000,
+                    100_000_000,
+                    WALLET_SPONSORED_FEE_REQUEST_TIMEOUT_MS,
+                    false,
+                )
+                .unwrap(),
+            Some(2)
+        );
+        assert_eq!(
+            state.apply_info(
+                1,
+                9,
+                &identity,
+                WalletSponsoredFeeInfo {
+                    relayer_address: "EQ-relayer".into(),
+                    min_amount_nano: 100_000_000,
+                    reset_at_ms: 200_000,
+                    left: 1,
+                    available: true,
+                },
+                WALLET_SPONSORED_FEE_REQUEST_TIMEOUT_MS + 1,
+            ),
+            Err(WalletSponsoredFeeError::StaleRequest)
+        );
+        assert_eq!(
+            state.apply_info(
+                2,
+                9,
+                &other,
+                WalletSponsoredFeeInfo {
+                    relayer_address: "EQ-relayer".into(),
+                    min_amount_nano: 100_000_000,
+                    reset_at_ms: 200_000,
+                    left: 1,
+                    available: true,
+                },
+                WALLET_SPONSORED_FEE_REQUEST_TIMEOUT_MS + 1,
+            ),
+            Err(WalletSponsoredFeeError::StaleRequest)
+        );
+        let answered_at = WALLET_SPONSORED_FEE_REQUEST_TIMEOUT_MS + 1;
+        state
+            .apply_info(
+                2,
+                9,
+                &identity,
+                WalletSponsoredFeeInfo {
+                    relayer_address: "EQ-relayer".into(),
+                    min_amount_nano: 100_000_000,
+                    reset_at_ms: 200_000,
+                    left: 1,
+                    available: true,
+                },
+                answered_at,
+            )
+            .unwrap();
+        let refresh_at =
+            answered_at + WALLET_SPONSORED_FEE_REFRESH_MS - WALLET_SPONSORED_FEE_REFRESH_AHEAD_MS;
+        assert!(!state.request_due(refresh_at - 1));
+        assert!(state.request_due(refresh_at));
+
+        assert_eq!(
+            state.sync_context(
+                10,
+                identity,
+                100_000_000,
+                100_000_000,
+                refresh_at,
+            ),
+            Err(WalletSponsoredFeeError::StaleNetworkGeneration {
+                current: 9,
+                received: 10,
+            })
+        );
+    }
+
+    #[test]
+    fn sponsored_fee_network_authority_is_runtime_only() {
+        let identity = sponsored_identity("EQ-wallet", 3);
+        let mut ledger = WalletLedger::default();
+        ledger.runtime.sponsored_fees.reset_for_network_generation(2);
+        let serial = ledger
+            .runtime
+            .sponsored_fees
+            .begin_request(
+                2,
+                identity.clone(),
+                100_000_000,
+                100_000_000,
+                1_000,
+                false,
+            )
+            .unwrap()
+            .unwrap();
+        ledger
+            .runtime
+            .sponsored_fees
+            .apply_info(
+                serial,
+                2,
+                &identity,
+                WalletSponsoredFeeInfo {
+                    relayer_address: "EQ-relayer".into(),
+                    min_amount_nano: 100_000_000,
+                    reset_at_ms: 70_000,
+                    left: 3,
+                    available: true,
+                },
+                2_000,
+            )
+            .unwrap();
+        assert!(ledger.runtime.sponsored_fees.terms.usable);
+
+        let encoded = serde_json::to_string(&ledger).unwrap();
+        assert!(!encoded.contains("sponsoredFees"));
+        let restored: WalletLedger = serde_json::from_str(&encoded).unwrap();
+        assert_eq!(
+            restored.runtime.sponsored_fees,
+            WalletSponsoredFeeState::default()
+        );
     }
 
     #[test]
