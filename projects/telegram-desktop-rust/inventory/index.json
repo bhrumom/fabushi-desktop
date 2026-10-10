@@ -14,29 +14,30 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 7760,
+    "unread_minimum": 7696,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through deterministic order 8,365; unread 7,760; unknown 15,845; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition through deterministic order 8,429; unread 7,696; unknown 15,845; omitted 0."
   },
   "latest_recursive_evidence": {
-    "run_id": 38084031087,
+    "run_id": 38096221101,
     "run_attempt": 1,
-    "job_id": 114306715771,
-    "head_sha": "46dfaf8102187cc46824362b143e9ac4f3d4b4b9",
-    "artifact_id": 11681780325,
-    "artifact_digest": "sha256:92d496e33e3f5fdd523a0033ce41bcac995dd829643116fda6581650fb38ced8",
+    "job_id": 114342569445,
+    "head_sha": "a8e357341bcaa527e78b7ef7c8ca06d68831f6ce",
+    "artifact_id": 11686195087,
+    "artifact_digest": "sha256:5d777a472ca1c07d3ea5b0f31250925802bb1fc3ec508518e22d7c6dc1120aaa",
     "artifact_files": [
       "upstream-recursive-inventory.json",
       "current-first-unread/window-manifest.json",
-      "current-first-unread/08013-scj.png",
-      "current-first-unread/08024-lgpl-2.1.txt",
-      "current-first-unread/08037-hime-setup.1",
-      "current-first-unread/08061-IC.c",
-      "current-first-unread/08076-i18nIMProto.c"
+      "current-first-unread/08366-Makefile.am",
+      "current-first-unread/08370-affixmgr.cxx",
+      "current-first-unread/08381-hunspell.cxx",
+      "current-first-unread/08412-textparser.cxx",
+      "current-first-unread/08427-hunspell.cxx",
+      "current-first-unread/08429-hzfuzzer.cxx"
     ],
     "evidence_status": "historical-diagnostic-after-descendant-accounting-commit",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
-    "note": "46dfaf source authority materialized 8,013–8,076; 11 PNGs were visually inspected and remaining entries text/source read. Descendant Actions required."
+    "note": "a8e357 source authority materialized exact 8,366–8,429 identities. This descendant records responsibility decomposition; fresh exact-head Actions are mandatory."
   },
   "closure_rules": {
     "executable_runner": "github-actions",
@@ -46,7 +47,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live authority exact through deterministic order 8,365; first unread 8,366 Telegram/ThirdParty/hunspell::src/Makefile.am; unread_minimum is 7,760; unknown remains 15,845; omitted remains 0.",
+  "note": "Live authority exact through deterministic order 8,429; first unread 8,430 Telegram/ThirdParty/hunspell::src/tools/hzfuzzer.options; unread_minimum is 7,696; unknown remains 15,845; omitted remains 0.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -64,10 +65,10 @@
       6541,
       6627
     ],
-    "current_source_read_through": 8365,
-    "first_unread_order": 8366,
-    "first_unread_path": "Telegram/ThirdParty/hunspell::src/Makefile.am",
-    "current_head_source_authority_evidence": "Orders 8,335–8,365 were exact-read from pinned hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b across remaining locale catalogs and gettext normalization/sentinel files. Descendant exact-head GitHub Actions remain required; source reading closes no unknown."
+    "current_source_read_through": 8429,
+    "first_unread_order": 8430,
+    "first_unread_path": "Telegram/ThirdParty/hunspell::src/tools/hzfuzzer.options",
+    "current_head_source_authority_evidence": "Orders 8,366–8,429 were exact-read from pinned hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b across core spell/suggest/affix/morphology, Unicode/encoding, dictionary persistence, parsers, generators, fuzzers and CLI/tool behavior. Source-authority artifact 11686195087 at predecessor a8e357341bcaa527e78b7ef7c8ca06d68831f6ce fixed exact identities; descendant exact-head GitHub Actions remain required and source reading closes no unknown."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -76,9 +77,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 8365,
-    "first_unread_order": 8366,
-    "first_unread_path": "Telegram/ThirdParty/hunspell::src/Makefile.am",
+    "read_through": 8429,
+    "first_unread_order": 8430,
+    "first_unread_path": "Telegram/ThirdParty/hunspell::src/tools/hzfuzzer.options",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }
