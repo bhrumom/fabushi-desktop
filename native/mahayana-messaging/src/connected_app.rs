@@ -1226,10 +1226,43 @@ impl ConnectedAppState {
         message_id: i64,
         claimed: bool,
     ) -> Result<(), ConnectedAppError> {
+        let recovery = self
+            .request_runtime
+            .active
+            .as_ref()
+            .filter(|entry| entry.message_id == message_id)
+            .map(|entry| entry.recovery)
+            .or_else(|| {
+                self.request_runtime
+                    .silent
+                    .get(&message_id)
+                    .map(|entry| entry.recovery)
+            });
         self.request_runtime.finish(message_id, claimed)?;
         if claimed {
             self.pending_requests
                 .retain(|_, request| request.message_id != message_id);
+        } else if recovery == Some(ConnectedAppRequestRecovery::Offer) {
+            if let Some(record) = self
+                .claims
+                .iter()
+                .find(|claim| claim.message_id == message_id)
+                .cloned()
+            {
+                let (kind, body) = if !record.answer.is_empty() {
+                    (
+                        ConnectedAppRecoverySubmissionKind::Answer,
+                        record.answer.clone(),
+                    )
+                } else {
+                    (
+                        ConnectedAppRecoverySubmissionKind::NotSent,
+                        record.not_sent.clone(),
+                    )
+                };
+                self.request_runtime
+                    .hold_recovery_submission(&record, kind, body);
+            }
         }
         Ok(())
     }
@@ -3083,6 +3116,30 @@ mod connected_app_claim_recovery_scheduler_source_tests {
         assert!(waiting.request_runtime.recovery_polling);
         assert!(waiting.request_runtime.waiting.is_empty());
         assert!(waiting.request_runtime.recovery_submissions.is_empty());
+    }
+
+    #[test]
+    fn dismissed_recovery_offer_submits_durable_fallback_after_releasing_flow() {
+        let identity = wallet(9);
+        let mut state = ConnectedAppState::default();
+        state.upsert_session(session()).unwrap();
+        confirm_claim(&mut state, 150, "dismiss-offer", identity.clone());
+        state
+            .reconcile_claim_recovery(Some(identity), Vec::new(), 300)
+            .unwrap();
+        assert_eq!(
+            state.take_next_request(300).unwrap().map(|entry| entry.recovery),
+            Some(ConnectedAppRequestRecovery::Offer)
+        );
+        state.finish_request(150, false).unwrap();
+        let submission = &state.request_runtime.recovery_submissions[&150];
+        assert_eq!(
+            submission.kind,
+            ConnectedAppRecoverySubmissionKind::NotSent
+        );
+        assert_eq!(submission.body, vec![9, 150]);
+        assert!(state.request_runtime.recovery_held.contains(&150));
+        assert_eq!(state.claims.len(), 1);
     }
 
     #[test]
