@@ -5093,7 +5093,7 @@ mod outbound_transfer_engine_tests {
 #[cfg(test)]
 mod wallet_address_engine_tests {
     use super::*;
-    use crate::actor::{Actor, ActorKind};
+    use crate::actor::Actor;
     use crate::wallet::WalletAddressKnowledge;
 
     fn person(id: &str) -> Actor {
