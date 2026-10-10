@@ -13,10 +13,10 @@
     "recursive_non_directory_entries": 16125,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 15846,
-    "unread_minimum": 9551,
+    "unknown_minimum": 15845,
+    "unread_minimum": 9534,
     "omitted_known": 0,
-    "note": "Live 28ac5769 recursive census 16,125; exact read-through 6,574; unknown 15,846, unread 9,551, omitted 0; cmake/build-runtime composition 6,542-6,574 responsibility-decomposed."
+    "note": "Recursive source census 16,125; unknown 15,845, unread 9,534, omitted 0. Root deterministic read-through is 6,591; gitlink child inventory remains recursively counted and separately evidenced."
   },
   "latest_recursive_evidence": {
     "run_id": 37998467124,
@@ -46,7 +46,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live authority exact through deterministic root source order 6,574; first unread 6,575 Telegram/codegen; unread_minimum is 9,551; unknown remains 15,846; omitted remains 0. Recursive gitlink child inventory remains part of the 16,125-entry census and is not falsely inserted into the root-prefix order.",
+  "note": "Live authority exact through deterministic root source order 6,591; first unread 6,592 Telegram/shaders/argb32.frag; unread_minimum is 9,534; unknown remains 15,845; omitted remains 0.",
   "rebaseline": {
     "from_commit": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
     "to_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
@@ -58,18 +58,18 @@
       5722,
       5759
     ],
-    "current_source_read_through": 6574,
-    "first_unread_order": 6575,
-    "first_unread_path": "Telegram/codegen",
-    "current_head_source_authority_evidence": "Accepted exact blobs through 6,574 responsibility-decomposed; descendant Actions and release-candidate evidence required."
+    "current_source_read_through": 6591,
+    "first_unread_order": 6592,
+    "first_unread_path": "Telegram/shaders/argb32.frag",
+    "current_head_source_authority_evidence": "Accepted exact root entries through 6,591 responsibility-decomposed; gitlink child trees inspected; fresh descendant Actions and release evidence required."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
     "upstream_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "deterministic_prefix_closed": 57,
-    "development_only_non_applicable": 69,
-    "unknown_closed": 279,
+    "development_only_non_applicable": 70,
+    "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 6574
+    "read_through": 6591
   }
 }

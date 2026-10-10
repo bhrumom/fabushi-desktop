@@ -6,8 +6,8 @@
   "target_commit": "3bc92400826cc4ca7ac665b467708e22261edc61",
   "coverage": {
     "source_entries_total": 16125,
-    "unknown": 15846,
-    "unread": 9551,
+    "unknown": 15845,
+    "unread": 9534,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13479,21 +13479,21 @@
     "ahead_by": 10,
     "changed_paths": 25,
     "source_read_reconciliation": "18 changed blobs inside prior prefix re-read/reconciled; orders 5831-6343 read/decomposed; read-through=6343/16125, unread=9782, unknown=15846, omitted=0.",
-    "source_authority_evidence": "Accepted Telegram authority 28ac576967a1026ecc89a927360fa0e138d7c88c / tree 9d8fa87ce68c832d2f4c99f372a5bb672463c3e1; exact-blob read-through 6574; fresh exact-head Actions and all production/release gates remain required.",
-    "current_source_read_through": 6574,
-    "first_unread_order": 6575,
-    "first_unread_path": "Telegram/codegen"
+    "source_authority_evidence": "Accepted Telegram authority 28ac576967a1026ecc89a927360fa0e138d7c88c / tree 9d8fa87ce68c832d2f4c99f372a5bb672463c3e1; exact root read-through 6591; gitlink child trees inspected; fresh exact-head Actions and release evidence required.",
+    "current_source_read_through": 6591,
+    "first_unread_order": 6592,
+    "first_unread_path": "Telegram/shaders/argb32.frag"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
     "upstream_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "deterministic_prefix_closed": 57,
-    "development_only_non_applicable": 69,
-    "unknown_closed": 279,
+    "development_only_non_applicable": 70,
+    "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 6574,
-    "first_unread_order": 6575,
-    "first_unread_path": "Telegram/codegen"
+    "read_through": 6591,
+    "first_unread_order": 6592,
+    "first_unread_path": "Telegram/shaders/argb32.frag"
   },
   "historical_exact_head_evidence": {
     "status": "historical-only",

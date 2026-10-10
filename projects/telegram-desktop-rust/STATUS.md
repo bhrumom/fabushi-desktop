@@ -1,5 +1,5 @@
-Live Revision 9 authority (2026-10-10): telegramdesktop/tdesktop@28ac576967a1026ecc89a927360fa0e138d7c88c (root tree 9d8fa87ce68c832d2f4c99f372a5bb672463c3e1). Root non-directory=6,653; recursive non-directory=16,125; read-through=6,574; first unread=6,575 Telegram/codegen@dbd1d53137cd581cfdbeebe93bcaf54abf55ec74; unread=9,551; unknown=15,846; omitted=0. Reading alone never closes unknown. Fresh descendant exact-head GitHub Actions evidence is required.
-<!-- TDRP_CURRENT_SUMMARY read-through=6574 unread=9551 unknown=15846 omitted=0 first-unread=6575 path=Telegram/codegen -->
+Live Revision 9 authority (2026-10-10): telegramdesktop/tdesktop@28ac576967a1026ecc89a927360fa0e138d7c88c (root tree 9d8fa87ce68c832d2f4c99f372a5bb672463c3e1). Root non-directory=6,653; recursive non-directory=16,125; read-through=6,591; first unread=6,592 Telegram/shaders/argb32.frag@4b4deb01e408b5f441808dc104488e3b8eeabfe2; unread=9,534; unknown=15,845; omitted=0. One newly closed unknown is development-only create.bat scaffolding; reading alone does not close other unknowns. Fresh descendant exact-head GitHub Actions evidence is required.
+<!-- TDRP_CURRENT_SUMMARY read-through=6591 unread=9534 unknown=15845 omitted=0 first-unread=6592 path=Telegram/shaders/argb32.frag -->
 
 # Telegram Desktop → Fabushi 全量等价重写 — Status
 
@@ -318,3 +318,8 @@ Orders **6,506-6,541** close the root build/release tooling source read. Product
 ### Source closure through 6,574
 
 Orders **6,542-6,574** are exact-blob read-complete/responsibility-decomposed for CMake/build-runtime composition. They preserve source-neutral responsibilities for deterministic code/resource generation, updater trust-root and signed-manifest embedding, FIDO2/WebAuthn, Calls/media composition, Wallet/Payments, password-strength dictionaries, Localization, data export, protocol/session maturity, Apple Swift runtime packaging and production-code updater tests. No Telegram-specific runtime or second product owner was introduced. Accounting: **6,574/16,125 read; 9,551 unread; 15,846 unknown; 0 omitted**. First unread is 6,575 gitlink `Telegram/codegen@dbd1d53137cd581cfdbeebe93bcaf54abf55ec74`. Reading/decomposition grants no implementation or release credit; same-head Actions and production/release evidence remain mandatory.
+
+
+### Source closure through 6,591
+
+Orders **6,575-6,591** are exact root-entry read-complete/responsibility-decomposed. The pinned `Telegram/codegen` child tree was inspected for tokenizer/UTF-8, emoji compatibility, localization and style-generation responsibilities; configure wrappers preserve fail-closed target/toolchain/credential propagation; direct library gitlinks map to existing runtime/concurrency/media/QR/reactive/spellcheck/storage/protocol/translation/design-system/call/webview owners. `Telegram/create.bat` is explicitly classified development-only non-applicable after reading, so it closes exactly one unknown without counting as omitted. Accounting: **6,591/16,125 read; 9,534 unread; 15,845 unknown; 0 omitted**. First unread is 6,592 `Telegram/shaders/argb32.frag@4b4deb01e408b5f441808dc104488e3b8eeabfe2`. No mapped-open row receives implementation or release credit.
