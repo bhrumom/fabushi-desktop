@@ -29,9 +29,9 @@ use crate::story::{
 use crate::wallet::{
     LedgerEntry, OnrampProviderInfo, OutboundTransferError, OutboundTransferRecord,
     OutboundTransferTerminal, WalletAccountId, WalletAddressDirectoryError, WalletError,
-    WalletExistingBalanceError, WalletLedger, WalletLiveError, WalletLivePresence, WalletOnrampError,
-    WalletParkedCheckOutcome, WalletParkedError, WalletRateError, WalletRuntimeState,
-    WalletSponsoredFeeError,
+    WalletExistingBalanceError, WalletLedger, WalletLiveError, WalletLivePresence,
+    WalletOnrampError, WalletParkedCheckOutcome, WalletParkedError, WalletRateError,
+    WalletRuntimeState, WalletSponsoredFeeError, WalletStreamKeepalive, WalletStreamRefresh,
     WalletSponsoredFeeInfo, WalletTransferIdentity, WalletTransferQuote, WalletTransferQuoteError,
 };
 use serde::{Deserialize, Serialize};
@@ -367,6 +367,53 @@ pub enum Command {
         generation: u64,
         observed_at_ms: i64,
     },
+    StartWalletLiveStream {
+        address: String,
+        observed_at_ms: i64,
+    },
+    ApplyWalletLiveStreamUrl {
+        generation: u64,
+        observed_at_ms: i64,
+        expires_in_ms: i64,
+    },
+    MarkWalletLiveStreamConnected {
+        generation: u64,
+        observed_at_ms: i64,
+    },
+    MarkWalletLiveStreamActivity {
+        generation: u64,
+        observed_at_ms: i64,
+    },
+    FailWalletLiveStream {
+        generation: u64,
+        observed_at_ms: i64,
+    },
+    ResumeWalletLiveStream {
+        generation: u64,
+        observed_at_ms: i64,
+    },
+    BeginWalletLiveStreamRenew {
+        generation: u64,
+        observed_at_ms: i64,
+    },
+    WantWalletLiveStreamRefresh {
+        generation: u64,
+        observed_at_ms: i64,
+        wanted: WalletStreamRefresh,
+    },
+    NoteWalletLiveStreamTransaction {
+        generation: u64,
+        observed_at_ms: i64,
+    },
+    TakeWalletLiveStreamRefresh {
+        generation: u64,
+        observed_at_ms: i64,
+    },
+    TakeWalletLiveStreamHistoryRecheck {
+        generation: u64,
+        observed_at_ms: i64,
+    },
+    StopWalletLiveStream,
     SpendWalletHistoryPageRequest {
         generation: u64,
     },
@@ -3076,6 +3123,128 @@ impl MessagingEngine {
                 runtime
                     .live
                     .mark_stream_resync(generation, observed_at_ms)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::StartWalletLiveStream {
+                address,
+                observed_at_ms,
+            } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime.live.stream.start(&address, observed_at_ms)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::ApplyWalletLiveStreamUrl {
+                generation,
+                observed_at_ms,
+                expires_in_ms,
+            } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime
+                    .live
+                    .stream
+                    .apply_url(generation, observed_at_ms, expires_in_ms)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::MarkWalletLiveStreamConnected {
+                generation,
+                observed_at_ms,
+            } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime
+                    .live
+                    .stream
+                    .connected(generation, observed_at_ms)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::MarkWalletLiveStreamActivity {
+                generation,
+                observed_at_ms,
+            } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime
+                    .live
+                    .stream
+                    .note_activity(generation, observed_at_ms)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::FailWalletLiveStream {
+                generation,
+                observed_at_ms,
+            } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime.live.stream.fail(generation, observed_at_ms)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::ResumeWalletLiveStream {
+                generation,
+                observed_at_ms,
+            } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime
+                    .live
+                    .stream
+                    .resume_after_backoff(generation, observed_at_ms)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::BeginWalletLiveStreamRenew {
+                generation,
+                observed_at_ms,
+            } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime
+                    .live
+                    .stream
+                    .begin_renew_if_due(generation, observed_at_ms)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::WantWalletLiveStreamRefresh {
+                generation,
+                observed_at_ms,
+                wanted,
+            } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime
+                    .live
+                    .stream
+                    .want_refresh(generation, observed_at_ms, wanted)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::NoteWalletLiveStreamTransaction {
+                generation,
+                observed_at_ms,
+            } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime
+                    .live
+                    .stream
+                    .note_transaction_event(generation, observed_at_ms)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::TakeWalletLiveStreamRefresh {
+                generation,
+                observed_at_ms,
+            } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime
+                    .live
+                    .stream
+                    .take_refresh_if_due(generation, observed_at_ms)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::TakeWalletLiveStreamHistoryRecheck {
+                generation,
+                observed_at_ms,
+            } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime
+                    .live
+                    .stream
+                    .take_history_recheck_if_due(generation, observed_at_ms)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::StopWalletLiveStream => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime.live.stream.stop()?;
                 Ok(vec![Event::WalletRuntimeChanged { runtime }])
             }
             Command::SpendWalletHistoryPageRequest { generation } => {
@@ -5903,6 +6072,75 @@ mod wallet_live_engine_tests {
         assert!(!engine.state().wallet.runtime.live.stream_resync_due(
             5_000 + crate::wallet::WALLET_LIVE_STREAM_RESYNC_MS - 1
         ));
+    }
+
+    #[test]
+    fn engine_stream_runtime_fences_stale_socket_epochs_and_coalesces_refresh() {
+        let mut engine = MessagingEngine::new();
+        engine
+            .execute(Command::StartWalletLiveStream {
+                address: "EQ-wallet".into(),
+                observed_at_ms: 0,
+            })
+            .unwrap();
+        let acquire = engine.state().wallet.runtime.live.stream.generation;
+        engine
+            .execute(Command::ApplyWalletLiveStreamUrl {
+                generation: acquire,
+                observed_at_ms: 10,
+                expires_in_ms: 120_000,
+            })
+            .unwrap();
+        let socket = engine.state().wallet.runtime.live.stream.generation;
+        engine
+            .execute(Command::MarkWalletLiveStreamConnected {
+                generation: socket,
+                observed_at_ms: 20,
+            })
+            .unwrap();
+        engine
+            .execute(Command::NoteWalletLiveStreamTransaction {
+                generation: socket,
+                observed_at_ms: 100,
+            })
+            .unwrap();
+        engine
+            .execute(Command::TakeWalletLiveStreamRefresh {
+                generation: socket,
+                observed_at_ms: 350,
+            })
+            .unwrap();
+        assert_eq!(engine.state().wallet.runtime.live.stream.wanted, WalletStreamRefresh::default());
+        engine
+            .execute(Command::FailWalletLiveStream {
+                generation: socket,
+                observed_at_ms: 400,
+            })
+            .unwrap();
+        assert_eq!(
+            engine.execute(Command::MarkWalletLiveStreamActivity {
+                generation: socket,
+                observed_at_ms: 401,
+            }),
+            Err(EngineError::WalletLive(WalletLiveError::StaleStreamGeneration {
+                current: engine.state().wallet.runtime.live.stream.generation,
+                received: socket,
+            }))
+        );
+        assert_eq!(
+            engine
+                .state()
+                .wallet
+                .runtime
+                .live
+                .stream
+                .keepalive_action(
+                    engine.state().wallet.runtime.live.stream.generation,
+                    401
+                )
+                .unwrap(),
+            WalletStreamKeepalive::None
+        );
     }
 
     #[test]

@@ -2153,6 +2153,335 @@ pub const WALLET_LIVE_STATE_REFRESH_MS: i64 = 60 * 1_000;
 pub const WALLET_LIVE_STREAM_RESYNC_MS: i64 = 30 * 1_000;
 pub const WALLET_LIVE_FAILURES_BEFORE_UNREACHABLE: u8 = 2;
 pub const WALLET_LIVE_MAX_HIDDEN_PAGES: u8 = 20;
+pub const WALLET_STREAM_COALESCE_MS: i64 = 250;
+pub const WALLET_STREAM_HISTORY_RECHECK_MS: i64 = 3_000;
+pub const WALLET_STREAM_HISTORY_FINAL_RECHECK_MS: i64 = 10_000;
+pub const WALLET_STREAM_KEEPALIVE_MS: i64 = 10_000;
+pub const WALLET_STREAM_STALL_MS: i64 = 30_000;
+pub const WALLET_STREAM_STABLE_MS: i64 = 60_000;
+pub const WALLET_STREAM_RENEW_MARGIN_MS: i64 = 60_000;
+pub const WALLET_STREAM_MAX_RENEW_MS: i64 = 30 * 60 * 1_000;
+pub const WALLET_STREAM_RETRY_MS: [i64; 7] = [500, 1_000, 2_000, 4_000, 8_000, 15_000, 30_000];
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum WalletStreamPhase {
+    #[default]
+    Idle,
+    Acquiring,
+    Connecting,
+    Live,
+    Backoff,
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WalletStreamRefresh {
+    pub state: bool,
+    pub history: bool,
+    pub collectibles: bool,
+}
+
+impl WalletStreamRefresh {
+    pub fn merge(&mut self, other: Self) {
+        self.state |= other.state;
+        self.history |= other.history;
+        self.collectibles |= other.collectibles;
+    }
+
+    pub fn any(self) -> bool {
+        self.state || self.history || self.collectibles
+    }
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WalletStreamState {
+    pub generation: u64,
+    pub address: String,
+    pub phase: WalletStreamPhase,
+    pub retry_attempt: u8,
+    pub live_since_ms: Option<i64>,
+    pub last_activity_ms: Option<i64>,
+    pub retry_at_ms: Option<i64>,
+    pub renew_at_ms: Option<i64>,
+    pub coalesce_due_ms: Option<i64>,
+    pub history_recheck_due_ms: Option<i64>,
+    pub history_rechecked_once: bool,
+    pub wanted: WalletStreamRefresh,
+}
+
+impl WalletStreamState {
+    pub fn start(&mut self, address: &str, now_ms: i64) -> Result<u64, WalletLiveError> {
+        require_live_timestamp(now_ms)?;
+        validate_wallet_address(address).map_err(|_| WalletLiveError::InvalidStreamAddress)?;
+        if self.phase != WalletStreamPhase::Idle && self.address == address {
+            return Ok(self.generation);
+        }
+        self.bump_generation()?;
+        self.address = address.to_string();
+        self.phase = WalletStreamPhase::Acquiring;
+        self.retry_attempt = 0;
+        self.live_since_ms = None;
+        self.last_activity_ms = None;
+        self.retry_at_ms = None;
+        self.renew_at_ms = None;
+        self.coalesce_due_ms = None;
+        self.history_recheck_due_ms = None;
+        self.history_rechecked_once = false;
+        self.wanted = WalletStreamRefresh::default();
+        Ok(self.generation)
+    }
+
+    pub fn stop(&mut self) -> Result<u64, WalletLiveError> {
+        self.bump_generation()?;
+        self.address.clear();
+        self.phase = WalletStreamPhase::Idle;
+        self.retry_attempt = 0;
+        self.live_since_ms = None;
+        self.last_activity_ms = None;
+        self.retry_at_ms = None;
+        self.renew_at_ms = None;
+        self.coalesce_due_ms = None;
+        self.history_recheck_due_ms = None;
+        self.history_rechecked_once = false;
+        self.wanted = WalletStreamRefresh::default();
+        Ok(self.generation)
+    }
+
+    pub fn apply_url(
+        &mut self,
+        generation: u64,
+        now_ms: i64,
+        expires_in_ms: i64,
+    ) -> Result<u64, WalletLiveError> {
+        self.require_generation(generation)?;
+        require_live_timestamp(now_ms)?;
+        if self.phase != WalletStreamPhase::Acquiring || expires_in_ms <= 0 {
+            return Err(WalletLiveError::InvalidStreamTransition);
+        }
+        let minimal = (expires_in_ms / 2).min(WALLET_STREAM_MAX_RENEW_MS);
+        let renew_delay = (expires_in_ms - WALLET_STREAM_RENEW_MARGIN_MS)
+            .clamp(minimal, WALLET_STREAM_MAX_RENEW_MS);
+        self.renew_at_ms = Some(now_ms.saturating_add(renew_delay));
+        self.bump_generation()?;
+        self.phase = WalletStreamPhase::Connecting;
+        self.last_activity_ms = Some(now_ms);
+        self.live_since_ms = None;
+        self.retry_at_ms = None;
+        Ok(self.generation)
+    }
+
+    pub fn connected(&mut self, generation: u64, now_ms: i64) -> Result<(), WalletLiveError> {
+        self.require_generation(generation)?;
+        require_live_timestamp(now_ms)?;
+        if self.phase != WalletStreamPhase::Connecting {
+            return Err(WalletLiveError::InvalidStreamTransition);
+        }
+        self.phase = WalletStreamPhase::Live;
+        self.live_since_ms = Some(now_ms);
+        self.last_activity_ms = Some(now_ms);
+        Ok(())
+    }
+
+    pub fn note_activity(&mut self, generation: u64, now_ms: i64) -> Result<(), WalletLiveError> {
+        self.require_generation(generation)?;
+        require_live_timestamp(now_ms)?;
+        if !matches!(self.phase, WalletStreamPhase::Connecting | WalletStreamPhase::Live) {
+            return Err(WalletLiveError::InvalidStreamTransition);
+        }
+        self.last_activity_ms = Some(now_ms);
+        Ok(())
+    }
+
+    pub fn keepalive_action(
+        &self,
+        generation: u64,
+        now_ms: i64,
+    ) -> Result<WalletStreamKeepalive, WalletLiveError> {
+        self.require_generation(generation)?;
+        require_live_timestamp(now_ms)?;
+        if self.phase != WalletStreamPhase::Live {
+            return Ok(WalletStreamKeepalive::None);
+        }
+        let stalled = self
+            .last_activity_ms
+            .is_some_and(|last| now_ms.saturating_sub(last) > WALLET_STREAM_STALL_MS);
+        Ok(if stalled {
+            WalletStreamKeepalive::Fail
+        } else {
+            WalletStreamKeepalive::Ping
+        })
+    }
+
+    pub fn fail(&mut self, generation: u64, now_ms: i64) -> Result<u64, WalletLiveError> {
+        self.require_generation(generation)?;
+        require_live_timestamp(now_ms)?;
+        if self.phase == WalletStreamPhase::Idle {
+            return Err(WalletLiveError::InvalidStreamTransition);
+        }
+        let stable = self
+            .live_since_ms
+            .is_some_and(|live| now_ms.saturating_sub(live) > WALLET_STREAM_STABLE_MS);
+        if stable {
+            self.retry_attempt = 0;
+        }
+        self.bump_generation()?;
+        let index = usize::from(self.retry_attempt)
+            .min(WALLET_STREAM_RETRY_MS.len().saturating_sub(1));
+        let delay = WALLET_STREAM_RETRY_MS[index];
+        self.retry_attempt = self.retry_attempt.saturating_add(1);
+        self.phase = WalletStreamPhase::Backoff;
+        self.retry_at_ms = Some(now_ms.saturating_add(delay));
+        self.renew_at_ms = None;
+        self.live_since_ms = None;
+        self.last_activity_ms = None;
+        self.history_recheck_due_ms = None;
+        self.history_rechecked_once = false;
+        Ok(self.generation)
+    }
+
+    pub fn resume_after_backoff(
+        &mut self,
+        generation: u64,
+        now_ms: i64,
+    ) -> Result<bool, WalletLiveError> {
+        self.require_generation(generation)?;
+        require_live_timestamp(now_ms)?;
+        if self.phase != WalletStreamPhase::Backoff {
+            return Err(WalletLiveError::InvalidStreamTransition);
+        }
+        if self.retry_at_ms.is_some_and(|due| now_ms < due) {
+            return Ok(false);
+        }
+        self.phase = WalletStreamPhase::Acquiring;
+        self.retry_at_ms = None;
+        Ok(true)
+    }
+
+    pub fn begin_renew_if_due(
+        &mut self,
+        generation: u64,
+        now_ms: i64,
+    ) -> Result<bool, WalletLiveError> {
+        self.require_generation(generation)?;
+        require_live_timestamp(now_ms)?;
+        if !matches!(self.phase, WalletStreamPhase::Live | WalletStreamPhase::Connecting) {
+            return Ok(false);
+        }
+        if self.renew_at_ms.is_some_and(|due| now_ms >= due) {
+            self.phase = WalletStreamPhase::Acquiring;
+            self.renew_at_ms = None;
+            return Ok(true);
+        }
+        Ok(false)
+    }
+
+    pub fn want_refresh(
+        &mut self,
+        generation: u64,
+        now_ms: i64,
+        wanted: WalletStreamRefresh,
+    ) -> Result<(), WalletLiveError> {
+        self.require_generation(generation)?;
+        require_live_timestamp(now_ms)?;
+        if !wanted.any() {
+            return Ok(());
+        }
+        self.wanted.merge(wanted);
+        self.coalesce_due_ms
+            .get_or_insert(now_ms.saturating_add(WALLET_STREAM_COALESCE_MS));
+        Ok(())
+    }
+
+    pub fn note_transaction_event(
+        &mut self,
+        generation: u64,
+        now_ms: i64,
+    ) -> Result<(), WalletLiveError> {
+        self.want_refresh(
+            generation,
+            now_ms,
+            WalletStreamRefresh {
+                state: true,
+                history: true,
+                collectibles: true,
+            },
+        )?;
+        self.history_rechecked_once = false;
+        self.history_recheck_due_ms = Some(now_ms.saturating_add(WALLET_STREAM_HISTORY_RECHECK_MS));
+        Ok(())
+    }
+
+    pub fn take_refresh_if_due(
+        &mut self,
+        generation: u64,
+        now_ms: i64,
+    ) -> Result<Option<WalletStreamRefresh>, WalletLiveError> {
+        self.require_generation(generation)?;
+        require_live_timestamp(now_ms)?;
+        if self.coalesce_due_ms.is_none_or(|due| now_ms < due) {
+            return Ok(None);
+        }
+        self.coalesce_due_ms = None;
+        let wanted = std::mem::take(&mut self.wanted);
+        Ok(wanted.any().then_some(wanted))
+    }
+
+    pub fn take_history_recheck_if_due(
+        &mut self,
+        generation: u64,
+        now_ms: i64,
+    ) -> Result<bool, WalletLiveError> {
+        self.require_generation(generation)?;
+        require_live_timestamp(now_ms)?;
+        let Some(due) = self.history_recheck_due_ms else {
+            return Ok(false);
+        };
+        if now_ms < due {
+            return Ok(false);
+        }
+        if self.history_rechecked_once {
+            self.history_recheck_due_ms = None;
+        } else {
+            self.history_rechecked_once = true;
+            self.history_recheck_due_ms = Some(
+                due.saturating_add(
+                    WALLET_STREAM_HISTORY_FINAL_RECHECK_MS - WALLET_STREAM_HISTORY_RECHECK_MS,
+                ),
+            );
+        }
+        Ok(true)
+    }
+
+    fn bump_generation(&mut self) -> Result<(), WalletLiveError> {
+        self.generation = self
+            .generation
+            .checked_add(1)
+            .ok_or(WalletLiveError::StreamGenerationOverflow)?;
+        Ok(())
+    }
+
+    fn require_generation(&self, generation: u64) -> Result<(), WalletLiveError> {
+        if generation != 0 && generation == self.generation {
+            Ok(())
+        } else {
+            Err(WalletLiveError::StaleStreamGeneration {
+                current: self.generation,
+                received: generation,
+            })
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum WalletStreamKeepalive {
+    #[default]
+    None,
+    Ping,
+    Fail,
+}
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -2176,6 +2505,7 @@ pub struct WalletLiveState {
     pub last_state_refresh_ms: Option<i64>,
     pub last_stream_resync_ms: Option<i64>,
     pub hidden_pages_without_visible_rows: u8,
+    pub stream: WalletStreamState,
 }
 
 impl WalletLiveState {
@@ -2190,6 +2520,7 @@ impl WalletLiveState {
         self.last_state_refresh_ms = None;
         self.last_stream_resync_ms = None;
         self.hidden_pages_without_visible_rows = 0;
+        self.stream = WalletStreamState::default();
         Ok(self.generation)
     }
 
@@ -2315,6 +2646,14 @@ pub enum WalletLiveError {
     InvalidTimestamp,
     #[error("wallet hidden history page budget is exhausted")]
     HistoryPageBudgetExhausted,
+    #[error("wallet stream address is invalid")]
+    InvalidStreamAddress,
+    #[error("wallet stream transition is invalid")]
+    InvalidStreamTransition,
+    #[error("wallet stream generation overflowed")]
+    StreamGenerationOverflow,
+    #[error("wallet stream generation is stale: current {current}, received {received}")]
+    StaleStreamGeneration { current: u64, received: u64 },
 }
 
 
@@ -3943,6 +4282,80 @@ mod wallet_runtime_tests {
         }
         live.rearm_history_walk(generation).unwrap();
         assert_eq!(live.hidden_pages_without_visible_rows, 0);
+    }
+
+    #[test]
+    fn live_stream_fences_epochs_backoffs_and_resets_after_stable_live() {
+        let mut stream = WalletStreamState::default();
+        let acquire = stream.start("EQ-wallet", 0).unwrap();
+        let socket = stream.apply_url(acquire, 10, 120_000).unwrap();
+        assert_eq!(stream.phase, WalletStreamPhase::Connecting);
+        assert_eq!(stream.renew_at_ms, Some(70_010));
+        stream.connected(socket, 20).unwrap();
+        stream.note_activity(socket, 25).unwrap();
+        assert_eq!(
+            stream.keepalive_action(socket, 25 + WALLET_STREAM_STALL_MS + 1).unwrap(),
+            WalletStreamKeepalive::Fail
+        );
+        let retry_generation = stream.fail(socket, 30).unwrap();
+        assert_eq!(stream.retry_at_ms, Some(30 + WALLET_STREAM_RETRY_MS[0]));
+        assert!(!stream
+            .resume_after_backoff(retry_generation, 100)
+            .unwrap());
+        assert!(stream
+            .resume_after_backoff(retry_generation, 530)
+            .unwrap());
+
+        let socket = stream.apply_url(retry_generation, 540, 120_000).unwrap();
+        stream.connected(socket, 550).unwrap();
+        let retry_generation = stream
+            .fail(socket, 550 + WALLET_STREAM_STABLE_MS + 1)
+            .unwrap();
+        assert_eq!(
+            stream.retry_at_ms,
+            Some(550 + WALLET_STREAM_STABLE_MS + 1 + WALLET_STREAM_RETRY_MS[0])
+        );
+        assert_eq!(
+            stream.note_activity(socket, 1_000),
+            Err(WalletLiveError::StaleStreamGeneration {
+                current: retry_generation,
+                received: socket,
+            })
+        );
+    }
+
+    #[test]
+    fn live_stream_coalesces_refresh_and_rechecks_transaction_history_twice() {
+        let mut stream = WalletStreamState::default();
+        let acquire = stream.start("EQ-wallet", 0).unwrap();
+        let socket = stream.apply_url(acquire, 10, 120_000).unwrap();
+        stream.connected(socket, 20).unwrap();
+        stream.note_transaction_event(socket, 100).unwrap();
+        stream
+            .want_refresh(
+                socket,
+                110,
+                WalletStreamRefresh {
+                    state: false,
+                    history: true,
+                    collectibles: false,
+                },
+            )
+            .unwrap();
+        assert!(stream.take_refresh_if_due(socket, 349).unwrap().is_none());
+        let wanted = stream.take_refresh_if_due(socket, 350).unwrap().unwrap();
+        assert!(wanted.state && wanted.history && wanted.collectibles);
+        assert!(!stream
+            .take_history_recheck_if_due(socket, 3_099)
+            .unwrap());
+        assert!(stream
+            .take_history_recheck_if_due(socket, 3_100)
+            .unwrap());
+        assert_eq!(stream.history_recheck_due_ms, Some(10_100));
+        assert!(stream
+            .take_history_recheck_if_due(socket, 10_100)
+            .unwrap());
+        assert_eq!(stream.history_recheck_due_ms, None);
     }
 
     #[test]
