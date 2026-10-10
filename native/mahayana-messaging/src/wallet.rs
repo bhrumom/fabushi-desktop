@@ -1632,13 +1632,14 @@ impl OutboundTransferRecord {
             || self.operation_id.trim().is_empty()
             || self.operation_id.len() > 256
             || !matches!(self.network, 1 | 2)
-            || self.address.trim().is_empty()
-            || self.address.len() > 128
+            || validate_wallet_address(&self.address).is_err()
             || self.public_key.len() != 32
-            || self.destination.trim().is_empty()
-            || self.destination.len() > 128
+            || validate_wallet_address(&self.destination).is_err()
             || self.comment.as_bytes().len() > OUTBOUND_TRANSFER_COMMENT_MAX_BYTES
-            || self.collectible.as_deref().is_some_and(|value| value.len() > 128)
+            || self
+                .collectible
+                .as_deref()
+                .is_some_and(|value| validate_wallet_address(value).is_err())
             || self.recipient_actor_id.as_ref().is_some_and(|actor| !actor.is_valid())
             || self.served.as_ref().is_some_and(|projection| projection.validate().is_err())
             || self.amount_nano <= 0
@@ -4789,6 +4790,34 @@ mod outbound_transfer_journal_tests {
             paired: false,
             bounce: false,
         }
+    }
+
+    #[test]
+    fn journal_rejects_noncanonical_source_destination_and_collectible_addresses() {
+        let mut journal = OutboundTransferJournal::default();
+
+        let mut invalid_source = prepared("source", "operation-source");
+        invalid_source.address = " source-address".into();
+        assert_eq!(
+            journal.prepare(invalid_source),
+            Err(OutboundTransferError::InvalidRecord)
+        );
+
+        let mut invalid_destination = prepared("destination", "operation-destination");
+        invalid_destination.destination = "destination-address\n".into();
+        assert_eq!(
+            journal.prepare(invalid_destination),
+            Err(OutboundTransferError::InvalidRecord)
+        );
+
+        let mut invalid_collectible = prepared("collectible", "operation-collectible");
+        invalid_collectible.collectible = Some(" collectible-address".into());
+        assert_eq!(
+            journal.prepare(invalid_collectible),
+            Err(OutboundTransferError::InvalidRecord)
+        );
+
+        assert!(journal.records.is_empty());
     }
 
     #[test]

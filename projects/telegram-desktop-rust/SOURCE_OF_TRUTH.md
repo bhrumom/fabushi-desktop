@@ -1,5 +1,5 @@
-Live Revision 9 authority (2026-10-10): telegramdesktop/tdesktop@28ac576967a1026ecc89a927360fa0e138d7c88c (root tree 9d8fa87ce68c832d2f4c99f372a5bb672463c3e1). Root non-directory=6,653; recursive non-directory=16,125; read-through=6,357; first unread=6,358 Telegram/SourceFiles/wallet/wallet_transfer_messages.cpp@69cfdacd962b23cad6aab961c1f57b704224735b; unread=9,768; unknown=15,846; omitted=0. Reading alone never closes unknown. Fresh descendant exact-head GitHub Actions evidence is required.
-<!-- TDRP_CURRENT_SUMMARY read-through=6357 unread=9768 unknown=15846 omitted=0 first-unread=6358 path=Telegram/SourceFiles/wallet/wallet_transfer_messages.cpp -->
+Live Revision 9 authority (2026-10-10): telegramdesktop/tdesktop@28ac576967a1026ecc89a927360fa0e138d7c88c (root tree 9d8fa87ce68c832d2f4c99f372a5bb672463c3e1). Root non-directory=6,653; recursive non-directory=16,125; read-through=6,361; first unread=6,362 Telegram/SourceFiles/wallet/wallet_unlock.cpp@5fbaea9d950772164094e7477e5f786f9a78279f; unread=9,764; unknown=15,846; omitted=0. Reading alone never closes unknown. Fresh descendant exact-head GitHub Actions evidence is required.
+<!-- TDRP_CURRENT_SUMMARY read-through=6361 unread=9764 unknown=15846 omitted=0 first-unread=6362 path=Telegram/SourceFiles/wallet/wallet_unlock.cpp -->
 
 # Telegram 源码 → Fabushi 全量等价重写 — Source of Truth
 
@@ -500,3 +500,8 @@ Orders **6,344-6,353** are exact-blob read/responsibility-decomposed across the 
 
 Orders **6,354-6,357** are exact-blob read/responsibility-decomposed across the full connected-app request scheduler/Flow contract and its request-confirmation projection. Existing-owner-first production descendants now cover transport message identity, active/silent/waiting arbitration, durable claim recovery rebuild, recovery polling/submission settlement, flow-completion ownership fencing and Recovery::Offer fallback through canonical native/mahayana-messaging ConnectedApp owners. Remote pending/service composition, closed-session late context, wallet resolve/polling, cryptographic decrypt/sign/encrypt, fee/emulation send integration, Recovery::Answer re-encryption and shipping request UI/a11y/visual evidence remain mapped-open. No row is promoted to verified and reading does not reduce global unknown. Accounting: **6,357 / 16,125 read**, **9,768 unread**, **15,846 unknown**, **0 omitted**. First unread is **6,358** Telegram/SourceFiles/wallet/wallet_transfer_messages.cpp@69cfdacd….
 
+
+
+### Revision 9 source closure through 6,361
+
+Orders **6,358-6,361** are exact-blob read/responsibility-decomposed for optimistic outbound transfer-message reconciliation and the durable submitted-transfer store. The canonical Wallet journal already owns handoff/lookup/terminal recovery; this descendant additionally fail-closes noncanonical source, destination and collectible addresses through the existing wallet-address validator. The Message owner still lacks the complete per-draft server-id floor, transport-identity and identical-twin adoption/refusal contract, so 6,358-6,359 remain explicitly mapped-open rather than receiving false implementation credit. Accounting is **6,361/16,125 read; 9,764 unread; 15,846 unknown; 0 omitted**. First unread is 6,362 `Telegram/SourceFiles/wallet/wallet_unlock.cpp@5fbaea9d950772164094e7477e5f786f9a78279f`.
