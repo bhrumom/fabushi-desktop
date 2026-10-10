@@ -266,9 +266,9 @@
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
     "unknown_minimum": 15845,
-    "unread_minimum": 9097,
+    "unread_minimum": 9069,
     "omitted_known": 0,
-    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 7,028; unknown=15,845, unread=9,097, omitted=0."
+    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 7,056; unknown=15,845, unread=9,069, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -634,9 +634,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 7028,
-    "first_unread_order": 7029,
-    "first_unread_path": "Telegram/ThirdParty/TooManyCooks::.clang-format",
+    "read_through": 7056,
+    "first_unread_order": 7057,
+    "first_unread_path": "Telegram/ThirdParty/TooManyCooks::include/tmc/all_headers.hpp",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {

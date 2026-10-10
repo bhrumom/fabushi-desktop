@@ -1,5 +1,5 @@
-Live Revision 9 authority (2026-10-10): telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 (root tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6). Root non-directory=6,653; recursive non-directory=16,125; read-through=7,028; first unread=7,029 Telegram/ThirdParty/TooManyCooks::.clang-format@b484c8323870e494c8031a35ddac49aa114052b3; unread=9,097; unknown=15,845; omitted=0. Orders 6,977-7,028 exact-read the pinned QR generator component. Existing RemoteControl pairing, SharedRoom invite and DeepLink owners retain payload/lifecycle state; QR remains a source-neutral representation/codec responsibility with no new QR/Identity/Conversation/Computer owner. Fresh descendant exact-head GitHub Actions evidence is required.
-<!-- TDRP_CURRENT_SUMMARY read-through=7028 unread=9097 unknown=15845 omitted=0 first-unread=7029 path=Telegram/ThirdParty/TooManyCooks::.clang-format -->
+Live Revision 9 authority (2026-10-10): telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 (root tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6). Root non-directory=6,653; recursive non-directory=16,125; read-through=7,056; first unread=7,057 Telegram/ThirdParty/TooManyCooks::include/tmc/all_headers.hpp@9f14633b57c5d4b319d1309b4bc6db643bc1822d; unread=9,069; unknown=15,845; omitted=0. Orders 7,029-7,056 exact-read TooManyCooks build/quality/project authority: sanitizer/platform/topology matrices, coroutine task/executor/priority/awaitable lifecycle and dependency/configuration contracts. Existing Fabushi runtime plus Build/Release owners remain canonical; no TMC runtime/provider is created. Fresh descendant exact-head GitHub Actions evidence is required.
+<!-- TDRP_CURRENT_SUMMARY read-through=7056 unread=9069 unknown=15845 omitted=0 first-unread=7057 path=Telegram/ThirdParty/TooManyCooks::include/tmc/all_headers.hpp -->
 
 # Telegram 源码 → Fabushi 全量等价重写 — Source of Truth
 
@@ -670,3 +670,9 @@ Orders **6,977-7,028** are exact-blob read-complete/responsibility-decomposed fo
 Existing-owner-first audit rejects a new QR product/state subsystem: RemoteControl already owns pairing/manual code, auth, expiry, status and persistence; SharedRoom owns share URL/expiry/room lifecycle; DeepLink owns canonical URL parsing. QR is mapped-open as a stateless representation/codec boundary behind those owners plus canonical Resource presentation. Reading grants no implementation, verification or unknown-closure credit.
 
 Accounting: **7,028/16,125 read; 9,097 unread; 15,845 unknown; 0 omitted**. First unread is order 7,029 `Telegram/ThirdParty/TooManyCooks::.clang-format@b484c8323870e494c8031a35ddac49aa114052b3`.
+
+### Source closure through 7,056
+
+Orders **7,029-7,056** exact-read TooManyCooks formatting, CI, project authority and package/build contracts. The source authority requires sanitizer/platform/topology coverage, cold task semantics, executor/priority inheritance and resume affinity, mandatory await/detach linear lifetime, fork/join lifetime, coroutine-lambda capture safety, work-stealing/topology behavior and build-option consistency. These remain mapped-open to existing Fabushi Coordinator/Host/Runner/ConversationActor/CapabilityBroker plus Build/Release owners; no TMC provider/runtime is introduced. Reading closes no unknown.
+
+Accounting: **7,056/16,125 read; 9,069 unread; 15,845 unknown; 0 omitted**. First unread is order 7,057 `Telegram/ThirdParty/TooManyCooks::include/tmc/all_headers.hpp@9f14633b57c5d4b319d1309b4bc6db643bc1822d`.

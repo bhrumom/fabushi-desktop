@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 9097,
+    "unread_minimum": 9069,
     "omitted_known": 0,
-    "note": "Recursive source census 16,125; unknown 15,845, unread 9,097, omitted 0. Exact read/responsibility decomposition extends through order 7,028; QR codec/rendering responsibilities remain mapped-open under existing pairing/share/deep-link/resource owners; reading closes no unknown."
+    "note": "Recursive source census 16,125; unknown 15,845, unread 9,069, omitted 0. Exact read/responsibility decomposition extends through order 7,056; TooManyCooks build/quality/project authority exposes sanitizer/topology/configuration plus coroutine/executor lifecycle responsibilities that remain mapped-open under existing runtime and Build/Release owners. Reading closes no unknown."
   },
   "latest_recursive_evidence": {
     "run_id": 38060966114,
@@ -46,7 +46,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live authority 6fed91ff exact through recursive order 7,028; first unread is 7,029 Telegram/ThirdParty/TooManyCooks::.clang-format; unread_minimum is 9,097; unknown remains 15,845; omitted remains 0.",
+  "note": "Live authority 6fed91ff exact through recursive order 7,056; first unread is 7,057 Telegram/ThirdParty/TooManyCooks::include/tmc/all_headers.hpp; unread_minimum is 9,069; unknown remains 15,845; omitted remains 0.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -64,10 +64,10 @@
       6541,
       6627
     ],
-    "current_source_read_through": 7028,
-    "first_unread_order": 7029,
-    "first_unread_path": "Telegram/ThirdParty/TooManyCooks::.clang-format",
-    "current_head_source_authority_evidence": "Accepted authority remains 6fed91ff. Deterministic component read-through completes QR through typescript-javascript/qrcodegen.ts order 7,028; QR codec/rendering responsibilities remain mapped-open under existing pairing/share/deep-link/resource owners and fresh descendant exact-head Actions are required."
+    "current_source_read_through": 7056,
+    "first_unread_order": 7057,
+    "first_unread_path": "Telegram/ThirdParty/TooManyCooks::include/tmc/all_headers.hpp",
+    "current_head_source_authority_evidence": "Deterministic reading now covers TooManyCooks orders 7,029-7,056: sanitizer/platform/topology matrices, package/build contracts, coroutine/executor/priority/awaitable lifecycle authority and dependency configuration. No unknown is closed; source-neutral mapping remains open."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -76,9 +76,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 7028,
-    "first_unread_order": 7029,
-    "first_unread_path": "Telegram/ThirdParty/TooManyCooks::.clang-format",
+    "read_through": 7056,
+    "first_unread_order": 7057,
+    "first_unread_path": "Telegram/ThirdParty/TooManyCooks::include/tmc/all_headers.hpp",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }
