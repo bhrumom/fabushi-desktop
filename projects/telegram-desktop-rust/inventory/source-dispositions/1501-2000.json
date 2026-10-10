@@ -19084,7 +19084,12 @@
       "omitted": false,
       "consumer_symbol": "read_reactions",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:680:whoReadReactions: icon{{ \"menu/read_reactions\", windowBoldFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:681:whoReadReactions: icon{{ \"menu/read_reactions\", windowBoldFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:682:whoReadReactionsOver: icon{{ \"menu/read_reactions\", windowBoldFgOver }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:683:whoReadReactionsDisabled: icon{{ \"menu/read_reactions\", menuFgDisabled }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:689:reactionsTabAll: icon {{ \"menu/read_reactions\", windowFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:690:reactionsTabAllSelected: icon {{ \"menu/read_reactions\", activeButtonFg }};",
+        "Telegram/SourceFiles/ui/menu_icons.style:11:menuIconReactions: icon {{ \"menu/read_reactions\", menuIconColor }};",
         "C++/product caller audit: reaction attribution tabs and profile access."
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
@@ -19127,7 +19132,12 @@
       "omitted": false,
       "consumer_symbol": "read_reactions",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:680:whoReadReactions: icon{{ \"menu/read_reactions\", windowBoldFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:681:whoReadReactions: icon{{ \"menu/read_reactions\", windowBoldFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:682:whoReadReactionsOver: icon{{ \"menu/read_reactions\", windowBoldFgOver }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:683:whoReadReactionsDisabled: icon{{ \"menu/read_reactions\", menuFgDisabled }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:689:reactionsTabAll: icon {{ \"menu/read_reactions\", windowFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:690:reactionsTabAllSelected: icon {{ \"menu/read_reactions\", activeButtonFg }};",
+        "Telegram/SourceFiles/ui/menu_icons.style:11:menuIconReactions: icon {{ \"menu/read_reactions\", menuIconColor }};",
         "C++/product caller audit: reaction attribution tabs and profile access."
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
@@ -19170,7 +19180,12 @@
       "omitted": false,
       "consumer_symbol": "read_reactions",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:680:whoReadReactions: icon{{ \"menu/read_reactions\", windowBoldFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:681:whoReadReactions: icon{{ \"menu/read_reactions\", windowBoldFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:682:whoReadReactionsOver: icon{{ \"menu/read_reactions\", windowBoldFgOver }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:683:whoReadReactionsDisabled: icon{{ \"menu/read_reactions\", menuFgDisabled }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:689:reactionsTabAll: icon {{ \"menu/read_reactions\", windowFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:690:reactionsTabAllSelected: icon {{ \"menu/read_reactions\", activeButtonFg }};",
+        "Telegram/SourceFiles/ui/menu_icons.style:11:menuIconReactions: icon {{ \"menu/read_reactions\", menuIconColor }};",
         "C++/product caller audit: reaction attribution tabs and profile access."
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
@@ -19213,7 +19228,11 @@
       "omitted": false,
       "consumer_symbol": "read_ticks",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:674:whoReadChecks: icon{{ \"menu/read_ticks\", windowBoldFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:675:whoReadChecks: icon{{ \"menu/read_ticks\", windowBoldFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:676:whoReadChecksOver: icon{{ \"menu/read_ticks\", windowBoldFgOver }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:677:whoReadChecksDisabled: icon{{ \"menu/read_ticks\", menuFgDisabled }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:693:reactionsTabChecks: icon {{ \"menu/read_ticks\", windowFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:694:reactionsTabChecksSelected: icon {{ \"menu/read_ticks\", activeButtonFg }};",
         "C++/product caller audit: who-read checks and reactions checks."
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
@@ -19256,7 +19275,11 @@
       "omitted": false,
       "consumer_symbol": "read_ticks",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:674:whoReadChecks: icon{{ \"menu/read_ticks\", windowBoldFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:675:whoReadChecks: icon{{ \"menu/read_ticks\", windowBoldFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:676:whoReadChecksOver: icon{{ \"menu/read_ticks\", windowBoldFgOver }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:677:whoReadChecksDisabled: icon{{ \"menu/read_ticks\", menuFgDisabled }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:693:reactionsTabChecks: icon {{ \"menu/read_ticks\", windowFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:694:reactionsTabChecksSelected: icon {{ \"menu/read_ticks\", activeButtonFg }};",
         "C++/product caller audit: who-read checks and reactions checks."
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
@@ -19299,7 +19322,11 @@
       "omitted": false,
       "consumer_symbol": "read_ticks",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:674:whoReadChecks: icon{{ \"menu/read_ticks\", windowBoldFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:675:whoReadChecks: icon{{ \"menu/read_ticks\", windowBoldFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:676:whoReadChecksOver: icon{{ \"menu/read_ticks\", windowBoldFgOver }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:677:whoReadChecksDisabled: icon{{ \"menu/read_ticks\", menuFgDisabled }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:693:reactionsTabChecks: icon {{ \"menu/read_ticks\", windowFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:694:reactionsTabChecksSelected: icon {{ \"menu/read_ticks\", activeButtonFg }};",
         "C++/product caller audit: who-read checks and reactions checks."
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
@@ -19342,7 +19369,8 @@
       "omitted": false,
       "consumer_symbol": "read_ticks_s",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:662:whoReadDateChecks: icon{{ \"menu/read_ticks_s\", windowSubTextFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:663:whoReadDateChecks: icon{{ \"menu/read_ticks_s\", windowSubTextFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:664:whoReadDateChecksOver: icon{{ \"menu/read_ticks_s\", windowSubTextFgOver }};",
         "C++/product caller audit: compact who-read checks."
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
@@ -19385,7 +19413,8 @@
       "omitted": false,
       "consumer_symbol": "read_ticks_s",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:662:whoReadDateChecks: icon{{ \"menu/read_ticks_s\", windowSubTextFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:663:whoReadDateChecks: icon{{ \"menu/read_ticks_s\", windowSubTextFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:664:whoReadDateChecksOver: icon{{ \"menu/read_ticks_s\", windowSubTextFgOver }};",
         "C++/product caller audit: compact who-read checks."
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
@@ -19428,7 +19457,8 @@
       "omitted": false,
       "consumer_symbol": "read_ticks_s",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:662:whoReadDateChecks: icon{{ \"menu/read_ticks_s\", windowSubTextFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:663:whoReadDateChecks: icon{{ \"menu/read_ticks_s\", windowSubTextFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:664:whoReadDateChecksOver: icon{{ \"menu/read_ticks_s\", windowSubTextFgOver }};",
         "C++/product caller audit: compact who-read checks."
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
