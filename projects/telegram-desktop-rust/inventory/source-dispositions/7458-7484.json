@@ -776,23 +776,23 @@
         "file_type": "blob",
         "recursive_order": 7473
       },
-      "ui_disposition": "No Fcitx/DBus product UI is retained. Session signals feed only canonical TextField/Composer/input projections.",
-      "fabushi_canonical_owner": "existing canonical TextField/Composer/input session, platform/lifecycle, security/privacy and capability-broker owners",
-      "platform_differences": "Replace DBus/QObject transport with current Fabushi/Electron/platform contracts, but preserve exact session lifecycle, async settlement, availability/reconnect, feature negotiation and event semantics.",
-      "reachability_status": "exact blob read; transport is source-specific but lifecycle/security/concurrency semantics are applicable and mapped-open",
-      "state_machine": "service/portal availability -> owner identity recheck -> async CreateInputContext -> bind signals/capabilities -> focus/key/preedit/surrounding/candidate actions -> service loss/teardown -> cleanup -> recheck/recreate",
-      "side_effects": "Creates/destroys one input context, propagates commit/preedit/delete-surrounding/forward-key/focus signals, updates capabilities/cursor/surrounding text, negotiates optional InvokeAction and virtual-keyboard behavior.",
-      "failure_cases": "service-owner race; stale pending create/introspection callback; duplicate context; missed cleanup; event delivered after owner loss; unsupported optional action treated as available; sensitive text leakage",
-      "fabushi_target": "existing source-neutral input session and platform lifecycle contracts; no Fcitx provider/runtime",
-      "production_evidence": "existing-owner-first mapping only; runtime equivalence remains open",
-      "test_evidence": "GitHub Actions fault-injection must cover service churn, stale async completion, exact-one context, teardown, optional feature negotiation, focus/key/preedit/surrounding/candidate transitions",
+      "ui_disposition": "No runtime UI responsibility. This executable build input generates DBus proxy/interface code from authoritative XML and must remain traceable as generated-input/build provenance.",
+      "fabushi_canonical_owner": "existing Build/Release, code-generation provenance and canonical input/platform contract owners",
+      "platform_differences": "The shell/qdbusxml2cpp mechanism is source-specific build tooling. Preserve deterministic generator inputs/outputs, executable mode, generated-code provenance and build failure semantics; runtime input-session lifecycle belongs to the generated interfaces/proxies and canonical Fabushi input owner.",
+      "reachability_status": "exact blob read; build/code-generation provenance responsibility mapped-open; not a runtime lifecycle owner",
+      "state_machine": "accepted XML inputs -> deterministic proxy/interface code generation -> compile/link consumption -> provenance validation; generator failure must fail the build",
+      "side_effects": "Generates proxy/interface source used by the DBus build graph; no direct runtime session state ownership.",
+      "failure_cases": "wrong/non-executable generator mode; stale XML input; generated output drift; untracked generated provenance; build silently using stale generated code",
+      "fabushi_target": "existing source-neutral Build/Release code-generation and provenance gates",
+      "production_evidence": "mapping only; exact-head generator/provenance validation required",
+      "test_evidence": "GitHub Actions must validate executable mode, accepted XML identities, deterministic generated-input provenance and fail-closed build behavior",
       "consumer_evidence": [
-        "FcitxQtWatcher service owner state",
-        "FcitxQtInputContextProxy async create/cleanup/introspection",
-        "InputContext1/InputMethod1 method+signal contracts"
+        "DBus XML interface inputs",
+        "generated proxy/interface compilation units",
+        "Fabushi Build/Release provenance gates"
       ],
-      "notes": "responsibility_cluster=input-session-lifecycle-transport; reading closes no unknown",
-      "responsibility": "Input-session lifecycle and transport semantics: availability/owner fencing, async context creation, cleanup/reconnect, focus/reset/key processing, preedit/commit/surrounding-text deletion, candidate actions, optional capability negotiation and virtual-keyboard state."
+      "notes": "responsibility_cluster=dbus-codegen-build-provenance; reading closes no unknown",
+      "responsibility": "DBus proxy/interface code generation and generated-input/build provenance; this script is not the input-session runtime lifecycle owner."
     },
     {
       "read_complete": true,
@@ -811,7 +811,7 @@
         "mount": "Telegram/ThirdParty/fcitx5-qt",
         "path": "qt4/dbusaddons/interfaces/org.fcitx.Fcitx.InputContext1.xml",
         "object": "b2c5c7919dc424f48cffdb0ccda0ce257d24c0d7",
-        "mode": "100644",
+        "mode": "120000",
         "type": "blob",
         "size": 68
       },
@@ -825,23 +825,22 @@
         "file_type": "blob",
         "recursive_order": 7474
       },
-      "ui_disposition": "No Fcitx/DBus product UI is retained. Session signals feed only canonical TextField/Composer/input projections.",
-      "fabushi_canonical_owner": "existing canonical TextField/Composer/input session, platform/lifecycle, security/privacy and capability-broker owners",
-      "platform_differences": "Replace DBus/QObject transport with current Fabushi/Electron/platform contracts, but preserve exact session lifecycle, async settlement, availability/reconnect, feature negotiation and event semantics.",
-      "reachability_status": "exact blob read; transport is source-specific but lifecycle/security/concurrency semantics are applicable and mapped-open",
-      "state_machine": "service/portal availability -> owner identity recheck -> async CreateInputContext -> bind signals/capabilities -> focus/key/preedit/surrounding/candidate actions -> service loss/teardown -> cleanup -> recheck/recreate",
-      "side_effects": "Creates/destroys one input context, propagates commit/preedit/delete-surrounding/forward-key/focus signals, updates capabilities/cursor/surrounding text, negotiates optional InvokeAction and virtual-keyboard behavior.",
-      "failure_cases": "service-owner race; stale pending create/introspection callback; duplicate context; missed cleanup; event delivered after owner loss; unsupported optional action treated as available; sensitive text leakage",
-      "fabushi_target": "existing source-neutral input session and platform lifecycle contracts; no Fcitx provider/runtime",
-      "production_evidence": "existing-owner-first mapping only; runtime equivalence remains open",
-      "test_evidence": "GitHub Actions fault-injection must cover service churn, stale async completion, exact-one context, teardown, optional feature negotiation, focus/key/preedit/surrounding/candidate transitions",
+      "ui_disposition": "No runtime UI. This row is a Git symlink compatibility alias from the Qt4 tree to the Qt5 DBus interface XML.",
+      "fabushi_canonical_owner": "existing Build/Release dependency/provenance owner",
+      "platform_differences": "Preserve the compatibility alias/build-composition fact and exact symlink identity only. Do not duplicate the target XML runtime contract here.",
+      "reachability_status": "exact symlink blob read; compatibility alias/build-composition only",
+      "state_machine": "build graph resolves Qt4 compatibility alias -> Qt5 interface target; no independent runtime lifecycle",
+      "side_effects": "Build-time path compatibility only.",
+      "failure_cases": "alias target drift; symlink materialized as ordinary file; duplicate/conflicting interface authority",
+      "fabushi_target": "existing Build/Release provenance and dependency graph",
+      "production_evidence": "mapping only; target runtime XML contract is carried by orders 7504/7505",
+      "test_evidence": "G-INVENTORY exact mode/type/blob/path validation plus build provenance",
       "consumer_evidence": [
-        "FcitxQtWatcher service owner state",
-        "FcitxQtInputContextProxy async create/cleanup/introspection",
-        "InputContext1/InputMethod1 method+signal contracts"
+        "Qt4 compatibility build path",
+        "Qt5 authoritative interface XML rows 7504/7505"
       ],
-      "notes": "responsibility_cluster=input-session-lifecycle-transport; reading closes no unknown",
-      "responsibility": "Input-session lifecycle and transport semantics: availability/owner fencing, async context creation, cleanup/reconnect, focus/reset/key processing, preedit/commit/surrounding-text deletion, candidate actions, optional capability negotiation and virtual-keyboard state."
+      "notes": "responsibility_cluster=qt4-to-qt5-dbus-interface-symlink-alias; target runtime contract is 7504/7505; reading closes no unknown",
+      "responsibility": "Qt4→Qt5 DBus interface compatibility symlink alias/build-composition only; the complete runtime XML contract is owned by target rows 7504/7505."
     },
     {
       "read_complete": true,
@@ -860,7 +859,7 @@
         "mount": "Telegram/ThirdParty/fcitx5-qt",
         "path": "qt4/dbusaddons/interfaces/org.fcitx.Fcitx.InputMethod1.xml",
         "object": "eecc302774852ffcafb5f8f63f6e4827da7df8a4",
-        "mode": "100644",
+        "mode": "120000",
         "type": "blob",
         "size": 67
       },
@@ -874,23 +873,22 @@
         "file_type": "blob",
         "recursive_order": 7475
       },
-      "ui_disposition": "No Fcitx/DBus product UI is retained. Session signals feed only canonical TextField/Composer/input projections.",
-      "fabushi_canonical_owner": "existing canonical TextField/Composer/input session, platform/lifecycle, security/privacy and capability-broker owners",
-      "platform_differences": "Replace DBus/QObject transport with current Fabushi/Electron/platform contracts, but preserve exact session lifecycle, async settlement, availability/reconnect, feature negotiation and event semantics.",
-      "reachability_status": "exact blob read; transport is source-specific but lifecycle/security/concurrency semantics are applicable and mapped-open",
-      "state_machine": "service/portal availability -> owner identity recheck -> async CreateInputContext -> bind signals/capabilities -> focus/key/preedit/surrounding/candidate actions -> service loss/teardown -> cleanup -> recheck/recreate",
-      "side_effects": "Creates/destroys one input context, propagates commit/preedit/delete-surrounding/forward-key/focus signals, updates capabilities/cursor/surrounding text, negotiates optional InvokeAction and virtual-keyboard behavior.",
-      "failure_cases": "service-owner race; stale pending create/introspection callback; duplicate context; missed cleanup; event delivered after owner loss; unsupported optional action treated as available; sensitive text leakage",
-      "fabushi_target": "existing source-neutral input session and platform lifecycle contracts; no Fcitx provider/runtime",
-      "production_evidence": "existing-owner-first mapping only; runtime equivalence remains open",
-      "test_evidence": "GitHub Actions fault-injection must cover service churn, stale async completion, exact-one context, teardown, optional feature negotiation, focus/key/preedit/surrounding/candidate transitions",
+      "ui_disposition": "No runtime UI. This row is a Git symlink compatibility alias from the Qt4 tree to the Qt5 DBus interface XML.",
+      "fabushi_canonical_owner": "existing Build/Release dependency/provenance owner",
+      "platform_differences": "Preserve the compatibility alias/build-composition fact and exact symlink identity only. Do not duplicate the target XML runtime contract here.",
+      "reachability_status": "exact symlink blob read; compatibility alias/build-composition only",
+      "state_machine": "build graph resolves Qt4 compatibility alias -> Qt5 interface target; no independent runtime lifecycle",
+      "side_effects": "Build-time path compatibility only.",
+      "failure_cases": "alias target drift; symlink materialized as ordinary file; duplicate/conflicting interface authority",
+      "fabushi_target": "existing Build/Release provenance and dependency graph",
+      "production_evidence": "mapping only; target runtime XML contract is carried by orders 7504/7505",
+      "test_evidence": "G-INVENTORY exact mode/type/blob/path validation plus build provenance",
       "consumer_evidence": [
-        "FcitxQtWatcher service owner state",
-        "FcitxQtInputContextProxy async create/cleanup/introspection",
-        "InputContext1/InputMethod1 method+signal contracts"
+        "Qt4 compatibility build path",
+        "Qt5 authoritative interface XML rows 7504/7505"
       ],
-      "notes": "responsibility_cluster=input-session-lifecycle-transport; reading closes no unknown",
-      "responsibility": "Input-session lifecycle and transport semantics: availability/owner fencing, async context creation, cleanup/reconnect, focus/reset/key processing, preedit/commit/surrounding-text deletion, candidate actions, optional capability negotiation and virtual-keyboard state."
+      "notes": "responsibility_cluster=qt4-to-qt5-dbus-interface-symlink-alias; target runtime contract is 7504/7505; reading closes no unknown",
+      "responsibility": "Qt4→Qt5 DBus interface compatibility symlink alias/build-composition only; the complete runtime XML contract is owned by target rows 7504/7505."
     },
     {
       "read_complete": true,
@@ -1247,7 +1245,7 @@
         "mount": "Telegram/ThirdParty/fcitx5-qt",
         "path": "qt4/inputcontext/qtkey.cpp",
         "object": "f6bc777a2383ed6a6a7ce2470aa8b28295b8712d",
-        "mode": "100644",
+        "mode": "120000",
         "type": "blob",
         "size": 40
       },
@@ -1261,23 +1259,22 @@
         "file_type": "blob",
         "recursive_order": 7483
       },
-      "ui_disposition": "Reuse canonical Fabushi TextField/Composer/preedit and keyboard behavior; no Qt4 input UI root.",
-      "fabushi_canonical_owner": "existing canonical TextField/Composer, keyboard/input, accessibility, security/privacy and thin platform adapter owners",
-      "platform_differences": "Re-express Qt4/XKB/QInputContext mechanics through current Electron/web/platform input APIs while preserving semantics and failure boundaries.",
-      "reachability_status": "exact blob read; input behavior is product-applicable and mapped-open pending production implementation/tests",
-      "state_machine": "focus -> context lookup/create -> capability/cursor/surrounding projection -> sync/async key processing + XKB compose -> preedit render/update -> commit/delete/forward -> focus-out/reset/window destruction -> settlement/cleanup",
-      "side_effects": "Commits text; formats preedit; deletes bounded Unicode surrounding text; forwards keys with modifiers/repeat; updates cursor rectangle and input capabilities.",
-      "failure_cases": "password/sensitive surrounding text exposed; stale window receives async key; Unicode cursor/delete split surrogate/codepoint; preedit lost/duplicated at focus teardown; key compose/repeat/order mismatch; destroyed window retained",
-      "fabushi_target": "canonical Fabushi Composer/TextField input state machine plus platform keyboard adapter",
-      "production_evidence": "mapping only; no source-specific runtime added",
-      "test_evidence": "GitHub Actions contracts required for focus churn, async key settlement, destroyed-window fencing, sensitive fields, Unicode cursor/delete, preedit formatting/commit, XKB compose/dead/international/media keys and restart/teardown",
+      "ui_disposition": "No independent Qt4 UI/runtime behavior. This row is a Git symlink compatibility alias to the Qt5 platforminputcontext qtkey implementation.",
+      "fabushi_canonical_owner": "existing Build/Release dependency/provenance owner pending deterministic read of target qt5/platforminputcontext/qtkey.cpp/.h",
+      "platform_differences": "Preserve exact symlink identity and compatibility build composition only. Do not attribute target keyboard mapping behavior before its deterministic recursive order is formally read.",
+      "reachability_status": "exact symlink blob read; compatibility alias only; target behavior intentionally not yet claimed",
+      "state_machine": "build graph resolves Qt4 qtkey alias -> Qt5 target; no independent runtime lifecycle",
+      "side_effects": "Build-time path compatibility only.",
+      "failure_cases": "alias target drift; symlink materialized as ordinary file; premature attribution of unread target behavior",
+      "fabushi_target": "existing Build/Release provenance; runtime keyboard owner mapping deferred to target rows",
+      "production_evidence": "mapping only; target behavior remains unread until deterministic qt5/platforminputcontext/qtkey.cpp/.h orders",
+      "test_evidence": "G-INVENTORY exact mode/type/blob/path validation plus later target-row behavior tests",
       "consumer_evidence": [
-        "QFcitxInputContext focus/capability/surrounding/preedit/key lifecycle",
-        "ProcessKeyWatcher QPointer window fencing",
-        "keysymToQtKey mapping"
+        "Qt4 compatibility build path",
+        "future deterministic target rows qt5/platforminputcontext/qtkey.cpp/.h"
       ],
-      "notes": "responsibility_cluster=canonical-input-behavior; reading closes no unknown",
-      "responsibility": "Canonical input-method behavior: focus/session binding, sensitive surrounding-text policy, Unicode cursor/selection/delete semantics, formatted preedit settlement, async key forwarding with liveness fencing, XKB compose/key mapping and teardown correctness."
+      "notes": "responsibility_cluster=qt4-to-qt5-qtkey-symlink-alias; target behavior not yet read; reading closes no unknown",
+      "responsibility": "Qt4→Qt5 qtkey compatibility symlink alias/build-composition only; no target keyboard behavior is claimed before the Qt5 target files are formally read."
     },
     {
       "read_complete": true,
@@ -1296,7 +1293,7 @@
         "mount": "Telegram/ThirdParty/fcitx5-qt",
         "path": "qt4/inputcontext/qtkey.h",
         "object": "cb41bc1d1b1b99d692373f4b6310b9c5e7af8b1d",
-        "mode": "100644",
+        "mode": "120000",
         "type": "blob",
         "size": 38
       },
@@ -1310,23 +1307,22 @@
         "file_type": "blob",
         "recursive_order": 7484
       },
-      "ui_disposition": "Reuse canonical Fabushi TextField/Composer/preedit and keyboard behavior; no Qt4 input UI root.",
-      "fabushi_canonical_owner": "existing canonical TextField/Composer, keyboard/input, accessibility, security/privacy and thin platform adapter owners",
-      "platform_differences": "Re-express Qt4/XKB/QInputContext mechanics through current Electron/web/platform input APIs while preserving semantics and failure boundaries.",
-      "reachability_status": "exact blob read; input behavior is product-applicable and mapped-open pending production implementation/tests",
-      "state_machine": "focus -> context lookup/create -> capability/cursor/surrounding projection -> sync/async key processing + XKB compose -> preedit render/update -> commit/delete/forward -> focus-out/reset/window destruction -> settlement/cleanup",
-      "side_effects": "Commits text; formats preedit; deletes bounded Unicode surrounding text; forwards keys with modifiers/repeat; updates cursor rectangle and input capabilities.",
-      "failure_cases": "password/sensitive surrounding text exposed; stale window receives async key; Unicode cursor/delete split surrogate/codepoint; preedit lost/duplicated at focus teardown; key compose/repeat/order mismatch; destroyed window retained",
-      "fabushi_target": "canonical Fabushi Composer/TextField input state machine plus platform keyboard adapter",
-      "production_evidence": "mapping only; no source-specific runtime added",
-      "test_evidence": "GitHub Actions contracts required for focus churn, async key settlement, destroyed-window fencing, sensitive fields, Unicode cursor/delete, preedit formatting/commit, XKB compose/dead/international/media keys and restart/teardown",
+      "ui_disposition": "No independent Qt4 UI/runtime behavior. This row is a Git symlink compatibility alias to the Qt5 platforminputcontext qtkey implementation.",
+      "fabushi_canonical_owner": "existing Build/Release dependency/provenance owner pending deterministic read of target qt5/platforminputcontext/qtkey.cpp/.h",
+      "platform_differences": "Preserve exact symlink identity and compatibility build composition only. Do not attribute target keyboard mapping behavior before its deterministic recursive order is formally read.",
+      "reachability_status": "exact symlink blob read; compatibility alias only; target behavior intentionally not yet claimed",
+      "state_machine": "build graph resolves Qt4 qtkey alias -> Qt5 target; no independent runtime lifecycle",
+      "side_effects": "Build-time path compatibility only.",
+      "failure_cases": "alias target drift; symlink materialized as ordinary file; premature attribution of unread target behavior",
+      "fabushi_target": "existing Build/Release provenance; runtime keyboard owner mapping deferred to target rows",
+      "production_evidence": "mapping only; target behavior remains unread until deterministic qt5/platforminputcontext/qtkey.cpp/.h orders",
+      "test_evidence": "G-INVENTORY exact mode/type/blob/path validation plus later target-row behavior tests",
       "consumer_evidence": [
-        "QFcitxInputContext focus/capability/surrounding/preedit/key lifecycle",
-        "ProcessKeyWatcher QPointer window fencing",
-        "keysymToQtKey mapping"
+        "Qt4 compatibility build path",
+        "future deterministic target rows qt5/platforminputcontext/qtkey.cpp/.h"
       ],
-      "notes": "responsibility_cluster=canonical-input-behavior; reading closes no unknown",
-      "responsibility": "Canonical input-method behavior: focus/session binding, sensitive surrounding-text policy, Unicode cursor/selection/delete semantics, formatted preedit settlement, async key forwarding with liveness fencing, XKB compose/key mapping and teardown correctness."
+      "notes": "responsibility_cluster=qt4-to-qt5-qtkey-symlink-alias; target behavior not yet read; reading closes no unknown",
+      "responsibility": "Qt4→Qt5 qtkey compatibility symlink alias/build-composition only; no target keyboard behavior is claimed before the Qt5 target files are formally read."
     }
   ]
 }
