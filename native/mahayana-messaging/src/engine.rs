@@ -5097,15 +5097,7 @@ mod wallet_address_engine_tests {
     use crate::wallet::WalletAddressKnowledge;
 
     fn person(id: &str) -> Actor {
-        Actor {
-            id: ActorId(id.into()),
-            kind: ActorKind::Human,
-            display_name: id.into(),
-            username: None,
-            avatar_url: None,
-            bio: None,
-            created_at_ms: 1,
-        }
+        Actor::human(id, id)
     }
 
     #[test]
