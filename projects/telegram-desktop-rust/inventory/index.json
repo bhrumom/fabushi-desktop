@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 7895,
+    "unread_minimum": 7893,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through deterministic order 8,230; unread 7,895; unknown 15,845; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition through deterministic order 8,232; unread 7,893; unknown 15,845; omitted 0."
   },
   "latest_recursive_evidence": {
     "run_id": 38084031087,
@@ -46,7 +46,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live authority exact through deterministic order 8,230; first unread 8,231 Telegram/ThirdParty/hunspell::ChangeLog; unread_minimum is 7,895; unknown remains 15,845; omitted remains 0.",
+  "note": "Live authority exact through deterministic order 8,232; unread_minimum is 7,893; unknown remains 15,845; omitted remains 0. Exact order 8,233 path must be resolved from accepted recursive inventory identity, not inferred.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -64,10 +64,10 @@
       6541,
       6627
     ],
-    "current_source_read_through": 8230,
-    "first_unread_order": 8231,
-    "first_unread_path": "Telegram/ThirdParty/hunspell::ChangeLog",
-    "current_head_source_authority_evidence": "Orders 8,227–8,230 were exact-read directly from pinned hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b; current descendant exact-head GitHub Actions remain required. Predecessor evidence is diagnostic only."
+    "current_source_read_through": 8232,
+    "first_unread_order": 8233,
+    "first_unread_path": "pending accepted recursive inventory identity after ChangeLog.O",
+    "current_head_source_authority_evidence": "Orders 8,227–8,232 were exact-read from pinned hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b; current descendant exact-head GitHub Actions remain required. Predecessor evidence is diagnostic only."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -76,9 +76,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 8230,
-    "first_unread_order": 8231,
-    "first_unread_path": "Telegram/ThirdParty/hunspell::ChangeLog",
+    "read_through": 8232,
+    "first_unread_order": 8233,
+    "first_unread_path": "pending accepted recursive inventory identity after ChangeLog.O",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }
