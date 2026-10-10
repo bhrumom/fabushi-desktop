@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15846,
-    "unread": 9713,
+    "unread": 9702,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 69,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 6412,
-    "first_unread_order": 6413,
-    "first_unread_path": "Telegram/SourceFiles/window/window.style"
+    "read_through": 6423,
+    "first_unread_order": 6424,
+    "first_unread_path": "Telegram/SourceFiles/window/window_filters_favorite.cpp"
   },
   "historical_exact_head_evidence": {
     "status": "historical-only",

@@ -1,5 +1,5 @@
-Live Revision 9 authority (2026-10-10): telegramdesktop/tdesktop@28ac576967a1026ecc89a927360fa0e138d7c88c (root tree 9d8fa87ce68c832d2f4c99f372a5bb672463c3e1). Root non-directory=6,653; recursive non-directory=16,125; read-through=6,412; first unread=6,413 Telegram/SourceFiles/window/window.style@a91951fc42761db61f7f7718f89e226fc9d3b5c2; unread=9,713; unknown=15,846; omitted=0. Reading alone never closes unknown. Fresh descendant exact-head GitHub Actions evidence is required.
-<!-- TDRP_CURRENT_SUMMARY read-through=6412 unread=9713 unknown=15846 omitted=0 first-unread=6413 path=Telegram/SourceFiles/window/window.style -->
+Live Revision 9 authority (2026-10-10): telegramdesktop/tdesktop@28ac576967a1026ecc89a927360fa0e138d7c88c (root tree 9d8fa87ce68c832d2f4c99f372a5bb672463c3e1). Root non-directory=6,653; recursive non-directory=16,125; read-through=6,423; first unread=6,424 Telegram/SourceFiles/window/window_filters_favorite.cpp@c51e19763a7939fe908fb8b9fc3eb5f73735674f; unread=9,702; unknown=15,846; omitted=0. Reading alone never closes unknown. Fresh descendant exact-head GitHub Actions evidence is required.
+<!-- TDRP_CURRENT_SUMMARY read-through=6423 unread=9702 unknown=15846 omitted=0 first-unread=6424 path=Telegram/SourceFiles/window/window_filters_favorite.cpp -->
 
 # Telegram 源码 → Fabushi 全量等价重写 — Source of Truth
 
@@ -535,3 +535,8 @@ Section navigation/workspace contracts and draw-to-reply media flow are exact-bl
 ### Revision 9 read-through 6393-6412
 
 Theme runtime/editor/preview/chat/cloud/embedded/accent/name-generation files are exact-blob read/responsibility-decomposed. Existing SandThemeController and the Fabushi Design System remain the only app/theme visual authority; Telegram Qt palette/theme-format rendering is not ported. Applicable bounded parsing/resources, transactional test→keep/revert, async generation fencing, per-conversation/cloud theme state, accessibility/contrast and editor lifecycle remain mapped-open against existing Theme/Settings/Conversation/Resource owners. Accounting: 6,412/16,125 read; 9,713 unread; 15,846 unknown; 0 omitted. First unread: 6,413 `Telegram/SourceFiles/window/window.style@a91951fc42761db61f7f7718f89e226fc9d3b5c2`.
+
+
+### Revision 9 read-through 6413-6423
+
+Window style/adaptive/chat preview/chat switch/connection/controller files are exact-blob read/responsibility-decomposed. Current Fabushi already has canonical responsive shell, ConversationWorkspace/List/navigation, CoordinatorConnectionController and Electron window owners, so no Telegram window runtime is introduced. Full adaptive columns, accessible chat preview/switch, proxy/retry status, multi-account/separate-window and security/layer sequencing remain mapped-open where current behavior is partial. Accounting: 6,423/16,125 read; 9,702 unread; 15,846 unknown; 0 omitted. First unread: 6,424 `Telegram/SourceFiles/window/window_filters_favorite.cpp@c51e19763a7939fe908fb8b9fc3eb5f73735674f`.
