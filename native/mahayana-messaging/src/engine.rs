@@ -4,6 +4,10 @@ use crate::community::{
     AdminRights, CommunityAuditAction, CommunityAuditEntry, CommunityError, CommunityMember,
     CommunityState, ForumTopicState, InviteLink, JoinRequest, MemberStatus,
 };
+use crate::connected_app::{
+    ConnectedAppClaimDecision, ConnectedAppError, ConnectedAppRequest, ConnectedAppSession,
+    ConnectedAppState,
+};
 use crate::conversation::{
     Conversation, ConversationChildIdentity, ConversationChildRuntimeState,
     ConversationChildUnreadThings, ConversationDestination, ConversationDraft, ConversationFolder, ConversationId,
@@ -298,6 +302,29 @@ pub enum Command {
     CloseWalletPanel,
     SetWalletTransactionsVisible {
         visible: bool,
+    },
+    UpsertConnectedAppSession {
+        session: ConnectedAppSession,
+    },
+    QueueConnectedAppRequest {
+        request: ConnectedAppRequest,
+        observed_at_ms: i64,
+    },
+    ResolveConnectedAppRequest {
+        session_id: u64,
+        request_id: String,
+        decision: ConnectedAppClaimDecision,
+        operation_id: String,
+        signed_payload: String,
+        answer: Vec<u8>,
+        observed_at_ms: i64,
+    },
+    CloseConnectedAppSession {
+        session_id: u64,
+        closed_at_ms: i64,
+    },
+    PruneConnectedAppClaims {
+        observed_at_ms: i64,
     },
     ReconcileEntitlement {
         entitlement: Entitlement,
@@ -609,6 +636,9 @@ pub enum Event {
     WalletRuntimeChanged {
         runtime: WalletRuntimeState,
     },
+    ConnectedAppStateChanged {
+        state: ConnectedAppState,
+    },
     EntitlementReconciled {
         entitlement: Entitlement,
     },
@@ -673,6 +703,7 @@ pub struct MessagingState {
     pub invoices: BTreeMap<String, Invoice>,
     pub orders: BTreeMap<String, PaymentOrder>,
     pub wallet: WalletLedger,
+    pub connected_apps: ConnectedAppState,
     pub entitlements: BTreeMap<String, Entitlement>,
     pub story_stealth: BTreeMap<ActorId, StoryStealthState>,
     pub stories: BTreeMap<StoryId, Story>,
@@ -845,6 +876,8 @@ pub enum EngineError {
     WalletOnramp(#[from] WalletOnrampError),
     #[error("wallet panel is not visible")]
     WalletPanelNotVisible,
+    #[error(transparent)]
+    ConnectedApp(#[from] ConnectedAppError),
     #[error("Mini App {0} is not installed")]
     MiniAppNotFound(String),
     #[error("Mini App session {0} does not exist")]
@@ -2761,6 +2794,53 @@ impl MessagingEngine {
                 runtime.panel.set_transactions_visible(visible);
                 Ok(vec![Event::WalletRuntimeChanged { runtime }])
             }
+            Command::UpsertConnectedAppSession { session } => {
+                let mut state = self.state.connected_apps.clone();
+                state.upsert_session(session)?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::QueueConnectedAppRequest {
+                request,
+                observed_at_ms,
+            } => {
+                let mut state = self.state.connected_apps.clone();
+                state.queue_request(request, observed_at_ms)?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::ResolveConnectedAppRequest {
+                session_id,
+                request_id,
+                decision,
+                operation_id,
+                signed_payload,
+                answer,
+                observed_at_ms,
+            } => {
+                let mut state = self.state.connected_apps.clone();
+                state.record_claim(
+                    session_id,
+                    &request_id,
+                    decision,
+                    operation_id,
+                    signed_payload,
+                    answer,
+                    observed_at_ms,
+                )?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::CloseConnectedAppSession {
+                session_id,
+                closed_at_ms,
+            } => {
+                let mut state = self.state.connected_apps.clone();
+                state.close_session(session_id, closed_at_ms)?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::PruneConnectedAppClaims { observed_at_ms } => {
+                let mut state = self.state.connected_apps.clone();
+                state.prune_claims(observed_at_ms);
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
             Command::ReconcileEntitlement { entitlement } => {
                 self.require_actor(&entitlement.owner_id)?;
                 if entitlement.id.trim().is_empty()
@@ -4354,6 +4434,9 @@ impl MessagingEngine {
             Event::WalletRuntimeChanged { runtime } => {
                 self.state.wallet.runtime = runtime;
             }
+            Event::ConnectedAppStateChanged { state } => {
+                self.state.connected_apps = state;
+            }
             Event::EntitlementReconciled { entitlement } => {
                 self.state.entitlements.insert(entitlement.id.clone(), entitlement);
             }
@@ -4721,5 +4804,104 @@ mod wallet_runtime_command_tests {
             engine.execute(Command::CloseWalletPanel),
             Err(EngineError::WalletPanelNotVisible)
         ));
+    }
+}
+
+
+#[cfg(test)]
+mod connected_app_engine_tests {
+    use super::*;
+    use crate::connected_app::{
+        ConnectedAppClaimDecision, ConnectedAppManifest, ConnectedAppRequest,
+        ConnectedAppRequestKind, ConnectedAppSession, ConnectedAppSessionStatus,
+    };
+
+    fn connected_session() -> ConnectedAppSession {
+        ConnectedAppSession {
+            id: 91,
+            client_id: "app-client".into(),
+            manifest: Some(ConnectedAppManifest {
+                url: "https://app.example/manifest.json".into(),
+                name: "Connected App".into(),
+                icon_url: None,
+            }),
+            status: ConnectedAppSessionStatus::Active,
+            created_at_ms: 10,
+            updated_at_ms: 10,
+        }
+    }
+
+    #[test]
+    fn connected_app_runtime_is_persisted_by_the_canonical_engine() {
+        let mut engine = MessagingEngine::new();
+        engine
+            .execute(Command::UpsertConnectedAppSession {
+                session: connected_session(),
+            })
+            .unwrap();
+        engine
+            .execute(Command::QueueConnectedAppRequest {
+                request: ConnectedAppRequest {
+                    session_id: 91,
+                    request_id: "request-1".into(),
+                    method: "sendTransaction".into(),
+                    kind: ConnectedAppRequestKind::SendTransaction,
+                    trace_id: "trace-1".into(),
+                    expires_at_ms: 1_000,
+                },
+                observed_at_ms: 100,
+            })
+            .unwrap();
+        engine
+            .execute(Command::ResolveConnectedAppRequest {
+                session_id: 91,
+                request_id: "request-1".into(),
+                decision: ConnectedAppClaimDecision::Confirm,
+                operation_id: "operation-1".into(),
+                signed_payload: "signed-payload".into(),
+                answer: vec![1, 2, 3],
+                observed_at_ms: 200,
+            })
+            .unwrap();
+
+        assert!(engine.state().connected_apps.pending_requests.is_empty());
+        assert_eq!(engine.state().connected_apps.claims.len(), 1);
+        let encoded = serde_json::to_string(engine.state()).unwrap();
+        let restored: MessagingState = serde_json::from_str(&encoded).unwrap();
+        assert_eq!(restored.connected_apps.claims.len(), 1);
+    }
+
+    #[test]
+    fn closing_connected_app_session_cancels_owned_pending_requests() {
+        let mut engine = MessagingEngine::new();
+        engine
+            .execute(Command::UpsertConnectedAppSession {
+                session: connected_session(),
+            })
+            .unwrap();
+        engine
+            .execute(Command::QueueConnectedAppRequest {
+                request: ConnectedAppRequest {
+                    session_id: 91,
+                    request_id: "request-close".into(),
+                    method: "signData".into(),
+                    kind: ConnectedAppRequestKind::SignData,
+                    trace_id: String::new(),
+                    expires_at_ms: 1_000,
+                },
+                observed_at_ms: 100,
+            })
+            .unwrap();
+        engine
+            .execute(Command::CloseConnectedAppSession {
+                session_id: 91,
+                closed_at_ms: 200,
+            })
+            .unwrap();
+        assert!(engine.state().connected_apps.pending_requests.is_empty());
+        assert_eq!(
+            engine.state().connected_apps.sessions.get(&91).unwrap().status,
+            ConnectedAppSessionStatus::Closed
+        );
     }
 }
