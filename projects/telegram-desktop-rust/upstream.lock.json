@@ -266,9 +266,9 @@
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
     "unknown_minimum": 15845,
-    "unread_minimum": 7963,
+    "unread_minimum": 7899,
     "omitted_known": 0,
-    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 8,162; unknown=15,845, unread=7,963, omitted=0."
+    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 8,226; unknown=15,845, unread=7,899, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -282,7 +282,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Source/product/release closure open. Corrected deterministic exact read-through 8,162/16,125; first unread 8,163 src/modules/chewing-conf.c; unread 7,963; unknown 15,845; omitted 0. Exact-head gate 114325060959 exposed and now fix-forwards the order-8,101 path drift without weakening assertions. Native method/language/width/scriptVariant/candidate truth remains mapped-open."
+    "note": "Source/product/release closure open. Deterministic exact read-through 8,226/16,125; first unread 8,227 Telegram/ThirdParty/hunspell::AUTHORS; unread 7,899; unknown 15,845; omitted 0. Exact-head Rust desktop runtime 38092547313 / Source authority job 114331805918 completed/success on 8cc274aa2090c3d8e40494f16ed2f99ecc6483db; source reading does not close unknown. Native method/language/width/scriptVariant/candidate truth remains mapped-open."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",
@@ -633,9 +633,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 8162,
-    "first_unread_order": 8163,
-    "first_unread_path": "Telegram/ThirdParty/hime::src/modules/chewing-conf.c",
+    "read_through": 8226,
+    "first_unread_order": 8227,
+    "first_unread_path": "Telegram/ThirdParty/hunspell::AUTHORS",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
