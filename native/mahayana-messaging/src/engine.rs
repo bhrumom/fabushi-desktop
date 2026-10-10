@@ -351,7 +351,10 @@ pub enum Command {
         generation: u64,
         observed_at_ms: i64,
     },
-    RecordWalletHistoryPage {
+    SpendWalletHistoryPageRequest {
+        generation: u64,
+    },
+    RecordWalletHistoryProgress {
         generation: u64,
         visible_rows: usize,
     },
@@ -2961,12 +2964,17 @@ impl MessagingEngine {
                     .mark_stream_resync(generation, observed_at_ms)?;
                 Ok(vec![Event::WalletRuntimeChanged { runtime }])
             }
-            Command::RecordWalletHistoryPage {
+            Command::SpendWalletHistoryPageRequest { generation } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime.live.spend_history_page_request(generation)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::RecordWalletHistoryProgress {
                 generation,
                 visible_rows,
             } => {
                 let mut runtime = self.state.wallet.runtime.clone();
-                runtime.live.note_history_page(generation, visible_rows)?;
+                runtime.live.note_history_progress(generation, visible_rows)?;
                 Ok(vec![Event::WalletRuntimeChanged { runtime }])
             }
             Command::RearmWalletHistoryWalk { generation } => {
@@ -5276,12 +5284,21 @@ mod wallet_live_engine_tests {
         let generation = engine.state().wallet.runtime.live.generation;
         for _ in 0..crate::wallet::WALLET_LIVE_MAX_HIDDEN_PAGES {
             engine
-                .execute(Command::RecordWalletHistoryPage {
+                .execute(Command::SpendWalletHistoryPageRequest { generation })
+                .unwrap();
+            engine
+                .execute(Command::RecordWalletHistoryProgress {
                     generation,
                     visible_rows: 0,
                 })
                 .unwrap();
         }
+        assert_eq!(
+            engine.execute(Command::SpendWalletHistoryPageRequest { generation }),
+            Err(EngineError::WalletLive(
+                WalletLiveError::HistoryPageBudgetExhausted
+            ))
+        );
         assert_eq!(
             engine.state().wallet.runtime.live.hidden_pages_without_visible_rows,
             crate::wallet::WALLET_LIVE_MAX_HIDDEN_PAGES
