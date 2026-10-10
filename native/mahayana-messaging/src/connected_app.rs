@@ -1,3 +1,4 @@
+use crate::wallet::WalletTransferIdentity;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use thiserror::Error;
@@ -152,6 +153,8 @@ pub struct ConnectedAppClaimRecord {
     pub trace_id: String,
     pub expires_at_ms: i64,
     pub decision: ConnectedAppClaimDecision,
+    #[serde(default)]
+    pub wallet_identity: Option<WalletTransferIdentity>,
     pub operation_id: String,
     pub signed_payload: String,
     pub answer: Vec<u8>,
@@ -168,6 +171,7 @@ impl ConnectedAppClaimRecord {
             || self.operation_id.len() > CONNECTED_APP_OPERATION_ID_MAX_BYTES
             || self.signed_payload.len() > CONNECTED_APP_SIGNED_PAYLOAD_MAX_BYTES
             || self.answer.len() > CONNECTED_APP_ANSWER_MAX_BYTES
+            || self.wallet_identity.as_ref().is_some_and(|identity| identity.validate().is_err())
             || (!self.signed_payload.is_empty() && self.operation_id.is_empty())
         {
             return Err(ConnectedAppError::InvalidClaim);
@@ -260,6 +264,55 @@ impl ConnectedAppState {
         answer: Vec<u8>,
         now_ms: i64,
     ) -> Result<ConnectedAppClaimRecord, ConnectedAppError> {
+        self.record_claim_internal(
+            session_id,
+            request_id,
+            decision,
+            None,
+            operation_id,
+            signed_payload,
+            answer,
+            now_ms,
+        )
+    }
+
+    pub fn record_wallet_claim(
+        &mut self,
+        session_id: u64,
+        request_id: &str,
+        decision: ConnectedAppClaimDecision,
+        wallet_identity: WalletTransferIdentity,
+        operation_id: String,
+        signed_payload: String,
+        answer: Vec<u8>,
+        now_ms: i64,
+    ) -> Result<ConnectedAppClaimRecord, ConnectedAppError> {
+        wallet_identity
+            .validate()
+            .map_err(|_| ConnectedAppError::InvalidWalletBinding)?;
+        self.record_claim_internal(
+            session_id,
+            request_id,
+            decision,
+            Some(wallet_identity),
+            operation_id,
+            signed_payload,
+            answer,
+            now_ms,
+        )
+    }
+
+    fn record_claim_internal(
+        &mut self,
+        session_id: u64,
+        request_id: &str,
+        decision: ConnectedAppClaimDecision,
+        wallet_identity: Option<WalletTransferIdentity>,
+        operation_id: String,
+        signed_payload: String,
+        answer: Vec<u8>,
+        now_ms: i64,
+    ) -> Result<ConnectedAppClaimRecord, ConnectedAppError> {
         let key = request_key(session_id, request_id);
         let request = self
             .pending_requests
@@ -280,6 +333,7 @@ impl ConnectedAppState {
             trace_id: request.trace_id.clone(),
             expires_at_ms: request.expires_at_ms,
             decision,
+            wallet_identity,
             operation_id,
             signed_payload,
             answer,
@@ -317,6 +371,23 @@ impl ConnectedAppState {
                         .saturating_add(CONNECTED_APP_CLAIM_RETENTION_MS)
             })
             .cloned()
+            .collect()
+    }
+
+    pub fn recoverable_claims_for_wallet(
+        &self,
+        wallet_identity: &WalletTransferIdentity,
+        now_ms: i64,
+    ) -> Vec<ConnectedAppClaimRecord> {
+        self.recoverable_claims(now_ms)
+            .into_iter()
+            .filter(|claim| {
+                claim.wallet_identity.as_ref().is_some_and(|bound| {
+                    bound.network == wallet_identity.network
+                        && bound.address == wallet_identity.address
+                        && bound.public_key == wallet_identity.public_key
+                })
+            })
             .collect()
     }
 }
@@ -413,6 +484,8 @@ pub enum ConnectedAppError {
     RequestExpired,
     #[error("connected app claim is invalid")]
     InvalidClaim,
+    #[error("connected app wallet binding is invalid")]
+    InvalidWalletBinding,
     #[error("connected app claim store capacity was exceeded")]
     ClaimCapacity,
 }
@@ -561,6 +634,36 @@ mod tests {
         assert_eq!(state.recoverable_claims(1_000).len(), 1);
         state.prune_claims(1_000 + CONNECTED_APP_CLAIM_RETENTION_MS + 1);
         assert!(state.claims.is_empty());
+    }
+
+    #[test]
+    fn wallet_bound_claim_recovery_requires_exact_wallet_address_and_public_key() {
+        let mut state = ConnectedAppState::default();
+        let mut active = session(ConnectedAppSessionStatus::Active);
+        active.updated_at_ms = 11;
+        state.upsert_session(active).unwrap();
+        state.queue_request(request("wallet", 1_000), 100).unwrap();
+        let wallet = WalletTransferIdentity {
+            network: 1,
+            address: "EQ-wallet".into(),
+            public_key: vec![4; 32],
+            revision: 9,
+        };
+        state.record_wallet_claim(
+            7,
+            "wallet",
+            ConnectedAppClaimDecision::Confirm,
+            wallet.clone(),
+            "operation-wallet".into(),
+            "signed".into(),
+            vec![1],
+            200,
+        ).unwrap();
+        assert_eq!(state.recoverable_claims_for_wallet(&wallet, 500).len(), 1);
+        let rotated_revision = WalletTransferIdentity { revision: 10, ..wallet.clone() };
+        assert_eq!(state.recoverable_claims_for_wallet(&rotated_revision, 500).len(), 1);
+        let another_key = WalletTransferIdentity { public_key: vec![5; 32], ..wallet };
+        assert!(state.recoverable_claims_for_wallet(&another_key, 500).is_empty());
     }
 
     #[test]

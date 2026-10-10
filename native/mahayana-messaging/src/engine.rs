@@ -408,6 +408,16 @@ pub enum Command {
         answer: Vec<u8>,
         observed_at_ms: i64,
     },
+    ResolveConnectedAppWalletRequest {
+        session_id: u64,
+        request_id: String,
+        decision: ConnectedAppClaimDecision,
+        wallet_identity: WalletTransferIdentity,
+        operation_id: String,
+        signed_payload: String,
+        answer: Vec<u8>,
+        observed_at_ms: i64,
+    },
     CloseConnectedAppSession {
         session_id: u64,
         closed_at_ms: i64,
@@ -3124,6 +3134,29 @@ impl MessagingEngine {
                 )?;
                 Ok(vec![Event::ConnectedAppStateChanged { state }])
             }
+            Command::ResolveConnectedAppWalletRequest {
+                session_id,
+                request_id,
+                decision,
+                wallet_identity,
+                operation_id,
+                signed_payload,
+                answer,
+                observed_at_ms,
+            } => {
+                let mut state = self.state.connected_apps.clone();
+                state.record_wallet_claim(
+                    session_id,
+                    &request_id,
+                    decision,
+                    wallet_identity,
+                    operation_id,
+                    signed_payload,
+                    answer,
+                    observed_at_ms,
+                )?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
             Command::CloseConnectedAppSession {
                 session_id,
                 closed_at_ms,
@@ -5165,6 +5198,55 @@ mod connected_app_engine_tests {
         let encoded = serde_json::to_string(engine.state()).unwrap();
         let restored: MessagingState = serde_json::from_str(&encoded).unwrap();
         assert_eq!(restored.connected_apps.claims.len(), 1);
+    }
+
+    #[test]
+    fn connected_app_wallet_claim_recovery_is_bound_to_wallet_key() {
+        let mut engine = MessagingEngine::new();
+        engine.execute(Command::UpsertConnectedAppSession {
+            session: connected_session(),
+        }).unwrap();
+        engine.execute(Command::QueueConnectedAppRequest {
+            request: ConnectedAppRequest {
+                session_id: 91,
+                request_id: "wallet-request".into(),
+                method: "sendTransaction".into(),
+                kind: ConnectedAppRequestKind::SendTransaction,
+                trace_id: "trace-wallet".into(),
+                expires_at_ms: 1_000,
+            },
+            observed_at_ms: 100,
+        }).unwrap();
+        let wallet = WalletTransferIdentity {
+            network: 1,
+            address: "EQ-wallet".into(),
+            public_key: vec![8; 32],
+            revision: 3,
+        };
+        engine.execute(Command::ResolveConnectedAppWalletRequest {
+            session_id: 91,
+            request_id: "wallet-request".into(),
+            decision: ConnectedAppClaimDecision::Confirm,
+            wallet_identity: wallet.clone(),
+            operation_id: "operation-wallet".into(),
+            signed_payload: "signed-wallet".into(),
+            answer: vec![9],
+            observed_at_ms: 200,
+        }).unwrap();
+        let encoded = serde_json::to_string(engine.state()).unwrap();
+        let restored: MessagingState = serde_json::from_str(&encoded).unwrap();
+        assert_eq!(
+            restored.connected_apps.recoverable_claims_for_wallet(&wallet, 500).len(),
+            1
+        );
+        let another_key = WalletTransferIdentity {
+            public_key: vec![7; 32],
+            ..wallet
+        };
+        assert!(restored
+            .connected_apps
+            .recoverable_claims_for_wallet(&another_key, 500)
+            .is_empty());
     }
 
     #[test]
