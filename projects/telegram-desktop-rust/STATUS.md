@@ -1,5 +1,5 @@
-Live Revision 9 authority (2026-10-10): telegramdesktop/tdesktop@28ac576967a1026ecc89a927360fa0e138d7c88c (root tree 9d8fa87ce68c832d2f4c99f372a5bb672463c3e1). Root non-directory=6,653; recursive non-directory=16,125; read-through=6,626; first unread=6,627 changelog.txt@bf82383b02717265acac50035c2ce3000afdac7a; unread=9,499; unknown=15,845; omitted=0. Reading alone does not close mapped-open shader unknowns. Fresh descendant exact-head GitHub Actions evidence is required.
-<!-- TDRP_CURRENT_SUMMARY read-through=6626 unread=9499 unknown=15845 omitted=0 first-unread=6627 path=changelog.txt -->
+Live Revision 9 authority (2026-10-10): telegramdesktop/tdesktop@28ac576967a1026ecc89a927360fa0e138d7c88c (root tree 9d8fa87ce68c832d2f4c99f372a5bb672463c3e1). Root non-directory=6,653; recursive non-directory=16,125; root read-through=6,653; first unread recursive component entry=6,654 Telegram/ThirdParty/GSL::.clang-format@c12d3bf2994fd5a083c04025d355a5ab4b3f6802; unread=9,472; unknown=15,845; omitted=0. All root entries are read; direct/nested component entries require explicit component identity before prefix extension. Fresh descendant exact-head GitHub Actions evidence is required.
+<!-- TDRP_CURRENT_SUMMARY read-through=6653 unread=9472 unknown=15845 omitted=0 first-unread=6654 path=Telegram/ThirdParty/GSL::.clang-format -->
 
 # Telegram Desktop → Fabushi 全量等价重写 — Status
 
@@ -328,3 +328,8 @@ Orders **6,575-6,591** are exact root-entry read-complete/responsibility-decompo
 ### Source closure through 6,626
 
 Orders **6,592-6,626** are exact-blob read-complete/responsibility-decomposed for GPU shader contracts. The tranche preserves ARGB/NV12/YUV420 conversion, OpenGL/Vulkan coordinate-origin handling, blur/dither, premultiplied alpha, rounded/fade/shadow composition, PiP nine-slice shadow behavior, premium time/night/alpha material inputs, and seeded/timestep-bounded particle lifecycle. These are mapped to source-neutral Fabushi rendering/Resource/Call/visual-effect owners; Telegram branding and pixel design are not carried over. Accounting: **6,626/16,125 read; 9,499 unread; 15,845 unknown; 0 omitted**. First unread is 6,627 `changelog.txt@bf82383b02717265acac50035c2ce3000afdac7a`. All shader rows remain mapped-open until shipping consumers, focused tests and cross-platform visual evidence exist.
+
+
+### Root source closure complete at 6,653
+
+Orders **6,627-6,653** close the remaining root entries: release changelog/build helpers, credential/build documentation, AppStream screenshot assets, WEB proxy design and acceptance contracts, Linux XDG/AppStream/DBus/Snap shipping integration, Wallet/thread/shared-media/navigation task evidence, and static-analysis/edit-rule tooling. Root accounting is now **6,653/6,653 exact-read**, while the recursive census remains **6,653/16,125 read; 9,472 unread; 15,845 unknown; 0 omitted**. The next recursive identity is order 6,654: `Microsoft/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37`, mount `Telegram/ThirdParty/GSL`, path `.clang-format`, object `c12d3bf2994fd5a083c04025d355a5ab4b3f6802`. The existing validator intentionally forbids crossing the root prefix without an explicit component identity schema, so schema/validator extension is the next required gate rather than a bookkeeping bypass.

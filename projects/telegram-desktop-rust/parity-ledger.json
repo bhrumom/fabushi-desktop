@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 9499,
+    "unread": 9472,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13479,10 +13479,10 @@
     "ahead_by": 10,
     "changed_paths": 25,
     "source_read_reconciliation": "18 changed blobs inside prior prefix re-read/reconciled; orders 5831-6343 read/decomposed; read-through=6343/16125, unread=9782, unknown=15846, omitted=0.",
-    "source_authority_evidence": "Accepted Telegram authority 28ac576967a1026ecc89a927360fa0e138d7c88c / tree 9d8fa87ce68c832d2f4c99f372a5bb672463c3e1; exact root read-through 6626; fresh exact-head Actions and visual/release evidence required.",
-    "current_source_read_through": 6626,
-    "first_unread_order": 6627,
-    "first_unread_path": "changelog.txt"
+    "source_authority_evidence": "Accepted Telegram authority 28ac576967a1026ecc89a927360fa0e138d7c88c / tree 9d8fa87ce68c832d2f4c99f372a5bb672463c3e1; all 6653 root non-directory entries exact-read; component identity schema is the next closure gate.",
+    "current_source_read_through": 6653,
+    "first_unread_order": 6654,
+    "first_unread_path": "Telegram/ThirdParty/GSL::.clang-format"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 6626,
-    "first_unread_order": 6627,
-    "first_unread_path": "changelog.txt"
+    "read_through": 6653,
+    "first_unread_order": 6654,
+    "first_unread_path": "Telegram/ThirdParty/GSL::.clang-format"
   },
   "historical_exact_head_evidence": {
     "status": "historical-only",
