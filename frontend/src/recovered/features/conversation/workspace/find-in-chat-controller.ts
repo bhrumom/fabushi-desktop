@@ -1,3 +1,6 @@
+import type { ToolResultCardSnapshot } from "../tool-results/model";
+import { formatTranscriptToolCallName } from "./tool-call-label.ts";
+
 export type FindableTranscriptEntry =
   | {
       readonly id: string;
@@ -7,6 +10,14 @@ export type FindableTranscriptEntry =
       readonly attachments?: readonly { readonly name: string }[];
     }
   | { readonly id: string; readonly kind: "notice"; readonly text: string }
+  | { readonly id: string; readonly kind: "thinking"; readonly text: string }
+  | {
+      readonly id: string;
+      readonly kind: "tool-call";
+      readonly name: string;
+      readonly summary?: string;
+      readonly toolResult?: ToolResultCardSnapshot;
+    }
   | {
       readonly id: string;
       readonly kind: "send-message";
@@ -30,6 +41,18 @@ export interface FindInChatScope {
 export interface FindInChatMatch {
   entryId: string;
   occurrence: number;
+}
+
+export type FindInChatDisclosureKind = "thinking" | "tool-call";
+
+export function includeFindInChatDisclosure(
+  current: ReadonlySet<string>,
+  entryId: string,
+): ReadonlySet<string> {
+  if (current.has(entryId)) return current;
+  const next = new Set(current);
+  next.add(entryId);
+  return next;
 }
 
 export interface FindInChatTranscriptHandle {
@@ -60,6 +83,18 @@ function copyScope(scope: FindInChatScope): FindInChatScope {
   return { accountSlot: scope.accountSlot, agentId: scope.agentId };
 }
 
+function toolResultSearchText(snapshot: ToolResultCardSnapshot): string[] {
+  const heading = snapshot.path ?? snapshot.command ?? snapshot.kind;
+  const detail = snapshot.summary || snapshot.diff || snapshot.output;
+  return [
+    heading,
+    snapshot.status,
+    snapshot.workingDirectory ?? "",
+    detail,
+    snapshot.diff,
+  ].filter((value) => value.length > 0);
+}
+
 export function findInChatSearchText(
   entry: FindableTranscriptEntry,
 ): string {
@@ -71,6 +106,18 @@ export function findInChatSearchText(
       ...(Array.isArray(message.attachments)
         ? message.attachments.flatMap((attachment) => typeof attachment?.name === "string" ? [attachment.name] : [])
         : []),
+    ].filter((value) => value.length > 0).join("\n");
+  }
+  if (entry.kind === "thinking") {
+    const thinking = entry as Extract<FindableTranscriptEntry, { kind: "thinking" }>;
+    return ["Thinking", thinking.text].filter((value) => value.length > 0).join("\n");
+  }
+  if (entry.kind === "tool-call") {
+    const toolCall = entry as Extract<FindableTranscriptEntry, { kind: "tool-call" }>;
+    return [
+      formatTranscriptToolCallName(toolCall.name),
+      toolCall.summary ?? "",
+      ...(toolCall.toolResult == null ? [] : toolResultSearchText(toolCall.toolResult)),
     ].filter((value) => value.length > 0).join("\n");
   }
   if (entry.kind === "notice") {

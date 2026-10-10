@@ -1,0 +1,75 @@
+{
+  "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+  "accepted_tree": "4ddb5182fc1ae238e4dc62a396614614b5b35f97",
+  "deterministic_order_basis": "non-directory/blob rank in accepted recursive tree",
+  "start": 5623,
+  "end": 5633,
+  "entries": [
+    {
+      "order": 5623,
+      "path": "Telegram/SourceFiles/settings/settings.style",
+      "blob": "8b9e56dddf72169a0fbbe1ab80159feda3fa3723",
+      "consumer_symbol": "settings.style"
+    },
+    {
+      "order": 5624,
+      "path": "Telegram/SourceFiles/settings/settings_builder.cpp",
+      "blob": "20b6e6dad9c927c8267377e0727f2325a607b508",
+      "consumer_symbol": "settings_builder.cpp"
+    },
+    {
+      "order": 5625,
+      "path": "Telegram/SourceFiles/settings/settings_builder.h",
+      "blob": "3ac0a93b0826aae7d9ee82856b991bf8dac49908",
+      "consumer_symbol": "settings_builder.h"
+    },
+    {
+      "order": 5626,
+      "path": "Telegram/SourceFiles/settings/settings_codes.cpp",
+      "blob": "78c43922d81ee3d807c0654393f16a3d55974d1e",
+      "consumer_symbol": "settings_codes.cpp"
+    },
+    {
+      "order": 5627,
+      "path": "Telegram/SourceFiles/settings/settings_codes.h",
+      "blob": "a9e13582f8e5b8c4f66c2e487ffe7903463da3ac",
+      "consumer_symbol": "settings_codes.h"
+    },
+    {
+      "order": 5628,
+      "path": "Telegram/SourceFiles/settings/settings_common.cpp",
+      "blob": "7133758b3749de2eba5eb4da71470de71936c10b",
+      "consumer_symbol": "settings_common.cpp"
+    },
+    {
+      "order": 5629,
+      "path": "Telegram/SourceFiles/settings/settings_common.h",
+      "blob": "f42ed946e5e7de3b42c25f7dc0bb0bb157ec74ff",
+      "consumer_symbol": "settings_common.h"
+    },
+    {
+      "order": 5630,
+      "path": "Telegram/SourceFiles/settings/settings_common_session.cpp",
+      "blob": "dc6ea9f3386341790acd6a7253d17b6c2f075909",
+      "consumer_symbol": "settings_common_session.cpp"
+    },
+    {
+      "order": 5631,
+      "path": "Telegram/SourceFiles/settings/settings_common_session.h",
+      "blob": "22546d124088f536d5c0a1c6082045e786c25665",
+      "consumer_symbol": "settings_common_session.h"
+    },
+    {
+      "order": 5632,
+      "path": "Telegram/SourceFiles/settings/settings_credits_graphics.cpp",
+      "blob": "c753c816ef84f57447b1f46c43c60a519b1d1d5c",
+      "consumer_symbol": "settings_credits_graphics.cpp"
+    },
+    {
+      "order": 5633,
+      "path": "Telegram/SourceFiles/settings/settings_credits_graphics.h",
+      "blob": "d5b89449f106b472f3ddee8995721a3877ea33b9",
+      "consumer_symbol": "settings_credits_graphics.h"
+    }
+  ]
+}

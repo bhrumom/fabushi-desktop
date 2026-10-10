@@ -137,6 +137,139 @@ fn invoice_and_paid_order_use_the_same_chat_domain() {
 }
 
 #[test]
+fn checkout_validates_requested_customer_information_before_charging() {
+    let mut engine = MessagingEngine::new();
+    engine
+        .execute(Command::UpsertActor {
+            actor: Actor::human("buyer:validated", "购买者"),
+        })
+        .unwrap();
+    engine
+        .execute(Command::UpsertActor {
+            actor: Actor::bot("seller:validated", "商店机器人"),
+        })
+        .unwrap();
+    engine
+        .execute(Command::UpsertConversation {
+            conversation: Conversation::direct(
+                "chat:validated-checkout",
+                "验证结算",
+                vec![
+                    participant("buyer:validated", ParticipantRole::Owner),
+                    participant("seller:validated", ParticipantRole::Member),
+                ],
+                1,
+            ),
+        })
+        .unwrap();
+
+    let invoice = Invoice {
+        id: "invoice:validated".into(),
+        conversation_id: ConversationId::new("chat:validated-checkout"),
+        seller_id: ActorId::new("seller:validated"),
+        title: "Validated checkout".into(),
+        description: "requested customer fields".into(),
+        kind: InvoiceKind::OneTime,
+        currency: "USD".into(),
+        prices: vec![PriceLine {
+            label: "Order".into(),
+            amount: Money::new("USD", 999),
+        }],
+        payload: "validated".into(),
+        provider_id: "fabushi-pay".into(),
+        start_parameter: None,
+        request_name: true,
+        request_email: true,
+        request_phone: true,
+        request_shipping_address: true,
+        flexible_shipping: false,
+        created_at_ms: 2,
+        expires_at_ms: None,
+    };
+    engine
+        .execute(Command::CreateInvoice {
+            invoice: invoice.clone(),
+        })
+        .unwrap();
+
+    let missing = engine
+        .execute(Command::CheckoutInvoice {
+            invoice_id: invoice.id.clone(),
+            order_id: "order:missing-customer".into(),
+            buyer_id: ActorId::new("buyer:validated"),
+            customer: None,
+            created_at_ms: 3,
+        })
+        .unwrap_err();
+    assert_eq!(missing, EngineError::InvalidCustomerInfo);
+
+    let invalid_customer = CustomerInfo {
+        name: Some("Buyer".into()),
+        email: Some("buyer@example.com".into()),
+        phone: Some("+16025550123".into()),
+        shipping_address: Some(ShippingAddress {
+            country_code: "US".into(),
+            state: "AZ".into(),
+            city: "P".into(),
+            street_line1: "1 Main Street".into(),
+            street_line2: None,
+            postal_code: "85001".into(),
+        }),
+    };
+    assert!(!invalid_customer.is_valid_for_invoice(&invoice));
+    let invalid = engine
+        .execute(Command::CheckoutInvoice {
+            invoice_id: invoice.id.clone(),
+            order_id: "order:invalid-customer".into(),
+            buyer_id: ActorId::new("buyer:validated"),
+            customer: Some(invalid_customer),
+            created_at_ms: 3,
+        })
+        .unwrap_err();
+    assert_eq!(invalid, EngineError::InvalidCustomerInfo);
+
+    engine
+        .execute(Command::CreditWalletSettlement {
+            request_id: "settlement:validated".into(),
+            owner_id: ActorId::new("buyer:validated"),
+            amount: Money::new("USD", 999),
+            reference: Some("checkout-fixture".into()),
+            settled_at_ms: 3,
+        })
+        .unwrap();
+
+    let valid_customer = CustomerInfo {
+        name: Some("Buyer".into()),
+        email: Some("buyer@example.com".into()),
+        phone: Some("+16025550123".into()),
+        shipping_address: Some(ShippingAddress {
+            country_code: "US".into(),
+            state: "AZ".into(),
+            city: "Phoenix".into(),
+            street_line1: "1 Main Street".into(),
+            street_line2: Some(String::new()),
+            postal_code: "85001".into(),
+        }),
+    };
+    assert!(valid_customer.is_valid_for_invoice(&invoice));
+    let events = engine
+        .execute(Command::CheckoutInvoice {
+            invoice_id: invoice.id.clone(),
+            order_id: "order:validated".into(),
+            buyer_id: ActorId::new("buyer:validated"),
+            customer: Some(valid_customer.clone()),
+            created_at_ms: 4,
+        })
+        .unwrap();
+    assert!(events.iter().any(|event| matches!(
+        event,
+        Event::OrderUpserted { order }
+            if order.id == "order:validated"
+                && order.customer.as_ref() == Some(&valid_customer)
+    )));
+}
+
+#[test]
 fn mini_app_permissions_are_enforced_before_host_calls() {
     let mut engine = MessagingEngine::new();
     engine
@@ -669,6 +802,7 @@ fn stories_communities_and_bot_execution_enforce_actor_permissions() {
         protected_content: true,
         allow_replies: true,
         views: std::collections::BTreeMap::new(),
+        anonymous_view_count: 0,
     };
     engine
         .execute(Command::PublishStory {

@@ -1,5 +1,6 @@
 import { installApplicationMenu, type ApplicationMenuElectronPort } from "./application-menu.js";
 import { reportDesktopEdgeFailure } from "./desktop-edge-failures.js";
+import { setDesktopAccessibilitySupportEnabled } from "./accessibility-support.js";
 import { createDevToolsGate, createDevToolsMembershipResolver } from "./devtools-gate.js";
 import {
   createHostWindowChords,
@@ -81,6 +82,7 @@ export interface MainBrowserWindow extends WindowStatePersistenceWindow {
 
 export interface ElectronMainApp {
   readonly isPackaged: boolean;
+  readonly accessibilitySupportEnabled?: boolean;
   disableHardwareAcceleration(): void;
   readonly commandLine: { readonly appendSwitch: (name: string) => void };
   requestSingleInstanceLock(): boolean;
@@ -89,6 +91,7 @@ export interface ElectronMainApp {
   whenReady(): Promise<unknown>;
   on(event: "second-instance", listener: (event: unknown, argv: readonly string[]) => void): void;
   on(event: "open-url", listener: (event: PreventableEvent, url: string) => void): void;
+  on(event: "accessibility-support-changed", listener: (event: unknown, accessibilitySupportEnabled: boolean) => void): void;
   on(event: "activate" | "window-all-closed", listener: () => void): void;
   on(event: "before-quit", listener: (event: PreventableEvent) => void): void;
   on(event: "will-quit", listener: () => void): void;
@@ -254,6 +257,10 @@ export function startElectronMain(deps: ElectronMainDependencies): ElectronMainR
   let isMainWindowCreationReady = false;
   let appIsQuitting = false;
   let services: ElectronMainServices | undefined;
+  deps.app.on("accessibility-support-changed", (_event, accessibilitySupportEnabled) => {
+    const state = setDesktopAccessibilitySupportEnabled(accessibilitySupportEnabled);
+    services?.mainEdge.emit("accessibility-support-changed", state);
+  });
   let overlaySession: ReturnType<typeof createWindowsTitleBarOverlaySession> | undefined;
 
   const syncWindowFocused = createWindowFocusSync({
@@ -377,6 +384,7 @@ export function startElectronMain(deps: ElectronMainDependencies): ElectronMainR
         deps.startup.cancel();
         return;
       }
+      setDesktopAccessibilitySupportEnabled(deps.app.accessibilitySupportEnabled === true);
       deps.startup.markPhase("move_check");
       const moveDisposition = await deps.startup.runMoveCheck({
         hasPendingActivation: deps.deepLinks.hasPendingActivation,

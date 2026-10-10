@@ -122,10 +122,16 @@ export function createTranscriptAcknowledgementController(): TranscriptAcknowled
     return removed;
   };
   const findRecord = (slot: string | null, nonce: string): [string, AcknowledgementRecord] | null => {
+    let matched: [string, AcknowledgementRecord] | null = null;
     for (const [key, record] of records) {
-      if (record.accountSlot === slot && recordMatches(record, nonce)) return [key, record];
+      if (record.accountSlot !== slot || !recordMatches(record, nonce)) continue;
+      // A nonce must identify exactly one live acknowledgement record inside
+      // the account scope. Never let iteration order choose an Agent when a
+      // malformed or stale transport has produced ambiguous ownership.
+      if (matched != null) return null;
+      matched = [key, record];
     }
-    return null;
+    return matched;
   };
   const publish = (changed: boolean): boolean => {
     if (changed) emit();
@@ -222,8 +228,13 @@ export function createTranscriptAcknowledgementController(): TranscriptAcknowled
     },
     reconcileEcho(input) {
       if (disposed || input.accountSlot !== accountSlot) return false;
+      if (input.echoedNonce == null || input.echoedNonce.length === 0) return false;
       const match = findRecord(input.accountSlot, input.nonce);
       if (match == null || match[1].agentId !== input.agentId) return false;
+      // Settlement is remote identity evidence, not local submission success.
+      // Missing, foreign, stale, or ambiguously-owned echoes must leave the
+      // optimistic record unsettled so the caller can fail/recover explicitly.
+      if (!recordMatches(match[1], input.echoedNonce)) return false;
       removeRecord(match[0]);
       return publish(true);
     },

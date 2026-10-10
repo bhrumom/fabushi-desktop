@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { createWriteStream } from "node:fs";
+import { open } from "node:fs/promises";
 import { rm } from "node:fs/promises";
 
 export class SandUpdateDownloadError extends Error {}
@@ -23,8 +23,11 @@ export async function downloadAndVerify(options: DownloadAndVerifyOptions): Prom
   const totalBytes = contentLength != null && /^\d+$/.test(contentLength) ? Number(contentLength) : null;
   const hash = options.sha256 != null ? createHash("sha256") : null;
   let receivedBytes = 0;
+  let createdDestination = false;
   try {
-    const file = createWriteStream(options.destinationPath);
+    const handle = await open(options.destinationPath, "wx", 0o600);
+    createdDestination = true;
+    const file = handle.createWriteStream();
     try {
       const reader = response.body.getReader();
       for (;;) {
@@ -39,10 +42,10 @@ export async function downloadAndVerify(options: DownloadAndVerifyOptions): Prom
     } catch (error) { file.destroy(); throw error; }
     if (hash != null && options.sha256 != null) {
       const digest = hash.digest("hex");
-      if (digest !== options.sha256) throw new SandUpdateDownloadError(`Update download failed integrity check: expected sha256 ${options.sha256}, got ${digest}`);
+      if (digest !== options.sha256.toLowerCase()) throw new SandUpdateDownloadError(`Update download failed integrity check: expected sha256 ${options.sha256.toLowerCase()}, got ${digest}`);
     }
   } catch (error) {
-    await rm(options.destinationPath, { force: true }).catch((cleanupError) => options.reportCleanupFailure?.(cleanupError));
+    if (createdDestination) await rm(options.destinationPath, { force: true }).catch((cleanupError) => options.reportCleanupFailure?.(cleanupError));
     throw error;
   }
 }

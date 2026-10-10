@@ -62,6 +62,11 @@ pub struct FabushiRemoteHumanMessage {
     pub read_at: Option<String>,
     #[serde(default)]
     pub is_outgoing: bool,
+    #[serde(default)]
+    pub silent: bool,
+    pub scheduled_at_ms: Option<i64>,
+    pub delivery_state: Option<String>,
+    pub delivered_at: Option<String>,
     pub reply_to_message_id: Option<Value>,
     #[serde(default)]
     pub attachments: Vec<FabushiRemoteHumanAttachment>,
@@ -163,6 +168,9 @@ struct SendRequest<'a> {
     client_request_id: &'a str,
     #[serde(skip_serializing_if = "Option::is_none")]
     reply_to_message_id: Option<&'a str>,
+    silent: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    scheduled_at_ms: Option<i64>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     attachments: Vec<SendAttachmentRequest<'a>>,
 }
@@ -415,6 +423,8 @@ impl FabushiNativeMessagingClient {
         client_request_id: &str,
         reply_to_message_id: Option<&str>,
         attachments: &[FabushiRemoteHumanAttachment],
+        silent: bool,
+        scheduled_at_ms: Option<i64>,
     ) -> Result<FabushiRemoteHumanMessage, String> {
         let peer_human_id = required_trimmed(peer_human_id, "peer Human id")?;
         let text = text.trim();
@@ -424,6 +434,9 @@ impl FabushiNativeMessagingClient {
             .filter(|value| !value.is_empty());
         if text.is_empty() && attachments.is_empty() {
             return Err("Fabushi Human message requires text or attachments".into());
+        }
+        if scheduled_at_ms.is_some_and(|value| value <= 0 || value > 9_007_199_254_740_991) {
+            return Err("Fabushi Human message scheduledAtMs must be a positive JavaScript-safe integer".into());
         }
         let credentials = read_credentials(&self.credential_path)?;
         let response = self
@@ -440,6 +453,8 @@ impl FabushiNativeMessagingClient {
                 text,
                 client_request_id,
                 reply_to_message_id,
+                silent,
+                scheduled_at_ms,
                 attachments: attachments
                     .iter()
                     .map(|attachment| SendAttachmentRequest {

@@ -288,6 +288,41 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
             .list_agents()
             .and_then(|agents| serde_json::to_value(agents).map_err(|error| error.to_string()))
             .map_err(SessionGatewayError::internal),
+        "getStoryStealthStatus" => session
+            .story_stealth_status()
+            .map_err(SessionGatewayError::internal),
+        "activateStoryStealth" => required_string(args, "requestId").and_then(|request_id| {
+            session
+                .activate_story_stealth(request_id)
+                .map_err(SessionGatewayError::internal)
+        }),
+        "listStories" => {
+            let limit = args
+                .get("limit")
+                .and_then(Value::as_u64)
+                .and_then(|value| usize::try_from(value).ok())
+                .unwrap_or(100);
+            session
+                .list_stories(limit)
+                .map(Value::Array)
+                .map_err(SessionGatewayError::internal)
+        },
+        "viewStory" => required_string(args, "storyId").and_then(|story_id| {
+            session.view_story(story_id).map_err(SessionGatewayError::internal)
+        }),
+        "reactStory" => required_string(args, "storyId").and_then(|story_id| {
+            optional_string(args, "reaction").and_then(|reaction| {
+                session
+                    .react_story(story_id, reaction)
+                    .map_err(SessionGatewayError::internal)
+            })
+        }),
+        "deleteStory" => required_string(args, "storyId").and_then(|story_id| {
+            session
+                .delete_story(story_id)
+                .map(|deleted| json!({ "storyId": story_id, "deleted": deleted }))
+                .map_err(SessionGatewayError::internal)
+        }),
         "searchAgents" => optional_string(args, "query").and_then(|query| {
             let limit = args
                 .get("limit")
@@ -382,6 +417,11 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
             }
             let text = optional_string(args, "text")?.unwrap_or_default();
             let reply_to_id = optional_string(args, "replyToId")?;
+            let silent = optional_bool(args, "silent")?.unwrap_or(false);
+            let scheduled_at_ms = optional_i64(args, "scheduledAtMs");
+            if scheduled_at_ms.is_some_and(|value| value <= 0 || value > 9_007_199_254_740_991) {
+                return Err(SessionGatewayError::bad("scheduledAtMs must be a positive JavaScript-safe integer"));
+            }
             let attachments = match args.get("attachments") {
                 None | Some(Value::Null) => Vec::new(),
                 Some(Value::Array(values)) => values.clone(),
@@ -396,6 +436,8 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
                         optional_f64(args, "composedAtMs"),
                         reply_to_id,
                         &attachments,
+                        silent,
+                        scheduled_at_ms,
                     )
                     .map_err(SessionGatewayError::internal)
             })

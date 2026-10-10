@@ -1,0 +1,68 @@
+{
+  "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+  "start": 5311,
+  "end": 5320,
+  "entries": [
+    {
+      "order": 5311,
+      "path": "Telegram/SourceFiles/passport/passport_form_row.cpp",
+      "blob": "e07e2aede2b5c46840be0d5ded7dfe89cb348e67",
+      "consumer_symbol": "Passport::FormRow"
+    },
+    {
+      "order": 5312,
+      "path": "Telegram/SourceFiles/passport/passport_form_row.h",
+      "blob": "b5525f0f9139f34c56776b239d260d289d7e6904",
+      "consumer_symbol": "Passport form row header"
+    },
+    {
+      "order": 5313,
+      "path": "Telegram/SourceFiles/passport/passport_form_view_controller.cpp",
+      "blob": "cd038acb504f9215f0282db28e8e4d47d6186236",
+      "consumer_symbol": "Passport scope/view controller functions"
+    },
+    {
+      "order": 5314,
+      "path": "Telegram/SourceFiles/passport/passport_form_view_controller.h",
+      "blob": "590d7c2109cb6ccd3be0c987dca3a7a1c9eaf2f8",
+      "consumer_symbol": "Passport::Scope / ScopeRow / ViewController"
+    },
+    {
+      "order": 5315,
+      "path": "Telegram/SourceFiles/passport/passport_panel.cpp",
+      "blob": "3b35fbab700a749acb51bf4e57253f93490d5b4e",
+      "consumer_symbol": "Passport::Panel"
+    },
+    {
+      "order": 5316,
+      "path": "Telegram/SourceFiles/passport/passport_panel.h",
+      "blob": "ef40205c4ff728b3eaae7dcca067ca2bf4ebc1c4",
+      "consumer_symbol": "Passport::Panel contract"
+    },
+    {
+      "order": 5317,
+      "path": "Telegram/SourceFiles/passport/passport_panel_controller.cpp",
+      "blob": "68a844e26e64122d09901e642ff972f777183f1d",
+      "consumer_symbol": "Passport::PanelController / GetDocumentScheme / GetContactScheme"
+    },
+    {
+      "order": 5318,
+      "path": "Telegram/SourceFiles/passport/passport_panel_controller.h",
+      "blob": "c08645056e5b6c5dcf9567b1326ab65b35d59f2f",
+      "consumer_symbol": "Passport::PanelController contract"
+    },
+    {
+      "order": 5319,
+      "path": "Telegram/SourceFiles/passport/passport_panel_edit_contact.cpp",
+      "blob": "7ac24c301d992307c6e1388cdd3d3e1d048249a6",
+      "consumer_symbol": "Passport::PanelEditContact / VerifyBox"
+    },
+    {
+      "order": 5320,
+      "path": "Telegram/SourceFiles/passport/passport_panel_edit_contact.h",
+      "blob": "a3d4a035d86ef7500944233f5d4f046f16e4cd93",
+      "consumer_symbol": "Passport::EditContactScheme / PanelEditContact"
+    }
+  ],
+  "accepted_tree": "4ddb5182fc1ae238e4dc62a396614614b5b35f97"
+}

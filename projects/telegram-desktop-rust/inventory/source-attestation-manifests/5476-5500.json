@@ -1,0 +1,158 @@
+{
+  "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+  "start": 5476,
+  "end": 5500,
+  "entries": [
+    {
+      "order": 5476,
+      "path": "Telegram/SourceFiles/platform/platform_overlay_widget.cpp",
+      "blob": "03fb75e3155758a619e46cfd1c212671e574d0f1",
+      "consumer_symbol": "Overlay/window chrome"
+    },
+    {
+      "order": 5477,
+      "path": "Telegram/SourceFiles/platform/platform_overlay_widget.h",
+      "blob": "5b599858aacb68cebc7e118663973a46d1d5619f",
+      "consumer_symbol": "Overlay/window chrome"
+    },
+    {
+      "order": 5478,
+      "path": "Telegram/SourceFiles/platform/platform_specific.h",
+      "blob": "b309f2aec46c72fa494a329d456cd6715c2f8790",
+      "consumer_symbol": "Platform-specific lifecycle"
+    },
+    {
+      "order": 5479,
+      "path": "Telegram/SourceFiles/platform/platform_text_recognition.h",
+      "blob": "109c427a28d4ae7bb9bed84c70447244d34f0570",
+      "consumer_symbol": "Text recognition capability"
+    },
+    {
+      "order": 5480,
+      "path": "Telegram/SourceFiles/platform/platform_translate_provider.h",
+      "blob": "a15b7a8e5c2657bce18ca66e5bbb4a0e2fcec346",
+      "consumer_symbol": "Translation provider capability"
+    },
+    {
+      "order": 5481,
+      "path": "Telegram/SourceFiles/platform/platform_tray.h",
+      "blob": "20deabebf666a9164711074ec913fe68bfe95e6d",
+      "consumer_symbol": "Tray capability"
+    },
+    {
+      "order": 5482,
+      "path": "Telegram/SourceFiles/platform/platform_webauthn.h",
+      "blob": "16737910ce952ba7505505785d573a7d4ac359cd",
+      "consumer_symbol": "Passkey/WebAuthn contract"
+    },
+    {
+      "order": 5483,
+      "path": "Telegram/SourceFiles/platform/platform_window_title.h",
+      "blob": "a684ad1960d3e4d3523ad1d84a46dcd84fba4d40",
+      "consumer_symbol": "Window title/theme preview"
+    },
+    {
+      "order": 5484,
+      "path": "Telegram/SourceFiles/platform/win/current_geo_location_win.cpp",
+      "blob": "9c7967588e0517d5d4bb9ebf710bcde9caa17017",
+      "consumer_symbol": "Windows exact location"
+    },
+    {
+      "order": 5485,
+      "path": "Telegram/SourceFiles/platform/win/current_geo_location_win.h",
+      "blob": "6bb8195430d9cf504d93db967807da5e11ae73eb",
+      "consumer_symbol": "Windows exact location"
+    },
+    {
+      "order": 5486,
+      "path": "Telegram/SourceFiles/platform/win/file_utilities_win.cpp",
+      "blob": "0bd07fbe6d935630988a45b66204d3e3be80ea7b",
+      "consumer_symbol": "Windows file/dialog security"
+    },
+    {
+      "order": 5487,
+      "path": "Telegram/SourceFiles/platform/win/file_utilities_win.h",
+      "blob": "e89dd8f8e02a19a6b4392bdea0ff0796246b4357",
+      "consumer_symbol": "Windows file/dialog security"
+    },
+    {
+      "order": 5488,
+      "path": "Telegram/SourceFiles/platform/win/integration_win.cpp",
+      "blob": "a857514cf69383a6af21ad143ae55a31194777bc",
+      "consumer_symbol": "Windows lifecycle integration"
+    },
+    {
+      "order": 5489,
+      "path": "Telegram/SourceFiles/platform/win/integration_win.h",
+      "blob": "01f04f95bc3d8667c3fad7c79123a9e331fb2e51",
+      "consumer_symbol": "Windows lifecycle integration"
+    },
+    {
+      "order": 5490,
+      "path": "Telegram/SourceFiles/platform/win/launcher_win.cpp",
+      "blob": "e3bb1ffa7aff885360e5bf5b4163178873d6831f",
+      "consumer_symbol": "Windows launcher/updater handoff"
+    },
+    {
+      "order": 5491,
+      "path": "Telegram/SourceFiles/platform/win/launcher_win.h",
+      "blob": "910a6a33e00eda9f8128970dd3920ab135575529",
+      "consumer_symbol": "Windows launcher/updater handoff"
+    },
+    {
+      "order": 5492,
+      "path": "Telegram/SourceFiles/platform/win/main_window_win.cpp",
+      "blob": "baceb0e57d55c434997b77e9c0472c5e86641631",
+      "consumer_symbol": "Windows main-window privacy/lifecycle"
+    },
+    {
+      "order": 5493,
+      "path": "Telegram/SourceFiles/platform/win/main_window_win.h",
+      "blob": "95f9d52da691c5ac8cd07013bbda4b70cd560479",
+      "consumer_symbol": "Windows main-window privacy/lifecycle"
+    },
+    {
+      "order": 5494,
+      "path": "Telegram/SourceFiles/platform/win/notifications_manager_win.cpp",
+      "blob": "c3f36b52273226a04486a0c2d596afb5e1a3bad1",
+      "consumer_symbol": "Windows native notification actions"
+    },
+    {
+      "order": 5495,
+      "path": "Telegram/SourceFiles/platform/win/notifications_manager_win.h",
+      "blob": "7f9a6ce8ef1d1b35145f944e986b0978d41c1687",
+      "consumer_symbol": "Windows native notification actions"
+    },
+    {
+      "order": 5496,
+      "path": "Telegram/SourceFiles/platform/win/overlay_widget_win.h",
+      "blob": "6430f4b200ce892e84b72baa4701c65885c09f49",
+      "consumer_symbol": "Windows MediaViewer overlay"
+    },
+    {
+      "order": 5497,
+      "path": "Telegram/SourceFiles/platform/win/specific_win.cpp",
+      "blob": "ba7f267b6d8c1c0f600d82d9a9226bfbc323da42",
+      "consumer_symbol": "Windows platform security/settings"
+    },
+    {
+      "order": 5498,
+      "path": "Telegram/SourceFiles/platform/win/specific_win.h",
+      "blob": "adeeb6b8d82e96c6c2d9192d3de783c4d374605f",
+      "consumer_symbol": "Windows platform security/settings"
+    },
+    {
+      "order": 5499,
+      "path": "Telegram/SourceFiles/platform/win/text_recognition_win.h",
+      "blob": "d2d05be5871f0e17ddd8ed7528c192af1eb05b24",
+      "consumer_symbol": "Windows OCR capability delta"
+    },
+    {
+      "order": 5500,
+      "path": "Telegram/SourceFiles/platform/win/translate_provider_win.h",
+      "blob": "8fed093cb4134c9021cf44cb2c2753ae1b95b425",
+      "consumer_symbol": "Windows translation capability delta"
+    }
+  ],
+  "accepted_tree": "4ddb5182fc1ae238e4dc62a396614614b5b35f97"
+}

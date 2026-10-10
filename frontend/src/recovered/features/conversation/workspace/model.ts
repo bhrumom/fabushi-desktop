@@ -2,6 +2,7 @@ import type { TranscriptCardEntry } from "../cards/transcript-card/protocol";
 import type { TimelineEventData } from "../cards/timeline-event-registry";
 import type { ToolResultCardSnapshot } from "../tool-results/model";
 import type { SendMessageTextAdjacency, SendMessageTextImage } from "../cards/transcript-card/send-message-text";
+import type { TranscriptDeliveryState } from "./transcript-delivery-state";
 
 export const COMPOSER_ATTACHMENT_LIMIT = 6;
 
@@ -212,7 +213,7 @@ export type ConversationAgentLastEntry =
   | { readonly kind: "attachment"; readonly count: number; readonly kinds: Readonly<Record<string, number>> }
   | { readonly kind: "link"; readonly url: string };
 
-export type TranscriptDelivery = "sent" | "pending" | "queued" | "failed";
+export type TranscriptDelivery = TranscriptDeliveryState;
 
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=4719000
 export type TranscriptReplyPreview =

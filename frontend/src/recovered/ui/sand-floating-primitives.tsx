@@ -1,4 +1,4 @@
-import { createContext, cloneElement, isValidElement, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type ReactElement, type ReactNode, type RefObject } from "react";
+import { Children, createContext, cloneElement, isValidElement, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type ReactElement, type ReactNode, type Ref, type RefObject } from "react";
 import { createPortal } from "react-dom";
 
 import "./sand-floating-primitives.css";
@@ -103,8 +103,13 @@ function useContextValue<T>(context: React.Context<T>): T {
   return useContext(context);
 }
 
-function mergeRefs<T>(...refs: readonly (((node: T | null) => void) | undefined)[]): (node: T | null) => void {
-  return (node) => { for (const ref of refs) ref?.(node); };
+function mergeRefs<T>(...refs: readonly (Ref<T> | undefined)[]): (node: T | null) => void {
+  return (node) => {
+    for (const ref of refs) {
+      if (typeof ref === "function") ref(node);
+      else if (ref != null) ref.current = node;
+    }
+  };
 }
 
 function cloneWithRef(element: ReactElement, ref: (node: HTMLElement | null) => void, props: Record<string, unknown>): ReactElement {
@@ -268,6 +273,10 @@ export interface SandTooltipProps {
   readonly offset?: number;
   readonly openDelay?: number;
   readonly closeDelay?: number;
+  readonly autoDismissMs?: number;
+  readonly closeOnOutsidePress?: boolean;
+  readonly closeOnEscape?: boolean;
+  readonly returnFocus?: boolean;
   readonly disabled?: boolean;
   readonly defaultOpen?: boolean;
   readonly open?: boolean;
@@ -279,20 +288,71 @@ export interface SandTooltipProps {
   readonly onOpenChange?: (open: boolean) => void;
 }
 
-export function SandTooltip({ children, content, placement = "top", offset = 8, openDelay = 30, closeDelay = 300, disabled = false, defaultOpen = false, open: controlledOpen, ariaLabel, width, minWidth, maxWidth, onOpenChange }: SandTooltipProps): ReactNode {
+export function SandTooltip({
+  children,
+  content,
+  placement = "top",
+  offset = 8,
+  openDelay = 30,
+  closeDelay = 300,
+  autoDismissMs,
+  closeOnOutsidePress = false,
+  closeOnEscape = false,
+  returnFocus = false,
+  disabled = false,
+  defaultOpen = false,
+  open: controlledOpen,
+  ariaLabel,
+  width,
+  minWidth,
+  maxWidth,
+  onOpenChange,
+}: SandTooltipProps): ReactNode {
   const [hoverOpen, setHoverOpen] = useState(defaultOpen);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autoDismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const open = controlledOpen ?? hoverOpen;
-  const setOpen = (next: boolean) => { if (controlledOpen == null) setHoverOpen(next); onOpenChange?.(next); };
-  const schedule = (next: boolean, delay: number) => { if (timerRef.current != null) clearTimeout(timerRef.current); timerRef.current = setTimeout(() => setOpen(next), delay); };
-  useEffect(() => () => { if (timerRef.current != null) clearTimeout(timerRef.current); }, []);
+  const setOpen = useCallback((next: boolean) => {
+    if (controlledOpen == null) setHoverOpen(next);
+    onOpenChange?.(next);
+  }, [controlledOpen, onOpenChange]);
+  const schedule = useCallback((next: boolean, delay: number) => {
+    if (hoverTimerRef.current != null) clearTimeout(hoverTimerRef.current);
+    hoverTimerRef.current = setTimeout(() => setOpen(next), delay);
+  }, [setOpen]);
+  useEffect(() => () => {
+    if (hoverTimerRef.current != null) clearTimeout(hoverTimerRef.current);
+  }, []);
+  useEffect(() => {
+    if (autoDismissTimerRef.current != null) {
+      clearTimeout(autoDismissTimerRef.current);
+      autoDismissTimerRef.current = null;
+    }
+    if (!open || disabled || autoDismissMs == null || autoDismissMs <= 0) return;
+    const timer = setTimeout(() => setOpen(false), autoDismissMs);
+    autoDismissTimerRef.current = timer;
+    return () => {
+      if (autoDismissTimerRef.current === timer) {
+        clearTimeout(timer);
+        autoDismissTimerRef.current = null;
+      }
+    };
+  }, [autoDismissMs, disabled, open, setOpen]);
   const trigger = cloneElement(children, {
     "data-base-ui-tooltip-trigger": disabled ? undefined : "",
     onFocus: (event: FocusEvent) => { (children.props as { onFocus?: (event: FocusEvent) => void }).onFocus?.(event); if (!disabled) schedule(true, openDelay); },
     onMouseEnter: (event: MouseEvent) => { (children.props as { onMouseEnter?: (event: MouseEvent) => void }).onMouseEnter?.(event); if (!disabled) schedule(true, openDelay); },
     onMouseLeave: (event: MouseEvent) => { (children.props as { onMouseLeave?: (event: MouseEvent) => void }).onMouseLeave?.(event); if (!disabled) schedule(false, closeDelay); },
   } as never);
-  return <FloatingRoot open={open} onOpenChange={setOpen} placement={placement} offset={offset} closeOnOutsidePress={false} closeOnEscape={false} returnFocus={false}>
+  return <FloatingRoot
+    open={open}
+    onOpenChange={setOpen}
+    placement={placement}
+    offset={offset}
+    closeOnOutsidePress={closeOnOutsidePress}
+    closeOnEscape={closeOnEscape}
+    returnFocus={returnFocus}
+  >
     <SandFloatingTrigger>{trigger}</SandFloatingTrigger>
     <FloatingSurface ariaLabel={ariaLabel} className="ui-menu__tooltip" dataComponent="tooltip-popup" role="tooltip" style={{ width, minWidth, maxWidth }}>{content}</FloatingSurface>
   </FloatingRoot>;
@@ -387,23 +447,64 @@ export interface SandContextMenuProps {
   readonly ariaLabel?: string;
   readonly open?: { readonly x: number; readonly y: number } | null;
   readonly onOpenChange?: (open: { readonly x: number; readonly y: number } | null) => void;
+  readonly shouldOpen?: (event: ReactMouseEvent) => boolean;
   readonly closeOnSelect?: boolean;
   readonly virtualFocus?: boolean;
 }
 
-export function SandContextMenu({ children, content, ariaLabel = "Menu", open, onOpenChange, closeOnSelect = true, virtualFocus = false }: SandContextMenuProps): ReactNode {
+export function SandContextMenu({ children, content, ariaLabel = "Menu", open, onOpenChange, shouldOpen, closeOnSelect = true, virtualFocus = false }: SandContextMenuProps): ReactNode {
   const [point, setPoint] = useState(open ?? null);
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const itemRefs = useRef(new Map<number, HTMLElement>());
+  const hasContent = Children.count(content) > 0;
   const currentPoint = open === undefined ? point : open;
-  const set = (next: { readonly x: number; readonly y: number } | null) => { if (open === undefined) setPoint(next); onOpenChange?.(next); };
+  const menuOpen = currentPoint != null && hasContent;
+  const set = useCallback((next: { readonly x: number; readonly y: number } | null) => {
+    const bounded = hasContent ? next : null;
+    if (open === undefined) setPoint(bounded);
+    if (bounded == null) setActiveIndex(null);
+    onOpenChange?.(bounded);
+  }, [hasContent, onOpenChange, open]);
   const anchorRef = useRef<HTMLElement | null>(null);
   const surfaceRef = useRef<HTMLDivElement | null>(null);
-  const context = useMemo<FloatingContextValue>(() => ({ anchorRef, close: () => set(null), closeOnEscape: true, closeOnOutsidePress: true, open: currentPoint != null, offset: 0, placement: "bottom-start", returnFocus: true, setAnchor: (node) => { anchorRef.current = node; }, setOpen: (next) => { if (!next) set(null); }, surfaceRef }), [currentPoint, onOpenChange]);
-  useDismissal(context);
+  const floating = useMemo<FloatingContextValue>(() => ({ anchorRef, close: () => set(null), closeOnEscape: true, closeOnOutsidePress: true, open: menuOpen, offset: 0, placement: "bottom-start", returnFocus: true, setAnchor: (node) => { anchorRef.current = node; }, setOpen: (next) => { if (!next) set(null); }, surfaceRef }), [menuOpen, set]);
+  const menu = useMemo<MenuContextValue>(() => ({
+    ...floating,
+    activeIndex,
+    closeOnSelect,
+    focusItemOnOpen: false,
+    registerItem: (index, node) => {
+      if (node == null) itemRefs.current.delete(index);
+      else itemRefs.current.set(index, node);
+    },
+    setActiveIndex,
+    virtualFocus,
+  }), [activeIndex, closeOnSelect, floating, virtualFocus]);
+  useDismissal(floating);
   const trigger = cloneWithRef(children, (node) => { anchorRef.current = node; }, {
-    onContextMenu: (event: ReactMouseEvent) => { (children.props as { onContextMenu?: (event: ReactMouseEvent) => void }).onContextMenu?.(event); if (!event.defaultPrevented) { event.preventDefault(); set({ x: event.clientX, y: event.clientY }); } },
-    onKeyDown: (event: ReactKeyboardEvent) => { (children.props as { onKeyDown?: (event: ReactKeyboardEvent) => void }).onKeyDown?.(event); if (!event.defaultPrevented && event.shiftKey && event.key === "F10") { event.preventDefault(); const rect = (event.currentTarget as HTMLElement).getBoundingClientRect(); set({ x: rect.left, y: rect.bottom }); } },
+    "aria-expanded": menuOpen,
+    "aria-haspopup": "menu",
+    "data-context-menu-open": menuOpen || undefined,
+    onContextMenu: (event: ReactMouseEvent) => {
+      (children.props as { onContextMenu?: (event: ReactMouseEvent) => void }).onContextMenu?.(event);
+      if (event.defaultPrevented || !hasContent || (shouldOpen != null && !shouldOpen(event))) return;
+      event.preventDefault();
+      set({ x: event.clientX, y: event.clientY });
+    },
+    onKeyDown: (event: ReactKeyboardEvent) => {
+      (children.props as { onKeyDown?: (event: ReactKeyboardEvent) => void }).onKeyDown?.(event);
+      if (event.defaultPrevented || !hasContent || !event.shiftKey || event.key !== "F10") return;
+      event.preventDefault();
+      const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+      set({ x: rect.left, y: rect.bottom });
+    },
   } as never);
-  return <FloatingContext.Provider value={context}><div data-context-menu-trigger="true">{trigger}</div><FloatingSurface ariaLabel={ariaLabel} className="ui-menu__content" dataComponent="menu-popup" role="menu" style={{ left: currentPoint?.x ?? 8, top: currentPoint?.y ?? 8 }}>{content}</FloatingSurface></FloatingContext.Provider>;
+  return <MenuContext.Provider value={menu}>
+    <FloatingContext.Provider value={floating}>
+      <div data-context-menu-open={menuOpen || undefined} data-context-menu-trigger="true">{trigger}</div>
+      <SandMenuContent ariaLabel={ariaLabel} style={{ left: currentPoint?.x ?? 8, top: currentPoint?.y ?? 8 }}>{content}</SandMenuContent>
+    </FloatingContext.Provider>
+  </MenuContext.Provider>;
 }
 
 export interface SandSelectOption<T extends string | number = string> {

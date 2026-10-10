@@ -4,6 +4,9 @@
 import {
   COORDINATOR_METHOD_TABLE,
   parseCoordinatorAgentThreadResponse,
+  parseCoordinatorStory,
+  parseCoordinatorStoryDeleteResponse,
+  parseCoordinatorStoryListResponse,
   parseCoordinatorTranscriptWindowResponse,
   type CoordinatorMethod
 } from "../../../../source/shared/rpc/coordinator";
@@ -204,6 +207,9 @@ const REPLY_CONVERTERS: Record<ReplyKind, (value: unknown) => ConvertedReply> = 
   },
   "transcript-window": (value) => parseCoordinatorTranscriptWindowResponse(value) ?? MALFORMED_REPLY,
   "agent-thread": (value) => parseCoordinatorAgentThreadResponse(value) ?? MALFORMED_REPLY,
+  "story-array": (value) => parseCoordinatorStoryListResponse(value) ?? MALFORMED_REPLY,
+  story: (value) => parseCoordinatorStory(value) ?? MALFORMED_REPLY,
+  "story-delete": (value) => parseCoordinatorStoryDeleteResponse(value) ?? MALFORMED_REPLY,
   "acceptance-lookup": (value) => isSourceRecord(value) && typeof value.outcome === "string" ? value : MALFORMED_REPLY,
   "connect-url": (value) => isSourceRecord(value) && typeof value.url === "string" ? value : MALFORMED_REPLY,
   "import-result": (value) => isSourceRecord(value) && Array.isArray(value.workflows) ? value : MALFORMED_REPLY,
@@ -517,6 +523,8 @@ export function createStableCoordinatorSource(initial: RawPortCoordinatorSource)
 const TELEMETRY_DOMAIN_BY_METHOD: Record<CoordinatorMethod, string> = {
   getAgentTranscriptWindow: "transcript", getAgentThread: "transcript", getAgentTranscriptTail: "transcript", openAgentTail: "transcript", getConversationOutline: "transcript",
   sendPrompt: "send", interruptAgent: "send", promptAcceptanceStatus: "send", reactToMessage: "send",
+  getStoryStealthStatus: "stories", activateStoryStealth: "stories",
+  listStories: "stories", viewStory: "stories", reactStory: "stories", deleteStory: "stories",
   listRoutedMcpTools: "plugins", executeRoutedMcpTool: "plugins",
   respondToWidget: "widgets", dismissWidget: "widgets", submitSecret: "widgets",
   resolveAutoReviewApproval: "approvals", resolveLocalToolPermission: "approvals",

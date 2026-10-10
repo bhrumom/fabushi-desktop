@@ -1,0 +1,68 @@
+{
+  "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+  "start": 5341,
+  "end": 5350,
+  "entries": [
+    {
+      "order": 5341,
+      "path": "Telegram/SourceFiles/payments/smartglocal/smartglocal_api_client.cpp",
+      "blob": "0f577374e84bebc53ce8b001bd7713e5b8f97c1b",
+      "consumer_symbol": "SmartGlocal::APIClient"
+    },
+    {
+      "order": 5342,
+      "path": "Telegram/SourceFiles/payments/smartglocal/smartglocal_api_client.h",
+      "blob": "3166b386dae109a6b216e2fd7085176ff15258f8",
+      "consumer_symbol": "SmartGlocal::APIClient contract"
+    },
+    {
+      "order": 5343,
+      "path": "Telegram/SourceFiles/payments/smartglocal/smartglocal_callbacks.h",
+      "blob": "53cecceb2d5bfd91b2579ab3b75131aea4563a6d",
+      "consumer_symbol": "SmartGlocal::TokenCompletionCallback"
+    },
+    {
+      "order": 5344,
+      "path": "Telegram/SourceFiles/payments/smartglocal/smartglocal_card.cpp",
+      "blob": "a08b0980dad10f6e1a3e9dc077892bf716eedd32",
+      "consumer_symbol": "SmartGlocal::Card"
+    },
+    {
+      "order": 5345,
+      "path": "Telegram/SourceFiles/payments/smartglocal/smartglocal_card.h",
+      "blob": "6ebd8bc0cae33288c35130441254692698f5a8df",
+      "consumer_symbol": "SmartGlocal::Card contract"
+    },
+    {
+      "order": 5346,
+      "path": "Telegram/SourceFiles/payments/smartglocal/smartglocal_error.cpp",
+      "blob": "cc764a07f2c17133bc23db9b57c6b4d7cb59eacd",
+      "consumer_symbol": "SmartGlocal::Error"
+    },
+    {
+      "order": 5347,
+      "path": "Telegram/SourceFiles/payments/smartglocal/smartglocal_error.h",
+      "blob": "e3829ff455e0715507a0446fe69184747983a106",
+      "consumer_symbol": "SmartGlocal::Error contract"
+    },
+    {
+      "order": 5348,
+      "path": "Telegram/SourceFiles/payments/smartglocal/smartglocal_token.cpp",
+      "blob": "ee8725ca0c8d837a0726575b5ba76b2f7d78143f",
+      "consumer_symbol": "SmartGlocal::Token"
+    },
+    {
+      "order": 5349,
+      "path": "Telegram/SourceFiles/payments/smartglocal/smartglocal_token.h",
+      "blob": "43f822da0986700d1b258567169fe93230890f59",
+      "consumer_symbol": "SmartGlocal::Token contract"
+    },
+    {
+      "order": 5350,
+      "path": "Telegram/SourceFiles/payments/stripe/stripe_address.h",
+      "blob": "5be06f6cc2d3d3997b0505b827eba2cc6d189981",
+      "consumer_symbol": "Stripe::BillingAddressFields"
+    }
+  ],
+  "accepted_tree": "4ddb5182fc1ae238e4dc62a396614614b5b35f97"
+}

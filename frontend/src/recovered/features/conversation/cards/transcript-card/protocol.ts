@@ -4,6 +4,7 @@
 
 import { projectTranscriptReactions, type TranscriptReaction } from "./reaction-actions";
 import { projectSendMessageText, type SendMessageTextImage } from "./send-message-text";
+import { projectRichMessageAction, type RichMessageAction } from "./url-card";
 
 export const TRANSCRIPT_CARD_ENTRY_KIND = "send-message" as const;
 
@@ -35,6 +36,7 @@ export interface WidgetOption {
   value?: string;
   description?: string;
   style?: "default" | "primary" | "danger";
+  action?: RichMessageAction;
 }
 
 export interface WidgetPrompt {
@@ -249,11 +251,14 @@ function projectWidget(value: Record<string, unknown>): WidgetCardMessage | null
     if (!isRecord(optionValue) || !nonEmptyString(optionValue.label)) return null;
     const style = optionValue.style;
     if (style !== undefined && style !== "default" && style !== "primary" && style !== "danger") return null;
+    const action = optionValue.action === undefined ? undefined : projectRichMessageAction(optionValue.action);
+    if (action === null) return null;
     options.push({
       label: optionValue.label,
       ...(optionalString(optionValue.value) == null ? {} : { value: optionalString(optionValue.value) }),
       ...(optionalString(optionValue.description) == null ? {} : { description: optionalString(optionValue.description) }),
       ...(style === undefined ? {} : { style }),
+      ...(action === undefined ? {} : { action }),
     });
   }
   return {

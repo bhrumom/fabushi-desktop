@@ -2743,7 +2743,7 @@
       "targetLanguage": "typescript",
       "owner": "renderer",
       "status": "implemented",
-      "referenceBlobSha": "b771c5593e80dd7ae47b123e32bf892a19bf76ee",
+      "referenceBlobSha": "c15fa18cf3271903d73b4b57de1f53aac810b964",
       "architecturalRole": "renderer/conversation",
       "processOrPackage": "renderer",
       "behavioralEvidence": [

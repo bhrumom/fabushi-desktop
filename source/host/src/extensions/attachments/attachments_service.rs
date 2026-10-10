@@ -75,6 +75,8 @@ pub enum SandAttachmentError {
     NoActiveAgent,
     #[error("Invalid agent id: {0}")]
     InvalidAgentId(String),
+    #[error("Invalid Human conversation id: {0}")]
+    InvalidHumanConversationId(String),
     #[error("{0}")]
     Io(String),
     #[error("{0}")]
@@ -433,6 +435,27 @@ pub fn read_host_attachment_chunk_with_root(
     read_chunk_file(&resolved, offset, length).ok().flatten()
 }
 
+fn read_human_message_attachment_chunk_with_root(
+    sand_root: &Path,
+    file_path: &Path,
+    offset: usize,
+    length: usize,
+    video_playback: bool,
+) -> Option<HostAttachmentChunk> {
+    let resolved = resolve_human_message_attachment_path_with_root(sand_root, file_path)?;
+    if video_playback && video_mime_from_path(&resolved).is_none() {
+        return None;
+    }
+    if video_playback {
+        return with_video_playback_source(&resolved, |path| {
+            read_chunk_file(path, offset, length)
+        })
+        .ok()
+        .flatten();
+    }
+    read_chunk_file(&resolved, offset, length).ok().flatten()
+}
+
 pub fn resolve_attachment_owner_dir_with_root(
     sand_root: &Path,
     file_path: &Path,
@@ -468,6 +491,53 @@ pub fn resolve_attachment_owner_dir_with_root(
 
 pub fn resolve_attachment_owner_dir(file_path: &Path) -> Option<PathBuf> {
     resolve_attachment_owner_dir_with_root(&get_sand_root_dir(), file_path)
+}
+
+const HUMAN_DIRECT_CONVERSATION_PREFIX: &str = "human-direct-";
+const HUMAN_MESSAGE_RESOURCES_DIRNAME: &str = "human-message-resources";
+const HUMAN_MESSAGE_OUTBOX_DIRNAME: &str = "human-message-outbox";
+
+fn is_canonical_human_conversation_id(value: &str) -> bool {
+    let Some(digest) = value.strip_prefix(HUMAN_DIRECT_CONVERSATION_PREFIX) else {
+        return false;
+    };
+    digest.len() == 64
+        && digest
+            .bytes()
+            .all(|byte| matches!(byte, b'0'..=b'9' | b'a'..=b'f'))
+}
+
+fn human_message_outbox_owner_dir_with_root(
+    sand_root: &Path,
+    conversation_id: &str,
+) -> Result<PathBuf, SandAttachmentError> {
+    if !is_canonical_human_conversation_id(conversation_id) {
+        return Err(SandAttachmentError::InvalidHumanConversationId(
+            conversation_id.to_string(),
+        ));
+    }
+    Ok(sand_root
+        .join("agents")
+        .join(HUMAN_MESSAGE_OUTBOX_DIRNAME)
+        .join(conversation_id))
+}
+
+fn resolve_human_message_attachment_path_with_root(
+    sand_root: &Path,
+    file_path: &Path,
+) -> Option<PathBuf> {
+    if file_path.as_os_str().is_empty() {
+        return None;
+    }
+    let resolved = reanchor_path_with_root(sand_root, file_path);
+    let agents_root = sand_root.join("agents");
+    for bucket in [HUMAN_MESSAGE_RESOURCES_DIRNAME, HUMAN_MESSAGE_OUTBOX_DIRNAME] {
+        let root = agents_root.join(bucket);
+        if path_is_within(&root, &resolved, true) {
+            return Some(resolved);
+        }
+    }
+    None
 }
 
 fn is_text_previewable_name(path: &Path) -> bool {
@@ -579,25 +649,15 @@ fn looks_like_binary(bytes: &[u8]) -> bool {
     controls as f64 / sample.len() as f64 > 0.3
 }
 
-pub fn read_attachment_text_with_root(
-    sand_root: &Path,
-    agent_dir: &Path,
-    file_path: &Path,
-) -> Option<AttachmentTextPreview> {
-    let resolved = reanchor_path_with_root(sand_root, file_path);
-    if file_path.as_os_str().is_empty()
-        || !path_is_within(&get_agent_attachments_dir(agent_dir), &resolved, true)
-    {
-        return None;
-    }
-    let info = fs::metadata(&resolved).ok()?;
+fn read_attachment_text_file(path: &Path) -> Option<AttachmentTextPreview> {
+    let info = fs::metadata(path).ok()?;
     if !info.is_file() {
         return None;
     }
-    if !is_text_previewable_name(&resolved) {
+    if !is_text_previewable_name(path) {
         return Some(AttachmentTextPreview::Binary { bytes: info.len() });
     }
-    let mut file = fs::File::open(resolved).ok()?;
+    let mut file = fs::File::open(path).ok()?;
     let mut head = vec![0_u8; ATTACHMENT_TEXT_PREVIEW_BYTE_CAP];
     let read = file.read(&mut head).ok()?;
     head.truncate(read);
@@ -610,6 +670,20 @@ pub fn read_attachment_text_with_root(
             > u64::try_from(ATTACHMENT_TEXT_PREVIEW_BYTE_CAP).unwrap_or(u64::MAX),
         bytes: info.len(),
     })
+}
+
+pub fn read_attachment_text_with_root(
+    sand_root: &Path,
+    agent_dir: &Path,
+    file_path: &Path,
+) -> Option<AttachmentTextPreview> {
+    let resolved = reanchor_path_with_root(sand_root, file_path);
+    if file_path.as_os_str().is_empty()
+        || !path_is_within(&get_agent_attachments_dir(agent_dir), &resolved, true)
+    {
+        return None;
+    }
+    read_attachment_text_file(&resolved)
 }
 
 pub fn read_image_dimensions_with_root(
@@ -1393,6 +1467,20 @@ impl AttachmentsService {
         .absolute_path)
     }
 
+    pub fn upload_human_message_resource(
+        &self,
+        filename: &str,
+        bytes_base64: Option<&str>,
+        conversation_id: &str,
+    ) -> Result<PathBuf, SandAttachmentError> {
+        let bytes = STANDARD
+            .decode(bytes_base64.unwrap_or_default())
+            .map_err(|error| SandAttachmentError::InvalidBase64(error.to_string()))?;
+        let owner_dir =
+            human_message_outbox_owner_dir_with_root(&self.sand_root, conversation_id)?;
+        Ok(ingest_attachment_bytes(&owner_dir, filename, &bytes)?.absolute_path)
+    }
+
     pub fn read_image(&self, path: &Path) -> Option<HostAttachmentImage> {
         read_host_attachment_image_with_root(&self.sand_root, path)
     }
@@ -1402,6 +1490,11 @@ impl AttachmentsService {
         path: &Path,
         agent_id: Option<&str>,
     ) -> Option<AttachmentTextPreview> {
+        if let Some(resolved) =
+            resolve_human_message_attachment_path_with_root(&self.sand_root, path)
+        {
+            return read_attachment_text_file(&resolved);
+        }
         let Some(dir) = self.read_dir(path, agent_id) else {
             self.report_miss("read_text_miss", agent_id.is_some());
             return None;
@@ -1417,6 +1510,15 @@ impl AttachmentsService {
         length: usize,
         video_playback: bool,
     ) -> Option<HostAttachmentChunk> {
+        if resolve_human_message_attachment_path_with_root(&self.sand_root, path).is_some() {
+            return read_human_message_attachment_chunk_with_root(
+                &self.sand_root,
+                path,
+                offset,
+                length,
+                video_playback,
+            );
+        }
         let Some(dir) = self.read_dir(path, agent_id) else {
             self.report_miss("read_chunk_miss", agent_id.is_some());
             return None;
@@ -1537,14 +1639,38 @@ impl AttachmentsService {
                     .get("filename")
                     .and_then(Value::as_str)
                     .ok_or_else(|| "uploadAttachment.filename must be a string".to_string());
+                let human_conversation_id = match args.get("humanConversationId") {
+                    None | Some(Value::Null) => Ok(None),
+                    Some(Value::String(value)) => Ok(Some(value.as_str())),
+                    Some(_) => Err(
+                        "uploadAttachment.humanConversationId must be a string".to_string(),
+                    ),
+                };
                 filename.and_then(|filename| {
-                    self.upload(
-                        filename,
-                        args.get("bytesBase64").and_then(Value::as_str),
-                        args.get("agentId").and_then(Value::as_str),
-                    )
-                    .map(|path| json!({ "path": path.to_string_lossy() }))
-                    .map_err(|error| error.to_string())
+                    human_conversation_id.and_then(|human_conversation_id| {
+                        let agent_id = args.get("agentId").and_then(Value::as_str);
+                        if human_conversation_id.is_some() && agent_id.is_some() {
+                            return Err(
+                                "uploadAttachment cannot combine Agent and Human owner scopes"
+                                    .to_string(),
+                            );
+                        }
+                        let uploaded = match human_conversation_id {
+                            Some(conversation_id) => self.upload_human_message_resource(
+                                filename,
+                                args.get("bytesBase64").and_then(Value::as_str),
+                                conversation_id,
+                            ),
+                            None => self.upload(
+                                filename,
+                                args.get("bytesBase64").and_then(Value::as_str),
+                                agent_id,
+                            ),
+                        };
+                        uploaded
+                            .map(|path| json!({ "path": path.to_string_lossy() }))
+                            .map_err(|error| error.to_string())
+                    })
                 })
             }
             "readAttachmentImage" => args

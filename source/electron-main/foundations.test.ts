@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
+import { createHash } from "node:crypto";
 import test from "node:test";
 
 import { getSimulatedGatewayLatencyMs, setSimulatedGatewayLatencyMs, SIMULATED_GATEWAY_LATENCY_MAX_MS } from "./dev/dev-network-latency.js";
@@ -10,9 +11,13 @@ import { SAND_DEV_PRELOAD_FILENAME, SAND_PRIMARY_PRELOAD_FILENAME, resolveSandMa
 import { createDevGatewayOfflineControl } from "./dev/dev-gateway-offline.js";
 import { registerExperimentsIpc } from "./experiments/experiments-ipc.js";
 import { computeDockBadgeTotal } from "./notifications/dock-badge.js";
+import { SandOsNotificationManager } from "./notifications/os-notification-manager.js";
 import { resolveScanRoots } from "./process-metrics/wiring.js";
 import { computeUpdateDisabledReason } from "./update/update-gate.js";
 import { isSafeToRelaunchForUpdate } from "./update/safe-relaunch-gate.js";
+import { SandWindowsInstaller, WINDOWS_PARENT_EXIT_GRACE_MS, buildWindowsInstallerParentHandoffScript } from "./update/win32-installer.js";
+import { parseUpdateResponse } from "./update/update-feed.js";
+import { downloadAndVerify } from "./update/update-download.js";
 import { createProductionWindowBroadcaster } from "./window-broadcast.js";
 import { unavailableOnePasswordProvisioningSink, OnePasswordProvisioningError } from "./onepassword/onepassword-provisioning-contract.js";
 import { requireDisposable, requireFunction, requireObject } from "./adapters/provider-guards.js";
@@ -33,6 +38,115 @@ import { createReleaseMetadata } from "./update/release-metadata.js";
 import { SandSettingsStore } from "../shared/node/settings/sand-settings-store.js";
 import { normalizeSandCallMediaPreferences, normalizeSandUiPreferences, resolveSandUiDirection } from "../shared/desktop.js";
 import { createDesktopCallMediaPort } from "./call-media.js";
+import { normalizeCommitStagedAttachmentsEdgeRequest, normalizeStageAttachmentEdgeRequest } from "./attachments/attachment-edge-wire.js";
+import { createAttachmentEdgePort, type AttachmentEdgeDeps } from "./attachments/attachments.js";
+import { readDesktopAccessibilityState, setDesktopAccessibilitySupportEnabled } from "./accessibility-support.js";
+
+test("main edge accepts the shipping preload attachment wire contract", () => {
+  const staged = normalizeStageAttachmentEdgeRequest({
+    filename: "phase1-human-reply.txt",
+    bytesBase64: Buffer.from("Fabushi Human attachment exact-head evidence.", "utf8").toString("base64"),
+  });
+  assert.equal(staged.filename, "phase1-human-reply.txt");
+  assert.equal(Buffer.from(staged.bytes as Uint8Array).toString("utf8"), "Fabushi Human attachment exact-head evidence.");
+  assert.equal(normalizeStageAttachmentEdgeRequest({ filename: "bad.txt", bytesBase64: "***" }).bytes, undefined);
+
+  const humanScope = { kind: "human-conversation", conversationId: `human-direct-${"a".repeat(64)}` };
+  assert.deepEqual(normalizeCommitStagedAttachmentsEdgeRequest({
+    items: [
+      { path: "/staging/a.txt", name: "a.txt" },
+      { path: "/staging/b.png", name: "b.png" },
+    ],
+    scope: humanScope,
+  }), {
+    paths: ["/staging/a.txt", "/staging/b.png"],
+    filenames: ["a.txt", "b.png"],
+    scope: humanScope,
+  });
+  assert.deepEqual(normalizeCommitStagedAttachmentsEdgeRequest({
+    paths: ["/legacy/a.txt"],
+    filenames: ["a.txt"],
+  }), {
+    paths: ["/legacy/a.txt"],
+    filenames: ["a.txt"],
+  });
+});
+
+test("attachment staging uses the production filesystem owner and Node UUID source", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "fabushi-attachment-stage-"));
+  const failures: Array<{ leg: string; errorClass: string }> = [];
+  try {
+    const edge = createAttachmentEdgePort({
+      byteLimitForName: () => 1024,
+      getStagingDir: () => dir,
+      onEdgeFailure: (failure: { leg: string; errorClass: string }) => failures.push(failure),
+      now: () => 1_700_000_000_000,
+    } as unknown as AttachmentEdgeDeps);
+    const bytes = new Uint8Array(Buffer.from("Fabushi Human attachment exact-head evidence.", "utf8"));
+    const staged = await edge.stageBytes("phase1-human-reply.txt", bytes);
+    if (!staged.ok) assert.fail("Expected production attachment staging to succeed.");
+    assert.match(basename(staged.path), /^1700000000000-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.txt$/u);
+    assert.equal(readFileSync(staged.path, "utf8"), "Fabushi Human attachment exact-head evidence.");
+    assert.deepEqual(failures, []);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("attachment commit binds Human scope and preserves retry staging until the full batch succeeds", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "fabushi-human-attachment-commit-"));
+  const firstPath = join(dir, "first.txt");
+  const secondPath = join(dir, "second.txt");
+  const uploads: Array<{ filename: string; bytesBase64: string; humanConversationId?: string }> = [];
+  const failures: Array<{ leg: string; errorClass: string }> = [];
+  try {
+    writeFileSync(firstPath, "first", "utf8");
+    writeFileSync(secondPath, "second", "utf8");
+    let failSecond = true;
+    const edge = createAttachmentEdgePort({
+      legs: {
+        async uploadAttachment(request: { filename: string; bytesBase64: string; humanConversationId?: string }) {
+          uploads.push(request);
+          if (request.filename === "second.txt" && failSecond) throw new Error("synthetic durable owner failure");
+          return { path: `/durable/${request.filename}` };
+        },
+      },
+      isWithinStagingDir: (path: string) => path === firstPath || path === secondPath,
+      onEdgeFailure: (failure: { leg: string; errorClass: string }) => failures.push(failure),
+    } as unknown as AttachmentEdgeDeps);
+
+    assert.equal(await edge.commitStaged(
+      [firstPath],
+      ["first.txt"],
+      { kind: "human-conversation", conversationId: "not-canonical" },
+    ), null);
+    assert.equal(uploads.length, 0);
+    assert.equal(existsSync(firstPath), true);
+
+    const conversationId = `human-direct-${"b".repeat(64)}`;
+    assert.equal(await edge.commitStaged(
+      [firstPath, secondPath],
+      ["first.txt", "second.txt"],
+      { kind: "human-conversation", conversationId },
+    ), null);
+    assert.equal(existsSync(firstPath), true);
+    assert.equal(existsSync(secondPath), true);
+
+    failSecond = false;
+    assert.deepEqual(await edge.commitStaged(
+      [firstPath, secondPath],
+      ["first.txt", "second.txt"],
+      { kind: "human-conversation", conversationId },
+    ), ["/durable/first.txt", "/durable/second.txt"]);
+    assert.equal(existsSync(firstPath), false);
+    assert.equal(existsSync(secondPath), false);
+    assert.equal(uploads.at(-2)?.humanConversationId, conversationId);
+    assert.equal(uploads.at(-1)?.humanConversationId, conversationId);
+    assert.ok(failures.some((failure) => failure.leg === "commit"));
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
 
 test("UI accessibility preferences normalize, persist, and resolve RTL", () => {
   const dir=mkdtempSync(join(tmpdir(),"fabushi-ui-prefs-"));
@@ -43,6 +157,25 @@ test("UI accessibility preferences normalize, persist, and resolve RTL", () => {
     assert.equal(resolveSandUiDirection(store.getUiPreferences()), "rtl");
     assert.deepEqual(normalizeSandUiPreferences({ locale:"../../invalid", direction:"sideways", reducedMotion:"yes", highContrast:true, textScale:9 }), { locale:"system", direction:"auto", reducedMotion:false, highContrast:true, textScale:2 });
   } finally { rmSync(dir,{recursive:true,force:true}); }
+});
+
+test("desktop accessibility state owns the real screen-reader signal without high-contrast inference", () => {
+  setDesktopAccessibilitySupportEnabled(true);
+  assert.deepEqual(readDesktopAccessibilityState(), { screenReader: true });
+  setDesktopAccessibilitySupportEnabled(false);
+  assert.deepEqual(readDesktopAccessibilityState(), { screenReader: false });
+});
+
+test("Electron accessibility snapshot is read only after app ready while change events are registered before ready", () => {
+  const root = existsSync(join(process.cwd(), "source", "electron-main", "main.ts")) ? process.cwd() : join(process.cwd(), "..");
+  const source = readFileSync(join(root, "source", "electron-main", "main.ts"), "utf8");
+  const listenerIndex = source.indexOf('deps.app.on("accessibility-support-changed"');
+  const whenReadyIndex = source.indexOf(".whenReady()");
+  const snapshotIndex = source.indexOf("setDesktopAccessibilitySupportEnabled(deps.app.accessibilitySupportEnabled === true)");
+  assert.ok(listenerIndex >= 0);
+  assert.ok(whenReadyIndex > listenerIndex);
+  assert.ok(snapshotIndex > whenReadyIndex);
+  assert.equal(source.slice(0, whenReadyIndex).includes("deps.app.accessibilitySupportEnabled"), false);
 });
 
 test("call media device preferences normalize and persist in the canonical settings store", () => {
@@ -163,6 +296,42 @@ test("update gates fail closed unless every safe-relaunch condition holds", () =
   assert.equal(isSafeToRelaunchForUpdate({ ...safe, screenLocked: false }), false);
 });
 
+
+test("Windows updater handoff waits for the exact parent identity before NSIS apply", () => {
+  const script = buildWindowsInstallerParentHandoffScript({
+    installerPath: "C:\\Fabushi's Updates\\fabushi setup.exe",
+    installerArgs: ["--updated", "/S", "--force-run"],
+    parentProcessId: 4242,
+  });
+  assert.match(script, /\$parentId = 4242/);
+  assert.match(script, new RegExp(`\\$graceMs = ${WINDOWS_PARENT_EXIT_GRACE_MS}`));
+  assert.match(script, /StartTime\.ToUniversalTime\(\)\.Ticks/);
+  assert.match(script, /WaitForExit\(\$graceMs\)/);
+  assert.match(script, /\$currentCreated -eq \$parentCreated/);
+  assert.match(script, /Stop-Process -Id \$parentId -Force/);
+  assert.match(script, /C:\\Fabushi''s Updates\\fabushi setup\.exe/);
+  assert.match(script, /--force-run/);
+
+  const spawned: Array<{ command: string; args: readonly string[] }> = [];
+  const installer = new SandWindowsInstaller({
+    quit: () => undefined,
+    parentProcessId: 777,
+    spawnDetached: (command, args) => { spawned.push({ command, args }); },
+  });
+  installer.installOnQuit("C:\\updates\\fabushi.exe", { forceRun: true });
+  assert.equal(spawned.length, 1);
+  assert.equal(spawned[0]?.command, "powershell.exe");
+  assert.deepEqual(spawned[0]?.args.slice(0, 4), [
+    "-NoProfile",
+    "-NonInteractive",
+    "-WindowStyle",
+    "Hidden",
+  ]);
+  const handoff = spawned[0]?.args.at(-1) ?? "";
+  assert.match(handoff, /\$parentId = 777/);
+  assert.match(handoff, /Start-Process -FilePath 'C:\\updates\\fabushi\.exe'/);
+});
+
 test("provider guards and unavailable 1Password sink fail closed", async () => {
   assert.deepEqual(requireObject({ ok: true }, "object"), { ok: true });
   assert.throws(() => requireObject(null, "object"), /Missing Electron production adapter port/);
@@ -241,6 +410,54 @@ test("process redaction keeps only Grok helper labels and hashes every original 
   assert.equal(foreign.name, "secret-app");
   assert.equal(foreign.nameHash.length, 64);
   assert.notEqual(foreign.nameHash, foreign.name);
+});
+
+
+
+test("protected updater requires authenticated Windows packages and private exclusive staging files", async () => {
+  assert.throws(
+    () => parseUpdateResponse({ version: "1.2.76", url: "https://updates.example/fabushi.exe" }, "iupdate"),
+    /sha256hash must be a 64-character hexadecimal digest/u,
+  );
+  assert.throws(
+    () => parseUpdateResponse({ version: "1.2.76", url: "https://updates.example/fabushi.exe", sha256hash: "not-a-digest" }, "iupdate"),
+    /sha256hash must be a 64-character hexadecimal digest/u,
+  );
+  const upperDigest = "A".repeat(64);
+  assert.equal(
+    parseUpdateResponse({ version: "1.2.76", url: "https://updates.example/fabushi.exe", sha256hash: upperDigest }, "iupdate").sha256,
+    upperDigest.toLowerCase(),
+  );
+
+  const dir = mkdtempSync(join(tmpdir(), "fabushi-protected-update-"));
+  try {
+    const existing = join(dir, "existing.exe");
+    writeFileSync(existing, "do-not-overwrite", "utf8");
+    await assert.rejects(
+      downloadAndVerify({
+        url: "https://updates.example/existing.exe",
+        destinationPath: existing,
+        sha256: "0".repeat(64),
+        fetchImpl: (async () => new Response(Buffer.from("replacement", "utf8"))) as typeof fetch,
+      }),
+      /EEXIST|exist/iu,
+    );
+    assert.equal(readFileSync(existing, "utf8"), "do-not-overwrite");
+
+    const staged = join(dir, "staged.exe");
+    const payload = Buffer.from("verified-update-payload", "utf8");
+    const digest = createHash("sha256").update(payload).digest("hex");
+    await downloadAndVerify({
+      url: "https://updates.example/staged.exe",
+      destinationPath: staged,
+      sha256: digest,
+      fetchImpl: (async () => new Response(payload)) as typeof fetch,
+    });
+    assert.equal(readFileSync(staged, "utf8"), "verified-update-payload");
+    assert.equal(statSync(staged).mode & 0o777, 0o600);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test("desktop connectivity tracks only recent resumes and exposes telemetry stamps", () => {
@@ -482,4 +699,212 @@ test("MAS packaging declares camera and microphone authority for Human calls", (
   const extendInfo = desktopPackage.build?.mas?.extendInfo ?? {};
   assert.equal(typeof extendInfo.NSMicrophoneUsageDescription, "string");
   assert.equal(typeof extendInfo.NSCameraUsageDescription, "string");
+});
+
+
+test("OS notification manager fences exact account/conversation scope and native actions", async () => {
+  type FakeNotification = {
+    readonly closeCount: { value: number };
+    readonly options: { hasReply?: boolean; actions?: readonly { readonly text: string }[] };
+    click(): void;
+    reply(text: string): void;
+    action(index: number): void;
+  };
+  const created: FakeNotification[] = [];
+  const failures: string[] = [];
+  let focusCount = 0;
+  let activationCount = 0;
+  const manager = new SandOsNotificationManager({
+    getWindow: () => ({
+      isFocused: () => false,
+      isMinimized: () => false,
+      restore: () => undefined,
+      show: () => undefined,
+      focus: () => { focusCount += 1; },
+    }),
+    isSupported: () => true,
+    createNotification: (options) => {
+      let click: (() => void) | undefined;
+      let reply: ((event: unknown, text: string) => void) | undefined;
+      let action: ((event: unknown, index: number) => void) | undefined;
+      let close: (() => void) | undefined;
+      const closeCount = { value: 0 };
+      const fake: FakeNotification = {
+        closeCount,
+        options,
+        click: () => click?.(),
+        reply: (text) => reply?.({}, text),
+        action: (index) => action?.({}, index),
+      };
+      created.push(fake);
+      return {
+        on: (event, listener) => {
+          if (event === "click") click = listener as () => void;
+          else if (event === "reply") reply = listener as (event: unknown, text: string) => void;
+          else action = listener as (event: unknown, index: number) => void;
+        },
+        once: (_event, listener) => { close = listener; },
+        show: () => undefined,
+        close: () => {
+          closeCount.value += 1;
+          close?.();
+        },
+      };
+    },
+    openAgent: () => undefined,
+    reportActionFailure: (operation) => failures.push(operation),
+  });
+
+  const topicScope = { kind: "conversation", accountId: "account-a", conversationId: "conversation-1", childId: "topic-7" } as const;
+  const otherAccountScope = { kind: "conversation", accountId: "account-b", conversationId: "conversation-1", childId: "topic-7" } as const;
+  let replied = "";
+  let markedRead = 0;
+  assert.equal(manager.showScoped({
+    scope: topicScope,
+    title: "Topic",
+    body: "Message",
+    silent: false,
+    urgency: "normal",
+    onActivate: () => { activationCount += 1; },
+    onReply: async (text) => { replied = text; },
+    onMarkRead: async () => { markedRead += 1; },
+  }), true);
+  assert.equal(manager.showScoped({
+    scope: otherAccountScope,
+    title: "Other account",
+    body: "Message",
+    silent: false,
+    urgency: "normal",
+    onActivate: () => { activationCount += 1; },
+  }), true);
+
+  assert.equal(created[0]?.options.hasReply, true);
+  assert.equal(created[0]?.options.actions?.[0]?.text, "Mark as Read");
+  created[0]?.reply("  hello from notification  ");
+  await Promise.resolve();
+  await Promise.resolve();
+  assert.equal(replied, "hello from notification");
+  assert.equal(created[0]?.closeCount.value, 1);
+  assert.equal(created[1]?.closeCount.value, 0);
+
+  assert.equal(manager.showScoped({
+    scope: topicScope,
+    title: "Topic again",
+    body: "Message",
+    silent: false,
+    urgency: "normal",
+    onActivate: () => undefined,
+    onMarkRead: async () => { markedRead += 1; },
+  }), true);
+  created[2]?.action(0);
+  await Promise.resolve();
+  await Promise.resolve();
+  assert.equal(markedRead, 1);
+  assert.equal(created[2]?.closeCount.value, 1);
+  assert.equal(created[1]?.closeCount.value, 0);
+
+  created[1]?.click();
+  assert.equal(focusCount, 1);
+  assert.equal(activationCount, 1);
+  assert.deepEqual(failures, []);
+
+  manager.reset();
+  assert.equal(created[1]?.closeCount.value, 1);
+});
+
+test("OS notification action failures preserve exact scope for retry", async () => {
+  let action: ((event: unknown, index: number) => void) | undefined;
+  let closeCount = 0;
+  const failures: string[] = [];
+  const manager = new SandOsNotificationManager({
+    getWindow: () => null,
+    isSupported: () => true,
+    createNotification: () => ({
+      on: (event, listener) => {
+        if (event === "action") action = listener as (event: unknown, index: number) => void;
+      },
+      once: () => undefined,
+      show: () => undefined,
+      close: () => { closeCount += 1; },
+    }),
+    openAgent: () => undefined,
+    reportActionFailure: (operation) => failures.push(operation),
+  });
+  manager.showScoped({
+    scope: { kind: "conversation", accountId: "account-a", conversationId: "conversation-1" },
+    title: "Message",
+    body: "Body",
+    silent: false,
+    urgency: "normal",
+    onActivate: () => undefined,
+    onMarkRead: async () => { throw new Error("offline"); },
+  });
+  action?.({}, 0);
+  await Promise.resolve();
+  await Promise.resolve();
+  assert.deepEqual(failures, ["mark-read"]);
+  assert.equal(closeCount, 0);
+});
+
+
+test("attachment download rejects transfer identity drift and removes partial output", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "fabushi-attachment-download-"));
+  const target = join(dir, "download.bin");
+  const failures: Array<{ leg: string; errorClass: string }> = [];
+  let reads = 0;
+  try {
+    const edge = createAttachmentEdgePort({
+      legs: {
+        async readAttachmentChunk(request: { path: string; offset: number; length: number }) {
+          reads += 1;
+          if (request.length === 0) return { totalSize: 4, bytesBase64: "" };
+          return { totalSize: 5, bytesBase64: Buffer.from("abcd").toString("base64") };
+        },
+      },
+      getMainWindow: () => null,
+      onEdgeFailure: (failure: { leg: string; errorClass: string }) => failures.push(failure),
+      downloadsDir: dir,
+      resolveSuggestedDownloadName: () => "download.bin",
+      resolveDefaultDownloadPath: () => target,
+      showSaveDialog: async () => ({ canceled: false, filePath: target }),
+      createHiddenWindow: () => ({}),
+      showErrorMessage: async () => {},
+    } as unknown as AttachmentEdgeDeps);
+    assert.equal(await edge.download("/remote/file", "download.bin"), false);
+    assert.equal(reads, 2);
+    assert.equal(existsSync(target), false);
+    assert.ok(failures.some((failure) => failure.leg === "download" && failure.errorClass === "transfer-identity-changed"));
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test("attachment download rejects invalid totals and oversized chunks", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "fabushi-attachment-download-size-"));
+  const target = join(dir, "download.bin");
+  const failures: Array<{ leg: string; errorClass: string }> = [];
+  try {
+    let mode: "invalid-total" | "oversized" = "invalid-total";
+    const edge = createAttachmentEdgePort({
+      legs: {
+        async readAttachmentChunk(request: { path: string; offset: number; length: number }) {
+          if (request.length === 0) return { totalSize: mode === "invalid-total" ? -1 : 2, bytesBase64: "" };
+          return { totalSize: 2, bytesBase64: Buffer.from("abc").toString("base64") };
+        },
+      },
+      getMainWindow: () => null,
+      onEdgeFailure: (failure: { leg: string; errorClass: string }) => failures.push(failure),
+      downloadsDir: dir,
+      resolveSuggestedDownloadName: () => "download.bin",
+      resolveDefaultDownloadPath: () => target,
+      showSaveDialog: async () => ({ canceled: false, filePath: target }),
+      createHiddenWindow: () => ({}),
+      showErrorMessage: async () => {},
+    } as unknown as AttachmentEdgeDeps);
+    assert.equal(await edge.download("/remote/file", "download.bin"), false);
+    assert.equal(existsSync(target), false);
+    assert.ok(failures.some((failure) => failure.errorClass === "invalid-total-size"));
+    mode = "oversized";
+    assert.equal(await edge.download("/remote/file", "download.bin"), false);
+    assert.equal(existsSync(target), false);
+    assert.ok(failures.some((failure) => failure.errorClass === "invalid-chunk-size"));
+  } finally { rmSync(dir, { recursive: true, force: true }); }
 });

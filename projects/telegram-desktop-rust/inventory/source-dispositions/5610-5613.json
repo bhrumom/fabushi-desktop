@@ -1,0 +1,168 @@
+{
+  "format_version": 2,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+    "tree": "9d8fa87ce68c832d2f4c99f372a5bb672463c3e1"
+  },
+  "range": {
+    "first_order": 5610,
+    "last_order": 5613,
+    "entries": 4
+  },
+  "rows": [
+    {
+      "recursive_order": 5610,
+      "source_path": "Telegram/SourceFiles/settings/sections/settings_notifications_type.cpp",
+      "source_blob_sha": "91c391eec2491faa2bec3541cbad4e5cff0a3929",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Per-default-notification-type policy for private/group/broadcast: enable/mute, sound/tone/volume, exact peer exceptions, add/remove/reset-all exception flows and reactive status/sorting.",
+      "upstream_owner": "Data::NotifySettings + Ringtones + MuteMenu + per-type Settings section",
+      "state_machine": "enter type -> project default mute/sound/ringtone/volume + exception set -> mutate default server policy or exact peer exception -> reactive peer/default updates refresh rows/status; add exception waits for peer notification update; clear-all requires confirmation",
+      "side_effects": "Updates server/default mute and sound/ringtone/volume policy; mutates exact peer exceptions; plays selected ringtone preview.",
+      "failure_cases": "wrong peer type/self/replies/verify-codes admitted; stale exception row after account change; add box callback after teardown; default/exception race; clear-all partial failure; ringtone removed during selection; server retry/idempotency; sort/status stale",
+      "ui_disposition": "Reuse canonical Notifications type detail, ListRow/Menu/Slider/Dialog; no source-specific peer list owner.",
+      "fabushi_canonical_owner": "Canonical Notification Policy + Conversation/Peer notification overrides + Ringtone/Audio policy",
+      "fabushi_target": "MAPPED OPEN.",
+      "platform_differences": "Platform notification manager only informs policy projection; server/account semantics remain canonical.",
+      "production_evidence": "Exact 828-line source read; canonical per-type/exception production evidence open.",
+      "test_evidence": "CRITICAL: type default and exact peer override precedence, add/remove/clear fault/retry/idempotency, account switch, ringtone deletion/reload, filter invalid peers, keyboard/focus/a11y/light-dark/responsive.",
+      "disposition": "mapped-open-canonical-notification-type-policy",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "NotificationsType",
+      "consumer_evidence": [
+        "SetupChecks",
+        "SetupExceptions",
+        "defaultUpdate",
+        "clearExceptions",
+        "resetToDefault"
+      ],
+      "reachability_status": "accepted-tree per-type notification responsibility proven; closure open",
+      "license_and_provenance": "tdesktop provenance retained.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-required",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+        "verified_blob_sha": "91c391eec2491faa2bec3541cbad4e5cff0a3929",
+        "file_type": "blob",
+        "recursive_order": 5610
+      },
+      "notes": "Full 828-line exact-source read."
+    },
+    {
+      "recursive_order": 5611,
+      "source_path": "Telegram/SourceFiles/settings/sections/settings_notifications_type.h",
+      "source_blob_sha": "5c0c3632b7366e1a2d1fa2adf07f17b0a96d3488",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Typed private/group/broadcast notification detail route and enabled-state producer.",
+      "upstream_owner": "NotificationsType interface",
+      "state_machine": "typed route owns DefaultNotify discriminator; enabled producer follows default updates",
+      "side_effects": "none",
+      "failure_cases": "wrong type identity or stale producer across session teardown",
+      "ui_disposition": "Canonical Notifications type detail route.",
+      "fabushi_canonical_owner": "Canonical Settings routing + Notification Policy",
+      "fabushi_target": "MAPPED OPEN.",
+      "platform_differences": "none",
+      "production_evidence": "Header read only.",
+      "test_evidence": "typed routing/lifecycle/enabled reactive state",
+      "disposition": "mapped-open-canonical-notification-type-interface",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "NotificationsType::Id",
+      "consumer_evidence": [
+        "NotificationsEnabledForType",
+        "NotificationsEnabledForTypeValue"
+      ],
+      "reachability_status": "typed notification route proven; closure open",
+      "license_and_provenance": "tdesktop provenance retained.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-required",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+        "verified_blob_sha": "5c0c3632b7366e1a2d1fa2adf07f17b0a96d3488",
+        "file_type": "blob",
+        "recursive_order": 5611
+      },
+      "notes": "Full header read."
+    },
+    {
+      "recursive_order": 5612,
+      "source_path": "Telegram/SourceFiles/settings/sections/settings_passkeys.cpp",
+      "source_blob_sha": "79a0ada396ad986446305ecc95a5ffedc052faab",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Account passkey lifecycle UI over one server-backed Passkeys owner and platform WebAuthn adapter: list/capability, registration challenge, platform credential creation, server finalize, delete, last-used/created metadata.",
+      "upstream_owner": "Session Passkeys + Platform::WebAuthn + Privacy/Security Settings",
+      "state_machine": "request list -> canRegister -> server initRegistration -> guarded platform RegisterKey -> fail closed on platform/unsigned error -> server registerPasskey finalize -> refresh/close; delete exact id behind confirmation",
+      "side_effects": "Invokes platform authenticator; creates/deletes server passkey credentials; renders credential metadata.",
+      "failure_cases": "unsigned/unsupported; cancel; stale challenge; account switch/teardown; platform success + server finalize fail; duplicate create/delete; stale list; wrong credential-id delete",
+      "ui_disposition": "Reuse canonical Privacy/Security Passkeys ProfileSection/ListRow/Menu/AlertDialog/Button.",
+      "fabushi_canonical_owner": "Canonical Account Authentication/Passkeys + platform WebAuthn adapter + signed-build capability policy",
+      "fabushi_target": "MAPPED OPEN. Existing remote WebAuthn proxy infrastructure is not sufficient proof of account Passkeys UI/lifecycle.",
+      "platform_differences": "Platform authenticator capability and signed-build restrictions are bounded adapters.",
+      "production_evidence": "Exact source read; account Passkey production UI/lifecycle and signed packaged evidence open.",
+      "test_evidence": "CRITICAL: stale challenge/cancel/unsupported/unsigned, platform-success/server-fail reconciliation, duplicate/idempotent create/delete, account switch/teardown, exact-id deletion, restart/reload, keyboard/a11y, signed packaged Windows/macOS WebAuthn acceptance.",
+      "disposition": "mapped-open-canonical-account-passkeys-webauthn",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "PasskeysId",
+      "consumer_evidence": [
+        "requestList",
+        "initRegistration",
+        "Platform::WebAuthn::RegisterKey",
+        "Error::UnsignedBuild",
+        "registerPasskey",
+        "deletePasskey(id)"
+      ],
+      "reachability_status": "accepted-tree account passkey flow proven; canonical product closure open",
+      "license_and_provenance": "tdesktop provenance retained; credential/challenge material excluded from evidence.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-required",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+        "verified_blob_sha": "79a0ada396ad986446305ecc95a5ffedc052faab",
+        "file_type": "blob",
+        "recursive_order": 5612
+      },
+      "notes": "Full exact-source read."
+    },
+    {
+      "recursive_order": 5613,
+      "source_path": "Telegram/SourceFiles/settings/sections/settings_passkeys.h",
+      "source_blob_sha": "612d507ab0d070a99dbc372ce8d8b633c0f85531",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Public Passkeys route and capability/explanation dialog entrypoint.",
+      "upstream_owner": "Passkeys Settings interface",
+      "state_machine": "typed route/dialog -> canonical passkey owner",
+      "side_effects": "none beyond declared UI entrypoints",
+      "failure_cases": "dialog bypasses account/capability guard",
+      "ui_disposition": "Canonical Privacy/Security Passkeys route/dialog.",
+      "fabushi_canonical_owner": "Canonical Settings routing + Account Auth/Passkeys",
+      "fabushi_target": "MAPPED OPEN.",
+      "platform_differences": "none in header",
+      "production_evidence": "Header read only.",
+      "test_evidence": "route/dialog account/capability lifecycle",
+      "disposition": "mapped-open-canonical-passkeys-interface",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "PasskeysId",
+      "consumer_evidence": [
+        "PasskeysNoneBox",
+        "Type PasskeysId()"
+      ],
+      "reachability_status": "public passkey entrypoint proven; closure open",
+      "license_and_provenance": "tdesktop provenance retained.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-required",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+        "verified_blob_sha": "612d507ab0d070a99dbc372ce8d8b633c0f85531",
+        "file_type": "blob",
+        "recursive_order": 5613
+      },
+      "notes": "Full header read."
+    }
+  ]
+}

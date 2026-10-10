@@ -234,7 +234,20 @@ async function ensureE2eAuthBackend(): Promise<string> {
         }
         response.setHeader('content-type', 'application/json');
         response.statusCode = 200;
-        response.end(JSON.stringify({ success: true, data: { friends: [] } }));
+        response.end(JSON.stringify({ success: true, data: { friends: [{
+          id: 'friend-human-parity-peer-e2e',
+          userId: 'human-parity-peer-e2e',
+          username: 'human-parity-peer-e2e',
+          displayName: 'Human Parity Peer',
+          avatarUrl: null,
+          status: 'accepted',
+        }] } }));
+        return;
+      }
+      if (requestUrl.pathname === '/api/social/calls' && request.method === 'GET') {
+        response.setHeader('content-type', 'application/json');
+        response.statusCode = 200;
+        response.end(JSON.stringify({ success: true, calls: [] }));
         return;
       }
       if (requestUrl.pathname === '/api/social/message-resources' && request.method === 'POST') {
@@ -806,7 +819,7 @@ test('Mahayana renders one Hermes-style assistant turn instead of a completion W
 });
 
 
-test('Human reply, attachment, reaction, and search stay on the shipping conversation contracts', async () => {
+test('Human reply, attachment, reaction, and search stay on the shipping conversation contracts', async ({}, testInfo) => {
   e2eHumanMessages = [];
   e2eHumanMessageSequence = 1;
   e2eHumanResourceSequence = 1;
@@ -820,14 +833,13 @@ test('Human reply, attachment, reaction, and search stay on the shipping convers
     app = await launchDesktopApp(appDataDir);
     let page = await app.firstWindow();
     await completeBrowserLogin(page);
-    await openMahayanaConversation(page);
-    await page.getByRole('button', { name: 'New Human chat', exact: true }).click();
-    const dialog = page.getByRole('dialog', { name: 'New Human chat' });
-    await dialog.getByRole('textbox', { name: 'Human identity' }).fill('human-parity-peer-e2e');
-    await dialog.getByRole('textbox', { name: 'Conversation title' }).fill('Human Parity Peer');
-    await dialog.getByRole('button', { name: 'Create', exact: true }).click();
+    const humanPeer = page.getByRole('region', { name: 'Agent list' })
+      .getByRole('button', { name: 'Human Parity Peer', exact: true });
+    await expect(humanPeer).toBeVisible({ timeout: 15_000 });
+    await humanPeer.click();
 
     const prompt = page.getByRole('textbox', { name: 'Prompt' });
+    await expect(prompt).toHaveAttribute('contenteditable', 'true', { timeout: 15_000 });
     const rootText = 'Human parity root for reply search.';
     await prompt.pressSequentially(rootText);
     await page.getByRole('button', { name: 'Send message' }).click();
@@ -835,8 +847,10 @@ test('Human reply, attachment, reaction, and search stay on the shipping convers
     await expect(rootTurn).toBeVisible({ timeout: 10_000 });
     await expect(rootTurn).not.toHaveAttribute('data-pending', { timeout: 15_000 });
 
-    await rootTurn.hover();
-    await rootTurn.getByRole('button', { name: 'Reply to your message' }).click();
+    const replyAction = rootTurn.getByRole('button', { name: 'Reply to your message' });
+    await replyAction.focus();
+    await expect(replyAction).toBeFocused();
+    await page.keyboard.press('Enter');
     await expect(page.getByRole('button', { name: 'Cancel reply' })).toBeVisible();
 
     await page.locator('input.sand-prompt-file-input').setInputFiles({
@@ -861,8 +875,50 @@ test('Human reply, attachment, reaction, and search stay on the shipping convers
     const uploadedResource = [...e2eHumanResources.values()].find((resource) => resource.name === attachmentName);
     expect(uploadedResource?.bytes.equals(attachmentBytes)).toBe(true);
 
-    await replyTurn.hover();
-    await replyTurn.getByRole('button', { name: 'Add reaction' }).click();
+    const mediaAttachmentName = 'phase1-human-preview.png';
+    const mediaAttachmentBytes = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Zl/0AAAAASUVORK5CYII=', 'base64');
+    await page.locator('input.sand-prompt-file-input').setInputFiles({
+      name: mediaAttachmentName,
+      mimeType: 'image/png',
+      buffer: mediaAttachmentBytes,
+    });
+    // setInputFiles only starts the canonical attachment-staging path. Wait for
+    // the Composer-owned staged attachment projection before sending so this
+    // acceptance proves the real staging boundary instead of racing it.
+    await expect(
+      page.getByRole('list', { name: 'Attachments' })
+        .getByRole('listitem', { name: mediaAttachmentName }),
+    ).toBeVisible({ timeout: 10_000 });
+    const mediaText = 'Human media preview window chrome evidence.';
+    await prompt.pressSequentially(mediaText);
+    await page.getByRole('button', { name: 'Send message' }).click();
+    const mediaTurn = page.getByRole('article').filter({ hasText: mediaText }).last();
+    await expect(mediaTurn).toBeVisible({ timeout: 10_000 });
+    await expect(mediaTurn).not.toHaveAttribute('data-pending', { timeout: 15_000 });
+    const previewTrigger = mediaTurn.getByRole('button', { name: 'Media preview' });
+    await expect(previewTrigger).toBeVisible({ timeout: 10_000 });
+    await previewTrigger.focus();
+    await expect(previewTrigger).toBeFocused();
+    await page.keyboard.press('Enter');
+    const mediaDialog = page.getByRole('dialog', { name: 'Media preview' });
+    await expect(mediaDialog).toBeVisible();
+    const closeMedia = mediaDialog.getByRole('button', { name: 'Close media preview' });
+    await expect(closeMedia).toBeVisible();
+    await expect(closeMedia).toHaveClass(/sand-kit-icon-button/u);
+    await closeMedia.focus();
+    await expect(closeMedia).toBeFocused();
+    await testInfo.attach('media-viewer-canonical-window-chrome', {
+      body: await mediaDialog.screenshot(),
+      contentType: 'image/png',
+    });
+    await page.keyboard.press('Enter');
+    await expect(mediaDialog).toHaveCount(0);
+    await expect(previewTrigger).toBeFocused();
+
+    const reactionAction = replyTurn.getByRole('button', { name: 'Add reaction' });
+    await reactionAction.focus();
+    await expect(reactionAction).toBeFocused();
+    await page.keyboard.press('Enter');
     await page.getByRole('button', { name: 'React with 👍' }).click();
     await expect(replyTurn.getByRole('button', { name: /You reacted with 👍/u })).toBeVisible();
     await expect.poll(() => e2eHumanMessages[1]?.reactions).toEqual([

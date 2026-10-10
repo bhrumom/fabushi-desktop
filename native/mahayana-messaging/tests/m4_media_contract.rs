@@ -208,3 +208,127 @@ fn media_and_poll_sends_follow_conversation_message_permissions() {
         Err(EngineError::SenderNotParticipant { conversation_id: id, .. }) if id == conversation_id
     ));
 }
+
+#[test]
+fn media_resolve_coordinator_prioritizes_visible_work_and_releases_expired_slots() {
+    let mut coordinator = MediaResolveCoordinator::new(2).unwrap();
+    coordinator
+        .enqueue("background", MediaResolvePriority::Background)
+        .unwrap();
+    coordinator
+        .enqueue("viewport", MediaResolvePriority::Viewport)
+        .unwrap();
+    coordinator
+        .enqueue("opened", MediaResolvePriority::UserVisible)
+        .unwrap();
+
+    let opened = coordinator.start_next(100, 60_000).unwrap().unwrap();
+    let viewport = coordinator.start_next(100, 60_000).unwrap().unwrap();
+    assert_eq!(opened.media_id, "opened");
+    assert_eq!(viewport.media_id, "viewport");
+    assert!(coordinator.start_next(100, 60_000).unwrap().is_none());
+
+    assert_eq!(coordinator.expire(60_099), Vec::<MediaResolveLease>::new());
+    let expired = coordinator.expire(60_100);
+    assert_eq!(expired.len(), 2);
+    assert_eq!(coordinator.in_flight(), 0);
+    assert_eq!(
+        coordinator.state("opened"),
+        Some(MediaResolveState::Failed)
+    );
+
+    let background = coordinator.start_next(60_100, 60_000).unwrap().unwrap();
+    assert_eq!(background.media_id, "background");
+}
+
+#[test]
+fn media_resolve_refresh_fences_stale_callbacks_and_cancel_is_terminal_for_a_lease() {
+    let mut coordinator = MediaResolveCoordinator::new(1).unwrap();
+    let first_generation = coordinator
+        .enqueue("collectible", MediaResolvePriority::Viewport)
+        .unwrap();
+    let stale = coordinator.start_next(10, 1_000).unwrap().unwrap();
+    assert_eq!(stale.generation, first_generation);
+
+    let second_generation = coordinator
+        .refresh("collectible", MediaResolvePriority::UserVisible)
+        .unwrap();
+    assert_ne!(second_generation, first_generation);
+    assert_eq!(coordinator.in_flight(), 0);
+    assert!(!coordinator.complete(&stale));
+
+    let current = coordinator.start_next(20, 1_000).unwrap().unwrap();
+    assert_eq!(current.generation, second_generation);
+    assert!(coordinator.cancel("collectible"));
+    assert!(!coordinator.complete(&current));
+    assert_eq!(
+        coordinator.state("collectible"),
+        Some(MediaResolveState::Cancelled)
+    );
+
+    let third_generation = coordinator
+        .enqueue("collectible", MediaResolvePriority::Background)
+        .unwrap();
+    assert_ne!(third_generation, second_generation);
+    let third = coordinator.start_next(30, 1_000).unwrap().unwrap();
+    assert!(coordinator.complete(&third));
+    assert!(!coordinator.fail(&third));
+    assert_eq!(
+        coordinator.state("collectible"),
+        Some(MediaResolveState::Done)
+    );
+}
+
+
+
+#[test]
+fn media_resolve_targeted_claim_preserves_global_priority_order() {
+    let mut coordinator = MediaResolveCoordinator::new(1).unwrap();
+    let background_generation = coordinator
+        .enqueue("background", MediaResolvePriority::Background)
+        .unwrap();
+    let visible_generation = coordinator
+        .enqueue("visible", MediaResolvePriority::UserVisible)
+        .unwrap();
+
+    assert!(coordinator
+        .start_if_next("background", background_generation, 10, 1_000)
+        .unwrap()
+        .is_none());
+    let visible = coordinator
+        .start_if_next("visible", visible_generation, 10, 1_000)
+        .unwrap()
+        .expect("visible work should claim first");
+    assert!(coordinator.complete(&visible));
+    let background = coordinator
+        .start_if_next("background", background_generation, 20, 1_000)
+        .unwrap()
+        .expect("background work should claim after visible settles");
+    assert!(coordinator.complete(&background));
+}
+
+#[test]
+fn media_resolve_teardown_cancels_all_current_generations_and_fences_late_completion() {
+    let mut coordinator = MediaResolveCoordinator::new(2).unwrap();
+    let first_generation = coordinator
+        .enqueue("first", MediaResolvePriority::UserVisible)
+        .unwrap();
+    let second_generation = coordinator
+        .enqueue("second", MediaResolvePriority::Viewport)
+        .unwrap();
+    let first = coordinator
+        .start_if_next("first", first_generation, 10, 1_000)
+        .unwrap()
+        .expect("first lease");
+    let retired = coordinator.cancel_all();
+
+    assert!(retired.iter().any(|lease| {
+        lease.media_id == "first" && lease.generation == first_generation
+    }));
+    assert!(retired.iter().any(|lease| {
+        lease.media_id == "second" && lease.generation == second_generation
+    }));
+    assert_eq!(coordinator.state("first"), Some(MediaResolveState::Cancelled));
+    assert_eq!(coordinator.state("second"), Some(MediaResolveState::Cancelled));
+    assert!(!coordinator.complete(&first));
+}

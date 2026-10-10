@@ -4,34 +4,35 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
-    "tree": "b4095fab77f923fca2a4b99d710ec333aa6757ab",
-    "baseline_identity_accepted": true
+    "commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+    "tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
+    "baseline_identity_accepted": false
   },
   "inventory": {
-    "root_non_directory_entries": 6355,
-    "recursive_non_directory_entries": 15788,
+    "root_non_directory_entries": 6653,
+    "recursive_non_directory_entries": 16125,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 15788,
-    "unread_minimum": 15761,
-    "omitted_known": 0
+    "unknown_minimum": 15845,
+    "unread_minimum": 8722,
+    "omitted_known": 0,
+    "note": "Recursive source census 16,125; exact read/decomposition through 7,403; unread 8,722; unknown 15,845; omitted 0. All 162 cmark-gfm entries are read/decomposed; production parser/security/lifecycle/bounded-work equivalence remains mapped-open."
   },
   "latest_recursive_evidence": {
-    "run_id": 37596744991,
+    "run_id": 38064993530,
     "run_attempt": 1,
-    "job_id": 112711134608,
-    "head_sha": "cc318d81532c44f8710681039cc1dba3dafe72cc",
-    "artifact_id": 11470099433,
-    "artifact_digest": "sha256:087136a99675f1a112602e748573c9d20aeaa27e3e2b308f00603d0d9f4a3dad",
+    "job_id": 114250776577,
+    "head_sha": "bbf9e2d299956f1919a7499a6ee0cc765ed29597",
+    "artifact_id": 11674697004,
+    "artifact_digest": "sha256:bf694d04f022f21490f971e88e54c802d7bedfa74bf415bf44fc4c9cb64798aa",
     "artifact_files": [
       "upstream-root-inventory.json",
       "upstream-recursive-inventory.json",
-      "authority-report.json",
-      "build-time-acquisition-candidates.txt"
+      "authority-report.json"
     ],
-    "evidence_status": "historical-only",
-    "upstream_commit": "f23c37857220eb84f8559f0901ea26fb304b564b"
+    "evidence_status": "historical-diagnostic-after-descendant-source-accounting-commit",
+    "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+    "note": "Exact predecessor authority artifact. Run 38064993530 failed only the lock coverage live-summary note drift before this descendant accounting repair; it cannot prove the new HEAD."
   },
   "closure_rules": {
     "executable_runner": "github-actions",
@@ -41,5 +42,39 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Rebased to telegramdesktop/tdesktop@72b3b71c3d6e450e5ef94a3112dd750a0168aa0b. Root cardinality remains 6,355 non-directory entries; the changed lib_webview pin remains 32 non-directory entries, so recursive total remains 15,788. Twenty-seven source entries are now read-complete on the accepted baseline. The four newly completed story entries are media_stories_share.cpp@cac84bc4f383fdc260e046ead9ee1fa96738a2f8, media_stories_share.h@c7149b0ca980a85c8592676f1cbc91abd1c6bafa, media_stories_sibling.h@24f334cae788ee6a1dc0b07cd313e81b77ca1ae2, and media_stories_sibling.cpp@a9d875c9e44a94909bb84c4aeb6e70c7f47403d3. unread_minimum is therefore 15,761; unknown remains 15,788 and omitted remains 0 while responsibility closure is open."
+  "note": "Live authority 6fed91ff exact through recursive order 7,403; first unread is 7,404 Telegram/ThirdParty/expected::.appveyor.yml; unread_minimum is 8,722; unknown remains 15,845; omitted remains 0.",
+  "rebaseline": {
+    "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+    "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+    "ahead_by": 4,
+    "changed_paths": 10,
+    "changed_prefix_orders": [
+      3155,
+      3201,
+      3202,
+      3766,
+      4521,
+      4522,
+      5166,
+      5943,
+      6541,
+      6627
+    ],
+    "current_source_read_through": 7403,
+    "first_unread_order": 7404,
+    "first_unread_path": "Telegram/ThirdParty/expected::.appveyor.yml",
+    "current_head_source_authority_evidence": "Complete cmark-gfm 7,242-7,403 exact-read. Shipping IV consumer, parser lifecycle/limits, AST ownership, Unicode/escaping, GFM extensions and fuzz/pathological/spec oracles are mapped to existing Fabushi rich-content/URL/Resource and Build-Release owners. Development wrappers/build inputs are source evidence only. No unknown closed."
+  },
+  "source_dispositions": {
+    "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+    "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+    "deterministic_prefix_closed": 57,
+    "development_only_non_applicable": 70,
+    "unknown_closed": 280,
+    "omitted": 0,
+    "read_through": 7403,
+    "first_unread_order": 7404,
+    "first_unread_path": "Telegram/ThirdParty/expected::.appveyor.yml",
+    "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
+  }
 }

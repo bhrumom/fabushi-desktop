@@ -3,7 +3,7 @@ import type { CoordinatorPortBridge, CursorAuthStatus, DesktopAutoReviewInstruct
 import computerEntrypoint from "../recovered/features/computer/overlay/entrypoint";
 import { ConversationComposer } from "../recovered/features/conversation/workspace/composer";
 import { commitComposerAttachments, stageComposerFiles } from "../recovered/features/conversation/workspace/desktop";
-import type { ComposerDraft, ConversationTranscriptEntry, DraftAttachment, TranscriptMessage } from "../recovered/features/conversation/workspace/model";
+import { COMPOSER_ATTACHMENT_LIMIT, type ComposerDraft, type ConversationTranscriptEntry, type DraftAttachment, type TranscriptMessage } from "../recovered/features/conversation/workspace/model";
 import { createComposerDraftPersistence, createComposerDraftStateStore } from "../recovered/features/conversation/workspace/draft-state";
 import { createComposerSubmissionQueue, type ComposerSubmission, type ComposerSubmissionQueue } from "../recovered/features/conversation/workspace/submission";
 import { createSendJournalApprovalLifecycle } from "../recovered/features/conversation/workspace/send-journal-approval-lifecycle";
@@ -78,7 +78,9 @@ import { ORG_CHART_GATE, orgChartAvailability } from "../recovered/features/org-
 import { createAgentNetworkTrigger } from "../recovered/features/org-chart/workspace/network-trigger";
 import { AccountMenu } from "../recovered/features/account/session/menu";
 import { SandBadge, SandButton, SandIcon, SandIconButton } from "../recovered/ui/sand-kit-primitives";
+import { createInFlightCommandFence } from "../recovered/ui/in-flight-command";
 import { OverlayDialog } from "../recovered/ui/overlay-primitives";
+import { SandTextField } from "../recovered/ui/sand-form-primitives";
 import { SignInStatus } from "../recovered/features/account/session/sign-in-status";
 import { isRosterPrivacyBlockFailure, PrivacyBlockedDialog } from "../recovered/features/roster/privacy-blocked";
 import { RosterStatus } from "../recovered/features/roster/status";
@@ -111,6 +113,7 @@ import { commandPaletteLinksFromConversation, createCommandPaletteLinkMetadataPr
 import { commandPaletteUpdateCommand } from "./command-palette-update-command";
 import { commandPaletteRootCommands, type CommandPaletteComputerUpdateAction, type CommandPaletteInfoSection } from "./command-palette-root-commands";
 import { CoordinatorCallError, createCoordinatorClient, type ProductionCoordinatorClient } from "./coordinator-client";
+import { StoryCapabilitySurface } from "./StoryCapabilitySurface";
 import { HumanCallControls } from "./human-call-media";
 import { UI_TEXT } from "./evidence";
 import { movePinnedAgent, partitionSidebarAgents } from "./sidebar-model";
@@ -433,7 +436,7 @@ function moveAgentsToSidebarSection(sections: readonly SidebarSection[], agentId
       : section.agentIds.filter((agentId) => !moved.has(agentId))
   }));
 }
-const EMPTY_DRAFT_SNAPSHOT = { draft: null, recovery: null } as const;
+const EMPTY_DRAFT_SNAPSHOT = { draft: null, recovery: null, stash: null } as const;
 const readEmptyDraftSnapshot = () => EMPTY_DRAFT_SNAPSHOT;
 const emptyDraftSubscribe = () => () => {};
 const readEmptyAgentSettingsSnapshot = () => null;
@@ -963,7 +966,12 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const [entriesByAgent, setEntriesByAgent] = useState<Record<string, ConversationTranscriptEntry[]>>({});
   const [transcriptLoadError, setTranscriptLoadError] = useState<TranscriptLoadErrorState | null>(null);
   const [busy, setBusy] = useState(false);
+  const [createAgentPending, setCreateAgentPending] = useState(false);
+  const [humanHandoffPending, setHumanHandoffPending] = useState(false);
+  const [commandFence] = useState(() => createInFlightCommandFence());
   const [notice, setNotice] = useState<string | null>(null);
+  const [scheduleComposerOpen, setScheduleComposerOpen] = useState(false);
+  const [scheduleComposerValue, setScheduleComposerValue] = useState("");
   const [composerClearGeneration, setComposerClearGeneration] = useState(0);
   const [overlay, setOverlay] = useState<AuxiliaryOverlay>(null);
   const [workspaceRoute, setWorkspaceRoute] = useState<WorkspaceRoute>(null);
@@ -1195,7 +1203,11 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     const humanConversation = humanConversationsRef.current.find((conversation) => conversation.id === submission.agentId);
     if (humanConversation != null) {
       const draftAttachments = submission.attachments.map((attachment) => ({ path: attachment.path, name: attachment.name }));
-      const attachments = bridge == null ? draftAttachments : await commitComposerAttachments(bridge, draftAttachments);
+      const attachments = bridge == null ? draftAttachments : await commitComposerAttachments(
+        bridge,
+        draftAttachments,
+        { kind: "human-conversation", conversationId: submission.agentId }
+      );
       for (const attachment of draftAttachments) stagedPaths.current.delete(attachment.path);
       const result = await client.call("sendHumanMessage", {
         conversationId: submission.agentId,
@@ -1203,33 +1215,54 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         clientNonce: submission.nonce,
         composedAtMs: submission.createdAtMs,
         attachments,
-        ...(submission.replyToId == null ? {} : { replyToId: submission.replyToId })
+        ...(submission.replyToId == null ? {} : { replyToId: submission.replyToId }),
+        ...(submission.silent === true ? { silent: true } : {}),
+        ...(submission.scheduledAtMs == null ? {} : { scheduledAtMs: submission.scheduledAtMs })
       });
       const authoritative = projectTranscriptEntry(result, 0, humanConversation.name, humanConversation.id);
-      if (authoritative != null) {
-        setEntriesByAgent((current) => {
-          const existing = current[submission.agentId] ?? [];
-          const correlatedIndex = existing.findIndex((entry) =>
-            entry.id === authoritative.id
-            || (entry.kind === "message" && entry.clientNonce === submission.nonce)
-          );
-          return {
-            ...current,
-            [submission.agentId]: correlatedIndex < 0
-              ? [...existing, authoritative]
-              : existing.map((entry, index) => index === correlatedIndex ? authoritative : entry)
-          };
-        });
-        acknowledgementController.reconcileEcho({
-          accountSlot: acknowledgementScopeRef.current.accountSlot,
-          agentId: submission.agentId,
-          nonce: submission.nonce,
-          echoedNonce: submission.nonce
-        });
+      const existing = entriesByAgentRef.current[submission.agentId] ?? [];
+      const correlated = authoritative == null ? [] : existing.filter((entry) =>
+        entry.id === authoritative.id
+        || (entry.kind === "message" && entry.clientNonce === submission.nonce)
+      );
+      if (authoritative == null
+        || authoritative.kind !== "message"
+        || authoritative.role !== "user"
+        || authoritative.id === "entry-0"
+        || authoritative.id === `pending-${submission.nonce}`
+        || authoritative.clientNonce !== submission.nonce
+        || correlated.length !== 1) {
+        throw new Error("sendHumanMessage returned missing or ambiguous durable message identity");
       }
-      const projectedHumans = projectHumanConversations(await client.call("listHumanConversations"));
-      humanConversationsRef.current = projectedHumans;
-      setHumanConversations(projectedHumans);
+      const reconciled = acknowledgementController.reconcileEcho({
+        accountSlot: acknowledgementScopeRef.current.accountSlot,
+        agentId: submission.agentId,
+        nonce: submission.nonce,
+        echoedNonce: authoritative.clientNonce
+      });
+      if (!reconciled) {
+        throw new Error("sendHumanMessage returned missing or ambiguous acknowledgement identity");
+      }
+      const correlatedId = correlated[0]?.id;
+      setEntriesByAgent((current) => {
+        const live = current[submission.agentId] ?? [];
+        return {
+          ...current,
+          [submission.agentId]: live.map((entry) => entry.id === correlatedId ? authoritative : entry)
+        };
+      });
+      // sendHumanMessage is the authoritative settlement for this submission.
+      // Keep the unrelated sidebar roster refresh out of the send lifecycle so
+      // an accepted draft clears before the next user edit, and a slow/failed
+      // roster refresh cannot reclassify an already accepted message as failed.
+      const humanRosterAccountGeneration = accountScopeGenerationRef.current;
+      void client.call("listHumanConversations").then((value) => {
+        if (accountScopeGenerationRef.current !== humanRosterAccountGeneration
+          || accountRef.current?.kind !== "logged-in") return;
+        const projectedHumans = projectHumanConversations(value);
+        humanConversationsRef.current = projectedHumans;
+        setHumanConversations(projectedHumans);
+      }).catch(() => {});
       return;
     }
     const draftAttachments = submission.attachments.map((attachment) => ({ path: attachment.path, name: attachment.name }));
@@ -1319,10 +1352,15 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       if (submission.phase === "queued" || submission.phase === "failed" || submission.phase === "sent" || submission.phase === "cancelled") setBusy(false);
     },
     onFailure: (submission, error) => {
-      composerDraftStore.recoverDraft(submission.agentId, {
-        prompt: submission.prompt,
-        attachments: [...submission.attachments]
-      });
+      if (submission.draftOrigin !== "stash") {
+        composerDraftStore.recoverDraft(submission.agentId, {
+          prompt: submission.prompt,
+          attachments: [...submission.attachments],
+          ...(submission.richText == null ? {} : { richText: submission.richText }),
+          ...(submission.replyToId == null ? {} : { replyToId: submission.replyToId }),
+          ...(submission.isFork === undefined ? {} : { isFork: submission.isFork })
+        });
+      }
       setNotice(error instanceof Error ? error.message : String(error));
       }
     });
@@ -2249,8 +2287,11 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       setNotice("Send at least one Human message before handing the conversation to an Agent.");
       return;
     }
+    const commandLease = commandFence.acquire("human-handoff");
+    if (commandLease == null) return;
     const clientNonce = makeClientNonce();
     const now = Date.now();
+    setHumanHandoffPending(true);
     setBusy(true);
     try {
       await client.call("sendPrompt", {
@@ -2272,9 +2313,11 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     } catch (error) {
       setNotice(error instanceof Error ? error.message : String(error));
     } finally {
+      commandLease.release();
+      setHumanHandoffPending(false);
       setBusy(false);
     }
-  }, [activeAgent, activeIsHuman, client, entries, humanHandoffAgentId]);
+  }, [activeAgent, activeIsHuman, client, commandFence, entries, humanHandoffAgentId]);
 
   const loadOlderTranscript = useCallback(() => transcriptPaginationController.loadOlder(), [transcriptPaginationController]);
   const paletteLinks = useMemo(
@@ -2286,6 +2329,18 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   }, [linkMetadataProvider, paletteLinks]);
   const baseDraft = activeDraftSnapshot.draft ?? activeDraftSnapshot.recovery ?? EMPTY_DRAFT;
   const draft = replyThreadController.applyReplyToDraft(baseDraft);
+  const canExchangeComposerStash = activeAgentId.length > 0 && composerDraftStore.canExchangeDraft(activeAgentId);
+  const exchangeComposerStash = useCallback(() => {
+    const agentId = activeAgentIdRef.current;
+    if (agentId.length === 0) return;
+    const exchanged = composerDraftStore.exchangeDraft(agentId, (candidate) => candidate.attachments.length <= COMPOSER_ATTACHMENT_LIMIT);
+    if (!exchanged) {
+      setNotice("That saved draft cannot be restored because its attachments no longer satisfy composer limits.");
+      return;
+    }
+    replyThreadController.clearReply();
+    setNotice(null);
+  }, [composerDraftStore, replyThreadController]);
   const clearReplyTarget = useCallback(() => {
     replyThreadController.clearReply();
     if (activeAgentId.length > 0 && activeDraftSnapshot.draft != null) {
@@ -3376,7 +3431,10 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
 
   const createAgent = async () => {
     if (client == null) return;
+    const commandLease = commandFence.acquire("create-agent");
+    if (commandLease == null) return;
     const name = newAgentName.trim() || "New chat";
+    setCreateAgentPending(true);
     setBusy(true);
     try {
       const result = await client.call("createAgent", {
@@ -3394,7 +3452,11 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       setNewAgentDialogOpen(false);
       if (projected != null) await openAgent(projected.id);
     } catch (error) { setNotice(error instanceof Error ? error.message : String(error)); }
-    finally { setBusy(false); }
+    finally {
+      commandLease.release();
+      setCreateAgentPending(false);
+      setBusy(false);
+    }
   };
 
   createAgentRef.current = openNewAgentDialog;
@@ -3515,8 +3577,9 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     }
   };
 
-  const submit = () => {
+  const submit = (options: { readonly silent?: boolean; readonly scheduledAtMs?: number } = {}) => {
     if (activeAgent == null || client == null) return;
+    if ((options.silent === true || options.scheduledAtMs != null) && !activeIsHuman) return;
     const liveDraftSnapshot = activeDraftSnapshotStore.get();
     const liveBaseDraft = liveDraftSnapshot.draft ?? liveDraftSnapshot.recovery ?? EMPTY_DRAFT;
     const liveDraft = replyThreadController.applyReplyToDraft(liveBaseDraft);
@@ -3532,7 +3595,9 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       ...(liveDraft.richText == null ? {} : { richText: liveDraft.richText }),
       attachments,
       createdAtMs: enteredAt,
-      ...(liveDraft.isFork === undefined ? {} : { isFork: liveDraft.isFork })
+      ...(liveDraft.isFork === undefined ? {} : { isFork: liveDraft.isFork }),
+      ...(options.silent === true ? { silent: true } : {}),
+      ...(options.scheduledAtMs == null ? {} : { scheduledAtMs: options.scheduledAtMs })
     });
     const submissionAccountSlot = acknowledgementScopeRef.current.accountSlot;
     const draftIdentity = composerDraftStore.identifyDraft({ agentId: activeAgent.id, draft: liveBaseDraft });
@@ -3560,6 +3625,82 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       composerDraftStore.clearRecovery(submission.agentId);
       setComposerClearGeneration((current) => current + 1);
     });
+    setNotice(null);
+  };
+
+  const localDateTimeInputValue = (date: Date) =>
+    new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
+
+  const openScheduleComposer = () => {
+    if (!activeIsHuman) return;
+    setScheduleComposerValue(localDateTimeInputValue(new Date(Date.now() + 5 * 60_000)));
+    setScheduleComposerOpen(true);
+  };
+
+  const submitScheduledComposer = () => {
+    const scheduledAtMs = new Date(scheduleComposerValue).getTime();
+    if (!Number.isSafeInteger(scheduledAtMs) || scheduledAtMs <= Date.now()) {
+      setNotice("Choose a future delivery time.");
+      return;
+    }
+    setScheduleComposerOpen(false);
+    submit({ scheduledAtMs });
+  };
+
+  const sendComposerStash = () => {
+    if (activeAgent == null || client == null) return;
+    const stashed = activeDraftSnapshotStore.get().stash;
+    if (stashed == null) return;
+    const clientNonce = makeClientNonce();
+    const enteredAt = Date.now();
+    const prompt = stashed.prompt.trim();
+    const attachments = stashed.attachments.map(({ path, name }) => ({ path, name }));
+    if (prompt.length === 0 && attachments.length === 0) return;
+    const submission: ComposerSubmission = {
+      nonce: clientNonce,
+      agentId: activeAgent.id,
+      prompt,
+      attachments,
+      createdAtMs: enteredAt,
+      draftOrigin: "stash",
+      ...(stashed.richText == null ? {} : { richText: stashed.richText }),
+      ...(stashed.replyToId == null ? {} : { replyToId: stashed.replyToId }),
+      ...(stashed.isFork === undefined ? {} : { isFork: stashed.isFork })
+    };
+    const submissionAccountSlot = acknowledgementScopeRef.current.accountSlot;
+    acknowledgementController.insertOptimistic({
+      accountSlot: submissionAccountSlot,
+      agentId: activeAgent.id,
+      nonce: clientNonce,
+      entries: optimisticAcknowledgementEntries(clientNonce, attachments),
+      phase: transportRef.current === "connected" ? "pending" : "queued"
+    });
+    setEntriesByAgent((current) => ({ ...current, [activeAgent.id]: [...(current[activeAgent.id] ?? []), {
+      kind: "message", id: `pending-${clientNonce}`, role: "user", author: "You", text: prompt, timestampMs: enteredAt, attachments, delivery: "pending", clientNonce,
+      ...(submission.replyToId == null ? {} : { replyToId: submission.replyToId })
+    }] }));
+    const queuedSubmission = composerSubmissionQueue.submit(submission);
+    void queuedSubmission.completion.then((phase) => {
+      if (phase !== "sent" || acknowledgementScopeRef.current.accountSlot !== submissionAccountSlot) return;
+      composerDraftStore.removeStashIfMatches(submission.agentId, stashed);
+    });
+    setNotice(null);
+  };
+
+  const removeComposerStash = async () => {
+    const agentId = activeAgentIdRef.current;
+    if (agentId.length === 0) return;
+    const stashed = composerDraftStore.snapshotsFor(agentId).get().stash;
+    if (stashed == null || !composerDraftStore.removeStashIfMatches(agentId, stashed)) return;
+    const queuedPaths = new Set(
+      composerSubmissionQueue.snapshot()
+        .filter((submission) => submission.agentId === agentId && submission.draftOrigin === "stash")
+        .flatMap((submission) => submission.attachments.map((attachment) => attachment.path))
+    );
+    await Promise.all(stashed.attachments.map(async (attachment) => {
+      if (queuedPaths.has(attachment.path)) return;
+      await removeAttachment(attachment);
+    }));
     setNotice(null);
   };
 
@@ -4093,12 +4234,14 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
             updatePill={<UpdatePill bridge={bridge} labels={UPDATE_PILL_LABELS} />}
           />
         </div>
-        {workspaceRoute === "org-chart" ? <main className="sand-chat-stage"><Suspense fallback={null}><OrgChartWorkspaceView
+        <div style={{ display: "flex", flex: "1 1 0", flexDirection: "column", minHeight: 0, minWidth: 0, width: "100%" }}>
+          <StoryCapabilitySurface client={client} enabled={account?.kind === "logged-in" && transport === "connected"} resolveMedia={resolveAttachmentMedia} onOpenOwner={openSidebarProfile} />
+          {workspaceRoute === "org-chart" ? <main className="sand-chat-stage"><Suspense fallback={null}><OrgChartWorkspaceView
           agents={orgChartAgents}
           onClose={() => setWorkspaceRoute(null)}
           onOpenAgent={(agentId) => void openAgent(agentId)}
           params={{}}
-        /></Suspense></main> : showRootEmptyWorkspace ? <RootShellEmptyWorkspace isVisible /> : activeAgent == null ? null : <div style={{ display: "flex", flexDirection: "column", minHeight: 0, minWidth: 0, width: "100%" }}>
+        /></Suspense></main> : showRootEmptyWorkspace ? <RootShellEmptyWorkspace isVisible /> : activeAgent == null ? null : <div style={{ display: "flex", flex: "1 1 0", flexDirection: "column", minHeight: 0, minWidth: 0, width: "100%" }}>
           <main className="sand-chat-stage">
           {activeIsHuman ? <div aria-labelledby="sand-conversation-heading" className="sand-chat-header" role="group">
             <div className="sand-chat-header__identity">
@@ -4110,7 +4253,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
               <select aria-label="Agent for Human handoff" disabled={busy || availableHandoffAgents.length === 0} onChange={(event) => setHumanHandoffAgentId(event.currentTarget.value)} value={humanHandoffAgentId}>
                 {availableHandoffAgents.length === 0 ? <option value="">No Agent available</option> : availableHandoffAgents.map((agent) => <option key={agent.id} value={agent.id}>{agent.name}</option>)}
               </select>
-              <SandButton disabled={busy || humanHandoffAgentId.length === 0} onClick={() => void handoffHumanConversationToAgent()} size="sm" variant="secondary">Ask Agent</SandButton>
+              <SandButton disabled={busy || humanHandoffAgentId.length === 0} onClick={() => void handoffHumanConversationToAgent()} pending={humanHandoffPending} size="sm" variant="secondary">Ask Agent</SandButton>
             </div>
           </div> : <ConversationAgentHeader
             agent={activeAgent}
@@ -4175,10 +4318,29 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
           </main>
           <div className="sand-chat-input-dock">
             {activeIsHuman ? null : localToolPermissionDock}
-            <ConversationComposer acceptedSendGeneration={composerClearGeneration} disabled={busy || client == null} draft={draft} editorProviders={activeIsHuman ? undefined : editorProviders} notice={notice} onChange={(value) => composerDraftStore.setDraft(activeAgent.id, value)} onClearReplyTarget={clearReplyTarget} onRemoveAttachment={removeAttachment} onStageFiles={stageFiles} onSubmit={submit} placeholder={`Message ${activeAgent.name}`} replyTarget={replyTarget} scopeKey={`${transcriptAccountSlot ?? "signed-out"}:${activeAgent.id}`} transcribeAudio={transcribeAudio} />
+            <ConversationComposer acceptedSendGeneration={composerClearGeneration} canExchangeStash={canExchangeComposerStash} disabled={busy || client == null} draft={draft} editorProviders={activeIsHuman ? undefined : editorProviders} hasStash={activeDraftSnapshot.stash != null} notice={notice} onChange={(value) => composerDraftStore.setDraft(activeAgent.id, value)} onClearReplyTarget={clearReplyTarget} onExchangeStash={exchangeComposerStash} onRemoveAttachment={removeAttachment} onRemoveStash={removeComposerStash} onScheduleSend={activeIsHuman ? openScheduleComposer : undefined} onSendSilently={activeIsHuman ? () => submit({ silent: true }) : undefined} onSendStash={sendComposerStash} onStageFiles={stageFiles} onSubmit={submit} placeholder={`Message ${activeAgent.name}`} replyTarget={replyTarget} scopeKey={`${transcriptAccountSlot ?? "signed-out"}:${activeAgent.id}`} transcribeAudio={transcribeAudio} />
           </div>
         </div>}
+        </div>
       </div>
+
+      <OverlayDialog
+        className="sand-schedule-message-dialog"
+        label="Schedule message"
+        onClose={() => setScheduleComposerOpen(false)}
+        open={scheduleComposerOpen && activeIsHuman}
+      >
+        <form onSubmit={(event) => { event.preventDefault(); submitScheduledComposer(); }}>
+          <header><div><h2>Schedule message</h2><p>The server will keep this message private from the recipient until its due time.</p></div></header>
+          <div className="sand-schedule-message-dialog__body">
+            <SandTextField autoFocus id="scheduled-message-at" label="Deliver at" min={localDateTimeInputValue(new Date(Date.now() + 60_000))} onChange={(event) => setScheduleComposerValue(event.currentTarget.value)} required type="datetime-local" value={scheduleComposerValue} />
+          </div>
+          <footer>
+            <SandButton onClick={() => setScheduleComposerOpen(false)} size="sm" type="button" variant="secondary">Cancel</SandButton>
+            <SandButton disabled={scheduleComposerValue.length === 0} size="sm" type="submit">Schedule</SandButton>
+          </footer>
+        </form>
+      </OverlayDialog>
 
       <ForwardMessageDialog
         forwardMessage={forwardHumanMessage}
@@ -4193,10 +4355,10 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       <OverlayDialog
         className="sand-new-agent-dialog"
         label="Create agent"
-        onClose={() => { if (!busy) setNewAgentDialogOpen(false); }}
+        onClose={() => { if (!busy && !createAgentPending) setNewAgentDialogOpen(false); }}
         open={newAgentDialogOpen}
       >
-        <form onSubmit={(event) => { event.preventDefault(); if (!busy) void createAgent(); }}>
+        <form onSubmit={(event) => { event.preventDefault(); if (!busy && !createAgentPending) void createAgent(); }}>
           <header>
             <div>
               <h2>Create agent</h2>
@@ -4247,7 +4409,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
           </div>
           <footer>
             <SandButton disabled={busy} onClick={() => setNewAgentDialogOpen(false)} size="sm" variant="secondary">Cancel</SandButton>
-            <SandButton disabled={busy || newAgentName.trim().length === 0} size="sm" type="submit">Create</SandButton>
+            <SandButton disabled={busy || newAgentName.trim().length === 0} pending={createAgentPending} size="sm" type="submit">Create</SandButton>
           </footer>
         </form>
       </OverlayDialog>

@@ -2,7 +2,10 @@ use serde_json::{Value, json};
 
 pub const GATEWAY_PREPARE_UPGRADE_PATH: &str = "/prepare-upgrade";
 
-pub use crate::host_gateway_api::FROZEN_HOST_GATEWAY_METHODS as GROK_GATEWAY_COMMANDS;
+pub use crate::host_gateway_api::{
+    FABUSHI_HOST_GATEWAY_METHODS,
+    FROZEN_HOST_GATEWAY_METHODS as GROK_GATEWAY_COMMANDS,
+};
 use crate::host_gateway_api::host_gateway_owner;
 
 /// Fabushi-owned gateway command that intentionally extends the frozen Grok 0.18

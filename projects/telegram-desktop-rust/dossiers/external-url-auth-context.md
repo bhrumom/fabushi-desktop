@@ -7,7 +7,7 @@ Responsibility: `TDRP-R9-EXTERNAL-URL-AUTH-CONTEXT-001`
 ## Source authority
 
 - Repository: `telegramdesktop/tdesktop`
-- Commit: `72b3b71c3d6e450e5ef94a3112dd750a0168aa0b`
+- Commit: `d346b42a1d30ef60dc989b6e5191bb8e571f6bd5`
 - Primary source path: `Telegram/SourceFiles/boxes/url_auth_box.cpp`
 - Blob: `f68ea15d650a07ed52839020fb46711012b288ae`
 - Relevant source symbols: `AcceptedUrlContext`, `ActivateButton`, `ActivateUrl`, `RequestButton`, `RequestUrl`

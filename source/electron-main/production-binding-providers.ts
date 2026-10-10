@@ -112,6 +112,9 @@ export interface ElectronNotificationsProviderPorts {
       readonly body: string;
       readonly silent: boolean;
       readonly urgency: "critical" | "normal";
+      readonly hasReply?: boolean;
+      readonly replyPlaceholder?: string;
+      readonly actions?: readonly { readonly type: "button"; readonly text: string }[];
     }): DesktopNotificationPort;
     isSupported(): boolean;
   };
@@ -422,6 +425,8 @@ export function createProductionNotificationsBinding(
         isSupported: () => ports.Notification.isSupported(),
         createNotification: (options) => new ports.Notification(options),
         openAgent: (agentId) => context.requireMainEdge().emit("focus-agent", { id: agentId }),
+        reportActionFailure: (operation, error) =>
+          reportDesktopEdgeFailure("os-notification-action", operation, error),
       });
       const dockBadge = new SandDockBadgeManager({
         setBadgeCount: (count) => { ports.app.setBadgeCount(count); },

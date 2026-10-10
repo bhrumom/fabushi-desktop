@@ -1,7 +1,8 @@
-import { useEffect, useId, useState, type FormEvent, type KeyboardEvent } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import type { TranscriptCardEntry, WidgetCardMessage, WidgetOption } from "../protocol";
 import { projectLeafEntry, useAdapterVersion, useTranscriptCardLeafProviders, type TranscriptCardLeafProps } from "./shared";
 import { SandButton, SandIconButton, SandKeycap } from "../../../../../ui/sand-kit-primitives";
+import { projectRichMessageActionAffordance } from "../url-card";
 
 // @evidence src/app/dist/renderer/assets/view-CIFdOvCz.js#byteOffset=0 (widget card leaf)
 // @evidence src/app/dist/renderer/assets/view-CIFdOvCz.js#byteOffset=3491 (widget keyboard/custom/interaction lifecycle)
@@ -30,6 +31,55 @@ function WidgetKey({ value, settled = false }: { value: string; settled?: boolea
   return <SandKeycap aria-hidden="true" className={`sand-widget-option__key sand-3nfvp2 sand-6s0dn4 sand-l56j7k sand-2lah0s sand-16xo4sp sand-4p5aij sand-mzs88n sand-1j85h84 sand-6wrskw sand-12oqio5 sand-qjedn3 sand-1y0btm7 sand-1atdlfd sand-luhinc sand-169k319${settled ? " sand-ti2d7y" : ""}`}>{value}</SandKeycap>;
 }
 
+function WidgetChoice({
+  option,
+  index,
+  canAct,
+  isKeyboardTarget,
+  onActivate,
+}: {
+  readonly option: WidgetOption;
+  readonly index: number;
+  readonly canAct: boolean;
+  readonly isKeyboardTarget?: boolean;
+  readonly onActivate: (option: WidgetOption) => void;
+}) {
+  const labelRef = useRef<HTMLSpanElement | null>(null);
+  const [labelElided, setLabelElided] = useState(false);
+  useLayoutEffect(() => {
+    const label = labelRef.current;
+    if (label == null) return;
+    const measure = () => setLabelElided(label.scrollWidth > label.clientWidth);
+    measure();
+    if (typeof ResizeObserver !== "undefined") {
+      const observer = new ResizeObserver(measure);
+      observer.observe(label);
+      return () => observer.disconnect();
+    }
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [option.label]);
+  const affordance = option.action == null
+    ? null
+    : projectRichMessageActionAffordance(option.action, labelElided ? option.label : "");
+  return <button
+    aria-keyshortcuts={isKeyboardTarget ? letter(index).toLowerCase() : undefined}
+    className="sand-widget-option sand-78zum5 sand-1iyjqo2 sand-s83m0k sand-dt5ytf sand-1cy8zhl sand-euugli"
+    data-transcript-copy-label={affordance?.copyLabel}
+    data-transcript-copy-text={affordance?.copyText}
+    disabled={!canAct}
+    onClick={() => onActivate(option)}
+    title={affordance?.tooltip}
+    type="button"
+  >
+    <WidgetKey value={letter(index)} />
+    <span className="sand-widget-option__body sand-78zum5 sand-1iyjqo2 sand-s83m0k sand-dt5ytf sand-1cy8zhl sand-euugli">
+      <span className="sand-widget-option__label sand-1heor9g sand-euugli sand-eaf4i8 sand-j0a0fe sand-dpxx8g" ref={labelRef}>{option.label}</span>
+      {option.description == null ? null : <span className="sand-widget-option__description sand-euugli sand-eaf4i8 sand-j0a0fe sand-dpxx8g sand-19aaqeu">{option.description}</span>}
+    </span>
+  </button>;
+}
+
 type WidgetEntry = TranscriptCardEntry & { message: WidgetCardMessage };
 
 function WidgetQuestion({ entry, isKeyboardTarget, isStale }: TranscriptCardLeafProps & { entry: WidgetEntry }) {
@@ -51,6 +101,22 @@ function WidgetQuestion({ entry, isKeyboardTarget, isStale }: TranscriptCardLeaf
     if (!canAct) return;
     void adapter.dismiss(entry.id);
   };
+  const activateOption = (option: WidgetOption) => {
+    if (!canAct) return;
+    const action = option.action;
+    if (action?.kind === "open-url") {
+      const affordance = projectRichMessageActionAffordance(action);
+      if (affordance.normalizedUrl == null || providers?.urlCards == null) return;
+      void providers.urlCards.openExternal(affordance.normalizedUrl);
+      return;
+    }
+    if (action?.kind === "copy-text") {
+      if (typeof navigator === "undefined" || navigator.clipboard == null) return;
+      void navigator.clipboard.writeText(action.data).catch(() => undefined);
+      return;
+    }
+    submit(optionValue(option));
+  };
 
   useEffect(() => {
     if (!isKeyboardTarget || !canAct) return;
@@ -61,7 +127,7 @@ function WidgetQuestion({ entry, isKeyboardTarget, isStale }: TranscriptCardLeaf
       const option = widget.options[index];
       if (option == null) return;
       event.preventDefault();
-      submit(optionValue(option));
+      activateOption(option);
     };
     document.addEventListener("keydown", handleKeyDown, true);
     return () => document.removeEventListener("keydown", handleKeyDown, true);
@@ -86,10 +152,7 @@ function WidgetQuestion({ entry, isKeyboardTarget, isStale }: TranscriptCardLeaf
       <SandIconButton aria-label="Dismiss question" className="sand-widget__dismiss" disabled={!canAct} icon="close" onClick={dismiss} size="sm" title="Dismiss without answering" type="button" variant="ghost" />
     </div>
     <div className="sand-widget__options sand-78zum5 sand-dt5ytf sand-h8yej3 sand-euugli sand-qjedn3 sand-1y0btm7 sand-q03nf1 sand-ur7f20 sand-b3r6kr sand-13l7odt">
-      {widget.options.map((option, index) => <button aria-keyshortcuts={isKeyboardTarget ? letter(index).toLowerCase() : undefined} className="sand-widget-option sand-78zum5 sand-1iyjqo2 sand-s83m0k sand-dt5ytf sand-1cy8zhl sand-euugli" disabled={!canAct} key={`${optionValue(option)}-${index}`} onClick={() => submit(optionValue(option))} type="button">
-        <WidgetKey value={letter(index)} />
-        <span className="sand-widget-option__body sand-78zum5 sand-1iyjqo2 sand-s83m0k sand-dt5ytf sand-1cy8zhl sand-euugli"><span className="sand-widget-option__label sand-1heor9g sand-euugli sand-eaf4i8 sand-j0a0fe sand-dpxx8g">{option.label}</span>{option.description == null ? null : <span className="sand-widget-option__description sand-euugli sand-eaf4i8 sand-j0a0fe sand-dpxx8g sand-19aaqeu">{option.description}</span>}</span>
-      </button>)}
+      {widget.options.map((option, index) => <WidgetChoice canAct={canAct} index={index} isKeyboardTarget={isKeyboardTarget} key={`${optionValue(option)}-${index}`} onActivate={activateOption} option={option} />)}
     </div>
     {widget.allowCustom !== true ? null : <div className="sand-widget__custom-row sand-78zum5 sand-1cy8zhl sand-167g77z sand-h8yej3 sand-euugli">
       <div className="sand-widget__custom-field sand-1iyjqo2 sand-s83m0k sand-1r8uery sand-euugli sand-1lliihq sand-5f5z56 sand-9f619 sand-126k92a sand-j0a0fe sand-tt52l0 sand-10wlt62 sand-123j3cw sand-cicffo sand-s9asl8 sand-1lqa7cf sand-ng3xce sand-ur7f20 sand-jbqb8w sand-1wd3ewq sand-jb2p0i sand-if65rj sand-1fc57z9 sand-12oo3zp sand-1t137rt sand-1h7ufjq"><textarea aria-label="Custom answer" autoComplete="off" className="sand-widget__custom-input" disabled={!canAct} onChange={(event) => setCustomValue(event.currentTarget.value)} onKeyDown={handleCustomKeyDown} placeholder="Type your own answer" rows={1} spellCheck={false} value={customValue} /></div>

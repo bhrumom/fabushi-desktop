@@ -1,0 +1,38 @@
+{
+  "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+  "start": 5605,
+  "end": 5609,
+  "entries": [
+    {
+      "order": 5605,
+      "path": "Telegram/SourceFiles/settings/sections/settings_notifications.cpp",
+      "blob": "a16c3ee9690de934d795a2803ada0e82c3f9db94",
+      "consumer_symbol": "NotificationsId"
+    },
+    {
+      "order": 5606,
+      "path": "Telegram/SourceFiles/settings/sections/settings_notifications.h",
+      "blob": "b55fabd4d8ba98a590cc96a14b917ea1a4d26984",
+      "consumer_symbol": "NotificationsId"
+    },
+    {
+      "order": 5607,
+      "path": "Telegram/SourceFiles/settings/sections/settings_notifications.style",
+      "blob": "b98dd63f0127fccd50c83b8b621d1f2ffef5f03a",
+      "consumer_symbol": "notificationsBoxMonitor"
+    },
+    {
+      "order": 5608,
+      "path": "Telegram/SourceFiles/settings/sections/settings_notifications_reactions.cpp",
+      "blob": "87361b9226b8833f244706c4fec2d7e165a89dd6",
+      "consumer_symbol": "NotificationsReactions"
+    },
+    {
+      "order": 5609,
+      "path": "Telegram/SourceFiles/settings/sections/settings_notifications_reactions.h",
+      "blob": "21a661dce7c3790bca8af8f6a1f99367dc2b538b",
+      "consumer_symbol": "NotificationsReactions"
+    }
+  ],
+  "accepted_tree": "4ddb5182fc1ae238e4dc62a396614614b5b35f97"
+}

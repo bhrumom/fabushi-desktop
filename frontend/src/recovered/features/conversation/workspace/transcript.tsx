@@ -1,7 +1,7 @@
 import { getSchema, type JSONContent } from "@tiptap/core";
-import { normalizeLinkUrl } from "../cards/transcript-card/url-card";
+import { projectTranscriptExternalLink } from "../cards/transcript-card/url-card";
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
-import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import "./transcript-utility-parity.css";
 import { AssistantMath } from "./math";
 import { TranscriptAttachmentGallery } from "./media-viewer";
@@ -14,7 +14,7 @@ import { TranscriptNoticeCard } from "../cards/notice/view";
 import { TranscriptCardRootEntry } from "../cards/transcript-card/root";
 import { TimelineEventRootEntry } from "../cards/timeline-event-resolver";
 import type { TranscriptCardRootMountContract } from "../cards/transcript-card/mount-contract";
-import { TranscriptCardInteractionProvider, type TranscriptCardInteractionContext, type TranscriptMessageReactionSlotProps, type RenderTranscriptMessageReactionActions } from "../cards/transcript-card/message-actions";
+import { TranscriptCardInteractionProvider, projectTranscriptInlineCopyTarget, type TranscriptCardInteractionContext, type TranscriptInlineCopyProjection, type TranscriptMessageReactionSlotProps, type RenderTranscriptMessageReactionActions } from "../cards/transcript-card/message-actions";
 import { projectTranscriptAdjacency } from "./transcript-adjacency";
 import type { LocalToolPermissionStore } from "../../permissions/local-tool/store";
 import type { ResolveLocalToolPermissionInput } from "../../permissions/local-tool/view";
@@ -25,10 +25,17 @@ import { LinkCardView } from "../cards/transcript-card/views";
 import { projectTranscriptMessageCard } from "../message-card-seam";
 import PermissionRequestLeaf from "../cards/permission-request/view";
 import { ToolResultCard } from "../tool-results/view";
-import type { FindInChatTranscriptHandle } from "./find-in-chat-controller";
+import { includeFindInChatDisclosure, type FindInChatDisclosureKind, type FindInChatTranscriptHandle } from "./find-in-chat-controller";
 import type { SendMessageTextImage } from "../cards/transcript-card/send-message-text";
 import { ThreadAffordance } from "../cards/transcript-card/thread-affordance";
 import type { TranscriptThreadSummary } from "../cards/transcript-card/thread-summary-controller";
+import { beginHorizontalScrollPointer, captureHorizontalScroll, clampHorizontalScrollOffset, normalizeHorizontalScrollWheelDelta, restoreHorizontalScrollOffset, updateHorizontalScrollPointer, updateHorizontalScrollWheelLock, type HorizontalScrollPointerGesture, type HorizontalScrollSnapshot, type HorizontalScrollWheelLock } from "./horizontal-scroll-state";
+import { reconcileAssistantContentProjection, type AssistantProjectionCandidate, type AssistantProjectionState } from "./assistant-content-projection";
+import { formatTranscriptToolCallName } from "./tool-call-label";
+import { copyTranscriptCodeText } from "./code-copy";
+import { isTranscriptNearBottom } from "./transcript-follow-state";
+import { isTranscriptDeliveryActionable, isTranscriptDeliveryBusy } from "./transcript-delivery-state";
+import { SandContextMenu, SandMenuContent, SandMenuItem, SandMenuRoot, SandMenuTrigger } from "../../../ui/sand-floating-primitives";
 
 function transcriptIds(id: string, hasTimestamp: boolean) {
   const base = `sand-conversation-entry-${encodeURIComponent(id)}`;
@@ -68,7 +75,7 @@ function isOrdinaryMessageActionable(
   onForward?: (entry: TranscriptMessage) => void,
 ): boolean {
   const hasActionableContent = entry.text.length > 0 || (entry.attachments?.length ?? 0) > 0;
-  const deliveryActionable = entry.delivery !== "failed" && entry.delivery !== "pending" && entry.delivery !== "queued";
+  const deliveryActionable = isTranscriptDeliveryActionable(entry.delivery);
   return hasActionableContent && deliveryActionable && (!isReadOnly || onCopy != null || onForward != null);
 }
 
@@ -159,75 +166,88 @@ function MessageActionAnchor({ entry, isReadOnly, threadRootId, threadSummary, o
   const hasActions = isOrdinaryMessageActionable(entry, isReadOnly, onCopy, onForward);
   if (!hasActions) return <>{children}</>;
   const isThreadActionVisible = threadRootId == null;
-  const anchorRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [contextMenuPoint, setContextMenuPoint] = useState<{ x: number; y: number } | null>(null);
   const [reactionMenuOpen, setReactionMenuOpen] = useState(false);
+  const [inlineCopy, setInlineCopy] = useState<TranscriptInlineCopyProjection | null>(null);
   const reactionActions = renderReactionActions?.((open) => {
     setReactionMenuOpen(open);
-    if (open) setMenuOpen(false);
+    if (open) {
+      setMenuOpen(false);
+      setContextMenuPoint(null);
+      setInlineCopy(null);
+    }
   });
   const closeMenu = (restoreFocus: boolean) => {
     setMenuOpen(false);
+    setContextMenuPoint(null);
+    setInlineCopy(null);
     if (restoreFocus) triggerRef.current?.focus();
   };
-
-  useEffect(() => {
-    if (!menuOpen) return;
-    const handlePointerDown = (event: PointerEvent) => {
-      if (!(event.target instanceof Node) || anchorRef.current?.contains(event.target)) return;
-      closeMenu(false);
-    };
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      event.preventDefault();
-      closeMenu(true);
-    };
-    document.addEventListener("pointerdown", handlePointerDown);
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("pointerdown", handlePointerDown);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [menuOpen]);
+  const updateMoreMenuOpen = (open: boolean) => {
+    setMenuOpen(open);
+    if (open) {
+      setContextMenuPoint(null);
+      setInlineCopy(null);
+      setReactionMenuOpen(false);
+    }
+  };
 
   const copy = () => {
+    const projection = inlineCopy;
     closeMenu(true);
+    if (projection != null) {
+      if (typeof navigator === "undefined" || navigator.clipboard == null) return;
+      void navigator.clipboard.writeText(projection.text).catch(() => undefined);
+      return;
+    }
     if (entry.sendMessageText?.streaming === true && entry.sendMessageText.message.content.length === 0) return;
     if (onCopy != null) {
       void Promise.resolve(onCopy(entry)).catch(() => undefined);
     }
   };
 
-  return (
-    <div
-      ref={anchorRef}
-      className={menuOpen || reactionMenuOpen ? "sand-message-action-anchor sand-message-action-anchor--menu-open" : "sand-message-action-anchor"}
-      onContextMenu={(event) => {
-        if (isMessageContextTargetExcluded(event.target)) return;
-        event.preventDefault();
-        setReactionMenuOpen(false);
-        setMenuOpen(true);
-      }}
-    >
-      {children}
-      {threadSummary != null && threadRootId == null && !isReadOnly && onOpenThread != null ? <ThreadAffordance onOpen={onOpenThread} role={entry.role} summary={threadSummary} /> : null}
-      <div aria-label={messageActionLabel(entry)} className="sand-message-hover-actions" role="toolbar">
-        {reactionActions}
-        {!isReadOnly && isThreadActionVisible && onReply != null ? <button aria-label={replyActionLabel(entry)} className="sand-message-hover-actions__button" onClick={() => onReply(entry)} type="button"><span aria-hidden="true" data-icon-name={replyActionIconName(entry)} /></button> : null}
-        <button aria-expanded={menuOpen} aria-haspopup="menu" aria-label="More message actions" className="sand-message-hover-actions__button" onClick={() => { setReactionMenuOpen(false); setMenuOpen((open) => !open); }} ref={triggerRef} type="button">
+  const menuItems = <>
+    {!isReadOnly && isThreadActionVisible && onReply != null ? <SandMenuItem index={0} onSelect={() => { onReply(entry); closeMenu(true); }}><span aria-hidden="true" data-icon-name={replyActionIconName(entry)} />Reply</SandMenuItem> : null}
+    {!isReadOnly && isThreadActionVisible && onStartThread != null ? <SandMenuItem index={1} onSelect={() => { onStartThread(entry); closeMenu(true); }}><span aria-hidden="true" data-icon-name="chat-bubbles" />Start a thread</SandMenuItem> : null}
+    {/* @evidence recovered/frontend/app/assets/index-UbX-y3il.js#byteOffset=6395536 (immutable Copy item is conditional on injected onCopy; UTF-8; SHA256 80464803b50f478598080bdc1b91da3996c6b74168e2351ea26f620f2ec62ba5) */}
+    {!isReadOnly && onForward != null ? <SandMenuItem index={2} onSelect={() => { onForward(entry); closeMenu(false); }}><span aria-hidden="true" data-icon-name="arrow-u-up-right" />Forward</SandMenuItem> : null}
+    {inlineCopy == null && onCopy == null ? null : <SandMenuItem index={3} onSelect={copy}><span aria-hidden="true" data-icon-name="copy" style={{ fontFamily: "cursor-icons" }}>{String.fromCodePoint(messageActionIconCodePoint("copy"))}</span>{inlineCopy?.label ?? "Copy"}</SandMenuItem>}
+  </>;
+
+  const anchor = <div className={menuOpen || contextMenuPoint != null || reactionMenuOpen ? "sand-message-action-anchor sand-message-action-anchor--menu-open" : "sand-message-action-anchor"}>
+    {children}
+    {threadSummary != null && threadRootId == null && !isReadOnly && onOpenThread != null ? <ThreadAffordance onOpen={onOpenThread} role={entry.role} summary={threadSummary} /> : null}
+    <div aria-label={messageActionLabel(entry)} className="sand-message-hover-actions" role="toolbar">
+      {reactionActions}
+      {!isReadOnly && isThreadActionVisible && onReply != null ? <button aria-label={replyActionLabel(entry)} className="sand-message-hover-actions__button" onClick={() => onReply(entry)} type="button"><span aria-hidden="true" data-icon-name={replyActionIconName(entry)} /></button> : null}
+      <SandMenuRoot onOpenChange={updateMoreMenuOpen} open={menuOpen} placement="top-end" returnFocus>
+        <SandMenuTrigger><button aria-label="More message actions" className="sand-message-hover-actions__button" onClick={() => { setInlineCopy(null); setReactionMenuOpen(false); }} ref={triggerRef} type="button">
           <span aria-hidden="true" data-icon-name="dots-3-horizontal" style={{ fontFamily: "cursor-icons" }}>{String.fromCodePoint(messageActionIconCodePoint("dots-3-horizontal"))}</span>
-        </button>
-        {menuOpen ? <div aria-label="More message actions" role="menu" style={{ position: "absolute", right: 0, bottom: "34px", display: "grid", minWidth: "150px", padding: "4px", background: "#20231f", border: "1px solid #343832", borderRadius: "8px", boxShadow: "0 12px 28px rgba(0, 0, 0, .35)" }}>
-          {!isReadOnly && isThreadActionVisible && onReply != null ? <button className="sand-message-hover-actions__button" onClick={() => { onReply(entry); closeMenu(true); }} role="menuitem" style={{ width: "100%", border: 0, borderRadius: "5px", textAlign: "left" }} type="button"><span aria-hidden="true" data-icon-name={replyActionIconName(entry)} />Reply</button> : null}
-          {!isReadOnly && isThreadActionVisible && onStartThread != null ? <button className="sand-message-hover-actions__button" onClick={() => { onStartThread(entry); closeMenu(true); }} role="menuitem" style={{ width: "100%", border: 0, borderRadius: "5px", textAlign: "left" }} type="button"><span aria-hidden="true" data-icon-name="chat-bubbles" />Start a thread</button> : null}
-          {/* @evidence recovered/frontend/app/assets/index-UbX-y3il.js#byteOffset=6395536 (immutable Copy item is conditional on injected onCopy; UTF-8; SHA256 80464803b50f478598080bdc1b91da3996c6b74168e2351ea26f620f2ec62ba5) */}
-          {!isReadOnly && onForward != null ? <button className="sand-message-hover-actions__button" onClick={() => { onForward(entry); closeMenu(false); }} role="menuitem" style={{ width: "100%", border: 0, borderRadius: "5px", textAlign: "left" }} type="button"><span aria-hidden="true" data-icon-name="arrow-u-up-right" />Forward</button> : null}
-          {onCopy == null ? null : <button className="sand-message-hover-actions__button" onClick={copy} role="menuitem" style={{ width: "100%", border: 0, borderRadius: "5px", textAlign: "left" }} type="button"><span aria-hidden="true" data-icon-name="copy" style={{ fontFamily: "cursor-icons" }}>{String.fromCodePoint(messageActionIconCodePoint("copy"))}</span>Copy</button>}
-        </div> : null}
-      </div>
+        </button></SandMenuTrigger>
+        <SandMenuContent ariaLabel="More message actions">{menuItems}</SandMenuContent>
+      </SandMenuRoot>
     </div>
-  );
+  </div>;
+
+  return <SandContextMenu
+    ariaLabel="Message actions"
+    content={menuItems}
+    onOpenChange={(point) => {
+      setContextMenuPoint(point);
+      if (point == null) setInlineCopy(null);
+    }}
+    open={contextMenuPoint}
+    shouldOpen={(event) => {
+      const projectedInlineCopy = projectTranscriptInlineCopyTarget(event.target);
+      if (projectedInlineCopy == null && isMessageContextTargetExcluded(event.target)) return false;
+      setInlineCopy(projectedInlineCopy);
+      setMenuOpen(false);
+      setReactionMenuOpen(false);
+      return true;
+    }}
+  >{anchor}</SandContextMenu>;
 }
 
 function StreamingMessage() {
@@ -241,19 +261,113 @@ function StreamingMessage() {
 type AssistantContentBlock = { kind: "text"; text: string } | { kind: "code"; language: string; code: string };
 type AssistantListItem = { text: string; task?: boolean; checked?: boolean };
 type AssistantTextBlock = { kind: "paragraph"; text: string } | { kind: "heading"; level: 1 | 2 | 3; text: string } | { kind: "list"; ordered: boolean; start?: number; items: AssistantListItem[] } | { kind: "blockquote"; text: string } | { kind: "horizontal-rule" } | { kind: "table"; headers: string[]; rows: string[][] } | { kind: "math"; expression: string };
+type AssistantRenderableBlock =
+  | { kind: "code"; code: string; language: string; ownerId: string; projection: AssistantProjectionCandidate }
+  | { kind: "text"; block: AssistantTextBlock; ownerId: string; projection: AssistantProjectionCandidate };
 
-function isHttpUrl(value: string): boolean {
-  try {
-    const protocol = new URL(value).protocol;
-    return protocol === "http:" || protocol === "https:";
-  } catch {
-    return false;
-  }
+type TranscriptExternalLinkOpener = (url: string) => void;
+const TRANSCRIPT_POINTER_ACTIVATION_DRAG_THRESHOLD = 4;
+
+function transcriptSelectionBlocksActivation(): boolean {
+  if (typeof window === "undefined") return false;
+  const selection = window.getSelection();
+  return selection != null && !selection.isCollapsed && selection.toString().length > 0;
 }
 
-function renderAssistantInlineText(text: string): ReactNode[] {
+function RetainedHorizontalScrollRegion({ children, className, label, ownerId, revision }: { children: ReactNode; className: string; label: string; ownerId: string; revision: string }) {
+  const regionRef = useRef<HTMLDivElement | null>(null);
+  const snapshotRef = useRef<HorizontalScrollSnapshot | null>(null);
+  const pointerGestureRef = useRef<HorizontalScrollPointerGesture | null>(null);
+  const wheelLockRef = useRef<HorizontalScrollWheelLock | null>(null);
+
+  const retirePointerGesture = (pointerId?: number) => {
+    const gesture = pointerGestureRef.current;
+    if (gesture == null || (pointerId != null && gesture.pointerId !== pointerId)) return;
+    const region = regionRef.current;
+    if (gesture.active && region?.hasPointerCapture(gesture.pointerId)) region.releasePointerCapture(gesture.pointerId);
+    pointerGestureRef.current = null;
+  };
+
+  useLayoutEffect(() => {
+    const region = regionRef.current;
+    if (region == null) return undefined;
+    region.scrollLeft = restoreHorizontalScrollOffset(snapshotRef.current, ownerId, region.scrollWidth, region.clientWidth);
+    wheelLockRef.current = null;
+    retirePointerGesture();
+    return () => {
+      const current = regionRef.current;
+      if (current != null) snapshotRef.current = captureHorizontalScroll(ownerId, current.scrollLeft);
+      retirePointerGesture();
+    };
+  }, [ownerId, revision]);
+
+  useEffect(() => {
+    const region = regionRef.current;
+    if (region == null || typeof ResizeObserver === "undefined") return undefined;
+    const observer = new ResizeObserver(() => {
+      region.scrollLeft = clampHorizontalScrollOffset(region.scrollLeft, region.scrollWidth, region.clientWidth);
+    });
+    observer.observe(region);
+    return () => observer.disconnect();
+  }, [ownerId]);
+
+  return <div
+    aria-label={label}
+    className={className}
+    onWheel={(event) => {
+      if (event.ctrlKey) {
+        wheelLockRef.current = null;
+        return;
+      }
+      const delta = normalizeHorizontalScrollWheelDelta(
+        event.deltaX,
+        event.deltaY,
+        event.deltaMode,
+        event.currentTarget.clientWidth,
+      );
+      const update = updateHorizontalScrollWheelLock(
+        wheelLockRef.current,
+        delta.x,
+        delta.y,
+        event.timeStamp,
+      );
+      wheelLockRef.current = update.lock;
+      if (update.axis !== "horizontal" || event.currentTarget.scrollWidth <= event.currentTarget.clientWidth) return;
+      event.currentTarget.scrollLeft = clampHorizontalScrollOffset(
+        event.currentTarget.scrollLeft + delta.x,
+        event.currentTarget.scrollWidth,
+        event.currentTarget.clientWidth,
+      );
+      event.preventDefault();
+    }}
+    onPointerCancel={(event) => retirePointerGesture(event.pointerId)}
+    onLostPointerCapture={(event) => retirePointerGesture(event.pointerId)}
+    onPointerDown={(event) => {
+      if (event.button !== 0 || event.pointerType === "mouse" || event.currentTarget.scrollWidth <= event.currentTarget.clientWidth) return;
+      pointerGestureRef.current = beginHorizontalScrollPointer(event.pointerId, event.clientX, event.clientY);
+    }}
+    onPointerMove={(event) => {
+      const update = updateHorizontalScrollPointer(pointerGestureRef.current, event.pointerId, event.clientX, event.clientY);
+      pointerGestureRef.current = update.gesture;
+      if (update.decision !== "horizontal" || update.gesture == null) return;
+      if (!event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.setPointerCapture(event.pointerId);
+      event.currentTarget.scrollLeft = clampHorizontalScrollOffset(
+        event.currentTarget.scrollLeft + update.deltaX,
+        event.currentTarget.scrollWidth,
+        event.currentTarget.clientWidth,
+      );
+      event.preventDefault();
+    }}
+    onPointerUp={(event) => retirePointerGesture(event.pointerId)}
+    ref={regionRef}
+    role="region"
+    tabIndex={0}
+  >{children}</div>;
+}
+
+function renderAssistantInlineText(text: string, openExternal?: TranscriptExternalLinkOpener): ReactNode[] {
   const nodes: ReactNode[] = [];
-  const assistantInlinePattern = /\\\(([^\\\n]*?)\\\)|\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s<>"']+)|(\*\*|__)(?=\S)([^\n]*?\S)\5|(\*|_)(?=\S)([^\n]*?\S)\7|~~(?=\S)([^\n]*?\S)~~|`([^`\n]+)`/giu;
+  const assistantInlinePattern = /\\\(([^\\\n]*?)\\\)|\[([^\]\n]+)\]\(((?:https?:\/\/|mailto:)[^\s)]+)\)|(https?:\/\/[^\s<>"']+)|(\*\*|__)(?=\S)([^\n]*?\S)\5|(\*|_)(?=\S)([^\n]*?\S)\7|~~(?=\S)([^\n]*?\S)~~|`([^`\n]+)`/giu;
   let cursor = 0;
   let match: RegExpExecArray | null;
   while ((match = assistantInlinePattern.exec(text)) != null) {
@@ -264,9 +378,9 @@ function renderAssistantInlineText(text: string): ReactNode[] {
       const markdownLabel = match[2];
       const rawUrl = match[3] ?? match[4] ?? "";
       if (match[5] != null) {
-        nodes.push(<strong className="sand-dj266r sand-at24cr" key={`assistant-strong-${match.index}`}>{renderAssistantInlineText(match[6] ?? "")}</strong>);
+        nodes.push(<strong className="sand-dj266r sand-at24cr" key={`assistant-strong-${match.index}`}>{renderAssistantInlineText(match[6] ?? "", openExternal)}</strong>);
       } else if (match[7] != null) {
-        nodes.push(<em className="sand-dj266r sand-at24cr" key={`assistant-emphasis-${match.index}`}>{renderAssistantInlineText(match[8] ?? "")}</em>);
+        nodes.push(<em className="sand-dj266r sand-at24cr" key={`assistant-emphasis-${match.index}`}>{renderAssistantInlineText(match[8] ?? "", openExternal)}</em>);
       } else if (match[9] != null) {
         nodes.push(<s className="sand-dj266r sand-at24cr" key={`assistant-strikethrough-${match.index}`}>{renderAssistantInlineText(match[9])}</s>);
       } else if (match[10] != null) {
@@ -274,10 +388,13 @@ function renderAssistantInlineText(text: string): ReactNode[] {
       } else {
         const trailing = markdownLabel == null ? rawUrl.match(/[),.!?;:\]}]+$/u)?.[0] ?? "" : "";
         const href = rawUrl.slice(0, rawUrl.length - trailing.length);
-        if (!isHttpUrl(href)) {
+        const external = projectTranscriptExternalLink(href, markdownLabel ?? undefined);
+        if (external == null) {
           nodes.push(match[0]);
         } else {
-          nodes.push(<a className="sand-l1v4ol sand-krqix3 sand-1sur9pj" href={href} key={`assistant-link-${match.index}`} rel="noopener noreferrer" target="_blank">{markdownLabel ?? href}</a>);
+          nodes.push(openExternal == null
+            ? (markdownLabel ?? external.copyText)
+            : <a className="sand-l1v4ol sand-krqix3 sand-1sur9pj" data-transcript-copy-label={external.copyLabel} data-transcript-copy-text={external.copyText} href={external.href} key={`assistant-link-${match.index}`} onClick={(event) => { event.preventDefault(); if (!transcriptSelectionBlocksActivation()) openExternal(external.href); }} rel="noopener noreferrer" title={external.tooltip ?? undefined}>{markdownLabel ?? external.copyText}</a>);
           if (trailing.length > 0) nodes.push(trailing);
         }
       }
@@ -401,12 +518,15 @@ function assistantTextBlocks(text: string): AssistantTextBlock[] {
   return blocks;
 }
 
-function AssistantTextBlock({ block }: { block: AssistantTextBlock }) {
+function AssistantTextBlock({ block, openExternal, ownerId }: { block: AssistantTextBlock; openExternal?: TranscriptExternalLinkOpener; ownerId: string }) {
   if (block.kind === "math") return <AssistantMath displayMode expression={block.expression} />;
-  if (block.kind === "paragraph") return block.text.length > 0 ? <p>{renderAssistantInlineText(block.text)}</p> : null;
-  if (block.kind === "blockquote") return <blockquote className="sand-dj266r sand-at24cr sand-rxpjvj sand-8fiw5y sand-yumdvf sand-1t7ytsu sand-4n2izg sand-19aaqeu"><p>{renderAssistantInlineText(block.text)}</p></blockquote>;
+  if (block.kind === "paragraph") return block.text.length > 0 ? <p>{renderAssistantInlineText(block.text, openExternal)}</p> : null;
+  if (block.kind === "blockquote") return <blockquote className="sand-dj266r sand-at24cr sand-rxpjvj sand-8fiw5y sand-yumdvf sand-1t7ytsu sand-4n2izg sand-19aaqeu"><p>{renderAssistantInlineText(block.text, openExternal)}</p></blockquote>;
   if (block.kind === "horizontal-rule") return <hr className="sand-dj266r sand-at24cr sand-178xt8z sand-13fuv20 sand-1aeic0j sand-11pwa6s sand-1sy0etr sand-1b16gh4" />;
-  if (block.kind === "table") return <table className="sand-dj266r sand-at24cr sand-1mwwwfo sand-1wm8ruf"><thead className="sand-dj266r sand-at24cr"><tr className="sand-dj266r sand-at24cr">{block.headers.map((header, index) => <th className="sand-dj266r sand-at24cr sand-y3jwiz sand-13e3tqs sand-17fyfba sand-dpxx8g sand-16dsc37 sand-xzm5a7" key={`header-${index}`}>{renderAssistantInlineText(header)}</th>)}</tr></thead><tbody className="sand-dj266r sand-at24cr">{block.rows.map((row, rowIndex) => <tr className="sand-dj266r sand-at24cr" key={`row-${rowIndex}`}>{row.map((cell, cellIndex) => <td className="sand-dj266r sand-at24cr sand-y3jwiz sand-13e3tqs sand-so031l sand-1q0q8m5 sand-17fyfba sand-dpxx8g sand-16dsc37" key={`cell-${rowIndex}-${cellIndex}`}>{renderAssistantInlineText(cell)}</td>)}</tr>)}</tbody></table>;
+  if (block.kind === "table") {
+    const tableOwnerId = `${ownerId}:table:${JSON.stringify(block.headers)}`;
+    return <RetainedHorizontalScrollRegion className="fabushi-rich-content-scroll-region" label="Data table" ownerId={tableOwnerId} revision={JSON.stringify(block.rows)}><table className="sand-dj266r sand-at24cr sand-1mwwwfo sand-1wm8ruf"><thead className="sand-dj266r sand-at24cr"><tr className="sand-dj266r sand-at24cr">{block.headers.map((header, headerIndex) => <th className="sand-dj266r sand-at24cr sand-y3jwiz sand-13e3tqs sand-17fyfba sand-dpxx8g sand-16dsc37 sand-xzm5a7" key={`header-${headerIndex}`}>{renderAssistantInlineText(header, openExternal)}</th>)}</tr></thead><tbody className="sand-dj266r sand-at24cr">{block.rows.map((row, rowIndex) => <tr className="sand-dj266r sand-at24cr" key={`row-${rowIndex}`}>{row.map((cell, cellIndex) => <td className="sand-dj266r sand-at24cr sand-y3jwiz sand-13e3tqs sand-so031l sand-1q0q8m5 sand-17fyfba sand-dpxx8g sand-16dsc37" key={`cell-${rowIndex}-${cellIndex}`}>{renderAssistantInlineText(cell, openExternal)}</td>)}</tr>)}</tbody></table></RetainedHorizontalScrollRegion>;
+  }
   if (block.kind === "heading") {
     const Heading = block.level === 1 ? "h1" : block.level === 2 ? "h2" : "h3";
     const className = block.level === 1
@@ -414,13 +534,13 @@ function AssistantTextBlock({ block }: { block: AssistantTextBlock }) {
       : block.level === 2
         ? "sand-dj266r sand-at24cr sand-1heor9g sand-xzm5a7 sand-1ja60sm sand-1b5m78i"
         : "sand-dj266r sand-at24cr sand-1heor9g sand-xzm5a7 sand-1ja60sm sand-140imcn";
-    return <Heading className={className}>{renderAssistantInlineText(block.text)}</Heading>;
+    return <Heading className={className}>{renderAssistantInlineText(block.text, openExternal)}</Heading>;
   }
   const List = block.ordered ? "ol" : "ul";
   const className = block.ordered
     ? "sand-dj266r sand-at24cr sand-92arao sand-1ja60sm sand-43c9pm sand-3yw8vx"
     : "sand-dj266r sand-at24cr sand-92arao sand-1ja60sm sand-43c9pm sand-taz4m5";
-  return <List className={className} start={block.ordered ? block.start : undefined}>{block.items.map((item, index) => <li className="sand-dj266r sand-at24cr sand-eaf4i8 sand-kwbhjd" key={`${block.ordered ? "ordered" : "unordered"}-${index}`}>{item.task ? <span aria-checked={item.checked === true} aria-disabled="true" className={item.checked === true ? "sand-markdown-checkbox sand-3nfvp2 sand-6s0dn4 sand-l56j7k sand-1kky2od sand-lup9mm sand-2lah0s sand-9f619 sand-mkeg23 sand-1y0btm7 sand-1qugcng sand-12oqio5 sand-1ua6jya sand-wbqysy sand-523cq2 sand-9r1u3d sand-1nyy9xd sand-70xvah" : "sand-markdown-checkbox sand-3nfvp2 sand-6s0dn4 sand-l56j7k sand-1kky2od sand-lup9mm sand-2lah0s sand-9f619 sand-mkeg23 sand-1y0btm7 sand-1qugcng sand-12oqio5 sand-1ua6jya sand-wbqysy sand-523cq2"} role="checkbox" /> : null}{item.task ? " " : null}{renderAssistantInlineText(item.text)}</li>)}</List>;
+  return <List className={className} start={block.ordered ? block.start : undefined}>{block.items.map((item, index) => <li className="sand-dj266r sand-at24cr sand-eaf4i8 sand-kwbhjd" key={`${block.ordered ? "ordered" : "unordered"}-${index}`}>{item.task ? <span aria-checked={item.checked === true} aria-disabled="true" className={item.checked === true ? "sand-markdown-checkbox sand-3nfvp2 sand-6s0dn4 sand-l56j7k sand-1kky2od sand-lup9mm sand-2lah0s sand-9f619 sand-mkeg23 sand-1y0btm7 sand-1qugcng sand-12oqio5 sand-1ua6jya sand-wbqysy sand-523cq2 sand-9r1u3d sand-1nyy9xd sand-70xvah" : "sand-markdown-checkbox sand-3nfvp2 sand-6s0dn4 sand-l56j7k sand-1kky2od sand-lup9mm sand-2lah0s sand-9f619 sand-mkeg23 sand-1y0btm7 sand-1qugcng sand-12oqio5 sand-1ua6jya sand-wbqysy sand-523cq2"} role="checkbox" /> : null}{item.task ? " " : null}{renderAssistantInlineText(item.text, openExternal)}</li>)}</List>;
 }
 
 function assistantContentBlocks(text: string): AssistantContentBlock[] {
@@ -439,6 +559,70 @@ function assistantContentBlocks(text: string): AssistantContentBlock[] {
   return blocks;
 }
 
+function assistantTextProjectionCandidate(block: AssistantTextBlock, path: string): AssistantProjectionCandidate {
+  if (block.kind === "paragraph" || block.kind === "blockquote") {
+    return { path, kind: block.kind, structuralIdentity: block.kind, revision: { mode: "text-prefix", value: block.text } };
+  }
+  if (block.kind === "heading") {
+    return { path, kind: block.kind, structuralIdentity: `heading:${block.level}`, revision: { mode: "text-prefix", value: block.text } };
+  }
+  if (block.kind === "math") {
+    return { path, kind: block.kind, structuralIdentity: "math", revision: { mode: "text-prefix", value: block.expression } };
+  }
+  if (block.kind === "horizontal-rule") {
+    return { path, kind: block.kind, structuralIdentity: "horizontal-rule", revision: { mode: "exact", value: "horizontal-rule" } };
+  }
+  if (block.kind === "list") {
+    return {
+      path,
+      kind: block.kind,
+      structuralIdentity: JSON.stringify({ ordered: block.ordered, start: block.start ?? null }),
+      revision: {
+        mode: "append-sequence",
+        values: block.items.map((item) => `${item.task === true ? "task" : "item"}:${item.checked === true ? "checked" : "open"}:${item.text}`),
+      },
+    };
+  }
+  return {
+    path,
+    kind: block.kind,
+    structuralIdentity: JSON.stringify(block.headers),
+    revision: { mode: "append-sequence", values: block.rows.map((row) => row.join("\u001f")) },
+  };
+}
+
+function assistantRenderableBlocks(text: string, ownerId: string): AssistantRenderableBlock[] {
+  const renderable: AssistantRenderableBlock[] = [];
+  assistantContentBlocks(text).forEach((block, contentIndex) => {
+    if (block.kind === "code") {
+      const path = `content:${contentIndex}:code`;
+      renderable.push({
+        kind: "code",
+        code: block.code,
+        language: block.language,
+        ownerId: `${ownerId}:code:${contentIndex}:${block.language || "plain"}`,
+        projection: {
+          path,
+          kind: "code",
+          structuralIdentity: `code:${block.language || "plain"}`,
+          revision: { mode: "text-prefix", value: block.code },
+        },
+      });
+      return;
+    }
+    assistantTextBlocks(block.text).forEach((textBlock, textIndex) => {
+      const path = `content:${contentIndex}:text:${textIndex}`;
+      renderable.push({
+        kind: "text",
+        block: textBlock,
+        ownerId: `${ownerId}:text:${contentIndex}:${textIndex}`,
+        projection: assistantTextProjectionCandidate(textBlock, path),
+      });
+    });
+  });
+  return renderable;
+}
+
 const assistantCodeCopyButtonClass = "ui-icon-button sand-10l6tqk sand-1jgjl8u sand-1s3hisn sand-1uspnb1 sand-18o3ruo sand-1ifrsg7 sand-qjedn3 sand-1y0btm7 sand-qz0629 sand-t9pb60 sand-12sv23o sand-1mh7f6w sand-1hc1fzr sand-m072we sand-o8ljoj sand-1yas17b sand-67bb7w sand-14ux7ur sand-1nn4xpi sand-q1nbte sand-cdv909 sand-fe0yzn sand-sagj69";
 
 function AssistantCodeCopyButton({ code }: { code: string }) {
@@ -452,13 +636,15 @@ function AssistantCodeCopyButton({ code }: { code: string }) {
   const iconName = copied ? "check" : "copy";
   const iconCodePoint = copied ? 0xeab2 : 0xebcc;
   return <button aria-label={label} className={assistantCodeCopyButtonClass} onClick={() => {
-    if (typeof navigator === "undefined" || navigator.clipboard == null) return;
-    void navigator.clipboard.writeText(code).then(() => setCopied(true)).catch(() => {});
+    const clipboard = typeof navigator === "undefined" ? null : navigator.clipboard;
+    void copyTranscriptCodeText(code, clipboard).then((copiedNow) => {
+      if (copiedNow) setCopied(true);
+    });
   }} type="button"><span aria-hidden="true" data-icon-name={iconName} data-size="base" style={{ fontFamily: "cursor-icons" }}>{String.fromCodePoint(iconCodePoint)}</span></button>;
 }
 
-function AssistantCodeBlock({ code, language }: { code: string; language: string }) {
-  const fallback = <div className="sand-code-figure"><div className="sand-code-scroll"><pre className="sand-code-block"><code className={language.length > 0 ? `language-${language}` : "sand-code-fallback"}>{code}</code></pre></div><AssistantCodeCopyButton code={code} /></div>;
+function AssistantCodeBlock({ code, language, ownerId }: { code: string; language: string; ownerId: string }) {
+  const fallback = <div className="sand-code-figure"><RetainedHorizontalScrollRegion className="sand-code-scroll" label={language.length > 0 ? `${language} code` : "Code block"} ownerId={ownerId} revision={code}><pre className="sand-code-block"><code className={language.length > 0 ? `language-${language}` : "sand-code-fallback"}>{code}</code></pre></RetainedHorizontalScrollRegion><AssistantCodeCopyButton code={code} /></div>;
   return language === "mermaid" ? <MermaidDiagram code={code} fallback={fallback} /> : fallback;
 }
 
@@ -470,13 +656,13 @@ function SendMessageTextImages({ images }: { images: readonly SendMessageTextIma
 const readOnlyRichTextExtensions = createPromptEditorExtensions("", undefined);
 const readOnlyRichTextSchema = getSchema(readOnlyRichTextExtensions);
 
-function richTextNodeChildren(node: ProseMirrorNode): ReactNode[] {
+function richTextNodeChildren(node: ProseMirrorNode, openExternal?: TranscriptExternalLinkOpener): ReactNode[] {
   const children: ReactNode[] = [];
-  node.forEach((child, _offset, index) => children.push(renderRichTextNode(child, `${node.type.name}-${index}`)));
+  node.forEach((child, _offset, index) => children.push(renderRichTextNode(child, `${node.type.name}-${index}`, openExternal)));
   return children;
 }
 
-function applyRichTextMarks(node: ProseMirrorNode, content: ReactNode): ReactNode {
+function applyRichTextMarks(node: ProseMirrorNode, content: ReactNode, openExternal?: TranscriptExternalLinkOpener): ReactNode {
   return node.marks.reduceRight((current, mark, index) => {
     const key = `${node.type.name}-mark-${index}`;
     switch (mark.type.name) {
@@ -486,17 +672,17 @@ function applyRichTextMarks(node: ProseMirrorNode, content: ReactNode): ReactNod
       case "underline": return <u key={key}>{current}</u>;
       case "code": return <code key={key}>{current}</code>;
       case "link": {
-        const href = normalizeLinkUrl(mark.attrs.href);
-        return href == null ? current : <a href={href} key={key}>{current}</a>;
+        const external = projectTranscriptExternalLink(mark.attrs.href, node.text ?? undefined);
+        return external == null || openExternal == null ? current : <a data-transcript-copy-label={external.copyLabel} data-transcript-copy-text={external.copyText} href={external.href} key={key} onClick={(event) => { event.preventDefault(); if (!transcriptSelectionBlocksActivation()) openExternal(external.href); }} title={external.tooltip ?? undefined}>{current}</a>;
       }
       default: return current;
     }
   }, content);
 }
 
-function renderRichTextNode(node: ProseMirrorNode, key: string): ReactNode {
-  if (node.isText) return applyRichTextMarks(node, node.text ?? "");
-  const children = richTextNodeChildren(node);
+function renderRichTextNode(node: ProseMirrorNode, key: string, openExternal?: TranscriptExternalLinkOpener): ReactNode {
+  if (node.isText) return applyRichTextMarks(node, node.text ?? "", openExternal);
+  const children = richTextNodeChildren(node, openExternal);
   switch (node.type.name) {
     case "doc": return <Fragment key={key}>{children}</Fragment>;
     case "paragraph": return <p key={key}>{children}</p>;
@@ -522,39 +708,52 @@ function renderRichTextNode(node: ProseMirrorNode, key: string): ReactNode {
   }
 }
 
-function readOnlyRichTextContent(value: string): ReactNode | null {
+function readOnlyRichTextContent(value: string, openExternal?: TranscriptExternalLinkOpener): ReactNode | null {
   try {
     const parsed: unknown = JSON.parse(value);
     if (typeof parsed !== "object" || parsed == null || (parsed as { type?: unknown }).type !== "doc") return null;
     const document = readOnlyRichTextSchema.nodeFromJSON(parsed as JSONContent);
-    return readRichTextDocument(document);
+    return readRichTextDocument(document, openExternal);
   } catch {
     // Immutable BPn falls back to the plain content when persisted rich text is malformed.
     return null;
   }
 }
 
-function readRichTextDocument(document: ProseMirrorNode): ReactNode {
-  return renderRichTextNode(document, "rich-text-document");
+function readRichTextDocument(document: ProseMirrorNode, openExternal?: TranscriptExternalLinkOpener): ReactNode {
+  return renderRichTextNode(document, "rich-text-document", openExternal);
 }
 
-function UserMessageContent({ text, richText }: { text: string; richText?: string }) {
-  const content = richText == null || richText.length === 0 ? null : readOnlyRichTextContent(richText);
+function UserMessageContent({ text, richText, openExternal }: { text: string; richText?: string; openExternal?: TranscriptExternalLinkOpener }) {
+  const content = richText == null || richText.length === 0 ? null : readOnlyRichTextContent(richText, openExternal);
   if (content != null) return <div className="sand-message-prose">{content}</div>;
   return <div className="sand-message-prose">{text ? <p>{text}</p> : null}</div>;
 }
 
-export function AssistantMessageContent({ text, images, channel, isSourceTrusted, isStreaming = false }: { text: string; images?: readonly SendMessageTextImage[]; channel?: string | null; isSourceTrusted?: boolean; isStreaming?: boolean }) {
-  return <div className="sand-message-prose" data-source-trusted={isSourceTrusted || undefined}>{isStreaming && text.length === 0 ? <StreamingMessage /> : assistantContentBlocks(text).flatMap((block, index) => block.kind === "code"
-    ? [<AssistantCodeBlock code={block.code} key={`code-${index}`} language={block.language} />]
-    : assistantTextBlocks(block.text).map((textBlock, textIndex) => <AssistantTextBlock block={textBlock} key={`text-${index}-${textIndex}`} />))}{images == null ? null : <SendMessageTextImages images={images} />}{channel == null ? null : <span className="sand-channel-tag" title={`Sent to ${channel}`}>{channel}</span>}</div>;
-}
+export function AssistantMessageContent({ text, images, channel, isSourceTrusted, isStreaming = false, openExternal, ownerId }: { text: string; images?: readonly SendMessageTextImage[]; channel?: string | null; isSourceTrusted?: boolean; isStreaming?: boolean; openExternal?: TranscriptExternalLinkOpener; ownerId: string }) {
+  const committedProjectionRef = useRef<AssistantProjectionState | null>(null);
+  const projectedContent = useMemo(() => {
+    const renderable = assistantRenderableBlocks(text, ownerId);
+    return {
+      renderable,
+      projection: reconcileAssistantContentProjection(committedProjectionRef.current, {
+        ownerId,
+        streaming: isStreaming,
+        candidates: renderable.map((block) => block.projection),
+      }),
+    };
+  }, [isStreaming, ownerId, text]);
+  useLayoutEffect(() => {
+    committedProjectionRef.current = projectedContent.projection;
+  }, [projectedContent.projection]);
 
-function formatToolName(name: string): string {
-  const withoutSuffix = name.endsWith("ToolCall") ? name.slice(0, -8) : name;
-  if (withoutSuffix.length === 0) return name;
-  const spaced = withoutSuffix.replace(/([a-z0-9])([A-Z])/g, "$1 $2");
-  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+  return <div className="sand-message-prose" data-source-trusted={isSourceTrusted || undefined}>{isStreaming && text.length === 0 ? <StreamingMessage /> : projectedContent.renderable.map((block, index) => {
+    const projectionEntry = projectedContent.projection.entries[index];
+    if (projectionEntry == null) return null;
+    return block.kind === "code"
+      ? <AssistantCodeBlock code={block.code} key={projectionEntry.key} language={block.language} ownerId={block.ownerId} />
+      : <AssistantTextBlock block={block.block} key={projectionEntry.key} openExternal={openExternal} ownerId={block.ownerId} />;
+  })}{images == null ? null : <SendMessageTextImages images={images} />}{channel == null ? null : <span className="sand-channel-tag" title={`Sent to ${channel}`}>{channel}</span>}</div>;
 }
 
 function toolCallPreview(summary?: string): string {
@@ -583,11 +782,11 @@ export function TranscriptToolCallRow({ entry, expanded, onToggle }: { entry: Tr
   const iconName = toolCallIconName(entry.status);
   const iconClassName = failed ? "sand-outline-item__icon sand-2lah0s sand-pmgbkh" : "sand-outline-item__icon sand-2lah0s sand-4b2ntj";
   return (
-    <div className="sand-outline-item" data-kind="tool-call" data-status={entry.status} role="listitem">
+    <div className="sand-outline-item" data-entry-id={entry.id} data-kind="tool-call" data-status={entry.status} role="listitem">
       <button aria-controls={expanded ? detailId : undefined} aria-expanded={expanded} className="sand-outline-item__row" onClick={() => onToggle(entry.id)} type="button">
         <span aria-hidden="true" className={iconClassName} data-active={pending || undefined} data-failed={failed || undefined} data-icon-name={iconName} style={pending ? { animation: "sand-outline-item-spin .9s linear infinite" } : undefined}>{String.fromCodePoint(outlineIconCodePoint(iconName))}</span>
-        <span className="sand-outline-item__label">{formatToolName(entry.name)}</span>
-        {preview.length > 0 ? <span className="sand-outline-item__preview">{preview}</span> : null}
+        <span className="sand-outline-item__label">{formatTranscriptToolCallName(entry.name)}</span>
+        {preview.length > 0 && !expanded ? <span className="sand-outline-item__preview">{preview}</span> : null}
         <span aria-hidden="true" className="sand-outline-item__chevron" style={{ transform: expanded ? "rotate(45deg)" : "rotate(-45deg)" }} />
       </button>
       {expanded ? (
@@ -608,11 +807,11 @@ export function TranscriptThinkingRow({ entry, expanded, onToggle }: { entry: Tr
   const detailId = `sand-conversation-thinking-detail-${encodeURIComponent(entry.id)}`;
   const preview = toolCallPreview(entry.text);
   return (
-    <div className="sand-outline-item" data-kind="thinking" role="listitem">
+    <div className="sand-outline-item" data-entry-id={entry.id} data-kind="thinking" role="listitem">
       <button aria-controls={expanded ? detailId : undefined} aria-expanded={expanded} className="sand-outline-item__row" onClick={() => onToggle(entry.id)} type="button">
         <span aria-hidden="true" className="sand-outline-item__icon sand-2lah0s sand-kbann2" data-icon-name="thinking-medium">{String.fromCodePoint(outlineIconCodePoint("thinking-medium"))}</span>
         <span className="sand-outline-item__label">Thinking</span>
-        {preview.length > 0 ? <span className="sand-outline-item__preview">{preview}</span> : null}
+        {preview.length > 0 && !expanded ? <span className="sand-outline-item__preview">{preview}</span> : null}
         <span aria-hidden="true" className="sand-outline-item__chevron" style={{ transform: expanded ? "rotate(45deg)" : "rotate(-45deg)" }} />
       </button>
       {expanded ? <div className="sand-outline-item__detail" id={detailId}><div className="sand-outline-item__detail-section"><pre className="sand-outline-item__detail-text">{entry.text}</pre></div></div> : null}
@@ -622,8 +821,12 @@ export function TranscriptThinkingRow({ entry, expanded, onToggle }: { entry: Tr
 
 export function ConversationTranscript({ entries, hasOlder = false, isLoadingOlder = false, loadOlder, isAgentRunning = false, renderComputerHandoff, isTransportDown = false, isReadOnly = false, onCancelQueuedSend, onCopyMessage, onDeleteFailedSend, onForward, onReply, onStartThread, renderMessageReactionActions, renderMessageReactionPills, resolveTranscriptCardInteractions, onResendFailedSend, resolveAttachmentMedia, readAttachmentBytes, downloadAttachment, resolveReplyPreview, isReplyTargetInScope, onOpenReply, onOpenAutomation, localToolPermissionStore, resolveLocalToolPermission, transcriptCards, urlCards, threadRootId = null, transcriptHandleRef }: { entries: readonly ConversationTranscriptEntry[]; isAgentRunning?: boolean; isReadOnly?: boolean; renderComputerHandoff?(entry: TranscriptComputerHandoff): ReactNode; resolveAttachmentMedia?: (source: string) => Promise<AttachmentMedia | null>; readAttachmentBytes?: (path: string, maxBytes: number) => Promise<AttachmentBytesResult | null>; downloadAttachment?: (path: string, suggestedName?: string) => Promise<boolean>; resolveReplyPreview?(targetId: string): TranscriptReplyPreview | null; isReplyTargetInScope?(targetId: string): boolean; localToolPermissionStore?: LocalToolPermissionStore; resolveLocalToolPermission?(input: ResolveLocalToolPermissionInput): Promise<unknown>; transcriptCards?: TranscriptCardRootMountContract; resolveTranscriptCardInteractions?: TranscriptCardInteractionContext; urlCards?: UrlCardProvider | null; threadRootId?: string | null; transcriptHandleRef?: { current: FindInChatTranscriptHandle | null } } & ConversationTranscriptActions) {
   const transcriptRef = useRef<HTMLDivElement | null>(null);
+  const followLatestRef = useRef(true);
+  const pointerActivationRevisionRef = useRef(0);
+  const pointerActivationIntentRef = useRef<{ revision: number; target: HTMLElement; pointerId: number; startX: number; startY: number } | null>(null);
   const olderLoadInFlightRef = useRef(false);
   const viewCommitListenersRef = useRef(new Set<() => void>());
+  const revealFindEntryRef = useRef<(entryId: string, kind: FindInChatDisclosureKind) => void>(() => {});
   const handleRef = useRef<FindInChatTranscriptHandle | null>(null);
   if (handleRef.current == null) {
     handleRef.current = {
@@ -633,6 +836,10 @@ export function ConversationTranscript({ entries, hasOlder = false, isLoadingOld
         const row = [...transcript.querySelectorAll<HTMLElement>("[data-entry-id], [data-row-key]")]
           .find((candidate) => (candidate.getAttribute("data-entry-id") ?? candidate.getAttribute("data-row-key")) === entryId);
         if (row == null) return false;
+        const disclosureKind = row.dataset.kind;
+        if (disclosureKind === "thinking" || disclosureKind === "tool-call") {
+          revealFindEntryRef.current(entryId, disclosureKind);
+        }
         row.scrollIntoView({ block: "center" });
         return true;
       },
@@ -652,9 +859,43 @@ export function ConversationTranscript({ entries, hasOlder = false, isLoadingOld
     };
   }, [transcriptHandle, transcriptHandleRef]);
   useLayoutEffect(() => {
+    pointerActivationRevisionRef.current += 1;
+    pointerActivationIntentRef.current = null;
     if (transcriptHandleRef == null) return;
     for (const listener of [...viewCommitListenersRef.current]) listener();
   }, [entries, transcriptHandleRef]);
+  useLayoutEffect(() => {
+    const transcript = transcriptRef.current;
+    if (transcript == null || !followLatestRef.current) return;
+    transcript.scrollTop = Math.max(0, transcript.scrollHeight - transcript.clientHeight);
+  }, [entries]);
+  useEffect(() => {
+    const transcript = transcriptRef.current;
+    if (transcript == null) return;
+    const syncFollowLatest = () => {
+      followLatestRef.current = isTranscriptNearBottom({
+        scrollTop: transcript.scrollTop,
+        clientHeight: transcript.clientHeight,
+        scrollHeight: transcript.scrollHeight,
+      });
+    };
+    transcript.addEventListener("scroll", syncFollowLatest, { passive: true });
+    return () => transcript.removeEventListener("scroll", syncFollowLatest);
+  }, []);
+  useEffect(() => {
+    const retirePointerActivationIntent = () => {
+      pointerActivationIntentRef.current = null;
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== "visible") retirePointerActivationIntent();
+    };
+    window.addEventListener("blur", retirePointerActivationIntent);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      window.removeEventListener("blur", retirePointerActivationIntent);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
   useEffect(() => {
     const transcript = transcriptRef.current;
     if (transcript == null || !hasOlder || loadOlder == null) return;
@@ -683,6 +924,22 @@ export function ConversationTranscript({ entries, hasOlder = false, isLoadingOld
   }, [hasOlder, isLoadingOlder, loadOlder]);
   const [expandedToolCalls, setExpandedToolCalls] = useState<ReadonlySet<string>>(() => new Set());
   const [expandedThinking, setExpandedThinking] = useState<ReadonlySet<string>>(() => new Set());
+  useLayoutEffect(() => {
+    revealFindEntryRef.current = (entryId, kind) => {
+      if (kind === "thinking") {
+        setExpandedThinking((current) => includeFindInChatDisclosure(current, entryId));
+        return;
+      }
+      setExpandedToolCalls((current) => includeFindInChatDisclosure(current, entryId));
+    };
+    return () => {
+      revealFindEntryRef.current = () => {};
+    };
+  }, []);
+  useLayoutEffect(() => {
+    if (transcriptHandleRef == null) return;
+    for (const listener of [...viewCommitListenersRef.current]) listener();
+  }, [expandedThinking, expandedToolCalls, transcriptHandleRef]);
   const toggleToolCall = (id: string) => {
     setExpandedToolCalls((current) => {
       const next = new Set(current);
@@ -703,7 +960,58 @@ export function ConversationTranscript({ entries, hasOlder = false, isLoadingOld
       : (entry) => resolveTranscriptCardInteractions.getThreadSummary(entry.id) != null,
   });
   return (
-    <div aria-label="Conversation transcript" aria-live="off" className="sand-virtual-transcript" ref={transcriptRef} role="log" tabIndex={0}>
+    <div
+      aria-label="Conversation transcript"
+      aria-live="off"
+      className="sand-virtual-transcript"
+      onBlurCapture={(event) => {
+        const next = event.relatedTarget;
+        if (next instanceof Node && transcriptRef.current?.contains(next)) return;
+        pointerActivationIntentRef.current = null;
+      }}
+      onClickCapture={(event) => {
+        if (event.detail === 0) return;
+        const target = event.target instanceof Element ? event.target.closest<HTMLElement>("a[href], button") : null;
+        if (target == null || !transcriptRef.current?.contains(target)) return;
+        if (transcriptSelectionBlocksActivation()) {
+          pointerActivationIntentRef.current = null;
+          event.preventDefault();
+          event.stopPropagation();
+          return;
+        }
+        const intent = pointerActivationIntentRef.current;
+        pointerActivationIntentRef.current = null;
+        if (intent?.revision === pointerActivationRevisionRef.current && intent.target === target) return;
+        event.preventDefault();
+        event.stopPropagation();
+      }}
+      onPointerCancelCapture={() => {
+        pointerActivationIntentRef.current = null;
+      }}
+      onPointerDownCapture={(event) => {
+        if (!event.isPrimary || event.button !== 0) {
+          pointerActivationIntentRef.current = null;
+          return;
+        }
+        const target = event.target instanceof Element ? event.target.closest<HTMLElement>("a[href], button") : null;
+        pointerActivationIntentRef.current = target != null && transcriptRef.current?.contains(target)
+          ? { revision: pointerActivationRevisionRef.current, target, pointerId: event.pointerId, startX: event.clientX, startY: event.clientY }
+          : null;
+      }}
+      onPointerLeave={() => {
+        pointerActivationIntentRef.current = null;
+      }}
+      onPointerMoveCapture={(event) => {
+        const intent = pointerActivationIntentRef.current;
+        if (intent == null || intent.pointerId !== event.pointerId) return;
+        if (Math.hypot(event.clientX - intent.startX, event.clientY - intent.startY) > TRANSCRIPT_POINTER_ACTIVATION_DRAG_THRESHOLD) {
+          pointerActivationIntentRef.current = null;
+        }
+      }}
+      ref={transcriptRef}
+      role="log"
+      tabIndex={0}
+    >
       {entries.map((entry, index) => {
         if (entry.kind === "time-separator") return <div className="sand-transcript-time-separator" key={entry.id} role="separator">{entry.label}</div>;
         if (entry.kind === "unread-divider") return <div className="sand-unread-divider" key={entry.id} role="separator"><span className="sand-unread-divider__label">{entry.newMessageCount} new {entry.newMessageCount === 1 ? "message" : "messages"}</span></div>;
@@ -734,7 +1042,7 @@ export function ConversationTranscript({ entries, hasOlder = false, isLoadingOld
         }
 
         const ids = transcriptIds(entry.id, true);
-        const pending = entry.delivery === "pending" || entry.delivery === "queued";
+        const pending = isTranscriptDeliveryBusy(entry.delivery);
         const failed = entry.delivery === "failed";
         const replyPreview = entry.replyToId == null || resolveReplyPreview == null ? null : (resolveReplyPreview(entry.replyToId) ?? { kind: "missing" as const });
         const referencedEntry = entry.replyToId == null ? undefined : entries.find((candidate) => candidate.id === entry.replyToId);
@@ -789,7 +1097,7 @@ export function ConversationTranscript({ entries, hasOlder = false, isLoadingOld
                   targetId={entry.replyToId ?? ""}
                   timestampMs={referencedEntry != null && "timestampMs" in referencedEntry ? referencedEntry.timestampMs : undefined}
                 /> : null}
-                {messageLink != null && messageUrlCards != null ? <LinkCardView isGroupStart={messageAdjacency.isGroupStart} provider={messageUrlCards} url={messageLink} /> : entry.isStreaming && entry.role === "assistant" && !entry.text ? <StreamingMessage /> : entry.role === "assistant" ? <AssistantMessageContent channel={entry.channel} images={entry.images} isSourceTrusted={entry.isSourceTrusted} isStreaming={entry.isStreaming} text={entry.text} /> : <UserMessageContent richText={entry.richText} text={entry.text} />}
+                {messageLink != null && messageUrlCards != null ? <LinkCardView isGroupStart={messageAdjacency.isGroupStart} provider={messageUrlCards} url={messageLink} /> : entry.isStreaming && entry.role === "assistant" && !entry.text ? <StreamingMessage /> : entry.role === "assistant" ? <AssistantMessageContent channel={entry.channel} images={entry.images} isSourceTrusted={entry.isSourceTrusted} isStreaming={entry.isStreaming} openExternal={messageUrlCards == null ? undefined : (url) => { void messageUrlCards.openExternal(url); }} ownerId={entry.id} text={entry.text} /> : <UserMessageContent openExternal={messageUrlCards == null ? undefined : (url) => { void messageUrlCards.openExternal(url); }} richText={entry.richText} text={entry.text} />}
                 {renderMessageReactionPills?.(reactionPillProps)}
                 {entry.attachments?.length ? <TranscriptAttachmentGallery adjacency={messageAdjacency} attachments={entry.attachments} downloadAttachment={downloadAttachment} readAttachmentBytes={readAttachmentBytes} resolveMedia={resolveAttachmentMedia} role={entry.role} /> : null}
                 {entry.delivery === "queued" && entry.composedAtMs == null ? <QueuedSendNotice entry={entry} isTransportDown={isTransportDown} onCancel={onCancelQueuedSend} /> : null}

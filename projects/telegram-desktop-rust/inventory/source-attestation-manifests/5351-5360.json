@@ -1,0 +1,68 @@
+{
+  "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+  "start": 5351,
+  "end": 5360,
+  "entries": [
+    {
+      "order": 5351,
+      "path": "Telegram/SourceFiles/payments/stripe/stripe_api_client.cpp",
+      "blob": "853dc1498c4b8a3089934ded1a033073b0a91028",
+      "consumer_symbol": "Stripe::APIClient"
+    },
+    {
+      "order": 5352,
+      "path": "Telegram/SourceFiles/payments/stripe/stripe_api_client.h",
+      "blob": "8fc26eb822dfd093597796e947e19ed87bd9d36a",
+      "consumer_symbol": "Stripe::APIClient contract"
+    },
+    {
+      "order": 5353,
+      "path": "Telegram/SourceFiles/payments/stripe/stripe_callbacks.h",
+      "blob": "8e0d0a2a5a3b95c45ee0b0390cc89429f22a773b",
+      "consumer_symbol": "Stripe::TokenCompletionCallback"
+    },
+    {
+      "order": 5354,
+      "path": "Telegram/SourceFiles/payments/stripe/stripe_card.cpp",
+      "blob": "ca2c864a9165cbf5d1f42783a865907dca3f5dd3",
+      "consumer_symbol": "Stripe::Card"
+    },
+    {
+      "order": 5355,
+      "path": "Telegram/SourceFiles/payments/stripe/stripe_card.h",
+      "blob": "30ff47b643781f58c83b7d0e2923ed54100970e2",
+      "consumer_symbol": "Stripe::Card contract"
+    },
+    {
+      "order": 5356,
+      "path": "Telegram/SourceFiles/payments/stripe/stripe_card_params.cpp",
+      "blob": "81b72c4e0328648616a3212c9fd0927ac076ca25",
+      "consumer_symbol": "Stripe::CardParams::formFieldValues"
+    },
+    {
+      "order": 5357,
+      "path": "Telegram/SourceFiles/payments/stripe/stripe_card_params.h",
+      "blob": "d107dc57f784162ca5656065b6800f29146bae8d",
+      "consumer_symbol": "Stripe::CardParams"
+    },
+    {
+      "order": 5358,
+      "path": "Telegram/SourceFiles/payments/stripe/stripe_card_validator.cpp",
+      "blob": "599a3922df18c67499b091ece51754e904d37acc",
+      "consumer_symbol": "Stripe::ValidateCard / ValidateExpireDate / ValidateCvc / CardNumberFormat"
+    },
+    {
+      "order": 5359,
+      "path": "Telegram/SourceFiles/payments/stripe/stripe_card_validator.h",
+      "blob": "68fdf5ad13954fa6c799132ddab4fd0c5e4e25ce",
+      "consumer_symbol": "Stripe validation contract"
+    },
+    {
+      "order": 5360,
+      "path": "Telegram/SourceFiles/payments/stripe/stripe_decode.cpp",
+      "blob": "acd2dac0b0b89c4b10ca10a975fa07926640fedd",
+      "consumer_symbol": "Stripe::ContainsFields"
+    }
+  ],
+  "accepted_tree": "4ddb5182fc1ae238e4dc62a396614614b5b35f97"
+}

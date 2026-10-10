@@ -1,7 +1,20 @@
 import type { CoordinatorPortBridge, TransferredCoordinatorPort } from "../recovered/contracts/desktop-bridge";
 import {
+  parseCoordinatorStory,
+  parseCoordinatorStoryDeleteResponse,
+  parseCoordinatorStoryStealthState,
+  parseCoordinatorStoryStealthStatus,
+  parseCoordinatorStoryListResponse,
   validateCoordinatorReply,
   type CoordinatorAgentThreadRequest,
+  type CoordinatorStory,
+  type CoordinatorStoryDeleteResponse,
+  type CoordinatorStoryStealthActivateRequest,
+  type CoordinatorStoryStealthState,
+  type CoordinatorStoryStealthStatus,
+  type CoordinatorStoryIdRequest,
+  type CoordinatorStoryListRequest,
+  type CoordinatorStoryReactionRequest,
   type CoordinatorAgentThreadResponse,
   type CoordinatorTranscriptWindowRequest,
   type CoordinatorTranscriptWindowResponse
@@ -32,6 +45,31 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function validateReply(method: string, value: unknown): unknown {
   if (method === "getAgentTranscriptWindow" || method === "getAgentThread") return validateCoordinatorReply(method, value);
+  if (method === "getStoryStealthStatus") {
+    const status = parseCoordinatorStoryStealthStatus(value);
+    if (status == null) throw new Error("getStoryStealthStatus returned a malformed projection");
+    return status;
+  }
+  if (method === "activateStoryStealth") {
+    const state = parseCoordinatorStoryStealthState(value);
+    if (state == null) throw new Error("activateStoryStealth returned a malformed projection");
+    return state;
+  }
+  if (method === "listStories") {
+    const stories = parseCoordinatorStoryListResponse(value);
+    if (stories == null) throw new Error("listStories returned a malformed Story projection");
+    return stories;
+  }
+  if (method === "viewStory" || method === "reactStory") {
+    const story = parseCoordinatorStory(value);
+    if (story == null) throw new Error(`${method} returned a malformed Story projection`);
+    return story;
+  }
+  if (method === "deleteStory") {
+    const deleted = parseCoordinatorStoryDeleteResponse(value);
+    if (deleted == null) throw new Error("deleteStory returned a malformed Story result");
+    return deleted;
+  }
   if (["listAgents", "searchAgents", "getTrays", "listAllAutomations"].includes(method)) {
     if (!Array.isArray(value)) throw new Error(`${method} returned a malformed array reply`);
   }
@@ -53,6 +91,12 @@ export interface ProductionCoordinatorClient {
   call(method: string, args?: unknown): Promise<unknown>;
   getAgentTranscriptWindow(args: CoordinatorTranscriptWindowRequest): Promise<CoordinatorTranscriptWindowResponse>;
   getAgentThread(args: CoordinatorAgentThreadRequest): Promise<CoordinatorAgentThreadResponse>;
+  getStoryStealthStatus(): Promise<CoordinatorStoryStealthStatus>;
+  activateStoryStealth(args: CoordinatorStoryStealthActivateRequest): Promise<CoordinatorStoryStealthState>;
+  listStories(args?: CoordinatorStoryListRequest): Promise<readonly CoordinatorStory[]>;
+  viewStory(args: CoordinatorStoryIdRequest): Promise<CoordinatorStory>;
+  reactStory(args: CoordinatorStoryReactionRequest): Promise<CoordinatorStory>;
+  deleteStory(args: CoordinatorStoryIdRequest): Promise<CoordinatorStoryDeleteResponse>;
   isEgressTunnelAvailable(): Promise<boolean>;
   subscribe(family: string, listener: EventListener): () => void;
   subscribeTransport(listener: TransportListener): () => void;
@@ -168,6 +212,12 @@ export function createCoordinatorClient(portBridge: CoordinatorPortBridge): Prod
     call,
     getAgentTranscriptWindow: async (args) => await call("getAgentTranscriptWindow", args) as CoordinatorTranscriptWindowResponse,
     getAgentThread: async (args) => await call("getAgentThread", args) as CoordinatorAgentThreadResponse,
+    getStoryStealthStatus: async () => validateReply("getStoryStealthStatus", await call("getStoryStealthStatus")) as CoordinatorStoryStealthStatus,
+    activateStoryStealth: async (args) => validateReply("activateStoryStealth", await call("activateStoryStealth", args)) as CoordinatorStoryStealthState,
+    listStories: async (args = {}) => validateReply("listStories", await call("listStories", args)) as readonly CoordinatorStory[],
+    viewStory: async (args) => validateReply("viewStory", await call("viewStory", args)) as CoordinatorStory,
+    reactStory: async (args) => validateReply("reactStory", await call("reactStory", args)) as CoordinatorStory,
+    deleteStory: async (args) => validateReply("deleteStory", await call("deleteStory", args)) as CoordinatorStoryDeleteResponse,
     isEgressTunnelAvailable: async () => await call("isEgressTunnelAvailable") === true,
     subscribe(family, listener) {
       const listeners = eventListeners.get(family) ?? new Set<EventListener>();

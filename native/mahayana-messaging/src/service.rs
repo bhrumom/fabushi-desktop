@@ -12,7 +12,8 @@ use crate::message::{
     ClientMessageId, DeliveryState, Message, MessageContent, MessageId, PendingPresenceSend,
     PresenceSendTrigger,
 };
-use crate::payment::Money;
+use crate::payment::{Entitlement, Money};
+use crate::story::STORY_STEALTH_PRODUCT_ID;
 use crate::protocol::{
     ClientCommand, ClientEnvelope, ServerEnvelope, ServerEvent, FABUSHI_MESSAGING_PROTOCOL_VERSION,
 };
@@ -121,6 +122,60 @@ impl<S: MessagingStateStore> MessagingService<S> {
         self.cursor
     }
 
+    /// Install or revoke the server/native-authoritative account relation that
+    /// permits SavedSublist children under a non-self parent Conversation.
+    /// This intentionally has no client protocol command.
+    pub fn reconcile_saved_sublist_parent_access(
+        &mut self,
+        conversation_id: ConversationId,
+        actor_id: ActorId,
+        allowed: bool,
+        server_time_ms: i64,
+    ) -> Result<(), MessagingServiceError> {
+        let events = self.engine.execute(Command::ReconcileSavedSublistParentAccess {
+            conversation_id,
+            actor_id,
+            allowed,
+        })?;
+        self.cursor = self
+            .cursor
+            .saturating_add(u64::try_from(events.len()).unwrap_or(u64::MAX));
+        self.persist(server_time_ms)
+    }
+
+    /// Replace the trusted server/native membership snapshot for one SavedSublist.
+    /// This is deliberately not part of ClientCommand; only the canonical sync/feed
+    /// side may assert child ownership for parent messages.
+    pub fn reconcile_saved_sublist_membership(
+        &mut self,
+        destination: ConversationDestination,
+        actor_id: ActorId,
+        message_ids: Vec<MessageId>,
+        server_time_ms: i64,
+    ) -> Result<(), MessagingServiceError> {
+        let events = self.engine.execute(Command::ReconcileSavedSublistMembership {
+            destination,
+            actor_id,
+            message_ids,
+        })?;
+        self.cursor = self
+            .cursor
+            .saturating_add(u64::try_from(events.len()).unwrap_or(u64::MAX));
+        self.persist(server_time_ms)
+    }
+
+    pub fn reconcile_entitlement(
+        &mut self,
+        entitlement: Entitlement,
+        server_time_ms: i64,
+    ) -> Result<(), MessagingServiceError> {
+        let events = self.engine.execute(Command::ReconcileEntitlement { entitlement })?;
+        self.cursor = self
+            .cursor
+            .saturating_add(u64::try_from(events.len()).unwrap_or(u64::MAX));
+        self.persist(server_time_ms)
+    }
+
     pub fn into_store(self) -> S {
         self.store
     }
@@ -182,6 +237,12 @@ impl<S: MessagingStateStore> MessagingService<S> {
             }
             ClientCommand::WalletStatus => {
                 Ok(vec![self.wallet_status_envelope(&actor_id, server_time_ms)])
+            }
+            ClientCommand::StoryStealthStatus => {
+                Ok(vec![self.story_stealth_status_envelope(&actor_id, server_time_ms)])
+            }
+            ClientCommand::ListStories { limit } => {
+                Ok(vec![self.stories_snapshot_envelope(&actor_id, limit, server_time_ms)])
             }
             ClientCommand::Sync { cursor, limit } => {
                 self.mark_direct_messages_delivered(&actor_id, server_time_ms)?;
@@ -1312,6 +1373,56 @@ impl<S: MessagingStateStore> MessagingService<S> {
         }
     }
 
+    fn story_stealth_status_envelope(
+        &self,
+        actor_id: &ActorId,
+        server_time_ms: i64,
+    ) -> ServerEnvelope {
+        let state = self
+            .engine
+            .state()
+            .story_stealth
+            .get(actor_id)
+            .cloned()
+            .unwrap_or_default();
+        let entitled = self.engine.state().entitlements.values().any(|entitlement| {
+            entitlement.is_active_for(actor_id, STORY_STEALTH_PRODUCT_ID, server_time_ms)
+        });
+        ServerEnvelope {
+            protocol_version: FABUSHI_MESSAGING_PROTOCOL_VERSION,
+            cursor: Some(self.cursor.to_string()),
+            server_time_ms,
+            event: ServerEvent::StoryStealthStatus { state, entitled },
+        }
+    }
+
+    fn stories_snapshot_envelope(
+        &self,
+        actor_id: &ActorId,
+        limit: u32,
+        server_time_ms: i64,
+    ) -> ServerEnvelope {
+        let max_items = usize::try_from(limit.max(1)).unwrap_or(usize::MAX);
+        let stories = self
+            .engine
+            .state()
+            .stories
+            .values()
+            .filter(|story| {
+                (story.pinned_to_profile || story.expires_at_ms > server_time_ms)
+                    && story.is_visible_to(actor_id, false, false)
+            })
+            .take(max_items)
+            .cloned()
+            .collect();
+        ServerEnvelope {
+            protocol_version: FABUSHI_MESSAGING_PROTOCOL_VERSION,
+            cursor: Some(self.cursor.to_string()),
+            server_time_ms,
+            event: ServerEvent::StoriesSnapshot { stories },
+        }
+    }
+
     fn sync_response(
         &self,
         actor_id: &ActorId,
@@ -2211,7 +2322,16 @@ impl<S: MessagingStateStore> MessagingService<S> {
                 request_id,
                 refunded_at_ms: now_ms,
             }],
-            ClientCommand::WalletStatus => Vec::new(),
+            ClientCommand::WalletStatus
+            | ClientCommand::StoryStealthStatus
+            | ClientCommand::ListStories { .. } => Vec::new(),
+            ClientCommand::ActivateStoryStealth { request_id } => {
+                vec![Command::ActivateStoryStealth {
+                    actor_id: actor_id.clone(),
+                    request_id,
+                    activated_at_ms: now_ms,
+                }]
+            }
             ClientCommand::PublishStory { story } => vec![Command::PublishStory {
                 actor_id: actor_id.clone(),
                 story,
@@ -2229,6 +2349,7 @@ impl<S: MessagingStateStore> MessagingService<S> {
                 actor_id: actor_id.clone(),
                 story_id,
                 reaction,
+                reacted_at_ms: now_ms,
             }],
             ClientCommand::UpdateCommunity { community } => vec![Command::UpdateCommunity {
                 actor_id: actor_id.clone(),
@@ -2542,11 +2663,27 @@ impl<S: MessagingStateStore> MessagingService<S> {
             | Event::ConversationChildPinnedChanged { .. }
             | Event::ConversationChildActiveChanged { .. }
             | Event::ConversationChildMarkedUnreadChanged { .. }
+            | Event::ConversationChildUnreadThingsReconciled { .. }
+            | Event::SavedSublistParentAccessReconciled { .. }
+            | Event::SavedSublistMembershipReconciled { .. }
             | Event::ConversationChildNoPaidMessagesChanged { .. }
             | Event::ConversationChildDestroyed { .. } => return None,
             Event::InvoiceCreated { invoice } => ServerEvent::InvoiceChanged { invoice },
             Event::OrderUpserted { order } => ServerEvent::OrderChanged { order },
-            Event::WalletChanged { .. } => return None,
+            // Wallet ledger/runtime state is native/server authority. The
+            // renderer receives purpose-built payment/order events rather than
+            // the private durable wallet state, key-protection metadata, rate
+            // cache, funding-session lifecycle or local panel state.
+            Event::WalletChanged { .. }
+            | Event::WalletRuntimeChanged { .. }
+            | Event::ConnectedAppStateChanged { .. } => return None,
+            Event::EntitlementReconciled { .. } => return None,
+            Event::StoryStealthChanged { actor_id: changed_actor_id, state } => {
+                if &changed_actor_id != actor_id {
+                    return None;
+                }
+                ServerEvent::StoryStealthChanged { state }
+            }
             Event::StoryChanged { story } => ServerEvent::StoryChanged { story },
             Event::StoryDeleted { story_id } => ServerEvent::StoryDeleted { story_id },
             Event::CommunityChanged { community } => ServerEvent::CommunityChanged {
@@ -2773,7 +2910,10 @@ impl<S: MessagingStateStore> MessagingService<S> {
                     audience.insert(session.actor_id.clone());
                 }
             }
-            ServerEvent::SyncBatch { .. }
+            ServerEvent::StoryStealthStatus { .. }
+            | ServerEvent::StoryStealthChanged { .. }
+            | ServerEvent::StoriesSnapshot { .. }
+            | ServerEvent::SyncBatch { .. }
             | ServerEvent::SearchResults { .. }
             | ServerEvent::FolderChanged { .. }
             | ServerEvent::FolderDeleted { .. }

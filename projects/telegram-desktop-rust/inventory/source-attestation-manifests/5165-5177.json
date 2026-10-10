@@ -1,0 +1,87 @@
+{
+  "accepted_upstream": "6fed91ffab9861771a75f29df65031b3c80b6941",
+  "start": 5165,
+  "end": 5177,
+  "entries": [
+    {
+      "order": 5165,
+      "path": "Telegram/SourceFiles/media/view/media_view_overlay_rhi.h",
+      "blob": "059d22ff5f5bb9b013b79c91c56c9c825062bae1",
+      "consumer_symbol": "Media::View::OverlayWidget::RendererRhi"
+    },
+    {
+      "order": 5166,
+      "path": "Telegram/SourceFiles/media/view/media_view_overlay_widget.cpp",
+      "blob": "2acbe80457cfc7d760ece77229ad2513b3fb2e41",
+      "consumer_symbol": "Media::View::OverlayWidget",
+      "rebaseline_note": "Re-attested after 28ac5769→6fed91ff upstream modification; exact current blob and responsibility delta were re-read before updating this manifest."
+    },
+    {
+      "order": 5167,
+      "path": "Telegram/SourceFiles/media/view/media_view_overlay_widget.h",
+      "blob": "40d67d4c05ba47710d8cdd3d6f8e844ffa1a05e3",
+      "consumer_symbol": "Media::View::OverlayWidget"
+    },
+    {
+      "order": 5168,
+      "path": "Telegram/SourceFiles/media/view/media_view_pip.cpp",
+      "blob": "1a1f2bd7c440ca4c9dfafad44d0fb5ddd9e3cfc8",
+      "consumer_symbol": "Media::View::Pip"
+    },
+    {
+      "order": 5169,
+      "path": "Telegram/SourceFiles/media/view/media_view_pip.h",
+      "blob": "0dcde9499c542d2fcdbc2df53bf067625c467208",
+      "consumer_symbol": "Media::View::Pip"
+    },
+    {
+      "order": 5170,
+      "path": "Telegram/SourceFiles/media/view/media_view_pip_opengl.cpp",
+      "blob": "c801791aec34a70ba4cd96e0d760c5c7b0916ac2",
+      "consumer_symbol": "Media::View::Pip::RendererGL"
+    },
+    {
+      "order": 5171,
+      "path": "Telegram/SourceFiles/media/view/media_view_pip_opengl.h",
+      "blob": "351cfb9eec1be811c9d865ba00ccc4dae2a501e0",
+      "consumer_symbol": "Media::View::Pip::RendererGL"
+    },
+    {
+      "order": 5172,
+      "path": "Telegram/SourceFiles/media/view/media_view_pip_raster.cpp",
+      "blob": "8d7c5f2f6e2faf8a9d411c7391682758a2c367c4",
+      "consumer_symbol": "Media::View::Pip::RendererSW"
+    },
+    {
+      "order": 5173,
+      "path": "Telegram/SourceFiles/media/view/media_view_pip_raster.h",
+      "blob": "9a03b7ad7269a903a2e881c131265b709fe8fbec",
+      "consumer_symbol": "Media::View::Pip::RendererSW"
+    },
+    {
+      "order": 5174,
+      "path": "Telegram/SourceFiles/media/view/media_view_pip_renderer.h",
+      "blob": "d73ccd1a255af3ad219bc2beb5777bfdd4377b3b",
+      "consumer_symbol": "Media::View::Pip::Renderer"
+    },
+    {
+      "order": 5175,
+      "path": "Telegram/SourceFiles/media/view/media_view_pip_rhi.cpp",
+      "blob": "a93167400236693397c311444a06b151497b00fe",
+      "consumer_symbol": "Media::View::Pip::RendererRhi"
+    },
+    {
+      "order": 5176,
+      "path": "Telegram/SourceFiles/media/view/media_view_pip_rhi.h",
+      "blob": "5498c0e1844fce1cb414a6dda101840d9ca17d91",
+      "consumer_symbol": "Media::View::Pip::RendererRhi"
+    },
+    {
+      "order": 5177,
+      "path": "Telegram/SourceFiles/media/view/media_view_playback_controls.cpp",
+      "blob": "f3fa3aa5ff6ee37d404874604b4e4a509d44ae1a",
+      "consumer_symbol": "Media::View::PlaybackControls"
+    }
+  ],
+  "accepted_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6"
+}

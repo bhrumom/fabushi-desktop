@@ -1,0 +1,128 @@
+{
+  "format_version": 3,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+    "tree": "9d8fa87ce68c832d2f4c99f372a5bb672463c3e1"
+  },
+  "range": {
+    "first_order": 6378,
+    "last_order": 6380,
+    "entries": 3
+  },
+  "rows": [
+    {
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "tdesktop WebAuthn source authority",
+      "ui_disposition": "Reuse canonical Fabushi auth/security dialogs and status projection; no Telegram UI root.",
+      "fabushi_canonical_owner": "source/node-agent-coordinator WebAuthn provider/signer, Host webauthn_proxy, and thin platform authenticator adapters",
+      "platform_differences": "libfido2/BlueZ/CaBLE are source inputs; Fabushi preserves device selection, cancellation, PIN/user-presence, error mapping and fallback semantics in source-neutral owners.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "reachability_status": "exact blob read/responsibility-decomposed; existing canonical WebAuthn implementation is partial",
+      "license_and_provenance": "telegramdesktop/tdesktop@28ac576967a1026ecc89a927360fa0e138d7c88c",
+      "notes": "No verified credit from reading; same-head production/service/platform evidence required.",
+      "recursive_order": 6378,
+      "source_path": "Telegram/SourceFiles/webauthn/org.bluez.xml",
+      "source_blob_sha": "245e0b9bc27e1cfbb31bd78d750ae189adf5f0cc",
+      "responsibility": "Minimal Linux BlueZ D-Bus contract for powered adapter, LE discovery filter/start/stop and device ServiceData.",
+      "state_machine": "Single ceremony owns device/fallback/cancellation state and settles exactly once; cancellation propagates to active authenticator.",
+      "side_effects": "Platform authenticator access, WebAuthn credential/result projection and canonical user prompt state.",
+      "failure_cases": "No device, no credentials, PIN required/invalid/blocked, cancellation races, unavailable platform library, malformed result and fallback drift.",
+      "fabushi_target": "Extend existing WebAuthn signer/provider/proxy and thin platform adapter; do not introduce a second authentication runtime.",
+      "production_evidence": "94aaee4 fail-closes ceremony kind; full libfido/CaBLE/platform parity remains open.",
+      "test_evidence": "Existing WebAuthn wire/provider/signer tests are partial; exact-head Actions required.",
+      "consumer_evidence": [
+        "source/node-agent-coordinator/src/webauthn.rs",
+        "source/node-agent-coordinator/src/webauthn/provider.rs",
+        "source/node-agent-coordinator/src/webauthn/signer.rs",
+        "source/host/src/extensions/webauthn_proxy"
+      ],
+      "source_binary_evidence": {
+        "evidence_status": "accepted-exact-blob-read-current-descendant-actions-required",
+        "accepted_upstream": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+        "verified_blob_sha": "245e0b9bc27e1cfbb31bd78d750ae189adf5f0cc",
+        "file_type": "blob",
+        "recursive_order": 6378
+      }
+    },
+    {
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "tdesktop WebAuthn source authority",
+      "ui_disposition": "Reuse canonical Fabushi auth/security dialogs and status projection; no Telegram UI root.",
+      "fabushi_canonical_owner": "source/node-agent-coordinator WebAuthn provider/signer, Host webauthn_proxy, and thin platform authenticator adapters",
+      "platform_differences": "libfido2/BlueZ/CaBLE are source inputs; Fabushi preserves device selection, cancellation, PIN/user-presence, error mapping and fallback semantics in source-neutral owners.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "reachability_status": "exact blob read/responsibility-decomposed; existing canonical WebAuthn implementation is partial",
+      "license_and_provenance": "telegramdesktop/tdesktop@28ac576967a1026ecc89a927360fa0e138d7c88c",
+      "notes": "No verified credit from reading; same-head production/service/platform evidence required.",
+      "recursive_order": 6379,
+      "source_path": "Telegram/SourceFiles/webauthn/webauthn_common.cpp",
+      "source_blob_sha": "6293278bfc9d39af96c5bcb4a540d58d62d9d24b",
+      "responsibility": "Canonical security-key/passkey orchestration: libfido device discovery, cancellation, PIN retry/blocking, user verification, register/login result mapping, CTAP cable fallback and exactly-once ceremony completion.",
+      "state_machine": "Single ceremony owns device/fallback/cancellation state and settles exactly once; cancellation propagates to active authenticator.",
+      "side_effects": "Platform authenticator access, WebAuthn credential/result projection and canonical user prompt state.",
+      "failure_cases": "No device, no credentials, PIN required/invalid/blocked, cancellation races, unavailable platform library, malformed result and fallback drift.",
+      "fabushi_target": "Extend existing WebAuthn signer/provider/proxy and thin platform adapter; do not introduce a second authentication runtime.",
+      "production_evidence": "94aaee4 fail-closes ceremony kind; full libfido/CaBLE/platform parity remains open.",
+      "test_evidence": "Existing WebAuthn wire/provider/signer tests are partial; exact-head Actions required.",
+      "consumer_evidence": [
+        "source/node-agent-coordinator/src/webauthn.rs",
+        "source/node-agent-coordinator/src/webauthn/provider.rs",
+        "source/node-agent-coordinator/src/webauthn/signer.rs",
+        "source/host/src/extensions/webauthn_proxy"
+      ],
+      "source_binary_evidence": {
+        "evidence_status": "accepted-exact-blob-read-current-descendant-actions-required",
+        "accepted_upstream": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+        "verified_blob_sha": "6293278bfc9d39af96c5bcb4a540d58d62d9d24b",
+        "file_type": "blob",
+        "recursive_order": 6379
+      }
+    },
+    {
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "tdesktop WebAuthn source authority",
+      "ui_disposition": "Reuse canonical Fabushi auth/security dialogs and status projection; no Telegram UI root.",
+      "fabushi_canonical_owner": "source/node-agent-coordinator WebAuthn provider/signer, Host webauthn_proxy, and thin platform authenticator adapters",
+      "platform_differences": "libfido2/BlueZ/CaBLE are source inputs; Fabushi preserves device selection, cancellation, PIN/user-presence, error mapping and fallback semantics in source-neutral owners.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "reachability_status": "exact blob read/responsibility-decomposed; existing canonical WebAuthn implementation is partial",
+      "license_and_provenance": "telegramdesktop/tdesktop@28ac576967a1026ecc89a927360fa0e138d7c88c",
+      "notes": "No verified credit from reading; same-head production/service/platform evidence required.",
+      "recursive_order": 6380,
+      "source_path": "Telegram/SourceFiles/webauthn/webauthn_common.h",
+      "source_blob_sha": "3381bebee4726c0a15168626a4b7125ad8b5c08a",
+      "responsibility": "Typed WebAuthn register/login security-key/CaBLE entrypoint and device-presence contract.",
+      "state_machine": "Single ceremony owns device/fallback/cancellation state and settles exactly once; cancellation propagates to active authenticator.",
+      "side_effects": "Platform authenticator access, WebAuthn credential/result projection and canonical user prompt state.",
+      "failure_cases": "No device, no credentials, PIN required/invalid/blocked, cancellation races, unavailable platform library, malformed result and fallback drift.",
+      "fabushi_target": "Extend existing WebAuthn signer/provider/proxy and thin platform adapter; do not introduce a second authentication runtime.",
+      "production_evidence": "94aaee4 fail-closes ceremony kind; full libfido/CaBLE/platform parity remains open.",
+      "test_evidence": "Existing WebAuthn wire/provider/signer tests are partial; exact-head Actions required.",
+      "consumer_evidence": [
+        "source/node-agent-coordinator/src/webauthn.rs",
+        "source/node-agent-coordinator/src/webauthn/provider.rs",
+        "source/node-agent-coordinator/src/webauthn/signer.rs",
+        "source/host/src/extensions/webauthn_proxy"
+      ],
+      "source_binary_evidence": {
+        "evidence_status": "accepted-exact-blob-read-current-descendant-actions-required",
+        "accepted_upstream": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+        "verified_blob_sha": "3381bebee4726c0a15168626a4b7125ad8b5c08a",
+        "file_type": "blob",
+        "recursive_order": 6380
+      }
+    }
+  ]
+}

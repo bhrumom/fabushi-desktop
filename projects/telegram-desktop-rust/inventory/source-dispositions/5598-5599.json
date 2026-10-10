@@ -1,0 +1,93 @@
+{
+  "format_version": 2,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+    "tree": "9d8fa87ce68c832d2f4c99f372a5bb672463c3e1"
+  },
+  "range": {
+    "first_order": 5598,
+    "last_order": 5599,
+    "entries": 2
+  },
+  "rows": [
+    {
+      "recursive_order": 5598,
+      "source_path": "Telegram/SourceFiles/settings/sections/settings_local_passcode.cpp",
+      "source_blob_sha": "0f1b6ace690851441a588074cbff816fb3e5a8a1",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Local-device passcode/app-lock security with 60-second sensitive-byte expiry, worker derivation/verification, wrong-attempt throttling, stale/external-change invalidation, wallet vault key-protection migration, launch app-lock, auto-lock and platform system unlock",
+      "upstream_owner": "Telegram local storage passcode + wallet key protection + platform SystemUnlock",
+      "state_machine": "no passcode -> create derive/write -> verified Manage; Check wrong -> retry counters/flood gate, correct -> secure-byte handover -> Manage; Change retains verified bytes <=60s, external change/stale verification -> forget -> Check; disable -> revalidate vault policy -> optional key-protection chooser -> fresh verification -> remove; app-lock off -> fresh verification; busy pauses expiry; leave/expiry cleans retained bytes",
+      "side_effects": "Writes encrypted local passcode/key-data wraps and app-lock setting, rotates wallet key protection when policy requires, disables system unlock when passcode removed, persists auto-lock/system-unlock preference, exposes Windows Hello/Touch ID/Apple Watch/system unlock. It must not be merged with server Cloud Password truth.",
+      "failure_cases": "retained bytes survive >60s or navigation; external passcode change not invalidated; verification minted from stale bytes accepted; wrong-attempt throttle bypass; keyring/passcode partial commit; removal leaves open vault/key unprotected; app-lock disable without proof; platform unlock toggled while unavailable; cancellation/close leaks secure bytes; secure-save failure leaves misleading UI",
+      "ui_disposition": "Reuse canonical Settings/Security/ProfileSection/TextField/Button/Switch/Dialog/AlertDialog/Toast plus platform-auth adapters and accessible countdown/error/focus states.",
+      "fabushi_canonical_owner": "Canonical Local Security/App Lock + encrypted local storage + Wallet Key Protection + platform unlock adapters",
+      "fabushi_target": "MAPPED OPEN. Preserve local-device security state machine independently from Cloud Password/2SV; no source-named Passcode UI owner.",
+      "platform_differences": "Qt event filter and platform SystemUnlock map to canonical inactivity/activity owner and Windows Hello/Touch ID/Apple Watch/system-auth adapters; secure byte lifetime and cryptographic verification remain fail-closed.",
+      "production_evidence": "Exact live-source read proves security contract only; Fabushi local-security/wallet/platform owners still require exact-head crypto/storage/fault/security evidence.",
+      "test_evidence": "CRITICAL: unit/property/crypto-storage contract/fault/security/E2E for 60s expiry, external-change invalidation, wrong-attempt throttle, stale verification, create/change/remove atomicity, wallet migration cancel/fail, app-lock enable/disable proof, auto-lock, system unlock availability/toggle, close/navigation cleanup and a11y.",
+      "disposition": "mapped-open-canonical-local-security-app-lock",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "LocalPasscodeManageId",
+      "consumer_evidence": [
+        "Telegram/SourceFiles/settings/sections/settings_local_passcode.cpp:56:constexpr auto kPasscodeSectionTimeout = 60 * crl::time(1000);",
+        "Telegram/SourceFiles/settings/sections/settings_local_passcode.cpp:159:controller->session().domain().local().localPasscodeChanged(",
+        "Telegram/SourceFiles/settings/sections/settings_local_passcode.cpp:1056:Wallet::MintVerificationOnWorker(this, _passcode, [=](",
+        "Telegram/SourceFiles/settings/sections/settings_local_passcode.cpp:1429:const auto result = Core::App().domain().local().setAppLockEnabled(",
+        "Telegram/SourceFiles/settings/sections/settings_local_passcode.cpp:1584:>(base::SystemUnlockStatus("
+      ],
+      "reachability_status": "accepted-tree local security responsibility proven; canonical implementation/evidence closure open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no source-named passcode component retained.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+        "verified_blob_sha": "0f1b6ace690851441a588074cbff816fb3e5a8a1",
+        "file_type": "blob",
+        "recursive_order": 5598
+      },
+      "notes": "Complete exact-source read at live authority. Distinct from Cloud Password/2SV; unknown remains open; omitted=false."
+    },
+    {
+      "recursive_order": 5599,
+      "source_path": "Telegram/SourceFiles/settings/sections/settings_local_passcode.h",
+      "source_blob_sha": "b0292c43e503bc8b7ad2fa66f9681be59c1c272c",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Public local passcode Create/Check/Manage route contracts",
+      "upstream_owner": "Telegram local-passcode settings interface",
+      "state_machine": "route selection enters Create/Check/Manage while secure-byte handover and canonical Local Security owner enforce verification/lifetime",
+      "side_effects": "Exports route identities only; no independent security state.",
+      "failure_cases": "route bypasses Check; direct Manage exposes actions without verified passcode; route history retains sensitive state",
+      "ui_disposition": "Expose through canonical typed Security settings routes only.",
+      "fabushi_canonical_owner": "Canonical Settings/Security routing + Local Security owner",
+      "fabushi_target": "MAPPED OPEN. Preserve verified route gating through source-neutral security navigation.",
+      "platform_differences": "C++ Settings Type maps to canonical security route guards.",
+      "production_evidence": "Header read proves public route surface only; same-head security evidence remains open.",
+      "test_evidence": "HIGH risk: route gating, direct-search Manage fallback to Check/Create, history cleanup and accessibility required.",
+      "disposition": "mapped-open-canonical-local-security-interface",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "LocalPasscodeManageId",
+      "consumer_evidence": [
+        "Telegram/SourceFiles/settings/sections/settings_local_passcode.h:14:Type LocalPasscodeCreateId();",
+        "Telegram/SourceFiles/settings/sections/settings_local_passcode.h:15:Type LocalPasscodeCheckId();",
+        "Telegram/SourceFiles/settings/sections/settings_local_passcode.h:16:Type LocalPasscodeManageId();"
+      ],
+      "reachability_status": "accepted-tree public local-security route contract proven; canonical implementation/evidence closure open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no source-named local passcode interface retained.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+        "verified_blob_sha": "b0292c43e503bc8b7ad2fa66f9681be59c1c272c",
+        "file_type": "blob",
+        "recursive_order": 5599
+      },
+      "notes": "Complete exact-source header read at live authority. Unknown remains open; omitted=false."
+    }
+  ]
+}

@@ -112,7 +112,7 @@ test("launcher transfers three ports and completes Grok control handshake", asyn
   assert.equal((channels[2]?.port2 as FakePort).closeCount, 1);
 });
 
-test("launcher fails closed on repeated hello and dispose kills the child", async () => {
+test("launcher fails closed on repeated hello and dispose gives the child a graceful exit window", async () => {
   const child = new FakeChild();
   const channels: CoordinatorMessageChannel[] = [];
   const problems: string[] = [];
@@ -133,6 +133,7 @@ test("launcher fails closed on repeated hello and dispose kills the child", asyn
     },
     onProblem: (problem) => problems.push(problem),
     processConfig: {},
+    gracefulExitTimeoutMs: 50,
   });
   const control = channels[0]?.port2 as FakePort;
   control.emitMessage({ kind: "lifecycle", phase: "hello", protocolVersion: 1 });
@@ -148,5 +149,9 @@ test("launcher fails closed on repeated hello and dispose kills the child", asyn
   handle.dispose();
   await handle.controlSettled;
   await new Promise<void>((resolve) => setImmediate(resolve));
-  assert.equal(child.killCount, 1);
+  assert.equal(child.killCount, 0, "control settlement must not immediately kill the Coordinator");
+  child.exit(0);
+  assert.deepEqual(await handle.processExited, { code: 0 });
+  await new Promise<void>((resolve) => setTimeout(resolve, 60));
+  assert.equal(child.killCount, 0, "a natural exit must cancel the force-kill watchdog");
 });

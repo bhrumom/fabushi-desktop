@@ -1,0 +1,63 @@
+{
+  "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+  "accepted_tree": "4ddb5182fc1ae238e4dc62a396614614b5b35f97",
+  "deterministic_order_basis": "non-directory/blob rank in accepted recursive tree",
+  "start": 5666,
+  "end": 5674,
+  "entries": [
+    {
+      "order": 5666,
+      "path": "Telegram/SourceFiles/statistics/statistics_format_values.cpp",
+      "blob": "da20e1aac00f21e953c3eb2ebc8d4e907b5b9194",
+      "consumer_symbol": "statistics_format_values.cpp"
+    },
+    {
+      "order": 5667,
+      "path": "Telegram/SourceFiles/statistics/statistics_format_values.h",
+      "blob": "7fa881e5c0c5eece157651e82546f14f4b721771",
+      "consumer_symbol": "statistics_format_values.h"
+    },
+    {
+      "order": 5668,
+      "path": "Telegram/SourceFiles/statistics/statistics_graphics.cpp",
+      "blob": "d99d44b46bfca2621484c43b10eed7afd67a44f4",
+      "consumer_symbol": "statistics_graphics.cpp"
+    },
+    {
+      "order": 5669,
+      "path": "Telegram/SourceFiles/statistics/statistics_graphics.h",
+      "blob": "e6c3a801149f329d7f835c99ece776fbf28de67e",
+      "consumer_symbol": "statistics_graphics.h"
+    },
+    {
+      "order": 5670,
+      "path": "Telegram/SourceFiles/statistics/statistics_sheets.cpp",
+      "blob": "8f9d3c03ceba0ef60cc8d496a99f58a12498a021",
+      "consumer_symbol": "statistics_sheets.cpp"
+    },
+    {
+      "order": 5671,
+      "path": "Telegram/SourceFiles/statistics/statistics_sheets.h",
+      "blob": "a7c05a5568b707cd7732e47709d2ebccdc637c0d",
+      "consumer_symbol": "statistics_sheets.h"
+    },
+    {
+      "order": 5672,
+      "path": "Telegram/SourceFiles/statistics/statistics_types.h",
+      "blob": "5d04d3442270a98a85841bf4bd137eb9a0329fef",
+      "consumer_symbol": "statistics_types.h"
+    },
+    {
+      "order": 5673,
+      "path": "Telegram/SourceFiles/statistics/statistics_xlsx.cpp",
+      "blob": "9a2b205589cce5cc510443a2af014e7113d02182",
+      "consumer_symbol": "statistics_xlsx.cpp"
+    },
+    {
+      "order": 5674,
+      "path": "Telegram/SourceFiles/statistics/statistics_xlsx.h",
+      "blob": "e90479e7d6608abf3d3b006b12bf443f5c39932f",
+      "consumer_symbol": "statistics_xlsx.h"
+    }
+  ]
+}

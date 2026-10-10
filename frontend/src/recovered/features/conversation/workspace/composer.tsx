@@ -4,6 +4,7 @@ import { useVoiceSession, VoiceWaveform, type VoiceTranscriber } from "./voice";
 import { ComposerReplyPill, replyComposerPlaceholder, type ComposerReplyTarget } from "./reply-preview";
 import { PromptRichTextEditor, type PromptEditorControls, type PromptEditorProviders } from "./rich-text-editor";
 import { SandIcon, SandIconButton } from "../../../ui/sand-kit-primitives";
+import { SandMenuContent, SandMenuItem, SandMenuRoot, SandMenuTrigger } from "../../../ui/sand-floating-primitives";
 import { SandSpinner } from "../../../ui/sand-status-primitives";
 
 // Immutable Mac voice carriers: index-UbX-y3il.js#byteOffset=4538599 (recording
@@ -16,13 +17,8 @@ const PROMPT_MIC_PAYLOAD_CLASS = "sand-prompt-mic sand-2lah0s sand-jbqb8w sand-u
 const PROMPT_SEND_CLASS = "sand-prompt-send sand-2lah0s sand-mak4db sand-1tc92z3 sand-1hc1fzr sand-1p5hr7d sand-1lfpgzf sand-1ypdohk";
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=4540240 (Nl.glyphShown/glyphHidden opacity+scale classes)
 // @evidence recovered/frontend/app/assets/index-UbX-y3il.js#byteOffset=5705592 (Windows prompt glyph state classes)
-const COMPOSER_GLYPH_VISIBLE_CLASS = "sand-1hc1fzr sand-3oybdh";
-const COMPOSER_GLYPH_HIDDEN_CLASS = "sand-g01cxk sand-1a33avv";
 const RECORDING_CHIP_CLASS = "sand-recording-chip sand-9f619 sand-3nfvp2 sand-pkkfsy sand-1th6cxs sand-f6zju3 sand-16b7oty sand-cnij5n sand-o7x2bt sand-2lah0s sand-c342km sand-ng3xce sand-1i4c3av sand-i07v4r sand-1kj6vsg sand-1ypdohk sand-1k57tk5 sand-784prv sand-1t137rt sand-9v5kkp sand-1uczgqu sand-1725o6r sand-omy3lu";
 
-function ComposerGlyph({ name, hidden = false }: { readonly name: "mic" | "arrow-up"; readonly hidden?: boolean }) {
-  return <SandIcon className={hidden ? COMPOSER_GLYPH_HIDDEN_CLASS : COMPOSER_GLYPH_VISIBLE_CLASS} name={name} size="sm" style={{ lineHeight: 1 }} variant="filled" />;
-}
 
 // Immutable prompt editor keyboard contract: Escape cancels an active voice
 // session or blurs the prompt when no voice session is active.
@@ -38,6 +34,13 @@ export interface ConversationComposerProps {
   onChange(draft: ComposerDraft): void;
   onStageFiles(files: File[]): void | Promise<void>;
   onSubmit(): void | Promise<void>;
+  onSendSilently?(): void | Promise<void>;
+  onScheduleSend?(): void;
+  onExchangeStash?(): void;
+  onSendStash?(): void | Promise<void>;
+  onRemoveStash?(): void | Promise<void>;
+  canExchangeStash?: boolean;
+  hasStash?: boolean;
   onRemoveAttachment?(attachment: DraftAttachment): void | Promise<void>;
   replyTarget?: ComposerReplyTarget;
   onClearReplyTarget?(): void;
@@ -68,7 +71,7 @@ export function selectComposerFiles(files: readonly File[], existingCount: numbe
   return files.slice(0, remaining);
 }
 
-export function ConversationComposer({ acceptedSendGeneration = 0, draft, disabled = false, notice, placeholder = "Ask anything, or drop a file.", transcribeAudio, onChange, onClearReplyTarget, onRemoveAttachment, onStageFiles, onSubmit, replyTarget, editorProviders, scopeKey }: ConversationComposerProps) {
+export function ConversationComposer({ acceptedSendGeneration = 0, canExchangeStash = false, draft, disabled = false, hasStash = false, notice, placeholder = "Ask anything, or drop a file.", transcribeAudio, onChange, onClearReplyTarget, onExchangeStash, onRemoveAttachment, onRemoveStash, onScheduleSend, onSendSilently, onSendStash, onStageFiles, onSubmit, replyTarget, editorProviders, scopeKey }: ConversationComposerProps) {
   const fileInput = useRef<HTMLInputElement>(null);
   const editorControls = useRef<PromptEditorControls | null>(null);
   const dragDepth = useRef(0);
@@ -96,6 +99,17 @@ export function ConversationComposer({ acceptedSendGeneration = 0, draft, disabl
   useEffect(() => {
     if (acceptedSendGeneration > 0) editorControls.current?.clear();
   }, [acceptedSendGeneration]);
+
+  useEffect(() => {
+    if (onExchangeStash == null) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (!(event.ctrlKey || event.metaKey) || !event.shiftKey || event.key.toLowerCase() !== "y" || !canExchangeStash || disabled || voiceBusy) return;
+      event.preventDefault();
+      onExchangeStash();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [canExchangeStash, disabled, onExchangeStash, voiceBusy]);
 
   const cancelVoiceAndRefocus = useCallback(() => {
     voice.handleCancelClick();
@@ -198,6 +212,21 @@ export function ConversationComposer({ acceptedSendGeneration = 0, draft, disabl
         {voice.isRecording || voice.isActivating ? <span aria-live="polite" className="sand-prompt-voice-status" role="status">Listening…</span> : null}
         <div className="sand-prompt-actions-row">
           <SandIconButton aria-label="Attach file" className={PROMPT_ATTACH_CLASS} disabled={disabled || atLimit || voiceBusy} icon="plus" onClick={() => fileInput.current?.click()} shape="circle" size="lg" type="button" variant="default" />
+          {onExchangeStash == null ? null : <SandIconButton aria-label={hasStash ? "Swap saved draft" : "Store draft"} disabled={disabled || !canExchangeStash || voiceBusy} icon="arrow-swap" onClick={onExchangeStash} shape="circle" size="lg" title={`${hasStash ? "Swap saved draft" : "Store draft"} (Ctrl+Shift+Y)`} type="button" variant="default" />}
+          {onSendSilently == null && onScheduleSend == null ? null : <SandMenuRoot placement="top-start">
+            <SandMenuTrigger><SandIconButton aria-label="Send options" disabled={disabled || voiceBusy || !hasPayload} icon="more" shape="circle" size="lg" type="button" variant="default" /></SandMenuTrigger>
+            <SandMenuContent ariaLabel="Send options">
+              {onSendSilently == null ? null : <SandMenuItem disabled={disabled || voiceBusy || !hasPayload} index={0} onSelect={() => { void onSendSilently(); }}>Send silently</SandMenuItem>}
+              {onScheduleSend == null ? null : <SandMenuItem disabled={disabled || voiceBusy || !hasPayload} index={1} onSelect={onScheduleSend}>Schedule send…</SandMenuItem>}
+            </SandMenuContent>
+          </SandMenuRoot>}
+          {!hasStash || onSendStash == null || onRemoveStash == null ? null : <SandMenuRoot placement="top-start">
+            <SandMenuTrigger><SandIconButton aria-label="Saved draft actions" disabled={disabled || voiceBusy} icon="more" shape="circle" size="lg" type="button" variant="default" /></SandMenuTrigger>
+            <SandMenuContent ariaLabel="Saved draft actions">
+              <SandMenuItem disabled={disabled || voiceBusy} index={0} onSelect={() => { void onSendStash(); }}>Send saved draft</SandMenuItem>
+              <SandMenuItem disabled={disabled || voiceBusy} index={1} onSelect={() => { void onRemoveStash(); }}>Remove saved draft</SandMenuItem>
+            </SandMenuContent>
+          </SandMenuRoot>}
           <span className="sand-prompt-actions-trailing sand-prompt-cta-cluster sand-78zum5 sand-6s0dn4 sand-2lah0s">
             {voice.isRecording ? <button aria-label="Stop dictation" className={RECORDING_CHIP_CLASS} onClick={() => voice.handleStopClick()} onKeyDown={(event) => {
               if (event.key === "Escape") {
@@ -210,7 +239,7 @@ export function ConversationComposer({ acceptedSendGeneration = 0, draft, disabl
               <span className="sand-recording-chip__waveform sand-1xp8n7a sand-18gnavp sand-2lah0s sand-78zum5 sand-6s0dn4"><VoiceWaveform stream={voice.stream} /></span>
             </button> : voice.isProcessing ? <span aria-label="Transcribing voice input…" className="sand-prompt-voice-processing sand-2lah0s sand-16w9d4f sand-1th6cxs sand-78zum5 sand-6s0dn4 sand-l56j7k" role="status"><SandSpinner ariaLabel="Transcribing voice input…" size={18} />Transcribing…</span> : <>
               {hasPayload ? <SandIconButton aria-label="Start voice input" className={PROMPT_MIC_PAYLOAD_CLASS} disabled={disabled || voiceBusy} icon="mic" onClick={() => voice.handleMicClick()} shape="circle" size="lg" type="button" variant="default" /> : null}
-              {hasPayload ? <button aria-label="Send message" className={PROMPT_SEND_CLASS} disabled={!canSend} type="submit"><span className="sand-1n2onr6 sand-1kky2od sand-lup9mm"><ComposerGlyph hidden={hasPayload} name="mic" /><ComposerGlyph hidden={!hasPayload} name="arrow-up" /></span></button> : <SandIconButton aria-label="Start voice input" className={PROMPT_MIC_EMPTY_CLASS} disabled={disabled} icon="mic" onClick={() => voice.handleMicClick()} shape="circle" size="lg" type="button" variant="default" />}
+              {hasPayload ? <SandIconButton aria-label="Send message" className={PROMPT_SEND_CLASS} disabled={!canSend} icon="arrow-up" shape="circle" size="lg" type="submit" variant="default" /> : <SandIconButton aria-label="Start voice input" className={PROMPT_MIC_EMPTY_CLASS} disabled={disabled} icon="mic" onClick={() => voice.handleMicClick()} shape="circle" size="lg" type="button" variant="default" />}
             </>}
           </span>
         </div>

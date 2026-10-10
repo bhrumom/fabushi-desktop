@@ -1,0 +1,9 @@
+# Settings Business router complete read — orders 5584-5585
+
+Accepted upstream: `863cf10d9f34fb0b1b35b35da1bda75acfc58d2e` / tree `5030985204963cbbd362ced7412d231b04ebd0cc`. Exact blobs: `settings_business.cpp` `66f2e398dc6e41616c64b122d11c4a829c3cce7f`; header `2ed90195c3c4231283145e8a5df430490ac74657`. The 1,041-line implementation and complete header were read under the live authority.
+
+The section is a settings aggregator, not a second Business data owner. It obtains server-configured feature order with a deterministic fallback; preloads chatbots, business-info/timezones/away/greeting, shortcut messages and chat links; fences navigation until the specific feature data is ready; keeps BusinessBots available while other features use Premium gating; projects sponsored-message mutation with error feedback; and owns only settings-layer search, top-bar, swipe/back and subscription CTA presentation. Away, Greeting, Quick Replies, Working Hours, Location, Chat Links, Chat Intro and Business Bots remain with their existing canonical feature/server owners.
+
+Failure/fault requirements stay open: account switch or teardown must invalidate waiting readiness; stale preload may not navigate a new account; server order may not create duplicate/missing truth; sponsored toggle failure must reconcile to server truth; premium/capability gating must not diverge between search, route and visible row; keyboard/focus/a11y/light-dark/responsive/swipe/back behavior needs same-head evidence.
+
+No Telegram Business settings runtime or source-named component is introduced. Both rows are `mapped-open`; unknown remains 15,844 and omitted remains 0. Deterministic read-through is now 5,585/16,123; first unread is order 5,586 `Telegram/SourceFiles/settings/sections/settings_calls.cpp` (`99ce45c03b9ade8f04e5f2ebd2b2ca74c1f0ce2a`).

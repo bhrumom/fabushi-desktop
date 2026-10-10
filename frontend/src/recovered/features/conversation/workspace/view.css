@@ -3,6 +3,16 @@
 ::highlight(sand-find-match) { background-color: color-mix(in srgb, var(--cursor-warn, #ffc000) 30%, transparent); }
 ::highlight(sand-find-current) { background-color: var(--cursor-warn, #ffc000); color: #1f1f1f; }
 
+/* Find-in-chat is an application control, not titlebar chrome. Keep it in the
+ * conversation flex flow and above the dock without borrowing window-drag hit testing. */
+.sand-chat-find {
+  position: relative;
+  z-index: 4;
+  flex: 0 0 auto;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
 /* @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#L499 */
 /* @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=2603896 (r0n separator) */
 .sand-agents-sidebar { position: relative; min-height: 0; width: 100%; background: var(--cursor-bg-chrome); border-right: 1px solid var(--cursor-stroke-tertiary); container-name: sand-sidebar; container-type: inline-size; }
@@ -135,7 +145,11 @@ html[data-platform="darwin"] .sand-agents-sidebar__new-actions {
   border-radius: 18px;
 }
 .sand-message-action-anchor { position: relative; width: fit-content; max-width: 100%; }
-.sand-message-hover-actions { position: absolute; right: 0; bottom: -30px; z-index: 2; display: flex; gap: 4px; opacity: 0; pointer-events: none; transition: opacity .12s ease; }
+/* Keep an open message action/reaction surface above both the sticky composer and
+ * the fixed native drag carrier (z-index: 4999), otherwise a picker scrolled into
+ * the titlebar band can be visible while the drag region steals pointer input. */
+.sand-message-action-anchor--menu-open { z-index: 5001; }
+.sand-message-hover-actions { position: absolute; right: 0; bottom: -30px; z-index: 5001; display: flex; gap: 4px; opacity: 0; pointer-events: none; transition: opacity .12s ease; }
 .sand-message-action-anchor:hover .sand-message-hover-actions,
 .sand-message-action-anchor:focus-within .sand-message-hover-actions,
 .sand-message-action-anchor--menu-open .sand-message-hover-actions { opacity: 1; pointer-events: auto; }
@@ -147,6 +161,11 @@ html[data-platform="darwin"] .sand-agents-sidebar__new-actions {
 .sand-message-prose a { color: #bfe86b; text-decoration: underline; text-underline-offset: 2px; }
 .sand-code-figure { position: relative; margin: 10px 0; }
 .sand-code-scroll { max-width: 100%; overflow-x: auto; }
+.fabushi-rich-content-scroll-region { max-width: 100%; overflow-x: auto; }
+.sand-code-scroll,
+.fabushi-rich-content-scroll-region { touch-action: pan-y; }
+.sand-code-scroll:focus-visible,
+.fabushi-rich-content-scroll-region:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
 .sand-code-block { margin: 0; padding: 11px 12px; color: #d9ded4; background: #1a1d19; border: 1px solid #343932; border-radius: 8px; font: 11px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace; }
 .sand-code-block code { white-space: pre; }
 .sand-code-fallback { white-space: pre; }
@@ -282,8 +301,8 @@ html[data-platform="darwin"] .sand-agents-sidebar__new-actions {
 /* @evidence src/app/dist/renderer/assets/index-UbX-y3il.js */
 .sand-media-viewer { position: fixed; inset: 0; z-index: 4000; display: flex; overflow: hidden; background: rgba(13, 15, 12, .96); }
 .sand-media-viewer__top-bar { position: absolute; inset: 0 0 auto; z-index: 2; display: flex; justify-content: flex-end; padding: 12px 16px; pointer-events: none; }
-.sand-media-viewer__close { width: 34px; height: 34px; color: #d9ded4; background: #20231f; border: 1px solid #343832; border-radius: 8px; cursor: pointer; font-size: 22px; line-height: 1; pointer-events: auto; }
-.sand-media-viewer__close:hover, .sand-media-viewer__close:focus-visible, .sand-media-viewer__nav:hover, .sand-media-viewer__nav:focus-visible, .sand-media-viewer__thumb:hover, .sand-media-viewer__thumb:focus-visible { color: #eef3e7; background: #292d26; outline: 1px solid #a9c85d; outline-offset: 1px; }
+.sand-media-viewer__close { pointer-events: auto; }
+.sand-media-viewer__nav:hover, .sand-media-viewer__nav:focus-visible, .sand-media-viewer__thumb:hover, .sand-media-viewer__thumb:focus-visible { color: #eef3e7; background: #292d26; outline: 1px solid #a9c85d; outline-offset: 1px; }
 .sand-media-viewer__column { display: flex; flex: 1; flex-direction: column; min-width: 0; min-height: 0; }
 .sand-media-viewer__media-cell { position: relative; display: grid; flex: 1; place-items: center; min-height: 0; overflow: hidden; }
 .sand-media-viewer__image { display: block; max-width: 92vw; max-height: calc(100vh - 145px); object-fit: contain; transform-origin: center; user-select: none; }

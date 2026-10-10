@@ -5,6 +5,10 @@ import type { AttachmentBytesResult, AttachmentMedia } from "../../../contracts/
 import { attachmentBasename, formatAttachmentBytes, inferAttachmentKind, type AttachmentKind, type DraftAttachment } from "./model";
 import { PdfAttachmentViewer, type PdfBytesResolver } from "./pdf-viewer";
 import type { TranscriptAdjacency } from "./transcript-adjacency";
+import { resolveWithSingleRetry } from "./media-runtime";
+import { accumulateWheelZoomSteps, normalizeWheelZoomDelta } from "./media-zoom";
+import { DERIVED_MEDIA_PRELOAD_ROOT_MARGIN, DERIVED_MEDIA_THUMBNAIL_ROOT_MARGIN, initialDerivedMediaVisibility, isVisibilityBoundDerivedMedia, observeDerivedMediaVisibility, shouldResolveDerivedMedia, shouldResolveDerivedThumbnail } from "./media-visibility";
+import { SandIconButton } from "../../../ui/sand-kit-primitives";
 
 // @evidence src/app/dist/renderer/assets/view-DPSBrvyV.js#byteOffset=0 (user-attachment media/file leaf)
 // @evidence src/app/dist/renderer/assets/view-DPSBrvyV.js#SHA256=5bf28224da62a9042885e9da60e3fce82ed544846f470241ed6bcf4e12e64040
@@ -35,6 +39,81 @@ const MIN_ZOOM = 1;
 const MAX_ZOOM = 5;
 const DRAG_THRESHOLD = 4;
 
+const MEDIA_PLAYBACK_PREFERENCES_KEY = "fabushi.mediaViewer.playback.v1";
+const MEDIA_PLAYBACK_POSITION_PREFIX = "fabushi.mediaViewer.position.v1.";
+const MEDIA_POSITION_WRITE_INTERVAL_MS = 1_000;
+
+interface MediaPlaybackPreferences {
+  volume: number;
+  muted: boolean;
+}
+
+function mediaPlaybackStorage(): Storage | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
+function mediaPlaybackSourceKey(source: string): string {
+  let hash = 0x811c9dc5;
+  for (let index = 0; index < source.length; index += 1) {
+    hash ^= source.charCodeAt(index);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return `${MEDIA_PLAYBACK_POSITION_PREFIX}${(hash >>> 0).toString(16).padStart(8, "0")}`;
+}
+
+function readMediaPlaybackPreferences(): MediaPlaybackPreferences | null {
+  const storage = mediaPlaybackStorage();
+  if (storage == null) return null;
+  try {
+    const parsed = JSON.parse(storage.getItem(MEDIA_PLAYBACK_PREFERENCES_KEY) ?? "null") as Partial<MediaPlaybackPreferences> | null;
+    if (parsed == null || typeof parsed.volume !== "number" || !Number.isFinite(parsed.volume) || typeof parsed.muted !== "boolean") return null;
+    return { volume: clamp(parsed.volume, 0, 1), muted: parsed.muted };
+  } catch {
+    return null;
+  }
+}
+
+function persistMediaPlaybackPreferences(video: HTMLVideoElement): void {
+  const storage = mediaPlaybackStorage();
+  if (storage == null) return;
+  try {
+    storage.setItem(MEDIA_PLAYBACK_PREFERENCES_KEY, JSON.stringify({ volume: clamp(video.volume, 0, 1), muted: video.muted }));
+  } catch {
+    // Playback remains functional when persistent storage is unavailable.
+  }
+}
+
+function readMediaPlaybackPosition(source: string, duration: number): number {
+  const storage = mediaPlaybackStorage();
+  if (storage == null || !Number.isFinite(duration) || duration <= 0) return 0;
+  try {
+    const value = Number(storage.getItem(mediaPlaybackSourceKey(source)) ?? "0");
+    return Number.isFinite(value) && value > 0 && value < Math.max(0, duration - 1) ? value : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function persistMediaPlaybackPosition(video: HTMLVideoElement, source: string, ended = false): void {
+  const storage = mediaPlaybackStorage();
+  if (storage == null || source.length === 0) return;
+  try {
+    const key = mediaPlaybackSourceKey(source);
+    if (ended || !Number.isFinite(video.currentTime) || video.currentTime <= 0 || (Number.isFinite(video.duration) && video.duration > 0 && video.currentTime >= video.duration - 1)) {
+      storage.removeItem(key);
+      return;
+    }
+    storage.setItem(key, String(video.currentTime));
+  } catch {
+    // Playback remains functional when persistent storage is unavailable.
+  }
+}
+
 function isPreviewable(kind: AttachmentKind): boolean {
   return kind === "image" || kind === "video";
 }
@@ -48,20 +127,51 @@ function clamp(value: number, minimum: number, maximum: number): number {
   return Math.min(maximum, Math.max(minimum, value));
 }
 
+function useNearViewport(enabled: boolean, rootMargin = DERIVED_MEDIA_PRELOAD_ROOT_MARGIN): [(element: HTMLElement | null) => void, boolean] {
+  const [element, setElement] = useState<HTMLElement | null>(null);
+  const [isNearViewport, setIsNearViewport] = useState(() => !enabled || typeof IntersectionObserver === "undefined");
+  const bindElement = useCallback((next: HTMLElement | null) => {
+    setElement(next);
+    if (!enabled) {
+      setIsNearViewport(true);
+      return;
+    }
+    setIsNearViewport(next == null ? false : initialDerivedMediaVisibility(next, rootMargin));
+  }, [enabled, rootMargin]);
+
+  useEffect(() => {
+    if (!enabled) {
+      setIsNearViewport(true);
+      return undefined;
+    }
+    if (element == null) return undefined;
+    return observeDerivedMediaVisibility(element, rootMargin, setIsNearViewport);
+  }, [element, enabled, rootMargin]);
+
+  return [bindElement, isNearViewport];
+}
+
 interface Transform {
   scale: number;
   x: number;
   y: number;
 }
 
-function MediaThumbnail({ source, resolveMedia }: { source: string; resolveMedia: MediaResolver }) {
+function MediaThumbnail({ source, resolveMedia, isActive }: { source: string; resolveMedia: MediaResolver; isActive: boolean }) {
+  const [observeThumbnail, isNearViewport] = useNearViewport(true, DERIVED_MEDIA_THUMBNAIL_ROOT_MARGIN);
+  const shouldResolve = shouldResolveDerivedThumbnail(isNearViewport, isActive);
   const [media, setMedia] = useState<AttachmentMedia | null>(null);
-  const [state, setState] = useState<"loading" | "missing">("loading");
+  const [state, setState] = useState<"idle" | "loading" | "missing">(() => shouldResolve ? "loading" : "idle");
   useEffect(() => {
     let active = true;
+    if (!shouldResolve) {
+      setMedia(null);
+      setState("idle");
+      return () => { active = false; };
+    }
     setMedia(null);
     setState("loading");
-    void resolveMedia(source).then((next) => {
+    void resolveWithSingleRetry(resolveMedia, source).then((next) => {
       if (!active) return;
       if (next?.kind === "image" || next?.kind === "video") {
         setMedia(next);
@@ -72,10 +182,10 @@ function MediaThumbnail({ source, resolveMedia }: { source: string; resolveMedia
       if (active) setState("missing");
     });
     return () => { active = false; };
-  }, [resolveMedia, source]);
-  if (media?.kind === "video") return <video aria-hidden className="sand-media-viewer__thumb-video" muted preload="metadata" src={media.src} />;
-  if (media?.kind === "image") return <img alt="" aria-hidden className="sand-media-viewer__thumb-image" draggable={false} src={media.dataUrl} />;
-  return <div aria-hidden className="sand-media-viewer__thumb-fallback" data-state={state} />;
+  }, [resolveMedia, shouldResolve, source]);
+  if (media?.kind === "video") return <video aria-hidden className="sand-media-viewer__thumb-video" muted preload="metadata" ref={observeThumbnail} src={media.src} />;
+  if (media?.kind === "image") return <img alt="" aria-hidden className="sand-media-viewer__thumb-image" draggable={false} ref={observeThumbnail} src={media.dataUrl} />;
+  return <div aria-hidden className="sand-media-viewer__thumb-fallback" data-state={state} ref={observeThumbnail} />;
 }
 
 function MediaViewer({ attachments, startIndex, resolveMedia, onClose, restoreFocus }: { attachments: readonly MediaViewerAttachment[]; startIndex: number; resolveMedia: MediaResolver; onClose: () => void; restoreFocus: () => void }) {
@@ -84,6 +194,10 @@ function MediaViewer({ attachments, startIndex, resolveMedia, onClose, restoreFo
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
   const [transform, setTransform] = useState<Transform>({ scale: MIN_ZOOM, x: 0, y: 0 });
+  const viewerRef = useRef<HTMLDivElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const videoPersistenceRef = useRef({ source: "", lastPositionWriteAt: 0 });
+  const wheelZoomRemainderRef = useRef(0);
   const pointerRef = useRef<{ id: number | null; startX: number; startY: number; originX: number; originY: number; moved: boolean }>({ id: null, startX: 0, startY: 0, originX: 0, originY: 0, moved: false });
   const current = attachments[index] ?? attachments[0];
   const total = attachments.length;
@@ -92,11 +206,25 @@ function MediaViewer({ attachments, startIndex, resolveMedia, onClose, restoreFo
   useEffect(() => {
     if (current == null) return undefined;
     let active = true;
+    const outgoingVideo = videoRef.current;
+    if (outgoingVideo != null) {
+      persistMediaPlaybackPreferences(outgoingVideo);
+      persistMediaPlaybackPosition(outgoingVideo, videoPersistenceRef.current.source);
+      outgoingVideo.pause();
+    }
+    videoPersistenceRef.current = { source: "", lastPositionWriteAt: 0 };
     setMedia(null);
     setLoading(true);
     setFailed(false);
     setTransform({ scale: MIN_ZOOM, x: 0, y: 0 });
-    void resolveMedia(current.path).then((next) => {
+    wheelZoomRemainderRef.current = 0;
+    const activePointerId = pointerRef.current.id;
+    const viewer = viewerRef.current;
+    if (activePointerId != null && viewer?.hasPointerCapture(activePointerId)) {
+      viewer.releasePointerCapture(activePointerId);
+    }
+    pointerRef.current = { id: null, startX: 0, startY: 0, originX: 0, originY: 0, moved: false };
+    void resolveWithSingleRetry(resolveMedia, current.path).then((next) => {
       if (!active) return;
       if (next?.kind === "image" || next?.kind === "video") {
         setMedia(next);
@@ -117,11 +245,14 @@ function MediaViewer({ attachments, startIndex, resolveMedia, onClose, restoreFo
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
+        if (document.fullscreenElement != null) return;
         event.preventDefault();
         event.stopPropagation();
         onClose();
         return;
       }
+      const target = event.target instanceof Element ? event.target : null;
+      if (target?.closest("video, audio, button, input, select, textarea, [role='slider'], [contenteditable='true']") != null) return;
       if (total <= 1) return;
       if (event.key === "ArrowLeft") {
         event.preventDefault();
@@ -143,16 +274,68 @@ function MediaViewer({ attachments, startIndex, resolveMedia, onClose, restoreFo
     };
   }, [onClose, restoreFocus, total]);
 
+  useEffect(() => () => {
+    const activeVideo = videoRef.current;
+    if (activeVideo != null) {
+      persistMediaPlaybackPreferences(activeVideo);
+      persistMediaPlaybackPosition(activeVideo, videoPersistenceRef.current.source);
+      activeVideo.pause();
+    }
+    const activePointerId = pointerRef.current.id;
+    const viewer = viewerRef.current;
+    if (activePointerId != null && viewer?.hasPointerCapture(activePointerId)) {
+      viewer.releasePointerCapture(activePointerId);
+    }
+    pointerRef.current.id = null;
+  }, []);
+
+  const restoreVideoPlaybackState = (event: React.SyntheticEvent<HTMLVideoElement>) => {
+    const video = event.currentTarget;
+    const sourceKey = current?.path ?? "";
+    videoPersistenceRef.current = { source: sourceKey, lastPositionWriteAt: 0 };
+    const preferences = readMediaPlaybackPreferences();
+    if (preferences != null) {
+      video.volume = preferences.volume;
+      video.muted = preferences.muted;
+    }
+    const position = readMediaPlaybackPosition(sourceKey, video.duration);
+    if (position > 0) video.currentTime = position;
+  };
+  const persistVideoPlaybackState = (event: React.SyntheticEvent<HTMLVideoElement>) => {
+    const video = event.currentTarget;
+    persistMediaPlaybackPreferences(video);
+    persistMediaPlaybackPosition(video, videoPersistenceRef.current.source);
+  };
+  const persistVideoPlaybackProgress = (event: React.SyntheticEvent<HTMLVideoElement>) => {
+    const now = Date.now();
+    if (now - videoPersistenceRef.current.lastPositionWriteAt < MEDIA_POSITION_WRITE_INTERVAL_MS) return;
+    videoPersistenceRef.current.lastPositionWriteAt = now;
+    persistMediaPlaybackPosition(event.currentTarget, videoPersistenceRef.current.source);
+  };
+  const clearCompletedVideoPlaybackPosition = (event: React.SyntheticEvent<HTMLVideoElement>) => {
+    persistMediaPlaybackPreferences(event.currentTarget);
+    persistMediaPlaybackPosition(event.currentTarget, videoPersistenceRef.current.source, true);
+  };
+
   const fit = () => setTransform({ scale: MIN_ZOOM, x: 0, y: 0 });
   const zoom = (factor: number) => setTransform((currentTransform) => ({ ...currentTransform, scale: clamp(currentTransform.scale * factor, MIN_ZOOM, MAX_ZOOM) }));
 
   const onWheel = (event: React.WheelEvent<HTMLDivElement>) => {
+    if (media?.kind === "video") return;
     event.preventDefault();
-    const multiplier = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? 100 : 1;
-    zoom(Math.exp(-event.deltaY * multiplier * 0.0015));
+    const normalizedDelta = normalizeWheelZoomDelta(event.deltaY, event.deltaMode);
+    if (event.ctrlKey) {
+      const accumulated = accumulateWheelZoomSteps(wheelZoomRemainderRef.current, normalizedDelta);
+      wheelZoomRemainderRef.current = accumulated.remainder;
+      if (accumulated.steps !== 0) zoom(Math.pow(1.2, accumulated.steps));
+      return;
+    }
+    wheelZoomRemainderRef.current = 0;
+    zoom(Math.exp(normalizedDelta * 0.0015));
   };
   const onPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (event.button !== 0 || transform.scale <= MIN_ZOOM) return;
+    if (media?.kind === "video" || event.button !== 0 || transform.scale <= MIN_ZOOM) return;
+    if (event.target instanceof Element && event.target.closest("button, a[href], input, select, textarea, [role='button']") != null) return;
     const currentTransform = transform;
     pointerRef.current = { id: event.pointerId, startX: event.clientX, startY: event.clientY, originX: currentTransform.x, originY: currentTransform.y, moved: false };
     event.currentTarget.setPointerCapture(event.pointerId);
@@ -170,6 +353,9 @@ function MediaViewer({ attachments, startIndex, resolveMedia, onClose, restoreFo
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
     pointerRef.current.id = null;
   };
+  const onLostPointerCapture = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (pointerRef.current.id === event.pointerId) pointerRef.current.id = null;
+  };
 
   if (current == null || typeof document === "undefined") return null;
   const source = mediaSource(media);
@@ -178,57 +364,72 @@ function MediaViewer({ attachments, startIndex, resolveMedia, onClose, restoreFo
     ? <div aria-live="polite" className="sand-media-viewer__state" role={failed ? "alert" : "status"}>{failed ? "Couldn't load media" : "Loading media…"}</div>
     : source == null ? null
       : media?.kind === "video"
-        ? <video aria-label={caption.length > 0 ? caption : "Media preview"} className="sand-media-viewer__image" controls={false} onError={() => setFailed(true)} preload="metadata" src={source} style={{ transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})` }} />
+        ? <video aria-label={caption.length > 0 ? caption : "Media preview"} className="sand-media-viewer__image" controls onEnded={clearCompletedVideoPlaybackPosition} onError={() => setFailed(true)} onLoadedMetadata={restoreVideoPlaybackState} onPause={persistVideoPlaybackState} onTimeUpdate={persistVideoPlaybackProgress} onVolumeChange={persistVideoPlaybackState} playsInline preload="metadata" ref={videoRef} src={source} />
         : <img alt={caption.length > 0 ? caption : "Media preview"} className="sand-media-viewer__image" draggable={false} onDoubleClick={fit} onError={() => setFailed(true)} src={source} style={{ transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})` }} />;
 
   return createPortal(
-    <div aria-label={title} aria-modal="true" className="sand-media-viewer" onClick={(event) => { if (event.target === event.currentTarget) onClose(); }} onPointerCancel={onPointerUp} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} role="dialog">
-      <div className="sand-media-viewer__top-bar"><button aria-label="Close media preview" className="sand-media-viewer__close" onClick={onClose} type="button">×</button></div>
+    <div aria-label={title} aria-modal="true" className="sand-media-viewer" onClick={(event) => { if (event.target === event.currentTarget) onClose(); }} onLostPointerCapture={onLostPointerCapture} onPointerCancel={onPointerUp} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} ref={viewerRef} role="dialog">
+      <div className="sand-media-viewer__top-bar"><SandIconButton aria-label="Close media preview" className="sand-media-viewer__close" icon="close" label="Close media preview" onClick={onClose} size="sm" type="button" variant="ghost" /></div>
       <div className="sand-media-viewer__column">
-        <div className="sand-media-viewer__media-cell" onDoubleClick={fit} onWheel={onWheel}>
+        <div className="sand-media-viewer__media-cell" onDoubleClick={media?.kind === "video" ? undefined : fit} onWheel={onWheel}>
           {total > 1 ? <button aria-label="Previous media" className="sand-media-viewer__nav" onClick={() => setIndex((value) => (value - 1 + total) % total)} style={{ left: "18px" }} type="button">‹</button> : null}
           {total > 1 ? <button aria-label="Next media" className="sand-media-viewer__nav" onClick={() => setIndex((value) => (value + 1) % total)} style={{ right: "18px" }} type="button">›</button> : null}
           {content}
         </div>
         {caption.length > 0 ? <div className="sand-media-viewer__caption">{caption}</div> : null}
-        {total > 1 ? <div className="sand-media-viewer__filmstrip"><div className="sand-media-viewer__filmstrip-track">{attachments.map((attachment, attachmentIndex) => <button aria-current={attachmentIndex === index || undefined} aria-label={`View media ${attachmentIndex + 1} of ${total}`} className="sand-media-viewer__thumb" key={`${attachment.path}:${attachmentIndex}`} onClick={(event) => { event.stopPropagation(); setIndex(attachmentIndex); }} type="button"><MediaThumbnail resolveMedia={resolveMedia} source={attachment.path} /></button>)}</div></div> : null}
+        {total > 1 ? <div className="sand-media-viewer__filmstrip"><div className="sand-media-viewer__filmstrip-track">{attachments.map((attachment, attachmentIndex) => <button aria-current={attachmentIndex === index || undefined} aria-label={`View media ${attachmentIndex + 1} of ${total}`} className="sand-media-viewer__thumb" key={`${attachment.path}:${attachmentIndex}`} onClick={(event) => { event.stopPropagation(); setIndex(attachmentIndex); }} type="button"><MediaThumbnail isActive={attachmentIndex === index} resolveMedia={resolveMedia} source={attachment.path} /></button>)}</div></div> : null}
       </div>
     </div>,
     document.body,
   );
 }
 
-function MediaCard({ attachment, kind, media, loading, role, onOpen, onOpenPdf }: { attachment: GalleryAttachment; kind: AttachmentKind; media: AttachmentMedia | null; loading: boolean; role: "user" | "assistant"; onOpen?: (trigger: HTMLButtonElement) => void; onOpenPdf?: (trigger: HTMLButtonElement) => void }) {
+function MediaCard({ attachment, kind, media, loading, observe, role, onOpen, onOpenPdf }: { attachment: GalleryAttachment; kind: AttachmentKind; media: AttachmentMedia | null; loading: boolean; observe: (element: HTMLElement | null) => void; role: "user" | "assistant"; onOpen?: (trigger: HTMLButtonElement) => void; onOpenPdf?: (trigger: HTMLButtonElement) => void }) {
   const label = attachment.name || attachmentBasename(attachment.path);
   const attachmentLabel = role === "assistant" ? "Agent attachment" : "User attachment";
   const userMediaStyle = attachment.sourceKind === "user-attachment" ? { maxWidth: 320 } : undefined;
-  if (media?.kind === "image" && onOpen != null) return <button aria-label="Media preview" className="sand-attachment" data-attachment-label={attachmentLabel} onClick={(event) => onOpen(event.currentTarget)} type="button"><img alt={label} className="sand-attachment__image" draggable={false} height={attachment.height ?? undefined} src={media.dataUrl} style={userMediaStyle} width={attachment.width ?? undefined} /></button>;
-  if (media?.kind === "video" && onOpen != null) return <button aria-label="Media preview" className="sand-attachment" data-attachment-label={attachmentLabel} onClick={(event) => onOpen(event.currentTarget)} type="button"><video aria-label={label} className="sand-attachment__video" height={attachment.height ?? undefined} muted preload="metadata" src={media.src} style={userMediaStyle} width={attachment.width ?? undefined} /></button>;
-  if (media?.kind === "audio") return <audio aria-label={label} className="sand-attachment" data-attachment-label={attachmentLabel} controls preload="metadata" src={media.src} />;
-  if (kind === "pdf" && onOpenPdf != null) return <button aria-label={`Open ${label}`} className="sand-file-attachment-chip sand-message-attachment" data-attachment-label={attachmentLabel} data-kind={kind} onClick={(event) => onOpenPdf(event.currentTarget)} type="button" title={attachment.path}><span aria-hidden="true">▤</span><span><strong>{label}</strong><small>{kind}{attachment.size == null ? "" : ` · ${formatAttachmentBytes(attachment.size)}`}</small></span></button>;
-  if (loading) return <span aria-label="Loading media…" className="sand-attachment" data-attachment-label={attachmentLabel} role="status">Loading media…</span>;
-  return <span aria-label={`Open ${label}`} className="sand-file-attachment-chip sand-message-attachment" data-attachment-label={attachmentLabel} data-kind={kind} role="group" title={attachment.path}><span aria-hidden="true">{kind === "image" ? "▧" : kind === "audio" ? "♪" : kind === "video" ? "▶" : "▤"}</span><span><strong>{label}</strong><small>{kind}{attachment.size == null ? "" : ` · ${formatAttachmentBytes(attachment.size)}`}</small></span></span>;
+  if (isPreviewable(kind) && onOpen != null) {
+    const preview = kind === "image" && media?.kind === "image"
+      ? <img alt={label} className="sand-attachment__image" draggable={false} height={attachment.height ?? undefined} src={media.dataUrl} style={userMediaStyle} width={attachment.width ?? undefined} />
+      : kind === "video" && media?.kind === "video"
+        ? <video aria-label={label} className="sand-attachment__video" height={attachment.height ?? undefined} muted preload="metadata" src={media.src} style={userMediaStyle} width={attachment.width ?? undefined} />
+        : <span aria-live={loading ? "polite" : undefined}>{loading ? "Loading media…" : label}</span>;
+    // The preview button owns activation/focus identity. Derived media may be
+    // released and reacquired as visibility changes, but replacing this node
+    // would retire keyboard focus and can feed IntersectionObserver ref churn
+    // back into visibility state. Only the preview payload is lifecycle-bound.
+    return <button aria-label="Media preview" className="sand-attachment" data-attachment-label={attachmentLabel} data-media-source={attachment.path} data-media-state={loading ? "loading" : media == null ? "unavailable" : "ready"} onClick={(event) => onOpen(event.currentTarget)} ref={observe} type="button">{preview}</button>;
+  }
+  if (media?.kind === "audio") return <audio aria-label={label} className="sand-attachment" data-attachment-label={attachmentLabel} controls preload="metadata" ref={observe} src={media.src} />;
+  if (kind === "pdf" && onOpenPdf != null) return <button aria-label={`Open ${label}`} className="sand-file-attachment-chip sand-message-attachment" data-attachment-label={attachmentLabel} data-kind={kind} onClick={(event) => onOpenPdf(event.currentTarget)} ref={observe} type="button" title={attachment.path}><span aria-hidden="true">▤</span><span><strong>{label}</strong><small>{kind}{attachment.size == null ? "" : ` · ${formatAttachmentBytes(attachment.size)}`}</small></span></button>;
+  if (loading) return <span aria-label="Loading media…" className="sand-attachment" data-attachment-label={attachmentLabel} ref={observe} role="status">Loading media…</span>;
+  return <span aria-label={`Open ${label}`} className="sand-file-attachment-chip sand-message-attachment" data-attachment-label={attachmentLabel} data-kind={kind} ref={observe} role="group" title={attachment.path}><span aria-hidden="true">{kind === "image" ? "▧" : kind === "audio" ? "♪" : kind === "video" ? "▶" : "▤"}</span><span><strong>{label}</strong><small>{kind}{attachment.size == null ? "" : ` · ${formatAttachmentBytes(attachment.size)}`}</small></span></span>;
 }
 
 function AttachmentItem({ attachment, adjacency, mediaAttachments, resolveMedia, readAttachmentBytes, downloadAttachment, role, onOpen, onOpenPdf }: { attachment: GalleryAttachment; adjacency?: TranscriptAdjacency; mediaAttachments: readonly GalleryAttachment[]; resolveMedia?: MediaResolver; readAttachmentBytes?: PdfBytesResolver; downloadAttachment?: (path: string, suggestedName?: string) => Promise<boolean>; role: "user" | "assistant"; onOpen: (index: number, trigger: HTMLButtonElement) => void; onOpenPdf: (attachment: DraftAttachment, trigger: HTMLButtonElement) => void }) {
   const kind = inferAttachmentKind({ mimeType: attachment.mimeType, fileName: attachment.name, urlOrPath: attachment.path });
+  const [observeMediaCard, isNearViewport] = useNearViewport(isVisibilityBoundDerivedMedia(kind));
+  const supportedMediaKind = kind === "image" || kind === "video" || kind === "audio";
+  const shouldResolve = resolveMedia != null && supportedMediaKind && shouldResolveDerivedMedia(kind, isNearViewport);
   const [media, setMedia] = useState<AttachmentMedia | null>(null);
-  const [loading, setLoading] = useState(resolveMedia != null && (kind === "image" || kind === "video" || kind === "audio"));
+  const [loading, setLoading] = useState(shouldResolve);
   useEffect(() => {
     let active = true;
-    if (resolveMedia == null || !["image", "video", "audio"].includes(kind)) {
+    if (!shouldResolve || resolveMedia == null) {
+      setMedia(null);
       setLoading(false);
       return () => { active = false; };
     }
+    setMedia(null);
     setLoading(true);
-    void resolveMedia(attachment.path).then((next) => { if (active) { setMedia(next); setLoading(false); } }).catch(() => { if (active) { setMedia(null); setLoading(false); } });
+    void resolveWithSingleRetry(resolveMedia, attachment.path).then((next) => { if (active) { setMedia(next); setLoading(false); } }).catch(() => { if (active) { setMedia(null); setLoading(false); } });
     return () => { active = false; };
-  }, [attachment.path, kind, resolveMedia]);
+  }, [attachment.path, kind, resolveMedia, shouldResolve]);
   const mediaIndex = mediaAttachments.findIndex((candidate) => candidate.path === attachment.path);
   const isUserAttachment = attachment.sourceKind === "user-attachment";
   const isUserFile = isUserAttachment && !isPreviewable(kind);
   const className = isUserFile ? "sand-file-card-wrap sand-78zum5 sand-dt5ytf sand-uk3077 sand-11twubx sand-h8yej3 sand-1vyvmim sand-pvyfi4" : undefined;
-  const card = <MediaCard attachment={attachment} kind={kind} loading={loading} media={media} onOpen={mediaIndex < 0 ? undefined : (trigger) => onOpen(mediaIndex, trigger)} onOpenPdf={kind === "pdf" && readAttachmentBytes != null && downloadAttachment != null ? (trigger) => onOpenPdf(attachment, trigger) : undefined} role={role} />;
+  const card = <MediaCard attachment={attachment} kind={kind} loading={loading} media={media} observe={observeMediaCard} onOpen={mediaIndex < 0 ? undefined : (trigger) => onOpen(mediaIndex, trigger)} onOpenPdf={kind === "pdf" && readAttachmentBytes != null && downloadAttachment != null ? (trigger) => onOpenPdf(attachment, trigger) : undefined} role={role} />;
   if (!isUserAttachment) return card;
   return <div className={className} data-group-start={adjacency?.isGroupStart || undefined} data-role="user" style={{ alignItems: "flex-end", alignSelf: "flex-end", justifyContent: "flex-end", ...(isPreviewable(kind) ? { maxWidth: 320 } : {}) }}>{card}</div>;
 }
@@ -239,10 +440,24 @@ export function TranscriptAttachmentGallery({ attachments, adjacency, role, reso
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const [openPdf, setOpenPdf] = useState<DraftAttachment | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const triggerSourceRef = useRef<string | null>(null);
+  const galleryRef = useRef<HTMLDivElement | null>(null);
   const close = useCallback(() => setOpenIndex(null), []);
-  const restoreFocus = useCallback(() => { triggerRef.current?.focus(); }, []);
+  const restoreFocus = useCallback(() => {
+    const focusCurrentTrigger = () => {
+      let trigger = triggerRef.current;
+      if (trigger == null || !trigger.isConnected) {
+        const source = triggerSourceRef.current;
+        trigger = source == null ? null : [...(galleryRef.current?.querySelectorAll<HTMLButtonElement>("button[data-media-source]") ?? [])].find((candidate) => candidate.dataset.mediaSource === source) ?? null;
+        triggerRef.current = trigger;
+      }
+      trigger?.focus({ preventScroll: true });
+    };
+    if (typeof requestAnimationFrame === "function") requestAnimationFrame(focusCurrentTrigger);
+    else queueMicrotask(focusCurrentTrigger);
+  }, []);
   return <>
-    <div aria-label={role === "assistant" ? "Agent attachments" : "Attachments"} className="sand-message-attachments" data-role={role} role="group"><div className="sand-message-attachments__strip">{galleryAttachments.map((attachment) => <AttachmentItem adjacency={adjacency} attachment={attachment} downloadAttachment={downloadAttachment} key={`${attachment.path}:${attachment.name}`} mediaAttachments={mediaAttachments} onOpen={(mediaIndex, trigger) => { triggerRef.current = trigger; setOpenIndex(mediaIndex); }} onOpenPdf={(pdf, trigger) => { triggerRef.current = trigger; setOpenPdf(pdf); }} readAttachmentBytes={readAttachmentBytes} resolveMedia={resolveMedia} role={role} />)}</div></div>
+    <div aria-label={role === "assistant" ? "Agent attachments" : "Attachments"} className="sand-message-attachments" data-role={role} ref={galleryRef} role="group"><div className="sand-message-attachments__strip">{galleryAttachments.map((attachment) => <AttachmentItem adjacency={adjacency} attachment={attachment} downloadAttachment={downloadAttachment} key={`${attachment.path}:${attachment.name}`} mediaAttachments={mediaAttachments} onOpen={(mediaIndex, trigger) => { triggerRef.current = trigger; triggerSourceRef.current = mediaAttachments[mediaIndex]?.path ?? null; setOpenIndex(mediaIndex); }} onOpenPdf={(pdf, trigger) => { triggerRef.current = trigger; triggerSourceRef.current = null; setOpenPdf(pdf); }} readAttachmentBytes={readAttachmentBytes} resolveMedia={resolveMedia} role={role} />)}</div></div>
     {openIndex == null || resolveMedia == null ? null : <MediaViewer attachments={mediaAttachments} onClose={close} resolveMedia={resolveMedia} restoreFocus={restoreFocus} startIndex={openIndex} />}
     {openPdf == null || readAttachmentBytes == null || downloadAttachment == null ? null : <PdfAttachmentViewer name={openPdf.name || attachmentBasename(openPdf.path)} onClose={() => setOpenPdf(null)} onDownload={() => downloadAttachment(openPdf.path, openPdf.name || attachmentBasename(openPdf.path))} readBytes={readAttachmentBytes} restoreFocus={() => triggerRef.current?.focus()} source={openPdf.path} isOpen />}
   </>;

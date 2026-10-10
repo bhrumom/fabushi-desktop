@@ -3,404 +3,907 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_repository": "telegramdesktop/tdesktop",
-  "upstream_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
+  "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
   "discovery": {
-    "evidence_run_id": 37602112794,
-    "evidence_head_sha": "6ea14a975654843140e77278261a73fb38cf072c",
-    "artifact_id": 11473257080,
-    "artifact_digest": "sha256:b0d6324f98cc19fd3e164c74c6b96882ef9afaa08f0c8175fa835775a6e909bd",
+    "evidence_run_id": 37837273028,
+    "evidence_head_sha": "3929d875d414f522f9b71b7fe6db33b81ccf4451",
+    "artifact_id": 11576650430,
+    "artifact_digest": "sha256:f300c0c9308470331da3b1bdadc5cef774757f04e95099d8e519bfaa1d6475e0",
     "candidate_file": "build-time-acquisition-candidates.txt",
-    "candidate_lines_total": 320,
-    "immutable_commit_pin_occurrences_classified": 17,
+    "candidate_lines_total": 330,
+    "immutable_commit_pin_occurrences_classified": 0,
     "candidate_lines_pending_classification": 0,
-    "note": "All 320 corrected-scan candidate lines now have explicit dispositions: 17 immutable commit-pin occurrences plus 303 grouped dispositions. Candidate classification is complete, but recursive authority closure remains open because mutable refs/tags, nested submodules/gitlinks, tool bootstrap inputs, package-manager inputs, and other source/build inputs still require exact child/input accounting. This does not advance baseline_ready or acceptance. The three previously pending external nested repositories are now expected to be live-scanned and fully dispositioned by the exact-HEAD external-child discovery gate; overall recursive authority remains open for root mutable/tool/package inputs.",
-    "candidate_lines_classified": 320,
-    "disposition_closure_status": "complete",
+    "note": "Live 6fed91ff modifies ten existing root blobs outside build/acquisition workflow sources; the classified candidate set remains 330 and immutable Action/clone bindings remain source-identical. Fresh descendant resolver evidence is required.",
+    "candidate_lines_classified": 330,
+    "disposition_closure_status": "complete-current-330-candidate-classification",
     "recursive_authority_closure_status": "open",
     "recursive_child_input_occurrences_recorded": 11,
     "recursive_child_unique_repositories_recorded": 9,
     "recursive_child_unique_external_nested_scans_pending": 0,
-    "recursive_child_unique_external_nested_scans_complete": 3
+    "recursive_child_unique_external_nested_scans_complete": 3,
+    "evidence_status": "current-source-classification-reconciled; exact-head resolver artifact pending"
   },
-  "immutable_commit_pin_occurrences": [
-    {
-      "id": "ACQ-R9-IMMUTABLE-001",
-      "source_path": "Telegram/build/docker/centos_env/Dockerfile",
-      "source_line": 88,
-      "repository": "https://github.com/yugr/Implib.so.git",
-      "ref_kind": "commit",
-      "commit": "ecf7bb51a92a0fb16834c5b698570ab25f9f1d21",
-      "disposition": "build-input-exact-pin",
-      "status": "classified",
-      "source_scope": "accepted-upstream"
-    },
-    {
-      "id": "ACQ-R9-IMMUTABLE-002",
-      "source_path": "Telegram/build/docker/centos_env/Dockerfile",
-      "source_line": 163,
-      "repository": "https://github.com/desktop-app/patches.git",
-      "ref_kind": "commit",
-      "commit": "ebcd707f1763651089e3e7220ddd4f97cbcf87e0",
-      "disposition": "build-input-exact-pin",
-      "status": "classified",
-      "source_scope": "accepted-upstream"
-    },
-    {
-      "id": "ACQ-R9-IMMUTABLE-003",
-      "source_path": "Telegram/build/docker/centos_env/Dockerfile",
-      "source_line": 173,
-      "repository": "https://github.com/madler/zlib.git",
-      "ref_kind": "commit",
-      "commit": "e3dc0a85b7032e98380dec011bc8f2c2ee0d8fca",
-      "disposition": "build-input-exact-pin",
-      "status": "classified",
-      "source_scope": "accepted-upstream"
-    },
-    {
-      "id": "ACQ-R9-IMMUTABLE-004",
-      "source_path": "Telegram/build/docker/centos_env/Dockerfile",
-      "source_line": 292,
-      "repository": "https://github.com/webmproject/libvpx.git",
-      "ref_kind": "commit",
-      "commit": "12f3a2ac603e8f10742105519e0cd03c3b8f71dd",
-      "disposition": "build-input-exact-pin",
-      "status": "classified",
-      "source_scope": "accepted-upstream"
-    },
-    {
-      "id": "ACQ-R9-IMMUTABLE-005",
-      "source_path": "Telegram/build/docker/centos_env/Dockerfile",
-      "source_line": 452,
-      "repository": "https://github.com/gitlab-freedesktop-mirrors/libxcb-keysyms.git",
-      "ref_kind": "commit",
-      "commit": "ef5cb393d27511ba511c68a54f8ff7b9aab4a384",
-      "disposition": "build-input-exact-pin",
-      "status": "classified",
-      "source_scope": "accepted-upstream"
-    },
-    {
-      "id": "ACQ-R9-IMMUTABLE-006",
-      "source_path": "Telegram/build/docker/centos_env/Dockerfile",
-      "source_line": 467,
-      "repository": "https://github.com/gitlab-freedesktop-mirrors/libxcb-render-util.git",
-      "ref_kind": "commit",
-      "commit": "5ad9853d6ddcac394d42dd2d4e34436b5db9da39",
-      "disposition": "build-input-exact-pin",
-      "status": "classified",
-      "source_scope": "accepted-upstream"
-    },
-    {
-      "id": "ACQ-R9-IMMUTABLE-007",
-      "source_path": "Telegram/build/docker/centos_env/Dockerfile",
-      "source_line": 486,
-      "repository": "https://github.com/gitlab-freedesktop-mirrors/libxcb-cursor.git",
-      "ref_kind": "commit",
-      "commit": "4929f6051658ba5424b41703a1fb63f9db896065",
-      "disposition": "build-input-exact-pin",
-      "status": "classified",
-      "source_scope": "accepted-upstream"
-    },
-    {
-      "id": "ACQ-R9-IMMUTABLE-008",
-      "source_path": "Telegram/build/docker/centos_env/Dockerfile",
-      "source_line": 916,
-      "repository": "https://chromium.googlesource.com/breakpad/breakpad.git",
-      "ref_kind": "commit",
-      "commit": "9aebd3d8ef5a246deb2c929b5666aaba160ebce6",
-      "disposition": "build-input-exact-pin",
-      "status": "classified",
-      "source_scope": "accepted-upstream"
-    },
-    {
-      "id": "ACQ-R9-IMMUTABLE-009",
-      "source_path": "Telegram/build/docker/centos_env/Dockerfile",
-      "source_line": 921,
-      "repository": "https://chromium.googlesource.com/linux-syscall-support.git",
-      "ref_kind": "commit",
-      "commit": "29164a80da4d41134950d76d55199ea33fbb9613",
-      "disposition": "build-input-exact-pin",
-      "status": "classified",
-      "source_scope": "accepted-upstream"
-    },
-    {
-      "id": "ACQ-R9-IMMUTABLE-010",
-      "source_path": "Telegram/build/docker/centos_env/Dockerfile",
-      "source_line": 954,
-      "repository": "https://github.com/desktop-app/tg_owt.git",
-      "ref_kind": "commit",
-      "commit": "e2d0e88d1bde6cc600da5dc92581dc97e4c1e685",
-      "disposition": "build-input-exact-pin",
-      "status": "classified",
-      "source_scope": "accepted-upstream"
-    },
-    {
-      "id": "ACQ-R9-IMMUTABLE-011",
-      "source_path": "Telegram/build/docker/centos_env/Dockerfile",
-      "source_line": 984,
-      "repository": "https://github.com/tdlib/td.git",
-      "ref_kind": "commit",
-      "commit": "51743dfd01dff6179e2d8f7095729caa4e2222e9",
-      "disposition": "build-input-exact-pin",
-      "status": "classified",
-      "source_scope": "accepted-upstream"
-    },
-    {
-      "id": "ACQ-R9-IMMUTABLE-012",
-      "source_path": "Telegram/build/docker/centos_env/Dockerfile",
-      "source_line": 1007,
-      "repository": "https://github.com/dkaraush/tlottie.git",
-      "ref_kind": "commit",
-      "commit": "31f1b542f88e7b4be9a01e749920d857535fc715",
-      "disposition": "build-input-exact-pin",
-      "status": "classified",
-      "source_scope": "accepted-upstream"
-    },
-    {
-      "id": "ACQ-R9-IMMUTABLE-013",
-      "source_path": "snap/snapcraft.yaml",
-      "source_line": 126,
-      "repository": "https://github.com/desktop-app/patches.git",
-      "ref_kind": "commit",
-      "commit": "ebcd707f1763651089e3e7220ddd4f97cbcf87e0",
-      "disposition": "build-input-exact-pin",
-      "status": "classified",
-      "source_scope": "accepted-upstream"
-    },
-    {
-      "id": "ACQ-R9-IMMUTABLE-014",
-      "source_path": "snap/snapcraft.yaml",
-      "source_line": 324,
-      "repository": "https://github.com/madler/zlib.git",
-      "ref_kind": "commit",
-      "commit": "e3dc0a85b7032e98380dec011bc8f2c2ee0d8fca",
-      "disposition": "build-input-exact-pin",
-      "status": "classified",
-      "source_scope": "accepted-upstream"
-    },
-    {
-      "id": "ACQ-R9-IMMUTABLE-015",
-      "source_path": "snap/snapcraft.yaml",
-      "source_line": 462,
-      "repository": "https://github.com/tdlib/td.git",
-      "ref_kind": "commit",
-      "commit": "51743dfd01dff6179e2d8f7095729caa4e2222e9",
-      "disposition": "build-input-exact-pin",
-      "status": "classified",
-      "source_scope": "accepted-upstream"
-    },
-    {
-      "id": "ACQ-R9-IMMUTABLE-016",
-      "source_path": "snap/snapcraft.yaml",
-      "source_line": 479,
-      "repository": "https://github.com/dkaraush/tlottie.git",
-      "ref_kind": "commit",
-      "commit": "31f1b542f88e7b4be9a01e749920d857535fc715",
-      "disposition": "build-input-exact-pin",
-      "status": "classified",
-      "source_scope": "accepted-upstream"
-    },
-    {
-      "id": "ACQ-R9-IMMUTABLE-017",
-      "source_path": "snap/snapcraft.yaml",
-      "source_line": 510,
-      "repository": "https://github.com/desktop-app/tg_owt.git",
-      "ref_kind": "commit",
-      "commit": "e2d0e88d1bde6cc600da5dc92581dc97e4c1e685",
-      "disposition": "build-input-exact-pin",
-      "status": "classified",
-      "source_scope": "accepted-upstream"
-    }
-  ],
+  "immutable_commit_pin_occurrences": [],
   "candidate_disposition_groups": [
     {
-      "disposition": "ci-only",
-      "source_path": ".github/telegram-bot-api/Dockerfile",
-      "source_lines": [
-        16
-      ],
-      "authority_scope": "ci-only"
-    },
-    {
-      "disposition": "ci-only",
-      "source_path": ".github/workflows/canary.yml",
-      "source_lines": [
-        1208,
-        286,
-        47
-      ],
-      "authority_scope": "ci-only"
-    },
-    {
-      "disposition": "ci-only",
-      "source_path": ".github/workflows/mac_packaged.yml",
-      "source_lines": [
-        112,
-        130,
-        151,
-        98,
-        99
-      ],
-      "authority_scope": "ci-only"
-    },
-    {
-      "disposition": "docs",
       "source_path": ".github/CONTRIBUTING.md",
       "source_lines": [
         42,
         43
       ],
-      "authority_scope": "docs-only"
+      "disposition": "documentation-example-not-build-acquisition",
+      "rationale": "Contributor instructions; clone/fetch examples are documentation, not an accepted build path.",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
+      "source_blob_sha": "4265e974d0b87622af223d5b8096b67edcbd4aab",
+      "scanner_evidence": {
+        "runner": "github-actions",
+        "run_id": 37837273028,
+        "job_id": 113517856832,
+        "artifact_id": 11576650430,
+        "artifact_digest": "sha256:f300c0c9308470331da3b1bdadc5cef774757f04e95099d8e519bfaa1d6475e0",
+        "candidate_file": "build-time-acquisition-candidates.txt",
+        "evidence_head_sha": "3929d875d414f522f9b71b7fe6db33b81ccf4451",
+        "upstream_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db"
+      },
+      "provenance_policy": "Each listed line is classified against this immutable accepted source blob. Inline 40-hex action/source pins or sha256 image digests remain immutable references; version tags, master refs, package-manager resolution and bare download/clone URLs remain provenance-open until separately resolved. Classification does not convert mutable third-party references into immutable evidence."
     },
     {
-      "disposition": "docs",
-      "source_path": "Telegram/build/sign_update.py",
+      "source_path": ".github/telegram-bot-api/Dockerfile",
       "source_lines": [
-        97
+        8,
+        10,
+        16,
+        27,
+        29
       ],
-      "authority_scope": "docs-help-only"
+      "disposition": "ancillary-telegram-bot-api-ci-not-desktop-product-build",
+      "rationale": "Builds/deploys Telegram Bot API tooling, not Telegram Desktop shipping product.",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
+      "source_blob_sha": "a361602441040028a3332c3732c4902d9c880122",
+      "scanner_evidence": {
+        "runner": "github-actions",
+        "run_id": 37837273028,
+        "job_id": 113517856832,
+        "artifact_id": 11576650430,
+        "artifact_digest": "sha256:f300c0c9308470331da3b1bdadc5cef774757f04e95099d8e519bfaa1d6475e0",
+        "candidate_file": "build-time-acquisition-candidates.txt",
+        "evidence_head_sha": "3929d875d414f522f9b71b7fe6db33b81ccf4451",
+        "upstream_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db"
+      },
+      "provenance_policy": "Each listed line is classified against this immutable accepted source blob. Inline 40-hex action/source pins or sha256 image digests remain immutable references; version tags, master refs, package-manager resolution and bare download/clone URLs remain provenance-open until separately resolved. Classification does not convert mutable third-party references into immutable evidence."
     },
     {
-      "disposition": "exact-immutable-input-support",
+      "source_path": ".github/workflows/canary-bot-api.yml",
+      "source_lines": [
+        43,
+        46,
+        54
+      ],
+      "disposition": "desktop-ci-build-test-packaging-acquisition",
+      "rationale": "Current upstream desktop CI/canary/platform packaging dependency or artifact flow; exact workflow source is authoritative for CI evidence, but third-party reference immutability is reviewed separately.",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
+      "source_blob_sha": "7285f29ed2a09695a02b8f7821c10df5aa50bc44",
+      "scanner_evidence": {
+        "runner": "github-actions",
+        "run_id": 37837273028,
+        "job_id": 113517856832,
+        "artifact_id": 11576650430,
+        "artifact_digest": "sha256:f300c0c9308470331da3b1bdadc5cef774757f04e95099d8e519bfaa1d6475e0",
+        "candidate_file": "build-time-acquisition-candidates.txt",
+        "evidence_head_sha": "3929d875d414f522f9b71b7fe6db33b81ccf4451",
+        "upstream_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db"
+      },
+      "provenance_policy": "Each listed line is classified against this immutable accepted source blob. Inline 40-hex action/source pins or sha256 image digests remain immutable references; version tags, master refs, package-manager resolution and bare download/clone URLs remain provenance-open until separately resolved. Classification does not convert mutable third-party references into immutable evidence."
+    },
+    {
+      "source_path": ".github/workflows/canary.yml",
+      "source_lines": [
+        47,
+        154,
+        286,
+        366,
+        389,
+        477,
+        509,
+        517,
+        530,
+        578,
+        585,
+        597,
+        677,
+        732,
+        742,
+        775,
+        798,
+        831,
+        871,
+        948,
+        979,
+        1001,
+        1007,
+        1121,
+        1184,
+        1191,
+        1213,
+        1233,
+        1261,
+        1262,
+        1269,
+        1278,
+        1286,
+        1295,
+        1303,
+        1327,
+        1398,
+        1444,
+        1451,
+        1492,
+        1497,
+        1503,
+        1516,
+        1581,
+        1586,
+        1592,
+        1669,
+        1674,
+        1680
+      ],
+      "disposition": "desktop-ci-build-test-packaging-acquisition",
+      "rationale": "Current upstream desktop CI/canary/platform packaging dependency or artifact flow; exact workflow source is authoritative for CI evidence, but third-party reference immutability is reviewed separately.",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
+      "source_blob_sha": "cff0a8cd8bb0008ddd1dc833c37005c8890e6a8c",
+      "scanner_evidence": {
+        "runner": "github-actions",
+        "run_id": 37837273028,
+        "job_id": 113517856832,
+        "artifact_id": 11576650430,
+        "artifact_digest": "sha256:f300c0c9308470331da3b1bdadc5cef774757f04e95099d8e519bfaa1d6475e0",
+        "candidate_file": "build-time-acquisition-candidates.txt",
+        "evidence_head_sha": "3929d875d414f522f9b71b7fe6db33b81ccf4451",
+        "upstream_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db"
+      },
+      "provenance_policy": "Each listed line is classified against this immutable accepted source blob. Inline 40-hex action/source pins or sha256 image digests remain immutable references; version tags, master refs, package-manager resolution and bare download/clone URLs remain provenance-open until separately resolved. Classification does not convert mutable third-party references into immutable evidence."
+    },
+    {
+      "source_path": ".github/workflows/cant-reproduce.yml",
+      "source_lines": [
+        11
+      ],
+      "disposition": "repository-maintenance-automation-not-desktop-build",
+      "rationale": "Issue/repository maintenance automation is not a Telegram Desktop product build dependency.",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
+      "source_blob_sha": "8e20e07349b5b43277f5371a4e931066bece4186",
+      "scanner_evidence": {
+        "runner": "github-actions",
+        "run_id": 37837273028,
+        "job_id": 113517856832,
+        "artifact_id": 11576650430,
+        "artifact_digest": "sha256:f300c0c9308470331da3b1bdadc5cef774757f04e95099d8e519bfaa1d6475e0",
+        "candidate_file": "build-time-acquisition-candidates.txt",
+        "evidence_head_sha": "3929d875d414f522f9b71b7fe6db33b81ccf4451",
+        "upstream_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db"
+      },
+      "provenance_policy": "Each listed line is classified against this immutable accepted source blob. Inline 40-hex action/source pins or sha256 image digests remain immutable references; version tags, master refs, package-manager resolution and bare download/clone URLs remain provenance-open until separately resolved. Classification does not convert mutable third-party references into immutable evidence."
+    },
+    {
+      "source_path": ".github/workflows/changelog.yml",
+      "source_lines": [
+        22,
+        24,
+        32,
+        45
+      ],
+      "disposition": "documentation-release-site-acquisition",
+      "rationale": "Generates/deploys changelog Pages; relevant to release documentation, not desktop runtime.",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
+      "source_blob_sha": "445277fe4b44dc9ccef17b7b602016572c08fe7c",
+      "scanner_evidence": {
+        "runner": "github-actions",
+        "run_id": 37837273028,
+        "job_id": 113517856832,
+        "artifact_id": 11576650430,
+        "artifact_digest": "sha256:f300c0c9308470331da3b1bdadc5cef774757f04e95099d8e519bfaa1d6475e0",
+        "candidate_file": "build-time-acquisition-candidates.txt",
+        "evidence_head_sha": "3929d875d414f522f9b71b7fe6db33b81ccf4451",
+        "upstream_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db"
+      },
+      "provenance_policy": "Each listed line is classified against this immutable accepted source blob. Inline 40-hex action/source pins or sha256 image digests remain immutable references; version tags, master refs, package-manager resolution and bare download/clone URLs remain provenance-open until separately resolved. Classification does not convert mutable third-party references into immutable evidence."
+    },
+    {
+      "source_path": ".github/workflows/copyright_year_updater.yml",
+      "source_lines": [
+        14
+      ],
+      "disposition": "repository-maintenance-automation-not-desktop-build",
+      "rationale": "Issue/repository maintenance automation is not a Telegram Desktop product build dependency.",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
+      "source_blob_sha": "7ddb3d0403a77812df954d8bb2f480672831a082",
+      "scanner_evidence": {
+        "runner": "github-actions",
+        "run_id": 37837273028,
+        "job_id": 113517856832,
+        "artifact_id": 11576650430,
+        "artifact_digest": "sha256:f300c0c9308470331da3b1bdadc5cef774757f04e95099d8e519bfaa1d6475e0",
+        "candidate_file": "build-time-acquisition-candidates.txt",
+        "evidence_head_sha": "3929d875d414f522f9b71b7fe6db33b81ccf4451",
+        "upstream_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db"
+      },
+      "provenance_policy": "Each listed line is classified against this immutable accepted source blob. Inline 40-hex action/source pins or sha256 image digests remain immutable references; version tags, master refs, package-manager resolution and bare download/clone URLs remain provenance-open until separately resolved. Classification does not convert mutable third-party references into immutable evidence."
+    },
+    {
+      "source_path": ".github/workflows/docker.yml",
+      "source_lines": [
+        20,
+        26,
+        27,
+        31
+      ],
+      "disposition": "container-publishing-ci-acquisition",
+      "rationale": "Container publishing workflow input; CI/release infrastructure, not desktop runtime source.",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
+      "source_blob_sha": "cba00688d935d50454bfb891fc37e001626cf9a0",
+      "scanner_evidence": {
+        "runner": "github-actions",
+        "run_id": 37837273028,
+        "job_id": 113517856832,
+        "artifact_id": 11576650430,
+        "artifact_digest": "sha256:f300c0c9308470331da3b1bdadc5cef774757f04e95099d8e519bfaa1d6475e0",
+        "candidate_file": "build-time-acquisition-candidates.txt",
+        "evidence_head_sha": "3929d875d414f522f9b71b7fe6db33b81ccf4451",
+        "upstream_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db"
+      },
+      "provenance_policy": "Each listed line is classified against this immutable accepted source blob. Inline 40-hex action/source pins or sha256 image digests remain immutable references; version tags, master refs, package-manager resolution and bare download/clone URLs remain provenance-open until separately resolved. Classification does not convert mutable third-party references into immutable evidence."
+    },
+    {
+      "source_path": ".github/workflows/issue_closer.yml",
+      "source_lines": [
+        12
+      ],
+      "disposition": "repository-maintenance-automation-not-desktop-build",
+      "rationale": "Issue/repository maintenance automation is not a Telegram Desktop product build dependency.",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
+      "source_blob_sha": "355405165590712b1826b2f92a8f867c8d568dd9",
+      "scanner_evidence": {
+        "runner": "github-actions",
+        "run_id": 37837273028,
+        "job_id": 113517856832,
+        "artifact_id": 11576650430,
+        "artifact_digest": "sha256:f300c0c9308470331da3b1bdadc5cef774757f04e95099d8e519bfaa1d6475e0",
+        "candidate_file": "build-time-acquisition-candidates.txt",
+        "evidence_head_sha": "3929d875d414f522f9b71b7fe6db33b81ccf4451",
+        "upstream_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db"
+      },
+      "provenance_policy": "Each listed line is classified against this immutable accepted source blob. Inline 40-hex action/source pins or sha256 image digests remain immutable references; version tags, master refs, package-manager resolution and bare download/clone URLs remain provenance-open until separately resolved. Classification does not convert mutable third-party references into immutable evidence."
+    },
+    {
+      "source_path": ".github/workflows/linux.yml",
+      "source_lines": [
+        65,
+        71,
+        72,
+        73,
+        83,
+        89,
+        93,
+        102,
+        110,
+        126,
+        184,
+        209
+      ],
+      "disposition": "desktop-ci-build-test-packaging-acquisition",
+      "rationale": "Current upstream desktop CI/canary/platform packaging dependency or artifact flow; exact workflow source is authoritative for CI evidence, but third-party reference immutability is reviewed separately.",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
+      "source_blob_sha": "dbedd23593c5ea66ff9b8b880bda6a8bc5a4cc55",
+      "scanner_evidence": {
+        "runner": "github-actions",
+        "run_id": 37837273028,
+        "job_id": 113517856832,
+        "artifact_id": 11576650430,
+        "artifact_digest": "sha256:f300c0c9308470331da3b1bdadc5cef774757f04e95099d8e519bfaa1d6475e0",
+        "candidate_file": "build-time-acquisition-candidates.txt",
+        "evidence_head_sha": "3929d875d414f522f9b71b7fe6db33b81ccf4451",
+        "upstream_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db"
+      },
+      "provenance_policy": "Each listed line is classified against this immutable accepted source blob. Inline 40-hex action/source pins or sha256 image digests remain immutable references; version tags, master refs, package-manager resolution and bare download/clone URLs remain provenance-open until separately resolved. Classification does not convert mutable third-party references into immutable evidence."
+    },
+    {
+      "source_path": ".github/workflows/lock.yml",
+      "source_lines": [
+        11
+      ],
+      "disposition": "repository-maintenance-automation-not-desktop-build",
+      "rationale": "Issue/repository maintenance automation is not a Telegram Desktop product build dependency.",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
+      "source_blob_sha": "7904e79591f79a4ea61c0dc194c189f048bf5c67",
+      "scanner_evidence": {
+        "runner": "github-actions",
+        "run_id": 37837273028,
+        "job_id": 113517856832,
+        "artifact_id": 11576650430,
+        "artifact_digest": "sha256:f300c0c9308470331da3b1bdadc5cef774757f04e95099d8e519bfaa1d6475e0",
+        "candidate_file": "build-time-acquisition-candidates.txt",
+        "evidence_head_sha": "3929d875d414f522f9b71b7fe6db33b81ccf4451",
+        "upstream_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db"
+      },
+      "provenance_policy": "Each listed line is classified against this immutable accepted source blob. Inline 40-hex action/source pins or sha256 image digests remain immutable references; version tags, master refs, package-manager resolution and bare download/clone URLs remain provenance-open until separately resolved. Classification does not convert mutable third-party references into immutable evidence."
+    },
+    {
+      "source_path": ".github/workflows/mac.yml",
+      "source_lines": [
+        63,
+        74,
+        85,
+        132
+      ],
+      "disposition": "desktop-ci-build-test-packaging-acquisition",
+      "rationale": "Current upstream desktop CI/canary/platform packaging dependency or artifact flow; exact workflow source is authoritative for CI evidence, but third-party reference immutability is reviewed separately.",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
+      "source_blob_sha": "184a94b091d2d7bab19ae67d7f3a5881b18213ba",
+      "scanner_evidence": {
+        "runner": "github-actions",
+        "run_id": 37837273028,
+        "job_id": 113517856832,
+        "artifact_id": 11576650430,
+        "artifact_digest": "sha256:f300c0c9308470331da3b1bdadc5cef774757f04e95099d8e519bfaa1d6475e0",
+        "candidate_file": "build-time-acquisition-candidates.txt",
+        "evidence_head_sha": "3929d875d414f522f9b71b7fe6db33b81ccf4451",
+        "upstream_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db"
+      },
+      "provenance_policy": "Each listed line is classified against this immutable accepted source blob. Inline 40-hex action/source pins or sha256 image digests remain immutable references; version tags, master refs, package-manager resolution and bare download/clone URLs remain provenance-open until separately resolved. Classification does not convert mutable third-party references into immutable evidence."
+    },
+    {
+      "source_path": ".github/workflows/mac_packaged.yml",
+      "source_lines": [
+        75,
+        85,
+        102,
+        103,
+        107,
+        117,
+        125,
+        132,
+        140,
+        167,
+        176,
+        185,
+        194,
+        203,
+        215,
+        248
+      ],
+      "disposition": "desktop-ci-build-test-packaging-acquisition",
+      "rationale": "Current upstream desktop CI/canary/platform packaging dependency or artifact flow; exact workflow source is authoritative for CI evidence, but third-party reference immutability is reviewed separately.",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
+      "source_blob_sha": "6e9f0b5bddfc3146bbed0bcd56a465bd584b89fc",
+      "scanner_evidence": {
+        "runner": "github-actions",
+        "run_id": 37837273028,
+        "job_id": 113517856832,
+        "artifact_id": 11576650430,
+        "artifact_digest": "sha256:f300c0c9308470331da3b1bdadc5cef774757f04e95099d8e519bfaa1d6475e0",
+        "candidate_file": "build-time-acquisition-candidates.txt",
+        "evidence_head_sha": "3929d875d414f522f9b71b7fe6db33b81ccf4451",
+        "upstream_commit": "65e23ba7137ea4129b6bc1b2616104a1f59495ef"
+      },
+      "provenance_policy": "Each listed line is classified against this immutable accepted source blob. Inline 40-hex action/source pins or sha256 image digests remain immutable references; version tags, master refs, package-manager resolution and bare download/clone URLs remain provenance-open until separately resolved. Classification does not convert mutable third-party references into immutable evidence. Live 65e23 re-read includes pinned Rust/toolchain/source fetches and the fourth actions/cache occurrence."
+    },
+    {
+      "source_path": ".github/workflows/master_updater.yml",
+      "source_lines": [
+        11
+      ],
+      "disposition": "repository-maintenance-automation-not-desktop-build",
+      "rationale": "Issue/repository maintenance automation is not a Telegram Desktop product build dependency.",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
+      "source_blob_sha": "fedc24f8e5d781a0bbdcdf80e24baf3eb2fe199f",
+      "scanner_evidence": {
+        "runner": "github-actions",
+        "run_id": 37837273028,
+        "job_id": 113517856832,
+        "artifact_id": 11576650430,
+        "artifact_digest": "sha256:f300c0c9308470331da3b1bdadc5cef774757f04e95099d8e519bfaa1d6475e0",
+        "candidate_file": "build-time-acquisition-candidates.txt",
+        "evidence_head_sha": "3929d875d414f522f9b71b7fe6db33b81ccf4451",
+        "upstream_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db"
+      },
+      "provenance_policy": "Each listed line is classified against this immutable accepted source blob. Inline 40-hex action/source pins or sha256 image digests remain immutable references; version tags, master refs, package-manager resolution and bare download/clone URLs remain provenance-open until separately resolved. Classification does not convert mutable third-party references into immutable evidence."
+    },
+    {
+      "source_path": ".github/workflows/needs-user-action.yml",
+      "source_lines": [
+        13
+      ],
+      "disposition": "repository-maintenance-automation-not-desktop-build",
+      "rationale": "Issue/repository maintenance automation is not a Telegram Desktop product build dependency.",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
+      "source_blob_sha": "55ad7891ce36682accae01d739203aa487876053",
+      "scanner_evidence": {
+        "runner": "github-actions",
+        "run_id": 37837273028,
+        "job_id": 113517856832,
+        "artifact_id": 11576650430,
+        "artifact_digest": "sha256:f300c0c9308470331da3b1bdadc5cef774757f04e95099d8e519bfaa1d6475e0",
+        "candidate_file": "build-time-acquisition-candidates.txt",
+        "evidence_head_sha": "3929d875d414f522f9b71b7fe6db33b81ccf4451",
+        "upstream_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db"
+      },
+      "provenance_policy": "Each listed line is classified against this immutable accepted source blob. Inline 40-hex action/source pins or sha256 image digests remain immutable references; version tags, master refs, package-manager resolution and bare download/clone URLs remain provenance-open until separately resolved. Classification does not convert mutable third-party references into immutable evidence."
+    },
+    {
+      "source_path": ".github/workflows/snap.yml",
+      "source_lines": [
+        54,
+        68,
+        86
+      ],
+      "disposition": "desktop-ci-build-test-packaging-acquisition",
+      "rationale": "Current upstream desktop CI/canary/platform packaging dependency or artifact flow; exact workflow source is authoritative for CI evidence, but third-party reference immutability is reviewed separately.",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
+      "source_blob_sha": "82f85ae9066a2773512afecb0bcf80875116a8c8",
+      "scanner_evidence": {
+        "runner": "github-actions",
+        "run_id": 37837273028,
+        "job_id": 113517856832,
+        "artifact_id": 11576650430,
+        "artifact_digest": "sha256:f300c0c9308470331da3b1bdadc5cef774757f04e95099d8e519bfaa1d6475e0",
+        "candidate_file": "build-time-acquisition-candidates.txt",
+        "evidence_head_sha": "3929d875d414f522f9b71b7fe6db33b81ccf4451",
+        "upstream_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db"
+      },
+      "provenance_policy": "Each listed line is classified against this immutable accepted source blob. Inline 40-hex action/source pins or sha256 image digests remain immutable references; version tags, master refs, package-manager resolution and bare download/clone URLs remain provenance-open until separately resolved. Classification does not convert mutable third-party references into immutable evidence."
+    },
+    {
+      "source_path": ".github/workflows/stale.yml",
+      "source_lines": [
+        10
+      ],
+      "disposition": "repository-maintenance-automation-not-desktop-build",
+      "rationale": "Issue/repository maintenance automation is not a Telegram Desktop product build dependency.",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
+      "source_blob_sha": "0d57eb7dbd9a9f758e1e33d45afbd1aefd212614",
+      "scanner_evidence": {
+        "runner": "github-actions",
+        "run_id": 37837273028,
+        "job_id": 113517856832,
+        "artifact_id": 11576650430,
+        "artifact_digest": "sha256:f300c0c9308470331da3b1bdadc5cef774757f04e95099d8e519bfaa1d6475e0",
+        "candidate_file": "build-time-acquisition-candidates.txt",
+        "evidence_head_sha": "3929d875d414f522f9b71b7fe6db33b81ccf4451",
+        "upstream_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db"
+      },
+      "provenance_policy": "Each listed line is classified against this immutable accepted source blob. Inline 40-hex action/source pins or sha256 image digests remain immutable references; version tags, master refs, package-manager resolution and bare download/clone URLs remain provenance-open until separately resolved. Classification does not convert mutable third-party references into immutable evidence."
+    },
+    {
+      "source_path": ".github/workflows/unused_styles_updater.yml",
+      "source_lines": [
+        14
+      ],
+      "disposition": "repository-maintenance-automation-not-desktop-build",
+      "rationale": "Issue/repository maintenance automation is not a Telegram Desktop product build dependency.",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
+      "source_blob_sha": "2c021d1cd09f7ac59b0e0d5ef6be2bf546167274",
+      "scanner_evidence": {
+        "runner": "github-actions",
+        "run_id": 37837273028,
+        "job_id": 113517856832,
+        "artifact_id": 11576650430,
+        "artifact_digest": "sha256:f300c0c9308470331da3b1bdadc5cef774757f04e95099d8e519bfaa1d6475e0",
+        "candidate_file": "build-time-acquisition-candidates.txt",
+        "evidence_head_sha": "3929d875d414f522f9b71b7fe6db33b81ccf4451",
+        "upstream_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db"
+      },
+      "provenance_policy": "Each listed line is classified against this immutable accepted source blob. Inline 40-hex action/source pins or sha256 image digests remain immutable references; version tags, master refs, package-manager resolution and bare download/clone URLs remain provenance-open until separately resolved. Classification does not convert mutable third-party references into immutable evidence."
+    },
+    {
+      "source_path": ".github/workflows/user_agent_updater.yml",
+      "source_lines": [
+        14
+      ],
+      "disposition": "repository-maintenance-automation-not-desktop-build",
+      "rationale": "Issue/repository maintenance automation is not a Telegram Desktop product build dependency.",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
+      "source_blob_sha": "1e3dae8182aefc4e4c76df065f547a43a1e50437",
+      "scanner_evidence": {
+        "runner": "github-actions",
+        "run_id": 37837273028,
+        "job_id": 113517856832,
+        "artifact_id": 11576650430,
+        "artifact_digest": "sha256:f300c0c9308470331da3b1bdadc5cef774757f04e95099d8e519bfaa1d6475e0",
+        "candidate_file": "build-time-acquisition-candidates.txt",
+        "evidence_head_sha": "3929d875d414f522f9b71b7fe6db33b81ccf4451",
+        "upstream_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db"
+      },
+      "provenance_policy": "Each listed line is classified against this immutable accepted source blob. Inline 40-hex action/source pins or sha256 image digests remain immutable references; version tags, master refs, package-manager resolution and bare download/clone URLs remain provenance-open until separately resolved. Classification does not convert mutable third-party references into immutable evidence."
+    },
+    {
+      "source_path": ".github/workflows/waiting-for-answer.yml",
+      "source_lines": [
+        13
+      ],
+      "disposition": "repository-maintenance-automation-not-desktop-build",
+      "rationale": "Issue/repository maintenance automation is not a Telegram Desktop product build dependency.",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
+      "source_blob_sha": "0cccca6b2d434303da915b12a13e7620cf1b8bc4",
+      "scanner_evidence": {
+        "runner": "github-actions",
+        "run_id": 37837273028,
+        "job_id": 113517856832,
+        "artifact_id": 11576650430,
+        "artifact_digest": "sha256:f300c0c9308470331da3b1bdadc5cef774757f04e95099d8e519bfaa1d6475e0",
+        "candidate_file": "build-time-acquisition-candidates.txt",
+        "evidence_head_sha": "3929d875d414f522f9b71b7fe6db33b81ccf4451",
+        "upstream_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db"
+      },
+      "provenance_policy": "Each listed line is classified against this immutable accepted source blob. Inline 40-hex action/source pins or sha256 image digests remain immutable references; version tags, master refs, package-manager resolution and bare download/clone URLs remain provenance-open until separately resolved. Classification does not convert mutable third-party references into immutable evidence."
+    },
+    {
+      "source_path": ".github/workflows/win.yml",
+      "source_lines": [
+        86,
+        113,
+        122,
+        136,
+        144,
+        157,
+        247
+      ],
+      "disposition": "desktop-ci-build-test-packaging-acquisition",
+      "rationale": "Current upstream desktop CI/canary/platform packaging dependency or artifact flow; exact workflow source is authoritative for CI evidence, but third-party reference immutability is reviewed separately.",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
+      "source_blob_sha": "219c42ebf679ca5d93add5cdbd51b0bb6e516b57",
+      "scanner_evidence": {
+        "runner": "github-actions",
+        "run_id": 37837273028,
+        "job_id": 113517856832,
+        "artifact_id": 11576650430,
+        "artifact_digest": "sha256:f300c0c9308470331da3b1bdadc5cef774757f04e95099d8e519bfaa1d6475e0",
+        "candidate_file": "build-time-acquisition-candidates.txt",
+        "evidence_head_sha": "3929d875d414f522f9b71b7fe6db33b81ccf4451",
+        "upstream_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db"
+      },
+      "provenance_policy": "Each listed line is classified against this immutable accepted source blob. Inline 40-hex action/source pins or sha256 image digests remain immutable references; version tags, master refs, package-manager resolution and bare download/clone URLs remain provenance-open until separately resolved. Classification does not convert mutable third-party references into immutable evidence."
+    },
+    {
+      "source_path": ".github/workflows/winget.yml",
+      "source_lines": [
+        10,
+        16
+      ],
+      "disposition": "distribution-publishing-acquisition",
+      "rationale": "Windows package publishing/distribution workflow; provenance matters for release distribution, not runtime source.",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
+      "source_blob_sha": "0ff2d50d8b12b67408d3ad1e06dc8e462b5a9390",
+      "scanner_evidence": {
+        "runner": "github-actions",
+        "run_id": 37837273028,
+        "job_id": 113517856832,
+        "artifact_id": 11576650430,
+        "artifact_digest": "sha256:f300c0c9308470331da3b1bdadc5cef774757f04e95099d8e519bfaa1d6475e0",
+        "candidate_file": "build-time-acquisition-candidates.txt",
+        "evidence_head_sha": "3929d875d414f522f9b71b7fe6db33b81ccf4451",
+        "upstream_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db"
+      },
+      "provenance_policy": "Each listed line is classified against this immutable accepted source blob. Inline 40-hex action/source pins or sha256 image digests remain immutable references; version tags, master refs, package-manager resolution and bare download/clone URLs remain provenance-open until separately resolved. Classification does not convert mutable third-party references into immutable evidence."
+    },
+    {
+      "source_path": "Telegram/build/canary_publish.sh",
+      "source_lines": [
+        75,
+        79,
+        93
+      ],
+      "disposition": "release-signing-publishing-tooling-acquisition",
+      "rationale": "Release/canary/signing tooling network or artifact acquisition; relevant to release provenance but not application runtime ownership.",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
+      "source_blob_sha": "4eb2d790063bb8f11efc7ffa06977fe1ef79a270",
+      "scanner_evidence": {
+        "runner": "github-actions",
+        "run_id": 37837273028,
+        "job_id": 113517856832,
+        "artifact_id": 11576650430,
+        "artifact_digest": "sha256:f300c0c9308470331da3b1bdadc5cef774757f04e95099d8e519bfaa1d6475e0",
+        "candidate_file": "build-time-acquisition-candidates.txt",
+        "evidence_head_sha": "3929d875d414f522f9b71b7fe6db33b81ccf4451",
+        "upstream_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db"
+      },
+      "provenance_policy": "Each listed line is classified against this immutable accepted source blob. Inline 40-hex action/source pins or sha256 image digests remain immutable references; version tags, master refs, package-manager resolution and bare download/clone URLs remain provenance-open until separately resolved. Classification does not convert mutable third-party references into immutable evidence."
+    },
+    {
       "source_path": "Telegram/build/docker/centos_env/Dockerfile",
       "source_lines": [
-        1006,
-        162,
-        172,
-        291,
-        451,
-        466,
-        485,
-        87,
-        953,
-        983
+        3,
+        14,
+        16,
+        18,
+        31,
+        88,
+        89,
+        159,
+        163,
+        164,
+        169,
+        173,
+        174,
+        191,
+        193,
+        202,
+        204,
+        213,
+        215,
+        224,
+        226,
+        235,
+        237,
+        251,
+        253,
+        262,
+        264,
+        277,
+        279,
+        288,
+        292,
+        293,
+        310,
+        312,
+        330,
+        334,
+        343,
+        349,
+        372,
+        374,
+        384,
+        386,
+        395,
+        399,
+        410,
+        412,
+        413,
+        422,
+        424,
+        425,
+        434,
+        438,
+        439,
+        448,
+        452,
+        453,
+        455,
+        463,
+        467,
+        468,
+        470,
+        478,
+        486,
+        487,
+        489,
+        500,
+        502,
+        511,
+        513,
+        522,
+        524,
+        533,
+        537,
+        546,
+        548,
+        557,
+        559,
+        568,
+        570,
+        579,
+        581,
+        582,
+        591,
+        593,
+        598,
+        608,
+        757,
+        761,
+        790,
+        792,
+        806,
+        810,
+        824,
+        826,
+        836,
+        840,
+        857,
+        874,
+        876,
+        902,
+        904,
+        912,
+        917,
+        922,
+        932,
+        954,
+        955,
+        957,
+        965,
+        967,
+        976,
+        984,
+        985,
+        994,
+        1000,
+        1008,
+        1009,
+        1014,
+        1015,
+        1044
       ],
-      "authority_scope": "build-source-authority"
+      "disposition": "canonical-linux-build-environment-acquisition",
+      "rationale": "Linux reproducible build image provisioning and dependency acquisition; package/repository provenance is part of shipping build authority.",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
+      "source_blob_sha": "e6d22fce93363f059e6929bb30f541549065a6c4",
+      "scanner_evidence": {
+        "runner": "github-actions",
+        "run_id": 37837273028,
+        "job_id": 113517856832,
+        "artifact_id": 11576650430,
+        "artifact_digest": "sha256:f300c0c9308470331da3b1bdadc5cef774757f04e95099d8e519bfaa1d6475e0",
+        "candidate_file": "build-time-acquisition-candidates.txt",
+        "evidence_head_sha": "3929d875d414f522f9b71b7fe6db33b81ccf4451",
+        "upstream_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db"
+      },
+      "provenance_policy": "Each listed line is classified against this immutable accepted source blob. Inline 40-hex action/source pins or sha256 image digests remain immutable references; version tags, master refs, package-manager resolution and bare download/clone URLs remain provenance-open until separately resolved. Classification does not convert mutable third-party references into immutable evidence."
     },
     {
-      "disposition": "exact-immutable-input-support",
       "source_path": "Telegram/build/prepare/prepare.py",
       "source_lines": [
-        1785,
-        1904,
-        1983,
         521,
         526,
-        633
-      ],
-      "authority_scope": "build-source-authority"
-    },
-    {
-      "disposition": "exact-immutable-input-support",
-      "source_path": "snap/snapcraft.yaml",
-      "source_lines": [
-        124,
-        322,
-        460,
-        477,
-        508
-      ],
-      "authority_scope": "build-source-authority"
-    },
-    {
-      "disposition": "exact-ref-requires-full-resolution",
-      "source_path": "Telegram/build/prepare/prepare.py",
-      "source_lines": [
-        1447,
-        1453,
-        1487,
-        1517,
-        1525,
-        1587,
+        541,
+        542,
+        556,
         576,
-        773
-      ],
-      "authority_scope": "build-source-authority"
-    },
-    {
-      "disposition": "mutable-tag-or-branch-input",
-      "source_path": "Telegram/build/docker/centos_env/Dockerfile",
-      "source_lines": [
-        192,
-        203,
-        214,
-        225,
-        236,
-        252,
-        263,
-        278,
-        311,
-        333,
-        348,
-        373,
-        385,
-        398,
-        411,
-        412,
-        423,
-        424,
-        437,
-        438,
-        501,
-        512,
-        523,
-        536,
-        547,
-        558,
-        569,
         580,
-        581,
-        592,
-        607,
-        760,
-        791,
-        809,
-        825,
-        839,
-        873,
-        966
-      ],
-      "authority_scope": "build-source-authority"
-    },
-    {
-      "disposition": "mutable-tag-or-branch-input",
-      "source_path": "Telegram/build/prepare/prepare.py",
-      "source_lines": [
-        1024,
-        1067,
-        1129,
-        1164,
-        1168,
-        1172,
-        1355,
-        1417,
-        1452,
-        1492,
-        1599,
-        1668,
-        1883,
+        583,
+        597,
         609,
         622,
-        671,
-        708,
-        755,
-        825,
-        833,
-        898,
-        956,
-        985
+        634,
+        672,
+        709,
+        756,
+        774,
+        805,
+        826,
+        834,
+        899,
+        957,
+        986,
+        1025,
+        1068,
+        1130,
+        1165,
+        1169,
+        1173,
+        1356,
+        1418,
+        1448,
+        1453,
+        1454,
+        1488,
+        1493,
+        1518,
+        1526,
+        1529,
+        1530,
+        1588,
+        1600,
+        1602,
+        1669,
+        1671,
+        1786,
+        1789,
+        1884,
+        1905,
+        1992,
+        2005
       ],
-      "authority_scope": "build-source-authority"
+      "disposition": "canonical-desktop-build-dependency-acquisition",
+      "rationale": "Primary desktop dependency preparation path; repositories/downloads/package tools reached here are shipping build authority when the surrounding branch is active.",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
+      "source_blob_sha": "1248e5e6405325dc74fb4f9d211ecddebcf89752",
+      "scanner_evidence": {
+        "runner": "github-actions",
+        "run_id": 37837273028,
+        "job_id": 113517856832,
+        "artifact_id": 11576650430,
+        "artifact_digest": "sha256:f300c0c9308470331da3b1bdadc5cef774757f04e95099d8e519bfaa1d6475e0",
+        "candidate_file": "build-time-acquisition-candidates.txt",
+        "evidence_head_sha": "3929d875d414f522f9b71b7fe6db33b81ccf4451",
+        "upstream_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db"
+      },
+      "provenance_policy": "Each listed line is classified against this immutable accepted source blob. Inline 40-hex action/source pins or sha256 image digests remain immutable references; version tags, master refs, package-manager resolution and bare download/clone URLs remain provenance-open until separately resolved. Classification does not convert mutable third-party references into immutable evidence."
     },
     {
-      "disposition": "mutable-tag-or-branch-input",
+      "source_path": "Telegram/build/release.py",
+      "source_lines": [
+        71,
+        294
+      ],
+      "disposition": "release-signing-publishing-tooling-acquisition",
+      "rationale": "Release/canary/signing tooling network or artifact acquisition; relevant to release provenance but not application runtime ownership.",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
+      "source_blob_sha": "df9e1b7944d396d05c03af6d3d0610b727d7de70",
+      "scanner_evidence": {
+        "runner": "github-actions",
+        "run_id": 37837273028,
+        "job_id": 113517856832,
+        "artifact_id": 11576650430,
+        "artifact_digest": "sha256:f300c0c9308470331da3b1bdadc5cef774757f04e95099d8e519bfaa1d6475e0",
+        "candidate_file": "build-time-acquisition-candidates.txt",
+        "evidence_head_sha": "3929d875d414f522f9b71b7fe6db33b81ccf4451",
+        "upstream_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db"
+      },
+      "provenance_policy": "Each listed line is classified against this immutable accepted source blob. Inline 40-hex action/source pins or sha256 image digests remain immutable references; version tags, master refs, package-manager resolution and bare download/clone URLs remain provenance-open until separately resolved. Classification does not convert mutable third-party references into immutable evidence."
+    },
+    {
+      "source_path": "Telegram/build/sign_update.py",
+      "source_lines": [
+        93,
+        97
+      ],
+      "disposition": "release-signing-publishing-tooling-acquisition",
+      "rationale": "Release/canary/signing tooling network or artifact acquisition; relevant to release provenance but not application runtime ownership.",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
+      "source_blob_sha": "9e3e2e9e1b716db6a15a36b949bf53d3f650777d",
+      "scanner_evidence": {
+        "runner": "github-actions",
+        "run_id": 37837273028,
+        "job_id": 113517856832,
+        "artifact_id": 11576650430,
+        "artifact_digest": "sha256:f300c0c9308470331da3b1bdadc5cef774757f04e95099d8e519bfaa1d6475e0",
+        "candidate_file": "build-time-acquisition-candidates.txt",
+        "evidence_head_sha": "3929d875d414f522f9b71b7fe6db33b81ccf4451",
+        "upstream_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db"
+      },
+      "provenance_policy": "Each listed line is classified against this immutable accepted source blob. Inline 40-hex action/source pins or sha256 image digests remain immutable references; version tags, master refs, package-manager resolution and bare download/clone URLs remain provenance-open until separately resolved. Classification does not convert mutable third-party references into immutable evidence."
+    },
+    {
       "source_path": "snap/snapcraft.yaml",
       "source_lines": [
+        39,
+        124,
+        126,
         135,
         137,
         149,
         151,
         165,
         167,
+        322,
+        324,
         334,
         336,
         349,
@@ -412,465 +915,33 @@
         396,
         398,
         442,
-        444
-      ],
-      "authority_scope": "build-source-authority"
-    },
-    {
-      "disposition": "runtime-service-call",
-      "source_path": "Telegram/build/canary_publish.sh",
-      "source_lines": [
-        75,
-        79,
-        93
-      ],
-      "authority_scope": "runtime-not-acquisition"
-    },
-    {
-      "disposition": "self-repository-release-operation",
-      "source_path": "Telegram/build/release.py",
-      "source_lines": [
-        294
-      ],
-      "authority_scope": "self-repository-operation"
-    },
-    {
-      "disposition": "tool-bootstrap",
-      "source_path": ".github/workflows/docker.yml",
-      "source_lines": [
-        27
-      ],
-      "authority_scope": "toolchain-authority"
-    },
-    {
-      "disposition": "tool-bootstrap",
-      "source_path": ".github/workflows/linux.yml",
-      "source_lines": [
-        72,
-        73
-      ],
-      "authority_scope": "toolchain-authority"
-    },
-    {
-      "disposition": "tool-bootstrap",
-      "source_path": "Telegram/build/docker/centos_env/Dockerfile",
-      "source_lines": [
-        18,
-        998
-      ],
-      "authority_scope": "toolchain-authority"
-    },
-    {
-      "disposition": "tool-bootstrap",
-      "source_path": "Telegram/build/prepare/prepare.py",
-      "source_lines": [
-        597
-      ],
-      "authority_scope": "toolchain-authority"
-    },
-    {
-      "disposition": "tool-bootstrap",
-      "source_path": "snap/snapcraft.yaml",
-      "source_lines": [
-        490
-      ],
-      "authority_scope": "toolchain-authority"
-    },
-    {
-      "disposition": "versioned-download-input",
-      "source_path": "Telegram/build/docker/centos_env/Dockerfile",
-      "source_lines": [
-        903
-      ],
-      "authority_scope": "build-source-authority"
-    },
-    {
-      "disposition": "versioned-download-input",
-      "source_path": "Telegram/build/prepare/prepare.py",
-      "source_lines": [
-        804
-      ],
-      "authority_scope": "build-source-authority"
-    },
-    {
-      "disposition": "ci-only",
-      "source_path": ".github/telegram-bot-api/Dockerfile",
-      "source_lines": [
-        10,
-        27,
-        29,
-        8
-      ],
-      "authority_scope": "ci-only"
-    },
-    {
-      "disposition": "ci-only",
-      "source_path": ".github/workflows/canary-bot-api.yml",
-      "source_lines": [
-        43,
-        46,
-        54
-      ],
-      "authority_scope": "ci-only"
-    },
-    {
-      "disposition": "ci-only",
-      "source_path": ".github/workflows/canary.yml",
-      "source_lines": [
-        1096,
-        1159,
-        1166,
-        1188,
-        1236,
-        1237,
-        1244,
-        1253,
-        1261,
-        1270,
-        1278,
-        1302,
-        1373,
-        1419,
-        1426,
-        1467,
-        1472,
-        1478,
-        1491,
-        154,
-        1556,
-        1561,
-        1567,
-        1644,
-        1649,
-        1655,
-        366,
-        389,
-        477,
-        509,
-        517,
-        530,
-        564,
-        571,
-        583,
-        663,
-        718,
-        728,
-        761,
-        784,
-        817,
-        846,
-        923,
-        954,
-        976,
-        982
-      ],
-      "authority_scope": "ci-only"
-    },
-    {
-      "disposition": "ci-only",
-      "source_path": ".github/workflows/cant-reproduce.yml",
-      "source_lines": [
-        11
-      ],
-      "authority_scope": "ci-only"
-    },
-    {
-      "disposition": "ci-only",
-      "source_path": ".github/workflows/changelog.yml",
-      "source_lines": [
-        22,
-        24,
-        32,
-        45
-      ],
-      "authority_scope": "ci-only"
-    },
-    {
-      "disposition": "ci-only",
-      "source_path": ".github/workflows/copyright_year_updater.yml",
-      "source_lines": [
-        14
-      ],
-      "authority_scope": "ci-only"
-    },
-    {
-      "disposition": "ci-only",
-      "source_path": ".github/workflows/docker.yml",
-      "source_lines": [
-        20,
-        26,
-        31
-      ],
-      "authority_scope": "ci-only"
-    },
-    {
-      "disposition": "ci-only",
-      "source_path": ".github/workflows/issue_closer.yml",
-      "source_lines": [
-        12
-      ],
-      "authority_scope": "ci-only"
-    },
-    {
-      "disposition": "ci-only",
-      "source_path": ".github/workflows/linux.yml",
-      "source_lines": [
-        102,
-        110,
-        126,
-        184,
-        209,
-        65,
-        71,
-        83,
-        89,
-        93
-      ],
-      "authority_scope": "ci-only"
-    },
-    {
-      "disposition": "ci-only",
-      "source_path": ".github/workflows/lock.yml",
-      "source_lines": [
-        11
-      ],
-      "authority_scope": "ci-only"
-    },
-    {
-      "disposition": "ci-only",
-      "source_path": ".github/workflows/mac.yml",
-      "source_lines": [
-        132,
-        63,
-        74,
-        85
-      ],
-      "authority_scope": "ci-only"
-    },
-    {
-      "disposition": "ci-only",
-      "source_path": ".github/workflows/mac_packaged.yml",
-      "source_lines": [
-        103,
-        121,
-        139,
-        184,
-        71,
-        81
-      ],
-      "authority_scope": "ci-only"
-    },
-    {
-      "disposition": "ci-only",
-      "source_path": ".github/workflows/master_updater.yml",
-      "source_lines": [
-        11
-      ],
-      "authority_scope": "ci-only"
-    },
-    {
-      "disposition": "ci-only",
-      "source_path": ".github/workflows/needs-user-action.yml",
-      "source_lines": [
-        13
-      ],
-      "authority_scope": "ci-only"
-    },
-    {
-      "disposition": "ci-only",
-      "source_path": ".github/workflows/snap.yml",
-      "source_lines": [
-        54,
-        68,
-        86
-      ],
-      "authority_scope": "ci-only"
-    },
-    {
-      "disposition": "ci-only",
-      "source_path": ".github/workflows/stale.yml",
-      "source_lines": [
-        10
-      ],
-      "authority_scope": "ci-only"
-    },
-    {
-      "disposition": "ci-only",
-      "source_path": ".github/workflows/unused_styles_updater.yml",
-      "source_lines": [
-        14
-      ],
-      "authority_scope": "ci-only"
-    },
-    {
-      "disposition": "ci-only",
-      "source_path": ".github/workflows/user_agent_updater.yml",
-      "source_lines": [
-        14
-      ],
-      "authority_scope": "ci-only"
-    },
-    {
-      "disposition": "ci-only",
-      "source_path": ".github/workflows/waiting-for-answer.yml",
-      "source_lines": [
-        13
-      ],
-      "authority_scope": "ci-only"
-    },
-    {
-      "disposition": "ci-only",
-      "source_path": ".github/workflows/win.yml",
-      "source_lines": [
-        113,
-        122,
-        136,
-        144,
-        157,
-        247,
-        86
-      ],
-      "authority_scope": "ci-only"
-    },
-    {
-      "disposition": "ci-only",
-      "source_path": ".github/workflows/winget.yml",
-      "source_lines": [
-        10,
-        16
-      ],
-      "authority_scope": "ci-only"
-    },
-    {
-      "disposition": "docs",
-      "source_path": "Telegram/build/sign_update.py",
-      "source_lines": [
-        93
-      ],
-      "authority_scope": "docs-help-only"
-    },
-    {
-      "disposition": "generated-input",
-      "source_path": "Telegram/build/docker/centos_env/Dockerfile",
-      "source_lines": [
-        1021,
-        158,
-        168,
-        190,
-        201,
-        212,
-        223,
-        234,
-        250,
-        261,
-        276,
-        287,
-        309,
-        329,
-        342,
-        371,
-        383,
-        394,
-        409,
-        421,
-        433,
-        447,
+        444,
+        460,
         462,
         477,
-        499,
+        508,
         510,
-        521,
-        532,
-        545,
-        556,
-        567,
-        578,
-        590,
-        597,
-        756,
-        789,
-        805,
-        823,
-        835,
-        856,
-        901,
-        911,
-        931,
-        964,
-        975,
-        993
+        515,
+        517,
+        527,
+        529
       ],
-      "authority_scope": "internal-build-stage"
-    },
-    {
-      "disposition": "mutable-tag-or-branch-input",
-      "source_path": "Telegram/build/docker/centos_env/Dockerfile",
-      "source_lines": [
-        3
-      ],
-      "authority_scope": "build-source-authority"
-    },
-    {
-      "disposition": "recursive-child-input",
-      "source_path": "Telegram/build/docker/centos_env/Dockerfile",
-      "source_lines": [
-        454,
-        469,
-        488,
-        875,
-        956
-      ],
-      "authority_scope": "build-source-authority"
-    },
-    {
-      "disposition": "recursive-child-input",
-      "source_path": "Telegram/build/prepare/prepare.py",
-      "source_lines": [
-        1528,
-        1529,
-        1601,
-        1670,
-        1788
-      ],
-      "authority_scope": "build-source-authority"
-    },
-    {
-      "disposition": "self-repository-local-source",
-      "source_path": "snap/snapcraft.yaml",
-      "source_lines": [
-        39
-      ],
-      "authority_scope": "self-repository-source"
-    },
-    {
-      "disposition": "self-repository-release-operation",
-      "source_path": "Telegram/build/release.py",
-      "source_lines": [
-        71
-      ],
-      "authority_scope": "self-repository-operation"
-    },
-    {
-      "disposition": "tool-bootstrap",
-      "source_path": "Telegram/build/docker/centos_env/Dockerfile",
-      "source_lines": [
-        14,
-        16,
-        30
-      ],
-      "authority_scope": "toolchain-authority"
-    },
-    {
-      "disposition": "tool-bootstrap",
-      "source_path": "Telegram/build/prepare/prepare.py",
-      "source_lines": [
-        541,
-        542,
-        556,
-        580,
-        583
-      ],
-      "authority_scope": "toolchain-authority"
+      "disposition": "canonical-snap-build-source-package-acquisition",
+      "rationale": "Snap shipping build source/package/plugin acquisition and pinned source declarations.",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
+      "source_blob_sha": "1c37daafffa537bf4861d567e39d9e29026e4426",
+      "scanner_evidence": {
+        "runner": "github-actions",
+        "run_id": 37837273028,
+        "job_id": 113517856832,
+        "artifact_id": 11576650430,
+        "artifact_digest": "sha256:f300c0c9308470331da3b1bdadc5cef774757f04e95099d8e519bfaa1d6475e0",
+        "candidate_file": "build-time-acquisition-candidates.txt",
+        "evidence_head_sha": "3929d875d414f522f9b71b7fe6db33b81ccf4451",
+        "upstream_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db"
+      },
+      "provenance_policy": "Each listed line is classified against this immutable accepted source blob. Inline 40-hex action/source pins or sha256 image digests remain immutable references; version tags, master refs, package-manager resolution and bare download/clone URLs remain provenance-open until separately resolved. Classification does not convert mutable third-party references into immutable evidence."
     }
   ],
   "resolved_short_ref_contexts": [
@@ -953,7 +1024,7 @@
     {
       "id": "tg-owt-abseil",
       "parent_repository": "desktop-app/tg_owt",
-      "parent_commit": "e2d0e88d1bde6cc600da5dc92581dc97e4c1e685",
+      "parent_commit": "d1cf250ea73de26c4c1f0a3c8173eb2648efbb04",
       "child_path": "src/third_party/abseil-cpp",
       "child_repository": "abseil/abseil-cpp",
       "child_commit": "d7aaad83b488fd62bd51c81ecf16cd938532cc0a",
@@ -962,7 +1033,7 @@
     {
       "id": "tg-owt-crc32c",
       "parent_repository": "desktop-app/tg_owt",
-      "parent_commit": "e2d0e88d1bde6cc600da5dc92581dc97e4c1e685",
+      "parent_commit": "d1cf250ea73de26c4c1f0a3c8173eb2648efbb04",
       "child_path": "src/third_party/crc32c/src",
       "child_repository": "google/crc32c",
       "child_commit": "21fc8ef30415a635e7351ffa0e5d5367943d4a94",
@@ -971,7 +1042,7 @@
     {
       "id": "tg-owt-libsrtp",
       "parent_repository": "desktop-app/tg_owt",
-      "parent_commit": "e2d0e88d1bde6cc600da5dc92581dc97e4c1e685",
+      "parent_commit": "d1cf250ea73de26c4c1f0a3c8173eb2648efbb04",
       "child_path": "src/third_party/libsrtp",
       "child_repository": "cisco/libsrtp",
       "child_commit": "a566a9cfcd619e8327784aa7cff4a1276dc1e895",
@@ -980,7 +1051,7 @@
     {
       "id": "tg-owt-libyuv",
       "parent_repository": "desktop-app/tg_owt",
-      "parent_commit": "e2d0e88d1bde6cc600da5dc92581dc97e4c1e685",
+      "parent_commit": "d1cf250ea73de26c4c1f0a3c8173eb2648efbb04",
       "child_path": "src/third_party/libyuv",
       "child_repository": "gitlab.com/chromiumsrc/libyuv",
       "child_commit": "04821d1e7d60845525e8db55c7bcd41ef5be9406",
@@ -1081,7 +1152,7 @@
       },
       "parent_build_exclusion": {
         "repository": "desktop-app/tg_owt",
-        "commit": "e2d0e88d1bde6cc600da5dc92581dc97e4c1e685",
+        "commit": "d1cf250ea73de26c4c1f0a3c8173eb2648efbb04",
         "forbidden_child_tooling_reference_pattern": "riscv_script|tools_libyuv|src/third_party/libyuv/(DEPS|infra)|third_party/libyuv/(DEPS|infra)",
         "expected_reference_count": 0,
         "rationale": "tg_owt consumes libyuv as the pinned embedded gitlink. The child repository's standalone gclient manifest, LUCI/CI, autoroller and RISC-V toolchain scripts are not invoked by the parent build and are therefore non-parent-build authority, while generated/build/resource files remain inventoried as child content."
@@ -1160,7 +1231,7 @@
   ],
   "recursive_build_reachability": {
     "status": "partial-audited-disposition-open",
-    "accepted_upstream_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
+    "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "rule": "A recursively discovered repository is source/build authority only when an accepted TDesktop build path actually initializes, downloads, generates, patches, or consumes it. Presence as an unselected superproject gitlink is not sufficient.",
     "qt_superproject": {
       "repository": "https://github.com/qt/qt5",
@@ -1196,17 +1267,17 @@
       "accepted_upstream_evidence": [
         {
           "path": "Telegram/build/prepare/prepare.py",
-          "blob": "9482a53e60386743ae797d75cecc36767cd63646",
+          "blob": "1248e5e6405325dc74fb4f9d211ecddebcf89752",
           "evidence": "Qt 5 initializes only qtbase qtimageformats qtsvg; Qt 6 prepare initializes only qtbase qtimageformats qtshadertools qtsvg."
         },
         {
           "path": "Telegram/build/docker/centos_env/Dockerfile",
-          "blob": "5516c448c628d5928d690687ed948d67b5cdaac3",
+          "blob": "e6d22fce93363f059e6929bb30f541549065a6c4",
           "evidence": "Qt 6 Linux image initializes only qtbase qtdeclarative qtwayland qtimageformats qtsvg qtshadertools."
         },
         {
           "path": "snap/snapcraft.yaml",
-          "blob": "5cff7cf59aedc430b0a9a2d6d66ab6fe3c29bd9f",
+          "blob": "1c37daafffa537bf4861d567e39d9e29026e4426",
           "evidence": "Snap Qt source-submodules lists only qtbase qtdeclarative qtimageformats qtshadertools qtsvg qtwayland."
         }
       ],
@@ -1283,8 +1354,8 @@
     },
     "openssl": {
       "repository": "https://github.com/openssl/openssl",
-      "commit": "a7e992847de83aa36be0c399c89db3fb827b0be2",
-      "ref": "openssl-3.2.1",
+      "commit": "45e844fa2a14ec92d146bd8f5778ac130b6625fb",
+      "ref": "openssl-3.5.9",
       "build_entries": [
         "Telegram/build/prepare/prepare.py",
         "Telegram/build/docker/centos_env/Dockerfile",
@@ -1293,17 +1364,17 @@
       "accepted_upstream_evidence": [
         {
           "path": "Telegram/build/prepare/prepare.py",
-          "blob": "9482a53e60386743ae797d75cecc36767cd63646",
+          "blob": "93ff2c8ab4f3275644145012c9231718530c1486",
           "evidence": "Clones OpenSSL and builds libraries directly; no git submodule init/update in the OpenSSL stage."
         },
         {
           "path": "Telegram/build/docker/centos_env/Dockerfile",
-          "blob": "5516c448c628d5928d690687ed948d67b5cdaac3",
+          "blob": "09a05179b48b4f9185697134002bad4e486ca4fd",
           "evidence": "Shallow clones OpenSSL, configures no-tests/no-dso, builds and installs; no submodule init/update."
         },
         {
           "path": "snap/snapcraft.yaml",
-          "blob": "5cff7cf59aedc430b0a9a2d6d66ab6fe3c29bd9f",
+          "blob": "b363829e5c131fce5e80e0644c0fb6546da8ad6c",
           "evidence": "Snap OpenSSL part uses source-tag/plugin make and does not request source-submodules."
         }
       ],
@@ -1316,22 +1387,27 @@
         [
           "fuzz/corpora",
           "https://github.com/openssl/fuzz-corpora",
-          "8663e2d71fa934e7846fa4c5fb6de7cb3afc53fd"
+          "ce771805c094d098c25a218bc8e9f7344eccbc5a"
         ],
         [
           "gost-engine",
           "https://github.com/gost-engine/engine",
-          "2a8a5e0ecaa3e3d6f4ec722a49aa72476755c2b7"
+          "74b1f4fddbc2d6de969815b1992ddc1ae7c643fe"
         ],
         [
           "krb5",
           "https://github.com/krb5/krb5",
-          "aa9b4a2a64046afd2fab7cb49c346295874a5fb6"
+          "784c38f50e70a739400cdd3f2620bac2e2788e6c"
         ],
         [
           "oqs-provider",
-          "https://github.com/open-quantum-safe/oqs-provider",
-          "8c746d7e294d6948c2f361a8f2fa376a63a2db30"
+          "https://github.com/open-quantum-safe/oqs-provider.git",
+          "7bc597c04b534ddea9b6654481deb31ded8e1bbc"
+        ],
+        [
+          "pkcs11-provider",
+          "https://github.com/latchset/pkcs11-provider.git",
+          "64fc325ac0f91d03d76b3546df2998d3a38c525b"
         ],
         [
           "pyca-cryptography",
@@ -1341,17 +1417,17 @@
         [
           "python-ecdsa",
           "https://github.com/tlsfuzzer/python-ecdsa",
-          "4de8d5bf89089d1140eb99aa5d7eb2dc8e6337b6"
+          "4096fa01715929e08b97e73f3173aee9d57f2a3f"
         ],
         [
           "tlsfuzzer",
           "https://github.com/tlsfuzzer/tlsfuzzer",
-          "dbd56c149072e656ca8d6a43a59588f3e7513da2"
+          "61f45d9701294fd87ef92d2a7e3dfb076653a562"
         ],
         [
           "tlslite-ng",
           "https://github.com/tlsfuzzer/tlslite-ng",
-          "771e9f59d639dbb0e2fa8e646c8e588405d3903e"
+          "77ef321dde1a9e6bcf94d73c80f8789a770d8031"
         ],
         [
           "wycheproof",
@@ -1414,7 +1490,7 @@
     },
     "tg_owt": {
       "repository": "https://github.com/desktop-app/tg_owt",
-      "commit": "e2d0e88d1bde6cc600da5dc92581dc97e4c1e685",
+      "commit": "d1cf250ea73de26c4c1f0a3c8173eb2648efbb04",
       "build_entries": [
         "Telegram/build/prepare/prepare.py",
         "Telegram/build/docker/centos_env/Dockerfile",
@@ -1423,15 +1499,15 @@
       "accepted_upstream_evidence": [
         {
           "path": "Telegram/build/prepare/prepare.py",
-          "evidence": "Clones tg_owt, checks out exact e2d0e88d1bde6cc600da5dc92581dc97e4c1e685, recursively initializes its pinned submodules, then invokes CMake build."
+          "evidence": "Clones tg_owt, checks out exact d1cf250ea73de26c4c1f0a3c8173eb2648efbb04, recursively initializes its pinned submodules, then invokes CMake build."
         },
         {
           "path": "Telegram/build/docker/centos_env/Dockerfile",
-          "evidence": "Initializes tg_owt at exact e2d0e88d1bde6cc600da5dc92581dc97e4c1e685, recursively initializes submodules, configures CMake, builds, and installs."
+          "evidence": "Initializes tg_owt at exact d1cf250ea73de26c4c1f0a3c8173eb2648efbb04, recursively initializes submodules, configures CMake, builds, and installs."
         },
         {
           "path": "snap/snapcraft.yaml",
-          "evidence": "The webrtc part pins tg_owt source-commit e2d0e88d1bde6cc600da5dc92581dc97e4c1e685 and builds it with the CMake plugin."
+          "evidence": "The webrtc part pins tg_owt source-commit d1cf250ea73de26c4c1f0a3c8173eb2648efbb04 and builds it with the CMake plugin."
         }
       ],
       "root_candidate_disposition_policy": [
@@ -1613,8 +1689,8 @@
     },
     "ada": {
       "repository": "https://github.com/ada-url/ada",
-      "commit": "010f7c45aeaff1205452e7da2df8702cf725fb3e",
-      "ref": "v3.2.4",
+      "commit": "6b4612162c34e7ffcee08c03b107b449e07a5683",
+      "ref": "v3.2.9",
       "build_entries": [
         "Telegram/build/prepare/prepare.py",
         "Telegram/build/docker/centos_env/Dockerfile",
@@ -1623,15 +1699,15 @@
       "accepted_upstream_evidence": [
         {
           "path": "Telegram/build/prepare/prepare.py",
-          "evidence": "Clones ada v3.2.4 and configures ADA_TESTING=OFF, ADA_TOOLS=OFF, ADA_INCLUDE_URL_PATTERN=OFF before building/installing."
+          "evidence": "Clones ada v3.2.9 and configures ADA_TESTING=OFF, ADA_TOOLS=OFF, ADA_INCLUDE_URL_PATTERN=OFF before building/installing."
         },
         {
           "path": "Telegram/build/docker/centos_env/Dockerfile",
-          "evidence": "Clones ada v3.2.4 shallow and configures ADA_TESTING=OFF, ADA_TOOLS=OFF, ADA_INCLUDE_URL_PATTERN=OFF."
+          "evidence": "Clones ada v3.2.9 shallow and configures ADA_TESTING=OFF, ADA_TOOLS=OFF, ADA_INCLUDE_URL_PATTERN=OFF."
         },
         {
           "path": "snap/snapcraft.yaml",
-          "evidence": "Pins ada v3.2.4 and passes ADA_TESTING=OFF, ADA_TOOLS=OFF, ADA_INCLUDE_URL_PATTERN=OFF."
+          "evidence": "Pins ada v3.2.9 and passes ADA_TESTING=OFF, ADA_TOOLS=OFF, ADA_INCLUDE_URL_PATTERN=OFF."
         }
       ],
       "root_candidate_disposition_policy": [
@@ -2202,7 +2278,7 @@
       "repository": "https://github.com/cisco/libsrtp",
       "commit": "a566a9cfcd619e8327784aa7cff4a1276dc1e895",
       "parent_repository": "https://github.com/desktop-app/tg_owt",
-      "parent_commit": "e2d0e88d1bde6cc600da5dc92581dc97e4c1e685",
+      "parent_commit": "d1cf250ea73de26c4c1f0a3c8173eb2648efbb04",
       "child_path": "src/third_party/libsrtp",
       "build_entries": [
         "Telegram/build/prepare/prepare.py",
@@ -2211,7 +2287,7 @@
       "accepted_upstream_evidence": [
         {
           "path": "Telegram/build/prepare/prepare.py",
-          "evidence": "Accepted tg_owt is pinned to e2d0e88d1bde6cc600da5dc92581dc97e4c1e685 and fetched with git submodule update --init --recursive; its src/third_party/libsrtp gitlink resolves to a566a9cfcd619e8327784aa7cff4a1276dc1e895. TDesktop does not execute libsrtp's own GitHub/Travis CI, Coverity, config update URLs or test download comments."
+          "evidence": "Accepted tg_owt is pinned to d1cf250ea73de26c4c1f0a3c8173eb2648efbb04 and fetched with git submodule update --init --recursive; its src/third_party/libsrtp gitlink resolves to a566a9cfcd619e8327784aa7cff4a1276dc1e895. TDesktop does not execute libsrtp's own GitHub/Travis CI, Coverity, config update URLs or test download comments."
         }
       ],
       "root_candidate_disposition_policy": [
@@ -2399,6 +2475,2138 @@
       ],
       "root_candidate_policy_status": "complete-for-current-xkbcommon-authority",
       "note": "Closes acquisition-pattern candidates for xkbcommon-1.6.0; keyboard mapping/runtime behavior remains in semantic scope."
+    },
+    "rebaseline_status": "Live 65e23ba7 changes macOS packaging/test harness/product blobs but does not change the accepted prepare.py, Linux Docker, or Snap build-reachability evidence blobs audited below; reachability dispositions remain unchanged. Fresh descendant exact-head authority validation is required."
+  },
+  "external_immutable_resolutions": [
+    {
+      "dependency": "ccache linux x86_64 glibc release archive",
+      "build_source_path": ".github/workflows/linux.yml",
+      "mutable_reference": "https://github.com/ccache/ccache/releases/download/v4.13.6/ccache-4.13.6-linux-x86_64-glibc.tar.xz",
+      "tag_object": "100d636a986eb3039880a10ac70869ac187eeee6",
+      "resolved_commit": "c6f36725ddaa247678ff130cf4349055962ac072",
+      "tag_signature_verified": true,
+      "release_asset_id": 411999981,
+      "release_asset_digest": "sha256:508b2a1217dc6e04a23e967c7b95a0fb45d8a7e16fde9e180919698f2e2be060",
+      "release_asset_size": 1308196,
+      "status": "resolved-snapshot-evidence-source-still-mutable-by-url",
+      "note": "Observed release payload is bound to a GitHub-reported SHA-256 and signed tag->commit. The accepted workflow still consumes a tag-based release URL and does not yet verify this digest, so immutable shipping acquisition closure remains open."
+    },
+    {
+      "dependency": "XZ Utils v5.8.4",
+      "build_source_path": "Telegram build prepare/Docker/Snap accepted paths",
+      "mutable_reference": "v5.8.4",
+      "tag_object": "9151b328e76bbc468aa64f85c741886b6227cec1",
+      "resolved_commit": "d3e650e63c110e830fd5391e7f8b45df0b91d3da",
+      "tag_signature_verified": true,
+      "status": "resolved-signed-tag-snapshot-source-tag-still-mutable",
+      "note": "Verified annotated tag resolves to an exact commit. Accepted build source remains tag-based, so this is snapshot evidence rather than immutable acquisition closure."
+    },
+    {
+      "dependency": "telegramdesktop/openal-soft macOS coreaudio_device_uid branch",
+      "build_source_path": "Telegram/build/prepare/prepare.py",
+      "mutable_reference": "coreaudio_device_uid",
+      "resolved_commit": "c2eab43d72890c58d4b51d5d98eafb9f011e1c89",
+      "status": "resolved-branch-snapshot-source-branch-still-mutable",
+      "note": "Current branch ref resolves to this exact commit and the snapshot is already represented in recursive build reachability. The accepted build source still names a movable branch; closure remains open until the acquisition is pinned or verifies an immutable identity."
     }
+  ],
+  "github_action_ref_resolutions": {
+    "status": "snapshot-resolved-observed-action-graph-shipping-mutable-refs-still-open",
+    "accepted_upstream": "6fed91ffab9861771a75f29df65031b3c80b6941",
+    "evidence": {
+      "runner": "github-actions",
+      "run_id": 37895845999,
+      "run_attempt": 1,
+      "job_id": 113707029955,
+      "validation_head_sha": "cf83555da246d25cfcf81bdcb0deb25f099f7612",
+      "artifact_id": 11600685991,
+      "artifact_digest": "sha256:097d945ec3b1913789ce8bde71cf533bdbec787bb753217c63287c056f588cf3",
+      "artifact_member": "build-time-github-action-ref-resolutions.json"
+    },
+    "top_level_occurrences": 89,
+    "unique_top_level_refs": 27,
+    "mutable_top_level_unique_refs": 15,
+    "mutable_top_level_refs": [
+      "Eden-CI/msvc-dev-cmd@master",
+      "actions/cache@v6",
+      "actions/checkout@v7",
+      "actions/deploy-pages@v5",
+      "actions/setup-python@v7",
+      "actions/stale@v11",
+      "actions/upload-artifact@v7",
+      "actions/upload-pages-artifact@v5",
+      "desktop-app/action_code_updater@master",
+      "desktop-app/action_issue_closer@master",
+      "dessant/lock-threads@v6",
+      "docker/build-push-action@v7",
+      "docker/setup-buildx-action@v4",
+      "lee-dohm/no-response@v0.5.0",
+      "telegramdesktop/winget-releaser@main"
+    ],
+    "resolutions": [
+      {
+        "source_path": ".github/workflows/canary-bot-api.yml",
+        "source_line": 43,
+        "raw": "uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "repository": "actions/checkout",
+        "action_path": "",
+        "ref": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "resolved_commit": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary-bot-api.yml",
+        "source_line": 46,
+        "raw": "uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f",
+        "repository": "docker/login-action",
+        "action_path": "",
+        "ref": "dbcb813823bdd20940b903addbd779551569679f",
+        "resolved_commit": "dbcb813823bdd20940b903addbd779551569679f",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary-bot-api.yml",
+        "source_line": 54,
+        "raw": "uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a",
+        "repository": "docker/build-push-action",
+        "action_path": "",
+        "ref": "53b7df96c91f9c12dcc8a07bcb9ccacbed38856a",
+        "resolved_commit": "53b7df96c91f9c12dcc8a07bcb9ccacbed38856a",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 1001,
+        "raw": "uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+        "repository": "actions/download-artifact",
+        "action_path": "",
+        "ref": "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+        "resolved_commit": "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 1007,
+        "raw": "uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+        "repository": "actions/download-artifact",
+        "action_path": "",
+        "ref": "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+        "resolved_commit": "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 1121,
+        "raw": "uses: azure/login@7ddb5af1ef8758cf1353cf3b42f940aee27ba21c",
+        "repository": "azure/login",
+        "action_path": "",
+        "ref": "7ddb5af1ef8758cf1353cf3b42f940aee27ba21c",
+        "resolved_commit": "7ddb5af1ef8758cf1353cf3b42f940aee27ba21c",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 1184,
+        "raw": "- uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "repository": "actions/upload-artifact",
+        "action_path": "",
+        "ref": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "resolved_commit": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 1191,
+        "raw": "- uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "repository": "actions/upload-artifact",
+        "action_path": "",
+        "ref": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "resolved_commit": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 1213,
+        "raw": "uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "repository": "actions/checkout",
+        "action_path": "",
+        "ref": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "resolved_commit": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 1269,
+        "raw": "uses: jlumbroso/free-disk-space@ceedf095f4ec1a097402bc6bd80831f2e1a6fde6",
+        "repository": "jlumbroso/free-disk-space",
+        "action_path": "",
+        "ref": "ceedf095f4ec1a097402bc6bd80831f2e1a6fde6",
+        "resolved_commit": "ceedf095f4ec1a097402bc6bd80831f2e1a6fde6",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 1278,
+        "raw": "uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e",
+        "repository": "docker/setup-buildx-action",
+        "action_path": "",
+        "ref": "37fe631027851001ddb9b187196cc803df7f5f0e",
+        "resolved_commit": "37fe631027851001ddb9b187196cc803df7f5f0e",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 1286,
+        "raw": "uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "repository": "actions/cache",
+        "action_path": "restore",
+        "ref": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "resolved_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 1295,
+        "raw": "uses: reproducible-containers/buildkit-cache-dance@5422eac04292c961a382e0f584ea0f03ad9da723",
+        "repository": "reproducible-containers/buildkit-cache-dance",
+        "action_path": "",
+        "ref": "5422eac04292c961a382e0f584ea0f03ad9da723",
+        "resolved_commit": "5422eac04292c961a382e0f584ea0f03ad9da723",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 1303,
+        "raw": "uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a",
+        "repository": "docker/build-push-action",
+        "action_path": "",
+        "ref": "53b7df96c91f9c12dcc8a07bcb9ccacbed38856a",
+        "resolved_commit": "53b7df96c91f9c12dcc8a07bcb9ccacbed38856a",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 1327,
+        "raw": "uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "repository": "actions/cache",
+        "action_path": "save",
+        "ref": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "resolved_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 1398,
+        "raw": "uses: azure/login@7ddb5af1ef8758cf1353cf3b42f940aee27ba21c",
+        "repository": "azure/login",
+        "action_path": "",
+        "ref": "7ddb5af1ef8758cf1353cf3b42f940aee27ba21c",
+        "resolved_commit": "7ddb5af1ef8758cf1353cf3b42f940aee27ba21c",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 1444,
+        "raw": "- uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "repository": "actions/upload-artifact",
+        "action_path": "",
+        "ref": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "resolved_commit": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 1451,
+        "raw": "- uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "repository": "actions/upload-artifact",
+        "action_path": "",
+        "ref": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "resolved_commit": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 1492,
+        "raw": "uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "repository": "actions/checkout",
+        "action_path": "",
+        "ref": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "resolved_commit": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 1497,
+        "raw": "uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+        "repository": "actions/download-artifact",
+        "action_path": "",
+        "ref": "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+        "resolved_commit": "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 1503,
+        "raw": "uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+        "repository": "actions/download-artifact",
+        "action_path": "",
+        "ref": "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+        "resolved_commit": "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 154,
+        "raw": "uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "repository": "actions/checkout",
+        "action_path": "",
+        "ref": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "resolved_commit": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 1581,
+        "raw": "uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "repository": "actions/checkout",
+        "action_path": "",
+        "ref": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "resolved_commit": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 1586,
+        "raw": "uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+        "repository": "actions/download-artifact",
+        "action_path": "",
+        "ref": "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+        "resolved_commit": "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 1592,
+        "raw": "uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+        "repository": "actions/download-artifact",
+        "action_path": "",
+        "ref": "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+        "resolved_commit": "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 1669,
+        "raw": "uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "repository": "actions/checkout",
+        "action_path": "",
+        "ref": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "resolved_commit": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 1674,
+        "raw": "uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+        "repository": "actions/download-artifact",
+        "action_path": "",
+        "ref": "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+        "resolved_commit": "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 1680,
+        "raw": "uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+        "repository": "actions/download-artifact",
+        "action_path": "",
+        "ref": "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+        "resolved_commit": "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 366,
+        "raw": "uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "repository": "actions/checkout",
+        "action_path": "",
+        "ref": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "resolved_commit": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 477,
+        "raw": "- uses: Eden-CI/msvc-dev-cmd@1bd71f95d6f3d1b2b3395b335cc63bcdc90cf223",
+        "repository": "Eden-CI/msvc-dev-cmd",
+        "action_path": "",
+        "ref": "1bd71f95d6f3d1b2b3395b335cc63bcdc90cf223",
+        "resolved_commit": "1bd71f95d6f3d1b2b3395b335cc63bcdc90cf223",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 509,
+        "raw": "uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "repository": "actions/cache",
+        "action_path": "restore",
+        "ref": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "resolved_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 517,
+        "raw": "uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "repository": "actions/cache",
+        "action_path": "restore",
+        "ref": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "resolved_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 530,
+        "raw": "uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "repository": "actions/cache",
+        "action_path": "restore",
+        "ref": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "resolved_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 578,
+        "raw": "uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "repository": "actions/cache",
+        "action_path": "save",
+        "ref": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "resolved_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 585,
+        "raw": "uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "repository": "actions/cache",
+        "action_path": "save",
+        "ref": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "resolved_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 597,
+        "raw": "uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "repository": "actions/cache",
+        "action_path": "save",
+        "ref": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "resolved_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 677,
+        "raw": "uses: azure/login@7ddb5af1ef8758cf1353cf3b42f940aee27ba21c",
+        "repository": "azure/login",
+        "action_path": "",
+        "ref": "7ddb5af1ef8758cf1353cf3b42f940aee27ba21c",
+        "resolved_commit": "7ddb5af1ef8758cf1353cf3b42f940aee27ba21c",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 732,
+        "raw": "- uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "repository": "actions/upload-artifact",
+        "action_path": "",
+        "ref": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "resolved_commit": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 742,
+        "raw": "- uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "repository": "actions/upload-artifact",
+        "action_path": "",
+        "ref": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "resolved_commit": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 775,
+        "raw": "uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "repository": "actions/checkout",
+        "action_path": "",
+        "ref": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "resolved_commit": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 831,
+        "raw": "uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "repository": "actions/cache",
+        "action_path": "restore",
+        "ref": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "resolved_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 871,
+        "raw": "uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "repository": "actions/cache",
+        "action_path": "save",
+        "ref": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "resolved_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 948,
+        "raw": "- uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "repository": "actions/upload-artifact",
+        "action_path": "",
+        "ref": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "resolved_commit": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/canary.yml",
+        "source_line": 979,
+        "raw": "uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "repository": "actions/checkout",
+        "action_path": "",
+        "ref": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "resolved_commit": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/cant-reproduce.yml",
+        "source_line": 11,
+        "raw": "- uses: lee-dohm/no-response@v0.5.0",
+        "repository": "lee-dohm/no-response",
+        "action_path": "",
+        "ref": "v0.5.0",
+        "resolved_commit": "9bb0a4b5e6a45046f00353d5de7d90fb8bd773bb",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/changelog.yml",
+        "source_line": 22,
+        "raw": "- uses: actions/checkout@v7",
+        "repository": "actions/checkout",
+        "action_path": "",
+        "ref": "v7",
+        "resolved_commit": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/changelog.yml",
+        "source_line": 24,
+        "raw": "- uses: actions/setup-python@v7",
+        "repository": "actions/setup-python",
+        "action_path": "",
+        "ref": "v7",
+        "resolved_commit": "5fda3b95a4ea91299a34e894583c3862153e4b97",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/changelog.yml",
+        "source_line": 32,
+        "raw": "uses: actions/upload-pages-artifact@v5",
+        "repository": "actions/upload-pages-artifact",
+        "action_path": "",
+        "ref": "v5",
+        "resolved_commit": "fc324d3547104276b827a68afc52ff2a11cc49c9",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/changelog.yml",
+        "source_line": 45,
+        "raw": "uses: actions/deploy-pages@v5",
+        "repository": "actions/deploy-pages",
+        "action_path": "",
+        "ref": "v5",
+        "resolved_commit": "368f82528645a54fb793d4d04e342629a3f51346",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/copyright_year_updater.yml",
+        "source_line": 14,
+        "raw": "- uses: desktop-app/action_code_updater@master",
+        "repository": "desktop-app/action_code_updater",
+        "action_path": "",
+        "ref": "master",
+        "resolved_commit": "0a8d3ebb437e5c77cf5d066d4a54cc93d34b534a",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/docker.yml",
+        "source_line": 20,
+        "raw": "uses: actions/checkout@v7",
+        "repository": "actions/checkout",
+        "action_path": "",
+        "ref": "v7",
+        "resolved_commit": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/docker.yml",
+        "source_line": 31,
+        "raw": "uses: jlumbroso/free-disk-space@ceedf095f4ec1a097402bc6bd80831f2e1a6fde6",
+        "repository": "jlumbroso/free-disk-space",
+        "action_path": "",
+        "ref": "ceedf095f4ec1a097402bc6bd80831f2e1a6fde6",
+        "resolved_commit": "ceedf095f4ec1a097402bc6bd80831f2e1a6fde6",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/issue_closer.yml",
+        "source_line": 12,
+        "raw": "uses: desktop-app/action_issue_closer@master",
+        "repository": "desktop-app/action_issue_closer",
+        "action_path": "",
+        "ref": "master",
+        "resolved_commit": "b2fc72db6cc262c8e84e10740c44296ec4be2e02",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/linux.yml",
+        "source_line": 102,
+        "raw": "uses: reproducible-containers/buildkit-cache-dance@5422eac04292c961a382e0f584ea0f03ad9da723",
+        "repository": "reproducible-containers/buildkit-cache-dance",
+        "action_path": "",
+        "ref": "5422eac04292c961a382e0f584ea0f03ad9da723",
+        "resolved_commit": "5422eac04292c961a382e0f584ea0f03ad9da723",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/linux.yml",
+        "source_line": 110,
+        "raw": "uses: docker/build-push-action@v7",
+        "repository": "docker/build-push-action",
+        "action_path": "",
+        "ref": "v7",
+        "resolved_commit": "c3c9e263c25d99ce0380d002d59b67737d91b0dc",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/linux.yml",
+        "source_line": 126,
+        "raw": "uses: actions/cache/restore@v6",
+        "repository": "actions/cache",
+        "action_path": "restore",
+        "ref": "v6",
+        "resolved_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/linux.yml",
+        "source_line": 184,
+        "raw": "uses: actions/cache/save@v6",
+        "repository": "actions/cache",
+        "action_path": "save",
+        "ref": "v6",
+        "resolved_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/linux.yml",
+        "source_line": 209,
+        "raw": "- uses: actions/upload-artifact@v7",
+        "repository": "actions/upload-artifact",
+        "action_path": "",
+        "ref": "v7",
+        "resolved_commit": "cf430e030ddbb5b0abf93d22962f4752f3646cd9",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/linux.yml",
+        "source_line": 65,
+        "raw": "uses: actions/checkout@v7",
+        "repository": "actions/checkout",
+        "action_path": "",
+        "ref": "v7",
+        "resolved_commit": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/linux.yml",
+        "source_line": 83,
+        "raw": "uses: jlumbroso/free-disk-space@ceedf095f4ec1a097402bc6bd80831f2e1a6fde6",
+        "repository": "jlumbroso/free-disk-space",
+        "action_path": "",
+        "ref": "ceedf095f4ec1a097402bc6bd80831f2e1a6fde6",
+        "resolved_commit": "ceedf095f4ec1a097402bc6bd80831f2e1a6fde6",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/linux.yml",
+        "source_line": 89,
+        "raw": "uses: docker/setup-buildx-action@v4",
+        "repository": "docker/setup-buildx-action",
+        "action_path": "",
+        "ref": "v4",
+        "resolved_commit": "f87e5991a6d7451dcb8d9637bfbc97413f497069",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/linux.yml",
+        "source_line": 93,
+        "raw": "uses: actions/cache@v6",
+        "repository": "actions/cache",
+        "action_path": "",
+        "ref": "v6",
+        "resolved_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/lock.yml",
+        "source_line": 11,
+        "raw": "- uses: dessant/lock-threads@v6",
+        "repository": "dessant/lock-threads",
+        "action_path": "",
+        "ref": "v6",
+        "resolved_commit": "89ae32b08ed1a541efecbab17912962a5e38981c",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/mac.yml",
+        "source_line": 132,
+        "raw": "- uses: actions/upload-artifact@v7",
+        "repository": "actions/upload-artifact",
+        "action_path": "",
+        "ref": "v7",
+        "resolved_commit": "cf430e030ddbb5b0abf93d22962f4752f3646cd9",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/mac.yml",
+        "source_line": 63,
+        "raw": "uses: actions/checkout@v7",
+        "repository": "actions/checkout",
+        "action_path": "",
+        "ref": "v7",
+        "resolved_commit": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/mac.yml",
+        "source_line": 85,
+        "raw": "uses: actions/cache@v6",
+        "repository": "actions/cache",
+        "action_path": "",
+        "ref": "v6",
+        "resolved_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/master_updater.yml",
+        "source_line": 11,
+        "raw": "- uses: desktop-app/action_code_updater@master",
+        "repository": "desktop-app/action_code_updater",
+        "action_path": "",
+        "ref": "master",
+        "resolved_commit": "0a8d3ebb437e5c77cf5d066d4a54cc93d34b534a",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/needs-user-action.yml",
+        "source_line": 13,
+        "raw": "- uses: lee-dohm/no-response@v0.5.0",
+        "repository": "lee-dohm/no-response",
+        "action_path": "",
+        "ref": "v0.5.0",
+        "resolved_commit": "9bb0a4b5e6a45046f00353d5de7d90fb8bd773bb",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/snap.yml",
+        "source_line": 54,
+        "raw": "uses: actions/checkout@v7",
+        "repository": "actions/checkout",
+        "action_path": "",
+        "ref": "v7",
+        "resolved_commit": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/snap.yml",
+        "source_line": 68,
+        "raw": "uses: samueldr/more-space-action@97048bd0df83fb05b5257887bdbaffc848887673",
+        "repository": "samueldr/more-space-action",
+        "action_path": "",
+        "ref": "97048bd0df83fb05b5257887bdbaffc848887673",
+        "resolved_commit": "97048bd0df83fb05b5257887bdbaffc848887673",
+        "reference_kind": "immutable-commit"
+      },
+      {
+        "source_path": ".github/workflows/snap.yml",
+        "source_line": 86,
+        "raw": "- uses: actions/upload-artifact@v7",
+        "repository": "actions/upload-artifact",
+        "action_path": "",
+        "ref": "v7",
+        "resolved_commit": "cf430e030ddbb5b0abf93d22962f4752f3646cd9",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/stale.yml",
+        "source_line": 10,
+        "raw": "- uses: actions/stale@v11",
+        "repository": "actions/stale",
+        "action_path": "",
+        "ref": "v11",
+        "resolved_commit": "4391f3da665fdf50b6810c1a66712fb9ba21aa93",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/unused_styles_updater.yml",
+        "source_line": 14,
+        "raw": "- uses: desktop-app/action_code_updater@master",
+        "repository": "desktop-app/action_code_updater",
+        "action_path": "",
+        "ref": "master",
+        "resolved_commit": "0a8d3ebb437e5c77cf5d066d4a54cc93d34b534a",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/user_agent_updater.yml",
+        "source_line": 14,
+        "raw": "- uses: desktop-app/action_code_updater@master",
+        "repository": "desktop-app/action_code_updater",
+        "action_path": "",
+        "ref": "master",
+        "resolved_commit": "0a8d3ebb437e5c77cf5d066d4a54cc93d34b534a",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/waiting-for-answer.yml",
+        "source_line": 13,
+        "raw": "- uses: lee-dohm/no-response@v0.5.0",
+        "repository": "lee-dohm/no-response",
+        "action_path": "",
+        "ref": "v0.5.0",
+        "resolved_commit": "9bb0a4b5e6a45046f00353d5de7d90fb8bd773bb",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/win.yml",
+        "source_line": 122,
+        "raw": "- uses: Eden-CI/msvc-dev-cmd@master",
+        "repository": "Eden-CI/msvc-dev-cmd",
+        "action_path": "",
+        "ref": "master",
+        "resolved_commit": "1bd71f95d6f3d1b2b3395b335cc63bcdc90cf223",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/win.yml",
+        "source_line": 136,
+        "raw": "uses: actions/cache@v6",
+        "repository": "actions/cache",
+        "action_path": "",
+        "ref": "v6",
+        "resolved_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/win.yml",
+        "source_line": 144,
+        "raw": "uses: actions/cache@v6",
+        "repository": "actions/cache",
+        "action_path": "",
+        "ref": "v6",
+        "resolved_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/win.yml",
+        "source_line": 157,
+        "raw": "uses: actions/cache@v6",
+        "repository": "actions/cache",
+        "action_path": "",
+        "ref": "v6",
+        "resolved_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/win.yml",
+        "source_line": 247,
+        "raw": "- uses: actions/upload-artifact@v7",
+        "repository": "actions/upload-artifact",
+        "action_path": "",
+        "ref": "v7",
+        "resolved_commit": "cf430e030ddbb5b0abf93d22962f4752f3646cd9",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/win.yml",
+        "source_line": 86,
+        "raw": "uses: actions/checkout@v7",
+        "repository": "actions/checkout",
+        "action_path": "",
+        "ref": "v7",
+        "resolved_commit": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/winget.yml",
+        "source_line": 10,
+        "raw": "uses: telegramdesktop/winget-releaser@main",
+        "repository": "telegramdesktop/winget-releaser",
+        "action_path": "",
+        "ref": "main",
+        "resolved_commit": "4ffc7888bffd451b357355dc214d43bb9f23917e",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/winget.yml",
+        "source_line": 16,
+        "raw": "uses: telegramdesktop/winget-releaser@main",
+        "repository": "telegramdesktop/winget-releaser",
+        "action_path": "",
+        "ref": "main",
+        "resolved_commit": "4ffc7888bffd451b357355dc214d43bb9f23917e",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/mac_packaged.yml",
+        "source_line": 75,
+        "raw": "uses: actions/checkout@v7",
+        "repository": "actions/checkout",
+        "action_path": "",
+        "ref": "v7",
+        "resolved_commit": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/mac_packaged.yml",
+        "source_line": 107,
+        "raw": "uses: actions/cache@v6",
+        "repository": "actions/cache",
+        "action_path": "",
+        "ref": "v6",
+        "resolved_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/mac_packaged.yml",
+        "source_line": 167,
+        "raw": "uses: actions/cache@v6",
+        "repository": "actions/cache",
+        "action_path": "",
+        "ref": "v6",
+        "resolved_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/mac_packaged.yml",
+        "source_line": 185,
+        "raw": "uses: actions/cache@v6",
+        "repository": "actions/cache",
+        "action_path": "",
+        "ref": "v6",
+        "resolved_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/mac_packaged.yml",
+        "source_line": 203,
+        "raw": "uses: actions/cache@v6",
+        "repository": "actions/cache",
+        "action_path": "",
+        "ref": "v6",
+        "resolved_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      },
+      {
+        "source_path": ".github/workflows/mac_packaged.yml",
+        "source_line": 248,
+        "raw": "- uses: actions/upload-artifact@v7",
+        "repository": "actions/upload-artifact",
+        "action_path": "",
+        "ref": "v7",
+        "resolved_commit": "cf430e030ddbb5b0abf93d22962f4752f3646cd9",
+        "reference_kind": "mutable-ref-resolved-snapshot"
+      }
+    ],
+    "transitive": [
+      {
+        "repository": "actions/upload-pages-artifact",
+        "commit": "fc324d3547104276b827a68afc52ff2a11cc49c9",
+        "action_path": "",
+        "depth": 0,
+        "parent": ".github/workflows/changelog.yml:32",
+        "metadata_path": "action.yml",
+        "metadata_blob_sha": "82713b4cbb35ccf98dfa8f2e0deedc5e83b6d845",
+        "child_spec": "actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f",
+        "child_repository": "actions/upload-artifact",
+        "child_ref": "bbbca2ddaa5d8feaa63e36b76fdaad77386f024f",
+        "child_resolved_commit": "bbbca2ddaa5d8feaa63e36b76fdaad77386f024f",
+        "child_reference_kind": "immutable-commit"
+      },
+      {
+        "repository": "telegramdesktop/winget-releaser",
+        "commit": "4ffc7888bffd451b357355dc214d43bb9f23917e",
+        "action_path": "",
+        "depth": 0,
+        "parent": ".github/workflows/winget.yml:10",
+        "metadata_path": "action.yml",
+        "metadata_blob_sha": "a6de3aab26491d01a7a459c3fcaca8b6d5bce393",
+        "child_spec": "cargo-bins/cargo-binstall@main",
+        "child_repository": "cargo-bins/cargo-binstall",
+        "child_ref": "main",
+        "child_resolved_commit": "c06f6a0003f7c6165a00c89d1697731c9e8a5c72",
+        "child_reference_kind": "mutable-ref-resolved-snapshot"
+      }
+    ],
+    "unresolved": [],
+    "note": "Observed GitHub Action uses refs are bound to exact commit snapshots for this accepted source/head. Mutable source refs remain open until the accepted build definition itself is immutably pinned; this does not close non-Action provenance.",
+    "rebaseline_status": "Accepted 6fed91ff modifies no workflow/acquisition source path; source/ref bindings are unchanged and fresh descendant GitHub Actions resolver evidence is required."
+  },
+  "github_clone_ref_resolutions": {
+    "status": "snapshot-resolved-literal-github-clone-refs-source-refs-still-open",
+    "accepted_upstream": "6fed91ffab9861771a75f29df65031b3c80b6941",
+    "evidence": {
+      "runner": "github-actions",
+      "run_id": 37895845999,
+      "run_attempt": 1,
+      "job_id": 113707029955,
+      "validation_head_sha": "cf83555da246d25cfcf81bdcb0deb25f099f7612",
+      "artifact_id": 11600685991,
+      "artifact_digest": "sha256:097d945ec3b1913789ce8bde71cf533bdbec787bb753217c63287c056f588cf3",
+      "artifact_member": "build-time-github-clone-ref-resolutions.json"
+    },
+    "unique_explicit_github_clone_refs": 33,
+    "resolutions": [
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 193,
+        "repository": "tukaani-project/xz",
+        "ref": "v5.8.4",
+        "raw": "git clone -b v5.8.4 --depth=1 https://github.com/tukaani-project/xz.git",
+        "resolved_commit": "d3e650e63c110e830fd5391e7f8b45df0b91d3da",
+        "status": "resolved-snapshot-source-ref-still-mutable"
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 204,
+        "repository": "mm2/Little-CMS",
+        "ref": "lcms2.15",
+        "raw": "git clone -b lcms2.15 --depth=1 https://github.com/mm2/Little-CMS.git",
+        "resolved_commit": "d0752309ff93f62be246ee9bf18338107f30d485",
+        "status": "resolved-snapshot-source-ref-still-mutable"
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 215,
+        "repository": "google/brotli",
+        "ref": "v1.2.0",
+        "raw": "git clone -b v1.2.0 --depth=1 https://github.com/google/brotli.git",
+        "resolved_commit": "028fb5a23661f123017c060daa546b55cf4bde29",
+        "status": "resolved-snapshot-source-ref-still-mutable"
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 226,
+        "repository": "google/highway",
+        "ref": "1.4.0",
+        "raw": "git clone -b 1.4.0 --depth=1 https://github.com/google/highway.git",
+        "resolved_commit": "2607d3b5b0113992fe84d3848859eae13b3b52c1",
+        "status": "resolved-snapshot-source-ref-still-mutable"
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 237,
+        "repository": "mozilla/mozjpeg",
+        "ref": "v4.1.5",
+        "raw": "git clone -b v4.1.5 --depth=1 https://github.com/mozilla/mozjpeg.git",
+        "resolved_commit": "6c9f0897afa1c2738d7222a0a9ab49e8b536a267",
+        "status": "resolved-snapshot-source-ref-still-mutable"
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 253,
+        "repository": "xiph/opus",
+        "ref": "v1.5.2",
+        "raw": "git clone -b v1.5.2 --depth=1 https://github.com/xiph/opus.git",
+        "resolved_commit": "ddbe48383984d56acd9e1ab6a090c54ca6b735a6",
+        "status": "resolved-snapshot-source-ref-still-mutable"
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 264,
+        "repository": "videolan/dav1d",
+        "ref": "1.5.4",
+        "raw": "git clone -b 1.5.4 --depth=1 https://github.com/videolan/dav1d.git",
+        "resolved_commit": "54706fc6bc0cdecab7e9593974a4039cc038fca7",
+        "status": "resolved-snapshot-source-ref-still-mutable"
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 279,
+        "repository": "cisco/openh264",
+        "ref": "v2.6.0",
+        "raw": "git clone -b v2.6.0 --depth=1 https://github.com/cisco/openh264.git",
+        "resolved_commit": "652bdb7719f30b52b08e506645a7322ff1b2cc6f",
+        "status": "resolved-snapshot-source-ref-still-mutable"
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 312,
+        "repository": "webmproject/libwebp",
+        "ref": "v1.6.0",
+        "raw": "git clone -b v1.6.0 --depth=1 https://github.com/webmproject/libwebp.git",
+        "resolved_commit": "4fa21912338357f89e4fd51cf2368325b59e9bd9",
+        "status": "resolved-snapshot-source-ref-still-mutable"
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 334,
+        "repository": "AOMediaCodec/libavif",
+        "ref": "v1.4.2",
+        "raw": "git clone -b v1.4.2 --depth=1 https://github.com/AOMediaCodec/libavif.git",
+        "resolved_commit": "c5240fc79fe5c2407e10afd35f5505ef6333ea49",
+        "status": "resolved-snapshot-source-ref-still-mutable"
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 349,
+        "repository": "libjxl/libjxl",
+        "ref": "v0.12.0",
+        "raw": "git clone -b v0.12.0 --depth=1 https://github.com/libjxl/libjxl.git",
+        "resolved_commit": "a7a9c787341cf703dede03c2009fa460cae5e5df",
+        "status": "resolved-snapshot-source-ref-still-mutable"
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 374,
+        "repository": "xiph/rnnoise",
+        "ref": "v0.2",
+        "raw": "git clone -b v0.2 --depth=1 https://github.com/xiph/rnnoise.git",
+        "resolved_commit": "904a876dce1f9ab8860c0a5000ed151f9f6eef58",
+        "status": "resolved-snapshot-source-ref-still-mutable"
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 386,
+        "repository": "gitlab-freedesktop-mirrors/xcbproto",
+        "ref": "xcb-proto-1.16.0",
+        "raw": "git clone -b xcb-proto-1.16.0 --depth=1 https://github.com/gitlab-freedesktop-mirrors/xcbproto.git",
+        "resolved_commit": "98eeebfc2d7db5377b85437418fb942ea30ffc0d",
+        "status": "resolved-snapshot-source-ref-still-mutable"
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 399,
+        "repository": "gitlab-freedesktop-mirrors/libxcb",
+        "ref": "libxcb-1.16.1",
+        "raw": "git clone -b libxcb-1.16.1 --depth=1 https://github.com/gitlab-freedesktop-mirrors/libxcb.git",
+        "resolved_commit": "c671b9b30aecada4e43cb48e0dee46d19fb5cb9c",
+        "status": "resolved-snapshot-source-ref-still-mutable"
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 502,
+        "repository": "gitlab-freedesktop-mirrors/libxext",
+        "ref": "libXext-1.3.5",
+        "raw": "git clone -b libXext-1.3.5 --depth=1 https://github.com/gitlab-freedesktop-mirrors/libxext.git",
+        "resolved_commit": "67e82cc395f44faddd83ec3d0d21624fe91c6fc0",
+        "status": "resolved-snapshot-source-ref-still-mutable"
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 513,
+        "repository": "gitlab-freedesktop-mirrors/libxtst",
+        "ref": "libXtst-1.2.5",
+        "raw": "git clone -b libXtst-1.2.5 --depth=1 https://github.com/gitlab-freedesktop-mirrors/libxtst.git",
+        "resolved_commit": "abf3ff74b97c4231d2324d66318bfa1d22e44913",
+        "status": "resolved-snapshot-source-ref-still-mutable"
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 524,
+        "repository": "gitlab-freedesktop-mirrors/libxfixes",
+        "ref": "libXfixes-5.0.3",
+        "raw": "git clone -b libXfixes-5.0.3 --depth=1 https://github.com/gitlab-freedesktop-mirrors/libxfixes.git",
+        "resolved_commit": "84df9cb81cc31bbed27ba241a23ae04f61da57db",
+        "status": "resolved-snapshot-source-ref-still-mutable"
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 537,
+        "repository": "gitlab-freedesktop-mirrors/libxv",
+        "ref": "libXv-1.0.13",
+        "raw": "git clone -b libXv-1.0.13 --depth=1 https://github.com/gitlab-freedesktop-mirrors/libxv.git",
+        "resolved_commit": "e1cde54538060c4fd3a3d02e3d2e2b7e5da7bff9",
+        "status": "resolved-snapshot-source-ref-still-mutable"
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 548,
+        "repository": "gitlab-freedesktop-mirrors/libxrandr",
+        "ref": "libXrandr-1.5.4",
+        "raw": "git clone -b libXrandr-1.5.4 --depth=1 https://github.com/gitlab-freedesktop-mirrors/libxrandr.git",
+        "resolved_commit": "512bf0b15b5597c721ff8c61083616ca9040fa72",
+        "status": "resolved-snapshot-source-ref-still-mutable"
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 559,
+        "repository": "gitlab-freedesktop-mirrors/libxrender",
+        "ref": "libXrender-0.9.12",
+        "raw": "git clone -b libXrender-0.9.12 --depth=1 https://github.com/gitlab-freedesktop-mirrors/libxrender.git",
+        "resolved_commit": "46e12ff9e8e4d3f0313a2f097df93dbfdc14f92f",
+        "status": "resolved-snapshot-source-ref-still-mutable"
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 570,
+        "repository": "gitlab-freedesktop-mirrors/libxdamage",
+        "ref": "libXdamage-1.1.6",
+        "raw": "git clone -b libXdamage-1.1.6 --depth=1 https://github.com/gitlab-freedesktop-mirrors/libxdamage.git",
+        "resolved_commit": "1f20df4fd7c132f55e924dc5ec3f270cd54704d0",
+        "status": "resolved-snapshot-source-ref-still-mutable"
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 593,
+        "repository": "FFmpeg/nv-codec-headers",
+        "ref": "n12.1.14.0",
+        "raw": "git clone -b n12.1.14.0 --depth=1 https://github.com/FFmpeg/nv-codec-headers.git",
+        "resolved_commit": "1889e62e2d35ff7aa9baca2bceb14f053785e6f1",
+        "status": "resolved-snapshot-source-ref-still-mutable"
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 608,
+        "repository": "FFmpeg/FFmpeg",
+        "ref": "n8.1.3",
+        "raw": "git clone -b n8.1.3 --depth=1 https://github.com/FFmpeg/FFmpeg.git",
+        "resolved_commit": "1041abdc962f4cc4f394aa8de9dc5236c0c3b9e7",
+        "status": "resolved-snapshot-source-ref-still-mutable"
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 761,
+        "repository": "strukturag/libheif",
+        "ref": "v1.23.5",
+        "raw": "git clone -b v1.23.5 --depth=1 https://github.com/strukturag/libheif.git",
+        "resolved_commit": "413e2a87e6a70b3eccc3a3adc5801179dd2d9e00",
+        "status": "resolved-snapshot-source-ref-still-mutable"
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 792,
+        "repository": "PipeWire/pipewire",
+        "ref": "0.3.62",
+        "raw": "git clone -b 0.3.62 --depth=1 https://github.com/PipeWire/pipewire.git",
+        "resolved_commit": "3a443b4e1c9730675c7de0453a6279ab9ee263fd",
+        "status": "resolved-snapshot-source-ref-still-mutable"
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 810,
+        "repository": "kcat/openal-soft",
+        "ref": "1.25.2",
+        "raw": "git clone -b 1.25.2 --depth=1 https://github.com/kcat/openal-soft.git",
+        "resolved_commit": "b2c48f7718ef3fcf67921a8b6534c4914e328970",
+        "status": "resolved-snapshot-source-ref-still-mutable"
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 826,
+        "repository": "openssl/openssl",
+        "ref": "openssl-3.5.9",
+        "raw": "git clone -b openssl-3.5.9 --depth=1 https://github.com/openssl/openssl.git",
+        "resolved_commit": "45e844fa2a14ec92d146bd8f5778ac130b6625fb",
+        "status": "resolved-snapshot-source-ref-still-mutable"
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 840,
+        "repository": "xkbcommon/libxkbcommon",
+        "ref": "xkbcommon-1.6.0",
+        "raw": "git clone -b xkbcommon-1.6.0 --depth=1 https://github.com/xkbcommon/libxkbcommon.git",
+        "resolved_commit": "d2a08f761c796733e42fac4099f5c38d443e88e1",
+        "status": "resolved-snapshot-source-ref-still-mutable"
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 967,
+        "repository": "ada-url/ada",
+        "ref": "v3.2.9",
+        "raw": "git clone -b v3.2.9 --depth=1 https://github.com/ada-url/ada.git",
+        "resolved_commit": "6b4612162c34e7ffcee08c03b107b449e07a5683",
+        "status": "resolved-snapshot-source-ref-still-mutable"
+      },
+      {
+        "source_path": "Telegram/build/prepare/prepare.py",
+        "source_line": 1130,
+        "repository": "mm2/Little-CMS",
+        "ref": "lcms2.16",
+        "raw": "git clone -b lcms2.16 https://github.com/mm2/Little-CMS.git liblcms2",
+        "resolved_commit": "453bafeb85b4ef96498866b7a8eadcc74dff9223",
+        "status": "resolved-snapshot-source-ref-still-mutable"
+      },
+      {
+        "source_path": "Telegram/build/prepare/prepare.py",
+        "source_line": 1169,
+        "repository": "boostorg/regex",
+        "ref": "boost-1.83.0",
+        "raw": "git clone -b boost-1.83.0 https://github.com/boostorg/regex.git",
+        "resolved_commit": "4cbcd3078e6ae10d05124379623a1bf03fcb9350",
+        "status": "resolved-snapshot-source-ref-still-mutable"
+      },
+      {
+        "source_path": "Telegram/build/prepare/prepare.py",
+        "source_line": 1453,
+        "repository": "google/googletest",
+        "ref": "release-1.11.0",
+        "raw": "git clone -b release-1.11.0 https://github.com/google/googletest src/testing",
+        "resolved_commit": "e2239ee6043f73722e7aa812a459f54a28552929",
+        "status": "resolved-snapshot-source-ref-still-mutable"
+      },
+      {
+        "source_path": "Telegram/build/prepare/prepare.py",
+        "source_line": 622,
+        "repository": "tukaani-project/xz",
+        "ref": "v5.4",
+        "raw": "git clone -b v5.4 https://github.com/tukaani-project/xz.git",
+        "resolved_commit": "05af863c3166cddeb4ab935829b14e995c8346b4",
+        "status": "resolved-snapshot-source-ref-still-mutable"
+      }
+    ],
+    "note": "Only literal GitHub git clone -b refs are included. Variable refs, bare clones, later fetch/checkout pins, GitLab/Chromium remotes, package managers, and downloads are intentionally excluded for separate contextual resolution. Every included literal ref resolved successfully on this run; ref mutability and all excluded contextual/package/download inputs remain open.",
+    "rebaseline_status": "Accepted 6fed91ff modifies no workflow/acquisition source path; source/ref bindings are unchanged and fresh descendant GitHub Actions resolver evidence is required."
+  },
+  "github_action_immutable_authority": {
+    "status": "complete-current-top-level-mutable-action-authority-bindings",
+    "accepted_upstream": "6fed91ffab9861771a75f29df65031b3c80b6941",
+    "policy": "Every mutable top-level GitHub Action occurrence in accepted Telegram source is bound by source path/line/ref to an exact 40-hex commit. The mutable upstream spelling is source evidence only; Fabushi provenance authority is the bound commit. A source/ref/resolution change must fail validation until this binding is explicitly reviewed and updated.",
+    "mutable_occurrences": 41,
+    "mutable_unique_refs": 15,
+    "unbound_occurrences": 0,
+    "bindings": [
+      {
+        "source_path": ".github/workflows/cant-reproduce.yml",
+        "source_line": 11,
+        "raw": "- uses: lee-dohm/no-response@v0.5.0",
+        "repository": "lee-dohm/no-response",
+        "action_path": "",
+        "mutable_ref": "v0.5.0",
+        "authority_commit": "9bb0a4b5e6a45046f00353d5de7d90fb8bd773bb",
+        "authority_kind": "fabushi-immutable-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": ".github/workflows/changelog.yml",
+        "source_line": 22,
+        "raw": "- uses: actions/checkout@v7",
+        "repository": "actions/checkout",
+        "action_path": "",
+        "mutable_ref": "v7",
+        "authority_commit": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "authority_kind": "fabushi-immutable-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": ".github/workflows/changelog.yml",
+        "source_line": 24,
+        "raw": "- uses: actions/setup-python@v7",
+        "repository": "actions/setup-python",
+        "action_path": "",
+        "mutable_ref": "v7",
+        "authority_commit": "5fda3b95a4ea91299a34e894583c3862153e4b97",
+        "authority_kind": "fabushi-immutable-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": ".github/workflows/changelog.yml",
+        "source_line": 32,
+        "raw": "uses: actions/upload-pages-artifact@v5",
+        "repository": "actions/upload-pages-artifact",
+        "action_path": "",
+        "mutable_ref": "v5",
+        "authority_commit": "fc324d3547104276b827a68afc52ff2a11cc49c9",
+        "authority_kind": "fabushi-immutable-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": ".github/workflows/changelog.yml",
+        "source_line": 45,
+        "raw": "uses: actions/deploy-pages@v5",
+        "repository": "actions/deploy-pages",
+        "action_path": "",
+        "mutable_ref": "v5",
+        "authority_commit": "368f82528645a54fb793d4d04e342629a3f51346",
+        "authority_kind": "fabushi-immutable-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": ".github/workflows/copyright_year_updater.yml",
+        "source_line": 14,
+        "raw": "- uses: desktop-app/action_code_updater@master",
+        "repository": "desktop-app/action_code_updater",
+        "action_path": "",
+        "mutable_ref": "master",
+        "authority_commit": "0a8d3ebb437e5c77cf5d066d4a54cc93d34b534a",
+        "authority_kind": "fabushi-immutable-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": ".github/workflows/docker.yml",
+        "source_line": 20,
+        "raw": "uses: actions/checkout@v7",
+        "repository": "actions/checkout",
+        "action_path": "",
+        "mutable_ref": "v7",
+        "authority_commit": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "authority_kind": "fabushi-immutable-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": ".github/workflows/issue_closer.yml",
+        "source_line": 12,
+        "raw": "uses: desktop-app/action_issue_closer@master",
+        "repository": "desktop-app/action_issue_closer",
+        "action_path": "",
+        "mutable_ref": "master",
+        "authority_commit": "b2fc72db6cc262c8e84e10740c44296ec4be2e02",
+        "authority_kind": "fabushi-immutable-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": ".github/workflows/linux.yml",
+        "source_line": 110,
+        "raw": "uses: docker/build-push-action@v7",
+        "repository": "docker/build-push-action",
+        "action_path": "",
+        "mutable_ref": "v7",
+        "authority_commit": "c3c9e263c25d99ce0380d002d59b67737d91b0dc",
+        "authority_kind": "fabushi-immutable-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": ".github/workflows/linux.yml",
+        "source_line": 126,
+        "raw": "uses: actions/cache/restore@v6",
+        "repository": "actions/cache",
+        "action_path": "restore",
+        "mutable_ref": "v6",
+        "authority_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "authority_kind": "fabushi-immutable-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": ".github/workflows/linux.yml",
+        "source_line": 184,
+        "raw": "uses: actions/cache/save@v6",
+        "repository": "actions/cache",
+        "action_path": "save",
+        "mutable_ref": "v6",
+        "authority_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "authority_kind": "fabushi-immutable-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": ".github/workflows/linux.yml",
+        "source_line": 209,
+        "raw": "- uses: actions/upload-artifact@v7",
+        "repository": "actions/upload-artifact",
+        "action_path": "",
+        "mutable_ref": "v7",
+        "authority_commit": "cf430e030ddbb5b0abf93d22962f4752f3646cd9",
+        "authority_kind": "fabushi-immutable-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": ".github/workflows/linux.yml",
+        "source_line": 65,
+        "raw": "uses: actions/checkout@v7",
+        "repository": "actions/checkout",
+        "action_path": "",
+        "mutable_ref": "v7",
+        "authority_commit": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "authority_kind": "fabushi-immutable-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": ".github/workflows/linux.yml",
+        "source_line": 89,
+        "raw": "uses: docker/setup-buildx-action@v4",
+        "repository": "docker/setup-buildx-action",
+        "action_path": "",
+        "mutable_ref": "v4",
+        "authority_commit": "f87e5991a6d7451dcb8d9637bfbc97413f497069",
+        "authority_kind": "fabushi-immutable-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": ".github/workflows/linux.yml",
+        "source_line": 93,
+        "raw": "uses: actions/cache@v6",
+        "repository": "actions/cache",
+        "action_path": "",
+        "mutable_ref": "v6",
+        "authority_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "authority_kind": "fabushi-immutable-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": ".github/workflows/lock.yml",
+        "source_line": 11,
+        "raw": "- uses: dessant/lock-threads@v6",
+        "repository": "dessant/lock-threads",
+        "action_path": "",
+        "mutable_ref": "v6",
+        "authority_commit": "89ae32b08ed1a541efecbab17912962a5e38981c",
+        "authority_kind": "fabushi-immutable-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": ".github/workflows/mac.yml",
+        "source_line": 132,
+        "raw": "- uses: actions/upload-artifact@v7",
+        "repository": "actions/upload-artifact",
+        "action_path": "",
+        "mutable_ref": "v7",
+        "authority_commit": "cf430e030ddbb5b0abf93d22962f4752f3646cd9",
+        "authority_kind": "fabushi-immutable-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": ".github/workflows/mac.yml",
+        "source_line": 63,
+        "raw": "uses: actions/checkout@v7",
+        "repository": "actions/checkout",
+        "action_path": "",
+        "mutable_ref": "v7",
+        "authority_commit": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "authority_kind": "fabushi-immutable-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": ".github/workflows/mac.yml",
+        "source_line": 85,
+        "raw": "uses: actions/cache@v6",
+        "repository": "actions/cache",
+        "action_path": "",
+        "mutable_ref": "v6",
+        "authority_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "authority_kind": "fabushi-immutable-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": ".github/workflows/master_updater.yml",
+        "source_line": 11,
+        "raw": "- uses: desktop-app/action_code_updater@master",
+        "repository": "desktop-app/action_code_updater",
+        "action_path": "",
+        "mutable_ref": "master",
+        "authority_commit": "0a8d3ebb437e5c77cf5d066d4a54cc93d34b534a",
+        "authority_kind": "fabushi-immutable-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": ".github/workflows/needs-user-action.yml",
+        "source_line": 13,
+        "raw": "- uses: lee-dohm/no-response@v0.5.0",
+        "repository": "lee-dohm/no-response",
+        "action_path": "",
+        "mutable_ref": "v0.5.0",
+        "authority_commit": "9bb0a4b5e6a45046f00353d5de7d90fb8bd773bb",
+        "authority_kind": "fabushi-immutable-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": ".github/workflows/snap.yml",
+        "source_line": 54,
+        "raw": "uses: actions/checkout@v7",
+        "repository": "actions/checkout",
+        "action_path": "",
+        "mutable_ref": "v7",
+        "authority_commit": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "authority_kind": "fabushi-immutable-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": ".github/workflows/snap.yml",
+        "source_line": 86,
+        "raw": "- uses: actions/upload-artifact@v7",
+        "repository": "actions/upload-artifact",
+        "action_path": "",
+        "mutable_ref": "v7",
+        "authority_commit": "cf430e030ddbb5b0abf93d22962f4752f3646cd9",
+        "authority_kind": "fabushi-immutable-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": ".github/workflows/stale.yml",
+        "source_line": 10,
+        "raw": "- uses: actions/stale@v11",
+        "repository": "actions/stale",
+        "action_path": "",
+        "mutable_ref": "v11",
+        "authority_commit": "4391f3da665fdf50b6810c1a66712fb9ba21aa93",
+        "authority_kind": "fabushi-immutable-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": ".github/workflows/unused_styles_updater.yml",
+        "source_line": 14,
+        "raw": "- uses: desktop-app/action_code_updater@master",
+        "repository": "desktop-app/action_code_updater",
+        "action_path": "",
+        "mutable_ref": "master",
+        "authority_commit": "0a8d3ebb437e5c77cf5d066d4a54cc93d34b534a",
+        "authority_kind": "fabushi-immutable-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": ".github/workflows/user_agent_updater.yml",
+        "source_line": 14,
+        "raw": "- uses: desktop-app/action_code_updater@master",
+        "repository": "desktop-app/action_code_updater",
+        "action_path": "",
+        "mutable_ref": "master",
+        "authority_commit": "0a8d3ebb437e5c77cf5d066d4a54cc93d34b534a",
+        "authority_kind": "fabushi-immutable-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": ".github/workflows/waiting-for-answer.yml",
+        "source_line": 13,
+        "raw": "- uses: lee-dohm/no-response@v0.5.0",
+        "repository": "lee-dohm/no-response",
+        "action_path": "",
+        "mutable_ref": "v0.5.0",
+        "authority_commit": "9bb0a4b5e6a45046f00353d5de7d90fb8bd773bb",
+        "authority_kind": "fabushi-immutable-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": ".github/workflows/win.yml",
+        "source_line": 122,
+        "raw": "- uses: Eden-CI/msvc-dev-cmd@master",
+        "repository": "Eden-CI/msvc-dev-cmd",
+        "action_path": "",
+        "mutable_ref": "master",
+        "authority_commit": "1bd71f95d6f3d1b2b3395b335cc63bcdc90cf223",
+        "authority_kind": "fabushi-immutable-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": ".github/workflows/win.yml",
+        "source_line": 136,
+        "raw": "uses: actions/cache@v6",
+        "repository": "actions/cache",
+        "action_path": "",
+        "mutable_ref": "v6",
+        "authority_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "authority_kind": "fabushi-immutable-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": ".github/workflows/win.yml",
+        "source_line": 144,
+        "raw": "uses: actions/cache@v6",
+        "repository": "actions/cache",
+        "action_path": "",
+        "mutable_ref": "v6",
+        "authority_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "authority_kind": "fabushi-immutable-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": ".github/workflows/win.yml",
+        "source_line": 157,
+        "raw": "uses: actions/cache@v6",
+        "repository": "actions/cache",
+        "action_path": "",
+        "mutable_ref": "v6",
+        "authority_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "authority_kind": "fabushi-immutable-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": ".github/workflows/win.yml",
+        "source_line": 247,
+        "raw": "- uses: actions/upload-artifact@v7",
+        "repository": "actions/upload-artifact",
+        "action_path": "",
+        "mutable_ref": "v7",
+        "authority_commit": "cf430e030ddbb5b0abf93d22962f4752f3646cd9",
+        "authority_kind": "fabushi-immutable-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": ".github/workflows/win.yml",
+        "source_line": 86,
+        "raw": "uses: actions/checkout@v7",
+        "repository": "actions/checkout",
+        "action_path": "",
+        "mutable_ref": "v7",
+        "authority_commit": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "authority_kind": "fabushi-immutable-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": ".github/workflows/winget.yml",
+        "source_line": 10,
+        "raw": "uses: telegramdesktop/winget-releaser@main",
+        "repository": "telegramdesktop/winget-releaser",
+        "action_path": "",
+        "mutable_ref": "main",
+        "authority_commit": "4ffc7888bffd451b357355dc214d43bb9f23917e",
+        "authority_kind": "fabushi-immutable-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": ".github/workflows/winget.yml",
+        "source_line": 16,
+        "raw": "uses: telegramdesktop/winget-releaser@main",
+        "repository": "telegramdesktop/winget-releaser",
+        "action_path": "",
+        "mutable_ref": "main",
+        "authority_commit": "4ffc7888bffd451b357355dc214d43bb9f23917e",
+        "authority_kind": "fabushi-immutable-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": ".github/workflows/mac_packaged.yml",
+        "source_line": 75,
+        "raw": "uses: actions/checkout@v7",
+        "repository": "actions/checkout",
+        "action_path": "",
+        "mutable_ref": "v7",
+        "authority_commit": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "authority_kind": "fabushi-immutable-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": ".github/workflows/mac_packaged.yml",
+        "source_line": 107,
+        "raw": "uses: actions/cache@v6",
+        "repository": "actions/cache",
+        "action_path": "",
+        "mutable_ref": "v6",
+        "authority_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "authority_kind": "fabushi-immutable-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": ".github/workflows/mac_packaged.yml",
+        "source_line": 167,
+        "raw": "uses: actions/cache@v6",
+        "repository": "actions/cache",
+        "action_path": "",
+        "mutable_ref": "v6",
+        "authority_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "authority_kind": "fabushi-immutable-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": ".github/workflows/mac_packaged.yml",
+        "source_line": 185,
+        "raw": "uses: actions/cache@v6",
+        "repository": "actions/cache",
+        "action_path": "",
+        "mutable_ref": "v6",
+        "authority_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "authority_kind": "fabushi-immutable-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": ".github/workflows/mac_packaged.yml",
+        "source_line": 203,
+        "raw": "uses: actions/cache@v6",
+        "repository": "actions/cache",
+        "action_path": "",
+        "mutable_ref": "v6",
+        "authority_commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "authority_kind": "fabushi-immutable-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": ".github/workflows/mac_packaged.yml",
+        "source_line": 248,
+        "raw": "- uses: actions/upload-artifact@v7",
+        "repository": "actions/upload-artifact",
+        "action_path": "",
+        "mutable_ref": "v7",
+        "authority_commit": "cf430e030ddbb5b0abf93d22962f4752f3646cd9",
+        "authority_kind": "fabushi-immutable-override-binding",
+        "source_ref_remains_mutable": true
+      }
+    ],
+    "resolver_evidence": {
+      "runner": "github-actions",
+      "run_id": 37895845999,
+      "run_attempt": 1,
+      "job_id": 113707029955,
+      "validation_head_sha": "cf83555da246d25cfcf81bdcb0deb25f099f7612",
+      "artifact_id": 11600685991,
+      "artifact_digest": "sha256:097d945ec3b1913789ce8bde71cf533bdbec787bb753217c63287c056f588cf3",
+      "artifact_member": "build-time-github-action-ref-resolutions.json"
+    },
+    "rebaseline_status": "Accepted 6fed91ff modifies no workflow/acquisition source path; source/ref bindings are unchanged and fresh descendant GitHub Actions resolver evidence is required."
+  },
+  "github_clone_immutable_authority": {
+    "status": "complete-current-literal-github-clone-authority-bindings",
+    "accepted_upstream": "6fed91ffab9861771a75f29df65031b3c80b6941",
+    "policy": "Every literal GitHub git clone -b occurrence resolved by the accepted-source scanner is bound by source path/line/repository/ref to an exact 40-hex commit. The mutable tag/ref in Telegram source remains evidence only; Fabushi provenance authority is the bound commit.",
+    "mutable_occurrences": 33,
+    "mutable_unique_refs": 33,
+    "unbound_occurrences": 0,
+    "bindings": [
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 193,
+        "raw": "git clone -b v5.8.4 --depth=1 https://github.com/tukaani-project/xz.git",
+        "repository": "tukaani-project/xz",
+        "mutable_ref": "v5.8.4",
+        "authority_commit": "d3e650e63c110e830fd5391e7f8b45df0b91d3da",
+        "authority_kind": "fabushi-immutable-clone-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 204,
+        "raw": "git clone -b lcms2.15 --depth=1 https://github.com/mm2/Little-CMS.git",
+        "repository": "mm2/Little-CMS",
+        "mutable_ref": "lcms2.15",
+        "authority_commit": "d0752309ff93f62be246ee9bf18338107f30d485",
+        "authority_kind": "fabushi-immutable-clone-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 215,
+        "raw": "git clone -b v1.2.0 --depth=1 https://github.com/google/brotli.git",
+        "repository": "google/brotli",
+        "mutable_ref": "v1.2.0",
+        "authority_commit": "028fb5a23661f123017c060daa546b55cf4bde29",
+        "authority_kind": "fabushi-immutable-clone-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 226,
+        "raw": "git clone -b 1.4.0 --depth=1 https://github.com/google/highway.git",
+        "repository": "google/highway",
+        "mutable_ref": "1.4.0",
+        "authority_commit": "2607d3b5b0113992fe84d3848859eae13b3b52c1",
+        "authority_kind": "fabushi-immutable-clone-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 237,
+        "raw": "git clone -b v4.1.5 --depth=1 https://github.com/mozilla/mozjpeg.git",
+        "repository": "mozilla/mozjpeg",
+        "mutable_ref": "v4.1.5",
+        "authority_commit": "6c9f0897afa1c2738d7222a0a9ab49e8b536a267",
+        "authority_kind": "fabushi-immutable-clone-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 253,
+        "raw": "git clone -b v1.5.2 --depth=1 https://github.com/xiph/opus.git",
+        "repository": "xiph/opus",
+        "mutable_ref": "v1.5.2",
+        "authority_commit": "ddbe48383984d56acd9e1ab6a090c54ca6b735a6",
+        "authority_kind": "fabushi-immutable-clone-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 264,
+        "raw": "git clone -b 1.5.4 --depth=1 https://github.com/videolan/dav1d.git",
+        "repository": "videolan/dav1d",
+        "mutable_ref": "1.5.4",
+        "authority_commit": "54706fc6bc0cdecab7e9593974a4039cc038fca7",
+        "authority_kind": "fabushi-immutable-clone-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 279,
+        "raw": "git clone -b v2.6.0 --depth=1 https://github.com/cisco/openh264.git",
+        "repository": "cisco/openh264",
+        "mutable_ref": "v2.6.0",
+        "authority_commit": "652bdb7719f30b52b08e506645a7322ff1b2cc6f",
+        "authority_kind": "fabushi-immutable-clone-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 312,
+        "raw": "git clone -b v1.6.0 --depth=1 https://github.com/webmproject/libwebp.git",
+        "repository": "webmproject/libwebp",
+        "mutable_ref": "v1.6.0",
+        "authority_commit": "4fa21912338357f89e4fd51cf2368325b59e9bd9",
+        "authority_kind": "fabushi-immutable-clone-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 334,
+        "raw": "git clone -b v1.4.2 --depth=1 https://github.com/AOMediaCodec/libavif.git",
+        "repository": "AOMediaCodec/libavif",
+        "mutable_ref": "v1.4.2",
+        "authority_commit": "c5240fc79fe5c2407e10afd35f5505ef6333ea49",
+        "authority_kind": "fabushi-immutable-clone-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 349,
+        "raw": "git clone -b v0.12.0 --depth=1 https://github.com/libjxl/libjxl.git",
+        "repository": "libjxl/libjxl",
+        "mutable_ref": "v0.12.0",
+        "authority_commit": "a7a9c787341cf703dede03c2009fa460cae5e5df",
+        "authority_kind": "fabushi-immutable-clone-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 374,
+        "raw": "git clone -b v0.2 --depth=1 https://github.com/xiph/rnnoise.git",
+        "repository": "xiph/rnnoise",
+        "mutable_ref": "v0.2",
+        "authority_commit": "904a876dce1f9ab8860c0a5000ed151f9f6eef58",
+        "authority_kind": "fabushi-immutable-clone-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 386,
+        "raw": "git clone -b xcb-proto-1.16.0 --depth=1 https://github.com/gitlab-freedesktop-mirrors/xcbproto.git",
+        "repository": "gitlab-freedesktop-mirrors/xcbproto",
+        "mutable_ref": "xcb-proto-1.16.0",
+        "authority_commit": "98eeebfc2d7db5377b85437418fb942ea30ffc0d",
+        "authority_kind": "fabushi-immutable-clone-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 399,
+        "raw": "git clone -b libxcb-1.16.1 --depth=1 https://github.com/gitlab-freedesktop-mirrors/libxcb.git",
+        "repository": "gitlab-freedesktop-mirrors/libxcb",
+        "mutable_ref": "libxcb-1.16.1",
+        "authority_commit": "c671b9b30aecada4e43cb48e0dee46d19fb5cb9c",
+        "authority_kind": "fabushi-immutable-clone-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 502,
+        "raw": "git clone -b libXext-1.3.5 --depth=1 https://github.com/gitlab-freedesktop-mirrors/libxext.git",
+        "repository": "gitlab-freedesktop-mirrors/libxext",
+        "mutable_ref": "libXext-1.3.5",
+        "authority_commit": "67e82cc395f44faddd83ec3d0d21624fe91c6fc0",
+        "authority_kind": "fabushi-immutable-clone-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 513,
+        "raw": "git clone -b libXtst-1.2.5 --depth=1 https://github.com/gitlab-freedesktop-mirrors/libxtst.git",
+        "repository": "gitlab-freedesktop-mirrors/libxtst",
+        "mutable_ref": "libXtst-1.2.5",
+        "authority_commit": "abf3ff74b97c4231d2324d66318bfa1d22e44913",
+        "authority_kind": "fabushi-immutable-clone-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 524,
+        "raw": "git clone -b libXfixes-5.0.3 --depth=1 https://github.com/gitlab-freedesktop-mirrors/libxfixes.git",
+        "repository": "gitlab-freedesktop-mirrors/libxfixes",
+        "mutable_ref": "libXfixes-5.0.3",
+        "authority_commit": "84df9cb81cc31bbed27ba241a23ae04f61da57db",
+        "authority_kind": "fabushi-immutable-clone-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 537,
+        "raw": "git clone -b libXv-1.0.13 --depth=1 https://github.com/gitlab-freedesktop-mirrors/libxv.git",
+        "repository": "gitlab-freedesktop-mirrors/libxv",
+        "mutable_ref": "libXv-1.0.13",
+        "authority_commit": "e1cde54538060c4fd3a3d02e3d2e2b7e5da7bff9",
+        "authority_kind": "fabushi-immutable-clone-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 548,
+        "raw": "git clone -b libXrandr-1.5.4 --depth=1 https://github.com/gitlab-freedesktop-mirrors/libxrandr.git",
+        "repository": "gitlab-freedesktop-mirrors/libxrandr",
+        "mutable_ref": "libXrandr-1.5.4",
+        "authority_commit": "512bf0b15b5597c721ff8c61083616ca9040fa72",
+        "authority_kind": "fabushi-immutable-clone-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 559,
+        "raw": "git clone -b libXrender-0.9.12 --depth=1 https://github.com/gitlab-freedesktop-mirrors/libxrender.git",
+        "repository": "gitlab-freedesktop-mirrors/libxrender",
+        "mutable_ref": "libXrender-0.9.12",
+        "authority_commit": "46e12ff9e8e4d3f0313a2f097df93dbfdc14f92f",
+        "authority_kind": "fabushi-immutable-clone-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 570,
+        "raw": "git clone -b libXdamage-1.1.6 --depth=1 https://github.com/gitlab-freedesktop-mirrors/libxdamage.git",
+        "repository": "gitlab-freedesktop-mirrors/libxdamage",
+        "mutable_ref": "libXdamage-1.1.6",
+        "authority_commit": "1f20df4fd7c132f55e924dc5ec3f270cd54704d0",
+        "authority_kind": "fabushi-immutable-clone-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 593,
+        "raw": "git clone -b n12.1.14.0 --depth=1 https://github.com/FFmpeg/nv-codec-headers.git",
+        "repository": "FFmpeg/nv-codec-headers",
+        "mutable_ref": "n12.1.14.0",
+        "authority_commit": "1889e62e2d35ff7aa9baca2bceb14f053785e6f1",
+        "authority_kind": "fabushi-immutable-clone-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 608,
+        "raw": "git clone -b n8.1.3 --depth=1 https://github.com/FFmpeg/FFmpeg.git",
+        "repository": "FFmpeg/FFmpeg",
+        "mutable_ref": "n8.1.3",
+        "authority_commit": "1041abdc962f4cc4f394aa8de9dc5236c0c3b9e7",
+        "authority_kind": "fabushi-immutable-clone-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 761,
+        "raw": "git clone -b v1.23.5 --depth=1 https://github.com/strukturag/libheif.git",
+        "repository": "strukturag/libheif",
+        "mutable_ref": "v1.23.5",
+        "authority_commit": "413e2a87e6a70b3eccc3a3adc5801179dd2d9e00",
+        "authority_kind": "fabushi-immutable-clone-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 792,
+        "raw": "git clone -b 0.3.62 --depth=1 https://github.com/PipeWire/pipewire.git",
+        "repository": "PipeWire/pipewire",
+        "mutable_ref": "0.3.62",
+        "authority_commit": "3a443b4e1c9730675c7de0453a6279ab9ee263fd",
+        "authority_kind": "fabushi-immutable-clone-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 810,
+        "raw": "git clone -b 1.25.2 --depth=1 https://github.com/kcat/openal-soft.git",
+        "repository": "kcat/openal-soft",
+        "mutable_ref": "1.25.2",
+        "authority_commit": "b2c48f7718ef3fcf67921a8b6534c4914e328970",
+        "authority_kind": "fabushi-immutable-clone-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 826,
+        "raw": "git clone -b openssl-3.5.9 --depth=1 https://github.com/openssl/openssl.git",
+        "repository": "openssl/openssl",
+        "mutable_ref": "openssl-3.5.9",
+        "authority_commit": "45e844fa2a14ec92d146bd8f5778ac130b6625fb",
+        "authority_kind": "fabushi-immutable-clone-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 840,
+        "raw": "git clone -b xkbcommon-1.6.0 --depth=1 https://github.com/xkbcommon/libxkbcommon.git",
+        "repository": "xkbcommon/libxkbcommon",
+        "mutable_ref": "xkbcommon-1.6.0",
+        "authority_commit": "d2a08f761c796733e42fac4099f5c38d443e88e1",
+        "authority_kind": "fabushi-immutable-clone-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+        "source_line": 967,
+        "raw": "git clone -b v3.2.9 --depth=1 https://github.com/ada-url/ada.git",
+        "repository": "ada-url/ada",
+        "mutable_ref": "v3.2.9",
+        "authority_commit": "6b4612162c34e7ffcee08c03b107b449e07a5683",
+        "authority_kind": "fabushi-immutable-clone-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": "Telegram/build/prepare/prepare.py",
+        "source_line": 1130,
+        "raw": "git clone -b lcms2.16 https://github.com/mm2/Little-CMS.git liblcms2",
+        "repository": "mm2/Little-CMS",
+        "mutable_ref": "lcms2.16",
+        "authority_commit": "453bafeb85b4ef96498866b7a8eadcc74dff9223",
+        "authority_kind": "fabushi-immutable-clone-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": "Telegram/build/prepare/prepare.py",
+        "source_line": 1169,
+        "raw": "git clone -b boost-1.83.0 https://github.com/boostorg/regex.git",
+        "repository": "boostorg/regex",
+        "mutable_ref": "boost-1.83.0",
+        "authority_commit": "4cbcd3078e6ae10d05124379623a1bf03fcb9350",
+        "authority_kind": "fabushi-immutable-clone-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": "Telegram/build/prepare/prepare.py",
+        "source_line": 1453,
+        "raw": "git clone -b release-1.11.0 https://github.com/google/googletest src/testing",
+        "repository": "google/googletest",
+        "mutable_ref": "release-1.11.0",
+        "authority_commit": "e2239ee6043f73722e7aa812a459f54a28552929",
+        "authority_kind": "fabushi-immutable-clone-override-binding",
+        "source_ref_remains_mutable": true
+      },
+      {
+        "source_path": "Telegram/build/prepare/prepare.py",
+        "source_line": 622,
+        "raw": "git clone -b v5.4 https://github.com/tukaani-project/xz.git",
+        "repository": "tukaani-project/xz",
+        "mutable_ref": "v5.4",
+        "authority_commit": "05af863c3166cddeb4ab935829b14e995c8346b4",
+        "authority_kind": "fabushi-immutable-clone-override-binding",
+        "source_ref_remains_mutable": true
+      }
+    ],
+    "resolver_evidence": {
+      "runner": "github-actions",
+      "run_id": 37895845999,
+      "run_attempt": 1,
+      "job_id": 113707029955,
+      "validation_head_sha": "cf83555da246d25cfcf81bdcb0deb25f099f7612",
+      "artifact_id": 11600685991,
+      "artifact_digest": "sha256:097d945ec3b1913789ce8bde71cf533bdbec787bb753217c63287c056f588cf3",
+      "artifact_member": "build-time-github-clone-ref-resolutions.json"
+    },
+    "rebaseline_status": "Accepted 6fed91ff modifies no workflow/acquisition source path; source/ref bindings are unchanged and fresh descendant GitHub Actions resolver evidence is required."
   }
 }

@@ -1,5 +1,6 @@
 import { useDeferredValue, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { FindInChatController, FindInChatMatch, FindInChatTranscriptHandle } from "./find-in-chat-controller";
+import { createFindHighlightRefreshRuntime } from "./find-highlight-runtime";
 import { SandIcon, SandIconButton } from "../../../ui/sand-kit-primitives";
 
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=5276787
@@ -121,6 +122,12 @@ export function FindInChatBar({ controller, focusNonce = 0, transcriptContainer,
 }) {
   const snapshot = useSyncExternalStore(controller.subscribe, controller.getSnapshot, controller.getSnapshot);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const controllerRef = useRef(controller);
+  const transcriptContainerRef = useRef<HTMLElement | null>(transcriptContainer ?? null);
+  const highlightRefreshRuntimeRef = useRef<ReturnType<typeof createFindHighlightRefreshRuntime> | null>(null);
+  if (highlightRefreshRuntimeRef.current == null) highlightRefreshRuntimeRef.current = createFindHighlightRefreshRuntime();
+  const highlightRefreshRuntime = highlightRefreshRuntimeRef.current;
+  const highlightLifecycleGenerationRef = useRef(0);
   const [inputQuery, setInputQuery] = useState(snapshot.query);
   const deferredQuery = useDeferredValue(inputQuery);
   const submittedQueryRef = useRef(snapshot.query);
@@ -140,26 +147,40 @@ export function FindInChatBar({ controller, focusNonce = 0, transcriptContainer,
   const close = () => { controller.close(); onClose?.(); };
   const step = (delta: 1 | -1) => {
     controller.step(delta);
-    const refresh = () => {
-      const nextSnapshot = controller.getSnapshot();
-      applyFindHighlights(transcriptContainer ?? null, nextSnapshot.query, nextSnapshot.current);
-    };
-    if (typeof requestAnimationFrame === "function") requestAnimationFrame(refresh);
-    else refresh();
+    highlightRefreshRuntime.schedule(() => {
+      const nextSnapshot = controllerRef.current.getSnapshot();
+      applyFindHighlights(transcriptContainerRef.current, nextSnapshot.query, nextSnapshot.current);
+    });
   };
+  useLayoutEffect(() => {
+    highlightRefreshRuntime.invalidate();
+    controllerRef.current = controller;
+    transcriptContainerRef.current = transcriptContainer ?? null;
+    return () => highlightRefreshRuntime.invalidate();
+  }, [controller, highlightRefreshRuntime, transcriptContainer]);
   useLayoutEffect(() => {
     inputRef.current?.focus();
     inputRef.current?.select();
   }, [focusNonce]);
   useEffect(() => {
-    applyFindHighlights(transcriptContainer ?? null, snapshot.query, snapshot.current);
+    applyFindHighlights(transcriptContainerRef.current, snapshot.query, snapshot.current);
     return () => clearFindHighlights();
   }, [snapshot.query, snapshot.current, transcriptContainer]);
+  useEffect(() => {
+    const generation = ++highlightLifecycleGenerationRef.current;
+    return () => {
+      highlightRefreshRuntime.invalidate();
+      queueMicrotask(() => {
+        if (highlightLifecycleGenerationRef.current !== generation) return;
+        highlightRefreshRuntime.dispose();
+      });
+    };
+  }, [highlightRefreshRuntime]);
   useEffect(() => {
     const liveTranscriptHandle = transcriptHandleRef?.current ?? transcriptHandle ?? null;
     if (liveTranscriptHandle == null) return undefined;
     const unsubscribe = liveTranscriptHandle.subscribeViewCommits(() => {
-      applyFindHighlights(transcriptContainer ?? null, snapshot.query, snapshot.current);
+      applyFindHighlights(transcriptContainerRef.current, snapshot.query, snapshot.current);
     });
     return () => {
       unsubscribe();

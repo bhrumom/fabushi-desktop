@@ -1,0 +1,68 @@
+{
+  "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+  "start": 5281,
+  "end": 5290,
+  "entries": [
+    {
+      "order": 5281,
+      "path": "Telegram/SourceFiles/mtproto/proxy_check.h",
+      "blob": "1cbfb15fd2cae6f92f49a4c4d999a30b00073780",
+      "consumer_symbol": "MTP proxy check"
+    },
+    {
+      "order": 5282,
+      "path": "Telegram/SourceFiles/mtproto/scheme/api.tl",
+      "blob": "57e72169e6e8fc8d36af957a96ca20f40b5d8a07",
+      "consumer_symbol": "Telegram API TL schema"
+    },
+    {
+      "order": 5283,
+      "path": "Telegram/SourceFiles/mtproto/scheme/mtproto.tl",
+      "blob": "76225965bfc794388db241f3f760db8ab79e84f8",
+      "consumer_symbol": "MTProto core TL schema"
+    },
+    {
+      "order": 5284,
+      "path": "Telegram/SourceFiles/mtproto/sender.h",
+      "blob": "5330a0559cff9c5693e71b7cda938a30e15ce305",
+      "consumer_symbol": "MTP::Sender"
+    },
+    {
+      "order": 5285,
+      "path": "Telegram/SourceFiles/mtproto/session.cpp",
+      "blob": "40d7048c3057c7c5523b786048670524c8bebe4c",
+      "consumer_symbol": "MTP::details::Session"
+    },
+    {
+      "order": 5286,
+      "path": "Telegram/SourceFiles/mtproto/session.h",
+      "blob": "d6f197d233fa4dcc6d2b19745e6d2787c5227911",
+      "consumer_symbol": "MTP::details::Session"
+    },
+    {
+      "order": 5287,
+      "path": "Telegram/SourceFiles/mtproto/session_private.cpp",
+      "blob": "b8be9bbdda1b788c4ab118f91d23cd4feeb82aec",
+      "consumer_symbol": "MTP::details::SessionPrivate"
+    },
+    {
+      "order": 5288,
+      "path": "Telegram/SourceFiles/mtproto/session_private.h",
+      "blob": "62b01e38dcb21832125b67dcd35fba3194a26829",
+      "consumer_symbol": "MTP::details::SessionPrivate"
+    },
+    {
+      "order": 5289,
+      "path": "Telegram/SourceFiles/mtproto/special_config_request.cpp",
+      "blob": "fdb65506b0a886bc2daeccb61090bc44be7e2d88",
+      "consumer_symbol": "MTP::details::SpecialConfigRequest"
+    },
+    {
+      "order": 5290,
+      "path": "Telegram/SourceFiles/mtproto/special_config_request.h",
+      "blob": "91901489e778089b03187682a9556e929867b94f",
+      "consumer_symbol": "MTP::details::SpecialConfigRequest"
+    }
+  ],
+  "accepted_tree": "4ddb5182fc1ae238e4dc62a396614614b5b35f97"
+}

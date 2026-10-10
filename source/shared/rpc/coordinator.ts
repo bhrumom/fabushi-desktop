@@ -25,6 +25,62 @@ export interface CoordinatorAgentThreadResponse {
   readonly entries: readonly CoordinatorTranscriptEntry[];
 }
 
+export interface CoordinatorStoryMedia {
+  readonly id: string;
+  readonly fileName?: string | null;
+  readonly mimeType?: string | null;
+  readonly sizeBytes?: number | null;
+  readonly width?: number | null;
+  readonly height?: number | null;
+  readonly durationMs?: number | null;
+  readonly thumbnailId?: string | null;
+  readonly localPath?: string | null;
+  readonly remoteUrl?: string | null;
+  readonly contentHash?: string | null;
+}
+
+export interface CoordinatorStoryPrivacy {
+  readonly kind: "everyone" | "contacts" | "closeFriends" | "selected";
+  readonly includedActorIds: readonly string[];
+  readonly excludedActorIds: readonly string[];
+}
+
+export interface CoordinatorStory {
+  readonly id: string;
+  readonly ownerId: string;
+  readonly media: CoordinatorStoryMedia;
+  readonly caption: { readonly text: string; readonly entities: readonly unknown[] };
+  readonly privacy: CoordinatorStoryPrivacy;
+  readonly createdAtMs: number;
+  readonly expiresAtMs: number;
+  readonly editedAtMs?: number | null;
+  readonly pinnedToProfile: boolean;
+  readonly protectedContent: boolean;
+  readonly allowReplies: boolean;
+  readonly views: Readonly<Record<string, unknown>>;
+  readonly anonymousViewCount: number;
+  readonly canDelete: boolean;
+  readonly myReaction?: string | null;
+}
+
+export interface CoordinatorStoryStealthState {
+  readonly enabledTillMs: number;
+  readonly cooldownTillMs: number;
+  readonly lastActivationRequestId?: string | null;
+}
+
+export interface CoordinatorStoryStealthStatus {
+  readonly state: CoordinatorStoryStealthState;
+  readonly entitled: boolean;
+}
+
+export interface CoordinatorStoryStealthActivateRequest { readonly requestId: string }
+
+export interface CoordinatorStoryListRequest { readonly limit?: number }
+export interface CoordinatorStoryIdRequest { readonly storyId: string }
+export interface CoordinatorStoryReactionRequest extends CoordinatorStoryIdRequest { readonly reaction?: string | null }
+export interface CoordinatorStoryDeleteResponse { readonly storyId: string; readonly deleted: boolean }
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -35,6 +91,65 @@ function isTranscriptEntry(value: unknown): value is CoordinatorTranscriptEntry 
 
 function isFiniteNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
+}
+
+function isNullableString(value: unknown): value is string | null | undefined {
+  return value === undefined || value === null || typeof value === "string";
+}
+
+function isCoordinatorStoryMedia(value: unknown): value is CoordinatorStoryMedia {
+  if (!isRecord(value) || typeof value.id !== "string" || value.id.length === 0) return false;
+  for (const field of ["fileName", "mimeType", "thumbnailId", "localPath", "remoteUrl", "contentHash"] as const) {
+    if (!isNullableString(value[field])) return false;
+  }
+  for (const field of ["sizeBytes", "width", "height", "durationMs"] as const) {
+    const candidate = value[field];
+    if (candidate !== undefined && candidate !== null && !isFiniteNumber(candidate)) return false;
+  }
+  return true;
+}
+
+export function parseCoordinatorStory(value: unknown): CoordinatorStory | null {
+  if (!isRecord(value) || typeof value.id !== "string" || value.id.length === 0 || typeof value.ownerId !== "string" || value.ownerId.length === 0) return null;
+  if (!isCoordinatorStoryMedia(value.media) || !isRecord(value.caption) || typeof value.caption.text !== "string" || !Array.isArray(value.caption.entities)) return null;
+  if (!isRecord(value.privacy)
+    || !["everyone", "contacts", "closeFriends", "selected"].includes(String(value.privacy.kind))
+    || !Array.isArray(value.privacy.includedActorIds)
+    || !value.privacy.includedActorIds.every((actorId) => typeof actorId === "string" && actorId.length > 0)
+    || !Array.isArray(value.privacy.excludedActorIds)
+    || !value.privacy.excludedActorIds.every((actorId) => typeof actorId === "string" && actorId.length > 0)) return null;
+  if (!isFiniteNumber(value.createdAtMs) || !isFiniteNumber(value.expiresAtMs)) return null;
+  if (value.editedAtMs !== undefined && value.editedAtMs !== null && !isFiniteNumber(value.editedAtMs)) return null;
+  if (typeof value.pinnedToProfile !== "boolean" || typeof value.protectedContent !== "boolean" || typeof value.allowReplies !== "boolean" || !isRecord(value.views)) return null;
+  if (!Number.isSafeInteger(value.anonymousViewCount) || (value.anonymousViewCount as number) < 0) return null;
+  if (typeof value.canDelete !== "boolean" || !isNullableString(value.myReaction)) return null;
+  return value as unknown as CoordinatorStory;
+}
+
+export function parseCoordinatorStoryStealthState(value: unknown): CoordinatorStoryStealthState | null {
+  if (!isRecord(value) || !isFiniteNumber(value.enabledTillMs) || !isFiniteNumber(value.cooldownTillMs)) return null;
+  if (!isNullableString(value.lastActivationRequestId)) return null;
+  return {
+    enabledTillMs: value.enabledTillMs,
+    cooldownTillMs: value.cooldownTillMs,
+    ...(value.lastActivationRequestId === undefined ? {} : { lastActivationRequestId: value.lastActivationRequestId })
+  };
+}
+
+export function parseCoordinatorStoryStealthStatus(value: unknown): CoordinatorStoryStealthStatus | null {
+  if (!isRecord(value) || typeof value.entitled !== "boolean") return null;
+  const state = parseCoordinatorStoryStealthState(value.state);
+  return state == null ? null : { state, entitled: value.entitled };
+}
+
+export function parseCoordinatorStoryListResponse(value: unknown): readonly CoordinatorStory[] | null {
+  return Array.isArray(value) && value.every((story) => parseCoordinatorStory(story) !== null) ? value as CoordinatorStory[] : null;
+}
+
+export function parseCoordinatorStoryDeleteResponse(value: unknown): CoordinatorStoryDeleteResponse | null {
+  return isRecord(value) && typeof value.storyId === "string" && value.storyId.length > 0 && typeof value.deleted === "boolean"
+    ? { storyId: value.storyId, deleted: value.deleted }
+    : null;
 }
 
 export function parseCoordinatorTranscriptWindowResponse(value: unknown): CoordinatorTranscriptWindowResponse | null {
@@ -135,6 +250,12 @@ export const COORDINATOR_METHOD_TABLE = {
   importAgentWorkflowUrl: { args: "object", reply: "import-result" },
   portAgentLocalSkills: { args: "object", reply: "import-result" },
   getConversationOutline: { args: "object", reply: "array" },
+  getStoryStealthStatus: { args: "none", reply: "record" },
+  activateStoryStealth: { args: "object", reply: "record" },
+  listStories: { args: "object", reply: "story-array" },
+  viewStory: { args: "object", reply: "story" },
+  reactStory: { args: "object", reply: "story" },
+  deleteStory: { args: "object", reply: "story-delete" },
   skillsCatalog: { args: "none", reply: "array" },
   syncPluginSkills: { args: "none", reply: "array" },
   getPluginSyncStatus: { args: "none", reply: "record" },

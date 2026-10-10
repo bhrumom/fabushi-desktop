@@ -1,0 +1,68 @@
+{
+  "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+  "start": 5111,
+  "end": 5120,
+  "entries": [
+    {
+      "order": 5111,
+      "path": "Telegram/SourceFiles/media/stories/media_stories_share.cpp",
+      "blob": "cac84bc4f383fdc260e046ead9ee1fa96738a2f8",
+      "consumer_symbol": "Media::Stories::PrepareShareBox"
+    },
+    {
+      "order": 5112,
+      "path": "Telegram/SourceFiles/media/stories/media_stories_share.h",
+      "blob": "c7149b0ca980a85c8592676f1cbc91abd1c6bafa",
+      "consumer_symbol": "Media::Stories::PrepareShareBox"
+    },
+    {
+      "order": 5113,
+      "path": "Telegram/SourceFiles/media/stories/media_stories_sibling.cpp",
+      "blob": "a9d875c9e44a94909bb84c4aeb6e70c7f47403d3",
+      "consumer_symbol": "Media::Stories::Sibling"
+    },
+    {
+      "order": 5114,
+      "path": "Telegram/SourceFiles/media/stories/media_stories_sibling.h",
+      "blob": "24f334cae788ee6a1dc0b07cd313e81b77ca1ae2",
+      "consumer_symbol": "Media::Stories::Sibling"
+    },
+    {
+      "order": 5115,
+      "path": "Telegram/SourceFiles/media/stories/media_stories_slider.cpp",
+      "blob": "bdb547186edc53fbfd64dd1434f861a27fb3be0d",
+      "consumer_symbol": "Media::Stories::Slider"
+    },
+    {
+      "order": 5116,
+      "path": "Telegram/SourceFiles/media/stories/media_stories_slider.h",
+      "blob": "37dbca0504c3423a14665c5b692f2dc2699d5469",
+      "consumer_symbol": "Media::Stories::Slider"
+    },
+    {
+      "order": 5117,
+      "path": "Telegram/SourceFiles/media/stories/media_stories_stealth.cpp",
+      "blob": "8bd47aaf5b5b454a6f2ac0b4641b285646d4a9b3",
+      "consumer_symbol": "Media::Stories::SetupStealthMode"
+    },
+    {
+      "order": 5118,
+      "path": "Telegram/SourceFiles/media/stories/media_stories_stealth.h",
+      "blob": "649cfa1eb5abcad11706741753bb70232fe43c7a",
+      "consumer_symbol": "Media::Stories::SetupStealthMode"
+    },
+    {
+      "order": 5119,
+      "path": "Telegram/SourceFiles/media/stories/media_stories_view.cpp",
+      "blob": "8fe4a5de24fd67abe0b64da0a45ec4e0fd901b30",
+      "consumer_symbol": "Media::Stories::View"
+    },
+    {
+      "order": 5120,
+      "path": "Telegram/SourceFiles/media/stories/media_stories_view.h",
+      "blob": "0f3e59e99503aa4924937ac715eccdbcd0966fa3",
+      "consumer_symbol": "Media::Stories::View"
+    }
+  ],
+  "accepted_tree": "4ddb5182fc1ae238e4dc62a396614614b5b35f97"
+}

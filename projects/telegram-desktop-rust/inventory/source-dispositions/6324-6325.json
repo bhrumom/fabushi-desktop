@@ -1,0 +1,81 @@
+{
+  "format_version": 3,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+    "tree": "9d8fa87ce68c832d2f4c99f372a5bb672463c3e1"
+  },
+  "range": {
+    "first_order": 6324,
+    "last_order": 6325,
+    "entries": 2
+  },
+  "rows": [
+    {
+      "recursive_order": 6324,
+      "source_path": "Telegram/SourceFiles/wallet/wallet_fiat.cpp",
+      "source_blob_sha": "6e16d23676a8d24ff840c71f88310cb21d540ce4",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "fiat-rate computation and locale-aware display: exact currency exponent/group/decimal placement, unavailable ellipsis, approximate U+2248 marker, tiny positive amount significant-digit projection, localized currency names, top-currency ordering from active currency/cloud/system/input-method/phone country, and minor-unit nanos",
+      "upstream_owner": "tdesktop Wallet fiat/rates presentation layer",
+      "state_machine": "rate/currency/locale -> deterministic per-gram conversion -> exact/approx/tiny formatted projection; currency list priority is stable deduped sources",
+      "side_effects": "Reads wallet rates, locale/input method and user phone-country; presentation only.",
+      "failure_cases": "unavailable/zero rate must not fabricate value; tiny rounding must not cross precision incorrectly; unknown locale/country/name falls back deterministically; duplicate top currencies dedupe without reordering",
+      "ui_disposition": "Reuse source-neutral canonical Money/Currency formatting, Wallet rates and Search/List owners; do not create Telegram-derived currency UI/runtime owners.",
+      "fabushi_canonical_owner": "canonical Money/Currency formatter + Wallet rates owner",
+      "fabushi_target": "mapped-open; verify the existing canonical money/rates formatting and currency picker production seams before closure",
+      "platform_differences": "Qt locale/input-method currency discovery is platform-specific; monetary rounding, unavailable-rate, tiny-value and currency-priority semantics are platform-neutral.",
+      "production_evidence": "Exact accepted blob read/decomposed only; production closure remains open.",
+      "test_evidence": "Focused monetary/locale/search contracts plus fresh descendant exact-head GitHub Actions required.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_evidence": [],
+      "reachability_status": "accepted-tree exact blob responsibility proven; production closure open",
+      "license_and_provenance": "tdesktop provenance retained; source-neutral rewrite required.",
+      "notes": "Reading does not decrement global unknown.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-required",
+        "accepted_upstream": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
+        "verified_blob_sha": "6e16d23676a8d24ff840c71f88310cb21d540ce4",
+        "file_type": "blob",
+        "recursive_order": 6324
+      }
+    },
+    {
+      "recursive_order": 6325,
+      "source_path": "Telegram/SourceFiles/wallet/wallet_fiat.h",
+      "source_blob_sha": "c380b50a5765226fd89d40a74e74181c58f28b48",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "typed FiatRate, format/name/top-currency/minor-unit/tiny-fraction and reactive rate-value contract",
+      "upstream_owner": "tdesktop Wallet fiat/rates presentation layer",
+      "state_machine": "canonical rate -> formatting/search helpers -> UI projections",
+      "side_effects": "No authoritative settlement side effects.",
+      "failure_cases": "contract must preserve currency exponent and rate availability semantics",
+      "ui_disposition": "Reuse source-neutral canonical Money/Currency formatting, Wallet rates and Search/List owners; do not create Telegram-derived currency UI/runtime owners.",
+      "fabushi_canonical_owner": "canonical Money/Currency formatter contract",
+      "fabushi_target": "mapped-open; verify the existing canonical money/rates formatting and currency picker production seams before closure",
+      "platform_differences": "Qt locale/input-method currency discovery is platform-specific; monetary rounding, unavailable-rate, tiny-value and currency-priority semantics are platform-neutral.",
+      "production_evidence": "Exact accepted blob read/decomposed only; production closure remains open.",
+      "test_evidence": "Focused monetary/locale/search contracts plus fresh descendant exact-head GitHub Actions required.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_evidence": [],
+      "reachability_status": "accepted-tree exact blob responsibility proven; production closure open",
+      "license_and_provenance": "tdesktop provenance retained; source-neutral rewrite required.",
+      "notes": "Reading does not decrement global unknown.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-required",
+        "accepted_upstream": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
+        "verified_blob_sha": "c380b50a5765226fd89d40a74e74181c58f28b48",
+        "file_type": "blob",
+        "recursive_order": 6325
+      }
+    }
+  ]
+}

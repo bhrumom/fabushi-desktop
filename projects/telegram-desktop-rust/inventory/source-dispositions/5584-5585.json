@@ -1,0 +1,89 @@
+{
+  "format_version": 2,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+    "tree": "9d8fa87ce68c832d2f4c99f372a5bb672463c3e1"
+  },
+  "range": {
+    "first_order": 5584,
+    "last_order": 5585,
+    "entries": 2
+  },
+  "rows": [
+    {
+      "recursive_order": 5584,
+      "source_path": "Telegram/SourceFiles/settings/sections/settings_business.cpp",
+      "source_blob_sha": "66f2e398dc6e41616c64b122d11c4a829c3cce7f",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Business settings capability aggregation, readiness fencing, premium gating, sponsored toggle and navigation projection",
+      "upstream_owner": "Telegram business settings section/design-system",
+      "state_machine": "app-config feature order -> preload business/chatbot/shortcut/chat-link state -> per-feature readiness fence -> premium/capability gate -> canonical feature route; sponsored state -> optimistic toggle request -> error toast/reprojection; layer wrap -> swipe/back/close projection",
+      "side_effects": "Preloads business data, routes to existing Away/Greeting/Quick Replies/Hours/Location/Links/Intro/Bots owners, toggles sponsored-message preference, and projects subscription CTA. It must not become a second business data owner.",
+      "failure_cases": "stale preload opens wrong feature state; premium gate bypass/divergence; malformed server order hides or duplicates feature; sponsored toggle error leaves false UI truth; layer/swipe/back closes wrong surface; account switch leaks readiness state",
+      "ui_disposition": "Reuse canonical Settings/ProfileSection/ListRow/Button/IconButton/Switch/LoadingState/ErrorState and existing Business feature surfaces; preserve keyboard/focus/a11y/light-dark/responsive/swipe semantics.",
+      "fabushi_canonical_owner": "Canonical Settings shell + existing Business capability owners + account-scoped platform/server business state",
+      "fabushi_target": "MAPPED OPEN. Existing Business/Settings owners remain canonical; no Telegram Business settings runtime or source-named component.",
+      "platform_differences": "Qt premium graphics/swipe/top-bar mechanics are presentation adapters. Feature availability, account scoping, server order, readiness and mutations remain canonical Fabushi responsibilities.",
+      "production_evidence": "Source read proves aggregation/readiness responsibility only. Existing Business capability slices are partial until same-head production and server evidence close this router contract.",
+      "test_evidence": "HIGH risk: unit/contract/integration/fault/security/a11y/E2E for premium gating, readiness races, account switch, sponsored mutation rollback/error, keyboard/focus, light-dark, responsive and swipe/back required before closure.",
+      "disposition": "mapped-open-canonical-business-settings-router",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "BusinessId",
+      "consumer_evidence": [
+        "Telegram/SourceFiles/settings/sections/settings_business.cpp:991:Type BusinessId() {",
+        "Telegram/SourceFiles/settings/sections/settings_business.cpp:1000:\tcontroller->showSettings(Settings::BusinessId());"
+      ],
+      "reachability_status": "accepted-tree route and product responsibility proven; canonical implementation/evidence closure open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no Telegram settings owner retained.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+        "verified_blob_sha": "66f2e398dc6e41616c64b122d11c4a829c3cce7f",
+        "file_type": "blob",
+        "recursive_order": 5584
+      },
+      "notes": "Full 1-1041 line exact-source read completed at live authority. Unknown remains open; omitted=false."
+    },
+    {
+      "recursive_order": 5585,
+      "source_path": "Telegram/SourceFiles/settings/sections/settings_business.h",
+      "source_blob_sha": "2ed90195c3c4231283145e8a5df430490ac74657",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Business settings route and ordered-feature public contract",
+      "upstream_owner": "Telegram business settings section interface",
+      "state_machine": "caller requests Business settings/show/order -> premiumPossible gate in implementation -> canonical settings route / deterministic server-configured feature order",
+      "side_effects": "Exports navigation/order contract only; implementation/server state remains with canonical owners.",
+      "failure_cases": "callers bypass availability gate; feature order API diverges from visible settings; stale account/session route survives teardown",
+      "ui_disposition": "Expose through canonical Settings routing and existing Business feature surfaces; no new source-named UI component.",
+      "fabushi_canonical_owner": "Canonical Settings routing + existing Business capability registry",
+      "fabushi_target": "MAPPED OPEN. Preserve interface semantics through source-neutral routes/capability registry.",
+      "platform_differences": "C++ Type/SessionController APIs are upstream adapters; target uses canonical route IDs and account-scoped stores.",
+      "production_evidence": "Header read proves callable contract only; same-head route/capability evidence remains required.",
+      "test_evidence": "MEDIUM risk: route availability/order/account-switch contract + keyboard/a11y navigation evidence required before closure.",
+      "disposition": "mapped-open-canonical-business-settings-interface",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "ShowBusiness",
+      "consumer_evidence": [
+        "Telegram/SourceFiles/settings/sections/settings_business.h:27:void ShowBusiness(not_null<Window::SessionController*> controller);",
+        "Telegram/SourceFiles/settings/sections/settings_business.cpp:995:void ShowBusiness(not_null<Window::SessionController*> controller) {"
+      ],
+      "reachability_status": "accepted-tree public settings contract proven; canonical implementation/evidence closure open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no source-named settings owner retained.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+        "verified_blob_sha": "2ed90195c3c4231283145e8a5df430490ac74657",
+        "file_type": "blob",
+        "recursive_order": 5585
+      },
+      "notes": "Complete exact-source header read at live authority. Unknown remains open; omitted=false."
+    }
+  ]
+}

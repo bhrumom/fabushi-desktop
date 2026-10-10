@@ -1,0 +1,38 @@
+{
+  "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+  "start": 5600,
+  "end": 5604,
+  "entries": [
+    {
+      "order": 5600,
+      "path": "Telegram/SourceFiles/settings/sections/settings_local_storage.cpp",
+      "blob": "b5371a40e0dce0d21583ca6a026bcd7df43ab15f",
+      "consumer_symbol": "LocalStorageId"
+    },
+    {
+      "order": 5601,
+      "path": "Telegram/SourceFiles/settings/sections/settings_local_storage.h",
+      "blob": "bdbf8b04bf37bca46cd8c9f42b2965909dacedc1",
+      "consumer_symbol": "LocalStorageId"
+    },
+    {
+      "order": 5602,
+      "path": "Telegram/SourceFiles/settings/sections/settings_local_storage.style",
+      "blob": "53ff050bd9836ec661c9f6f10ee6bbb6b8693c86",
+      "consumer_symbol": "localStorageChartHeight"
+    },
+    {
+      "order": 5603,
+      "path": "Telegram/SourceFiles/settings/sections/settings_main.cpp",
+      "blob": "62e91ea63b3ae2280b8effdc4d0315d70aa69a0d",
+      "consumer_symbol": "MainId"
+    },
+    {
+      "order": 5604,
+      "path": "Telegram/SourceFiles/settings/sections/settings_main.h",
+      "blob": "c06b499e59d5ddf2efa582626e1c5a462c64188c",
+      "consumer_symbol": "MainId"
+    }
+  ],
+  "accepted_tree": "4ddb5182fc1ae238e4dc62a396614614b5b35f97"
+}

@@ -1,0 +1,90 @@
+{
+  "format_version": 2,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+    "tree": "9d8fa87ce68c832d2f4c99f372a5bb672463c3e1"
+  },
+  "range": {
+    "first_order": 5586,
+    "last_order": 5587,
+    "entries": 2
+  },
+  "rows": [
+    {
+      "recursive_order": 5586,
+      "source_path": "Telegram/SourceFiles/settings/sections/settings_calls.cpp",
+      "source_blob_sha": "99ce45c03b9ade8f04e5f2ebd2b2ca74c1f0ce2a",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Call media settings: global and call-specific device selection/fallback, microphone testing, camera preview, permission recovery, incoming-call authorization and system-settings routing",
+      "upstream_owner": "Telegram calls settings section + media devices + authorization API",
+      "state_machine": "enumerate devices -> resolve default/current IDs -> persist global/call-specific selection; microphone permission -> live level test -> teardown; camera preview -> suspend/cancel while current call/group call owns capture -> resume; current authorization reload -> calls-disabled-here toggle -> server reconciliation",
+      "side_effects": "Persists canonical audio/camera preferences, opens OS permission/audio settings, owns temporary microphone/camera test lifetimes, and mutates the current authorization incoming-call flag. No second call/media/session owner is allowed.",
+      "failure_cases": "inactive device treated as active; default fallback diverges; permission denial loops; mic tester survives section exit; camera preview competes with active call/group call; stale device switch targets replaced capture; authorization toggle diverges from server/current account; inaccessible radio/device chooser",
+      "ui_disposition": "Reuse canonical Settings/ListRow/Radio/Switch/Dialog/Button media controls with keyboard/focus/a11y/light-dark/responsive state evidence; device chooser and preview are projections of canonical media owners.",
+      "fabushi_canonical_owner": "Canonical call media/device settings + platform permission adapter + account-scoped authorization/session owner",
+      "fabushi_target": "MAPPED OPEN. Extend existing source-neutral settings/media/authorization owners; no Telegram Calls settings runtime.",
+      "platform_differences": "Qt/WebRTC UI helpers map to existing browser/Electron mediaDevices and native platform permission adapters; server authorization truth remains account-scoped.",
+      "production_evidence": "Exact source read proves responsibilities only. Existing media-device settings are partial; incoming-call authorization/current-call preview fencing and same-head evidence remain open.",
+      "test_evidence": "HIGH risk: unit/contract/integration/fault/security/a11y/E2E for device hotplug/inactive fallback, permission deny/grant, teardown cancellation, active-call preview exclusion, authorization reconciliation, keyboard/focus and responsive/light-dark required.",
+      "disposition": "mapped-open-canonical-call-media-settings",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "CallsId",
+      "consumer_evidence": [
+        "Telegram/SourceFiles/settings/sections/settings_calls.cpp:739:Type CallsId() {",
+        "Telegram/SourceFiles/settings/sections/settings_calls.cpp:407:\t\t\tauthorizations->toggleCallsDisabledHere(!value);",
+        "Telegram/SourceFiles/settings/sections/settings_calls.cpp:743:Webrtc::VideoTrack *AddCameraSubsection("
+      ],
+      "reachability_status": "accepted-tree call settings responsibility proven; canonical implementation/evidence closure open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no source-named call settings owner retained.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+        "verified_blob_sha": "99ce45c03b9ade8f04e5f2ebd2b2ca74c1f0ce2a",
+        "file_type": "blob",
+        "recursive_order": 5586
+      },
+      "notes": "Complete exact-source read at live authority. Unknown remains open; omitted=false."
+    },
+    {
+      "recursive_order": 5587,
+      "source_path": "Telegram/SourceFiles/settings/sections/settings_calls.h",
+      "source_blob_sha": "686dddae0a1d9ec92c51822757827cc3a8e6b0b8",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Public call settings/media chooser and camera-preview contracts",
+      "upstream_owner": "Telegram calls settings interface",
+      "state_machine": "caller resolves Calls route or device-name/chooser/camera-preview helper -> canonical media/device setting or scoped preview lifetime",
+      "side_effects": "Exports route and helper contracts only; media capture, persistence, permissions and account authorization remain canonical owners.",
+      "failure_cases": "helper creates a second preference truth; chooser loses inactive/default semantics; preview lifetime escapes owner; callers bypass permission/current-call fencing",
+      "ui_disposition": "Expose via canonical Settings and reusable Radio/Dialog/media preview primitives; no source-named component.",
+      "fabushi_canonical_owner": "Canonical Settings route + call media/device adapters",
+      "fabushi_target": "MAPPED OPEN. Preserve public semantics through source-neutral typed APIs.",
+      "platform_differences": "C++ object_ptr/Qt style parameters are upstream presentation mechanics; target keeps typed canonical controls/adapters.",
+      "production_evidence": "Header read proves callable surface only; same-head production evidence remains required.",
+      "test_evidence": "MEDIUM risk: helper routing/default/inactive-device/preview-lifetime contract and keyboard/a11y evidence required.",
+      "disposition": "mapped-open-canonical-call-media-settings-interface",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "AddCameraSubsection",
+      "consumer_evidence": [
+        "Telegram/SourceFiles/settings/sections/settings_calls.h:35:Webrtc::VideoTrack *AddCameraSubsection(",
+        "Telegram/SourceFiles/settings/sections/settings_calls.cpp:743:Webrtc::VideoTrack *AddCameraSubsection("
+      ],
+      "reachability_status": "accepted-tree public call-settings contract proven; canonical implementation/evidence closure open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no source-named call settings owner retained.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+        "verified_blob_sha": "686dddae0a1d9ec92c51822757827cc3a8e6b0b8",
+        "file_type": "blob",
+        "recursive_order": 5587
+      },
+      "notes": "Complete exact-source header read at live authority. Unknown remains open; omitted=false."
+    }
+  ]
+}

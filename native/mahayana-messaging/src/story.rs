@@ -25,6 +25,29 @@ pub struct StoryPrivacy {
     pub excluded_actor_ids: BTreeSet<ActorId>,
 }
 
+pub const STORY_STEALTH_PRODUCT_ID: &str = "story-stealth";
+pub const STORY_STEALTH_ACTIVE_MS: i64 = 25 * 60 * 1000;
+pub const STORY_STEALTH_COOLDOWN_MS: i64 = 3 * 60 * 60 * 1000;
+pub const STORY_STEALTH_RETROACTIVE_MS: i64 = 5 * 60 * 1000;
+
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct StoryStealthState {
+    pub enabled_till_ms: i64,
+    pub cooldown_till_ms: i64,
+    pub last_activation_request_id: Option<String>,
+}
+
+impl StoryStealthState {
+    pub fn enabled_at(&self, now_ms: i64) -> bool {
+        self.enabled_till_ms > now_ms
+    }
+
+    pub fn cooling_down_at(&self, now_ms: i64) -> bool {
+        self.cooldown_till_ms > now_ms
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StoryView {
@@ -32,6 +55,34 @@ pub struct StoryView {
     pub viewed_at_ms: i64,
     pub reaction: Option<String>,
     pub forwarded: bool,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct StoryProgressState {
+    pub index: usize,
+    pub total: usize,
+    pub progress: f64,
+}
+
+impl Default for StoryProgressState {
+    fn default() -> Self {
+        Self { index: 0, total: 1, progress: 0.0 }
+    }
+}
+
+impl StoryProgressState {
+    /// Projects the source-neutral Story slider state used by a capability surface.
+    /// Every show call resets playback progress before exposing bounded index/total.
+    pub fn show(&mut self, index: usize, total: usize) {
+        self.progress = 0.0;
+        self.total = total.max(1);
+        self.index = index.min(self.total - 1);
+    }
+
+    /// Updates only the active Story playback projection with a finite bounded value.
+    pub fn update_playback(&mut self, progress: f64) {
+        self.progress = if progress.is_finite() { progress.clamp(0.0, 1.0) } else { 0.0 };
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -49,6 +100,8 @@ pub struct Story {
     pub protected_content: bool,
     pub allow_replies: bool,
     pub views: BTreeMap<ActorId, StoryView>,
+    #[serde(default)]
+    pub anonymous_view_count: u64,
 }
 
 impl Story {
@@ -91,16 +144,46 @@ impl Story {
         Ok(())
     }
 
+    pub fn record_anonymous_view(&mut self, viewed_at_ms: i64) -> Result<(), StoryError> {
+        if viewed_at_ms > self.expires_at_ms && !self.pinned_to_profile {
+            return Err(StoryError::Expired(self.id.clone()));
+        }
+        self.anonymous_view_count = self.anonymous_view_count.saturating_add(1);
+        Ok(())
+    }
+
+    pub fn anonymize_recent_view(&mut self, actor_id: &ActorId, since_ms: i64) -> bool {
+        let should_remove = self
+            .views
+            .get(actor_id)
+            .is_some_and(|view| view.viewed_at_ms >= since_ms);
+        if should_remove {
+            self.views.remove(actor_id);
+            self.anonymous_view_count = self.anonymous_view_count.saturating_add(1);
+        }
+        should_remove
+    }
+
     pub fn react(
         &mut self,
         actor_id: &ActorId,
         reaction: Option<String>,
+        reacted_at_ms: i64,
     ) -> Result<(), StoryError> {
-        let view = self
-            .views
-            .get_mut(actor_id)
-            .ok_or_else(|| StoryError::ViewerNotFound(actor_id.clone()))?;
-        view.reaction = reaction;
+        if !self.views.contains_key(actor_id) {
+            if reaction.is_none() {
+                return Ok(());
+            }
+            // A stealth view remains anonymous until the viewer performs an
+            // identity-bearing action. Upstream Story reactions are sent
+            // independently and owner-side StoryView entries carry user_id +
+            // reaction, so an explicit reaction establishes named attribution
+            // without rewriting the earlier anonymous view.
+            self.record_view(actor_id.clone(), reacted_at_ms)?;
+        }
+        if let Some(view) = self.views.get_mut(actor_id) {
+            view.reaction = reaction;
+        }
         Ok(())
     }
 }
@@ -111,4 +194,47 @@ pub enum StoryError {
     Expired(StoryId),
     #[error("story viewer {0:?} was not found")]
     ViewerNotFound(ActorId),
+}
+
+
+#[cfg(test)]
+mod progress_tests {
+    use super::StoryProgressState;
+
+    #[test]
+    fn story_progress_show_normalizes_bounds_and_resets_playback() {
+        let mut state = StoryProgressState::default();
+        state.update_playback(0.75);
+        state.show(9, 3);
+        assert_eq!(state.index, 2);
+        assert_eq!(state.total, 3);
+        assert_eq!(state.progress, 0.0);
+        state.update_playback(0.5);
+        state.show(0, 0);
+        assert_eq!(state.index, 0);
+        assert_eq!(state.total, 1);
+        assert_eq!(state.progress, 0.0);
+    }
+
+    #[test]
+    fn story_progress_updates_only_with_bounded_finite_values() {
+        let mut state = StoryProgressState::default();
+        state.update_playback(-1.0);
+        assert_eq!(state.progress, 0.0);
+        state.update_playback(2.0);
+        assert_eq!(state.progress, 1.0);
+        state.update_playback(f64::NAN);
+        assert_eq!(state.progress, 0.0);
+        state.update_playback(0.375);
+        assert_eq!(state.progress, 0.375);
+    }
+
+    #[test]
+    fn repeated_show_resets_progress_even_when_selection_is_unchanged() {
+        let mut state = StoryProgressState::default();
+        state.show(1, 3);
+        state.update_playback(0.8);
+        state.show(1, 3);
+        assert_eq!(state, StoryProgressState { index: 1, total: 3, progress: 0.0 });
+    }
 }
