@@ -1,5 +1,5 @@
-Live Revision 9 authority (2026-10-10): telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 (root tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6). Root non-directory=6,653; recursive non-directory=16,125; read-through=6,976; first unread=6,977 Telegram/ThirdParty/QR::Readme.markdown@66292b4b93bdd968738066827f8cb91e66ffe170; unread=9,149; unknown=15,845; omitted=0. Orders 6,963-6,976 complete MicroTeX utility/dependency reading with explicit OOB, ctype-byte, Unicode and typed-error invariants; reading alone closes no unknown. Fresh descendant exact-head GitHub Actions evidence is required.
-<!-- TDRP_CURRENT_SUMMARY read-through=6976 unread=9149 unknown=15845 omitted=0 first-unread=6977 path=Telegram/ThirdParty/QR::Readme.markdown -->
+Live Revision 9 authority (2026-10-10): telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 (root tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6). Root non-directory=6,653; recursive non-directory=16,125; read-through=7,028; first unread=7,029 Telegram/ThirdParty/TooManyCooks::.clang-format@b484c8323870e494c8031a35ddac49aa114052b3; unread=9,097; unknown=15,845; omitted=0. Orders 6,977-7,028 exact-read the pinned QR generator component. Existing RemoteControl pairing, SharedRoom invite and DeepLink owners retain payload/lifecycle state; QR remains a source-neutral representation/codec responsibility with no new QR/Identity/Conversation/Computer owner. Fresh descendant exact-head GitHub Actions evidence is required.
+<!-- TDRP_CURRENT_SUMMARY read-through=7028 unread=9097 unknown=15845 omitted=0 first-unread=7029 path=Telegram/ThirdParty/TooManyCooks::.clang-format -->
 
 # Telegram Desktop → Fabushi 全量等价重写 — Status
 
@@ -411,3 +411,11 @@ Orders **6,949-6,962** are exact-blob read-complete/responsibility-decomposed fo
 ### Source closure through 6,976
 
 Orders **6,963-6,976** are exact-blob read-complete/responsibility-decomposed for MicroTeX utility and dependency boundaries. Binary lookup must remain one-past-end safe; byte ctype classification must use unsigned-byte domain; malformed UTF/numeric/resource input must fail locally; typed error distinctions and dependency provenance remain explicit. C++ utilities are not copied. Accounting: **6,976/16,125 read; 9,149 unread; 15,845 unknown; 0 omitted**. First unread is 6,977 `Telegram/ThirdParty/QR::Readme.markdown@66292b4b…`.
+
+### Source closure through 7,028
+
+Orders **6,977-7,028** are exact-blob read-complete/responsibility-decomposed for the pinned Nayuki QR component across C/C++, Java/fast-Java, Python, Rust/no-heap, Rust and TypeScript/JavaScript implementations, tests, demos and package/build inputs. Applicable invariants include versions 1-40, four ECC levels, numeric/alphanumeric/byte/Kanji/ECI segmentation, bounded capacity/version selection, optional ECC boost, mask selection/penalty scoring, Reed-Solomon block/interleave behavior, bounded module access, typed too-long/invalid-input failure, no-heap caller-buffer contracts and output border/scale bounds.
+
+Existing-owner-first audit rejects a new QR product/state subsystem: RemoteControl already owns pairing/manual code, auth, expiry, status and persistence; SharedRoom owns share URL/expiry/room lifecycle; DeepLink owns canonical URL parsing. QR is mapped-open as a stateless representation/codec boundary behind those owners plus canonical Resource presentation. Reading grants no implementation, verification or unknown-closure credit.
+
+Accounting: **7,028/16,125 read; 9,097 unread; 15,845 unknown; 0 omitted**. First unread is order 7,029 `Telegram/ThirdParty/TooManyCooks::.clang-format@b484c8323870e494c8031a35ddac49aa114052b3`.

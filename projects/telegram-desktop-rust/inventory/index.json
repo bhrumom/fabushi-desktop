@@ -14,17 +14,17 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 9149,
+    "unread_minimum": 9097,
     "omitted_known": 0,
-    "note": "Recursive source census 16,125; unknown 15,845, unread 9,149, omitted 0. Exact read/responsibility decomposition extends through order 6,976; MicroTeX bounds/Unicode/error/dependency utility responsibilities remain mapped-open under existing AssistantMath/KaTeX and Build/Release owners."
+    "note": "Recursive source census 16,125; unknown 15,845, unread 9,097, omitted 0. Exact read/responsibility decomposition extends through order 7,028; QR codec/rendering responsibilities remain mapped-open under existing pairing/share/deep-link/resource owners; reading closes no unknown."
   },
   "latest_recursive_evidence": {
-    "run_id": 37998467124,
+    "run_id": 38060966114,
     "run_attempt": 1,
-    "job_id": 114050616674,
-    "head_sha": "55dee111546e051a641ac57a8b1a264ec8a7ac77",
-    "artifact_id": 11648646136,
-    "artifact_digest": "sha256:d21edd69e8122cdea571c3e7efea9a2e327c8c42a021d87d501dc71b6da1313b",
+    "job_id": 114239025476,
+    "head_sha": "274e39e8a47635b1587877ba5daa97a40ec72bd1",
+    "artifact_id": 11673102130,
+    "artifact_digest": "sha256:de267e1ea4b5cb1bf34a65bf99b06cdc7d54d56dfcae34186f1404609e50c897",
     "artifact_files": [
       "upstream-root-inventory.json",
       "upstream-recursive-inventory.json",
@@ -34,9 +34,9 @@
       "build-time-github-action-ref-resolutions.json",
       "build-time-github-clone-ref-resolutions.json"
     ],
-    "evidence_status": "historical-only-predecessor-source-authority-target-head-55dee111",
-    "upstream_commit": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
-    "note": "Run 37998467124 / job 114050616674 proves accepted upstream 65e23ba source authority on predecessor target HEAD 55dee111 with artifact 11648646136; descendant census/production commit requires fresh exact-head Actions."
+    "evidence_status": "historical-only-after-descendant-source-accounting-commit",
+    "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+    "note": "Run 38060966114 / job 114239025476 / artifact 11673102130 proves accepted 6fed91ff source authority on target HEAD 274e39e8. The QR source-accounting descendant requires fresh exact-head Actions."
   },
   "closure_rules": {
     "executable_runner": "github-actions",
@@ -46,7 +46,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live authority 6fed91ff exact through recursive order 6,976; first unread is 6,977 Telegram/ThirdParty/QR::Readme.markdown; unread_minimum is 9,149; unknown remains 15,845; omitted remains 0.",
+  "note": "Live authority 6fed91ff exact through recursive order 7,028; first unread is 7,029 Telegram/ThirdParty/TooManyCooks::.clang-format; unread_minimum is 9,097; unknown remains 15,845; omitted remains 0.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -64,10 +64,10 @@
       6541,
       6627
     ],
-    "current_source_read_through": 6976,
-    "first_unread_order": 6977,
-    "first_unread_path": "Telegram/ThirdParty/QR::Readme.markdown",
-    "current_head_source_authority_evidence": "Accepted authority remains 6fed91ff. Deterministic component read-through completes MicroTeX through vcpkg.json order 6,976; bounds/Unicode/error/dependency responsibilities remain mapped-open pending canonical math boundary evidence and descendant exact-head Actions."
+    "current_source_read_through": 7028,
+    "first_unread_order": 7029,
+    "first_unread_path": "Telegram/ThirdParty/TooManyCooks::.clang-format",
+    "current_head_source_authority_evidence": "Accepted authority remains 6fed91ff. Deterministic component read-through completes QR through typescript-javascript/qrcodegen.ts order 7,028; QR codec/rendering responsibilities remain mapped-open under existing pairing/share/deep-link/resource owners and fresh descendant exact-head Actions are required."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -76,9 +76,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 6976,
-    "first_unread_order": 6977,
-    "first_unread_path": "Telegram/ThirdParty/QR::Readme.markdown",
+    "read_through": 7028,
+    "first_unread_order": 7029,
+    "first_unread_path": "Telegram/ThirdParty/TooManyCooks::.clang-format",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }

@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 9149,
+    "unread": 9097,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,11 +13478,11 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Ten changed root blobs inside the accepted prefix were reconciled; deterministic recursive read-through=6976/16125, unread=9149, unknown=15845, omitted=0.",
-    "source_authority_evidence": "Accepted Telegram authority 6fed91ffab9861771a75f29df65031b3c80b6941 / tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; prefix completes MicroTeX through vcpkg.json order 6976; bounds/Unicode/error/dependency responsibilities remain mapped-open and fresh exact-head Actions are required.",
-    "current_source_read_through": 6976,
-    "first_unread_order": 6977,
-    "first_unread_path": "Telegram/ThirdParty/QR::Readme.markdown"
+    "source_read_reconciliation": "Ten changed root blobs inside the accepted prefix were reconciled; deterministic recursive read-through=7028/16125, unread=9097, unknown=15845, omitted=0.",
+    "source_authority_evidence": "Accepted Telegram authority 6fed91ffab9861771a75f29df65031b3c80b6941 / tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; prefix completes QR through typescript-javascript/qrcodegen.ts order 7028; QR representation responsibilities remain mapped-open under existing pairing/share/deep-link/resource owners and fresh descendant exact-head Actions are required.",
+    "current_source_read_through": 7028,
+    "first_unread_order": 7029,
+    "first_unread_path": "Telegram/ThirdParty/TooManyCooks::.clang-format"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,41 +13491,71 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 6976,
-    "first_unread_order": 6977,
-    "first_unread_path": "Telegram/ThirdParty/QR::Readme.markdown",
+    "read_through": 7028,
+    "first_unread_order": 7029,
+    "first_unread_path": "Telegram/ThirdParty/TooManyCooks::.clang-format",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
-    "status": "historical-only",
-    "predecessor_upstream_commit": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
-    "predecessor_target_head": "6c9f4a71accfb8ef6ed39647ba9c314cdaadffa0",
+    "status": "historical-only-after-descendant-commit",
+    "target_head": "274e39e8a47635b1587877ba5daa97a40ec72bd1",
     "runs": [
       {
-        "id": 37994253070,
-        "workflow": "Desktop Chat Parity CI",
+        "id": 38060966114,
+        "workflow": "Rust desktop runtime",
+        "run_number": 7149,
+        "attempt": 1,
         "conclusion": "success"
       },
       {
-        "id": 37994253071,
-        "workflow": "Rust desktop runtime",
+        "id": 38060965952,
+        "workflow": "Desktop Chat Parity CI",
+        "run_number": 4628,
+        "attempt": 1,
+        "conclusion": "success"
+      }
+    ],
+    "jobs": [
+      {
+        "id": 114239025476,
+        "name": "Source authority / recursive inventory",
+        "conclusion": "success"
+      },
+      {
+        "id": 114239025563,
+        "name": "rust-host",
+        "conclusion": "success"
+      },
+      {
+        "id": 114239025590,
+        "name": "Focused Electron chat E2E",
+        "conclusion": "success"
+      },
+      {
+        "id": 114239025551,
+        "name": "Pressure profiler (macOS)",
+        "conclusion": "success"
+      },
+      {
+        "id": 114239025636,
+        "name": "Pressure profiler (Windows)",
         "conclusion": "success"
       }
     ],
     "artifacts": [
       {
-        "id": 11646627384,
-        "digest": "sha256:8f66512c3631210316dd0b0728cf09f7177c174a1bcd2a6dd236101fc10b15c1"
+        "id": 11673102130,
+        "digest": "sha256:de267e1ea4b5cb1bf34a65bf99b06cdc7d54d56dfcae34186f1404609e50c897"
       },
       {
-        "id": 11646890929,
-        "digest": "sha256:3683ec0b5ab2b42a9c78a5e122b4f8db60282423bf1174883017f3d4eb072d0d"
+        "id": 11672819473,
+        "digest": "sha256:8b8c18d2eede37fbb6bd2576b6b5720a6a2b36ad1f46fdb171d837043e16edd6"
       },
       {
-        "id": 11646487081,
-        "digest": "sha256:bf39b897019c201c70869ecc227896a4345abaf67b765340ee15408f1c8b0cc6"
+        "id": 11673395999,
+        "digest": "sha256:a6385e0577a5680a0a5a754959400baa12a189fd77021a9a9910fba06f652ec9"
       }
     ],
-    "note": "These completed/success runs prove accepted upstream 65e23ba + target 6c9f4a71 only; descendant HEADs require fresh exact-head evidence."
+    "note": "All listed runs/jobs/artifacts prove exact target HEAD 274e39e8 only. The QR descendant requires fresh exact-head Actions."
   }
 }
