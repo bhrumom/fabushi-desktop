@@ -14,25 +14,25 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 8884,
+    "unread_minimum": 8818,
     "omitted_known": 0,
-    "note": "Recursive source census 16,125; exact read/decomposition through 7,241; unread 8,884; unknown 15,845; omitted 0. google/cld3 is fully read; local language-classification capability remains mapped-open with current shipping owner absent."
+    "note": "Recursive source census 16,125; exact read/decomposition through 7,307; unread 8,818; unknown 15,845; omitted 0. cmark-gfm orders 7,242-7,307 are read/decomposed; shipping parser/security/bounded-work equivalence remains mapped-open."
   },
   "latest_recursive_evidence": {
-    "run_id": 38062398837,
+    "run_id": 38064993530,
     "run_attempt": 1,
-    "job_id": 114243173201,
-    "head_sha": "4028b7613fc760d0f6ef7d4884cd620b409a9c0c",
-    "artifact_id": 11673552460,
-    "artifact_digest": "sha256:33cf046454569e14a5c3e2157dac152d9c6826353284227bdbf03d56160fc2b9",
+    "job_id": 114250776577,
+    "head_sha": "bbf9e2d299956f1919a7499a6ee0cc765ed29597",
+    "artifact_id": 11674697004,
+    "artifact_digest": "sha256:bf694d04f022f21490f971e88e54c802d7bedfa74bf415bf44fc4c9cb64798aa",
     "artifact_files": [
       "upstream-root-inventory.json",
       "upstream-recursive-inventory.json",
       "authority-report.json"
     ],
-    "evidence_status": "historical-only-after-descendant-source-accounting-commit",
+    "evidence_status": "historical-diagnostic-after-descendant-source-accounting-commit",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
-    "note": "Exact predecessor authority evidence; descendant source-accounting commit requires fresh exact-head Actions."
+    "note": "Exact predecessor authority artifact. Run 38064993530 failed only the lock coverage live-summary note drift before this descendant accounting repair; it cannot prove the new HEAD."
   },
   "closure_rules": {
     "executable_runner": "github-actions",
@@ -42,7 +42,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live authority 6fed91ff exact through recursive order 7,056; first unread is 7,057 Telegram/ThirdParty/TooManyCooks::include/tmc/all_headers.hpp; unread_minimum is 9,069; unknown remains 15,845; omitted remains 0.",
+  "note": "Live authority 6fed91ff exact through recursive order 7,307; first unread is 7,308 Telegram/ThirdParty/cmark-gfm::fuzz/CMakeLists.txt; unread_minimum is 8,818; unknown remains 15,845; omitted remains 0.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -60,10 +60,10 @@
       6541,
       6627
     ],
-    "current_source_read_through": 7241,
-    "first_unread_order": 7242,
-    "first_unread_path": "Telegram/ThirdParty/cmark-gfm::.editorconfig",
-    "current_head_source_authority_evidence": "Orders 7,155-7,241 exact-read google/cld3 and trace local language classification to Telegram translation consumers. Current Fabushi shipping tree lacks a language/translation classifier owner; no unknown closed."
+    "current_source_read_through": 7307,
+    "first_unread_order": 7308,
+    "first_unread_path": "Telegram/ThirdParty/cmark-gfm::fuzz/CMakeLists.txt",
+    "current_head_source_authority_evidence": "Orders 7,242-7,307 exact-read pinned cmark-gfm and trace shipping use to IV Markdown parser. GFM semantics, parser memory/complexity limits and security regressions remain mapped-open in existing Fabushi rich-content/URL/Resource and Build-Release owners; no unknown closed."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -72,9 +72,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 7241,
-    "first_unread_order": 7242,
-    "first_unread_path": "Telegram/ThirdParty/cmark-gfm::.editorconfig",
+    "read_through": 7307,
+    "first_unread_order": 7308,
+    "first_unread_path": "Telegram/ThirdParty/cmark-gfm::fuzz/CMakeLists.txt",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }
