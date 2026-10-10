@@ -820,7 +820,7 @@
         "mount": "Telegram/ThirdParty/MicroTeX",
         "path": "prebuilt/otf_clm.py",
         "object": "aba6e00be5221f7ee18d4ae71f8acbf8c92cf17b",
-        "mode": "100644",
+        "mode": "100755",
         "type": "blob",
         "size": 14267
       },
