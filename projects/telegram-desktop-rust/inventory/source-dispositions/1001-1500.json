@@ -18513,8 +18513,8 @@
       "omitted": false,
       "consumer_symbol": "media_video_play",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:603:\t{ \"media_video_play_bg\", videoPlayIconBg },",
-        "Telegram/SourceFiles/ui/chat/chat.style:604:\t{ \"media_video_play\", videoPlayIconFg, point(12px, 12px) },"
+        "Telegram/SourceFiles/ui/chat/chat.style:604:\t{ \"media_video_play_bg\", videoPlayIconBg },",
+        "Telegram/SourceFiles/ui/chat/chat.style:605:\t{ \"media_video_play\", videoPlayIconFg, point(12px, 12px) },"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop source/legal provenance retained for source-reading evidence. Source-read credit records semantics/consumers only; Telegram artwork/branding is not imported without separate rights/provenance approval.",
@@ -18531,7 +18531,8 @@
         "evidence_contract": "exact git hash-object + byte size + file(1) type",
         "recursive_order": 1438,
         "evidence_status": "live-github-tree-bound-current-head-actions-pending"
-      }
+      },
+      "rebaseline_note": "Re-attested exact consumer reachability on accepted 6fed91ff after chat.style inserted enlarge-ripple presentation state; the consumer token/content is unchanged and now lives at the generated current line."
     },
     {
       "recursive_order": 1439,
@@ -18555,8 +18556,8 @@
       "omitted": false,
       "consumer_symbol": "media_video_play",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:603:\t{ \"media_video_play_bg\", videoPlayIconBg },",
-        "Telegram/SourceFiles/ui/chat/chat.style:604:\t{ \"media_video_play\", videoPlayIconFg, point(12px, 12px) },"
+        "Telegram/SourceFiles/ui/chat/chat.style:604:\t{ \"media_video_play_bg\", videoPlayIconBg },",
+        "Telegram/SourceFiles/ui/chat/chat.style:605:\t{ \"media_video_play\", videoPlayIconFg, point(12px, 12px) },"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop source/legal provenance retained for source-reading evidence. Source-read credit records semantics/consumers only; Telegram artwork/branding is not imported without separate rights/provenance approval.",
@@ -18573,7 +18574,8 @@
         "evidence_contract": "exact git hash-object + byte size + file(1) type",
         "recursive_order": 1439,
         "evidence_status": "live-github-tree-bound-current-head-actions-pending"
-      }
+      },
+      "rebaseline_note": "Re-attested exact consumer reachability on accepted 6fed91ff after chat.style inserted enlarge-ripple presentation state; the consumer token/content is unchanged and now lives at the generated current line."
     },
     {
       "recursive_order": 1440,
@@ -18597,7 +18599,7 @@
       "omitted": false,
       "consumer_symbol": "media_video_play_bg",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:603:\t{ \"media_video_play_bg\", videoPlayIconBg },"
+        "Telegram/SourceFiles/ui/chat/chat.style:604:\t{ \"media_video_play_bg\", videoPlayIconBg },"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop source/legal provenance retained for source-reading evidence. Source-read credit records semantics/consumers only; Telegram artwork/branding is not imported without separate rights/provenance approval.",
@@ -18614,7 +18616,8 @@
         "evidence_contract": "exact git hash-object + byte size + file(1) type",
         "recursive_order": 1440,
         "evidence_status": "live-github-tree-bound-current-head-actions-pending"
-      }
+      },
+      "rebaseline_note": "Re-attested exact consumer reachability on accepted 6fed91ff after chat.style inserted enlarge-ripple presentation state; the consumer token/content is unchanged and now lives at the generated current line."
     },
     {
       "recursive_order": 1441,
@@ -18638,7 +18641,7 @@
       "omitted": false,
       "consumer_symbol": "media_video_play_bg",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:603:\t{ \"media_video_play_bg\", videoPlayIconBg },"
+        "Telegram/SourceFiles/ui/chat/chat.style:604:\t{ \"media_video_play_bg\", videoPlayIconBg },"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop source/legal provenance retained for source-reading evidence. Source-read credit records semantics/consumers only; Telegram artwork/branding is not imported without separate rights/provenance approval.",
@@ -18655,7 +18658,8 @@
         "evidence_contract": "exact git hash-object + byte size + file(1) type",
         "recursive_order": 1441,
         "evidence_status": "live-github-tree-bound-current-head-actions-pending"
-      }
+      },
+      "rebaseline_note": "Re-attested exact consumer reachability on accepted 6fed91ff after chat.style inserted enlarge-ripple presentation state; the consumer token/content is unchanged and now lives at the generated current line."
     },
     {
       "recursive_order": 1442,
@@ -18679,7 +18683,7 @@
       "omitted": false,
       "consumer_symbol": "media_video_play_bg",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:603:\t{ \"media_video_play_bg\", videoPlayIconBg },"
+        "Telegram/SourceFiles/ui/chat/chat.style:604:\t{ \"media_video_play_bg\", videoPlayIconBg },"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop source/legal provenance retained for source-reading evidence. Source-read credit records semantics/consumers only; Telegram artwork/branding is not imported without separate rights/provenance approval.",
@@ -18696,7 +18700,8 @@
         "evidence_contract": "exact git hash-object + byte size + file(1) type",
         "recursive_order": 1442,
         "evidence_status": "live-github-tree-bound-current-head-actions-pending"
-      }
+      },
+      "rebaseline_note": "Re-attested exact consumer reachability on accepted 6fed91ff after chat.style inserted enlarge-ripple presentation state; the consumer token/content is unchanged and now lives at the generated current line."
     },
     {
       "recursive_order": 1443,
