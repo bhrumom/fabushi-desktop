@@ -348,6 +348,209 @@ impl ConnectedAppRequest {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ConnectedAppRequestRecovery {
+    None,
+    Offer,
+    Answer,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ConnectedAppRequestEntry {
+    pub session_id: u64,
+    pub message_id: i64,
+    pub kind: ConnectedAppRequestKind,
+    pub expires_at_ms: i64,
+    pub order: u64,
+    pub chosen: bool,
+    pub recovery: ConnectedAppRequestRecovery,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct ConnectedAppRequestRuntime {
+    pub active: Option<ConnectedAppRequestEntry>,
+    pub silent: BTreeMap<i64, ConnectedAppRequestEntry>,
+    pub waiting: Vec<ConnectedAppRequestEntry>,
+    pub claimed_ids: BTreeSet<i64>,
+    pub recovery_held: BTreeSet<i64>,
+    pub recovery_polling: bool,
+    pub stopped: bool,
+    order: u64,
+}
+
+impl ConnectedAppRequestRuntime {
+    fn owns(&self, message_id: i64) -> bool {
+        self.active.as_ref().is_some_and(|entry| entry.message_id == message_id)
+            || self.silent.contains_key(&message_id)
+            || self.waiting.iter().any(|entry| entry.message_id == message_id)
+    }
+
+    fn enqueue(
+        &mut self,
+        request: &ConnectedAppRequest,
+        chosen: bool,
+    ) -> Result<(), ConnectedAppError> {
+        if self.stopped {
+            return Err(ConnectedAppError::RequestRuntimeStopped);
+        }
+        if self.owns(request.message_id) || self.claimed_ids.contains(&request.message_id) {
+            return Err(ConnectedAppError::DuplicateRequest);
+        }
+        self.order = self
+            .order
+            .checked_add(1)
+            .ok_or(ConnectedAppError::RequestOrderOverflow)?;
+        let entry = ConnectedAppRequestEntry {
+            session_id: request.session_id,
+            message_id: request.message_id,
+            kind: request.kind,
+            expires_at_ms: request.expires_at_ms,
+            order: self.order,
+            chosen,
+            recovery: ConnectedAppRequestRecovery::None,
+        };
+        if request.kind == ConnectedAppRequestKind::Disconnect {
+            self.silent.insert(entry.message_id, entry);
+        } else {
+            self.waiting.push(entry);
+        }
+        Ok(())
+    }
+
+    fn clear_session(&mut self, session_id: u64) {
+        if self.active.as_ref().is_some_and(|entry| entry.session_id == session_id) {
+            self.active = None;
+        }
+        self.silent.retain(|_, entry| entry.session_id != session_id);
+        self.waiting.retain(|entry| entry.session_id != session_id);
+    }
+
+    fn retain_sessions(&mut self, sessions: &BTreeMap<u64, ConnectedAppSession>) {
+        if self.active.as_ref().is_some_and(|entry| !sessions.contains_key(&entry.session_id)) {
+            self.active = None;
+        }
+        self.silent.retain(|_, entry| sessions.contains_key(&entry.session_id));
+        self.waiting.retain(|entry| sessions.contains_key(&entry.session_id));
+    }
+
+    fn take_next(
+        &mut self,
+        now_ms: i64,
+    ) -> Result<Option<ConnectedAppRequestEntry>, ConnectedAppError> {
+        if now_ms < 0 {
+            return Err(ConnectedAppError::InvalidRequest);
+        }
+        if self.stopped || self.active.is_some() {
+            return Ok(None);
+        }
+        let claimed = &self.claimed_ids;
+        self.waiting.retain(|entry| match entry.recovery {
+            ConnectedAppRequestRecovery::Answer => true,
+            ConnectedAppRequestRecovery::Offer => entry.expires_at_ms > now_ms,
+            ConnectedAppRequestRecovery::None => {
+                entry.expires_at_ms > now_ms && !claimed.contains(&entry.message_id)
+            }
+        });
+        if self.waiting.is_empty() {
+            return Ok(None);
+        }
+        let mut index = self
+            .waiting
+            .iter()
+            .enumerate()
+            .min_by_key(|(_, entry)| entry.order)
+            .map(|(index, _)| index)
+            .expect("waiting is non-empty");
+        if !self.waiting[index].chosen {
+            let session_id = self.waiting[index].session_id;
+            if let Some((same_index, _)) = self
+                .waiting
+                .iter()
+                .enumerate()
+                .filter(|(_, entry)| entry.session_id == session_id)
+                .min_by_key(|(_, entry)| entry.message_id)
+            {
+                index = same_index;
+            }
+        }
+        let entry = self.waiting.remove(index);
+        self.active = Some(entry.clone());
+        Ok(Some(entry))
+    }
+
+    fn choose(&mut self, message_id: i64) -> Result<(), ConnectedAppError> {
+        if self.stopped {
+            return Err(ConnectedAppError::RequestRuntimeStopped);
+        }
+        if self.silent.contains_key(&message_id) {
+            return Err(ConnectedAppError::RequestOwnedSilently);
+        }
+        if self.active.as_ref().is_some_and(|entry| entry.message_id == message_id) {
+            return Ok(());
+        }
+        let index = self
+            .waiting
+            .iter()
+            .position(|entry| entry.message_id == message_id)
+            .ok_or(ConnectedAppError::RequestNotFound)?;
+        self.waiting[index].chosen = true;
+        if self.active.is_some() {
+            let mut entry = self.waiting.remove(index);
+            entry.order = 0;
+            self.waiting.insert(0, entry);
+        } else {
+            let entry = self.waiting.remove(index);
+            self.active = Some(entry);
+        }
+        Ok(())
+    }
+
+    fn handled_elsewhere(&mut self, message_id: i64) -> bool {
+        let mut changed = false;
+        if self.active.as_ref().is_some_and(|entry| {
+            entry.message_id == message_id && entry.recovery == ConnectedAppRequestRecovery::None
+        }) {
+            self.active = None;
+            changed = true;
+        }
+        if self.silent.remove(&message_id).is_some() {
+            changed = true;
+        }
+        let before = self.waiting.len();
+        self.waiting.retain(|entry| {
+            entry.message_id != message_id || entry.recovery != ConnectedAppRequestRecovery::None
+        });
+        changed || before != self.waiting.len()
+    }
+
+    fn finish(&mut self, message_id: i64, claimed: bool) -> Result<(), ConnectedAppError> {
+        let mut found = false;
+        if self.active.as_ref().is_some_and(|entry| entry.message_id == message_id) {
+            self.active = None;
+            found = true;
+        }
+        if self.silent.remove(&message_id).is_some() {
+            found = true;
+        }
+        if !found {
+            return Err(ConnectedAppError::RequestNotFound);
+        }
+        if claimed {
+            self.claimed_ids.insert(message_id);
+        }
+        Ok(())
+    }
+
+    fn stop(&mut self) {
+        self.active = None;
+        self.silent.clear();
+        self.waiting.clear();
+        self.recovery_held.clear();
+        self.recovery_polling = false;
+        self.stopped = true;
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum ConnectedAppClaimDecision {
@@ -455,6 +658,8 @@ pub struct ConnectedAppState {
     pub disconnect_runtime: ConnectedAppDisconnectRuntime,
     #[serde(skip, default)]
     pub connect_runtime: ConnectedAppConnectRuntime,
+    #[serde(skip, default)]
+    pub request_runtime: ConnectedAppRequestRuntime,
 }
 
 impl ConnectedAppState {
@@ -493,6 +698,7 @@ impl ConnectedAppState {
             self.sessions.remove(&session.id);
             self.pending_requests
                 .retain(|_, request| request.session_id != session.id);
+            self.request_runtime.clear_session(session.id);
             self.key_runtime.references.remove(&session.id);
             self.disconnect_runtime.clear_session(session.id);
         } else {
@@ -806,6 +1012,7 @@ impl ConnectedAppState {
         }
         self.key_runtime.retain_sessions(&self.sessions);
         self.disconnect_runtime.retain_sessions(&self.sessions);
+        self.request_runtime.retain_sessions(&self.sessions);
         self.session_refresh.settle();
         Ok(())
     }
@@ -886,8 +1093,63 @@ impl ConnectedAppState {
         {
             return Err(ConnectedAppError::DuplicateRequest);
         }
+        self.request_runtime.enqueue(&request, false)?;
         self.pending_requests.insert(key, request);
         Ok(())
+    }
+
+    pub fn take_next_request(
+        &mut self,
+        now_ms: i64,
+    ) -> Result<Option<ConnectedAppRequestEntry>, ConnectedAppError> {
+        let claims = &self.claims;
+        self.pending_requests.retain(|_, request| {
+            request.expires_at_ms > now_ms
+                && !claims.iter().any(|claim| {
+                    claim.session_id == request.session_id
+                        && claim.message_id == request.message_id
+                })
+        });
+        self.request_runtime.take_next(now_ms)
+    }
+
+    pub fn choose_request(&mut self, message_id: i64) -> Result<(), ConnectedAppError> {
+        if !self.request_runtime.owns(message_id) {
+            let request = self
+                .pending_requests
+                .values()
+                .find(|request| request.message_id == message_id)
+                .cloned()
+                .ok_or(ConnectedAppError::RequestNotFound)?;
+            self.request_runtime.enqueue(&request, true)?;
+        }
+        self.request_runtime.choose(message_id)
+    }
+
+    pub fn mark_request_handled_elsewhere(&mut self, message_id: i64) -> bool {
+        let changed = self.request_runtime.handled_elsewhere(message_id);
+        if changed {
+            self.pending_requests
+                .retain(|_, request| request.message_id != message_id);
+        }
+        changed
+    }
+
+    pub fn finish_request(
+        &mut self,
+        message_id: i64,
+        claimed: bool,
+    ) -> Result<(), ConnectedAppError> {
+        self.request_runtime.finish(message_id, claimed)?;
+        if claimed {
+            self.pending_requests
+                .retain(|_, request| request.message_id != message_id);
+        }
+        Ok(())
+    }
+
+    pub fn stop_requests(&mut self) {
+        self.request_runtime.stop();
     }
 
     pub fn record_claim(
@@ -1587,6 +1849,12 @@ pub enum ConnectedAppError {
     InvalidRequest,
     #[error("connected app request already exists or was already claimed")]
     DuplicateRequest,
+    #[error("connected app request runtime is stopped")]
+    RequestRuntimeStopped,
+    #[error("connected app request order overflowed")]
+    RequestOrderOverflow,
+    #[error("connected app request is owned by the silent flow")]
+    RequestOwnedSilently,
     #[error("connected app request was not found")]
     RequestNotFound,
     #[error("connected app request expired")]
@@ -2353,3 +2621,109 @@ mod lifecycle_source_tests {
         );
     }
 }
+
+#[cfg(test)]
+mod connected_app_request_runtime_source_tests {
+    use super::*;
+
+    fn session() -> ConnectedAppSession {
+        ConnectedAppSession {
+            id: 77,
+            client_id: "runtime-client".into(),
+            manifest: None,
+            status: ConnectedAppSessionStatus::Active,
+            created_at_ms: 1,
+            updated_at_ms: 1,
+        }
+    }
+
+    fn request(message_id: i64, request_id: &str, kind: ConnectedAppRequestKind) -> ConnectedAppRequest {
+        ConnectedAppRequest {
+            session_id: 77,
+            message_id,
+            request_id: request_id.into(),
+            method: match kind {
+                ConnectedAppRequestKind::Disconnect => "disconnect",
+                _ => "sendTransaction",
+            }.into(),
+            kind,
+            trace_id: String::new(),
+            expires_at_ms: 10_000,
+        }
+    }
+
+    #[test]
+    fn request_runtime_fences_transport_ownership_and_orders_same_session_by_message_id() {
+        let mut state = ConnectedAppState::default();
+        state.upsert_session(session()).unwrap();
+        state.queue_request(request(300, "r300", ConnectedAppRequestKind::SendTransaction), 10).unwrap();
+        state.queue_request(request(200, "r200", ConnectedAppRequestKind::SendTransaction), 10).unwrap();
+
+        let selected = state.take_next_request(20).unwrap().unwrap();
+        assert_eq!(selected.message_id, 200);
+        assert_eq!(state.request_runtime.active.as_ref().map(|entry| entry.message_id), Some(200));
+
+        state.finish_request(200, false).unwrap();
+        let selected = state.take_next_request(21).unwrap().unwrap();
+        assert_eq!(selected.message_id, 300);
+    }
+
+    #[test]
+    fn chosen_request_moves_ahead_without_preempting_active_and_disconnect_is_silent_owned() {
+        let mut state = ConnectedAppState::default();
+        state.upsert_session(session()).unwrap();
+        state.queue_request(request(100, "r100", ConnectedAppRequestKind::SendTransaction), 10).unwrap();
+        state.queue_request(request(200, "r200", ConnectedAppRequestKind::SendTransaction), 10).unwrap();
+        state.queue_request(request(300, "r300", ConnectedAppRequestKind::Disconnect), 10).unwrap();
+
+        assert_eq!(state.take_next_request(20).unwrap().unwrap().message_id, 100);
+        state.choose_request(200).unwrap();
+        assert_eq!(state.request_runtime.active.as_ref().unwrap().message_id, 100);
+        assert_eq!(state.request_runtime.waiting.first().unwrap().message_id, 200);
+        assert!(state.request_runtime.silent.contains_key(&300));
+        assert_eq!(state.choose_request(300), Err(ConnectedAppError::RequestOwnedSilently));
+
+        state.finish_request(100, false).unwrap();
+        assert_eq!(state.take_next_request(21).unwrap().unwrap().message_id, 200);
+    }
+
+    #[test]
+    fn handled_elsewhere_drops_unclaimed_flow_and_runtime_state_is_not_persisted() {
+        let mut state = ConnectedAppState::default();
+        state.upsert_session(session()).unwrap();
+        state.queue_request(request(400, "r400", ConnectedAppRequestKind::SendTransaction), 10).unwrap();
+        assert_eq!(state.take_next_request(20).unwrap().unwrap().message_id, 400);
+        assert!(state.mark_request_handled_elsewhere(400));
+        assert!(state.request_runtime.active.is_none());
+        assert!(state.pending_requests.is_empty());
+
+        state.queue_request(request(500, "r500", ConnectedAppRequestKind::SendTransaction), 10).unwrap();
+        assert_eq!(state.take_next_request(20).unwrap().unwrap().message_id, 500);
+        let encoded = serde_json::to_string(&state).unwrap();
+        let restored: ConnectedAppState = serde_json::from_str(&encoded).unwrap();
+        assert!(restored.request_runtime.active.is_none());
+        assert!(restored.request_runtime.waiting.is_empty());
+        assert!(restored.request_runtime.silent.is_empty());
+        assert_eq!(restored.pending_requests.len(), 1);
+    }
+
+    #[test]
+    fn claimed_finish_fences_reappearance_and_stop_cancels_runtime_ownership() {
+        let mut state = ConnectedAppState::default();
+        state.upsert_session(session()).unwrap();
+        state.queue_request(request(600, "r600", ConnectedAppRequestKind::Disconnect), 10).unwrap();
+        state.finish_request(600, true).unwrap();
+        assert!(state.request_runtime.claimed_ids.contains(&600));
+        assert!(state.pending_requests.is_empty());
+
+        state.queue_request(request(700, "r700", ConnectedAppRequestKind::SendTransaction), 10).unwrap();
+        state.stop_requests();
+        assert!(state.request_runtime.stopped);
+        assert!(state.request_runtime.waiting.is_empty());
+        assert_eq!(
+            state.queue_request(request(800, "r800", ConnectedAppRequestKind::SendTransaction), 10),
+            Err(ConnectedAppError::RequestRuntimeStopped)
+        );
+    }
+}
+

@@ -537,6 +537,20 @@ pub enum Command {
         request: ConnectedAppRequest,
         observed_at_ms: i64,
     },
+    TakeNextConnectedAppRequest {
+        observed_at_ms: i64,
+    },
+    ChooseConnectedAppRequest {
+        message_id: i64,
+    },
+    MarkConnectedAppRequestHandled {
+        message_id: i64,
+    },
+    FinishConnectedAppRequest {
+        message_id: i64,
+        claimed: bool,
+    },
+    StopConnectedAppRequests,
     ResolveConnectedAppRequest {
         session_id: u64,
         #[serde(default)]
@@ -3582,6 +3596,31 @@ impl MessagingEngine {
                 state.queue_request(request, observed_at_ms)?;
                 Ok(vec![Event::ConnectedAppStateChanged { state }])
             }
+            Command::TakeNextConnectedAppRequest { observed_at_ms } => {
+                let mut state = self.state.connected_apps.clone();
+                state.take_next_request(observed_at_ms)?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::ChooseConnectedAppRequest { message_id } => {
+                let mut state = self.state.connected_apps.clone();
+                state.choose_request(message_id)?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::MarkConnectedAppRequestHandled { message_id } => {
+                let mut state = self.state.connected_apps.clone();
+                state.mark_request_handled_elsewhere(message_id);
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::FinishConnectedAppRequest { message_id, claimed } => {
+                let mut state = self.state.connected_apps.clone();
+                state.finish_request(message_id, claimed)?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::StopConnectedAppRequests => {
+                let mut state = self.state.connected_apps.clone();
+                state.stop_requests();
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
             Command::ResolveConnectedAppRequest {
                 session_id,
                 message_id,
@@ -6625,3 +6664,52 @@ mod connected_app_source_runtime_engine_tests {
         assert!(restored.connected_apps.disconnect_runtime.close_waiting.is_empty());
     }
 }
+
+#[cfg(test)]
+mod connected_app_request_runtime_engine_tests {
+    use super::*;
+    use crate::connected_app::{
+        ConnectedAppRequestKind, ConnectedAppSessionStatus,
+    };
+
+    fn session() -> ConnectedAppSession {
+        ConnectedAppSession {
+            id: 991,
+            client_id: "request-runtime-engine".into(),
+            manifest: None,
+            status: ConnectedAppSessionStatus::Active,
+            created_at_ms: 1,
+            updated_at_ms: 1,
+        }
+    }
+
+    #[test]
+    fn engine_wires_connected_app_request_runtime_commands() {
+        let mut engine = MessagingEngine::new();
+        engine.execute(Command::UpsertConnectedAppSession { session: session() }).unwrap();
+        engine.execute(Command::QueueConnectedAppRequest {
+            request: ConnectedAppRequest {
+                session_id: 991,
+                message_id: 901,
+                request_id: "engine-request".into(),
+                method: "sendTransaction".into(),
+                kind: ConnectedAppRequestKind::SendTransaction,
+                trace_id: String::new(),
+                expires_at_ms: 10_000,
+            },
+            observed_at_ms: 10,
+        }).unwrap();
+        engine.execute(Command::TakeNextConnectedAppRequest { observed_at_ms: 20 }).unwrap();
+        assert_eq!(
+            engine.state().connected_apps.request_runtime.active.as_ref().map(|entry| entry.message_id),
+            Some(901)
+        );
+        engine.execute(Command::FinishConnectedAppRequest {
+            message_id: 901,
+            claimed: true,
+        }).unwrap();
+        assert!(engine.state().connected_apps.request_runtime.claimed_ids.contains(&901));
+        assert!(engine.state().connected_apps.pending_requests.is_empty());
+    }
+}
+
