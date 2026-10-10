@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15846,
-    "unread_minimum": 9800,
+    "unread_minimum": 9786,
     "omitted_known": 0,
-    "note": "Live 65e23ba recursive census remains 16,125; exact read-through 6,325; unknown 15,846, unread 9,800, omitted 0. Fresh current-head Actions remain required."
+    "note": "Live 65e23ba recursive census remains 16,125; exact read-through 6,339; unknown 15,846, unread 9,786, omitted 0. Fresh current-head Actions remain required."
   },
   "latest_recursive_evidence": {
     "run_id": 37998467124,
