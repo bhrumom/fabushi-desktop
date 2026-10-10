@@ -54,6 +54,28 @@ test('canonical math renderer normalizes every accepted localized decimal block 
   expect(seenExpressions).toEqual(['1.2', '1.2']);
 });
 
+test('canonical math renderer isolates mutable macro scope across strict, recovery, and later renders', () => {
+  const scopes: Array<Record<string, string>> = [];
+  const runtime: KatexRuntime = {
+    renderToString(_expression, options) {
+      scopes.push(options.macros);
+      expect(options.macros.leaked).toBeUndefined();
+      options.macros.leaked = `attempt-${scopes.length}`;
+      if (scopes.length === 1) throw new Error('strict macro-scope probe');
+      return '<span class="katex">x</span>';
+    },
+  };
+
+  expect(renderKatexMarkup(runtime, 'x', false)).toContain('katex');
+  expect(scopes).toHaveLength(2);
+  expect(scopes[0]).not.toBe(scopes[1]);
+
+  expect(renderKatexMarkup(runtime, 'y', false)).toContain('katex');
+  expect(scopes).toHaveLength(3);
+  expect(scopes[2]).not.toBe(scopes[0]);
+  expect(scopes[2]).not.toBe(scopes[1]);
+});
+
 test('canonical math renderer rejects over-budget input before invoking the runtime', () => {
   let calls = 0;
   const runtime: KatexRuntime = {
