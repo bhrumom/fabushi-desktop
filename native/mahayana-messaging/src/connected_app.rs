@@ -1,6 +1,6 @@
 use crate::wallet::WalletTransferIdentity;
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use thiserror::Error;
 
 pub const CONNECTED_APP_REQUEST_ID_MAX_CHARS: usize = 100;
@@ -231,6 +231,8 @@ pub struct ConnectedAppState {
     pub sessions: BTreeMap<u64, ConnectedAppSession>,
     pub pending_requests: BTreeMap<String, ConnectedAppRequest>,
     pub claims: Vec<ConnectedAppClaimRecord>,
+    #[serde(default)]
+    pub closed_session_ids: BTreeSet<u64>,
     #[serde(skip, default)]
     pub session_refresh: ConnectedAppSessionRefreshState,
 }
@@ -249,6 +251,11 @@ impl ConnectedAppState {
         track_refresh_change: bool,
     ) -> Result<(), ConnectedAppError> {
         session.validate()?;
+        if session.status != ConnectedAppSessionStatus::Closed
+            && self.closed_session_ids.contains(&session.id)
+        {
+            return Err(ConnectedAppError::InvalidSessionTransition);
+        }
         if let Some(previous) = self.sessions.get(&session.id) {
             if previous.client_id != session.client_id
                 || session.created_at_ms != previous.created_at_ms
@@ -262,6 +269,7 @@ impl ConnectedAppState {
             self.session_refresh.changed_while_loading.insert(session.id, session.clone());
         }
         if session.status == ConnectedAppSessionStatus::Closed {
+            self.closed_session_ids.insert(session.id);
             self.sessions.remove(&session.id);
             self.pending_requests.retain(|_, request| request.session_id != session.id);
         } else {
@@ -299,9 +307,10 @@ impl ConnectedAppState {
         self.pending_requests.retain(|_, request| self.sessions.contains_key(&request.session_id));
         for (_, local) in changed {
             if local.status == ConnectedAppSessionStatus::Closed {
+                self.closed_session_ids.insert(local.id);
                 self.sessions.remove(&local.id);
                 self.pending_requests.retain(|_, request| request.session_id != local.id);
-            } else {
+            } else if !self.closed_session_ids.contains(&local.id) {
                 self.sessions.insert(local.id, local);
             }
         }
