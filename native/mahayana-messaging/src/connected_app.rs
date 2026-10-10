@@ -238,13 +238,22 @@ impl ConnectedAppConnectRuntime {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub enum ConnectedAppOperationFate {
     Unknown,
     Sending,
     Unresolved,
     Settled,
     Absent,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ConnectedAppClaimFate {
+    pub session_id: u64,
+    pub message_id: i64,
+    pub fate: ConnectedAppOperationFate,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -255,6 +264,22 @@ pub enum ConnectedAppRecoveryAction {
     SubmitAnswer,
     SubmitNotSent,
     Forget,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ConnectedAppRecoverySubmissionKind {
+    Answer,
+    NotSent,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ConnectedAppRecoverySubmission {
+    pub session_id: u64,
+    pub message_id: i64,
+    pub request_id: String,
+    pub trace_id: String,
+    pub kind: ConnectedAppRecoverySubmissionKind,
+    pub body: Vec<u8>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -373,6 +398,7 @@ pub struct ConnectedAppRequestRuntime {
     pub waiting: Vec<ConnectedAppRequestEntry>,
     pub claimed_ids: BTreeSet<i64>,
     pub recovery_held: BTreeSet<i64>,
+    pub recovery_submissions: BTreeMap<i64, ConnectedAppRecoverySubmission>,
     pub recovery_polling: bool,
     pub stopped: bool,
     order: u64,
@@ -415,6 +441,65 @@ impl ConnectedAppRequestRuntime {
             self.waiting.push(entry);
         }
         Ok(())
+    }
+
+    fn enqueue_recovery(
+        &mut self,
+        claim: &ConnectedAppClaimRecord,
+        recovery: ConnectedAppRequestRecovery,
+    ) -> Result<bool, ConnectedAppError> {
+        if self.stopped {
+            return Err(ConnectedAppError::RequestRuntimeStopped);
+        }
+        if self.owns(claim.message_id) || self.recovery_held.contains(&claim.message_id) {
+            return Ok(false);
+        }
+        self.order = self
+            .order
+            .checked_add(1)
+            .ok_or(ConnectedAppError::RequestOrderOverflow)?;
+        self.waiting.push(ConnectedAppRequestEntry {
+            session_id: claim.session_id,
+            message_id: claim.message_id,
+            kind: ConnectedAppRequestKind::SendTransaction,
+            expires_at_ms: claim.expires_at_ms,
+            order: self.order,
+            chosen: false,
+            recovery,
+        });
+        Ok(true)
+    }
+
+    fn hold_recovery_submission(
+        &mut self,
+        claim: &ConnectedAppClaimRecord,
+        kind: ConnectedAppRecoverySubmissionKind,
+        body: Vec<u8>,
+    ) -> bool {
+        if body.is_empty()
+            || self.recovery_held.contains(&claim.message_id)
+            || self.owns(claim.message_id)
+        {
+            return false;
+        }
+        self.recovery_held.insert(claim.message_id);
+        self.recovery_submissions.insert(
+            claim.message_id,
+            ConnectedAppRecoverySubmission {
+                session_id: claim.session_id,
+                message_id: claim.message_id,
+                request_id: claim.request_id.clone(),
+                trace_id: claim.trace_id.clone(),
+                kind,
+                body,
+            },
+        );
+        true
+    }
+
+    fn clear_recovery_submission(&mut self, message_id: i64) {
+        self.recovery_submissions.remove(&message_id);
+        self.recovery_held.remove(&message_id);
     }
 
     fn clear_session(&mut self, session_id: u64) {
@@ -546,6 +631,7 @@ impl ConnectedAppRequestRuntime {
         self.silent.clear();
         self.waiting.clear();
         self.recovery_held.clear();
+        self.recovery_submissions.clear();
         self.recovery_polling = false;
         self.stopped = true;
     }
@@ -1369,6 +1455,143 @@ impl ConnectedAppState {
             return Ok(ConnectedAppRecoveryAction::SubmitNotSent);
         }
         Ok(ConnectedAppRecoveryAction::Offer)
+    }
+
+    pub fn reconcile_claim_recovery(
+        &mut self,
+        wallet_identity: Option<WalletTransferIdentity>,
+        fates: Vec<ConnectedAppClaimFate>,
+        now_ms: i64,
+    ) -> Result<(), ConnectedAppError> {
+        if now_ms < 0
+            || wallet_identity
+                .as_ref()
+                .is_some_and(|identity| identity.validate().is_err())
+        {
+            return Err(ConnectedAppError::InvalidWalletBinding);
+        }
+        self.prune_claims(now_ms);
+        let live_ids = self.claims.iter().map(|claim| claim.message_id).collect::<BTreeSet<_>>();
+        self.request_runtime.recovery_held.retain(|id| live_ids.contains(id));
+        self.request_runtime.recovery_submissions.retain(|id, _| live_ids.contains(id));
+
+        let mut fate_by_claim = BTreeMap::new();
+        for item in fates {
+            if item.session_id == 0 || item.message_id <= 0 || item.message_id > i32::MAX as i64 {
+                return Err(ConnectedAppError::InvalidClaim);
+            }
+            fate_by_claim.insert((item.session_id, item.message_id), item.fate);
+        }
+
+        let records = self.claims.clone();
+        for record in &records {
+            self.request_runtime.claimed_ids.insert(record.message_id);
+        }
+
+        let mut journal_waits = false;
+        for record in records {
+            if self.request_runtime.recovery_held.contains(&record.message_id)
+                || self.request_runtime.owns(record.message_id)
+            {
+                continue;
+            }
+            if !record.answer.is_empty() || record.decision == ConnectedAppClaimDecision::Answer {
+                self.request_runtime.hold_recovery_submission(
+                    &record,
+                    ConnectedAppRecoverySubmissionKind::Answer,
+                    record.answer.clone(),
+                );
+                continue;
+            }
+            let wallet_matches = match (&record.wallet_identity, &wallet_identity) {
+                (Some(bound), Some(current)) => {
+                    bound.network == current.network
+                        && bound.address == current.address
+                        && bound.public_key == current.public_key
+                }
+                _ => false,
+            };
+            if !wallet_matches {
+                continue;
+            }
+            let fate = if record.operation_id.is_empty() {
+                ConnectedAppOperationFate::Absent
+            } else {
+                fate_by_claim
+                    .get(&(record.session_id, record.message_id))
+                    .copied()
+                    .unwrap_or(ConnectedAppOperationFate::Unknown)
+            };
+            let action = self.claim_recovery_action(
+                record.session_id,
+                record.message_id,
+                &record.request_id,
+                fate,
+                now_ms,
+            )?;
+            match action {
+                ConnectedAppRecoveryAction::Wait => {
+                    let handed_off = !record.signed_payload.is_empty();
+                    journal_waits |= fate == ConnectedAppOperationFate::Sending
+                        || (fate == ConnectedAppOperationFate::Unresolved && handed_off);
+                }
+                ConnectedAppRecoveryAction::Offer => {
+                    self.request_runtime
+                        .enqueue_recovery(&record, ConnectedAppRequestRecovery::Offer)?;
+                }
+                ConnectedAppRecoveryAction::RecoverAnswer => {
+                    self.request_runtime
+                        .enqueue_recovery(&record, ConnectedAppRequestRecovery::Answer)?;
+                }
+                ConnectedAppRecoveryAction::SubmitAnswer => {
+                    self.request_runtime.hold_recovery_submission(
+                        &record,
+                        ConnectedAppRecoverySubmissionKind::Answer,
+                        record.answer.clone(),
+                    );
+                }
+                ConnectedAppRecoveryAction::SubmitNotSent => {
+                    self.request_runtime.hold_recovery_submission(
+                        &record,
+                        ConnectedAppRecoverySubmissionKind::NotSent,
+                        record.not_sent.clone(),
+                    );
+                }
+                ConnectedAppRecoveryAction::Forget => {
+                    self.claims.retain(|claim| {
+                        claim.session_id != record.session_id || claim.message_id != record.message_id
+                    });
+                }
+            }
+        }
+        self.request_runtime.recovery_polling = journal_waits;
+        Ok(())
+    }
+
+    pub fn settle_recovery_submission(
+        &mut self,
+        session_id: u64,
+        message_id: i64,
+        request_id: &str,
+        retry_later: bool,
+    ) -> Result<(), ConnectedAppError> {
+        let submission = self
+            .request_runtime
+            .recovery_submissions
+            .get(&message_id)
+            .ok_or(ConnectedAppError::ClaimNotFound)?;
+        if submission.session_id != session_id || submission.request_id != request_id {
+            return Err(ConnectedAppError::ClaimNotFound);
+        }
+        if !retry_later {
+            self.claims.retain(|claim| {
+                claim.session_id != session_id
+                    || claim.message_id != message_id
+                    || claim.request_id != request_id
+            });
+            self.request_runtime.clear_recovery_submission(message_id);
+        }
+        Ok(())
     }
 
     fn claim(
@@ -2729,3 +2952,159 @@ mod connected_app_request_runtime_source_tests {
     }
 }
 
+
+
+#[cfg(test)]
+mod connected_app_claim_recovery_scheduler_source_tests {
+    use super::*;
+
+    fn session() -> ConnectedAppSession {
+        ConnectedAppSession {
+            id: 771,
+            client_id: "recover-client".into(),
+            manifest: Some(ConnectedAppManifest {
+                url: "https://recover.example/manifest.json".into(),
+                name: "Recover".into(),
+                icon_url: None,
+            }),
+            status: ConnectedAppSessionStatus::Active,
+            created_at_ms: 10,
+            updated_at_ms: 10,
+        }
+    }
+
+    fn wallet(byte: u8) -> WalletTransferIdentity {
+        WalletTransferIdentity {
+            network: 1,
+            address: "EQ-recover".into(),
+            public_key: vec![byte; 32],
+            revision: 1,
+        }
+    }
+
+    fn request(message_id: i64, request_id: &str) -> ConnectedAppRequest {
+        ConnectedAppRequest {
+            session_id: 771,
+            message_id,
+            request_id: request_id.into(),
+            method: "sendTransaction".into(),
+            kind: ConnectedAppRequestKind::SendTransaction,
+            trace_id: format!("trace-{message_id}"),
+            expires_at_ms: 10_000,
+        }
+    }
+
+    fn confirm_claim(
+        state: &mut ConnectedAppState,
+        message_id: i64,
+        request_id: &str,
+        identity: WalletTransferIdentity,
+    ) {
+        state.queue_request(request(message_id, request_id), 100).unwrap();
+        state
+            .record_wallet_claim_with_recovery(
+                771,
+                message_id,
+                request_id,
+                ConnectedAppClaimDecision::Confirm,
+                identity,
+                String::new(),
+                String::new(),
+                vec![9, message_id as u8],
+                Vec::new(),
+                200,
+            )
+            .unwrap();
+    }
+
+    #[test]
+    fn durable_claims_rebuild_offer_not_sent_and_polling_runtime() {
+        let identity = wallet(7);
+        let mut offer = ConnectedAppState::default();
+        offer.upsert_session(session()).unwrap();
+        confirm_claim(&mut offer, 101, "offer", identity.clone());
+        let encoded = serde_json::to_string(&offer).unwrap();
+        let mut offer: ConnectedAppState = serde_json::from_str(&encoded).unwrap();
+        assert!(offer.request_runtime.waiting.is_empty());
+        offer.reconcile_claim_recovery(Some(identity.clone()), Vec::new(), 300).unwrap();
+        assert!(offer.request_runtime.claimed_ids.contains(&101));
+        assert_eq!(
+            offer.request_runtime.waiting.first().map(|entry| entry.recovery),
+            Some(ConnectedAppRequestRecovery::Offer)
+        );
+
+        let mut not_sent = ConnectedAppState::default();
+        not_sent.upsert_session(session()).unwrap();
+        confirm_claim(&mut not_sent, 102, "not-sent", identity.clone());
+        not_sent.link_claim_operation(771, 102, "not-sent", "operation-102").unwrap();
+        not_sent
+            .reconcile_claim_recovery(
+                Some(identity.clone()),
+                vec![ConnectedAppClaimFate {
+                    session_id: 771,
+                    message_id: 102,
+                    fate: ConnectedAppOperationFate::Unresolved,
+                }],
+                300,
+            )
+            .unwrap();
+        assert_eq!(
+            not_sent.request_runtime.recovery_submissions[&102].kind,
+            ConnectedAppRecoverySubmissionKind::NotSent
+        );
+        not_sent.settle_recovery_submission(771, 102, "not-sent", true).unwrap();
+        assert_eq!(not_sent.claims.len(), 1);
+        not_sent.settle_recovery_submission(771, 102, "not-sent", false).unwrap();
+        assert!(not_sent.claims.is_empty());
+
+        let mut waiting = ConnectedAppState::default();
+        waiting.upsert_session(session()).unwrap();
+        confirm_claim(&mut waiting, 103, "sending", identity.clone());
+        waiting.link_claim_operation(771, 103, "sending", "operation-103").unwrap();
+        waiting
+            .record_claim_handoff(771, 103, "sending", "operation-103", "signed-payload")
+            .unwrap();
+        waiting
+            .reconcile_claim_recovery(
+                Some(identity),
+                vec![ConnectedAppClaimFate {
+                    session_id: 771,
+                    message_id: 103,
+                    fate: ConnectedAppOperationFate::Sending,
+                }],
+                300,
+            )
+            .unwrap();
+        assert!(waiting.request_runtime.recovery_polling);
+        assert!(waiting.request_runtime.waiting.is_empty());
+        assert!(waiting.request_runtime.recovery_submissions.is_empty());
+    }
+
+    #[test]
+    fn recovery_is_wallet_fenced_and_answer_claims_submit_without_wallet() {
+        let mut state = ConnectedAppState::default();
+        state.upsert_session(session()).unwrap();
+        confirm_claim(&mut state, 201, "wallet-fence", wallet(1));
+        state.reconcile_claim_recovery(Some(wallet(2)), Vec::new(), 300).unwrap();
+        assert!(state.request_runtime.waiting.is_empty());
+
+        state.queue_request(request(202, "answer"), 100).unwrap();
+        state
+            .record_claim(
+                771,
+                202,
+                "answer",
+                ConnectedAppClaimDecision::Answer,
+                String::new(),
+                String::new(),
+                vec![4, 5],
+                200,
+            )
+            .unwrap();
+        state.reconcile_claim_recovery(None, Vec::new(), 300).unwrap();
+        assert_eq!(
+            state.request_runtime.recovery_submissions[&202].kind,
+            ConnectedAppRecoverySubmissionKind::Answer
+        );
+    }
+}

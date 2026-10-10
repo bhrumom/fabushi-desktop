@@ -5,9 +5,9 @@ use crate::community::{
     CommunityState, ForumTopicState, InviteLink, JoinRequest, MemberStatus,
 };
 use crate::connected_app::{
-    ConnectedAppAccess, ConnectedAppClaimDecision, ConnectedAppError, ConnectedAppKeyError,
-    ConnectedAppLink, ConnectedAppManifest, ConnectedAppRequest, ConnectedAppSession,
-    ConnectedAppState,
+    ConnectedAppAccess, ConnectedAppClaimDecision, ConnectedAppClaimFate, ConnectedAppError,
+    ConnectedAppKeyError, ConnectedAppLink, ConnectedAppManifest, ConnectedAppRequest,
+    ConnectedAppSession, ConnectedAppState,
 };
 use crate::conversation::{
     Conversation, ConversationChildIdentity, ConversationChildRuntimeState,
@@ -551,6 +551,18 @@ pub enum Command {
         claimed: bool,
     },
     StopConnectedAppRequests,
+    ReconcileConnectedAppClaimRecovery {
+        wallet_identity: Option<WalletTransferIdentity>,
+        fates: Vec<ConnectedAppClaimFate>,
+        observed_at_ms: i64,
+    },
+    SettleConnectedAppRecoverySubmission {
+        session_id: u64,
+        #[serde(default)]
+        message_id: i64,
+        request_id: String,
+        retry_later: bool,
+    },
     ResolveConnectedAppRequest {
         session_id: u64,
         #[serde(default)]
@@ -3619,6 +3631,25 @@ impl MessagingEngine {
             Command::StopConnectedAppRequests => {
                 let mut state = self.state.connected_apps.clone();
                 state.stop_requests();
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::ReconcileConnectedAppClaimRecovery {
+                wallet_identity,
+                fates,
+                observed_at_ms,
+            } => {
+                let mut state = self.state.connected_apps.clone();
+                state.reconcile_claim_recovery(wallet_identity, fates, observed_at_ms)?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::SettleConnectedAppRecoverySubmission {
+                session_id,
+                message_id,
+                request_id,
+                retry_later,
+            } => {
+                let mut state = self.state.connected_apps.clone();
+                state.settle_recovery_submission(session_id, message_id, &request_id, retry_later)?;
                 Ok(vec![Event::ConnectedAppStateChanged { state }])
             }
             Command::ResolveConnectedAppRequest {
@@ -6713,3 +6744,88 @@ mod connected_app_request_runtime_engine_tests {
     }
 }
 
+
+
+#[cfg(test)]
+mod connected_app_claim_recovery_engine_source_tests {
+    use super::*;
+    use crate::connected_app::{
+        ConnectedAppClaimFate, ConnectedAppManifest, ConnectedAppOperationFate,
+        ConnectedAppRecoverySubmissionKind, ConnectedAppRequestKind, ConnectedAppSessionStatus,
+    };
+
+    #[test]
+    fn engine_rebuilds_and_settles_durable_connected_app_recovery() {
+        let mut engine = MessagingEngine::new();
+        engine.execute(Command::UpsertConnectedAppSession {
+            session: ConnectedAppSession {
+                id: 1991,
+                client_id: "engine-recovery".into(),
+                manifest: Some(ConnectedAppManifest {
+                    url: "https://engine.example/manifest.json".into(),
+                    name: "Engine".into(),
+                    icon_url: None,
+                }),
+                status: ConnectedAppSessionStatus::Active,
+                created_at_ms: 10,
+                updated_at_ms: 10,
+            },
+        }).unwrap();
+        engine.execute(Command::QueueConnectedAppRequest {
+            request: ConnectedAppRequest {
+                session_id: 1991,
+                message_id: 9901,
+                request_id: "engine-recovery-request".into(),
+                method: "sendTransaction".into(),
+                kind: ConnectedAppRequestKind::SendTransaction,
+                trace_id: "trace-engine-recovery".into(),
+                expires_at_ms: 10_000,
+            },
+            observed_at_ms: 100,
+        }).unwrap();
+        let wallet = WalletTransferIdentity {
+            network: 1,
+            address: "EQ-engine-recovery".into(),
+            public_key: vec![8; 32],
+            revision: 1,
+        };
+        engine.execute(Command::ResolveConnectedAppWalletRequest {
+            session_id: 1991,
+            message_id: 9901,
+            request_id: "engine-recovery-request".into(),
+            decision: ConnectedAppClaimDecision::Confirm,
+            wallet_identity: wallet.clone(),
+            operation_id: String::new(),
+            signed_payload: String::new(),
+            not_sent: vec![7],
+            answer: Vec::new(),
+            observed_at_ms: 200,
+        }).unwrap();
+        engine.execute(Command::LinkConnectedAppClaimOperation {
+            session_id: 1991,
+            message_id: 9901,
+            request_id: "engine-recovery-request".into(),
+            operation_id: "operation-engine".into(),
+        }).unwrap();
+        engine.execute(Command::ReconcileConnectedAppClaimRecovery {
+            wallet_identity: Some(wallet),
+            fates: vec![ConnectedAppClaimFate {
+                session_id: 1991,
+                message_id: 9901,
+                fate: ConnectedAppOperationFate::Unresolved,
+            }],
+            observed_at_ms: 300,
+        }).unwrap();
+        assert_eq!(
+            engine.state().connected_apps.request_runtime.recovery_submissions[&9901].kind,
+            ConnectedAppRecoverySubmissionKind::NotSent
+        );
+        engine.execute(Command::SettleConnectedAppRecoverySubmission {
+            session_id: 1991,
+            message_id: 9901,
+            request_id: "engine-recovery-request".into(),
+            retry_later: false,
+        }).unwrap();
+        assert!(engine.state().connected_apps.claims.is_empty());
+    }
+}
