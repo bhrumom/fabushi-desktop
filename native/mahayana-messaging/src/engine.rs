@@ -4250,6 +4250,7 @@ impl MessagingEngine {
                 conversation_id,
                 message_ids,
             } => {
+                let deleted_ids = message_ids.iter().cloned().collect::<BTreeSet<_>>();
                 for id in message_ids {
                     let message = self
                         .state
@@ -4294,6 +4295,37 @@ impl MessagingEngine {
                     {
                         conversation.pinned_message_ids.retain(|pinned| pinned != &id.0);
                     }
+                    // A retired message must not remain the selected reply
+                    // target of an actor's parent or topic composer. Preserve
+                    // text and unrelated targets; remove now-empty legacy
+                    // draft projections, exactly as DraftChanged does. The
+                    // authoritative child state is reconciled above.
+                    if let Some(by_actor) = self.state.drafts.get_mut(&conversation_id) {
+                        by_actor.retain(|_, draft| {
+                            if draft.reply_to_message_id.as_deref() == Some(id.0.as_str()) {
+                                draft.reply_to_message_id = None;
+                            }
+                            !draft.text.trim().is_empty() || draft.reply_to_message_id.is_some()
+                        });
+                        if by_actor.is_empty() {
+                            self.state.drafts.remove(&conversation_id);
+                        }
+                    }
+                    if let Some(by_actor) = self.state.topic_drafts.get_mut(&conversation_id) {
+                        by_actor.retain(|_, by_topic| {
+                            by_topic.retain(|_, draft| {
+                                if draft.reply_to_message_id.as_deref() == Some(id.0.as_str()) {
+                                    draft.reply_to_message_id = None;
+                                }
+                                !draft.text.trim().is_empty()
+                                    || draft.reply_to_message_id.is_some()
+                            });
+                            !by_topic.is_empty()
+                        });
+                        if by_actor.is_empty() {
+                            self.state.topic_drafts.remove(&conversation_id);
+                        }
+                    }
                     let remove_poll_bucket = self
                         .state
                         .poll_votes
@@ -4304,6 +4336,75 @@ impl MessagingEngine {
                         });
                     if remove_poll_bucket {
                         self.state.poll_votes.remove(&conversation_id);
+                    }
+                }
+
+                // History deletion is authoritative for the Conversation summary too,
+                // but deleting an older message must not rewrite unrelated summary state or
+                // roll back a later non-message updated_at timestamp. Recompute only when
+                // this exact batch tombstoned the current last pointer.
+                let recompute_conversation_last = self
+                    .state
+                    .conversations
+                    .get(&conversation_id)
+                    .and_then(|conversation| conversation.last_message_id.as_deref())
+                    .is_some_and(|last| deleted_ids.iter().any(|id| id.0 == last));
+                if recompute_conversation_last {
+                    let latest_surviving = self
+                        .state
+                        .messages
+                        .get(&conversation_id)
+                        .and_then(|messages| {
+                            messages
+                                .values()
+                                .filter(|message| !message.deleted)
+                                .max_by(|left, right| {
+                                    (left.created_at_ms, &left.id)
+                                        .cmp(&(right.created_at_ms, &right.id))
+                                })
+                                .map(|message| (message.id.0.clone(), message.created_at_ms))
+                        });
+                    if let Some(conversation) =
+                        self.state.conversations.get_mut(&conversation_id)
+                    {
+                        conversation.last_message_id =
+                            latest_surviving.as_ref().map(|(id, _)| id.clone());
+                        if let Some((_, created_at_ms)) = latest_surviving {
+                            conversation.updated_at_ms = created_at_ms;
+                        }
+                    }
+                }
+
+                // ForumTopicState is the analogous derived summary. Touch only topics
+                // whose current last pointer was removed by this batch; unrelated topic
+                // summaries remain byte-for-byte stable.
+                if let Some(community) = self.state.communities.get_mut(&conversation_id) {
+                    let messages = self.state.messages.get(&conversation_id);
+                    for topic in community.topics.values_mut() {
+                        let recompute_topic_last = topic
+                            .last_message_id
+                            .as_deref()
+                            .is_some_and(|last| deleted_ids.iter().any(|id| id.0 == last));
+                        if !recompute_topic_last {
+                            continue;
+                        }
+                        topic.last_message_id = messages.and_then(|messages| {
+                            messages
+                                .values()
+                                .filter(|message| !message.deleted)
+                                .filter(|message| {
+                                    message
+                                        .thread_root_message_id
+                                        .as_ref()
+                                        .and_then(topic_id_from_root)
+                                        == Some(topic.id.as_str())
+                                })
+                                .max_by(|left, right| {
+                                    (left.created_at_ms, &left.id)
+                                        .cmp(&(right.created_at_ms, &right.id))
+                                })
+                                .map(|message| message.id.0.clone())
+                        });
                     }
                 }
             }
@@ -4957,6 +5058,347 @@ mod recent_open_history_tests {
                 .get(&parent)
                 .and_then(|messages| messages.get(&message_id))
                 .is_some_and(|message| message.deleted)
+        );
+    }
+
+    #[test]
+    fn deleted_messages_recompute_conversation_last_message_from_surviving_truth() {
+        let conversation_id = ConversationId::new("conversation:history-last-message");
+        let sender = ActorId::new("human:history-sender");
+        let mut conversation = Conversation::direct(
+            conversation_id.0.clone(),
+            "History",
+            Vec::new(),
+            1,
+        );
+        conversation.last_message_id = Some("message:newest".into());
+        conversation.updated_at_ms = 30;
+
+        let make_message = |id: &str, created_at_ms: i64| Message {
+            id: MessageId::new(id),
+            conversation_id: conversation_id.clone(),
+            sender_id: sender.clone(),
+            content: MessageContent::Text {
+                text: crate::message::FormattedText::plain(id),
+            },
+            reply_to_message_id: None,
+            thread_root_message_id: None,
+            forward_origin: None,
+            reply_markup: None,
+            reactions: Vec::new(),
+            delivery_state: DeliveryState::Delivered,
+            created_at_ms,
+            edited_at_ms: None,
+            scheduled_at_ms: None,
+            silent: false,
+            protected_content: false,
+            pinned: false,
+            deleted: false,
+        };
+
+        let oldest = MessageId::new("message:oldest");
+        let tie_a = MessageId::new("message:tie-a");
+        let tie_b = MessageId::new("message:tie-b");
+        let newest = MessageId::new("message:newest");
+        let mut state = MessagingState::default();
+        state
+            .conversations
+            .insert(conversation_id.clone(), conversation);
+        state.messages.insert(
+            conversation_id.clone(),
+            BTreeMap::from([
+                (oldest.clone(), make_message(&oldest.0, 10)),
+                (tie_a.clone(), make_message(&tie_a.0, 20)),
+                (tie_b.clone(), make_message(&tie_b.0, 20)),
+                (newest.clone(), make_message(&newest.0, 30)),
+            ]),
+        );
+
+        let mut engine = MessagingEngine::from_state(state);
+        engine
+            .state
+            .conversations
+            .get_mut(&conversation_id)
+            .expect("conversation")
+            .updated_at_ms = 99;
+        let delete_old_non_last = Event::MessagesDeleted {
+            conversation_id: conversation_id.clone(),
+            message_ids: vec![oldest.clone()],
+        };
+        engine.apply(delete_old_non_last.clone());
+        engine.apply(delete_old_non_last);
+        let conversation = &engine.state().conversations[&conversation_id];
+        assert_eq!(
+            conversation.last_message_id.as_deref(),
+            Some(newest.0.as_str())
+        );
+        assert_eq!(
+            conversation.updated_at_ms, 99,
+            "deleting an older message must preserve later non-message activity"
+        );
+
+        let delete_newest = Event::MessagesDeleted {
+            conversation_id: conversation_id.clone(),
+            message_ids: vec![newest.clone()],
+        };
+        engine.apply(delete_newest.clone());
+        engine.apply(delete_newest);
+
+        let conversation = &engine.state().conversations[&conversation_id];
+        assert_eq!(
+            conversation.last_message_id.as_deref(),
+            Some(tie_b.0.as_str()),
+            "stable id ordering must break equal-timestamp ties"
+        );
+        assert_eq!(conversation.updated_at_ms, 20);
+
+        // Delete the remaining latest pair in reverse lexical order. Recomputing
+        // after the whole batch must converge to the same surviving message.
+        let delete_tied = Event::MessagesDeleted {
+            conversation_id: conversation_id.clone(),
+            message_ids: vec![tie_b.clone(), tie_a.clone()],
+        };
+        engine.apply(delete_tied.clone());
+        engine.apply(delete_tied);
+        let conversation = &engine.state().conversations[&conversation_id];
+        assert!(conversation.last_message_id.is_none());
+        // Empty-history deletion must not manufacture a new timestamp.
+        assert_eq!(conversation.updated_at_ms, 20);
+    }
+
+    #[test]
+    fn deleted_messages_recompute_forum_topic_last_message_without_cross_topic_leakage() {
+        let conversation_id = ConversationId::new("conversation:history-topic-summary");
+        let sender = ActorId::new("human:history-topic-sender");
+        let mut community = CommunityState::new(conversation_id.clone());
+        for (id, last_message_id) in [
+            ("a", Some("message:a-new".to_string())),
+            ("b", Some("message:b-only".to_string())),
+        ] {
+            community.topics.insert(
+                id.into(),
+                ForumTopicState {
+                    id: id.into(),
+                    conversation_id: conversation_id.clone(),
+                    title: format!("Topic {id}"),
+                    icon: None,
+                    creator_id: sender.clone(),
+                    created_at_ms: 1,
+                    pinned: false,
+                    closed: false,
+                    hidden: false,
+                    unread_count: 0,
+                    last_message_id,
+                },
+            );
+        }
+
+        let make_message = |id: &str, topic: &str, created_at_ms: i64| Message {
+            id: MessageId::new(id),
+            conversation_id: conversation_id.clone(),
+            sender_id: sender.clone(),
+            content: MessageContent::Text {
+                text: crate::message::FormattedText::plain(id),
+            },
+            reply_to_message_id: None,
+            thread_root_message_id: Some(MessageId::new(format!("topic:{topic}"))),
+            forward_origin: None,
+            reply_markup: None,
+            reactions: Vec::new(),
+            delivery_state: DeliveryState::Delivered,
+            created_at_ms,
+            edited_at_ms: None,
+            scheduled_at_ms: None,
+            silent: false,
+            protected_content: false,
+            pinned: false,
+            deleted: false,
+        };
+        let a_old = MessageId::new("message:a-old");
+        let a_new = MessageId::new("message:a-new");
+        let b_only = MessageId::new("message:b-only");
+        let mut state = MessagingState::default();
+        state.communities.insert(conversation_id.clone(), community);
+        state.messages.insert(
+            conversation_id.clone(),
+            BTreeMap::from([
+                (a_old.clone(), make_message(&a_old.0, "a", 10)),
+                (a_new.clone(), make_message(&a_new.0, "a", 20)),
+                (b_only.clone(), make_message(&b_only.0, "b", 30)),
+            ]),
+        );
+        let mut engine = MessagingEngine::from_state(state);
+
+        let delete_a_old = Event::MessagesDeleted {
+            conversation_id: conversation_id.clone(),
+            message_ids: vec![a_old.clone()],
+        };
+        engine.apply(delete_a_old.clone());
+        engine.apply(delete_a_old);
+        let topics = &engine.state().communities[&conversation_id].topics;
+        assert_eq!(
+            topics["a"].last_message_id.as_deref(),
+            Some(a_new.0.as_str())
+        );
+        assert_eq!(
+            topics["b"].last_message_id.as_deref(),
+            Some(b_only.0.as_str())
+        );
+
+        let delete_a_new = Event::MessagesDeleted {
+            conversation_id: conversation_id.clone(),
+            message_ids: vec![a_new],
+        };
+        engine.apply(delete_a_new.clone());
+        engine.apply(delete_a_new);
+        let topics = &engine.state().communities[&conversation_id].topics;
+        assert!(
+            topics["a"].last_message_id.is_none(),
+            "topic A has no surviving messages after both a-old and a-new are retired"
+        );
+        assert_eq!(
+            topics["b"].last_message_id.as_deref(),
+            Some(b_only.0.as_str())
+        );
+
+        let delete_remaining = Event::MessagesDeleted {
+            conversation_id: conversation_id.clone(),
+            message_ids: vec![b_only],
+        };
+        engine.apply(delete_remaining.clone());
+        engine.apply(delete_remaining);
+        let topics = &engine.state().communities[&conversation_id].topics;
+        assert!(topics["a"].last_message_id.is_none());
+        assert!(topics["b"].last_message_id.is_none());
+    }
+
+    #[test]
+    fn deleted_message_clears_legacy_reply_targets_without_erasing_draft_text_or_other_scopes() {
+        let parent = ConversationId::new("conversation:history-parent");
+        let other = ConversationId::new("conversation:history-other");
+        let deleted = MessageId::new("message:history-deleted");
+        let surviving = MessageId::new("message:history-surviving");
+        let author = ActorId::new("human:history-author");
+        let secondary = ActorId::new("human:history-secondary");
+        let mut state = MessagingState::default();
+
+        state.drafts.insert(
+            parent.clone(),
+            BTreeMap::from([
+                (
+                    author.clone(),
+                    ConversationDraft {
+                        conversation_id: parent.clone(),
+                        actor_id: author.clone(),
+                        text: "keep this draft".into(),
+                        reply_to_message_id: Some(deleted.0.clone()),
+                        updated_at_ms: 20,
+                    },
+                ),
+                (
+                    secondary.clone(),
+                    ConversationDraft {
+                        conversation_id: parent.clone(),
+                        actor_id: secondary.clone(),
+                        text: "".into(),
+                        reply_to_message_id: Some(deleted.0.clone()),
+                        updated_at_ms: 21,
+                    },
+                ),
+            ]),
+        );
+        state.drafts.insert(
+            other.clone(),
+            BTreeMap::from([(
+                author.clone(),
+                ConversationDraft {
+                    conversation_id: other.clone(),
+                    actor_id: author.clone(),
+                    text: "another conversation".into(),
+                    reply_to_message_id: Some(deleted.0.clone()),
+                    updated_at_ms: 22,
+                },
+            )]),
+        );
+        state.topic_drafts.insert(
+            parent.clone(),
+            BTreeMap::from([(
+                author.clone(),
+                BTreeMap::from([
+                    (
+                        "topic:a".into(),
+                        TopicDraft {
+                            conversation_id: parent.clone(),
+                            topic_id: "topic:a".into(),
+                            actor_id: author.clone(),
+                            text: "topic body".into(),
+                            reply_to_message_id: Some(deleted.0.clone()),
+                            updated_at_ms: 23,
+                        },
+                    ),
+                    (
+                        "topic:b".into(),
+                        TopicDraft {
+                            conversation_id: parent.clone(),
+                            topic_id: "topic:b".into(),
+                            actor_id: author.clone(),
+                            text: "unrelated".into(),
+                            reply_to_message_id: Some(surviving.0.clone()),
+                            updated_at_ms: 24,
+                        },
+                    ),
+                ]),
+            )]),
+        );
+        state.topic_drafts.insert(
+            other.clone(),
+            BTreeMap::from([(
+                author.clone(),
+                BTreeMap::from([(
+                    "topic:elsewhere".into(),
+                    TopicDraft {
+                        conversation_id: other.clone(),
+                        topic_id: "topic:elsewhere".into(),
+                        actor_id: author.clone(),
+                        text: "keep".into(),
+                        reply_to_message_id: Some(deleted.0.clone()),
+                        updated_at_ms: 25,
+                    },
+                )]),
+            )]),
+        );
+
+        let mut engine = MessagingEngine::from_state(state);
+        let removal = Event::MessagesDeleted {
+            conversation_id: parent.clone(),
+            message_ids: vec![deleted.clone()],
+        };
+        engine.apply(removal.clone());
+        // Event replay must be idempotent even if an older snapshot no longer
+        // retains the deleted message's body.
+        engine.apply(removal);
+        let state = engine.state();
+        let draft = &state.drafts[&parent][&author];
+        assert_eq!(draft.text, "keep this draft");
+        assert_eq!(draft.updated_at_ms, 20);
+        assert!(draft.reply_to_message_id.is_none());
+        assert!(!state.drafts[&parent].contains_key(&secondary));
+        assert_eq!(
+            state.drafts[&other][&author].reply_to_message_id.as_deref(),
+            Some(deleted.0.as_str())
+        );
+        let topics = &state.topic_drafts[&parent][&author];
+        assert_eq!(topics["topic:a"].text, "topic body");
+        assert!(topics["topic:a"].reply_to_message_id.is_none());
+        assert_eq!(
+            topics["topic:b"].reply_to_message_id.as_deref(),
+            Some(surviving.0.as_str())
+        );
+        assert_eq!(
+            state.topic_drafts[&other][&author]["topic:elsewhere"]
+                .reply_to_message_id
+                .as_deref(),
+            Some(deleted.0.as_str())
         );
     }
 
