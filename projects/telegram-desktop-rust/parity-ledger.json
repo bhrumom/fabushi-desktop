@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 8020,
+    "unread": 8010,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13480,9 +13480,9 @@
     "changed_paths": 10,
     "source_read_reconciliation": "Accepted prefix 8,012/16,125; Hime gray-tail/root-brand/pink-theme window 7,949–8,012 exact-read and visually/textually inspected; unread 8,113; unknown 15,845; omitted 0. Next is pink scj.png.",
     "source_authority_evidence": "GitHub Actions source-authority artifact 11681552029 (sha256:83a3108678dafcdda74afec1bcffffb9606f48315623fe24d4b5bf9a1e5d8fd4) at 7d155a0461bfe318da513ada5db7dfb65d71b71f materialized accepted Hime 7,949–8,012. 63 PNGs were visually inspected; pink COPYING text was read. Gray/pink artwork is theme-only replacement; Hime root mascot is branding and must not ship. Source reading only; descendant exact-head Actions required.",
-    "current_source_read_through": 8105,
-    "first_unread_order": 8106,
-    "first_unread_path": "Telegram/ThirdParty/hime::src/hime-crypt.c"
+    "current_source_read_through": 8115,
+    "first_unread_order": 8116,
+    "first_unread_path": "Telegram/ThirdParty/hime::src/hime-module-cb.c"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 8105,
-    "first_unread_order": 8106,
-    "first_unread_path": "Telegram/ThirdParty/hime::src/hime-crypt.c",
+    "read_through": 8115,
+    "first_unread_order": 8116,
+    "first_unread_path": "Telegram/ThirdParty/hime::src/hime-module-cb.c",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {

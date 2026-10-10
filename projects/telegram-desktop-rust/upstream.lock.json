@@ -266,9 +266,9 @@
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
     "unknown_minimum": 15845,
-    "unread_minimum": 8020,
+    "unread_minimum": 8010,
     "omitted_known": 0,
-    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 8,105; unknown=15,845, unread=8,020, omitted=0."
+    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 8,115; unknown=15,845, unread=8,010, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -282,7 +282,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Source/product/release closure open. Exact read-through 8,105/16,125; unread 8,020; unknown 15,845; omitted 0; accessible input-status projection is implemented but real native input-source signal remains open; fresh descendant evidence required."
+    "note": "Source/product/release closure open. Exact read-through 8,115/16,125; unread 8,010; unknown 15,845; omitted 0; real native platform-input source truth remains mapped-open; fresh descendant evidence required."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",
@@ -633,9 +633,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 8105,
-    "first_unread_order": 8106,
-    "first_unread_path": "Telegram/ThirdParty/hime::src/hime-crypt.c",
+    "read_through": 8115,
+    "first_unread_order": 8116,
+    "first_unread_path": "Telegram/ThirdParty/hime::src/hime-module-cb.c",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
