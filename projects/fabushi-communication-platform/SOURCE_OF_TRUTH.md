@@ -1,4 +1,4 @@
-Live TDRP Revision 9 upstream authority: telegramdesktop/tdesktop@28ac576967a1026ecc89a927360fa0e138d7c88c (root tree 9d8fa87ce68c832d2f4c99f372a5bb672463c3e1); recursive total 16,125; read-through 6,437; first unread 6,438 Telegram/SourceFiles/window/window_media_preview.cpp@4fe0e7f11298b0b56c99c47e43c27c6fd47d0282; unread 9,688; unknown 15,846; omitted 0.
+Live TDRP Revision 9 upstream authority: telegramdesktop/tdesktop@28ac576967a1026ecc89a927360fa0e138d7c88c (root tree 9d8fa87ce68c832d2f4c99f372a5bb672463c3e1); recursive total 16,125; read-through 6,448; first unread 6,449 Telegram/SourceFiles/window/window_session_controller.cpp@df216237e47d22c200a51b2c7fda31175682d3c5; unread 9,677; unknown 15,846; omitted 0.
 
 Live Revision 9 authority (2026-10-10): telegramdesktop/tdesktop@65e23ba7137ea4129b6bc1b2616104a1f59495ef (root tree 6b616494f3465324e749a04dcd1c9d508657a998). Root non-directory=6,653; recursive non-directory=16,125; read-through=5,836; first unread=5,837 Telegram/SourceFiles/test/test_wallet_intercept.cpp@7a0885063d4f393de43cd05f368e6671dfd40b7d; unread=10,289; unknown=15,846; omitted=0. The b0d1fe5e→65e23ba7 delta is ten commits / 25 modified paths; all 18 changed blobs inside the prior prefix were explicitly re-read and reconciled before retaining prefix credit. Orders 5,831-5,836 were then read/decomposed on the same live authority. Fresh descendant exact-head GitHub Actions evidence is required; b0400d+b0d1fe5 runs are predecessor-only.
 
@@ -192,3 +192,7 @@ The 811b83a1→b0d1fe5e upstream delta changes only order 5,166 `media_view_over
 ### TDRP read-through 6424-6437
 
 Exact accepted blobs for Window favorite/filter navigation, history overlay dismissal, lock/security, main-menu composition and helpers are read/decomposed through order 6,437. Responsibilities remain mapped-open to existing source-neutral ProductShell, Account/Security, Conversation/ReadState, Settings, Marketplace/MiniApp/Plugin and Resource owners; reading alone does not reduce global unknown. Current accounting: **6,437/16,125 read; 9,688 unread; 15,846 unknown; 0 omitted**. First unread is 6,438 `window/window_media_preview.cpp@4fe0e7f11298b0b56c99c47e43c27c6fd47d0282`.
+
+### TDRP read-through 6438-6448
+
+Exact accepted blobs are read/decomposed through order 6,448. Media preview, canonical peer commands, window restore and detachable-window identity remain mapped-open to existing source-neutral owners. Main-window state persistence is partial parity, not multi-window restore evidence. Accounting: **6,448/16,125 read; 9,677 unread; 15,846 unknown; 0 omitted**. First unread is 6,449 `window/window_session_controller.cpp@df216237e47d22c200a51b2c7fda31175682d3c5`.
