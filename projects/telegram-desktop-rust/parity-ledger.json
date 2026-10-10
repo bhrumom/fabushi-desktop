@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 8337,
+    "unread": 8321,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,11 +13478,11 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Accepted prefix 7,788/16,125; first black Hime input-mode icon window exact-byte plus visual inspected and LGPL v2.1-or-later COPYING read; unread 8,337; unknown 15,845; omitted 0. Next black icon is fcitx-wanfeng.",
-    "source_authority_evidence": "Artifact 11680335933 (sha256:e425c4b675c000fe5effe8170f9b294272be66606acab7c380b7d7ca7eed17bf) exact-materialized 7,773–7,788; all identities matched and image semantics visually reviewed. Descendant exact-head Actions required.",
-    "current_source_read_through": 7788,
-    "first_unread_order": 7789,
-    "first_unread_path": "Telegram/ThirdParty/hime::icons/black/fcitx-wanfeng.png"
+    "source_read_reconciliation": "Accepted prefix 7,804/16,125; second black input-mode icon window exact-byte plus visual inspected, including orthogonal width/script status axes; unread 8,321; unknown 15,845; omitted 0. Next black icon is latin-letters.",
+    "source_authority_evidence": "Artifact 11680630074 (sha256:472fbfbab38fa8b5dbadf9a3aafa2778b24fa0ac0ce8bbfb11bc04398e383581) exact-materialized 7,789–7,804; all identities matched and image semantics visually reviewed. Descendant exact-head Actions required.",
+    "current_source_read_through": 7804,
+    "first_unread_order": 7805,
+    "first_unread_path": "Telegram/ThirdParty/hime::icons/black/latin-letters.png"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 7788,
-    "first_unread_order": 7789,
-    "first_unread_path": "Telegram/ThirdParty/hime::icons/black/fcitx-wanfeng.png",
+    "read_through": 7804,
+    "first_unread_order": 7805,
+    "first_unread_path": "Telegram/ThirdParty/hime::icons/black/latin-letters.png",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
