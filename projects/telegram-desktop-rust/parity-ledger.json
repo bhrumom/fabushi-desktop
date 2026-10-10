@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 9215,
+    "unread": 9204,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,11 +13478,11 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Ten changed root blobs inside the accepted prefix were reconciled; deterministic recursive read-through=6910/16125, unread=9215, unknown=15845, omitted=0.",
-    "source_authority_evidence": "Accepted Telegram authority 6fed91ffab9861771a75f29df65031b3c80b6941 / tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; prefix exact through MicroTeX cmss10.def.cpp order 6910; font metric/fallback/extension/ligature/kern responsibilities remain mapped-open and fresh exact-head Actions are required.",
-    "current_source_read_through": 6910,
-    "first_unread_order": 6911,
-    "first_unread_path": "Telegram/ThirdParty/MicroTeX::src/res/font/cmssbx10.def.cpp"
+    "source_read_reconciliation": "Ten changed root blobs inside the accepted prefix were reconciled; deterministic recursive read-through=6921/16125, unread=9204, unknown=15845, omitted=0.",
+    "source_authority_evidence": "Accepted Telegram authority 6fed91ffab9861771a75f29df65031b3c80b6941 / tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; prefix exact through MicroTeX font meson.build order 6921; font metric/fallback/ligature/kern/math-alphabet/build-closure responsibilities remain mapped-open and fresh exact-head Actions are required.",
+    "current_source_read_through": 6921,
+    "first_unread_order": 6922,
+    "first_unread_path": "Telegram/ThirdParty/MicroTeX::src/res/font/moustache.def.cpp"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 6910,
-    "first_unread_order": 6911,
-    "first_unread_path": "Telegram/ThirdParty/MicroTeX::src/res/font/cmssbx10.def.cpp",
+    "read_through": 6921,
+    "first_unread_order": 6922,
+    "first_unread_path": "Telegram/ThirdParty/MicroTeX::src/res/font/moustache.def.cpp",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
