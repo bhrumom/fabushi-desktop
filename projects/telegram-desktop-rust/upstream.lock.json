@@ -268,7 +268,7 @@
     "unknown_minimum": 15845,
     "unread_minimum": 8483,
     "omitted_known": 0,
-    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 7,642 after completing all 215 fcitx5-qt entries; unknown=15,845, unread=8,483, omitted=0."
+    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 7,642; unknown=15,845, unread=8,483, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
