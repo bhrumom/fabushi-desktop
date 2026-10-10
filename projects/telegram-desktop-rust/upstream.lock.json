@@ -266,9 +266,9 @@
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
     "unknown_minimum": 15846,
-    "unread_minimum": 9733,
+    "unread_minimum": 9713,
     "omitted_known": 0,
-    "note": "Accepted 28ac576967a1026ecc89a927360fa0e138d7c88c tree 9d8fa87ce68c832d2f4c99f372a5bb672463c3e1; exact read-through 6,392; unknown=15,846, unread=9,733, omitted=0."
+    "note": "Accepted 28ac576967a1026ecc89a927360fa0e138d7c88c tree 9d8fa87ce68c832d2f4c99f372a5bb672463c3e1; exact read-through 6,412; unknown=15,846, unread=9,713, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -634,7 +634,7 @@
     "development_only_non_applicable": 69,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 6392
+    "read_through": 6412
   },
   "historical_exact_head_evidence": {
     "status": "historical-only",
