@@ -9,6 +9,13 @@ Orders 8,101–8,105 were newly read as the GTK2 input-context branch. Its appli
 
 Hime/GTK/XIM runtime identity remains replacement-only. The canonical `PromptRichTextEditor` DOM composition path truthfully reports focus/composition/preedit lifecycle, but current OS input method, language, width, script variant and candidate state still require a source-neutral native platform adapter and cannot be inferred from locale or browser state.
 
+Native platform-input implementation contract:
+- The adapter MAY report a method, language, width mode, script variant, or candidate state only when that value comes from an operating-system input API or an operating-system-owned input service queried for the active desktop input context. Browser locale, `navigator.language`, app locale, keyboard-event heuristics, and source-derived defaults are forbidden substitutes.
+- Chromium composition events remain the canonical renderer owner for preedit presence/text lifecycle and editor focus/composition lifecycle. Native observations augment those axes; they do not replace the canonical editor state machine.
+- Every native observation is request/generation fenced. Conversation scope changes, blur, composition end, a newer composition generation, disposal, timeout, process failure, or malformed native output invalidate the pending observation. Invalid or unavailable axes remain explicit `unknown`; the last successful value must not leak across scopes or failures.
+- Platform adapters stay source-neutral and bounded: no Hime/XIM/GTK/Telegram runtime is embedded or spawned. Native probes must use fixed, non-shell command invocation or platform APIs, bounded execution, bounded output, strict parsing, and fail-closed semantics.
+- Focused GitHub Actions evidence must cover parser/normalization truthfulness, timeout/failure-to-unknown behavior, stale-generation fencing, the trusted MainEdge/preload bridge, renderer merge semantics, and the supported real-OS probe path. A source-only mapping or mocked renderer status does not upgrade the responsibility to `verified`.
+
 All rows remain `mapped-open`, `unknown_closed=false`, `omitted=false`. Correct accounting is **8,162/16,125 read; 7,963 unread; 15,845 unknown; 0 omitted**. The true next source is 8,163 `Telegram/ThirdParty/hime::src/modules/chewing-conf.c@93cc1fd31b57e7b45c1fe272ebd945ed7f6632c5`.
 
 ### Revision 9 deterministic read-through — Hime IMdkit/runtime/input catalog 8,077–8,095
