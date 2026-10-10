@@ -167,7 +167,8 @@ test("desktop accessibility state owns the real screen-reader signal without hig
 });
 
 test("Electron accessibility snapshot is read only after app ready while change events are registered before ready", () => {
-  const source = readFileSync(new URL("./main.js", import.meta.url), "utf8");
+  const root = existsSync(join(process.cwd(), "source", "electron-main", "main.ts")) ? process.cwd() : join(process.cwd(), "..");
+  const source = readFileSync(join(root, "source", "electron-main", "main.ts"), "utf8");
   const listenerIndex = source.indexOf('deps.app.on("accessibility-support-changed"');
   const whenReadyIndex = source.indexOf(".whenReady()");
   const snapshotIndex = source.indexOf("setDesktopAccessibilitySupportEnabled(deps.app.accessibilitySupportEnabled === true)");
