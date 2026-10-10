@@ -260,7 +260,6 @@ impl ConnectedAppState {
         answer: Vec<u8>,
         now_ms: i64,
     ) -> Result<ConnectedAppClaimRecord, ConnectedAppError> {
-        self.prune_claims(now_ms);
         let key = request_key(session_id, request_id);
         let request = self
             .pending_requests
@@ -271,6 +270,7 @@ impl ConnectedAppState {
             self.pending_requests.remove(&key);
             return Err(ConnectedAppError::RequestExpired);
         }
+        self.prune_claims(now_ms);
         if self.claims.len() >= CONNECTED_APP_CLAIM_MAX_RECORDS {
             return Err(ConnectedAppError::ClaimCapacity);
         }
