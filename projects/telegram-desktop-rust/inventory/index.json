@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 8620,
+    "unread_minimum": 8610,
     "omitted_known": 0,
-    "note": "Recursive source census 16,125; exact read/decomposition through 7,505; unread 8,620; unknown 15,845; omitted 0. fcitx5-qt is read through the Qt5 DBus/control plane; DBus transport is replacement-only while input session and platform input configuration/reconciliation semantics remain mapped-open."
+    "note": "Recursive source census 16,125; exact read/decomposition through 7,515; unread 8,610; unknown 15,845; omitted 0. fcitx5-qt is read through Qt5 GUI-wrapper/config lifecycle and IM-module probing; Qt presentation/process wrappers are replaced while Settings save-settlement and platform-input observability remain mapped-open."
   },
   "latest_recursive_evidence": {
     "run_id": 38064993530,
@@ -42,7 +42,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live authority 6fed91ff exact through recursive order 7,505; first unread is 7,506 Telegram/ThirdParty/fcitx5-qt::qt5/guiwrapper/CMakeLists.txt; unread_minimum is 8,620; unknown remains 15,845; omitted remains 0.",
+  "note": "Live authority 6fed91ff exact through recursive order 7,515; first unread is 7,516 Telegram/ThirdParty/fcitx5-qt::qt5/platforminputcontext/CMakeLists.txt; unread_minimum is 8,610; unknown remains 15,845; omitted remains 0.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -60,10 +60,10 @@
       6541,
       6627
     ],
-    "current_source_read_through": 7505,
-    "first_unread_order": 7506,
-    "first_unread_path": "Telegram/ThirdParty/fcitx5-qt::qt5/guiwrapper/CMakeLists.txt",
-    "current_head_source_authority_evidence": "fcitx5-qt exact-read through Qt5 DBus/control plane 7,485-7,505. Controller input-source/layout/group/config/restart/update semantics map to canonical Settings/platform input owners, never Fabushi Marketplace; session owner-fencing/async-create/virtual-keyboard semantics map to canonical input/platform lifecycle owners. No unknown closed."
+    "current_source_read_through": 7515,
+    "first_unread_order": 7516,
+    "first_unread_path": "Telegram/ThirdParty/fcitx5-qt::qt5/platforminputcontext/CMakeLists.txt",
+    "current_head_source_authority_evidence": "fcitx5-qt exact-read through Qt5 GUI wrapper and IM-module probing 7,506-7,515. Source-specific Qt helper/presentation is replacement-only; canonical Settings preserves config path probing, dirty/apply/reset, async-save settlement, authoritative notification failure behavior and modal continuity; platform adapters preserve requested/active input-module observability. No unknown closed."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -72,9 +72,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 7505,
-    "first_unread_order": 7506,
-    "first_unread_path": "Telegram/ThirdParty/fcitx5-qt::qt5/guiwrapper/CMakeLists.txt",
+    "read_through": 7515,
+    "first_unread_order": 7516,
+    "first_unread_path": "Telegram/ThirdParty/fcitx5-qt::qt5/platforminputcontext/CMakeLists.txt",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }
