@@ -2037,11 +2037,13 @@ mod tests {
             ),
             Err(ConnectedAppError::RequestExpired)
         );
-        state.queue_request(request("recover", 1_000), 600).unwrap();
+        let mut recover = request("recover", 1_000);
+        recover.message_id = 102;
+        state.queue_request(recover, 600).unwrap();
         state
             .record_claim(
                 7,
-                 101,
+                 102,
                 "recover",
                 ConnectedAppClaimDecision::Answer,
                 String::new(),
