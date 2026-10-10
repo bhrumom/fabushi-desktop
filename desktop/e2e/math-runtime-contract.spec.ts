@@ -4,6 +4,7 @@ import {
   createAssistantMathMarkupCache,
   MAX_ASSISTANT_MATH_EXPANSIONS,
   MAX_ASSISTANT_MATH_EXPRESSION_LENGTH,
+  MAX_ASSISTANT_MATH_GROUP_DEPTH,
   MAX_ASSISTANT_MATH_MARKUP_BYTES,
   MAX_ASSISTANT_MATH_SIZE_EM,
   normalizeAssistantMathLocalizedDigits,
@@ -74,6 +75,28 @@ test('canonical math renderer isolates mutable macro scope across strict, recove
   expect(scopes).toHaveLength(3);
   expect(scopes[2]).not.toBe(scopes[0]);
   expect(scopes[2]).not.toBe(scopes[1]);
+});
+
+test('canonical math renderer bounds structural group depth before runtime invocation', () => {
+  let calls = 0;
+  const runtime: KatexRuntime = {
+    renderToString(expression) {
+      calls += 1;
+      return `<span class="katex">${expression}</span>`;
+    },
+  };
+
+  const atLimit = `${'{'.repeat(MAX_ASSISTANT_MATH_GROUP_DEPTH)}x${'}'.repeat(MAX_ASSISTANT_MATH_GROUP_DEPTH)}`;
+  expect(renderKatexMarkup(runtime, atLimit, false)).toContain('katex');
+  expect(calls).toBe(1);
+
+  const overLimit = `${'{'.repeat(MAX_ASSISTANT_MATH_GROUP_DEPTH + 1)}x${'}'.repeat(MAX_ASSISTANT_MATH_GROUP_DEPTH + 1)}`;
+  expect(() => renderKatexMarkup(runtime, overLimit, false)).toThrow(/group nesting/u);
+  expect(calls).toBe(1);
+
+  const escapedAndCommented = `\\\\{x\\\\} % ${'{'.repeat(MAX_ASSISTANT_MATH_GROUP_DEPTH + 20)}\n y`;
+  expect(renderKatexMarkup(runtime, escapedAndCommented, false)).toContain('katex');
+  expect(calls).toBe(2);
 });
 
 test('canonical math renderer rejects over-budget input before invoking the runtime', () => {
