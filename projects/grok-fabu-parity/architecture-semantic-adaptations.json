@@ -353,7 +353,7 @@
       "referencePath": "frontend/src/recovered/features/conversation/workspace/composer.tsx",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "0dc4ed5399bff2328e6bb6cb97a50fecb953aeb9",
+      "targetBlobSha": "165acae9b5edd38cec9b463f635e0f05a24c3c76",
       "behavioralEvidence": [
         "frontend/src/recovered/features/conversation/workspace/composer.tsx",
         "frontend/src/recovered/features/conversation/workspace/draft-state.ts",
@@ -428,7 +428,7 @@
       "referencePath": "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "9d131d1bafe466a0b7df420bb622365c695f4de7",
+      "targetBlobSha": "46c6c2e7f9e86f6344b039486f45ea88000233aa",
       "behavioralEvidence": [
         "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
         "frontend/src/recovered/features/conversation/workspace/composer.tsx"
