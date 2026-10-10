@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 9472,
+    "unread_minimum": 9428,
     "omitted_known": 0,
-    "note": "Recursive source census 16,125; unknown 15,845, unread 9,472, omitted 0. All 6,653 root non-directory entries are exact-read/responsibility-decomposed; direct/nested component entries remain unread under component identity schema."
+    "note": "Recursive source census 16,125; unknown 15,845, unread 9,428, omitted 0. Exact read/responsibility decomposition extends through order 6,697, including all 44 pinned Microsoft/GSL component entries; implementation/verification closure remains open."
   },
   "latest_recursive_evidence": {
     "run_id": 37998467124,
@@ -46,7 +46,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live authority exact through all 6,653 deterministic root source entries; first unread recursive component entry is 6,654 Telegram/ThirdParty/GSL::.clang-format; unread_minimum is 9,472; unknown remains 15,845; omitted remains 0.",
+  "note": "Live authority exact through recursive order 6,697; first unread is 6,698 Telegram/ThirdParty/MicroTeX::.github/workflows/ubuntu-gtk.yml; unread_minimum is 9,428; unknown remains 15,845; omitted remains 0.",
   "rebaseline": {
     "from_commit": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
     "to_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
@@ -58,10 +58,10 @@
       5722,
       5759
     ],
-    "current_source_read_through": 6653,
-    "first_unread_order": 6654,
-    "first_unread_path": "Telegram/ThirdParty/GSL::.clang-format",
-    "current_head_source_authority_evidence": "All root non-directory entries exact-read/responsibility-decomposed. Direct/nested gitlink children require explicit repository/commit/scope/mount/path identity schema before source-disposition prefix can advance."
+    "current_source_read_through": 6697,
+    "first_unread_order": 6698,
+    "first_unread_path": "Telegram/ThirdParty/MicroTeX::.github/workflows/ubuntu-gtk.yml",
+    "current_head_source_authority_evidence": "All 6,653 root entries plus Microsoft/GSL orders 6,654-6,697 are exact-read/responsibility-decomposed with explicit component identity. Production ownership/evidence remains open; next deterministic entry is MicroTeX order 6,698."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -70,8 +70,8 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 6653,
-    "first_unread_order": 6654,
-    "first_unread_path": "Telegram/ThirdParty/GSL::.clang-format"
+    "read_through": 6697,
+    "first_unread_order": 6698,
+    "first_unread_path": "Telegram/ThirdParty/MicroTeX::.github/workflows/ubuntu-gtk.yml"
   }
 }
