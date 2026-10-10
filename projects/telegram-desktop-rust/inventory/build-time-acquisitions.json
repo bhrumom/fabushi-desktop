@@ -13,7 +13,7 @@
     "candidate_lines_total": 330,
     "immutable_commit_pin_occurrences_classified": 0,
     "candidate_lines_pending_classification": 0,
-    "note": "Live 6fed91ff changes only ten existing root blobs (version metadata, photo enlarge interaction, media-viewer Ctrl+S arbitration, style token, changelog); build-time acquisition candidate set remains 330. Fresh descendant resolver evidence is required.",
+    "note": "Live 6fed91ff modifies ten existing root blobs outside build/acquisition workflow sources; the classified candidate set remains 330 and immutable Action/clone bindings remain source-identical. Fresh descendant resolver evidence is required.",
     "candidate_lines_classified": 330,
     "disposition_closure_status": "complete-current-330-candidate-classification",
     "recursive_authority_closure_status": "open",
@@ -33,8 +33,8 @@
       ],
       "disposition": "documentation-example-not-build-acquisition",
       "rationale": "Contributor instructions; clone/fetch examples are documentation, not an accepted build path.",
-      "accepted_upstream_commit": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
-      "accepted_upstream_tree": "b031c2cd84aa0cbbb149a7e5693c41ef14d643f3",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
       "source_blob_sha": "4265e974d0b87622af223d5b8096b67edcbd4aab",
       "scanner_evidence": {
         "runner": "github-actions",
@@ -59,8 +59,8 @@
       ],
       "disposition": "ancillary-telegram-bot-api-ci-not-desktop-product-build",
       "rationale": "Builds/deploys Telegram Bot API tooling, not Telegram Desktop shipping product.",
-      "accepted_upstream_commit": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
-      "accepted_upstream_tree": "b031c2cd84aa0cbbb149a7e5693c41ef14d643f3",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
       "source_blob_sha": "a361602441040028a3332c3732c4902d9c880122",
       "scanner_evidence": {
         "runner": "github-actions",
@@ -83,8 +83,8 @@
       ],
       "disposition": "desktop-ci-build-test-packaging-acquisition",
       "rationale": "Current upstream desktop CI/canary/platform packaging dependency or artifact flow; exact workflow source is authoritative for CI evidence, but third-party reference immutability is reviewed separately.",
-      "accepted_upstream_commit": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
-      "accepted_upstream_tree": "b031c2cd84aa0cbbb149a7e5693c41ef14d643f3",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
       "source_blob_sha": "7285f29ed2a09695a02b8f7821c10df5aa50bc44",
       "scanner_evidence": {
         "runner": "github-actions",
@@ -153,8 +153,8 @@
       ],
       "disposition": "desktop-ci-build-test-packaging-acquisition",
       "rationale": "Current upstream desktop CI/canary/platform packaging dependency or artifact flow; exact workflow source is authoritative for CI evidence, but third-party reference immutability is reviewed separately.",
-      "accepted_upstream_commit": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
-      "accepted_upstream_tree": "b031c2cd84aa0cbbb149a7e5693c41ef14d643f3",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
       "source_blob_sha": "cff0a8cd8bb0008ddd1dc833c37005c8890e6a8c",
       "scanner_evidence": {
         "runner": "github-actions",
@@ -175,8 +175,8 @@
       ],
       "disposition": "repository-maintenance-automation-not-desktop-build",
       "rationale": "Issue/repository maintenance automation is not a Telegram Desktop product build dependency.",
-      "accepted_upstream_commit": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
-      "accepted_upstream_tree": "b031c2cd84aa0cbbb149a7e5693c41ef14d643f3",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
       "source_blob_sha": "8e20e07349b5b43277f5371a4e931066bece4186",
       "scanner_evidence": {
         "runner": "github-actions",
@@ -200,8 +200,8 @@
       ],
       "disposition": "documentation-release-site-acquisition",
       "rationale": "Generates/deploys changelog Pages; relevant to release documentation, not desktop runtime.",
-      "accepted_upstream_commit": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
-      "accepted_upstream_tree": "b031c2cd84aa0cbbb149a7e5693c41ef14d643f3",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
       "source_blob_sha": "445277fe4b44dc9ccef17b7b602016572c08fe7c",
       "scanner_evidence": {
         "runner": "github-actions",
@@ -222,8 +222,8 @@
       ],
       "disposition": "repository-maintenance-automation-not-desktop-build",
       "rationale": "Issue/repository maintenance automation is not a Telegram Desktop product build dependency.",
-      "accepted_upstream_commit": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
-      "accepted_upstream_tree": "b031c2cd84aa0cbbb149a7e5693c41ef14d643f3",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
       "source_blob_sha": "7ddb3d0403a77812df954d8bb2f480672831a082",
       "scanner_evidence": {
         "runner": "github-actions",
@@ -247,8 +247,8 @@
       ],
       "disposition": "container-publishing-ci-acquisition",
       "rationale": "Container publishing workflow input; CI/release infrastructure, not desktop runtime source.",
-      "accepted_upstream_commit": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
-      "accepted_upstream_tree": "b031c2cd84aa0cbbb149a7e5693c41ef14d643f3",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
       "source_blob_sha": "cba00688d935d50454bfb891fc37e001626cf9a0",
       "scanner_evidence": {
         "runner": "github-actions",
@@ -269,8 +269,8 @@
       ],
       "disposition": "repository-maintenance-automation-not-desktop-build",
       "rationale": "Issue/repository maintenance automation is not a Telegram Desktop product build dependency.",
-      "accepted_upstream_commit": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
-      "accepted_upstream_tree": "b031c2cd84aa0cbbb149a7e5693c41ef14d643f3",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
       "source_blob_sha": "355405165590712b1826b2f92a8f867c8d568dd9",
       "scanner_evidence": {
         "runner": "github-actions",
@@ -302,8 +302,8 @@
       ],
       "disposition": "desktop-ci-build-test-packaging-acquisition",
       "rationale": "Current upstream desktop CI/canary/platform packaging dependency or artifact flow; exact workflow source is authoritative for CI evidence, but third-party reference immutability is reviewed separately.",
-      "accepted_upstream_commit": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
-      "accepted_upstream_tree": "b031c2cd84aa0cbbb149a7e5693c41ef14d643f3",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
       "source_blob_sha": "dbedd23593c5ea66ff9b8b880bda6a8bc5a4cc55",
       "scanner_evidence": {
         "runner": "github-actions",
@@ -324,8 +324,8 @@
       ],
       "disposition": "repository-maintenance-automation-not-desktop-build",
       "rationale": "Issue/repository maintenance automation is not a Telegram Desktop product build dependency.",
-      "accepted_upstream_commit": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
-      "accepted_upstream_tree": "b031c2cd84aa0cbbb149a7e5693c41ef14d643f3",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
       "source_blob_sha": "7904e79591f79a4ea61c0dc194c189f048bf5c67",
       "scanner_evidence": {
         "runner": "github-actions",
@@ -349,8 +349,8 @@
       ],
       "disposition": "desktop-ci-build-test-packaging-acquisition",
       "rationale": "Current upstream desktop CI/canary/platform packaging dependency or artifact flow; exact workflow source is authoritative for CI evidence, but third-party reference immutability is reviewed separately.",
-      "accepted_upstream_commit": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
-      "accepted_upstream_tree": "b031c2cd84aa0cbbb149a7e5693c41ef14d643f3",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
       "source_blob_sha": "184a94b091d2d7bab19ae67d7f3a5881b18213ba",
       "scanner_evidence": {
         "runner": "github-actions",
@@ -386,8 +386,8 @@
       ],
       "disposition": "desktop-ci-build-test-packaging-acquisition",
       "rationale": "Current upstream desktop CI/canary/platform packaging dependency or artifact flow; exact workflow source is authoritative for CI evidence, but third-party reference immutability is reviewed separately.",
-      "accepted_upstream_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
-      "accepted_upstream_tree": "6b616494f3465324e749a04dcd1c9d508657a998",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
       "source_blob_sha": "6e9f0b5bddfc3146bbed0bcd56a465bd584b89fc",
       "scanner_evidence": {
         "runner": "github-actions",
@@ -408,8 +408,8 @@
       ],
       "disposition": "repository-maintenance-automation-not-desktop-build",
       "rationale": "Issue/repository maintenance automation is not a Telegram Desktop product build dependency.",
-      "accepted_upstream_commit": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
-      "accepted_upstream_tree": "b031c2cd84aa0cbbb149a7e5693c41ef14d643f3",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
       "source_blob_sha": "fedc24f8e5d781a0bbdcdf80e24baf3eb2fe199f",
       "scanner_evidence": {
         "runner": "github-actions",
@@ -430,8 +430,8 @@
       ],
       "disposition": "repository-maintenance-automation-not-desktop-build",
       "rationale": "Issue/repository maintenance automation is not a Telegram Desktop product build dependency.",
-      "accepted_upstream_commit": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
-      "accepted_upstream_tree": "b031c2cd84aa0cbbb149a7e5693c41ef14d643f3",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
       "source_blob_sha": "55ad7891ce36682accae01d739203aa487876053",
       "scanner_evidence": {
         "runner": "github-actions",
@@ -454,8 +454,8 @@
       ],
       "disposition": "desktop-ci-build-test-packaging-acquisition",
       "rationale": "Current upstream desktop CI/canary/platform packaging dependency or artifact flow; exact workflow source is authoritative for CI evidence, but third-party reference immutability is reviewed separately.",
-      "accepted_upstream_commit": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
-      "accepted_upstream_tree": "b031c2cd84aa0cbbb149a7e5693c41ef14d643f3",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
       "source_blob_sha": "82f85ae9066a2773512afecb0bcf80875116a8c8",
       "scanner_evidence": {
         "runner": "github-actions",
@@ -476,8 +476,8 @@
       ],
       "disposition": "repository-maintenance-automation-not-desktop-build",
       "rationale": "Issue/repository maintenance automation is not a Telegram Desktop product build dependency.",
-      "accepted_upstream_commit": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
-      "accepted_upstream_tree": "b031c2cd84aa0cbbb149a7e5693c41ef14d643f3",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
       "source_blob_sha": "0d57eb7dbd9a9f758e1e33d45afbd1aefd212614",
       "scanner_evidence": {
         "runner": "github-actions",
@@ -498,8 +498,8 @@
       ],
       "disposition": "repository-maintenance-automation-not-desktop-build",
       "rationale": "Issue/repository maintenance automation is not a Telegram Desktop product build dependency.",
-      "accepted_upstream_commit": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
-      "accepted_upstream_tree": "b031c2cd84aa0cbbb149a7e5693c41ef14d643f3",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
       "source_blob_sha": "2c021d1cd09f7ac59b0e0d5ef6be2bf546167274",
       "scanner_evidence": {
         "runner": "github-actions",
@@ -520,8 +520,8 @@
       ],
       "disposition": "repository-maintenance-automation-not-desktop-build",
       "rationale": "Issue/repository maintenance automation is not a Telegram Desktop product build dependency.",
-      "accepted_upstream_commit": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
-      "accepted_upstream_tree": "b031c2cd84aa0cbbb149a7e5693c41ef14d643f3",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
       "source_blob_sha": "1e3dae8182aefc4e4c76df065f547a43a1e50437",
       "scanner_evidence": {
         "runner": "github-actions",
@@ -542,8 +542,8 @@
       ],
       "disposition": "repository-maintenance-automation-not-desktop-build",
       "rationale": "Issue/repository maintenance automation is not a Telegram Desktop product build dependency.",
-      "accepted_upstream_commit": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
-      "accepted_upstream_tree": "b031c2cd84aa0cbbb149a7e5693c41ef14d643f3",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
       "source_blob_sha": "0cccca6b2d434303da915b12a13e7620cf1b8bc4",
       "scanner_evidence": {
         "runner": "github-actions",
@@ -570,8 +570,8 @@
       ],
       "disposition": "desktop-ci-build-test-packaging-acquisition",
       "rationale": "Current upstream desktop CI/canary/platform packaging dependency or artifact flow; exact workflow source is authoritative for CI evidence, but third-party reference immutability is reviewed separately.",
-      "accepted_upstream_commit": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
-      "accepted_upstream_tree": "b031c2cd84aa0cbbb149a7e5693c41ef14d643f3",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
       "source_blob_sha": "219c42ebf679ca5d93add5cdbd51b0bb6e516b57",
       "scanner_evidence": {
         "runner": "github-actions",
@@ -593,8 +593,8 @@
       ],
       "disposition": "distribution-publishing-acquisition",
       "rationale": "Windows package publishing/distribution workflow; provenance matters for release distribution, not runtime source.",
-      "accepted_upstream_commit": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
-      "accepted_upstream_tree": "b031c2cd84aa0cbbb149a7e5693c41ef14d643f3",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
       "source_blob_sha": "0ff2d50d8b12b67408d3ad1e06dc8e462b5a9390",
       "scanner_evidence": {
         "runner": "github-actions",
@@ -617,8 +617,8 @@
       ],
       "disposition": "release-signing-publishing-tooling-acquisition",
       "rationale": "Release/canary/signing tooling network or artifact acquisition; relevant to release provenance but not application runtime ownership.",
-      "accepted_upstream_commit": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
-      "accepted_upstream_tree": "b031c2cd84aa0cbbb149a7e5693c41ef14d643f3",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
       "source_blob_sha": "4eb2d790063bb8f11efc7ffa06977fe1ef79a270",
       "scanner_evidence": {
         "runner": "github-actions",
@@ -758,8 +758,8 @@
       ],
       "disposition": "canonical-linux-build-environment-acquisition",
       "rationale": "Linux reproducible build image provisioning and dependency acquisition; package/repository provenance is part of shipping build authority.",
-      "accepted_upstream_commit": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
-      "accepted_upstream_tree": "b031c2cd84aa0cbbb149a7e5693c41ef14d643f3",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
       "source_blob_sha": "e6d22fce93363f059e6929bb30f541549065a6c4",
       "scanner_evidence": {
         "runner": "github-actions",
@@ -829,8 +829,8 @@
       ],
       "disposition": "canonical-desktop-build-dependency-acquisition",
       "rationale": "Primary desktop dependency preparation path; repositories/downloads/package tools reached here are shipping build authority when the surrounding branch is active.",
-      "accepted_upstream_commit": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
-      "accepted_upstream_tree": "b031c2cd84aa0cbbb149a7e5693c41ef14d643f3",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
       "source_blob_sha": "1248e5e6405325dc74fb4f9d211ecddebcf89752",
       "scanner_evidence": {
         "runner": "github-actions",
@@ -852,8 +852,8 @@
       ],
       "disposition": "release-signing-publishing-tooling-acquisition",
       "rationale": "Release/canary/signing tooling network or artifact acquisition; relevant to release provenance but not application runtime ownership.",
-      "accepted_upstream_commit": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
-      "accepted_upstream_tree": "b031c2cd84aa0cbbb149a7e5693c41ef14d643f3",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
       "source_blob_sha": "df9e1b7944d396d05c03af6d3d0610b727d7de70",
       "scanner_evidence": {
         "runner": "github-actions",
@@ -875,8 +875,8 @@
       ],
       "disposition": "release-signing-publishing-tooling-acquisition",
       "rationale": "Release/canary/signing tooling network or artifact acquisition; relevant to release provenance but not application runtime ownership.",
-      "accepted_upstream_commit": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
-      "accepted_upstream_tree": "b031c2cd84aa0cbbb149a7e5693c41ef14d643f3",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
       "source_blob_sha": "9e3e2e9e1b716db6a15a36b949bf53d3f650777d",
       "scanner_evidence": {
         "runner": "github-actions",
@@ -928,8 +928,8 @@
       ],
       "disposition": "canonical-snap-build-source-package-acquisition",
       "rationale": "Snap shipping build source/package/plugin acquisition and pinned source declarations.",
-      "accepted_upstream_commit": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
-      "accepted_upstream_tree": "b031c2cd84aa0cbbb149a7e5693c41ef14d643f3",
+      "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+      "accepted_upstream_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
       "source_blob_sha": "1c37daafffa537bf4861d567e39d9e29026e4426",
       "scanner_evidence": {
         "runner": "github-actions",
@@ -1231,7 +1231,7 @@
   ],
   "recursive_build_reachability": {
     "status": "partial-audited-disposition-open",
-    "accepted_upstream_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+    "accepted_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "rule": "A recursively discovered repository is source/build authority only when an accepted TDesktop build path actually initializes, downloads, generates, patches, or consumes it. Presence as an unselected superproject gitlink is not sufficient.",
     "qt_superproject": {
       "repository": "https://github.com/qt/qt5",
@@ -2513,7 +2513,7 @@
   ],
   "github_action_ref_resolutions": {
     "status": "snapshot-resolved-observed-action-graph-shipping-mutable-refs-still-open",
-    "accepted_upstream": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+    "accepted_upstream": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "evidence": {
       "runner": "github-actions",
       "run_id": 37895845999,
@@ -3468,11 +3468,11 @@
     ],
     "unresolved": [],
     "note": "Observed GitHub Action uses refs are bound to exact commit snapshots for this accepted source/head. Mutable source refs remain open until the accepted build definition itself is immutably pinned; this does not close non-Action provenance.",
-    "rebaseline_status": "Live 65e23ba7 adds one macOS packaged actions/cache occurrence and shifts all mac_packaged source lines; fresh exact-head resolver evidence pending."
+    "rebaseline_status": "Accepted 6fed91ff modifies no workflow/acquisition source path; source/ref bindings are unchanged and fresh descendant GitHub Actions resolver evidence is required."
   },
   "github_clone_ref_resolutions": {
     "status": "snapshot-resolved-literal-github-clone-refs-source-refs-still-open",
-    "accepted_upstream": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+    "accepted_upstream": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "evidence": {
       "runner": "github-actions",
       "run_id": 37895845999,
@@ -3784,11 +3784,11 @@
       }
     ],
     "note": "Only literal GitHub git clone -b refs are included. Variable refs, bare clones, later fetch/checkout pins, GitLab/Chromium remotes, package managers, and downloads are intentionally excluded for separate contextual resolution. Every included literal ref resolved successfully on this run; ref mutability and all excluded contextual/package/download inputs remain open.",
-    "rebaseline_status": "Live 65e23ba7 changes mac_packaged variable-ref fetches but adds no literal GitHub clone -b resolver occurrence; fresh exact-head resolver evidence pending."
+    "rebaseline_status": "Accepted 6fed91ff modifies no workflow/acquisition source path; source/ref bindings are unchanged and fresh descendant GitHub Actions resolver evidence is required."
   },
   "github_action_immutable_authority": {
     "status": "complete-current-top-level-mutable-action-authority-bindings",
-    "accepted_upstream": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+    "accepted_upstream": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "policy": "Every mutable top-level GitHub Action occurrence in accepted Telegram source is bound by source path/line/ref to an exact 40-hex commit. The mutable upstream spelling is source evidence only; Fabushi provenance authority is the bound commit. A source/ref/resolution change must fail validation until this binding is explicitly reviewed and updated.",
     "mutable_occurrences": 41,
     "mutable_unique_refs": 15,
@@ -4256,11 +4256,11 @@
       "artifact_digest": "sha256:097d945ec3b1913789ce8bde71cf533bdbec787bb753217c63287c056f588cf3",
       "artifact_member": "build-time-github-action-ref-resolutions.json"
     },
-    "rebaseline_status": "Live 65e23ba7 adds one macOS packaged actions/cache occurrence and shifts all mac_packaged source lines; fresh exact-head resolver evidence pending."
+    "rebaseline_status": "Accepted 6fed91ff modifies no workflow/acquisition source path; source/ref bindings are unchanged and fresh descendant GitHub Actions resolver evidence is required."
   },
   "github_clone_immutable_authority": {
     "status": "complete-current-literal-github-clone-authority-bindings",
-    "accepted_upstream": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+    "accepted_upstream": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "policy": "Every literal GitHub git clone -b occurrence resolved by the accepted-source scanner is bound by source path/line/repository/ref to an exact 40-hex commit. The mutable tag/ref in Telegram source remains evidence only; Fabushi provenance authority is the bound commit.",
     "mutable_occurrences": 33,
     "mutable_unique_refs": 33,
@@ -4607,6 +4607,6 @@
       "artifact_digest": "sha256:097d945ec3b1913789ce8bde71cf533bdbec787bb753217c63287c056f588cf3",
       "artifact_member": "build-time-github-clone-ref-resolutions.json"
     },
-    "rebaseline_status": "Live 65e23ba7 changes mac_packaged variable-ref fetches but adds no literal GitHub clone -b resolver occurrence; fresh exact-head resolver evidence pending."
+    "rebaseline_status": "Accepted 6fed91ff modifies no workflow/acquisition source path; source/ref bindings are unchanged and fresh descendant GitHub Actions resolver evidence is required."
   }
 }
