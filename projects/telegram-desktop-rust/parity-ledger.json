@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 8585,
+    "unread": 8560,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,11 +13478,11 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Accepted prefix reaches 7,540/16,125; fcitx5-qt 7,526-7,540 exact-read/decomposed through canonical Qt5 platform-input, candidate/preedit/theme/failover and deterministic qtkey targets; unread=8,585, unknown=15,845, omitted=0. Reading closes no unknown.",
-    "source_authority_evidence": "Qt/Fcitx transport/presentation is replacement-only. Canonical platform/input owners retain exactly-one owner failover, candidate/preedit lifecycle, validated theme/resource reload, focus/surrounding/cursor/virtual-keyboard state, async key-event liveness fencing, compose fallback and deterministic XKB key mapping.",
-    "current_source_read_through": 7540,
-    "first_unread_order": 7541,
-    "first_unread_path": "Telegram/ThirdParty/fcitx5-qt::qt5/widgetsaddons/CMakeLists.txt"
+    "source_read_reconciliation": "Accepted prefix reaches 7,565/16,125; fcitx5-qt 7,541-7,565 exact-read/decomposed across Qt5 widgets/config/shortcut semantics and Qt6 DBus/input contracts; unread=8,560, unknown=15,845, omitted=0. Reading closes no unknown.",
+    "source_authority_evidence": "Qt/Fcitx widget/plugin/DBus mechanics are replacement-only. Canonical Settings/Input owners retain fail-closed plugin identity/discovery, async save settlement, shortcut/key normalization, generated-input provenance and toolkit-version-neutral input lifecycle/state contracts.",
+    "current_source_read_through": 7565,
+    "first_unread_order": 7566,
+    "first_unread_path": "Telegram/ThirdParty/fcitx5-qt::qt6/dbusaddons/fcitxqtinputcontextproxy_p.h"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 7540,
-    "first_unread_order": 7541,
-    "first_unread_path": "Telegram/ThirdParty/fcitx5-qt::qt5/widgetsaddons/CMakeLists.txt",
+    "read_through": 7565,
+    "first_unread_order": 7566,
+    "first_unread_path": "Telegram/ThirdParty/fcitx5-qt::qt6/dbusaddons/fcitxqtinputcontextproxy_p.h",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {

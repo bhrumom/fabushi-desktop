@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 8585,
+    "unread_minimum": 8560,
     "omitted_known": 0,
-    "note": "Recursive source census 16,125; exact read/decomposition through 7,540; unread 8,585; unknown 15,845; omitted 0. fcitx5-qt Qt5 canonical platform-input rows preserve single-owner failover, candidate/preedit lifecycle, validated theme/resource reload, async key-event liveness fencing and deterministic XKB key mapping while Qt/Fcitx transport/presentation remains replacement-only."
+    "note": "Recursive source census 16,125; exact read/decomposition through 7,565; unread 8,560; unknown 15,845; omitted 0. Qt5 widgets and Qt6 input contracts preserve fail-closed config-plugin discovery, save settlement, shortcut/key normalization and toolkit-version-neutral input/settings semantics without a second runtime."
   },
   "latest_recursive_evidence": {
     "run_id": 38064993530,
@@ -42,7 +42,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live authority 6fed91ff exact through recursive order 7,540; first unread is 7,541 Telegram/ThirdParty/fcitx5-qt::qt5/widgetsaddons/CMakeLists.txt; unread_minimum is 8,585; unknown remains 15,845; omitted remains 0.",
+  "note": "Live authority 6fed91ff exact through recursive order 7,565; first unread is 7,566 Telegram/ThirdParty/fcitx5-qt::qt6/dbusaddons/fcitxqtinputcontextproxy_p.h; unread_minimum is 8,560; unknown remains 15,845; omitted remains 0.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -60,10 +60,10 @@
       6541,
       6627
     ],
-    "current_source_read_through": 7540,
-    "first_unread_order": 7541,
-    "first_unread_path": "Telegram/ThirdParty/fcitx5-qt::qt5/widgetsaddons/CMakeLists.txt",
-    "current_head_source_authority_evidence": "fcitx5-qt exact-read through Qt5 canonical platform-input 7,526-7,540. Preserve exactly-one input owner/failover, candidate/preedit lifecycle, theme path validation/fallback/reload, focus/surrounding/cursor/virtual-keyboard state, async key-event liveness fencing, compose fallback and deterministic XKB key mapping in existing canonical owners. No unknown closed."
+    "current_source_read_through": 7565,
+    "first_unread_order": 7566,
+    "first_unread_path": "Telegram/ThirdParty/fcitx5-qt::qt6/dbusaddons/fcitxqtinputcontextproxy_p.h",
+    "current_head_source_authority_evidence": "fcitx5-qt exact-read through Qt5 widgets and Qt6 input contracts 7,541-7,565. Preserve fail-closed config plugin identity/discovery, async Settings save settlement, shortcut capture/key normalization, generated-input provenance and shared canonical Qt6/Qt5 input/settings semantics. No unknown closed."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -72,9 +72,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 7540,
-    "first_unread_order": 7541,
-    "first_unread_path": "Telegram/ThirdParty/fcitx5-qt::qt5/widgetsaddons/CMakeLists.txt",
+    "read_through": 7565,
+    "first_unread_order": 7566,
+    "first_unread_path": "Telegram/ThirdParty/fcitx5-qt::qt6/dbusaddons/fcitxqtinputcontextproxy_p.h",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }
