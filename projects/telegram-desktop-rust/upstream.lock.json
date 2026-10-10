@@ -634,9 +634,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 6892,
-    "first_unread_order": 6893,
-    "first_unread_path": "Telegram/ThirdParty/MicroTeX::src/res/builtin/formula_mappings.res.cpp",
+    "read_through": 6910,
+    "first_unread_order": 6911,
+    "first_unread_path": "Telegram/ThirdParty/MicroTeX::src/res/font/cmssbx10.def.cpp",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
