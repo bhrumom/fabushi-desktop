@@ -5226,7 +5226,7 @@ mod wallet_live_engine_tests {
         engine
             .execute(Command::ReconcileWalletLivePresence {
                 generation: first,
-                presence: WalletLivePresence::Existing,
+                presence: WalletLivePresence::Ready,
                 observed_at_ms: 1_000,
             })
             .unwrap();
