@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 9295,
+    "unread": 9273,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 6830,
-    "first_unread_order": 6831,
-    "first_unread_path": "Telegram/ThirdParty/MicroTeX::src/atom/atom_space.h"
+    "read_through": 6852,
+    "first_unread_order": 6853,
+    "first_unread_path": "Telegram/ThirdParty/MicroTeX::src/core/localized_num.cpp"
   },
   "historical_exact_head_evidence": {
     "status": "historical-only",
