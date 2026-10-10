@@ -1,4 +1,4 @@
-Live TDRP Revision 9 upstream authority: telegramdesktop/tdesktop@28ac576967a1026ecc89a927360fa0e138d7c88c (root tree 9d8fa87ce68c832d2f4c99f372a5bb672463c3e1); recursive total 16,125; read-through 6,505; first unread 6,506 Telegram/build/build.bat@3e5f698f99c5944e237c514d60124bc25489ea76; unread 9,620; unknown 15,846; omitted 0.
+Live TDRP Revision 9 upstream authority: telegramdesktop/tdesktop@28ac576967a1026ecc89a927360fa0e138d7c88c (root tree 9d8fa87ce68c832d2f4c99f372a5bb672463c3e1); recursive total 16,125; read-through 6,541; first unread 6,542 Telegram/cmake/binobj2obj.py@3683a6dd3a72706ee382ea415d6e9cfaae84d8ce; unread 9,584; unknown 15,846; omitted 0.
 
 Live Revision 9 authority (2026-10-10): telegramdesktop/tdesktop@65e23ba7137ea4129b6bc1b2616104a1f59495ef (root tree 6b616494f3465324e749a04dcd1c9d508657a998). Root non-directory=6,653; recursive non-directory=16,125; read-through=5,836; first unread=5,837 Telegram/SourceFiles/test/test_wallet_intercept.cpp@7a0885063d4f393de43cd05f368e6671dfd40b7d; unread=10,289; unknown=15,846; omitted=0. The b0d1fe5e→65e23ba7 delta is ten commits / 25 modified paths; all 18 changed blobs inside the prior prefix were explicitly re-read and reconciled before retaining prefix credit. Orders 5,831-5,836 were then read/decomposed on the same live authority. Fresh descendant exact-head GitHub Actions evidence is required; b0400d+b0d1fe5 runs are predecessor-only.
 
@@ -208,3 +208,7 @@ macOS bundle, entitlement and icon-source responsibility is read/decomposed thro
 ### TDRP read-through 6484-6505
 
 Root ThirdParty gitlinks are provenance/role-read through order 6,505. Nested third-party source remains independently open and no Telegram/Qt runtime is adopted by default. Accounting: **6,505/16,125 read; 9,620 unread; 15,846 unknown; 0 omitted**.
+
+### TDRP read-through 6506-6541
+
+Build/release tooling is read/decomposed through 6,541 as release-security, supply-chain, install/update and provenance responsibility, not excluded as mere tooling. Telegram-specific private infrastructure is replaced by current Fabushi GitHub Actions/electron-builder/updater/platform owners. Accounting: **6,541/16,125 read; 9,584 unread; 15,846 unknown; 0 omitted**.
