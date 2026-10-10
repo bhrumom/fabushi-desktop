@@ -297,7 +297,11 @@ impl ConnectedAppState {
         let mut remote = BTreeMap::new();
         for session in sessions {
             session.validate()?;
-            if session.status == ConnectedAppSessionStatus::Closed { continue; }
+            if session.status == ConnectedAppSessionStatus::Closed
+                || self.closed_session_ids.contains(&session.id)
+            {
+                continue;
+            }
             if remote.insert(session.id, session).is_some() {
                 return Err(ConnectedAppError::DuplicateSessionInRefresh);
             }
@@ -897,6 +901,20 @@ mod tests {
         assert_eq!(state.sessions.get(&7).unwrap().status, ConnectedAppSessionStatus::Closing);
         assert_eq!(state.closing_session_ids(), vec![7]);
         assert!(!state.session_refresh.in_flight);
+    }
+
+    #[test]
+    fn session_refresh_cannot_resurrect_a_closed_tombstone() {
+        let mut state = ConnectedAppState::default();
+        let active = session(ConnectedAppSessionStatus::Active);
+        state.upsert_session(active.clone()).unwrap();
+        state.close_session(7, 20).unwrap();
+        let generation = state.begin_session_refresh(100, true).unwrap().unwrap();
+        let mut stale = active;
+        stale.updated_at_ms = 30;
+        state.apply_session_refresh(generation, vec![stale], 110).unwrap();
+        assert!(!state.sessions.contains_key(&7));
+        assert!(state.closed_session_ids.contains(&7));
     }
 
     #[test]
