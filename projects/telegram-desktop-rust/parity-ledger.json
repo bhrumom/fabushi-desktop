@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 8434,
+    "unread": 8399,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,11 +13478,11 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Accepted prefix reaches 7,691/16,125. Hime 7,660 exact license plus 7,661–7,691 functional input mappings/layouts/tables/build helper are read/decomposed; unread=8,434, unknown=15,845, omitted=0. Order 7,692 is a >1 MB source requiring exact raw artifact review. Reading closes no unknown.",
+    "source_read_reconciliation": "Accepted prefix 7,726/16,125; phrase corpora, remaining input data, distro package lifecycle, icon license/generator read/decomposed; unread 8,399; unknown 15,845; omitted 0. Next XCF needs binary/visual review.",
     "source_authority_evidence": "fcitx5-qt Qt6 closure preserves aliases as composition-only and maps service-owner fencing, input lifecycle, quick-phrase persistence/failure settlement, Settings plugin/save and shortcut normalization to existing canonical owners.",
-    "current_source_read_through": 7691,
-    "first_unread_order": 7692,
-    "first_unread_path": "Telegram/ThirdParty/hime::data/s-tsin.src"
+    "current_source_read_through": 7726,
+    "first_unread_order": 7727,
+    "first_unread_path": "Telegram/ThirdParty/hime::distro/dev-tools/icons/hime.xcf"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 7691,
-    "first_unread_order": 7692,
-    "first_unread_path": "Telegram/ThirdParty/hime::data/s-tsin.src",
+    "read_through": 7726,
+    "first_unread_order": 7727,
+    "first_unread_path": "Telegram/ThirdParty/hime::distro/dev-tools/icons/hime.xcf",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {

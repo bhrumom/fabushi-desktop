@@ -14,27 +14,26 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 8434,
+    "unread_minimum": 8399,
     "omitted_known": 0,
-    "note": "Recursive source census 16,125; exact read/decomposition through 7,691, including the exact Array Input Method license plus Hime functional input maps/layouts/phonetic tables and generated-input helpers; unread 8,434; unknown 15,845; omitted 0. Hime runtime/toolkit/data are not retained as a second input stack; canonical platform input, Resource, Build/Release and License/NOTICE owners remain mapped-open."
+    "note": "Recursive 16,125; exact read/decomposition through 7,726; unread 8,399; unknown 15,845; omitted 0."
   },
   "latest_recursive_evidence": {
-    "run_id": 38077279162,
+    "run_id": 38077755131,
     "run_attempt": 1,
-    "job_id": 114286846660,
-    "head_sha": "aa1abf3311adcdf90a26353bd161cc345fb00d60",
-    "artifact_id": 11679557131,
-    "artifact_digest": "sha256:21f8c165f6974c04ac6e94e07372dbf02db1982b78ce5c2097ee29a63b4df8e7",
+    "job_id": 114288228333,
+    "head_sha": "1d0e4a8230c198993fd331387d72063936ad80e8",
+    "artifact_id": 11678742627,
+    "artifact_digest": "sha256:d4ffb4761f726207bad7475aedba43478c2e7407bbdc3b01085b3a1f324b77a1",
     "artifact_files": [
-      "upstream-root-inventory.json",
       "upstream-recursive-inventory.json",
-      "authority-report.json",
-      "current-first-unread/manifest.json",
-      "current-first-unread/07660-array_license.pdf"
+      "current-first-unread/window-manifest.json",
+      "current-first-unread/07692-s-tsin.src",
+      "current-first-unread/07699-tsin.src"
     ],
-    "evidence_status": "historical-diagnostic-after-descendant-source-accounting-commit",
+    "evidence_status": "historical-diagnostic-after-descendant-accounting-commit",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
-    "note": "Exact predecessor source-authority succeeded and materialized/hash-verified the 7,660 PDF. Descendant 7,691 accounting and source-review-window change require fresh exact-head Actions and cannot inherit predecessor green."
+    "note": "Predecessor exact-head source authority succeeded; descendant accounting requires fresh Actions."
   },
   "closure_rules": {
     "executable_runner": "github-actions",
@@ -44,7 +43,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live authority 6fed91ff exact through recursive order 7,691; first unread is 7,692 Telegram/ThirdParty/hime::data/s-tsin.src; unread_minimum is 8,434; unknown remains 15,845; omitted remains 0.",
+  "note": "Live authority exact through 7,726; first unread 7,727 Telegram/ThirdParty/hime::distro/dev-tools/icons/hime.xcf; unread 8,399; unknown 15,845; omitted 0.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -62,10 +61,10 @@
       6541,
       6627
     ],
-    "current_source_read_through": 7691,
-    "first_unread_order": 7692,
-    "first_unread_path": "Telegram/ThirdParty/hime::data/s-tsin.src",
-    "current_head_source_authority_evidence": "Orders 7,660–7,691 exact-read/decomposed. Order 7,660 exact PDF was materialized by aa1abf source-authority artifact 11679557131 and hash/render verified; functional input data/layout/table responsibilities remain mapped-open. Next >1 MB tsin source requires raw review-window artifact. Reading closes no unknown."
+    "current_source_read_through": 7726,
+    "first_unread_order": 7727,
+    "first_unread_path": "Telegram/ThirdParty/hime::distro/dev-tools/icons/hime.xcf",
+    "current_head_source_authority_evidence": "7,692–7,726 exact-read/decomposed; review-window exact-materialized the >1 MB phrase corpora; next XCF needs binary/visual review; reading closes no unknown."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -74,9 +73,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 7691,
-    "first_unread_order": 7692,
-    "first_unread_path": "Telegram/ThirdParty/hime::data/s-tsin.src",
+    "read_through": 7726,
+    "first_unread_order": 7727,
+    "first_unread_path": "Telegram/ThirdParty/hime::distro/dev-tools/icons/hime.xcf",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }
