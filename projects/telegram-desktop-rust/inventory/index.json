@@ -46,7 +46,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live authority exact through 8,095; first unread 8,096 Telegram/ThirdParty/hime::src/gtab-tsin-fname.c; unread_minimum 8,030; unknown 15,845; omitted 0.",
+  "note": "Live authority exact through 8,095; first unread 8,096 Telegram/ThirdParty/hime::src/gtab-tsin-fname.c; unread_minimum is 8,030; unknown remains 15,845; omitted remains 0.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",

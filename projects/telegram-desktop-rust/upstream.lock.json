@@ -282,7 +282,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Source/product/release closure open. Exact read-through 8,012/16,125; unread 8,113; unknown 15,845; omitted 0; accessible input-status projection is implemented but real native input-source signal remains open; fresh descendant evidence required."
+    "note": "Source/product/release closure open. Exact read-through 8,095/16,125; unread 8,030; unknown 15,845; omitted 0; accessible input-status projection is implemented but real native input-source signal remains open; fresh descendant evidence required."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",
