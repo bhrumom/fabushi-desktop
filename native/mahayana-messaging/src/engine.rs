@@ -29,7 +29,8 @@ use crate::story::{
 use crate::wallet::{
     LedgerEntry, OnrampProviderInfo, OutboundTransferError, OutboundTransferRecord,
     OutboundTransferTerminal, WalletAccountId, WalletAddressDirectoryError, WalletError,
-    WalletLedger, WalletOnrampError, WalletRateError, WalletRuntimeState,
+    WalletLedger, WalletLiveError, WalletLivePresence, WalletOnrampError, WalletRateError,
+    WalletRuntimeState,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
@@ -335,6 +336,27 @@ pub enum Command {
     },
     SetWalletAddressServiceUnavailable {
         unavailable: bool,
+    },
+    BeginWalletLiveGeneration,
+    ReconcileWalletLivePresence {
+        generation: u64,
+        presence: WalletLivePresence,
+        observed_at_ms: i64,
+    },
+    MarkWalletLiveStateFailed {
+        generation: u64,
+        observed_at_ms: i64,
+    },
+    MarkWalletStreamResynced {
+        generation: u64,
+        observed_at_ms: i64,
+    },
+    RecordWalletHistoryPage {
+        generation: u64,
+        visible_rows: usize,
+    },
+    RearmWalletHistoryWalk {
+        generation: u64,
     },
     UpsertConnectedAppSession {
         session: ConnectedAppSession,
@@ -913,6 +935,8 @@ pub enum EngineError {
     OutboundTransfer(#[from] OutboundTransferError),
     #[error(transparent)]
     WalletAddressDirectory(#[from] WalletAddressDirectoryError),
+    #[error(transparent)]
+    WalletLive(#[from] WalletLiveError),
     #[error(transparent)]
     ConnectedApp(#[from] ConnectedAppError),
     #[error("Mini App {0} is not installed")]
@@ -2899,6 +2923,55 @@ impl MessagingEngine {
                 runtime
                     .address_directory
                     .set_service_unavailable(unavailable);
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::BeginWalletLiveGeneration => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime.live.begin_generation()?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::ReconcileWalletLivePresence {
+                generation,
+                presence,
+                observed_at_ms,
+            } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime
+                    .live
+                    .apply_presence(generation, presence, observed_at_ms)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::MarkWalletLiveStateFailed {
+                generation,
+                observed_at_ms,
+            } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime
+                    .live
+                    .note_state_failure(generation, observed_at_ms)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::MarkWalletStreamResynced {
+                generation,
+                observed_at_ms,
+            } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime
+                    .live
+                    .mark_stream_resync(generation, observed_at_ms)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::RecordWalletHistoryPage {
+                generation,
+                visible_rows,
+            } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime.live.note_history_page(generation, visible_rows)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::RearmWalletHistoryWalk { generation } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime.live.rearm_history_walk(generation)?;
                 Ok(vec![Event::WalletRuntimeChanged { runtime }])
             }
             Command::UpsertConnectedAppSession { session } => {
@@ -5135,5 +5208,94 @@ mod wallet_address_engine_tests {
             engine.state().wallet.runtime.address_directory.known(&ActorId("unknown".into())).knowledge,
             WalletAddressKnowledge::Unknown
         );
+    }
+}
+
+
+#[cfg(test)]
+mod wallet_live_engine_tests {
+    use super::*;
+
+    #[test]
+    fn engine_fences_stale_wallet_live_generations_and_recovers_from_failures() {
+        let mut engine = MessagingEngine::new();
+        engine.execute(Command::BeginWalletLiveGeneration).unwrap();
+        let first = engine.state().wallet.runtime.live.generation;
+        assert_eq!(first, 1);
+
+        engine
+            .execute(Command::ReconcileWalletLivePresence {
+                generation: first,
+                presence: WalletLivePresence::Existing,
+                observed_at_ms: 1_000,
+            })
+            .unwrap();
+        engine
+            .execute(Command::MarkWalletLiveStateFailed {
+                generation: first,
+                observed_at_ms: 2_000,
+            })
+            .unwrap();
+        assert!(!engine.state().wallet.runtime.live.state_unreachable);
+        engine
+            .execute(Command::MarkWalletLiveStateFailed {
+                generation: first,
+                observed_at_ms: 3_000,
+            })
+            .unwrap();
+        assert!(engine.state().wallet.runtime.live.state_unreachable);
+
+        engine.execute(Command::BeginWalletLiveGeneration).unwrap();
+        let second = engine.state().wallet.runtime.live.generation;
+        assert_eq!(second, 2);
+        assert_eq!(
+            engine.execute(Command::MarkWalletLiveStateFailed {
+                generation: first,
+                observed_at_ms: 4_000,
+            }),
+            Err(EngineError::WalletLive(WalletLiveError::StaleGeneration {
+                current: second,
+                received: first,
+            }))
+        );
+        engine
+            .execute(Command::MarkWalletStreamResynced {
+                generation: second,
+                observed_at_ms: 5_000,
+            })
+            .unwrap();
+        assert!(!engine.state().wallet.runtime.live.stream_resync_due(
+            5_000 + crate::wallet::WALLET_LIVE_STREAM_RESYNC_MS - 1
+        ));
+    }
+
+    #[test]
+    fn engine_bounds_hidden_wallet_history_without_persisting_live_authority() {
+        let mut engine = MessagingEngine::new();
+        engine.execute(Command::BeginWalletLiveGeneration).unwrap();
+        let generation = engine.state().wallet.runtime.live.generation;
+        for _ in 0..crate::wallet::WALLET_LIVE_MAX_HIDDEN_PAGES {
+            engine
+                .execute(Command::RecordWalletHistoryPage {
+                    generation,
+                    visible_rows: 0,
+                })
+                .unwrap();
+        }
+        assert_eq!(
+            engine.state().wallet.runtime.live.hidden_pages_without_visible_rows,
+            crate::wallet::WALLET_LIVE_MAX_HIDDEN_PAGES
+        );
+        engine
+            .execute(Command::RearmWalletHistoryWalk { generation })
+            .unwrap();
+        assert_eq!(
+            engine.state().wallet.runtime.live.hidden_pages_without_visible_rows,
+            0
+        );
+
+        let serialized = serde_json::to_string(engine.state()).unwrap();
+        let restored: MessagingState = serde_json::from_str(&serialized).unwrap();
+        assert_eq!(restored.wallet.runtime.live.generation, 0);
     }
 }
