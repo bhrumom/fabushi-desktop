@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 8722,
+    "unread": 8698,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,11 +13478,11 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Accepted prefix reaches 7,403/16,125; all cmark-gfm 7,242-7,403 exact-read/decomposed; unread=8,722, unknown=15,845, omitted=0. Reading closes no unknown.",
-    "source_authority_evidence": "cmark-gfm shipping reachability is direct through Telegram IV Markdown. Parser memory/depth/abort lifecycle, AST ownership/UAF protection, Unicode/entity/escaping, dangerous URL/raw HTML safety, GFM extensions, fuzz/pathological/spec/roundtrip oracles and development-only inputs are classified against existing source-neutral Fabushi owners. Production equivalence remains open.",
-    "current_source_read_through": 7403,
-    "first_unread_order": 7404,
-    "first_unread_path": "Telegram/ThirdParty/expected::.appveyor.yml"
+    "source_read_reconciliation": "Accepted prefix reaches 7,427/16,125; cmark-gfm 7,242-7,403 and expected 7,404-7,427 exact-read/decomposed; unread=8,698, unknown=15,845, omitted=0. Reading closes no unknown.",
+    "source_authority_evidence": "cmark-gfm shipping reachability remains direct through Telegram IV Markdown; its parser lifecycle/security/performance responsibilities remain mapped-open. The pinned expected component adds language-neutral typed success/error settlement, ownership/propagation and focused regression oracles; these map to existing Rust Result/Option and TypeScript discriminated-result contracts under canonical Coordinator/Host/Runner/domain owners, with Build/Release provenance retained. Predecessor de430cbd failed fail-closed on a malformed 38-character cmark stats.py identity; this descendant corrects it without weakening validation.",
+    "current_source_read_through": 7427,
+    "first_unread_order": 7428,
+    "first_unread_path": "Telegram/ThirdParty/fcitx5-qt::.clang-format"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 7403,
-    "first_unread_order": 7404,
-    "first_unread_path": "Telegram/ThirdParty/expected::.appveyor.yml",
+    "read_through": 7427,
+    "first_unread_order": 7428,
+    "first_unread_path": "Telegram/ThirdParty/fcitx5-qt::.clang-format",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {

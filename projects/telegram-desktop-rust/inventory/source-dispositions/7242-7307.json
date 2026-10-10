@@ -2337,7 +2337,7 @@
         "Telegram/cmake/td_iv.cmake -> desktop-app::external_cmark_gfm",
         "projects/telegram-desktop-rust/dossiers/iv-markdown-article-complete-read.md -> existing Fabushi rich-content owners"
       ],
-      "notes": "responsibility_cluster=performance-pathological-oracle; accepted direct gitlink entry; reading closes no unknown and authorizes no source-shaped parser/runtime",
+      "notes": "responsibility_cluster=performance-pathological-oracle; accepted direct gitlink entry; reading closes no unknown and authorizes no source-shaped parser/runtime; corrected malformed 38-character blob identity from predecessor de430cbd authority failure; accepted object verified against desktop-app/cmark-gfm@d7d4a24",
       "recursive_order": 7288,
       "source_path": "Telegram/ThirdParty/cmark-gfm::bench/stats.py",
       "source_blob_sha": "c244b419f66624bd2d2d3cb028d1f65edabc22",
