@@ -4,6 +4,7 @@
 export const KATEX_ASSET = "/upstream/assets/katex-DHMw6HUq.js";
 export const MAX_ASSISTANT_MATH_EXPRESSION_LENGTH = 32 * 1024;
 export const MAX_ASSISTANT_MATH_EXPANSIONS = 1_000;
+export const MAX_ASSISTANT_MATH_GROUP_DEPTH = 48;
 export const MAX_ASSISTANT_MATH_SIZE_EM = 1_000;
 export const MAX_ASSISTANT_MATH_MARKUP_BYTES = 8 * 1024 * 1024;
 export const DEFAULT_ASSISTANT_MATH_CACHE_BUDGET_BYTES = 32 * 1024 * 1024;
@@ -77,6 +78,35 @@ function assertAssistantMathExpressionWithinLimit(expression: string, maxExpress
   }
 }
 
+export function assertAssistantMathGroupDepthWithinLimit(
+  expression: string,
+  maxDepth = MAX_ASSISTANT_MATH_GROUP_DEPTH,
+): void {
+  const boundedMaxDepth = normalizeNonNegativeIntegerBudget(maxDepth);
+  let depth = 0;
+  for (let index = 0; index < expression.length; index += 1) {
+    const character = expression[index];
+    if (character === "\\") {
+      index += 1;
+      continue;
+    }
+    if (character === "%") {
+      while (index + 1 < expression.length && expression[index + 1] !== "\n" && expression[index + 1] !== "\r") {
+        index += 1;
+      }
+      continue;
+    }
+    if (character === "{") {
+      depth += 1;
+      if (depth > boundedMaxDepth) {
+        throw new Error(`Assistant math group nesting exceeds the ${boundedMaxDepth}-level parsing limit.`);
+      }
+    } else if (character === "}") {
+      depth = Math.max(0, depth - 1);
+    }
+  }
+}
+
 class AssistantMathRenderBudgetError extends Error {
   constructor(maxMarkupBytes: number) {
     super(`Assistant math rendered markup exceeds the ${maxMarkupBytes}-byte safety budget.`);
@@ -105,6 +135,7 @@ export function renderKatexMarkup(
 ): string {
   const boundedExpressionLength = normalizeNonNegativeIntegerBudget(maxExpressionLength);
   assertAssistantMathExpressionWithinLimit(expression, boundedExpressionLength);
+  assertAssistantMathGroupDepthWithinLimit(expression);
   const normalizedExpression = normalizeAssistantMathLocalizedDigits(expression);
   const boundedMarkupBytes = normalizeNonNegativeIntegerBudget(maxMarkupBytes);
   const safety = {
