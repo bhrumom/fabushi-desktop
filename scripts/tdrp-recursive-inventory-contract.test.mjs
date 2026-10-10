@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { checkRecursiveInventory } from './tdrp-recursive-inventory-contract.mjs';
+import { checkRecursiveInventory, checkSourceDispositionPrefix } from './tdrp-recursive-inventory-contract.mjs';
 
 const s = digit => digit.repeat(40);
 function fixture() {
@@ -87,4 +87,84 @@ test('stale human-readable inventory accounting fails closed', () => {
   const g=fixture();
   g.inventoryIndex.inventory.note='Recursive source census 6; unknown 6, unread 4, omitted 0.';
   assert.throws(() => checkRecursiveInventory(g),/inventory detail narrative unread count drift/);
+});
+
+
+test('source disposition prefix crosses the root boundary only with exact component identity', () => {
+  const f=fixture();
+  const rows=[
+    {
+      recursive_order:1,
+      source_path:'vendor/a',
+      source_blob_sha:s('2'),
+      read_complete:true,
+      responsibility_decomposition_complete:true
+    },
+    {
+      recursive_order:2,
+      source_path:'vendor/a::docs',
+      source_blob_sha:s('3'),
+      source_identity:{...f.entries[1]},
+      read_complete:true,
+      responsibility_decomposition_complete:true
+    }
+  ];
+  const result=checkSourceDispositionPrefix({
+    rows,
+    prefix:{first_order:1,last_order:2,entries:2},
+    entries:f.entries
+  });
+  assert.equal(result.read_through,2);
+});
+
+test('component source disposition identity drift fails closed field by field', () => {
+  const f=fixture();
+  const base={
+    recursive_order:2,
+    source_path:'vendor/a::docs',
+    source_blob_sha:s('3'),
+    source_identity:{...f.entries[1]},
+    read_complete:true,
+    responsibility_decomposition_complete:true
+  };
+  for (const [field,value] of [
+    ['repository','vendor/wrong'],
+    ['commit',s('9')],
+    ['scope','nested-gitlink'],
+    ['mount','vendor/wrong'],
+    ['path','wrong'],
+    ['object',s('9')],
+    ['mode','100644'],
+    ['type','blob']
+  ]) {
+    const row={...base,source_identity:{...base.source_identity,[field]:value}};
+    assert.throws(() => checkSourceDispositionPrefix({
+      rows:[
+        {recursive_order:1,source_path:'vendor/a',source_blob_sha:s('2'),read_complete:true,responsibility_decomposition_complete:true},
+        row
+      ],
+      prefix:{first_order:1,last_order:2,entries:2},
+      entries:f.entries
+    }),new RegExp(field + ' drift'));
+  }
+});
+
+test('component source disposition cannot omit identity or create order gaps', () => {
+  const f=fixture();
+  assert.throws(() => checkSourceDispositionPrefix({
+    rows:[
+      {recursive_order:1,source_path:'vendor/a',source_blob_sha:s('2'),read_complete:true,responsibility_decomposition_complete:true},
+      {recursive_order:2,source_path:'vendor/a::docs',source_blob_sha:s('3'),read_complete:true,responsibility_decomposition_complete:true}
+    ],
+    prefix:{first_order:1,last_order:2,entries:2},
+    entries:f.entries
+  }),/missing source_identity/);
+  assert.throws(() => checkSourceDispositionPrefix({
+    rows:[
+      {recursive_order:1,source_path:'vendor/a',source_blob_sha:s('2'),read_complete:true,responsibility_decomposition_complete:true},
+      {recursive_order:3,source_path:'vendor/a::cppgir',source_blob_sha:s('4'),source_identity:{...f.entries[2]},read_complete:true,responsibility_decomposition_complete:true}
+    ],
+    prefix:{first_order:1,last_order:2,entries:2},
+    entries:f.entries
+  }),/outside deterministic prefix|gap/);
 });

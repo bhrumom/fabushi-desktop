@@ -7,6 +7,65 @@ const sha = value => typeof value === 'string' && /^[0-9a-f]{40}$/.test(value);
 const key = row => [row.scope, row.repository, row.commit, row.parent || '', row.mount || '', row.path].join('\0');
 const componentKey = row => [row.parent || '', row.path || row.mount, row.repository, row.commit].join('\0');
 
+const sourceDisplayPath = row => row.scope === 'root'
+  ? row.path
+  : (row.mount + '::' + row.path);
+const sameOptional = (a, b) => (a ?? null) === (b ?? null);
+
+export function checkSourceDispositionPrefix({ rows, prefix, entries }) {
+  assert(Number.isInteger(prefix?.first_order) && prefix.first_order === 1, 'source-dispositions prefix must start at order 1');
+  assert(Number.isInteger(prefix?.last_order) && prefix.last_order >= 0, 'source-dispositions prefix last order missing');
+  assert(prefix.entries === prefix.last_order, 'source-dispositions prefix entry count drift');
+  assert(Array.isArray(rows), 'source-dispositions rows must be an array');
+  assert(rows.length === prefix.entries, 'source-dispositions row count differs from deterministic prefix');
+  assert(prefix.last_order <= entries.length, 'source-dispositions prefix exceeds recursive inventory');
+  const orders = new Set();
+  for (const row of rows) {
+    assert(Number.isInteger(row.recursive_order)
+      && row.recursive_order >= 1
+      && row.recursive_order <= prefix.last_order,
+    'source-dispositions row order outside deterministic prefix: ' + row.recursive_order);
+    assert(!orders.has(row.recursive_order), 'duplicate source-dispositions recursive order: ' + row.recursive_order);
+    orders.add(row.recursive_order);
+    const expected = entries[row.recursive_order - 1];
+    assert(expected, 'missing recursive source identity at order ' + row.recursive_order);
+    assert(row.source_path === sourceDisplayPath(expected),
+      'source-dispositions deterministic path drift at order ' + row.recursive_order
+      + ': expected ' + sourceDisplayPath(expected) + ', recorded ' + row.source_path);
+    assert(row.source_blob_sha === expected.object,
+      'source-dispositions deterministic blob drift at order ' + row.recursive_order + ': ' + row.source_path);
+    if (expected.scope !== 'root') {
+      const identity = row.source_identity;
+      assert(identity && typeof identity === 'object',
+        'component source-disposition missing source_identity at order ' + row.recursive_order);
+      for (const field of ['repository','commit','scope','path','object','mode','type']) {
+        assert(identity[field] === expected[field],
+          'component source-disposition ' + field + ' drift at order ' + row.recursive_order);
+      }
+      for (const field of ['parent','mount','size']) {
+        assert(sameOptional(identity[field], expected[field]),
+          'component source-disposition ' + field + ' drift at order ' + row.recursive_order);
+      }
+    } else if (row.source_identity) {
+      const identity = row.source_identity;
+      for (const field of ['repository','commit','scope','path','object','mode','type']) {
+        assert(identity[field] === expected[field],
+          'root source-disposition ' + field + ' drift at order ' + row.recursive_order);
+      }
+      for (const field of ['parent','mount','size']) {
+        assert(sameOptional(identity[field], expected[field]),
+          'root source-disposition ' + field + ' drift at order ' + row.recursive_order);
+      }
+    }
+    assert(row.read_complete === true && row.responsibility_decomposition_complete === true,
+      'source-dispositions prefix contains unread/incomplete row at order ' + row.recursive_order);
+  }
+  for (let order = 1; order <= prefix.last_order; order++) {
+    assert(orders.has(order), 'source-dispositions deterministic prefix has a gap at order ' + order);
+  }
+  return { read_through: prefix.last_order, orders };
+}
+
 /**
  * Compare the live, recursively enumerated Git objects against all three
  * durable TDRP stores. Only GitHub Actions may execute this verification.
