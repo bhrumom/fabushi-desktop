@@ -266,9 +266,9 @@
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
     "unknown_minimum": 15845,
-    "unread_minimum": 7895,
+    "unread_minimum": 7893,
     "omitted_known": 0,
-    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 8,230; unknown=15,845, unread=7,895, omitted=0."
+    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 8,232; unknown=15,845, unread=7,893, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -282,7 +282,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Source/product/release closure open. Deterministic exact read-through 8,230/16,125; first unread 8,231 Telegram/ThirdParty/hunspell::ChangeLog; unread 7,895; unknown 15,845; omitted 0. Orders 8,227–8,230 are exact pinned Hunspell provenance/license reads; current descendant exact-head Actions remain required. Source reading does not close unknown. Native method/language/width/scriptVariant/candidate truth remains mapped-open."
+    "note": "Source/product/release closure open. Deterministic exact read-through 8,232/16,125; unread 7,893; unknown 15,845; omitted 0. Orders 8,227–8,232 are exact pinned Hunspell provenance/history reads; exact order 8,233 identity must come from accepted recursive inventory. Current descendant exact-head Actions remain required. Source reading does not close unknown. Native method/language/width/scriptVariant/candidate truth remains mapped-open."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",
@@ -633,9 +633,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 8230,
-    "first_unread_order": 8231,
-    "first_unread_path": "Telegram/ThirdParty/hunspell::ChangeLog",
+    "read_through": 8232,
+    "first_unread_order": 8233,
+    "first_unread_path": "pending accepted recursive inventory identity after ChangeLog.O",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
