@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 8305,
+    "unread": 8289,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,11 +13478,11 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Accepted prefix 7,820/16,125; third black icon window exact-byte plus visual inspected across language/method/symbol modes; unread 8,305; unknown 15,845; omitted 0. Next is black wm2.",
-    "source_authority_evidence": "Artifact 11680830198 (sha256:e05eecc728d2b69fdbf944ef0d600354c698197730832fb9ef7120629f7d1b2a) exact-materialized 7,805–7,820; all identities matched and image semantics visually reviewed. Descendant exact-head Actions required.",
-    "current_source_read_through": 7820,
-    "first_unread_order": 7821,
-    "first_unread_path": "Telegram/ThirdParty/hime::icons/black/wm2.png"
+    "source_read_reconciliation": "Accepted prefix 7,836/16,125; existing durable 7,821–7,836 Hime black-tail/blue icon shard reconciled into master accounting; unread 8,289; unknown 15,845; omitted 0. Next is blue ez.png.",
+    "source_authority_evidence": "Predecessor artifact 11680237607 (sha256:ec7d9a56248c20177ea718d0da67c9d81d10587e343270e5efb766691d1c9e4d) exact-materialized 7,821–7,836; all recorded identities/sizes matched and glyph semantics were visually reviewed. Descendant exact-head Actions required.",
+    "current_source_read_through": 7836,
+    "first_unread_order": 7837,
+    "first_unread_path": "Telegram/ThirdParty/hime::icons/blue/ez.png"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 7820,
-    "first_unread_order": 7821,
-    "first_unread_path": "Telegram/ThirdParty/hime::icons/black/wm2.png",
+    "read_through": 7836,
+    "first_unread_order": 7837,
+    "first_unread_path": "Telegram/ThirdParty/hime::icons/blue/ez.png",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
