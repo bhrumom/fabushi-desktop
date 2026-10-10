@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 8049,
+    "unread_minimum": 8030,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through 8,076; unread 8,049; unknown 15,845; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition through 8,095; unread 8,030; unknown 15,845; omitted 0."
   },
   "latest_recursive_evidence": {
     "run_id": 38084031087,
@@ -46,7 +46,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live authority exact through 8,076; first unread 8,077 Telegram/ThirdParty/hime::src/IMdkit/lib/i18nIc.c; unread_minimum 8,049; unknown 15,845; omitted 0.",
+  "note": "Live authority exact through 8,095; first unread 8,096 Telegram/ThirdParty/hime::src/gtab-tsin-fname.c; unread_minimum 8,030; unknown 15,845; omitted 0.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -64,10 +64,10 @@
       6541,
       6627
     ],
-    "current_source_read_through": 8076,
-    "first_unread_order": 8077,
-    "first_unread_path": "Telegram/ThirdParty/hime::src/IMdkit/lib/i18nIc.c",
-    "current_head_source_authority_evidence": "Artifact 11681780325 (sha256:92d496e33e3f5fdd523a0033ce41bcac995dd829643116fda6581650fb38ced8) at 46dfaf8102187cc46824362b143e9ac4f3d4b4b9 materialized 8,013–8,076 with exact identity/mode/size/SHA-256; reading closes no unknown; descendant Actions required."
+    "current_source_read_through": 8095,
+    "first_unread_order": 8096,
+    "first_unread_path": "Telegram/ThirdParty/hime::src/gtab-tsin-fname.c",
+    "current_head_source_authority_evidence": "Orders 8,077–8,095 were read directly from pinned hime-ime/hime@9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5; each returned Git blob SHA matched accepted recursive inventory. Current-head Actions remain in progress and are required before acceptance."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -76,9 +76,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 8076,
-    "first_unread_order": 8077,
-    "first_unread_path": "Telegram/ThirdParty/hime::src/IMdkit/lib/i18nIc.c",
+    "read_through": 8095,
+    "first_unread_order": 8096,
+    "first_unread_path": "Telegram/ThirdParty/hime::src/gtab-tsin-fname.c",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }
