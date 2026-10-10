@@ -9,7 +9,7 @@ import { Plugin, PluginKey, TextSelection } from "@tiptap/pm/state";
 import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import type { EmojiEntry } from "../cards/transcript-card/emoji-catalog";
 import type { EditorMcpSuggestion, EditorMentionSuggestion, EditorSuggestionEntry, EditorWorkflowSuggestion } from "./editor-suggestion-provider";
-import { promptEditorKeyAction, shouldHoldScopeFenceDuringComposition } from "./input-composition-state";
+import { compositionOnlyInputStatus, promptEditorKeyAction, shouldHoldScopeFenceDuringComposition, type PlatformInputStatusSnapshot } from "./input-composition-state";
 
 // Immutable editor closure: e9n/hft in index-UbX-y3il.js. The package graph
 // is intentionally owned by B6; this leaf only imports the released graph.
@@ -100,6 +100,7 @@ export interface PromptRichTextEditorProps {
   onSubmit(): void | Promise<void>;
   onEscape(): void;
   onPasteFiles(files: File[]): void;
+  onInputStatusChange?(status: PlatformInputStatusSnapshot): void;
   onControls?(controls: PromptEditorControls | null): void;
 }
 
@@ -709,9 +710,9 @@ function isPromptEditingTarget(target: EventTarget | null): boolean {
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=4742034
 // @evidence recovered/frontend/app/assets/index-UbX-y3il.js#byteOffset=5953061
 
-export function PromptRichTextEditor({ prompt, richText, scopeKey = "", clearGeneration = 0, disabled = false, placeholder, providers, canSubmit, onChange, onSubmit, onEscape, onPasteFiles, onControls }: PromptRichTextEditorProps) {
-  const callbacks = useRef({ canSubmit, onChange, onSubmit, onEscape, onPasteFiles });
-  callbacks.current = { canSubmit, onChange, onSubmit, onEscape, onPasteFiles };
+export function PromptRichTextEditor({ prompt, richText, scopeKey = "", clearGeneration = 0, disabled = false, placeholder, providers, canSubmit, onChange, onSubmit, onEscape, onPasteFiles, onInputStatusChange, onControls }: PromptRichTextEditorProps) {
+  const callbacks = useRef({ canSubmit, onChange, onSubmit, onEscape, onPasteFiles, onInputStatusChange });
+  callbacks.current = { canSubmit, onChange, onSubmit, onEscape, onPasteFiles, onInputStatusChange };
   const extensions = useMemo(() => createPromptEditorExtensions(placeholder, providers), [placeholder, providers]);
   const initialContent = useMemo(() => promptEditorContent(prompt, richText), []);
   const previousExternalContent = useRef({ prompt, richText });
@@ -745,12 +746,14 @@ export function PromptRichTextEditor({ prompt, richText, scopeKey = "", clearGen
           // scope changes is fenced separately below and must not be released by
           // its trailing beforeinput/input events.
           compositionActive.current = true;
+          callbacks.current.onInputStatusChange?.(compositionOnlyInputStatus(true));
           compositionScopeFence.current = null;
           scopeFence.current = null;
           return false;
         },
         compositionend: () => {
           compositionActive.current = false;
+          callbacks.current.onInputStatusChange?.(compositionOnlyInputStatus(false));
           // Force the external-content reconciliation effect to run even when
           // the parent props were last updated while composition was active.
           setCompositionSettlementGeneration((generation) => generation + 1);

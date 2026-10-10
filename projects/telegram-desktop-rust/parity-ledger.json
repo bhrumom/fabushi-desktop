@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 8177,
+    "unread": 8113,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,11 +13478,11 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Accepted prefix 7,948/16,125; Hime gray language/input-method/width/script-variant window 7,933–7,948 exact-read and visually inspected; unread 8,177; unknown 15,845; omitted 0. Next is gray hime-tray.png.",
-    "source_authority_evidence": "GitHub Actions source-authority artifact 11680793020 (sha256:b767c2137f6f7c3e0d451197583a45868c7da1c2c33f7eb7e917950ec8ff22ee) at 2b3711e8f0f35d664af5dafe567e2089201f869d materialized accepted Hime 7,933–7,948; all PNGs visually inspected. The full/half × simplified/traditional and halfwidth-kana rows prove independent typed status axes. Source reading only; descendant exact-head Actions required.",
-    "current_source_read_through": 7948,
-    "first_unread_order": 7949,
-    "first_unread_path": "Telegram/ThirdParty/hime::icons/gray/hime-tray.png"
+    "source_read_reconciliation": "Accepted prefix 8,012/16,125; Hime gray-tail/root-brand/pink-theme window 7,949–8,012 exact-read and visually/textually inspected; unread 8,113; unknown 15,845; omitted 0. Next is pink scj.png.",
+    "source_authority_evidence": "GitHub Actions source-authority artifact 11681552029 (sha256:83a3108678dafcdda74afec1bcffffb9606f48315623fe24d4b5bf9a1e5d8fd4) at 7d155a0461bfe318da513ada5db7dfb65d71b71f materialized accepted Hime 7,949–8,012. 63 PNGs were visually inspected; pink COPYING text was read. Gray/pink artwork is theme-only replacement; Hime root mascot is branding and must not ship. Source reading only; descendant exact-head Actions required.",
+    "current_source_read_through": 8012,
+    "first_unread_order": 8013,
+    "first_unread_path": "Telegram/ThirdParty/hime::icons/pink/scj.png"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 7948,
-    "first_unread_order": 7949,
-    "first_unread_path": "Telegram/ThirdParty/hime::icons/gray/hime-tray.png",
+    "read_through": 8012,
+    "first_unread_order": 8013,
+    "first_unread_path": "Telegram/ThirdParty/hime::icons/pink/scj.png",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {

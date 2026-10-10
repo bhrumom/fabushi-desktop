@@ -3,6 +3,7 @@ import { COMPOSER_ATTACHMENT_LIMIT, attachmentBasename, formatAttachmentBytes, i
 import { useVoiceSession, VoiceWaveform, type VoiceTranscriber } from "./voice";
 import { ComposerReplyPill, replyComposerPlaceholder, type ComposerReplyTarget } from "./reply-preview";
 import { PromptRichTextEditor, type PromptEditorControls, type PromptEditorProviders } from "./rich-text-editor";
+import { compositionOnlyInputStatus, platformInputStatusText, type PlatformInputStatusSnapshot } from "./input-composition-state";
 import { SandIcon, SandIconButton } from "../../../ui/sand-kit-primitives";
 import { SandMenuContent, SandMenuItem, SandMenuRoot, SandMenuTrigger } from "../../../ui/sand-floating-primitives";
 import { SandSpinner } from "../../../ui/sand-status-primitives";
@@ -76,6 +77,7 @@ export function ConversationComposer({ acceptedSendGeneration = 0, canExchangeSt
   const editorControls = useRef<PromptEditorControls | null>(null);
   const dragDepth = useRef(0);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [inputStatus, setInputStatus] = useState<PlatformInputStatusSnapshot>(() => compositionOnlyInputStatus(false));
   const draftRef = useRef(draft);
   const hasPayload = !isComposerDraftEmpty(draft);
   draftRef.current = draft;
@@ -202,6 +204,7 @@ export function ConversationComposer({ acceptedSendGeneration = 0, canExchangeSt
             else editorControls.current?.blur();
           }}
           onPasteFiles={stageFiles}
+          onInputStatusChange={setInputStatus}
           onSubmit={onSubmit}
           placeholder={replyTarget == null ? placeholder : replyComposerPlaceholder(replyTarget.preview)}
           prompt={draft.prompt}
@@ -210,6 +213,7 @@ export function ConversationComposer({ acceptedSendGeneration = 0, canExchangeSt
           scopeKey={scopeKey}
         />
         {voice.isRecording || voice.isActivating ? <span aria-live="polite" className="sand-prompt-voice-status" role="status">Listening…</span> : null}
+        {platformInputStatusText(inputStatus) == null ? null : <p aria-live="polite" className="fabushi-input-status" data-testid="input-composition-status" role="status">{platformInputStatusText(inputStatus)}</p>}
         <div className="sand-prompt-actions-row">
           <SandIconButton aria-label="Attach file" className={PROMPT_ATTACH_CLASS} disabled={disabled || atLimit || voiceBusy} icon="plus" onClick={() => fileInput.current?.click()} shape="circle" size="lg" type="button" variant="default" />
           {onExchangeStash == null ? null : <SandIconButton aria-label={hasStash ? "Swap saved draft" : "Store draft"} disabled={disabled || !canExchangeStash || voiceBusy} icon="arrow-swap" onClick={onExchangeStash} shape="circle" size="lg" title={`${hasStash ? "Swap saved draft" : "Store draft"} (Ctrl+Shift+Y)`} type="button" variant="default" />}

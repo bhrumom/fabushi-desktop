@@ -216,6 +216,36 @@ test('Messenger composer remains inside the desktop viewport for chat peers', as
   }
 });
 
+test('Composer exposes truthful accessible IME composition status without guessing platform details', async () => {
+  const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-input-status-regression-'));
+  const app = await launchDesktopApp(appDataDir);
+
+  try {
+    const page = await app.firstWindow();
+    await completeBrowserLogin(page);
+
+    const peer = page.locator('[data-testid^="peer-"]').first();
+    await expect(peer).toBeVisible();
+    await peer.click();
+
+    const editor = page.locator('.sand-prompt-field');
+    await expect(editor).toBeVisible();
+    await expect(page.getByTestId('input-composition-status')).toHaveCount(0);
+
+    await editor.dispatchEvent('compositionstart');
+    const status = page.getByTestId('input-composition-status');
+    await expect(status).toBeVisible();
+    await expect(status).toHaveAttribute('role', 'status');
+    await expect(status).toHaveText('Composing text. Input method, language, width mode, and script variant are not reported by the platform.');
+
+    await editor.dispatchEvent('compositionend');
+    await expect(status).toHaveCount(0);
+  } finally {
+    await app.close();
+    await rm(appDataDir, { recursive: true, force: true });
+  }
+});
+
 test('switching peers keeps dynamic avatars visible and narrow layouts can open the info panel', async () => {
   const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-messenger-avatar-info-regression-'));
   const app = await launchDesktopApp(appDataDir);
