@@ -9,8 +9,8 @@
   },
   "deterministic_recursive_prefix": {
     "first_order": 1,
-    "last_order": 8162,
-    "entries": 8162
+    "last_order": 8230,
+    "entries": 8230
   },
   "semantics": {
     "development_only_non_applicable_is_not_omission": true,
@@ -1313,6 +1313,30 @@
       "first_order": 8136,
       "last_order": 8162,
       "entries": 27
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/8163-8225.json",
+      "first_order": 8163,
+      "last_order": 8225,
+      "entries": 63
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/8226-8226.json",
+      "first_order": 8226,
+      "last_order": 8226,
+      "entries": 1
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/8227-8227.json",
+      "first_order": 8227,
+      "last_order": 8227,
+      "entries": 1
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/8228-8230.json",
+      "first_order": 8228,
+      "last_order": 8230,
+      "entries": 3
     }
   ],
   "rebaseline_overrides": {
