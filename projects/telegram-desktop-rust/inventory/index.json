@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 8971,
+    "unread_minimum": 8884,
     "omitted_known": 0,
-    "note": "Recursive source census 16,125; exact read/decomposition through 7,154; unread 8,971; unknown 15,845; omitted 0. Pinned TooManyCooks is fully read, but applicable runtime/quality responsibilities remain mapped-open."
+    "note": "Recursive source census 16,125; exact read/decomposition through 7,241; unread 8,884; unknown 15,845; omitted 0. google/cld3 is fully read; local language-classification capability remains mapped-open with current shipping owner absent."
   },
   "latest_recursive_evidence": {
     "run_id": 38062398837,
@@ -60,10 +60,10 @@
       6541,
       6627
     ],
-    "current_source_read_through": 7154,
-    "first_unread_order": 7155,
-    "first_unread_path": "Telegram/ThirdParty/cld3::.github/workflows/main.yml",
-    "current_head_source_authority_evidence": "Orders 7,057-7,154 exact-read remaining TooManyCooks runtime/build/package authority. Existing-owner-first mapping remains open; no unknown was closed."
+    "current_source_read_through": 7241,
+    "first_unread_order": 7242,
+    "first_unread_path": "Telegram/ThirdParty/cmark-gfm::.editorconfig",
+    "current_head_source_authority_evidence": "Orders 7,155-7,241 exact-read google/cld3 and trace local language classification to Telegram translation consumers. Current Fabushi shipping tree lacks a language/translation classifier owner; no unknown closed."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -72,9 +72,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 7154,
-    "first_unread_order": 7155,
-    "first_unread_path": "Telegram/ThirdParty/cld3::.github/workflows/main.yml",
+    "read_through": 7241,
+    "first_unread_order": 7242,
+    "first_unread_path": "Telegram/ThirdParty/cmark-gfm::.editorconfig",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }

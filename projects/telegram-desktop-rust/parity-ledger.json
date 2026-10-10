@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 8971,
+    "unread": 8884,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,11 +13478,11 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Accepted recursive prefix reaches 7,154/16,125 and completes pinned TooManyCooks; unread=8,971, unknown=15,845, omitted=0. Reading closes no unknown.",
-    "source_authority_evidence": "Orders 7,057-7,154 exact-read TooManyCooks runtime/build/package inputs and map them existing-owner-first to Coordinator/Host/Runner/canonical messaging/Build-Release; semantic verification remains open.",
-    "current_source_read_through": 7154,
-    "first_unread_order": 7155,
-    "first_unread_path": "Telegram/ThirdParty/cld3::.github/workflows/main.yml"
+    "source_read_reconciliation": "Accepted prefix reaches 7,241/16,125; google/cld3 87/87 entries read/decomposed; unread=8,884, unknown=15,845, omitted=0. Reading closes no unknown.",
+    "source_authority_evidence": "CLD3 language detection traced to Platform::Language::Recognize consumers. Current Fabushi has conceptual Canonical Translation gateway mapping but no shipping classifier path; minimal owner requires ADR and production implementation.",
+    "current_source_read_through": 7241,
+    "first_unread_order": 7242,
+    "first_unread_path": "Telegram/ThirdParty/cmark-gfm::.editorconfig"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 7154,
-    "first_unread_order": 7155,
-    "first_unread_path": "Telegram/ThirdParty/cld3::.github/workflows/main.yml",
+    "read_through": 7241,
+    "first_unread_order": 7242,
+    "first_unread_path": "Telegram/ThirdParty/cmark-gfm::.editorconfig",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {

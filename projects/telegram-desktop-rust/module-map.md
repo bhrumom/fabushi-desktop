@@ -66,3 +66,7 @@ Updated: 2026-10-07
 ### TooManyCooks runtime authority — orders 7,057–7,154
 
 All 126 pinned TooManyCooks entries are exact-read. Runtime behavior maps to existing Coordinator/Host/Runner/canonical messaging/Build-Release owners; no TMC subsystem is created. Executor/priority, wait/wake/UAF, foreign callback lifetime, queue close/reclamation, CPU capacity/topology and build-quality responsibilities remain mapped-open pending focused GitHub Actions evidence.
+
+### CLD3 local language classification — orders 7,155–7,241
+
+All 87 pinned CLD3 entries are read. Product behavior is local text-language classification consumed by translation/AI-compose flows. No shipping Fabushi owner currently exists; the conceptual Canonical Translation service gateway remains mapped-open. A minimal source-neutral TextLanguageClassifier requires owner-absence ADR approval, implementation, focused multilingual/Unicode tests and exact-head evidence; no CLD3 provider/runtime is permitted.

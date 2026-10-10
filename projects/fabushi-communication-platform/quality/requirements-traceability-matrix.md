@@ -1,4 +1,4 @@
-Live Revision 9 authority (2026-10-10): telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 (root tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6). Root non-directory=6,653; recursive non-directory=16,125; read-through=7,154; first unread=7,155 Telegram/ThirdParty/cld3::.github/workflows/main.yml@b26ff5ec0300683c819c0c7f17edfc21bfdd0fc3; unread=8,971; unknown=15,845; omitted=0. Orders 7,057-7,154 exact-read the remaining TooManyCooks runtime/build/package inputs: executor/priority restoration, coroutine/awaitable lifetime, fork/join/UAF fencing, atomic wait/wake and teardown, foreign callback lifetime, CPU quota/topology/work-stealing, cancellation and build-option consistency. Existing canonical owners remain authoritative; all applicable TMC responsibilities remain mapped-open and reading closes no unknown. Fresh descendant exact-head GitHub Actions evidence is required.
+Live Revision 9 authority (2026-10-10): telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 (root tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6). Root non-directory=6,653; recursive non-directory=16,125; read-through=7,241; first unread=7,242 Telegram/ThirdParty/cmark-gfm::.editorconfig@12032e647502de7a91f241f75fcd7666be375875; unread=8,884; unknown=15,845; omitted=0. Orders 7,155-7,241 exact-read pinned google/cld3: UTF-8/interchange/script normalization, bounded ngram/script feature extraction, embedded neural language inference, probability/reliability output, multilingual/invalid-input tests, generated model parameters and build/license inputs. Telegram shipping consumers use Platform::Language::Recognize for translation/AI-compose flows. Fabushi currently has no shipping classifier/translation implementation, so the capability remains mapped-open and unknown is unchanged. Fresh descendant exact-head GitHub Actions evidence is required.
 
 # Requirements Traceability Matrix
 
@@ -647,3 +647,14 @@ The 811b83a1→b0d1fe5e upstream delta changes only order 5,166 `media_view_over
 | TDRP-R9-TMC-BUILD-QUALITY-CONSISTENCY-001 | concurrency-affecting build options consistent; sanitizer/fuzz/coverage exercise shipping semantics | exact-head Build/Release matrix | MAPPED |
 
 Predecessor 4028b761 runs `38062398837/38062398841` and pressure jobs `114243173186/114243173229` prove owner/regression health only. They do **not** satisfy these semantic oracles for the descendant. Independent review + same-head execution remain required before VERIFIED.
+
+### CLD3 language-classification RTM — 7,155–7,241
+
+| requirement_id | oracle / invariant | required execution | verdict |
+| --- | --- | --- | --- |
+| TDRP-R9-LANGUAGE-CLASSIFIER-001 | bounded local classification returns typed language/probability/reliability or unknown without network side effects | multilingual + short/empty/mixed-script unit/property tests | MAPPED |
+| TDRP-R9-LANGUAGE-UNICODE-001 | invalid/interchange-invalid UTF-8 cannot corrupt offsets/crash; script normalization is deterministic | Unicode fuzz/property + invalid-input corpus | MAPPED |
+| TDRP-R9-LANGUAGE-LONGTEXT-001 | long input is bounded deterministically and cannot cause unbounded CPU/memory | boundary/performance/soak | MAPPED |
+| TDRP-R9-LANGUAGE-CONSUMER-001 | translation/AI consumers treat low confidence as unknown and never expose unauthorized text | Translation-gateway contract + E2E once owner exists | BLOCKED-ON-PRODUCTION-OWNER |
+
+No row is VERIFIED. Current blocker is an absent shipping classifier/Translation gateway owner, not lack of source understanding.
