@@ -266,9 +266,9 @@
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
     "unknown_minimum": 15845,
-    "unread_minimum": 9325,
+    "unread_minimum": 9295,
     "omitted_known": 0,
-    "note": "Accepted 28ac576967a1026ecc89a927360fa0e138d7c88c tree 9d8fa87ce68c832d2f4c99f372a5bb672463c3e1; exact read-through 6,800; unknown=15,845, unread=9,325, omitted=0."
+    "note": "Accepted 28ac576967a1026ecc89a927360fa0e138d7c88c tree 9d8fa87ce68c832d2f4c99f372a5bb672463c3e1; exact read-through 6,830; unknown=15,845, unread=9,295, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
