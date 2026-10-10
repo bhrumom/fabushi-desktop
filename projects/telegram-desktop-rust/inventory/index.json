@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 7868,
+    "unread_minimum": 7791,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through deterministic order 8,257; unread 7,868; unknown 15,845; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition through deterministic order 8,334; unread 7,791; unknown 15,845; omitted 0."
   },
   "latest_recursive_evidence": {
     "run_id": 38084031087,
@@ -46,7 +46,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live authority exact through deterministic order 8,257; first unread 8,258 Telegram/ThirdParty/hunspell::man/Makefile.am; unread_minimum is 7,868; unknown remains 15,845; omitted remains 0.",
+  "note": "Live authority exact through deterministic order 8,334; first unread 8,335 Telegram/ThirdParty/hunspell::po/nb_NO.po; unread_minimum is 7,791; unknown remains 15,845; omitted remains 0.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -64,10 +64,10 @@
       6541,
       6627
     ],
-    "current_source_read_through": 8257,
-    "first_unread_order": 8258,
-    "first_unread_path": "Telegram/ThirdParty/hunspell::man/Makefile.am",
-    "current_head_source_authority_evidence": "Orders 8,243–8,257 were exact-read from pinned hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b using the immutable identities materialized by current-head authority artifact 11685032724; order 8,232 tree-size drift is corrected to 20,359 bytes. Descendant exact-head GitHub Actions remain required."
+    "current_source_read_through": 8334,
+    "first_unread_order": 8335,
+    "first_unread_path": "Telegram/ThirdParty/hunspell::po/nb_NO.po",
+    "current_head_source_authority_evidence": "Orders 8,258–8,334 were exact-read from pinned hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b and responsibility-decomposed across manuals, Windows build matrices, OSS-Fuzz, gettext generation, and locale catalogs. Descendant exact-head GitHub Actions remain required; source reading closes no unknown."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -76,9 +76,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 8257,
-    "first_unread_order": 8258,
-    "first_unread_path": "Telegram/ThirdParty/hunspell::man/Makefile.am",
+    "read_through": 8334,
+    "first_unread_order": 8335,
+    "first_unread_path": "Telegram/ThirdParty/hunspell::po/nb_NO.po",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }
