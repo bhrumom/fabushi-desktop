@@ -1,5 +1,5 @@
 {
-  "accepted_upstream": "b0d1fe5e08c963402b8b71648c70a2bf68e6fab2",
+  "accepted_upstream": "6fed91ffab9861771a75f29df65031b3c80b6941",
   "start": 5165,
   "end": 5177,
   "entries": [
@@ -12,8 +12,9 @@
     {
       "order": 5166,
       "path": "Telegram/SourceFiles/media/view/media_view_overlay_widget.cpp",
-      "blob": "e35f67119323850a3cea450548566186c8a2231c",
-      "consumer_symbol": "Media::View::OverlayWidget"
+      "blob": "2acbe80457cfc7d760ece77229ad2513b3fb2e41",
+      "consumer_symbol": "Media::View::OverlayWidget",
+      "rebaseline_note": "Re-attested after 28ac5769→6fed91ff upstream modification; exact current blob and responsibility delta were re-read before updating this manifest."
     },
     {
       "order": 5167,
@@ -82,5 +83,5 @@
       "consumer_symbol": "Media::View::PlaybackControls"
     }
   ],
-  "accepted_tree": "e279373aec283ebfcc6e3bb7385e51205acd84a2"
+  "accepted_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6"
 }

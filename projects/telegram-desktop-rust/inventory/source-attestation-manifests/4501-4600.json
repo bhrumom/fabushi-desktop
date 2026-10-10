@@ -1,5 +1,5 @@
 {
-  "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+  "accepted_upstream": "6fed91ffab9861771a75f29df65031b3c80b6941",
   "start": 4501,
   "end": 4600,
   "entries": [
@@ -126,14 +126,16 @@
     {
       "order": 4521,
       "path": "Telegram/SourceFiles/history/view/media/history_view_photo.cpp",
-      "blob": "44beb4ffa87e94f18184f0e3b7fb5d46b2dd9396",
-      "consumer_symbol": "history_view_photo"
+      "blob": "4a563307fe671139f6113e093351e4363fe72ebc",
+      "consumer_symbol": "history_view_photo",
+      "rebaseline_note": "Re-attested after 28ac5769→6fed91ff upstream modification; exact current blob and responsibility delta were re-read before updating this manifest."
     },
     {
       "order": 4522,
       "path": "Telegram/SourceFiles/history/view/media/history_view_photo.h",
-      "blob": "8bb536d269f75a00a04f40828ba8da7cc10ed364",
-      "consumer_symbol": "history_view_photo"
+      "blob": "2724cbfafca3611757e0192433ad297cc92c6122",
+      "consumer_symbol": "history_view_photo",
+      "rebaseline_note": "Re-attested after 28ac5769→6fed91ff upstream modification; exact current blob and responsibility delta were re-read before updating this manifest."
     },
     {
       "order": 4523,
@@ -604,5 +606,5 @@
       "consumer_symbol": "earn_format"
     }
   ],
-  "accepted_tree": "4ddb5182fc1ae238e4dc62a396614614b5b35f97"
+  "accepted_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6"
 }
