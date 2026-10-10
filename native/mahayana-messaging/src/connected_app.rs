@@ -163,16 +163,30 @@ pub struct ConnectedAppClaimRecord {
 
 impl ConnectedAppClaimRecord {
     pub fn validate(&self) -> Result<(), ConnectedAppError> {
+        // Durable claims are recovery authority, not a best-effort cache.
+        // A confirmed transfer must always retain the encrypted "not sent"
+        // answer that recovery can safely publish when no handoff occurred.
+        // A non-transfer answer is already terminal and therefore must not
+        // carry transfer operation or signed-payload state.
+        let decision_shape_valid = match self.decision {
+            ConnectedAppClaimDecision::Confirm => !self.answer.is_empty(),
+            ConnectedAppClaimDecision::Answer => {
+                !self.answer.is_empty()
+                    && self.operation_id.is_empty()
+                    && self.signed_payload.is_empty()
+            }
+        };
         if self.session_id == 0
             || !connected_app_request_id_valid(&self.request_id)
             || self.trace_id.chars().count() > CONNECTED_APP_TRACE_ID_MAX_CHARS
             || self.expires_at_ms <= 0
-            || self.created_at_ms < 0
+            || self.created_at_ms <= 0
             || self.operation_id.len() > CONNECTED_APP_OPERATION_ID_MAX_BYTES
             || self.signed_payload.len() > CONNECTED_APP_SIGNED_PAYLOAD_MAX_BYTES
             || self.answer.len() > CONNECTED_APP_ANSWER_MAX_BYTES
             || self.wallet_identity.as_ref().is_some_and(|identity| identity.validate().is_err())
             || (!self.signed_payload.is_empty() && self.operation_id.is_empty())
+            || !decision_shape_valid
         {
             return Err(ConnectedAppError::InvalidClaim);
         }
@@ -664,6 +678,62 @@ mod tests {
         assert_eq!(state.recoverable_claims_for_wallet(&rotated_revision, 500).len(), 1);
         let another_key = WalletTransferIdentity { public_key: vec![5; 32], ..wallet };
         assert!(state.recoverable_claims_for_wallet(&another_key, 500).is_empty());
+    }
+
+    #[test]
+    fn durable_claim_shape_fails_closed_for_recovery_unsafe_combinations() {
+        let base = ConnectedAppClaimRecord {
+            session_id: 7,
+            request_id: "claim-shape".into(),
+            trace_id: "trace".into(),
+            expires_at_ms: 1_000,
+            decision: ConnectedAppClaimDecision::Confirm,
+            wallet_identity: None,
+            operation_id: String::new(),
+            signed_payload: String::new(),
+            answer: vec![1],
+            created_at_ms: 100,
+        };
+        assert_eq!(
+            ConnectedAppClaimRecord {
+                answer: Vec::new(),
+                ..base.clone()
+            }
+            .validate(),
+            Err(ConnectedAppError::InvalidClaim)
+        );
+        assert_eq!(
+            ConnectedAppClaimRecord {
+                decision: ConnectedAppClaimDecision::Answer,
+                operation_id: "operation".into(),
+                ..base.clone()
+            }
+            .validate(),
+            Err(ConnectedAppError::InvalidClaim)
+        );
+        assert_eq!(
+            ConnectedAppClaimRecord {
+                decision: ConnectedAppClaimDecision::Answer,
+                signed_payload: "signed".into(),
+                ..base.clone()
+            }
+            .validate(),
+            Err(ConnectedAppError::InvalidClaim)
+        );
+        assert_eq!(
+            ConnectedAppClaimRecord {
+                created_at_ms: 0,
+                ..base.clone()
+            }
+            .validate(),
+            Err(ConnectedAppError::InvalidClaim)
+        );
+        ConnectedAppClaimRecord {
+            decision: ConnectedAppClaimDecision::Answer,
+            ..base
+        }
+        .validate()
+        .unwrap();
     }
 
     #[test]
