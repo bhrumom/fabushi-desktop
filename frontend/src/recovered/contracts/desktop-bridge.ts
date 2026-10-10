@@ -9,6 +9,19 @@ export interface ThemeState {
 export type DesktopUiDirection = "auto" | "ltr" | "rtl";
 export interface DesktopUiPreferences { locale: string; direction: DesktopUiDirection; reducedMotion: boolean; highContrast: boolean; textScale: number; }
 export interface DesktopAccessibilityState { screenReader: boolean; }
+export interface DesktopPlatformInputValue { readonly kind: "known" | "unknown"; readonly value?: string; }
+export interface DesktopPlatformInputState {
+  readonly method: DesktopPlatformInputValue;
+  readonly language: DesktopPlatformInputValue;
+  readonly width: DesktopPlatformInputValue;
+  readonly scriptVariant: DesktopPlatformInputValue;
+  readonly preedit: DesktopPlatformInputValue;
+  readonly candidate: DesktopPlatformInputValue;
+  readonly focus: "focused" | "blurred" | "unknown";
+  readonly lifecycle: "idle" | "focus" | "blur" | "composition-start" | "composition-update" | "composition-end" | "unknown";
+  readonly sampledAt: number;
+  readonly source: "native-platform";
+}
 export interface DesktopCallMediaPreferences { microphoneId: string | null; cameraId: string | null; }
 
 export type CursorAuthStatus =
@@ -538,6 +551,9 @@ export interface DesktopBridge {
   readonly accessibility: {
     get(): Promise<DesktopAccessibilityState>;
     onChanged(listener: BridgeListener<DesktopAccessibilityState>): Unsubscribe;
+  };
+  readonly platformInput: {
+    get(): Promise<DesktopPlatformInputState>;
   };
   readonly autoReviewInstructions: {
     get(): Promise<DesktopAutoReviewInstructions>;

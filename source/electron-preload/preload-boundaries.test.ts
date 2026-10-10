@@ -119,6 +119,7 @@ test("main RPC runtime exposes the frozen shared registry", () => {
   assert.equal(isMainMethod("definitelyNotMain"), false);
   assert.equal(MAIN_RPC_METHOD_TABLE.openExternal.args, "object");
   assert.equal(MAIN_RPC_METHOD_TABLE.getWindowState.args, "none");
+  assert.equal(MAIN_RPC_METHOD_TABLE.getPlatformInputState.args, "none");
 });
 
 
@@ -148,6 +149,33 @@ test("accessibility preload bridge uses the trusted main RPC and cleans up the l
   stop();
   assert.deepEqual(stopped, ["accessibility-support-changed"]);
   assert.deepEqual(calls, ["getAccessibilityState"]);
+});
+
+test("platform-input preload bridge exposes only the trusted main RPC snapshot", async () => {
+  const calls: string[] = [];
+  const nativeState = {
+    method: { kind: "known", value: "com.apple.keylayout.US" },
+    language: { kind: "unknown" },
+    width: { kind: "unknown" },
+    scriptVariant: { kind: "unknown" },
+    preedit: { kind: "unknown" },
+    candidate: { kind: "unknown" },
+    focus: "unknown",
+    lifecycle: "unknown",
+    sampledAt: 42,
+    source: "native-platform",
+  };
+  const bridge = createDesktopPreloadBridge({
+    ipc: { invoke: async () => null, sendSync: () => null, send: () => {}, on: () => {}, off: () => {} },
+    webFrame: { getZoomFactor: () => 1 },
+    mainEdge: {
+      async getPlatformInputState() { calls.push("getPlatformInputState"); return nativeState; },
+      subscribe() { return () => {}; },
+    } as never,
+    initialState: { experimentSnapshot: {}, themeState: { preference: "system", resolved: "light" }, egressTunnelEnabled: false, webauthnProxyEnabled: false, egressTunnelStatus: null },
+  });
+  assert.deepEqual(await bridge.platformInput.get(), nativeState);
+  assert.deepEqual(calls, ["getPlatformInputState"]);
 });
 
 test("attachment preload bridge normalizes native staging and commit contracts", () => {

@@ -75,7 +75,7 @@
       "fabushi_target": "existing canonical text-input/spellcheck + Resource + security/recovery + Build/test owners",
       "production_evidence": "mapping evidence only; source reading/history analysis is not production verification",
       "test_evidence": "Direct GitHub exact-commit full-file read of hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b/ChangeLog.O returned Git blob a2c712d73bc4f5d8cbfbe5eea5f0696ef9d921dd; no local build/test used. Current descendant GitHub Actions and focused production tests remain required.",
-      "notes": "Full 525-line legacy history was processed; applicable suggestion/compound/morphology/API compatibility semantics remain mapped-open.",
+      "notes": "Full legacy history was processed; exact Git-tree size is 20,359 bytes for immutable blob a2c712d73bc4f5d8cbfbe5eea5f0696ef9d921dd. The predecessor 21,588-byte transcription was authority drift and is corrected without weakening the validator.",
       "recursive_order": 8232,
       "source_path": "Telegram/ThirdParty/hunspell::ChangeLog.O",
       "source_blob_sha": "a2c712d73bc4f5d8cbfbe5eea5f0696ef9d921dd",
@@ -88,7 +88,7 @@
         "object": "a2c712d73bc4f5d8cbfbe5eea5f0696ef9d921dd",
         "mode": "100644",
         "type": "blob",
-        "size": 21588
+        "size": 20359
       },
       "responsibility": "Legacy MySpell/Hunspell engineering ledger: suggestion/compound/morphology evolution, API/interface compatibility and platform history. Preserve applicable mature behavioral constraints in existing canonical text-input/spellcheck/resource owners and retain historical provenance; do not ship a Hunspell-shaped runtime owner.",
       "source_binary_evidence": {

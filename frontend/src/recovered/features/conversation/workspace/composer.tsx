@@ -3,7 +3,7 @@ import { COMPOSER_ATTACHMENT_LIMIT, attachmentBasename, formatAttachmentBytes, i
 import { useVoiceSession, VoiceWaveform, type VoiceTranscriber } from "./voice";
 import { ComposerReplyPill, replyComposerPlaceholder, type ComposerReplyTarget } from "./reply-preview";
 import { PromptRichTextEditor, type PromptEditorControls, type PromptEditorProviders } from "./rich-text-editor";
-import { compositionOnlyInputStatus, platformInputStatusText, type PlatformInputStatusSnapshot } from "./input-composition-state";
+import { compositionOnlyInputStatus, platformInputStatusText, type NativePlatformInputStatusSnapshot, type PlatformInputStatusSnapshot } from "./input-composition-state";
 import { SandIcon, SandIconButton } from "../../../ui/sand-kit-primitives";
 import { SandMenuContent, SandMenuItem, SandMenuRoot, SandMenuTrigger } from "../../../ui/sand-floating-primitives";
 import { SandSpinner } from "../../../ui/sand-status-primitives";
@@ -48,6 +48,7 @@ export interface ConversationComposerProps {
   editorProviders?: PromptEditorProviders;
   scopeKey?: string;
   acceptedSendGeneration?: number;
+  platformInput?: { get(): Promise<NativePlatformInputStatusSnapshot> };
 }
 
 export function extractClipboardFiles(items: DataTransferItemList | null | undefined): File[] {
@@ -72,7 +73,7 @@ export function selectComposerFiles(files: readonly File[], existingCount: numbe
   return files.slice(0, remaining);
 }
 
-export function ConversationComposer({ acceptedSendGeneration = 0, canExchangeStash = false, draft, disabled = false, hasStash = false, notice, placeholder = "Ask anything, or drop a file.", transcribeAudio, onChange, onClearReplyTarget, onExchangeStash, onRemoveAttachment, onRemoveStash, onScheduleSend, onSendSilently, onSendStash, onStageFiles, onSubmit, replyTarget, editorProviders, scopeKey }: ConversationComposerProps) {
+export function ConversationComposer({ acceptedSendGeneration = 0, canExchangeStash = false, draft, disabled = false, hasStash = false, notice, placeholder = "Ask anything, or drop a file.", transcribeAudio, onChange, onClearReplyTarget, onExchangeStash, onRemoveAttachment, onRemoveStash, onScheduleSend, onSendSilently, onSendStash, onStageFiles, onSubmit, replyTarget, editorProviders, scopeKey, platformInput }: ConversationComposerProps) {
   const fileInput = useRef<HTMLInputElement>(null);
   const editorControls = useRef<PromptEditorControls | null>(null);
   const dragDepth = useRef(0);
@@ -209,6 +210,7 @@ export function ConversationComposer({ acceptedSendGeneration = 0, canExchangeSt
           placeholder={replyTarget == null ? placeholder : replyComposerPlaceholder(replyTarget.preview)}
           prompt={draft.prompt}
           providers={editorProviders}
+          platformInput={platformInput}
           richText={draft.richText}
           scopeKey={scopeKey}
         />

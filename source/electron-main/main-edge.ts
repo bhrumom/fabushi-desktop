@@ -13,6 +13,7 @@ import { getLocalDockerStatus, startLocalDockerBox, stopLocalDockerBox } from ".
 import type { DesktopCallMediaPort } from "./call-media.js";
 import { normalizeCommitStagedAttachmentsEdgeRequest, normalizeStageAttachmentEdgeRequest } from "./attachments/attachment-edge-wire.js";
 import { readDesktopAccessibilityState } from "./accessibility-support.js";
+import { readDesktopPlatformInputState } from "./platform-input.js";
 
 export const MAIN_EDGE_UNSERVED = "main/unserved-method";
 export const MAIN_EDGE_UPDATE_UNAVAILABLE = "main/update-unavailable";
@@ -62,6 +63,7 @@ export interface MainEdgeDeps {
   readonly platform: NodeJS.Platform;
   readonly delay?: (milliseconds: number) => Promise<void>;
   readonly detectTimeZone?: () => string | null | undefined;
+  readonly readPlatformInputState?: () => Promise<unknown>;
 }
 
 function invariant(condition: unknown, message: string): asserts condition { if (!condition) throw new Error(message); }
@@ -100,6 +102,7 @@ export function createMainEdgeHandlers(deps: MainEdgeDeps): HandlerMap {
     setTimeZoneOverride: (raw) => { const { timeZone } = req(raw); if (timeZone === null) invoke(deps.settingsStore, "setUserTimeZoneOverride", undefined); else if (typeof timeZone === "string" && isValidIanaTimeZone(timeZone)) invoke(deps.settingsStore, "setUserTimeZoneOverride", timeZone); const detected = (deps.detectTimeZone ?? detectTimeZone)(); void deps.syncHostSettingsToBox({ ...(detected == null ? {} : { userTimeZone: detected }), userTimeZoneOverride: invoke(deps.settingsStore, "getUserTimeZoneOverride") ?? "" }); return { detectedTimeZone: (deps.detectTimeZone ?? detectTimeZone)() ?? null, overrideTimeZone: invoke(deps.settingsStore, "getUserTimeZoneOverride") ?? null }; },
     getUiPreferences: () => invoke(deps.settingsStore, "getUiPreferences"),
     getAccessibilityState: () => readDesktopAccessibilityState(),
+    getPlatformInputState: async () => await (deps.readPlatformInputState?.() ?? readDesktopPlatformInputState({ platform: deps.platform })),
     setUiPreferences: (raw) => { const ui=normalizeSandUiPreferences(req(raw).preferences); invoke(deps.settingsStore, "setUiPreferences", ui); return invoke(deps.settingsStore, "getUiPreferences"); },
     getCallMediaPreferences: () => invoke(deps.settingsStore, "getCallMediaPreferences"),
     setCallMediaPreferences: (raw) => { const media=normalizeSandCallMediaPreferences(req(raw).preferences); invoke(deps.settingsStore, "setCallMediaPreferences", media); return invoke(deps.settingsStore, "getCallMediaPreferences"); },

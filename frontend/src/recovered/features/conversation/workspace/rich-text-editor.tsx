@@ -9,7 +9,7 @@ import { Plugin, PluginKey, TextSelection } from "@tiptap/pm/state";
 import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import type { EmojiEntry } from "../cards/transcript-card/emoji-catalog";
 import type { EditorMcpSuggestion, EditorMentionSuggestion, EditorSuggestionEntry, EditorWorkflowSuggestion } from "./editor-suggestion-provider";
-import { compositionOnlyInputStatus, promptEditorKeyAction, shouldHoldScopeFenceDuringComposition, type PlatformInputStatusSnapshot } from "./input-composition-state";
+import { compositionOnlyInputStatus, isCurrentPlatformInputSample, mergeNativePlatformInputStatus, promptEditorKeyAction, shouldHoldScopeFenceDuringComposition, type NativePlatformInputStatusSnapshot, type PlatformInputStatusSnapshot } from "./input-composition-state";
 
 // Immutable editor closure: e9n/hft in index-UbX-y3il.js. The package graph
 // is intentionally owned by B6; this leaf only imports the released graph.
@@ -101,6 +101,7 @@ export interface PromptRichTextEditorProps {
   onEscape(): void;
   onPasteFiles(files: File[]): void;
   onInputStatusChange?(status: PlatformInputStatusSnapshot): void;
+  readonly platformInput?: { get(): Promise<NativePlatformInputStatusSnapshot> };
   onControls?(controls: PromptEditorControls | null): void;
 }
 
@@ -710,7 +711,7 @@ function isPromptEditingTarget(target: EventTarget | null): boolean {
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=4742034
 // @evidence recovered/frontend/app/assets/index-UbX-y3il.js#byteOffset=5953061
 
-export function PromptRichTextEditor({ prompt, richText, scopeKey = "", clearGeneration = 0, disabled = false, placeholder, providers, canSubmit, onChange, onSubmit, onEscape, onPasteFiles, onInputStatusChange, onControls }: PromptRichTextEditorProps) {
+export function PromptRichTextEditor({ prompt, richText, scopeKey = "", clearGeneration = 0, disabled = false, placeholder, providers, canSubmit, onChange, onSubmit, onEscape, onPasteFiles, onInputStatusChange, onControls, platformInput }: PromptRichTextEditorProps) {
   const callbacks = useRef({ canSubmit, onChange, onSubmit, onEscape, onPasteFiles, onInputStatusChange });
   callbacks.current = { canSubmit, onChange, onSubmit, onEscape, onPasteFiles, onInputStatusChange };
   const extensions = useMemo(() => createPromptEditorExtensions(placeholder, providers), [placeholder, providers]);
@@ -726,6 +727,37 @@ export function PromptRichTextEditor({ prompt, richText, scopeKey = "", clearGen
   const emittedChangeSerial = useRef(0);
   const observedScopeKey = useRef(scopeKey);
   const observedClearGeneration = useRef(clearGeneration);
+  const platformInputRef = useRef(platformInput);
+  platformInputRef.current = platformInput;
+  const nativeInputRequestSerial = useRef(0);
+  const lastInputStatus = useRef<PlatformInputStatusSnapshot>(compositionOnlyInputStatus(false));
+  const emitInputStatus = (status: PlatformInputStatusSnapshot): void => {
+    lastInputStatus.current = status;
+    callbacks.current.onInputStatusChange?.(status);
+    const requestSerial = ++nativeInputRequestSerial.current;
+    const adapter = platformInputRef.current;
+    if (adapter == null) return;
+    const request = {
+      scopeKey: observedScopeKey.current,
+      generation: status.generation,
+      requestSerial,
+    };
+    void adapter.get().then((native) => {
+      const current = {
+        scopeKey: observedScopeKey.current,
+        generation: compositionGeneration.current,
+        requestSerial: nativeInputRequestSerial.current,
+      };
+      if (!isCurrentPlatformInputSample(request, current)) return;
+      const dom = lastInputStatus.current;
+      if (dom.generation !== request.generation) return;
+      const merged = mergeNativePlatformInputStatus(dom, native);
+      lastInputStatus.current = merged;
+      callbacks.current.onInputStatusChange?.(merged);
+    }).catch(() => {
+      // Native capability probes are optional and fail closed to typed unknown.
+    });
+  };
   const editor = useEditor({
     extensions,
     content: initialContent,
@@ -744,7 +776,7 @@ export function PromptRichTextEditor({ prompt, richText, scopeKey = "", clearGen
       handleDOMEvents: {
         focus: () => {
           inputFocus.current = "focused";
-          callbacks.current.onInputStatusChange?.(compositionOnlyInputStatus(compositionActive.current, {
+          emitInputStatus(compositionOnlyInputStatus(compositionActive.current, {
             focus: "focused",
             lifecycle: "focus",
             generation: compositionGeneration.current,
@@ -753,7 +785,7 @@ export function PromptRichTextEditor({ prompt, richText, scopeKey = "", clearGen
         },
         blur: () => {
           inputFocus.current = "blurred";
-          callbacks.current.onInputStatusChange?.(compositionOnlyInputStatus(compositionActive.current, {
+          emitInputStatus(compositionOnlyInputStatus(compositionActive.current, {
             focus: "blurred",
             lifecycle: "blur",
             generation: compositionGeneration.current,
@@ -764,7 +796,7 @@ export function PromptRichTextEditor({ prompt, richText, scopeKey = "", clearGen
           compositionActive.current = true;
           compositionGeneration.current += 1;
           const data = event instanceof CompositionEvent ? event.data : "";
-          callbacks.current.onInputStatusChange?.(compositionOnlyInputStatus(true, {
+          emitInputStatus(compositionOnlyInputStatus(true, {
             focus: inputFocus.current,
             lifecycle: "composition-start",
             generation: compositionGeneration.current,
@@ -776,7 +808,7 @@ export function PromptRichTextEditor({ prompt, richText, scopeKey = "", clearGen
         },
         compositionupdate: (_view, event) => {
           const data = event instanceof CompositionEvent ? event.data : "";
-          callbacks.current.onInputStatusChange?.(compositionOnlyInputStatus(true, {
+          emitInputStatus(compositionOnlyInputStatus(true, {
             focus: inputFocus.current,
             lifecycle: "composition-update",
             generation: compositionGeneration.current,
@@ -787,7 +819,7 @@ export function PromptRichTextEditor({ prompt, richText, scopeKey = "", clearGen
         compositionend: (_view, event) => {
           const data = event instanceof CompositionEvent ? event.data : "";
           compositionActive.current = false;
-          callbacks.current.onInputStatusChange?.(compositionOnlyInputStatus(false, {
+          emitInputStatus(compositionOnlyInputStatus(false, {
             focus: inputFocus.current,
             lifecycle: "composition-end",
             generation: compositionGeneration.current,
@@ -899,6 +931,7 @@ export function PromptRichTextEditor({ prompt, richText, scopeKey = "", clearGen
   }
   if (observedScopeKey.current !== scopeKey) {
     observedScopeKey.current = scopeKey;
+    nativeInputRequestSerial.current += 1;
     clearFence.current = null;
     if (editor != null) {
       scopeFence.current = { scopeKey, before: JSON.stringify(editor.getJSON()) };

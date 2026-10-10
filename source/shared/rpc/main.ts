@@ -31,6 +31,7 @@ export const MAIN_METHOD_TABLE = {
   setTimeZoneOverride: { args: "object" },
   getUiPreferences: { args: "none" },
   getAccessibilityState: { args: "none" },
+  getPlatformInputState: { args: "none" },
   setUiPreferences: { args: "object" },
   getCallMediaPreferences: { args: "none" },
   setCallMediaPreferences: { args: "object" },

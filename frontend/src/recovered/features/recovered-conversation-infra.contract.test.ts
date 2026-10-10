@@ -49,7 +49,7 @@ import {
   type ComposerDraftPersistence,
 } from "./conversation/workspace/draft-state.ts";
 import { createTranscriptAcknowledgementController } from "./conversation/workspace/acknowledgement.ts";
-import { promptEditorKeyAction, shouldHoldScopeFenceDuringComposition } from "./conversation/workspace/input-composition-state.ts";
+import { isCurrentPlatformInputSample, mergeNativePlatformInputStatus, promptEditorKeyAction, shouldHoldScopeFenceDuringComposition, compositionOnlyInputStatus } from "./conversation/workspace/input-composition-state.ts";
 import {
   isForwardRecipientNavigationKey,
   isForwardSubmitShortcut,
@@ -1449,4 +1449,46 @@ test("CONTRACT-TDRP-INPUT-IME-SCOPE-001 old-scope native composition stays fence
   assert.match(source, /setCompositionSettlementGeneration\(\(generation\) => generation \+ 1\);/);
   assert.match(source, /editor\.commands\.setContent\(expected, \{ emitUpdate: false \}\);/);
   assert.match(source, /scopeFence\.current\?\.scopeKey === settlingCompositionScope/);
+});
+
+
+test("UNIT-TDRP-INPUT-NATIVE-MERGE-001 native platform truth enriches DOM composition without stealing preedit, focus, lifecycle, or generation ownership", () => {
+  const dom = compositionOnlyInputStatus(true, {
+    focus: "focused",
+    lifecycle: "composition-update",
+    generation: 7,
+    preeditPresent: true,
+  });
+  const merged = mergeNativePlatformInputStatus(dom, {
+    method: { kind: "known", value: "com.apple.inputmethod.Kotoeri.RomajiTyping.Japanese" },
+    language: { kind: "unknown" },
+    width: { kind: "unknown" },
+    scriptVariant: { kind: "unknown" },
+    preedit: { kind: "known", value: "native-stale" },
+    candidate: { kind: "unknown" },
+    focus: "blurred",
+    lifecycle: "unknown",
+    sampledAt: 42,
+    source: "native-platform",
+  });
+  assert.deepEqual(merged.method, { kind: "known", value: "com.apple.inputmethod.Kotoeri.RomajiTyping.Japanese" });
+  assert.deepEqual(merged.preedit, { kind: "known", value: "active" });
+  assert.equal(merged.focus, "focused");
+  assert.equal(merged.lifecycle, "composition-update");
+  assert.equal(merged.generation, 7);
+  assert.equal(merged.source, "dom-ime+native");
+});
+
+test("UNIT-TDRP-INPUT-NATIVE-FENCE-001 native platform samples are accepted only for the exact scope, composition generation, and latest request", async () => {
+  const current = { scopeKey: "account:conversation-a", generation: 3, requestSerial: 8 };
+  assert.equal(isCurrentPlatformInputSample(current, current), true);
+  assert.equal(isCurrentPlatformInputSample({ ...current, scopeKey: "account:conversation-b" }, current), false);
+  assert.equal(isCurrentPlatformInputSample({ ...current, generation: 2 }, current), false);
+  assert.equal(isCurrentPlatformInputSample({ ...current, requestSerial: 7 }, current), false);
+
+  const source = await readFile(new URL("./conversation/workspace/rich-text-editor.tsx", import.meta.url), "utf8");
+  assert.match(source, /nativeInputRequestSerial\.current \+= 1/);
+  assert.match(source, /isCurrentPlatformInputSample\(request, current\)/);
+  assert.match(source, /dom\.generation !== request\.generation/);
+  assert.doesNotMatch(source, /navigator\.language|navigator\.languages/);
 });

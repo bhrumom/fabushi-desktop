@@ -841,9 +841,15 @@ test('Human reply, attachment, reaction, and search stay on the shipping convers
     const prompt = page.getByRole('textbox', { name: 'Prompt' });
     await expect(prompt).toHaveAttribute('contenteditable', 'true', { timeout: 15_000 });
 
-    // Chromium composition events are the truthful renderer-side IME lifecycle.
-    // They surface preedit/focus without inventing OS source, locale, width,
-    // script-variant, or candidate values that the native adapter has not supplied.
+    // Chromium remains the live preedit/focus/lifecycle owner. The native
+    // bridge may enrich that state only with OS-observed input-source truth;
+    // fields the platform cannot expose remain typed unknown and are never
+    // inferred from navigator/browser locale.
+    const nativeInputState = await page.evaluate(async () => await window.desktop!.platformInput.get());
+    expect(nativeInputState.source).toBe('native-platform');
+    expect(nativeInputState.width).toEqual({ kind: 'unknown' });
+    expect(nativeInputState.scriptVariant).toEqual({ kind: 'unknown' });
+    expect(nativeInputState.candidate).toEqual({ kind: 'unknown' });
     await prompt.focus();
     await prompt.evaluate((element) => {
       element.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true, data: '' }));
@@ -852,7 +858,11 @@ test('Human reply, attachment, reaction, and search stay on the shipping convers
     const inputStatus = page.getByTestId('input-composition-status');
     await expect(inputStatus).toContainText('Composing text.');
     await expect(inputStatus).toContainText('Preedit signal: active.');
-    await expect(inputStatus).toContainText('candidate state are not reported by the native platform adapter.');
+    if (nativeInputState.method.kind === 'known') {
+      await expect(inputStatus).toContainText(`Input method: ${nativeInputState.method.value}`);
+    } else {
+      await expect(inputStatus).toContainText('Input method, language, width mode, script variant, and candidate state are not reported by the native platform adapter.');
+    }
     await prompt.evaluate((element) => {
       element.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true, data: '輸' }));
     });

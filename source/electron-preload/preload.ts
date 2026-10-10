@@ -269,6 +269,9 @@ export function createDesktopPreloadBridge(options: {
       get: () => edge("getAccessibilityState"),
       onChanged: (listener: (state: { screenReader: boolean }) => void) => subscribe("accessibility-support-changed", listener),
     },
+    platformInput: {
+      get: () => edge("getPlatformInputState"),
+    },
     autoReviewInstructions: {
       get: () => edge("getAutoReviewInstructions"),
       set: (instructions: unknown) => edge("setAutoReviewInstructions", { instructions }),

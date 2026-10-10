@@ -35,6 +35,19 @@ export type PlatformInputLifecycle =
   | "composition-update"
   | "composition-end";
 
+export interface NativePlatformInputStatusSnapshot {
+  readonly method: PlatformInputStatusValue;
+  readonly language: PlatformInputStatusValue;
+  readonly width: PlatformInputStatusValue;
+  readonly scriptVariant: PlatformInputStatusValue;
+  readonly preedit: PlatformInputStatusValue;
+  readonly candidate: PlatformInputStatusValue;
+  readonly focus: PlatformInputFocus;
+  readonly lifecycle: PlatformInputLifecycle | "unknown";
+  readonly sampledAt: number;
+  readonly source: "native-platform";
+}
+
 export interface PlatformInputStatusSnapshot {
   readonly composition: "active" | "idle";
   readonly method: PlatformInputStatusValue;
@@ -48,7 +61,7 @@ export interface PlatformInputStatusSnapshot {
   readonly focus: PlatformInputFocus;
   readonly lifecycle: PlatformInputLifecycle;
   readonly generation: number;
-  readonly source: "dom-ime" | "native";
+  readonly source: "dom-ime" | "dom-ime+native";
 }
 
 const UNKNOWN_PLATFORM_INPUT_VALUE: PlatformInputStatusValue = Object.freeze({ kind: "unknown" });
@@ -80,6 +93,44 @@ export function compositionOnlyInputStatus(
     generation: details.generation ?? 0,
     source: "dom-ime",
   };
+}
+
+export function mergeNativePlatformInputStatus(
+  dom: PlatformInputStatusSnapshot,
+  native: NativePlatformInputStatusSnapshot,
+): PlatformInputStatusSnapshot {
+  const preferNative = (nativeValue: PlatformInputStatusValue, domValue: PlatformInputStatusValue) =>
+    nativeValue.kind === "known" ? nativeValue : domValue;
+  return {
+    ...dom,
+    method: preferNative(native.method, dom.method),
+    language: preferNative(native.language, dom.language),
+    width: preferNative(native.width, dom.width),
+    scriptVariant: preferNative(native.scriptVariant, dom.scriptVariant),
+    // Chromium owns the editable's live preedit/focus/lifecycle truth. Native
+    // probes can add capability state, but cannot overwrite a newer DOM event.
+    preedit: dom.preedit,
+    candidate: preferNative(native.candidate, dom.candidate),
+    focus: dom.focus,
+    lifecycle: dom.lifecycle,
+    generation: dom.generation,
+    source: "dom-ime+native",
+  };
+}
+
+export interface PlatformInputSampleFence {
+  readonly scopeKey: string;
+  readonly generation: number;
+  readonly requestSerial: number;
+}
+
+export function isCurrentPlatformInputSample(
+  request: PlatformInputSampleFence,
+  current: PlatformInputSampleFence,
+): boolean {
+  return request.scopeKey === current.scopeKey
+    && request.generation === current.generation
+    && request.requestSerial === current.requestSerial;
 }
 
 export function platformInputStatusText(status: PlatformInputStatusSnapshot): string | null {

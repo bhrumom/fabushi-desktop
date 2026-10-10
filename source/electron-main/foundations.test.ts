@@ -41,6 +41,7 @@ import { createDesktopCallMediaPort } from "./call-media.js";
 import { normalizeCommitStagedAttachmentsEdgeRequest, normalizeStageAttachmentEdgeRequest } from "./attachments/attachment-edge-wire.js";
 import { createAttachmentEdgePort, type AttachmentEdgeDeps } from "./attachments/attachments.js";
 import { readDesktopAccessibilityState, setDesktopAccessibilitySupportEnabled } from "./accessibility-support.js";
+import { readDesktopPlatformInputState } from "./platform-input.js";
 
 test("main edge accepts the shipping preload attachment wire contract", () => {
   const staged = normalizeStageAttachmentEdgeRequest({
@@ -907,4 +908,55 @@ test("attachment download rejects invalid totals and oversized chunks", async ()
     assert.equal(existsSync(target), false);
     assert.ok(failures.some((failure) => failure.errorClass === "invalid-chunk-size"));
   } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+
+test("native platform input adapter reports only observed OS input-source truth", async () => {
+  const macCalls: Array<{ command: string; args: readonly string[]; timeoutMs: number }> = [];
+  const mac = await readDesktopPlatformInputState({
+    platform: "darwin",
+    now: () => 42,
+    runCommand: async (command, args, timeoutMs) => {
+      macCalls.push({ command, args, timeoutMs });
+      return "com.apple.keylayout.US\n";
+    },
+  });
+  assert.equal(mac.sampledAt, 42);
+  assert.equal(mac.source, "native-platform");
+  assert.deepEqual(mac.method, { kind: "known", value: "com.apple.keylayout.US" });
+  assert.deepEqual(mac.language, { kind: "unknown" });
+  assert.deepEqual(mac.width, { kind: "unknown" });
+  assert.deepEqual(mac.scriptVariant, { kind: "unknown" });
+  assert.deepEqual(mac.candidate, { kind: "unknown" });
+  assert.deepEqual(macCalls, [{
+    command: "/usr/bin/defaults",
+    args: ["read", "com.apple.HIToolbox", "AppleCurrentKeyboardLayoutInputSourceID"],
+    timeoutMs: 750,
+  }]);
+
+  const linuxCalls: string[] = [];
+  const linux = await readDesktopPlatformInputState({
+    platform: "linux",
+    runCommand: async (command) => {
+      linuxCalls.push(command);
+      if (command.endsWith("fcitx5-remote")) throw new Error("not installed");
+      return "xkb:us::eng\n";
+    },
+  });
+  assert.deepEqual(linux.method, { kind: "known", value: "xkb:us::eng" });
+  assert.deepEqual(linuxCalls, ["/usr/bin/fcitx5-remote", "/usr/bin/ibus"]);
+
+  let windowsProbeCount = 0;
+  const windows = await readDesktopPlatformInputState({
+    platform: "win32",
+    runCommand: async () => { windowsProbeCount += 1; return "guessed"; },
+  });
+  assert.equal(windowsProbeCount, 0);
+  assert.deepEqual(windows.method, { kind: "unknown" });
+
+  const malformed = await readDesktopPlatformInputState({
+    platform: "darwin",
+    runCommand: async () => "layout\nwith-two-lines",
+  });
+  assert.deepEqual(malformed.method, { kind: "unknown" });
 });

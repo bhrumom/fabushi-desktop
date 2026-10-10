@@ -266,9 +266,9 @@
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
     "unknown_minimum": 15845,
-    "unread_minimum": 7883,
+    "unread_minimum": 7868,
     "omitted_known": 0,
-    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 8,242; unknown=15,845, unread=7,883, omitted=0."
+    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 8,257; unknown=15,845, unread=7,868, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -282,7 +282,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Source/product/release closure open. Deterministic exact read-through 8,242/16,125; first unread 8,243 Telegram/ThirdParty/hunspell::license.hunspell; unread 7,883; unknown 15,845; omitted 0. Current descendant exact-head Actions remain required. Source reading does not close unknown. Native method/language/width/scriptVariant/candidate truth remains mapped-open."
+    "note": "Source/product/release closure open. Deterministic exact read-through 8,257/16,125; first unread 8,258 Telegram/ThirdParty/hunspell::man/Makefile.am; unread 7,868; unknown 15,845; omitted 0. Current descendant exact-head Actions remain required. Source reading does not close unknown. A minimal source-neutral native platform-input adapter is now wired through the existing main-RPC/preload/Composer path; unsupported language/width/scriptVariant/candidate fields remain typed unknown pending exact-head evidence."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",
