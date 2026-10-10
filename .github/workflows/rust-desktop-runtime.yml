@@ -1179,6 +1179,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: node scripts/validate-tdrp-revision9-authority.mjs
+      - name: Regression test current first-unread source review artifact helper
+        run: node --test scripts/tdrp-current-source-review-artifact.contract.test.mjs
+      - name: Materialize current first-unread source review artifact
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/tdrp-current-source-review-artifact.mjs
       - name: Require accepted mode to fail closed only on incomplete acceptance
         env:
           GITHUB_TOKEN: ${{ github.token }}
