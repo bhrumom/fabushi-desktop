@@ -10,6 +10,33 @@ export const DEFAULT_ASSISTANT_MATH_CACHE_BUDGET_BYTES = 32 * 1024 * 1024;
 const ASSISTANT_MATH_CACHE_ENTRY_OVERHEAD_BYTES = 256;
 const UTF16_BYTES_PER_CODE_UNIT = 2;
 
+const ASSISTANT_MATH_LOCALIZED_DIGIT_BLOCK_STARTS = [
+  0x0660, 0x06f0, 0x0966, 0x09e6, 0x0a66, 0x0ae6, 0x0b66, 0x0c66, 0x0d66, 0x0e50,
+  0x0ed0, 0x0f20, 0x1040, 0x17e0, 0x1810, 0x1b50, 0x1bb0, 0x1c40, 0x1c50, 0xa8d0,
+] as const;
+
+export function normalizeAssistantMathLocalizedDigits(expression: string): string {
+  let normalized = "";
+  for (const character of expression) {
+    const codePoint = character.codePointAt(0);
+    if (codePoint === 0x066b) {
+      normalized += ".";
+      continue;
+    }
+    let decimalDigit: number | null = null;
+    if (codePoint != null) {
+      for (const start of ASSISTANT_MATH_LOCALIZED_DIGIT_BLOCK_STARTS) {
+        if (codePoint >= start && codePoint <= start + 9) {
+          decimalDigit = codePoint - start;
+          break;
+        }
+      }
+    }
+    normalized += decimalDigit == null ? character : String(decimalDigit);
+  }
+  return normalized;
+}
+
 export interface KatexRuntime {
   renderToString(expression: string, options: {
     displayMode: boolean;
@@ -77,6 +104,7 @@ export function renderKatexMarkup(
 ): string {
   const boundedExpressionLength = normalizeNonNegativeIntegerBudget(maxExpressionLength);
   assertAssistantMathExpressionWithinLimit(expression, boundedExpressionLength);
+  const normalizedExpression = normalizeAssistantMathLocalizedDigits(expression);
   const boundedMarkupBytes = normalizeNonNegativeIntegerBudget(maxMarkupBytes);
   const safety = {
     maxExpand: MAX_ASSISTANT_MATH_EXPANSIONS,
@@ -84,7 +112,7 @@ export function renderKatexMarkup(
     trust: false as const,
   };
   const renderBounded = (options: Parameters<KatexRuntime["renderToString"]>[1]): string => {
-    const markup = runtime.renderToString(expression, options);
+    const markup = runtime.renderToString(normalizedExpression, options);
     assertAssistantMathMarkupWithinLimit(markup, boundedMarkupBytes);
     return markup;
   };
