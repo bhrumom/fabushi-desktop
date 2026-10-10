@@ -64,6 +64,8 @@ jobs:
       - name: Enforce Agent workspace architecture boundary
         run: node scripts/check-agent-workspace-boundary.mjs
       - run: npm run typecheck
+      - name: Validate bounded canonical math runtime contract
+        run: npx playwright test e2e/math-runtime-contract.spec.ts --workers=1
       - run: npm run build:renderer
       - name: Verify co-staged desktop runtime
         run: npm run check:desktop-runtime
