@@ -1275,8 +1275,11 @@ pub fn connected_app_start_param(query: &str) -> String {
 fn percent_encode_start_param_chunk(value: &str) -> String {
     let mut result = String::new();
     for byte in value.as_bytes() {
-        let safe = byte.is_ascii_alphanumeric()
-            || matches!(*byte, b'=' | b'-' | b'.' | b'_' | b'~');
+        // Match QUrl::toPercentEncoding(chunk, "=", "-._~") exactly:
+        // '=' is explicitly excluded from encoding, while '-._~' are
+        // explicitly included so a literal '-' can never alias the SDK's
+        // single-dash pair separator during decoding.
+        let safe = byte.is_ascii_alphanumeric() || *byte == b'=';
         if safe {
             result.push(*byte as char);
         } else {
@@ -2036,6 +2039,17 @@ mod tests {
             Some("v=2")
         );
         assert!(connected_app_start_param_query("other-v=2").is_none());
+
+        let reserved = "ret=a-b.c_d~e";
+        let reserved_encoded = connected_app_start_param(reserved);
+        assert!(reserved_encoded.contains("--2D"));
+        assert!(reserved_encoded.contains("--2E"));
+        assert!(reserved_encoded.contains("--5F"));
+        assert!(reserved_encoded.contains("--7E"));
+        assert_eq!(
+            connected_app_start_param_query(&reserved_encoded).as_deref(),
+            Some(reserved)
+        );
     }
 
     #[test]
