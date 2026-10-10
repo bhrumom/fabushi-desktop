@@ -5,6 +5,7 @@ export const KATEX_ASSET = "/upstream/assets/katex-DHMw6HUq.js";
 export const MAX_ASSISTANT_MATH_EXPRESSION_LENGTH = 32 * 1024;
 export const MAX_ASSISTANT_MATH_EXPANSIONS = 1_000;
 export const MAX_ASSISTANT_MATH_SIZE_EM = 1_000;
+export const MAX_ASSISTANT_MATH_MARKUP_BYTES = 8 * 1024 * 1024;
 export const DEFAULT_ASSISTANT_MATH_CACHE_BUDGET_BYTES = 32 * 1024 * 1024;
 const ASSISTANT_MATH_CACHE_ENTRY_OVERHEAD_BYTES = 256;
 const UTF16_BYTES_PER_CODE_UNIT = 2;
@@ -44,32 +45,63 @@ function assertAssistantMathExpressionWithinLimit(expression: string, maxExpress
   }
 }
 
+class AssistantMathRenderBudgetError extends Error {
+  constructor(maxMarkupBytes: number) {
+    super(`Assistant math rendered markup exceeds the ${maxMarkupBytes}-byte safety budget.`);
+    this.name = "AssistantMathRenderBudgetError";
+  }
+}
+
+function assertAssistantMathMarkupWithinLimit(markup: string, maxMarkupBytes: number): void {
+  if ((markup.length * UTF16_BYTES_PER_CODE_UNIT) > maxMarkupBytes) {
+    throw new AssistantMathRenderBudgetError(maxMarkupBytes);
+  }
+}
+
+function renderAssistantMathError(expression: string, error: unknown): string {
+  const opening = ["<", "span class=\"katex-error\" style=\"color:#cc0000\" title=\""].join("");
+  const closing = ["\">", escapeHtml(expression), "<", "/span", ">"].join("");
+  return [opening, escapeHtml(String(error)), closing].join("");
+}
+
 export function renderKatexMarkup(
   runtime: KatexRuntime,
   expression: string,
   displayMode: boolean,
   maxExpressionLength = MAX_ASSISTANT_MATH_EXPRESSION_LENGTH,
+  maxMarkupBytes = MAX_ASSISTANT_MATH_MARKUP_BYTES,
 ): string {
   assertAssistantMathExpressionWithinLimit(expression, maxExpressionLength);
+  const boundedMarkupBytes = Math.max(0, Math.floor(maxMarkupBytes));
   const safety = {
     maxExpand: MAX_ASSISTANT_MATH_EXPANSIONS,
     maxSize: MAX_ASSISTANT_MATH_SIZE_EM,
     trust: false as const,
   };
+  const renderBounded = (options: Parameters<KatexRuntime["renderToString"]>[1]): string => {
+    const markup = runtime.renderToString(expression, options);
+    assertAssistantMathMarkupWithinLimit(markup, boundedMarkupBytes);
+    return markup;
+  };
+
   try {
-    return runtime.renderToString(expression, { displayMode, throwOnError: true, ...safety });
+    return renderBounded({ displayMode, throwOnError: true, ...safety });
   } catch (error) {
+    if (error instanceof AssistantMathRenderBudgetError) {
+      return renderAssistantMathError(expression, error);
+    }
     try {
-      return runtime.renderToString(expression, {
+      return renderBounded({
         displayMode,
         strict: "ignore",
         throwOnError: false,
         ...safety,
       });
-    } catch {
-      const opening = ["<", "span class=\"katex-error\" style=\"color:#cc0000\" title=\""].join("");
-      const closing = ["\">", escapeHtml(expression), "<", "/span", ">"].join("");
-      return [opening, escapeHtml(String(error)), closing].join("");
+    } catch (recoveryError) {
+      return renderAssistantMathError(
+        expression,
+        recoveryError instanceof AssistantMathRenderBudgetError ? recoveryError : error,
+      );
     }
   }
 }
