@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 7973,
+    "unread_minimum": 7963,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through 8,152; unread 7,973; unknown 15,845; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition through 8,162; unread 7,963; unknown 15,845; omitted 0."
   },
   "latest_recursive_evidence": {
     "run_id": 38084031087,
@@ -46,7 +46,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live authority exact through 8,152; first unread 8,153 Telegram/ThirdParty/hime::src/modules/chewing-conf.c; unread_minimum is 7,973; unknown remains 15,845; omitted remains 0.",
+  "note": "Live authority exact through 8,162; first unread 8,163 Telegram/ThirdParty/hime::src/pho-kbm-name.h; unread_minimum is 7,963; unknown remains 15,845; omitted remains 0.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -64,10 +64,10 @@
       6541,
       6627
     ],
-    "current_source_read_through": 8152,
-    "first_unread_order": 8153,
-    "first_unread_path": "Telegram/ThirdParty/hime::src/modules/chewing-conf.c",
-    "current_head_source_authority_evidence": "Orders 8,126–8,152 were read in full from pinned hime-ime/hime@9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5; returned Git blob identities matched accepted recursive inventory. No source-only row was promoted to verified."
+    "current_source_read_through": 8162,
+    "first_unread_order": 8163,
+    "first_unread_path": "Telegram/ThirdParty/hime::src/pho-kbm-name.h",
+    "current_head_source_authority_evidence": "Orders 8,153–8,162 were read in full from pinned hime-ime/hime@9b3e6f9ab59d1fe4d9de73d3bf0fed7789f921c5; returned Git blob identities matched accepted recursive inventory. No source-only row was promoted to verified."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -76,9 +76,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 8152,
-    "first_unread_order": 8153,
-    "first_unread_path": "Telegram/ThirdParty/hime::src/modules/chewing-conf.c",
+    "read_through": 8162,
+    "first_unread_order": 8163,
+    "first_unread_path": "Telegram/ThirdParty/hime::src/pho-kbm-name.h",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }
