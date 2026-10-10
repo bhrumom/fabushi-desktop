@@ -1,0 +1,105 @@
+{
+  "format_version": 2,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+    "tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6"
+  },
+  "range": {
+    "first_order": 8231,
+    "last_order": 8232,
+    "entries": 2
+  },
+  "rows": [
+    {
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "hunspell/hunspell pinned engineering-history source",
+      "ui_disposition": "No source UI is retained. Historical product semantics are mapped responsibility-by-responsibility into existing Fabushi text-input/spellcheck, Resource, security/recovery and Build/test owners.",
+      "fabushi_canonical_owner": "existing canonical text-input/spellcheck + Resource + security/recovery + Build/test owners",
+      "platform_differences": "Hunspell/MySpell runtime identity and CLI/UI are not target architecture. Only applicable source-neutral behavior, lifecycle, safety and compatibility semantics may be absorbed into canonical Fabushi owners.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "reachability_status": "accepted exact pinned blob read in full directly from GitHub and responsibility-decomposed; production equivalence/current descendant exact-head evidence remain open",
+      "license_and_provenance": "telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 -> Telegram/ThirdParty/hunspell -> hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b; exact blob e7dc98ed383a9f21e2a7fbd14e4ed071395d95b6",
+      "state_machine": "historical behavior/provenance input -> identify applicable invariants and failure semantics -> map to current canonical owners -> verify only through shipping composition and current-head tests",
+      "side_effects": "May require existing canonical spellcheck/text-input, Unicode/resource parsing, security/recovery, platform and regression-test owners to preserve mature behavior; no source-shaped runtime is allowed.",
+      "failure_cases": "unbounded suggestions/compound work, malformed dictionary or encoding input, invalid Unicode/path handling, unsafe temporary/file-name behavior, crash/memory faults, stale API compatibility assumptions, platform divergence, or regression loss",
+      "fabushi_target": "existing canonical text-input/spellcheck + Resource + security/recovery + Build/test owners",
+      "production_evidence": "mapping evidence only; source reading/history analysis is not production verification",
+      "test_evidence": "Direct GitHub exact-commit full-file read of hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b/ChangeLog returned Git blob e7dc98ed383a9f21e2a7fbd14e4ed071395d95b6; no local build/test used. Current descendant GitHub Actions and focused production tests remain required.",
+      "notes": "Full 1,994-line history was processed. It repeatedly records security/crash/memory hardening, Unicode/encoding fixes, bounded suggestion/compound/morphology behavior and regression tests; these are product-quality responsibilities rather than a blanket documentation N/A.",
+      "recursive_order": 8231,
+      "source_path": "Telegram/ThirdParty/hunspell::ChangeLog",
+      "source_blob_sha": "e7dc98ed383a9f21e2a7fbd14e4ed071395d95b6",
+      "source_identity": {
+        "repository": "hunspell/hunspell",
+        "commit": "a698d8b53cab3507d1d619d5fa08a88777abe50b",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/hunspell",
+        "path": "ChangeLog",
+        "object": "e7dc98ed383a9f21e2a7fbd14e4ed071395d95b6",
+        "mode": "100644",
+        "type": "blob",
+        "size": 88934
+      },
+      "responsibility": "Historical engineering behavior ledger carrying applicable spell-check responsibilities: API compatibility/deprecation, Unicode/encoding and path correctness, bounded suggestion/compound/morphology behavior, crash/memory/file-name hardening, platform compatibility, and regression-test provenance. Map applicable semantics into existing canonical text-input/spellcheck/resource/security/build owners; history text itself is provenance-only.",
+      "source_binary_evidence": {
+        "evidence_status": "direct-github-exact-blob-read-pending-descendant-actions",
+        "accepted_upstream": "6fed91ffab9861771a75f29df65031b3c80b6941",
+        "component_repository": "hunspell/hunspell",
+        "component_commit": "a698d8b53cab3507d1d619d5fa08a88777abe50b",
+        "verified_blob_sha": "e7dc98ed383a9f21e2a7fbd14e4ed071395d95b6",
+        "file_type": "blob",
+        "recursive_order": 8231
+      }
+    },
+    {
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "hunspell/hunspell pinned engineering-history source",
+      "ui_disposition": "No source UI is retained. Historical product semantics are mapped responsibility-by-responsibility into existing Fabushi text-input/spellcheck, Resource, security/recovery and Build/test owners.",
+      "fabushi_canonical_owner": "existing canonical text-input/spellcheck + Resource + security/recovery + Build/test owners",
+      "platform_differences": "Hunspell/MySpell runtime identity and CLI/UI are not target architecture. Only applicable source-neutral behavior, lifecycle, safety and compatibility semantics may be absorbed into canonical Fabushi owners.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "reachability_status": "accepted exact pinned blob read in full directly from GitHub and responsibility-decomposed; production equivalence/current descendant exact-head evidence remain open",
+      "license_and_provenance": "telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 -> Telegram/ThirdParty/hunspell -> hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b; exact blob a2c712d73bc4f5d8cbfbe5eea5f0696ef9d921dd",
+      "state_machine": "historical behavior/provenance input -> identify applicable invariants and failure semantics -> map to current canonical owners -> verify only through shipping composition and current-head tests",
+      "side_effects": "May require existing canonical spellcheck/text-input, Unicode/resource parsing, security/recovery, platform and regression-test owners to preserve mature behavior; no source-shaped runtime is allowed.",
+      "failure_cases": "unbounded suggestions/compound work, malformed dictionary or encoding input, invalid Unicode/path handling, unsafe temporary/file-name behavior, crash/memory faults, stale API compatibility assumptions, platform divergence, or regression loss",
+      "fabushi_target": "existing canonical text-input/spellcheck + Resource + security/recovery + Build/test owners",
+      "production_evidence": "mapping evidence only; source reading/history analysis is not production verification",
+      "test_evidence": "Direct GitHub exact-commit full-file read of hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b/ChangeLog.O returned Git blob a2c712d73bc4f5d8cbfbe5eea5f0696ef9d921dd; no local build/test used. Current descendant GitHub Actions and focused production tests remain required.",
+      "notes": "Full 525-line legacy history was processed; applicable suggestion/compound/morphology/API compatibility semantics remain mapped-open.",
+      "recursive_order": 8232,
+      "source_path": "Telegram/ThirdParty/hunspell::ChangeLog.O",
+      "source_blob_sha": "a2c712d73bc4f5d8cbfbe5eea5f0696ef9d921dd",
+      "source_identity": {
+        "repository": "hunspell/hunspell",
+        "commit": "a698d8b53cab3507d1d619d5fa08a88777abe50b",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/hunspell",
+        "path": "ChangeLog.O",
+        "object": "a2c712d73bc4f5d8cbfbe5eea5f0696ef9d921dd",
+        "mode": "100644",
+        "type": "blob",
+        "size": 21588
+      },
+      "responsibility": "Legacy MySpell/Hunspell engineering ledger: suggestion/compound/morphology evolution, API/interface compatibility and platform history. Preserve applicable mature behavioral constraints in existing canonical text-input/spellcheck/resource owners and retain historical provenance; do not ship a Hunspell-shaped runtime owner.",
+      "source_binary_evidence": {
+        "evidence_status": "direct-github-exact-blob-read-pending-descendant-actions",
+        "accepted_upstream": "6fed91ffab9861771a75f29df65031b3c80b6941",
+        "component_repository": "hunspell/hunspell",
+        "component_commit": "a698d8b53cab3507d1d619d5fa08a88777abe50b",
+        "verified_blob_sha": "a2c712d73bc4f5d8cbfbe5eea5f0696ef9d921dd",
+        "file_type": "blob",
+        "recursive_order": 8232
+      }
+    }
+  ]
+}
