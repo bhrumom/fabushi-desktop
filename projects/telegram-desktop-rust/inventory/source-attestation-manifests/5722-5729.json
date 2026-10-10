@@ -1,6 +1,6 @@
 {
-  "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
-  "accepted_tree": "4ddb5182fc1ae238e4dc62a396614614b5b35f97",
+  "accepted_upstream": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+  "accepted_tree": "9d8fa87ce68c832d2f4c99f372a5bb672463c3e1",
   "deterministic_order_basis": "non-directory/blob rank in accepted recursive tree",
   "start": 5722,
   "end": 5729,
@@ -8,7 +8,7 @@
     {
       "order": 5722,
       "path": "Telegram/SourceFiles/storage/storage_account.cpp",
-      "blob": "5888ffa1164327b7170a2a3d8df7793a3fa467da",
+      "blob": "52036077e07521b6fd7c7a7766add1245b09dedc",
       "consumer_symbol": "storage_account.cpp"
     },
     {

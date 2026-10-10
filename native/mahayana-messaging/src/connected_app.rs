@@ -1722,11 +1722,11 @@ mod tests {
                 200,
             )
             .unwrap();
-        state.link_claim_operation(7, "r1", "operation-1").unwrap();
+        state.link_claim_operation(7, 101, "r1", "operation-1").unwrap();
         state
-            .record_claim_handoff(7, "r1", "operation-1", "signed-payload")
+            .record_claim_handoff(7, 101, "r1", "operation-1", "signed-payload")
             .unwrap();
-        state.record_claim_answer(7, "r1", vec![1, 2, 3]).unwrap();
+        state.record_claim_answer(7, 101, "r1", vec![1, 2, 3]).unwrap();
         assert_eq!(claim.trace_id, "trace");
         assert!(state.pending_requests.is_empty());
         assert_eq!(state.claims.len(), 1);
@@ -1810,10 +1810,10 @@ mod tests {
             200,
         ).unwrap();
         state
-            .link_claim_operation(7, "wallet", "operation-wallet")
+            .link_claim_operation(7, 101, "wallet", "operation-wallet")
             .unwrap();
         state
-            .record_claim_handoff(7, "wallet", "operation-wallet", "signed")
+            .record_claim_handoff(7, 101, "wallet", "operation-wallet", "signed")
             .unwrap();
         assert_eq!(state.recoverable_claims_for_wallet(&wallet, 500).len(), 1);
         let rotated_revision = WalletTransferIdentity { revision: 10, ..wallet.clone() };
@@ -2276,7 +2276,7 @@ mod lifecycle_source_tests {
         );
 
         state
-            .link_claim_operation(77, "request-stage", "operation-1")
+            .link_claim_operation(77, 701, "request-stage", "operation-1")
             .unwrap();
         assert_eq!(
             state
@@ -2292,7 +2292,7 @@ mod lifecycle_source_tests {
         );
 
         state
-            .record_claim_handoff(77, "request-stage", "operation-1", "signed-payload")
+            .record_claim_handoff(77, 701, "request-stage", "operation-1", "signed-payload")
             .unwrap();
         assert_eq!(
             state
@@ -2320,7 +2320,7 @@ mod lifecycle_source_tests {
         );
 
         state
-            .record_claim_answer(77, "request-stage", vec![1, 2, 3])
+            .record_claim_answer(77, 701, "request-stage", vec![1, 2, 3])
             .unwrap();
         assert_eq!(
             state
