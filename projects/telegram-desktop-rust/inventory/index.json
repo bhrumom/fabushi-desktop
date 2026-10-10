@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 8273,
+    "unread_minimum": 8257,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through 7,852; unread 8,273; unknown 15,845; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition through 7,868; unread 8,257; unknown 15,845; omitted 0."
   },
   "latest_recursive_evidence": {
     "run_id": 38077755131,
@@ -43,7 +43,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live authority exact through 7,852; first unread 7,853 Telegram/ThirdParty/hime::icons/blue/jyutping.png; unread_minimum is 8,273; unknown remains 15,845; omitted remains 0.",
+  "note": "Live authority exact through 7,868; first unread 7,869 Telegram/ThirdParty/hime::icons/blue/tsou.png; unread_minimum is 8,257; unknown remains 15,845; omitted remains 0.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -61,10 +61,10 @@
       6541,
       6627
     ],
-    "current_source_read_through": 7852,
-    "first_unread_order": 7853,
-    "first_unread_path": "Telegram/ThirdParty/hime::icons/blue/jyutping.png",
-    "current_head_source_authority_evidence": "7,837–7,852 accepted Hime blobs were fetched from the pinned component commit, checked against Git tree identity/mode/size and visually inspected; reading closes no unknown. Descendant exact-head Actions remain required."
+    "current_source_read_through": 7868,
+    "first_unread_order": 7869,
+    "first_unread_path": "Telegram/ThirdParty/hime::icons/blue/tsou.png",
+    "current_head_source_authority_evidence": "7,853–7,868 accepted Hime blobs were fetched from the pinned component commit, checked against Git tree identity/mode/size and visually inspected; reading closes no unknown. Descendant exact-head Actions remain required."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -73,9 +73,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 7852,
-    "first_unread_order": 7853,
-    "first_unread_path": "Telegram/ThirdParty/hime::icons/blue/jyutping.png",
+    "read_through": 7868,
+    "first_unread_order": 7869,
+    "first_unread_path": "Telegram/ThirdParty/hime::icons/blue/tsou.png",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }
