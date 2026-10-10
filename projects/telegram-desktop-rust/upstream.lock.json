@@ -266,9 +266,9 @@
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
     "unknown_minimum": 15845,
-    "unread_minimum": 9163,
+    "unread_minimum": 9149,
     "omitted_known": 0,
-    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 6,962; unknown=15,845, unread=9,163, omitted=0."
+    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 6,976; unknown=15,845, unread=9,149, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -634,9 +634,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 6962,
-    "first_unread_order": 6963,
-    "first_unread_path": "Telegram/ThirdParty/MicroTeX::src/utils/dict_tree.h",
+    "read_through": 6976,
+    "first_unread_order": 6977,
+    "first_unread_path": "Telegram/ThirdParty/QR::Readme.markdown",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {

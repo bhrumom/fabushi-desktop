@@ -1,5 +1,5 @@
-Live Revision 9 authority (2026-10-10): telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 (root tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6). Root non-directory=6,653; recursive non-directory=16,125; read-through=6,962; first unread=6,963 Telegram/ThirdParty/MicroTeX::src/utils/dict_tree.h@314b8eca99c896f44280228978d25b601bae10ea; unread=9,163; unknown=15,845; omitted=0. Orders 6,949-6,962 exact-read MicroTeX sample integration across GTK/memory-check/Qt/Skia/QML/Win32; sample UI is non-shipping, while init/parse/render/export/teardown invariants remain mapped-open. Fresh descendant exact-head GitHub Actions evidence is required.
-<!-- TDRP_CURRENT_SUMMARY read-through=6962 unread=9163 unknown=15845 omitted=0 first-unread=6963 path=Telegram/ThirdParty/MicroTeX::src/utils/dict_tree.h -->
+Live Revision 9 authority (2026-10-10): telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 (root tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6). Root non-directory=6,653; recursive non-directory=16,125; read-through=6,976; first unread=6,977 Telegram/ThirdParty/QR::Readme.markdown@66292b4b93bdd968738066827f8cb91e66ffe170; unread=9,149; unknown=15,845; omitted=0. Orders 6,963-6,976 complete MicroTeX utility/dependency reading with explicit OOB, ctype-byte, Unicode and typed-error invariants; reading alone closes no unknown. Fresh descendant exact-head GitHub Actions evidence is required.
+<!-- TDRP_CURRENT_SUMMARY read-through=6976 unread=9149 unknown=15845 omitted=0 first-unread=6977 path=Telegram/ThirdParty/QR::Readme.markdown -->
 
 # Telegram 源码 → Fabushi 全量等价重写 — Source of Truth
 
@@ -657,3 +657,8 @@ Orders **6,933-6,948** are exact-blob read-complete/responsibility-decomposed ac
 ### Source closure through 6,962
 
 Orders **6,949-6,962** are exact-blob read-complete/responsibility-decomposed for MicroTeX GTK/memory-check/Qt/Skia/QML/Win32 samples. Platform demo UI is not copied; applicable single-owner init/parse/render/export/failure/teardown semantics map to existing AssistantMath/KaTeX, test and Build/Release owners. Accounting: **6,962/16,125 read; 9,163 unread; 15,845 unknown; 0 omitted**. First unread is 6,963 `Telegram/ThirdParty/MicroTeX::src/utils/dict_tree.h@314b8eca…`. Reading grants no implementation or release credit.
+
+
+### Source closure through 6,976
+
+Orders **6,963-6,976** are exact-blob read-complete/responsibility-decomposed for MicroTeX utility and dependency boundaries. Binary lookup must remain one-past-end safe; byte ctype classification must use unsigned-byte domain; malformed UTF/numeric/resource input must fail locally; typed error distinctions and dependency provenance remain explicit. C++ utilities are not copied. Accounting: **6,976/16,125 read; 9,149 unread; 15,845 unknown; 0 omitted**. First unread is 6,977 `Telegram/ThirdParty/QR::Readme.markdown@66292b4b…`.

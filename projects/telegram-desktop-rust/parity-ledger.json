@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 9163,
+    "unread": 9149,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,11 +13478,11 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Ten changed root blobs inside the accepted prefix were reconciled; deterministic recursive read-through=6962/16125, unread=9163, unknown=15845, omitted=0.",
-    "source_authority_evidence": "Accepted Telegram authority 6fed91ffab9861771a75f29df65031b3c80b6941 / tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; prefix exact through MicroTeX win32_main.cpp order 6962; sample lifecycle/render/export/teardown responsibilities remain mapped-open and fresh exact-head Actions are required.",
-    "current_source_read_through": 6962,
-    "first_unread_order": 6963,
-    "first_unread_path": "Telegram/ThirdParty/MicroTeX::src/utils/dict_tree.h"
+    "source_read_reconciliation": "Ten changed root blobs inside the accepted prefix were reconciled; deterministic recursive read-through=6976/16125, unread=9149, unknown=15845, omitted=0.",
+    "source_authority_evidence": "Accepted Telegram authority 6fed91ffab9861771a75f29df65031b3c80b6941 / tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; prefix completes MicroTeX through vcpkg.json order 6976; bounds/Unicode/error/dependency responsibilities remain mapped-open and fresh exact-head Actions are required.",
+    "current_source_read_through": 6976,
+    "first_unread_order": 6977,
+    "first_unread_path": "Telegram/ThirdParty/QR::Readme.markdown"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 6962,
-    "first_unread_order": 6963,
-    "first_unread_path": "Telegram/ThirdParty/MicroTeX::src/utils/dict_tree.h",
+    "read_through": 6976,
+    "first_unread_order": 6977,
+    "first_unread_path": "Telegram/ThirdParty/QR::Readme.markdown",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {

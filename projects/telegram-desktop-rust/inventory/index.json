@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 9163,
+    "unread_minimum": 9149,
     "omitted_known": 0,
-    "note": "Recursive source census 16,125; unknown 15,845, unread 9,163, omitted 0. Exact read/responsibility decomposition extends through order 6,962; MicroTeX sample lifecycle/render/export/teardown semantics remain mapped-open under existing AssistantMath/KaTeX, test and Build/Release owners."
+    "note": "Recursive source census 16,125; unknown 15,845, unread 9,149, omitted 0. Exact read/responsibility decomposition extends through order 6,976; MicroTeX bounds/Unicode/error/dependency utility responsibilities remain mapped-open under existing AssistantMath/KaTeX and Build/Release owners."
   },
   "latest_recursive_evidence": {
     "run_id": 37998467124,
@@ -46,7 +46,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live authority 6fed91ff exact through recursive order 6,962; first unread is 6,963 Telegram/ThirdParty/MicroTeX::src/utils/dict_tree.h; unread_minimum is 9,163; unknown remains 15,845; omitted remains 0.",
+  "note": "Live authority 6fed91ff exact through recursive order 6,976; first unread is 6,977 Telegram/ThirdParty/QR::Readme.markdown; unread_minimum is 9,149; unknown remains 15,845; omitted remains 0.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -64,10 +64,10 @@
       6541,
       6627
     ],
-    "current_source_read_through": 6962,
-    "first_unread_order": 6963,
-    "first_unread_path": "Telegram/ThirdParty/MicroTeX::src/utils/dict_tree.h",
-    "current_head_source_authority_evidence": "Accepted authority remains 6fed91ff. Deterministic component read-through extends through MicroTeX win32_main.cpp order 6,962; sample UI is non-shipping while lifecycle/render/export/teardown semantics remain mapped-open pending canonical math runtime evidence and descendant exact-head Actions."
+    "current_source_read_through": 6976,
+    "first_unread_order": 6977,
+    "first_unread_path": "Telegram/ThirdParty/QR::Readme.markdown",
+    "current_head_source_authority_evidence": "Accepted authority remains 6fed91ff. Deterministic component read-through completes MicroTeX through vcpkg.json order 6,976; bounds/Unicode/error/dependency responsibilities remain mapped-open pending canonical math boundary evidence and descendant exact-head Actions."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -76,9 +76,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 6962,
-    "first_unread_order": 6963,
-    "first_unread_path": "Telegram/ThirdParty/MicroTeX::src/utils/dict_tree.h",
+    "read_through": 6976,
+    "first_unread_order": 6977,
+    "first_unread_path": "Telegram/ThirdParty/QR::Readme.markdown",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }
