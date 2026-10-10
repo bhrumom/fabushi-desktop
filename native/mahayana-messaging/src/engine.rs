@@ -539,6 +539,8 @@ pub enum Command {
     },
     ResolveConnectedAppRequest {
         session_id: u64,
+        #[serde(default)]
+        message_id: i64,
         request_id: String,
         decision: ConnectedAppClaimDecision,
         operation_id: String,
@@ -550,6 +552,8 @@ pub enum Command {
     },
     ResolveConnectedAppWalletRequest {
         session_id: u64,
+        #[serde(default)]
+        message_id: i64,
         request_id: String,
         decision: ConnectedAppClaimDecision,
         wallet_identity: WalletTransferIdentity,
@@ -562,17 +566,23 @@ pub enum Command {
     },
     LinkConnectedAppClaimOperation {
         session_id: u64,
+        #[serde(default)]
+        message_id: i64,
         request_id: String,
         operation_id: String,
     },
     RecordConnectedAppClaimHandoff {
         session_id: u64,
+        #[serde(default)]
+        message_id: i64,
         request_id: String,
         operation_id: String,
         signed_payload: String,
     },
     RecordConnectedAppClaimAnswer {
         session_id: u64,
+        #[serde(default)]
+        message_id: i64,
         request_id: String,
         answer: Vec<u8>,
     },
@@ -3574,6 +3584,7 @@ impl MessagingEngine {
             }
             Command::ResolveConnectedAppRequest {
                 session_id,
+                message_id,
                 request_id,
                 decision,
                 operation_id,
@@ -3585,6 +3596,7 @@ impl MessagingEngine {
                 let mut state = self.state.connected_apps.clone();
                 state.record_claim_with_recovery(
                     session_id,
+                    message_id,
                     &request_id,
                     decision,
                     operation_id,
@@ -3597,6 +3609,7 @@ impl MessagingEngine {
             }
             Command::ResolveConnectedAppWalletRequest {
                 session_id,
+                message_id,
                 request_id,
                 decision,
                 wallet_identity,
@@ -3609,6 +3622,7 @@ impl MessagingEngine {
                 let mut state = self.state.connected_apps.clone();
                 state.record_wallet_claim_with_recovery(
                     session_id,
+                    message_id,
                     &request_id,
                     decision,
                     wallet_identity,
@@ -3622,15 +3636,17 @@ impl MessagingEngine {
             }
             Command::LinkConnectedAppClaimOperation {
                 session_id,
+                message_id,
                 request_id,
                 operation_id,
             } => {
                 let mut state = self.state.connected_apps.clone();
-                state.link_claim_operation(session_id, &request_id, &operation_id)?;
+                state.link_claim_operation(session_id, message_id, &request_id, &operation_id)?;
                 Ok(vec![Event::ConnectedAppStateChanged { state }])
             }
             Command::RecordConnectedAppClaimHandoff {
                 session_id,
+                message_id,
                 request_id,
                 operation_id,
                 signed_payload,
@@ -3638,6 +3654,7 @@ impl MessagingEngine {
                 let mut state = self.state.connected_apps.clone();
                 state.record_claim_handoff(
                     session_id,
+                    message_id,
                     &request_id,
                     &operation_id,
                     &signed_payload,
@@ -3646,11 +3663,12 @@ impl MessagingEngine {
             }
             Command::RecordConnectedAppClaimAnswer {
                 session_id,
+                message_id,
                 request_id,
                 answer,
             } => {
                 let mut state = self.state.connected_apps.clone();
-                state.record_claim_answer(session_id, &request_id, answer)?;
+                state.record_claim_answer(session_id, message_id, &request_id, answer)?;
                 Ok(vec![Event::ConnectedAppStateChanged { state }])
             }
             Command::CloseConnectedAppSession {
@@ -5784,6 +5802,7 @@ mod connected_app_engine_tests {
             .execute(Command::QueueConnectedAppRequest {
                 request: ConnectedAppRequest {
                     session_id: 91,
+                    message_id: 904,
                     request_id: "request-1".into(),
                     method: "sendTransaction".into(),
                     kind: ConnectedAppRequestKind::SendTransaction,
@@ -5796,6 +5815,7 @@ mod connected_app_engine_tests {
         engine
             .execute(Command::ResolveConnectedAppRequest {
                 session_id: 91,
+                    message_id: 905,
                 request_id: "request-1".into(),
                 decision: ConnectedAppClaimDecision::Confirm,
                 operation_id: String::new(),
@@ -5808,6 +5828,7 @@ mod connected_app_engine_tests {
         engine
             .execute(Command::LinkConnectedAppClaimOperation {
                 session_id: 91,
+                message_id: 901,
                 request_id: "request-1".into(),
                 operation_id: "operation-1".into(),
             })
@@ -5815,6 +5836,7 @@ mod connected_app_engine_tests {
         engine
             .execute(Command::RecordConnectedAppClaimHandoff {
                 session_id: 91,
+                message_id: 901,
                 request_id: "request-1".into(),
                 operation_id: "operation-1".into(),
                 signed_payload: "signed-payload".into(),
@@ -5823,6 +5845,7 @@ mod connected_app_engine_tests {
         engine
             .execute(Command::RecordConnectedAppClaimAnswer {
                 session_id: 91,
+                message_id: 901,
                 request_id: "request-1".into(),
                 answer: vec![1, 2, 3],
             })
@@ -5844,6 +5867,7 @@ mod connected_app_engine_tests {
         engine.execute(Command::QueueConnectedAppRequest {
             request: ConnectedAppRequest {
                 session_id: 91,
+                    message_id: 906,
                 request_id: "wallet-request".into(),
                 method: "sendTransaction".into(),
                 kind: ConnectedAppRequestKind::SendTransaction,
@@ -5860,6 +5884,7 @@ mod connected_app_engine_tests {
         };
         engine.execute(Command::ResolveConnectedAppWalletRequest {
             session_id: 91,
+                message_id: 902,
             request_id: "wallet-request".into(),
             decision: ConnectedAppClaimDecision::Confirm,
             wallet_identity: wallet.clone(),
@@ -5871,11 +5896,13 @@ mod connected_app_engine_tests {
         }).unwrap();
         engine.execute(Command::LinkConnectedAppClaimOperation {
             session_id: 91,
+                message_id: 902,
             request_id: "wallet-request".into(),
             operation_id: "operation-wallet".into(),
         }).unwrap();
         engine.execute(Command::RecordConnectedAppClaimHandoff {
             session_id: 91,
+                message_id: 902,
             request_id: "wallet-request".into(),
             operation_id: "operation-wallet".into(),
             signed_payload: "signed-wallet".into(),
@@ -5929,6 +5956,7 @@ mod connected_app_engine_tests {
             .execute(Command::QueueConnectedAppRequest {
                 request: ConnectedAppRequest {
                     session_id: 91,
+                    message_id: 907,
                     request_id: "request-close".into(),
                     method: "signData".into(),
                     kind: ConnectedAppRequestKind::SignData,

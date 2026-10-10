@@ -267,10 +267,6 @@ pub struct ConnectedAppManifest {
 
 impl ConnectedAppManifest {
     pub fn validate(&self) -> Result<(), ConnectedAppError> {
-        let name = self.name.trim();
-        if name.is_empty() || name.chars().count() > CONNECTED_APP_NAME_MAX_CHARS {
-            return Err(ConnectedAppError::InvalidManifest);
-        }
         if !valid_secure_url(&self.url) {
             return Err(ConnectedAppError::InvalidManifest);
         }
@@ -327,6 +323,8 @@ pub enum ConnectedAppRequestKind {
 #[serde(rename_all = "camelCase")]
 pub struct ConnectedAppRequest {
     pub session_id: u64,
+    #[serde(default)]
+    pub message_id: i64,
     pub request_id: String,
     pub method: String,
     pub kind: ConnectedAppRequestKind,
@@ -337,6 +335,8 @@ pub struct ConnectedAppRequest {
 impl ConnectedAppRequest {
     pub fn validate(&self, now_ms: i64) -> Result<(), ConnectedAppError> {
         if self.session_id == 0
+            || self.message_id <= 0
+            || self.message_id > i32::MAX as i64
             || !connected_app_request_id_valid(&self.request_id)
             || self.method.trim().is_empty()
             || self.trace_id.chars().count() > CONNECTED_APP_TRACE_ID_MAX_CHARS
@@ -359,6 +359,8 @@ pub enum ConnectedAppClaimDecision {
 #[serde(rename_all = "camelCase")]
 pub struct ConnectedAppClaimRecord {
     pub session_id: u64,
+    #[serde(default)]
+    pub message_id: i64,
     pub request_id: String,
     pub trace_id: String,
     pub expires_at_ms: i64,
@@ -389,6 +391,8 @@ impl ConnectedAppClaimRecord {
             }
         };
         if self.session_id == 0
+            || self.message_id <= 0
+            || self.message_id > i32::MAX as i64
             || !connected_app_request_id_valid(&self.request_id)
             || self.trace_id.chars().count() > CONNECTED_APP_TRACE_ID_MAX_CHARS
             || self.expires_at_ms <= 0
@@ -874,10 +878,10 @@ impl ConnectedAppState {
         ) {
             return Err(ConnectedAppError::SessionClosed);
         }
-        let key = request_key(request.session_id, &request.request_id);
+        let key = request_key(request.session_id, request.message_id);
         if self.pending_requests.contains_key(&key)
             || self.claims.iter().any(|claim| {
-                claim.session_id == request.session_id && claim.request_id == request.request_id
+                claim.session_id == request.session_id && claim.message_id == request.message_id
             })
         {
             return Err(ConnectedAppError::DuplicateRequest);
@@ -889,6 +893,7 @@ impl ConnectedAppState {
     pub fn record_claim(
         &mut self,
         session_id: u64,
+        message_id: i64,
         request_id: &str,
         decision: ConnectedAppClaimDecision,
         operation_id: String,
@@ -901,6 +906,7 @@ impl ConnectedAppState {
         }
         self.record_claim_with_recovery(
             session_id,
+            message_id,
             request_id,
             decision,
             operation_id,
@@ -914,6 +920,7 @@ impl ConnectedAppState {
     pub fn record_claim_with_recovery(
         &mut self,
         session_id: u64,
+        message_id: i64,
         request_id: &str,
         decision: ConnectedAppClaimDecision,
         operation_id: String,
@@ -924,6 +931,7 @@ impl ConnectedAppState {
     ) -> Result<ConnectedAppClaimRecord, ConnectedAppError> {
         self.record_claim_internal(
             session_id,
+            message_id,
             request_id,
             decision,
             None,
@@ -938,6 +946,7 @@ impl ConnectedAppState {
     pub fn record_wallet_claim(
         &mut self,
         session_id: u64,
+        message_id: i64,
         request_id: &str,
         decision: ConnectedAppClaimDecision,
         wallet_identity: WalletTransferIdentity,
@@ -951,6 +960,7 @@ impl ConnectedAppState {
         }
         self.record_wallet_claim_with_recovery(
             session_id,
+            message_id,
             request_id,
             decision,
             wallet_identity,
@@ -965,6 +975,7 @@ impl ConnectedAppState {
     pub fn record_wallet_claim_with_recovery(
         &mut self,
         session_id: u64,
+        message_id: i64,
         request_id: &str,
         decision: ConnectedAppClaimDecision,
         wallet_identity: WalletTransferIdentity,
@@ -979,6 +990,7 @@ impl ConnectedAppState {
             .map_err(|_| ConnectedAppError::InvalidWalletBinding)?;
         self.record_claim_internal(
             session_id,
+            message_id,
             request_id,
             decision,
             Some(wallet_identity),
@@ -993,6 +1005,7 @@ impl ConnectedAppState {
     pub fn link_claim_operation(
         &mut self,
         session_id: u64,
+        message_id: i64,
         request_id: &str,
         operation_id: &str,
     ) -> Result<(), ConnectedAppError> {
@@ -1001,7 +1014,7 @@ impl ConnectedAppState {
         {
             return Err(ConnectedAppError::ClaimTransition);
         }
-        let claim = self.claim_mut(session_id, request_id)?;
+        let claim = self.claim_mut(session_id, message_id, request_id)?;
         if claim.decision != ConnectedAppClaimDecision::Confirm
             || !claim.signed_payload.is_empty()
             || !claim.answer.is_empty()
@@ -1016,6 +1029,7 @@ impl ConnectedAppState {
     pub fn record_claim_handoff(
         &mut self,
         session_id: u64,
+        message_id: i64,
         request_id: &str,
         operation_id: &str,
         signed_payload: &str,
@@ -1025,7 +1039,7 @@ impl ConnectedAppState {
         {
             return Err(ConnectedAppError::ClaimTransition);
         }
-        let claim = self.claim_mut(session_id, request_id)?;
+        let claim = self.claim_mut(session_id, message_id, request_id)?;
         if claim.decision != ConnectedAppClaimDecision::Confirm
             || claim.operation_id != operation_id
             || operation_id.is_empty()
@@ -1041,13 +1055,14 @@ impl ConnectedAppState {
     pub fn record_claim_answer(
         &mut self,
         session_id: u64,
+        message_id: i64,
         request_id: &str,
         answer: Vec<u8>,
     ) -> Result<(), ConnectedAppError> {
         if answer.is_empty() || answer.len() > CONNECTED_APP_ANSWER_MAX_BYTES {
             return Err(ConnectedAppError::ClaimTransition);
         }
-        let claim = self.claim_mut(session_id, request_id)?;
+        let claim = self.claim_mut(session_id, message_id, request_id)?;
         if claim.decision != ConnectedAppClaimDecision::Confirm
             || claim.operation_id.is_empty()
             || (!claim.answer.is_empty() && claim.answer != answer)
@@ -1061,11 +1076,12 @@ impl ConnectedAppState {
     pub fn claim_recovery_action(
         &self,
         session_id: u64,
+        message_id: i64,
         request_id: &str,
         fate: ConnectedAppOperationFate,
         now_ms: i64,
     ) -> Result<ConnectedAppRecoveryAction, ConnectedAppError> {
-        let claim = self.claim(session_id, request_id)?;
+        let claim = self.claim(session_id, message_id, request_id)?;
         if !claim.answer.is_empty() || claim.decision == ConnectedAppClaimDecision::Answer {
             return Ok(ConnectedAppRecoveryAction::SubmitAnswer);
         }
@@ -1096,28 +1112,39 @@ impl ConnectedAppState {
     fn claim(
         &self,
         session_id: u64,
+        message_id: i64,
         request_id: &str,
     ) -> Result<&ConnectedAppClaimRecord, ConnectedAppError> {
         self.claims
             .iter()
-            .find(|claim| claim.session_id == session_id && claim.request_id == request_id)
+            .find(|claim| {
+                claim.session_id == session_id
+                    && claim.message_id == message_id
+                    && claim.request_id == request_id
+            })
             .ok_or(ConnectedAppError::ClaimNotFound)
     }
 
     fn claim_mut(
         &mut self,
         session_id: u64,
+        message_id: i64,
         request_id: &str,
     ) -> Result<&mut ConnectedAppClaimRecord, ConnectedAppError> {
         self.claims
             .iter_mut()
-            .find(|claim| claim.session_id == session_id && claim.request_id == request_id)
+            .find(|claim| {
+                claim.session_id == session_id
+                    && claim.message_id == message_id
+                    && claim.request_id == request_id
+            })
             .ok_or(ConnectedAppError::ClaimNotFound)
     }
 
     fn record_claim_internal(
         &mut self,
         session_id: u64,
+        message_id: i64,
         request_id: &str,
         decision: ConnectedAppClaimDecision,
         wallet_identity: Option<WalletTransferIdentity>,
@@ -1132,12 +1159,15 @@ impl ConnectedAppState {
         {
             return Err(ConnectedAppError::ClaimTransition);
         }
-        let key = request_key(session_id, request_id);
+        let key = request_key(session_id, message_id);
         let request = self
             .pending_requests
             .get(&key)
             .cloned()
             .ok_or(ConnectedAppError::RequestNotFound)?;
+        if request.request_id != request_id {
+            return Err(ConnectedAppError::RequestNotFound);
+        }
         if request.expires_at_ms <= now_ms {
             self.pending_requests.remove(&key);
             return Err(ConnectedAppError::RequestExpired);
@@ -1148,6 +1178,7 @@ impl ConnectedAppState {
         }
         let claim = ConnectedAppClaimRecord {
             session_id,
+            message_id: request.message_id,
             request_id: request.request_id.clone(),
             trace_id: request.trace_id.clone(),
             expires_at_ms: request.expires_at_ms,
@@ -1179,7 +1210,7 @@ impl ConnectedAppState {
                         .saturating_add(CONNECTED_APP_CLAIM_RETENTION_MS)
         });
         self.pending_requests
-            .retain(|_, request| request.expires_at_ms > now_ms);
+            .retain(|_, request| request.validate(now_ms).is_ok());
     }
 
     pub fn recoverable_claims(&self, now_ms: i64) -> Vec<ConnectedAppClaimRecord> {
@@ -1211,6 +1242,76 @@ impl ConnectedAppState {
                 })
             })
             .collect()
+    }
+}
+
+pub fn connected_app_start_param_query(start_param: &str) -> Option<String> {
+    let mut result = start_param.strip_prefix("tonconnect-")?.to_string();
+    result = result.replace("--", "%");
+    result = result.replace("__", "=");
+    result = result.replace('-', "&");
+    Some(result)
+}
+
+pub fn connected_app_start_param(query: &str) -> String {
+    let query = query.split('#').next().unwrap_or_default().replace('+', "%20");
+    let mut parts = Vec::new();
+    for pair in query.split('&').filter(|part| !part.is_empty()) {
+        let part = pair
+            .split('%')
+            .map(percent_encode_start_param_chunk)
+            .collect::<Vec<_>>()
+            .join("%");
+        if !part.starts_with('%') {
+            parts.push(part);
+        }
+    }
+    let mut encoded = parts.join("-");
+    encoded = encoded.replace('=', "__");
+    encoded = encoded.replace('%', "--");
+    format!("tonconnect-{encoded}")
+}
+
+fn percent_encode_start_param_chunk(value: &str) -> String {
+    let mut result = String::new();
+    for byte in value.as_bytes() {
+        let safe = byte.is_ascii_alphanumeric()
+            || matches!(*byte, b'=' | b'-' | b'.' | b'_' | b'~');
+        if safe {
+            result.push(*byte as char);
+        } else {
+            result.push_str(&format!("%{byte:02X}"));
+        }
+    }
+    result
+}
+
+pub fn connected_app_display_name(name: &str, fallback: &str) -> String {
+    let mut result = String::new();
+    let mut units = 0usize;
+    let mut previous_space = false;
+    for ch in name.chars() {
+        let code = ch as u32;
+        if matches!(code, 0x200E..=0x200F | 0x202A..=0x202E | 0x2066..=0x2069) {
+            continue;
+        }
+        let ch = if ch.is_whitespace() { ' ' } else { ch };
+        if ch == ' ' && previous_space {
+            continue;
+        }
+        let next = ch.len_utf16();
+        if units + next > CONNECTED_APP_NAME_MAX_CHARS {
+            break;
+        }
+        result.push(ch);
+        units += next;
+        previous_space = ch == ' ';
+    }
+    let result = result.trim();
+    if result.is_empty() {
+        fallback.to_string()
+    } else {
+        result.to_string()
     }
 }
 
@@ -1414,8 +1515,8 @@ pub fn connected_app_proof_domain_allowed(
         && (ownership.is_empty() || normalized != ownership)
 }
 
-fn request_key(session_id: u64, request_id: &str) -> String {
-    format!("{session_id}:{request_id}")
+fn request_key(session_id: u64, message_id: i64) -> String {
+    format!("{session_id}:{message_id}")
 }
 
 fn normalize_domain(value: &str) -> String {
@@ -1547,6 +1648,7 @@ mod tests {
     fn request(id: &str, expires_at_ms: i64) -> ConnectedAppRequest {
         ConnectedAppRequest {
             session_id: 7,
+            message_id: 101,
             request_id: id.into(),
             method: "sendTransaction".into(),
             kind: ConnectedAppRequestKind::SendTransaction,
@@ -1610,6 +1712,7 @@ mod tests {
         let claim = state
             .record_claim_with_recovery(
                 7,
+                 101,
                 "r1",
                 ConnectedAppClaimDecision::Confirm,
                 String::new(),
@@ -1630,6 +1733,7 @@ mod tests {
         assert_eq!(
             state.record_claim_with_recovery(
                 7,
+                 101,
                 "r1",
                 ConnectedAppClaimDecision::Confirm,
                 String::new(),
@@ -1652,6 +1756,7 @@ mod tests {
         assert_eq!(
             state.record_claim(
                 7,
+                 101,
                 "late",
                 ConnectedAppClaimDecision::Answer,
                 String::new(),
@@ -1665,6 +1770,7 @@ mod tests {
         state
             .record_claim(
                 7,
+                 101,
                 "recover",
                 ConnectedAppClaimDecision::Answer,
                 String::new(),
@@ -1693,6 +1799,7 @@ mod tests {
         };
         state.record_wallet_claim_with_recovery(
             7,
+             101,
             "wallet",
             ConnectedAppClaimDecision::Confirm,
             wallet.clone(),
@@ -1774,6 +1881,7 @@ mod tests {
     fn durable_claim_shape_fails_closed_for_recovery_unsafe_combinations() {
         let base = ConnectedAppClaimRecord {
             session_id: 7,
+            message_id: 101,
             request_id: "claim-shape".into(),
             trace_id: "trace".into(),
             expires_at_ms: 1_000,
@@ -1838,6 +1946,7 @@ mod tests {
         let mut state = ConnectedAppState::default();
         state.claims.push(ConnectedAppClaimRecord {
             session_id: 7,
+            message_id: 101,
             request_id: "persisted-invalid".into(),
             trace_id: String::new(),
             expires_at_ms: 1_000,
@@ -1855,6 +1964,100 @@ mod tests {
     }
 
     #[test]
+    fn transport_message_identity_allows_protocol_id_reuse_without_claim_collision() {
+        let mut state = ConnectedAppState::default();
+        let mut active = session(ConnectedAppSessionStatus::Active);
+        active.updated_at_ms = 11;
+        state.upsert_session(active).unwrap();
+        let mut first = request("same-protocol-id", 1_000);
+        first.message_id = 501;
+        let mut second = first.clone();
+        second.message_id = 502;
+        state.queue_request(first, 100).unwrap();
+        state.queue_request(second, 100).unwrap();
+        state
+            .record_claim(
+                7,
+                501,
+                "same-protocol-id",
+                ConnectedAppClaimDecision::Answer,
+                String::new(),
+                String::new(),
+                vec![1],
+                200,
+            )
+            .unwrap();
+        state
+            .record_claim(
+                7,
+                502,
+                "same-protocol-id",
+                ConnectedAppClaimDecision::Answer,
+                String::new(),
+                String::new(),
+                vec![2],
+                200,
+            )
+            .unwrap();
+        assert_eq!(state.claims.len(), 2);
+        assert_eq!(state.claims[0].message_id, 501);
+        assert_eq!(state.claims[1].message_id, 502);
+    }
+
+    #[test]
+    fn legacy_claim_without_message_identity_fails_closed() {
+        let mut claim = ConnectedAppClaimRecord {
+            session_id: 7,
+            message_id: 0,
+            request_id: "legacy".into(),
+            trace_id: String::new(),
+            expires_at_ms: 1_000,
+            decision: ConnectedAppClaimDecision::Answer,
+            wallet_identity: None,
+            operation_id: String::new(),
+            signed_payload: String::new(),
+            not_sent: Vec::new(),
+            answer: vec![1],
+            created_at_ms: 100,
+        };
+        assert_eq!(claim.validate(), Err(ConnectedAppError::InvalidClaim));
+        claim.message_id = 1;
+        claim.validate().unwrap();
+    }
+
+    #[test]
+    fn start_param_codec_preserves_sdk_separator_contract() {
+        let query = "v=2&id=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa&trace_id=12345678-1234-1234-1234-123456789abc";
+        let encoded = connected_app_start_param(query);
+        assert_eq!(connected_app_start_param_query(&encoded).as_deref(), Some(query));
+        let unsafe_leading_escape = connected_app_start_param("%7Bignored&v=2");
+        assert_eq!(
+            connected_app_start_param_query(&unsafe_leading_escape).as_deref(),
+            Some("v=2")
+        );
+        assert!(connected_app_start_param_query("other-v=2").is_none());
+    }
+
+    #[test]
+    fn display_name_is_single_line_bidi_safe_utf16_bounded_and_falls_back() {
+        let hostile = format!("  hello\n\u{202E}world {}  ", "馃榾".repeat(40));
+        let display = connected_app_display_name(&hostile, "fallback.example");
+        assert!(!display.contains('\n'));
+        assert!(!display.contains('\u{202E}'));
+        assert!(display.encode_utf16().count() <= CONNECTED_APP_NAME_MAX_CHARS);
+        assert_eq!(
+            connected_app_display_name("\u{202E}\n", "fallback.example"),
+            "fallback.example"
+        );
+        let manifest = ConnectedAppManifest {
+            url: "https://fallback.example/manifest.json".into(),
+            name: "\u{202E}\n".into(),
+            icon_url: None,
+        };
+        manifest.validate().unwrap();
+    }
+
+    #[test]
     fn signed_payload_requires_operation_id_and_manifest_requires_https() {
         let mut state = ConnectedAppState::default();
         let mut active = session(ConnectedAppSessionStatus::Active);
@@ -1864,6 +2067,7 @@ mod tests {
         assert_eq!(
             state.record_claim_with_recovery(
                 7,
+                 101,
                 "r2",
                 ConnectedAppClaimDecision::Confirm,
                 String::new(),
@@ -2034,6 +2238,7 @@ mod lifecycle_source_tests {
             .queue_request(
                 ConnectedAppRequest {
                     session_id: 77,
+                    message_id: 701,
                     request_id: "request-stage".into(),
                     method: "sendTransaction".into(),
                     kind: ConnectedAppRequestKind::SendTransaction,
@@ -2046,6 +2251,7 @@ mod lifecycle_source_tests {
         state
             .record_claim_with_recovery(
                 77,
+                 701,
                 "request-stage",
                 ConnectedAppClaimDecision::Confirm,
                 String::new(),
@@ -2060,6 +2266,7 @@ mod lifecycle_source_tests {
             state
                 .claim_recovery_action(
                     77,
+                     701,
                     "request-stage",
                     ConnectedAppOperationFate::Absent,
                     300,
@@ -2075,6 +2282,7 @@ mod lifecycle_source_tests {
             state
                 .claim_recovery_action(
                     77,
+                     701,
                     "request-stage",
                     ConnectedAppOperationFate::Unresolved,
                     300,
@@ -2090,6 +2298,7 @@ mod lifecycle_source_tests {
             state
                 .claim_recovery_action(
                     77,
+                     701,
                     "request-stage",
                     ConnectedAppOperationFate::Unresolved,
                     300,
@@ -2101,6 +2310,7 @@ mod lifecycle_source_tests {
             state
                 .claim_recovery_action(
                     77,
+                     701,
                     "request-stage",
                     ConnectedAppOperationFate::Settled,
                     300,
@@ -2116,6 +2326,7 @@ mod lifecycle_source_tests {
             state
                 .claim_recovery_action(
                     77,
+                     701,
                     "request-stage",
                     ConnectedAppOperationFate::Settled,
                     300,
