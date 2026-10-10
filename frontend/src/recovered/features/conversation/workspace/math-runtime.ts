@@ -39,6 +39,10 @@ function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/gu, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character] ?? character);
 }
 
+function normalizeNonNegativeIntegerBudget(value: number): number {
+  return Number.isFinite(value) ? Math.max(0, Math.floor(value)) : 0;
+}
+
 function assertAssistantMathExpressionWithinLimit(expression: string, maxExpressionLength: number): void {
   if (expression.length > maxExpressionLength) {
     throw new Error(`Assistant math expression exceeds the ${maxExpressionLength}-code-unit parsing limit.`);
@@ -71,8 +75,9 @@ export function renderKatexMarkup(
   maxExpressionLength = MAX_ASSISTANT_MATH_EXPRESSION_LENGTH,
   maxMarkupBytes = MAX_ASSISTANT_MATH_MARKUP_BYTES,
 ): string {
-  assertAssistantMathExpressionWithinLimit(expression, maxExpressionLength);
-  const boundedMarkupBytes = Math.max(0, Math.floor(maxMarkupBytes));
+  const boundedExpressionLength = normalizeNonNegativeIntegerBudget(maxExpressionLength);
+  assertAssistantMathExpressionWithinLimit(expression, boundedExpressionLength);
+  const boundedMarkupBytes = normalizeNonNegativeIntegerBudget(maxMarkupBytes);
   const safety = {
     maxExpand: MAX_ASSISTANT_MATH_EXPANSIONS,
     maxSize: MAX_ASSISTANT_MATH_SIZE_EM,
@@ -133,10 +138,12 @@ function estimateStringBytes(value: string): number {
 export function createAssistantMathMarkupCache(
   options: AssistantMathMarkupCacheOptions = {},
 ): AssistantMathMarkupCache {
-  const maxBytes = Math.max(0, Math.floor(options.maxBytes ?? DEFAULT_ASSISTANT_MATH_CACHE_BUDGET_BYTES));
-  const maxExpressionLength = Math.max(0, Math.floor(
+  const maxBytes = normalizeNonNegativeIntegerBudget(
+    options.maxBytes ?? DEFAULT_ASSISTANT_MATH_CACHE_BUDGET_BYTES,
+  );
+  const maxExpressionLength = normalizeNonNegativeIntegerBudget(
     options.maxExpressionLength ?? MAX_ASSISTANT_MATH_EXPRESSION_LENGTH,
-  ));
+  );
   let byLoader = new WeakMap<KatexRuntimeLoader, AssistantMathLoaderCache>();
   const keyFor = (expression: string, displayMode: boolean) => `${displayMode ? "display" : "inline"}:\u0000${expression}`;
 
