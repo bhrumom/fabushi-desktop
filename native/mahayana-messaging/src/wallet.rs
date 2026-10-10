@@ -1583,26 +1583,34 @@ impl WalletLiveState {
             .is_none_or(|last| now_ms.saturating_sub(last) >= WALLET_LIVE_STREAM_RESYNC_MS)
     }
 
-    /// One empty hidden page spends from the bounded walk. The twentieth
-    /// consecutive empty answer is accepted, but refuses an automatic
-    /// twenty-first request until visible progress or an explicit user/runtime
-    /// re-arm resets the budget.
-    pub fn note_history_page(
+    /// Spend the hidden-page budget before dispatching the actual request.
+    /// Both viewport-driven load-more and answer-side continuation therefore
+    /// consume one shared finite lane and cannot race past the bound.
+    pub fn spend_history_page_request(
         &mut self,
         generation: u64,
-        visible_rows: usize,
-    ) -> Result<bool, WalletLiveError> {
+    ) -> Result<(), WalletLiveError> {
         self.require_generation(generation)?;
-        if visible_rows > 0 {
-            self.hidden_pages_without_visible_rows = 0;
-            return Ok(true);
-        }
         if self.hidden_pages_without_visible_rows >= WALLET_LIVE_MAX_HIDDEN_PAGES {
-            return Ok(false);
+            return Err(WalletLiveError::HistoryPageBudgetExhausted);
         }
         self.hidden_pages_without_visible_rows =
             self.hidden_pages_without_visible_rows.saturating_add(1);
-        Ok(self.hidden_pages_without_visible_rows < WALLET_LIVE_MAX_HIDDEN_PAGES)
+        Ok(())
+    }
+
+    /// Only visible progress refills the automatic walk. Empty answers retain
+    /// the budget already spent when their request was issued.
+    pub fn note_history_progress(
+        &mut self,
+        generation: u64,
+        visible_rows: usize,
+    ) -> Result<(), WalletLiveError> {
+        self.require_generation(generation)?;
+        if visible_rows > 0 {
+            self.hidden_pages_without_visible_rows = 0;
+        }
+        Ok(())
     }
 
     pub fn rearm_history_walk(&mut self, generation: u64) -> Result<(), WalletLiveError> {
@@ -1639,6 +1647,8 @@ pub enum WalletLiveError {
     StaleGeneration { current: u64, received: u64 },
     #[error("wallet live timestamp is invalid")]
     InvalidTimestamp,
+    #[error("wallet hidden history page budget is exhausted")]
+    HistoryPageBudgetExhausted,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -2381,18 +2391,22 @@ mod wallet_runtime_tests {
     }
 
     #[test]
-    fn live_hidden_history_walk_is_bounded_and_rearmable() {
+    fn live_hidden_history_walk_spends_before_request_and_is_rearmable() {
         let mut live = WalletLiveState::default();
         let generation = live.begin_generation().unwrap();
-        for page in 1..=WALLET_LIVE_MAX_HIDDEN_PAGES {
-            let may_continue = live.note_history_page(generation, 0).unwrap();
-            assert_eq!(may_continue, page < WALLET_LIVE_MAX_HIDDEN_PAGES);
+        for _ in 0..WALLET_LIVE_MAX_HIDDEN_PAGES {
+            live.spend_history_page_request(generation).unwrap();
+            live.note_history_progress(generation, 0).unwrap();
         }
-        assert!(!live.note_history_page(generation, 0).unwrap());
-        assert!(live.note_history_page(generation, 1).unwrap());
+        assert_eq!(
+            live.spend_history_page_request(generation),
+            Err(WalletLiveError::HistoryPageBudgetExhausted)
+        );
+        live.note_history_progress(generation, 1).unwrap();
         assert_eq!(live.hidden_pages_without_visible_rows, 0);
         for _ in 0..3 {
-            let _ = live.note_history_page(generation, 0).unwrap();
+            live.spend_history_page_request(generation).unwrap();
+            live.note_history_progress(generation, 0).unwrap();
         }
         live.rearm_history_walk(generation).unwrap();
         assert_eq!(live.hidden_pages_without_visible_rows, 0);
