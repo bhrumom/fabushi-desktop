@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15846,
-    "unread": 9758,
+    "unread": 9748,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 69,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 6367,
-    "first_unread_order": 6368,
-    "first_unread_path": "Telegram/SourceFiles/webauthn/cable.h"
+    "read_through": 6377,
+    "first_unread_order": 6378,
+    "first_unread_path": "Telegram/SourceFiles/webauthn/org.bluez.xml"
   },
   "historical_exact_head_evidence": {
     "status": "historical-only",
