@@ -1500,7 +1500,7 @@ pub struct WalletTransferIdentity {
 }
 
 impl WalletTransferIdentity {
-    fn validate(&self) -> Result<(), WalletSponsoredFeeError> {
+    pub(crate) fn validate(&self) -> Result<(), WalletSponsoredFeeError> {
         if !matches!(self.network, 1 | 2)
             || self.public_key.len() != 32
             || validate_wallet_address(&self.address).is_err()
