@@ -1050,7 +1050,13 @@ if (reachabilityBlocks.length) {
     const proof=reachabilityBlocks.find(block=>block.symbol===row.consumer_symbol && block.token===token && block.consumers.length);
     if (!proof) continue;
     fail(row.reachability_status!=='open-no-exact-resource-consumer-proven','exact source consumer evidence contradicts reachability-open disposition at order '+row.recursive_order+': '+row.source_path);
-    fail(Array.isArray(row.consumer_evidence) && row.consumer_evidence.some(line=>proof.consumers.includes(line)),'source-dispositions row lacks exact generated consumer evidence at order '+row.recursive_order+': '+row.source_path);
+    const consumerIdentity=line=>String(line).replace(/^([^:]+):\\d+:/u,'$1:');
+    const generatedConsumerIdentities=new Set(proof.consumers.map(consumerIdentity));
+    fail(
+      Array.isArray(row.consumer_evidence)
+        && row.consumer_evidence.some(line=>generatedConsumerIdentities.has(consumerIdentity(line))),
+      'source-dispositions row lacks exact generated consumer evidence at order '+row.recursive_order+': '+row.source_path,
+    );
   }
 }
 
