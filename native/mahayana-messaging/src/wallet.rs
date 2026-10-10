@@ -1,8 +1,15 @@
 use crate::actor::ActorId;
 use crate::payment::Money;
+use chacha20poly1305::aead::{Aead, KeyInit, Payload};
+use chacha20poly1305::{XChaCha20Poly1305, XNonce};
+use hkdf::Hkdf;
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeMap;
+use sha2::Sha256;
+use std::collections::{BTreeMap, BTreeSet};
+use std::fmt;
 use thiserror::Error;
+use x25519_dalek::{PublicKey as X25519PublicKey, StaticSecret};
+use zeroize::Zeroize;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(transparent)]
@@ -56,6 +63,8 @@ pub struct WalletLedger {
     pub accounts: BTreeMap<WalletAccountId, WalletAccount>,
     pub entries: BTreeMap<String, LedgerEntry>,
     request_entries: BTreeMap<String, String>,
+    #[serde(default)]
+    pub runtime: WalletRuntimeState,
 }
 
 impl WalletLedger {
@@ -357,6 +366,960 @@ fn normalize_currency(currency: &str) -> String {
     currency.trim().to_ascii_uppercase()
 }
 
+
+pub const WALLET_RATE_REFRESH_MS: i64 = 5 * 60 * 1_000;
+pub const WALLET_RATE_RETRY_MS: i64 = 30 * 1_000;
+pub const WALLET_RECOVERY_SEED_BYTES: usize = 215;
+const WALLET_KEY_BYTES: usize = 32;
+const WALLET_KEY_NONCE_BYTES: usize = 24;
+const WALLET_RECOVERY_PUBLIC_KEY_BYTES: usize = 32;
+const WALLET_RECOVERY_NONCE_BYTES: usize = 24;
+const WALLET_KEY_ALGORITHM: &str = "XChaCha20Poly1305";
+const WALLET_KEY_AAD_PREFIX: &[u8] = b"fabushi-wallet-key-v1";
+const WALLET_RECOVERY_AAD_PREFIX: &[u8] = b"fabushi-wallet-recovery-share-v1";
+
+/// Secret-bearing bytes never participate in serde and are cleansed on drop.
+/// The explicit wrapper makes it difficult to accidentally persist or log
+/// wallet/recovery key material while allowing platform adapters to hand a
+/// short-lived wrapping key to the canonical wallet owner.
+pub struct WalletSecretBytes(Vec<u8>);
+
+impl WalletSecretBytes {
+    pub fn new(bytes: impl Into<Vec<u8>>) -> Self {
+        Self(bytes.into())
+    }
+
+    pub fn expose(&self) -> &[u8] {
+        &self.0
+    }
+}
+
+impl fmt::Debug for WalletSecretBytes {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str("WalletSecretBytes([REDACTED])")
+    }
+}
+
+impl Drop for WalletSecretBytes {
+    fn drop(&mut self) {
+        self.0.zeroize();
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum WalletKeyProtectionKind {
+    Passcode,
+    System,
+    Hardware,
+    External,
+}
+
+#[derive(Debug)]
+pub struct WalletProtectionMaterial {
+    /// Opaque platform-owned handle. The canonical wallet never persists the
+    /// wrapping key itself, only this handle plus authenticated ciphertext.
+    pub reference: String,
+    pub wrapping_key: WalletSecretBytes,
+}
+
+pub trait WalletProtectionProvider: Send + Sync {
+    fn id(&self) -> &'static str;
+    fn kind(&self) -> WalletKeyProtectionKind;
+
+    /// The provider returns a wrapping key and opaque reference. It is never
+    /// handed the wallet key, so device/passcode protection cannot become a
+    /// second wallet-secret owner.
+    fn enroll(&self) -> Result<WalletProtectionMaterial, WalletProtectionError>;
+    fn unwrap(&self, reference: &str) -> Result<WalletSecretBytes, WalletProtectionError>;
+    fn remove(&self, reference: &str) -> Result<(), WalletProtectionError>;
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProtectedWalletKey {
+    pub version: u32,
+    pub algorithm: String,
+    pub provider_id: String,
+    pub protection_kind: WalletKeyProtectionKind,
+    pub provider_reference: String,
+    pub nonce: Vec<u8>,
+    pub ciphertext: Vec<u8>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WalletKeyProtectionState {
+    pub epoch: u64,
+    pub locked: bool,
+    pub envelope: Option<ProtectedWalletKey>,
+}
+
+impl Default for WalletKeyProtectionState {
+    fn default() -> Self {
+        Self {
+            epoch: 0,
+            locked: true,
+            envelope: None,
+        }
+    }
+}
+
+impl WalletKeyProtectionState {
+    pub fn install(
+        &mut self,
+        expected_epoch: u64,
+        provider: &dyn WalletProtectionProvider,
+        wallet_key: &WalletSecretBytes,
+    ) -> Result<u64, WalletProtectionError> {
+        self.require_epoch(expected_epoch)?;
+        let envelope = protect_wallet_key(provider, wallet_key)?;
+        self.epoch = self
+            .epoch
+            .checked_add(1)
+            .ok_or(WalletProtectionError::EpochOverflow)?;
+        self.envelope = Some(envelope);
+        self.locked = true;
+        Ok(self.epoch)
+    }
+
+    pub fn unlock(
+        &mut self,
+        expected_epoch: u64,
+        provider: &dyn WalletProtectionProvider,
+    ) -> Result<WalletSecretBytes, WalletProtectionError> {
+        self.require_epoch(expected_epoch)?;
+        let envelope = self
+            .envelope
+            .as_ref()
+            .ok_or(WalletProtectionError::Absent)?;
+        let result = unprotect_wallet_key(provider, envelope)?;
+        self.locked = false;
+        Ok(result)
+    }
+
+    /// A replacement is committed before the old platform handle is retired.
+    /// If retirement fails, the new encrypted envelope remains authoritative
+    /// and the caller receives a typed retirement failure rather than rolling
+    /// security state back to an old factor.
+    pub fn rotate(
+        &mut self,
+        expected_epoch: u64,
+        current_provider: &dyn WalletProtectionProvider,
+        replacement_provider: &dyn WalletProtectionProvider,
+    ) -> Result<u64, WalletProtectionError> {
+        self.require_epoch(expected_epoch)?;
+        let previous = self
+            .envelope
+            .clone()
+            .ok_or(WalletProtectionError::Absent)?;
+        let wallet_key = unprotect_wallet_key(current_provider, &previous)?;
+        let replacement = protect_wallet_key(replacement_provider, &wallet_key)?;
+        self.epoch = self
+            .epoch
+            .checked_add(1)
+            .ok_or(WalletProtectionError::EpochOverflow)?;
+        self.envelope = Some(replacement);
+        self.locked = true;
+        current_provider
+            .remove(&previous.provider_reference)
+            .map_err(|_| WalletProtectionError::RetirementFailed)?;
+        Ok(self.epoch)
+    }
+
+    pub fn remove(
+        &mut self,
+        expected_epoch: u64,
+        provider: &dyn WalletProtectionProvider,
+    ) -> Result<u64, WalletProtectionError> {
+        self.require_epoch(expected_epoch)?;
+        let previous = self
+            .envelope
+            .clone()
+            .ok_or(WalletProtectionError::Absent)?;
+        require_matching_provider(provider, &previous)?;
+        provider.remove(&previous.provider_reference)?;
+        self.epoch = self
+            .epoch
+            .checked_add(1)
+            .ok_or(WalletProtectionError::EpochOverflow)?;
+        self.envelope = None;
+        self.locked = true;
+        Ok(self.epoch)
+    }
+
+    fn require_epoch(&self, expected_epoch: u64) -> Result<(), WalletProtectionError> {
+        if self.epoch == expected_epoch {
+            Ok(())
+        } else {
+            Err(WalletProtectionError::StaleEpoch {
+                expected: expected_epoch,
+                current: self.epoch,
+            })
+        }
+    }
+}
+
+fn wallet_key_aad(
+    provider_id: &str,
+    kind: WalletKeyProtectionKind,
+    reference: &str,
+) -> Vec<u8> {
+    let mut aad = Vec::with_capacity(
+        WALLET_KEY_AAD_PREFIX.len() + provider_id.len() + reference.len() + 16,
+    );
+    aad.extend_from_slice(WALLET_KEY_AAD_PREFIX);
+    aad.push(0);
+    aad.extend_from_slice(provider_id.as_bytes());
+    aad.push(0);
+    aad.extend_from_slice(format!("{kind:?}").as_bytes());
+    aad.push(0);
+    aad.extend_from_slice(reference.as_bytes());
+    aad
+}
+
+fn require_wrapping_key(key: &WalletSecretBytes) -> Result<(), WalletProtectionError> {
+    if key.expose().len() == WALLET_KEY_BYTES {
+        Ok(())
+    } else {
+        Err(WalletProtectionError::InvalidWrappingKey)
+    }
+}
+
+fn require_matching_provider(
+    provider: &dyn WalletProtectionProvider,
+    envelope: &ProtectedWalletKey,
+) -> Result<(), WalletProtectionError> {
+    if envelope.version != 1 || envelope.algorithm != WALLET_KEY_ALGORITHM {
+        return Err(WalletProtectionError::UnsupportedEnvelope);
+    }
+    if envelope.provider_id != provider.id() || envelope.protection_kind != provider.kind() {
+        return Err(WalletProtectionError::WrongProvider);
+    }
+    Ok(())
+}
+
+pub fn protect_wallet_key(
+    provider: &dyn WalletProtectionProvider,
+    wallet_key: &WalletSecretBytes,
+) -> Result<ProtectedWalletKey, WalletProtectionError> {
+    if wallet_key.expose().len() != WALLET_KEY_BYTES {
+        return Err(WalletProtectionError::InvalidWalletKey);
+    }
+    let material = provider.enroll()?;
+    if material.reference.trim().is_empty() {
+        return Err(WalletProtectionError::InvalidProviderReference);
+    }
+    require_wrapping_key(&material.wrapping_key)?;
+    let mut nonce = [0u8; WALLET_KEY_NONCE_BYTES];
+    getrandom::getrandom(&mut nonce).map_err(|_| WalletProtectionError::EntropyUnavailable)?;
+    let aad = wallet_key_aad(provider.id(), provider.kind(), &material.reference);
+    let cipher = XChaCha20Poly1305::new_from_slice(material.wrapping_key.expose())
+        .map_err(|_| WalletProtectionError::InvalidWrappingKey)?;
+    let ciphertext = cipher
+        .encrypt(
+            XNonce::from_slice(&nonce),
+            Payload {
+                msg: wallet_key.expose(),
+                aad: &aad,
+            },
+        )
+        .map_err(|_| WalletProtectionError::EncryptionFailed)?;
+    Ok(ProtectedWalletKey {
+        version: 1,
+        algorithm: WALLET_KEY_ALGORITHM.to_string(),
+        provider_id: provider.id().to_string(),
+        protection_kind: provider.kind(),
+        provider_reference: material.reference,
+        nonce: nonce.to_vec(),
+        ciphertext,
+    })
+}
+
+pub fn unprotect_wallet_key(
+    provider: &dyn WalletProtectionProvider,
+    envelope: &ProtectedWalletKey,
+) -> Result<WalletSecretBytes, WalletProtectionError> {
+    require_matching_provider(provider, envelope)?;
+    if envelope.nonce.len() != WALLET_KEY_NONCE_BYTES {
+        return Err(WalletProtectionError::CorruptEnvelope);
+    }
+    let material = provider.unwrap(&envelope.provider_reference)?;
+    require_wrapping_key(&material)?;
+    let aad = wallet_key_aad(
+        &envelope.provider_id,
+        envelope.protection_kind,
+        &envelope.provider_reference,
+    );
+    let cipher = XChaCha20Poly1305::new_from_slice(material.expose())
+        .map_err(|_| WalletProtectionError::InvalidWrappingKey)?;
+    let plaintext = cipher
+        .decrypt(
+            XNonce::from_slice(&envelope.nonce),
+            Payload {
+                msg: &envelope.ciphertext,
+                aad: &aad,
+            },
+        )
+        .map_err(|_| WalletProtectionError::AuthenticationFailed)?;
+    if plaintext.len() != WALLET_KEY_BYTES {
+        return Err(WalletProtectionError::CorruptEnvelope);
+    }
+    Ok(WalletSecretBytes::new(plaintext))
+}
+
+#[derive(Debug, Error, Clone, PartialEq, Eq)]
+pub enum WalletProtectionError {
+    #[error("wallet key protection was cancelled")]
+    Cancelled,
+    #[error("wallet key protection is unavailable")]
+    Unavailable,
+    #[error("wallet key protection material is absent")]
+    Absent,
+    #[error("wallet key protection provider rejected authentication")]
+    AuthenticationFailed,
+    #[error("wallet key protection provider does not match the persisted envelope")]
+    WrongProvider,
+    #[error("wallet key protection envelope is unsupported")]
+    UnsupportedEnvelope,
+    #[error("wallet key protection envelope is corrupt")]
+    CorruptEnvelope,
+    #[error("wallet key must contain exactly 32 bytes")]
+    InvalidWalletKey,
+    #[error("wallet wrapping key must contain exactly 32 bytes")]
+    InvalidWrappingKey,
+    #[error("wallet protection provider returned an invalid reference")]
+    InvalidProviderReference,
+    #[error("secure entropy is unavailable")]
+    EntropyUnavailable,
+    #[error("wallet key encryption failed")]
+    EncryptionFailed,
+    #[error("wallet protection epoch is stale: expected {expected}, current {current}")]
+    StaleEpoch { expected: u64, current: u64 },
+    #[error("wallet protection epoch overflowed")]
+    EpochOverflow,
+    #[error("the replacement key protection committed but the old handle could not be retired")]
+    RetirementFailed,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WalletRateState {
+    pub selected_currency: String,
+    /// Source-neutral quote in millionths of selected fiat per one wallet
+    /// asset. Integer storage avoids binary floating-point persistence drift.
+    pub quote_micros: BTreeMap<String, i64>,
+    pub last_updated_at_ms: Option<i64>,
+    pub refresh_at_ms: i64,
+    pub retrying: bool,
+}
+
+impl Default for WalletRateState {
+    fn default() -> Self {
+        Self {
+            selected_currency: "USD".to_string(),
+            quote_micros: BTreeMap::new(),
+            last_updated_at_ms: None,
+            refresh_at_ms: 0,
+            retrying: false,
+        }
+    }
+}
+
+impl WalletRateState {
+    pub fn set_currency(&mut self, currency: &str) -> Result<(), WalletRateError> {
+        let normalized = checked_currency(currency)?;
+        self.selected_currency = normalized;
+        Ok(())
+    }
+
+    pub fn apply_snapshot(
+        &mut self,
+        rates: impl IntoIterator<Item = (String, i64)>,
+        now_ms: i64,
+    ) -> Result<(), WalletRateError> {
+        let mut parsed = BTreeMap::new();
+        for (currency, quote_micros) in rates {
+            let currency = checked_currency(&currency)?;
+            if quote_micros <= 0 {
+                return Err(WalletRateError::InvalidQuote(currency));
+            }
+            parsed.insert(currency, quote_micros);
+        }
+        if parsed.is_empty() {
+            return Err(WalletRateError::EmptySnapshot);
+        }
+        self.quote_micros = parsed;
+        self.last_updated_at_ms = Some(now_ms);
+        self.refresh_at_ms = now_ms.saturating_add(WALLET_RATE_REFRESH_MS);
+        self.retrying = false;
+        Ok(())
+    }
+
+    pub fn mark_refresh_failure(&mut self, now_ms: i64) {
+        self.refresh_at_ms = now_ms.saturating_add(WALLET_RATE_RETRY_MS);
+        self.retrying = true;
+    }
+
+    pub fn current_quote_micros(&self) -> Option<i64> {
+        self.quote_micros.get(&self.selected_currency).copied()
+    }
+
+    pub fn currencies(&self) -> Vec<String> {
+        let mut currencies = self.quote_micros.keys().cloned().collect::<BTreeSet<_>>();
+        currencies.insert(self.selected_currency.clone());
+        currencies.into_iter().collect()
+    }
+
+    pub fn refresh_due(&self, now_ms: i64) -> bool {
+        now_ms >= self.refresh_at_ms
+    }
+}
+
+fn checked_currency(currency: &str) -> Result<String, WalletRateError> {
+    let normalized = normalize_currency(currency);
+    if normalized.len() == 3 && normalized.bytes().all(|byte| byte.is_ascii_uppercase()) {
+        Ok(normalized)
+    } else {
+        Err(WalletRateError::InvalidCurrency(currency.to_string()))
+    }
+}
+
+#[derive(Debug, Error, Clone, PartialEq, Eq)]
+pub enum WalletRateError {
+    #[error("wallet fiat currency is invalid: {0}")]
+    InvalidCurrency(String),
+    #[error("wallet fiat quote is invalid for {0}")]
+    InvalidQuote(String),
+    #[error("wallet fiat-rate snapshot is empty")]
+    EmptySnapshot,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OnrampProviderInfo {
+    pub id: String,
+    /// None means the provider did not advertise or the optional discovery
+    /// step failed; callers must still be able to create a session without a
+    /// base currency.
+    pub base_currencies: Option<BTreeSet<String>>,
+}
+
+impl OnrampProviderInfo {
+    pub fn new(
+        id: impl Into<String>,
+        base_currencies: Option<impl IntoIterator<Item = String>>,
+    ) -> Self {
+        Self {
+            id: id.into(),
+            base_currencies: base_currencies.map(|currencies| {
+                currencies
+                    .into_iter()
+                    .filter_map(|currency| checked_currency(&currency).ok())
+                    .collect()
+            }),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum WalletOnrampStatus {
+    ResolvingProvider,
+    CreatingSession,
+    Completed,
+    Failed,
+    Cancelled,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WalletOnrampRequest {
+    pub request_id: u64,
+    pub address: String,
+    pub asset: String,
+    pub base_currency: Option<String>,
+    pub provider_id: Option<String>,
+    pub status: WalletOnrampStatus,
+    pub session_url: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct OnrampSessionSpec {
+    pub request_id: u64,
+    pub address: String,
+    pub asset: String,
+    pub provider_id: String,
+    pub base_currency: Option<String>,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WalletOnrampState {
+    pub next_request_id: u64,
+    pub active: Option<WalletOnrampRequest>,
+}
+
+impl WalletOnrampState {
+    /// Beginning a new request invalidates the previous request generation.
+    /// Late provider/session callbacks therefore cannot settle a replacement.
+    pub fn begin(
+        &mut self,
+        address: impl Into<String>,
+        asset: impl Into<String>,
+        base_currency: Option<&str>,
+    ) -> Result<u64, WalletOnrampError> {
+        let address = address.into().trim().to_string();
+        let asset = asset.into().trim().to_ascii_uppercase();
+        if address.is_empty() || asset.is_empty() {
+            return Err(WalletOnrampError::InvalidRequest);
+        }
+        let base_currency = base_currency
+            .filter(|value| !value.trim().is_empty())
+            .map(checked_currency)
+            .transpose()
+            .map_err(|_| WalletOnrampError::InvalidRequest)?;
+        self.next_request_id = self
+            .next_request_id
+            .checked_add(1)
+            .ok_or(WalletOnrampError::RequestIdOverflow)?;
+        let request_id = self.next_request_id;
+        self.active = Some(WalletOnrampRequest {
+            request_id,
+            address,
+            asset,
+            base_currency,
+            provider_id: None,
+            status: WalletOnrampStatus::ResolvingProvider,
+            session_url: None,
+        });
+        Ok(request_id)
+    }
+
+    pub fn resolve_provider(
+        &mut self,
+        request_id: u64,
+        providers: &[OnrampProviderInfo],
+    ) -> Result<OnrampSessionSpec, WalletOnrampError> {
+        let request = self.current_mut(request_id)?;
+        if request.status != WalletOnrampStatus::ResolvingProvider {
+            return Err(WalletOnrampError::InvalidState);
+        }
+        let provider = providers
+            .iter()
+            .find(|provider| !provider.id.trim().is_empty())
+            .ok_or(WalletOnrampError::ProviderUnavailable)?;
+        let base_currency = request.base_currency.as_ref().and_then(|selected| {
+            provider
+                .base_currencies
+                .as_ref()
+                .filter(|currencies| currencies.contains(selected))
+                .map(|_| selected.clone())
+        });
+        request.provider_id = Some(provider.id.clone());
+        request.status = WalletOnrampStatus::CreatingSession;
+        Ok(OnrampSessionSpec {
+            request_id,
+            address: request.address.clone(),
+            asset: request.asset.clone(),
+            provider_id: provider.id.clone(),
+            base_currency,
+        })
+    }
+
+    pub fn complete(
+        &mut self,
+        request_id: u64,
+        session_url: Option<&str>,
+    ) -> Result<Option<String>, WalletOnrampError> {
+        let request = self.current_mut(request_id)?;
+        if request.status != WalletOnrampStatus::CreatingSession {
+            return Err(WalletOnrampError::InvalidState);
+        }
+        let url = session_url
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .map(str::to_string);
+        request.status = if url.is_some() {
+            WalletOnrampStatus::Completed
+        } else {
+            WalletOnrampStatus::Failed
+        };
+        request.session_url = url.clone();
+        Ok(url)
+    }
+
+    pub fn cancel(&mut self, request_id: u64) -> Result<(), WalletOnrampError> {
+        let request = self.current_mut(request_id)?;
+        if matches!(
+            request.status,
+            WalletOnrampStatus::Completed | WalletOnrampStatus::Failed
+        ) {
+            return Err(WalletOnrampError::InvalidState);
+        }
+        request.status = WalletOnrampStatus::Cancelled;
+        Ok(())
+    }
+
+    fn current_mut(
+        &mut self,
+        request_id: u64,
+    ) -> Result<&mut WalletOnrampRequest, WalletOnrampError> {
+        let request = self
+            .active
+            .as_mut()
+            .ok_or(WalletOnrampError::NoActiveRequest)?;
+        if request.request_id != request_id {
+            return Err(WalletOnrampError::StaleRequest {
+                expected: request.request_id,
+                received: request_id,
+            });
+        }
+        Ok(request)
+    }
+}
+
+#[derive(Debug, Error, Clone, PartialEq, Eq)]
+pub enum WalletOnrampError {
+    #[error("wallet funding request is invalid")]
+    InvalidRequest,
+    #[error("wallet funding provider is unavailable")]
+    ProviderUnavailable,
+    #[error("wallet funding request has no active operation")]
+    NoActiveRequest,
+    #[error("wallet funding request is stale: expected {expected}, received {received}")]
+    StaleRequest { expected: u64, received: u64 },
+    #[error("wallet funding request is in an invalid state")]
+    InvalidState,
+    #[error("wallet funding request id overflowed")]
+    RequestIdOverflow,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WalletPanelState {
+    pub generation: u64,
+    pub visible: bool,
+    pub minimized: bool,
+    pub active: bool,
+    pub transactions_visible: bool,
+}
+
+impl WalletPanelState {
+    /// The surface is singleton state: show restores/minimizes the current
+    /// generation instead of constructing a parallel wallet window.
+    pub fn show(&mut self) -> u64 {
+        if !self.visible {
+            self.generation = self.generation.saturating_add(1);
+        }
+        self.visible = true;
+        self.minimized = false;
+        self.active = true;
+        self.generation
+    }
+
+    pub fn minimize(&mut self) -> bool {
+        if !self.visible {
+            return false;
+        }
+        self.minimized = true;
+        self.active = false;
+        true
+    }
+
+    pub fn close(&mut self) -> bool {
+        if !self.visible {
+            return false;
+        }
+        self.visible = false;
+        self.minimized = false;
+        self.active = false;
+        true
+    }
+
+    pub fn set_transactions_visible(&mut self, visible: bool) {
+        self.transactions_visible = visible;
+    }
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WalletRuntimeState {
+    pub key_protection: WalletKeyProtectionState,
+    pub rates: WalletRateState,
+    pub onramp: WalletOnrampState,
+    pub panel: WalletPanelState,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct SendingClockPose {
+    pub minute_turns: f64,
+    pub hour_turns: f64,
+}
+
+pub fn sending_clock_pose(elapsed_ms: i64) -> SendingClockPose {
+    const HOUR_TURN_MS: i64 = 2_000;
+    const MINUTE_TURNS_PER_HOUR_TURN: f64 = 3.0;
+    let progress = elapsed_ms.rem_euclid(HOUR_TURN_MS) as f64 / HOUR_TURN_MS as f64;
+    SendingClockPose {
+        minute_turns: MINUTE_TURNS_PER_HOUR_TURN * progress,
+        hour_turns: 0.25 + progress,
+    }
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct GlareCycle {
+    pub birth_ms: Option<i64>,
+    pub death_ms: i64,
+}
+
+impl GlareCycle {
+    pub fn tick(&mut self, now_ms: i64, duration_ms: i64, pause_ms: i64) -> bool {
+        if duration_ms < 0 || pause_ms < 0 {
+            return false;
+        }
+        if now_ms.saturating_sub(self.death_ms) > pause_ms {
+            self.birth_ms = Some(now_ms);
+            self.death_ms = now_ms.saturating_add(duration_ms);
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn progress(&self, now_ms: i64) -> Option<f64> {
+        let birth_ms = self.birth_ms?;
+        let duration = self.death_ms.saturating_sub(birth_ms);
+        if duration <= 0 || now_ms < birth_ms || now_ms > self.death_ms {
+            return None;
+        }
+        Some((now_ms - birth_ms) as f64 / duration as f64)
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct GlareBand {
+    pub from: f64,
+    pub till: f64,
+}
+
+pub fn compute_glare_band(progress: f64, extent: f64, width: f64) -> GlareBand {
+    let from = -width + (extent + 2.0 * width) * progress;
+    GlareBand {
+        from,
+        till: from + width,
+    }
+}
+
+pub fn recovery_seed_from_words(words: &[String]) -> Result<Vec<u8>, WalletRecoveryError> {
+    let joined = words.join(" ").into_bytes();
+    if joined.len() > WALLET_RECOVERY_SEED_BYTES {
+        return Err(WalletRecoveryError::SeedTooLong);
+    }
+    let mut seed = vec![b' '; WALLET_RECOVERY_SEED_BYTES];
+    seed[..joined.len()].copy_from_slice(&joined);
+    Ok(seed)
+}
+
+pub fn split_recovery_seed(
+    seed: &[u8],
+    count: usize,
+) -> Result<Vec<Vec<u8>>, WalletRecoveryError> {
+    if count < 2 || seed.is_empty() {
+        return Err(WalletRecoveryError::InvalidShareCount);
+    }
+    let mut shares = vec![vec![0u8; seed.len()]; count];
+    let mut last = seed.to_vec();
+    for share in shares.iter_mut().take(count - 1) {
+        getrandom::getrandom(share).map_err(|_| WalletRecoveryError::EntropyUnavailable)?;
+        for (target, random) in last.iter_mut().zip(share.iter()) {
+            *target ^= *random;
+        }
+    }
+    shares[count - 1] = last;
+    Ok(shares)
+}
+
+pub fn combine_recovery_shares(
+    shares: &[Vec<u8>],
+) -> Result<Vec<u8>, WalletRecoveryError> {
+    let length = shares
+        .first()
+        .filter(|share| !share.is_empty())
+        .map(Vec::len)
+        .ok_or(WalletRecoveryError::InvalidShareSet)?;
+    if shares.iter().any(|share| share.len() != length) {
+        return Err(WalletRecoveryError::MismatchedShareLength);
+    }
+    let mut result = vec![0u8; length];
+    for share in shares {
+        for (target, value) in result.iter_mut().zip(share.iter()) {
+            *target ^= *value;
+        }
+    }
+    Ok(result)
+}
+
+pub struct RecoveryShareKeyPair {
+    secret: [u8; WALLET_RECOVERY_PUBLIC_KEY_BYTES],
+    public: [u8; WALLET_RECOVERY_PUBLIC_KEY_BYTES],
+}
+
+impl RecoveryShareKeyPair {
+    pub fn generate() -> Result<Self, WalletRecoveryError> {
+        let mut secret = [0u8; WALLET_RECOVERY_PUBLIC_KEY_BYTES];
+        getrandom::getrandom(&mut secret).map_err(|_| WalletRecoveryError::EntropyUnavailable)?;
+        let private = StaticSecret::from(secret);
+        let public = X25519PublicKey::from(&private).to_bytes();
+        Ok(Self { secret, public })
+    }
+
+    pub fn public_key(&self) -> [u8; WALLET_RECOVERY_PUBLIC_KEY_BYTES] {
+        self.public
+    }
+
+    pub fn decrypt(
+        &self,
+        envelope: &EncryptedRecoveryShare,
+    ) -> Result<Vec<u8>, WalletRecoveryError> {
+        if envelope.ephemeral_public_key.len() != WALLET_RECOVERY_PUBLIC_KEY_BYTES
+            || envelope.nonce.len() != WALLET_RECOVERY_NONCE_BYTES
+        {
+            return Err(WalletRecoveryError::MalformedEnvelope);
+        }
+        let mut peer_bytes = [0u8; WALLET_RECOVERY_PUBLIC_KEY_BYTES];
+        peer_bytes.copy_from_slice(&envelope.ephemeral_public_key);
+        let private = StaticSecret::from(self.secret);
+        let peer = X25519PublicKey::from(peer_bytes);
+        let shared = private.diffie_hellman(&peer);
+        let mut key = derive_recovery_share_key(shared.as_bytes())?;
+        let aad = recovery_share_aad(&envelope.ephemeral_public_key, &self.public);
+        let cipher = XChaCha20Poly1305::new_from_slice(&key)
+            .map_err(|_| WalletRecoveryError::EncryptionFailed)?;
+        key.zeroize();
+        cipher
+            .decrypt(
+                XNonce::from_slice(&envelope.nonce),
+                Payload {
+                    msg: &envelope.ciphertext,
+                    aad: &aad,
+                },
+            )
+            .map_err(|_| WalletRecoveryError::AuthenticationFailed)
+    }
+}
+
+impl fmt::Debug for RecoveryShareKeyPair {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter
+            .debug_struct("RecoveryShareKeyPair")
+            .field("public", &self.public)
+            .field("secret", &"[REDACTED]")
+            .finish()
+    }
+}
+
+impl Drop for RecoveryShareKeyPair {
+    fn drop(&mut self) {
+        self.secret.zeroize();
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EncryptedRecoveryShare {
+    pub ephemeral_public_key: Vec<u8>,
+    pub nonce: Vec<u8>,
+    pub ciphertext: Vec<u8>,
+}
+
+pub fn encrypt_recovery_share(
+    holder_public_key: &[u8],
+    share: &[u8],
+) -> Result<EncryptedRecoveryShare, WalletRecoveryError> {
+    if holder_public_key.len() != WALLET_RECOVERY_PUBLIC_KEY_BYTES || share.is_empty() {
+        return Err(WalletRecoveryError::InvalidRecipient);
+    }
+    let mut holder_bytes = [0u8; WALLET_RECOVERY_PUBLIC_KEY_BYTES];
+    holder_bytes.copy_from_slice(holder_public_key);
+    let holder = X25519PublicKey::from(holder_bytes);
+    let mut ephemeral_secret = [0u8; WALLET_RECOVERY_PUBLIC_KEY_BYTES];
+    getrandom::getrandom(&mut ephemeral_secret)
+        .map_err(|_| WalletRecoveryError::EntropyUnavailable)?;
+    let private = StaticSecret::from(ephemeral_secret);
+    ephemeral_secret.zeroize();
+    let public = X25519PublicKey::from(&private).to_bytes();
+    let shared = private.diffie_hellman(&holder);
+    let mut key = derive_recovery_share_key(shared.as_bytes())?;
+    let mut nonce = [0u8; WALLET_RECOVERY_NONCE_BYTES];
+    getrandom::getrandom(&mut nonce).map_err(|_| WalletRecoveryError::EntropyUnavailable)?;
+    let aad = recovery_share_aad(&public, holder_public_key);
+    let cipher = XChaCha20Poly1305::new_from_slice(&key)
+        .map_err(|_| WalletRecoveryError::EncryptionFailed)?;
+    key.zeroize();
+    let ciphertext = cipher
+        .encrypt(
+            XNonce::from_slice(&nonce),
+            Payload { msg: share, aad: &aad },
+        )
+        .map_err(|_| WalletRecoveryError::EncryptionFailed)?;
+    Ok(EncryptedRecoveryShare {
+        ephemeral_public_key: public.to_vec(),
+        nonce: nonce.to_vec(),
+        ciphertext,
+    })
+}
+
+fn derive_recovery_share_key(
+    shared_secret: &[u8; WALLET_RECOVERY_PUBLIC_KEY_BYTES],
+) -> Result<[u8; WALLET_KEY_BYTES], WalletRecoveryError> {
+    if shared_secret.iter().all(|byte| *byte == 0) {
+        return Err(WalletRecoveryError::InvalidRecipient);
+    }
+    let hkdf = Hkdf::<Sha256>::new(Some(WALLET_RECOVERY_AAD_PREFIX), shared_secret);
+    let mut key = [0u8; WALLET_KEY_BYTES];
+    hkdf.expand(b"share-wrap", &mut key)
+        .map_err(|_| WalletRecoveryError::EncryptionFailed)?;
+    Ok(key)
+}
+
+fn recovery_share_aad(ephemeral_public_key: &[u8], holder_public_key: &[u8]) -> Vec<u8> {
+    let mut aad = Vec::with_capacity(
+        WALLET_RECOVERY_AAD_PREFIX.len()
+            + ephemeral_public_key.len()
+            + holder_public_key.len()
+            + 2,
+    );
+    aad.extend_from_slice(WALLET_RECOVERY_AAD_PREFIX);
+    aad.push(0);
+    aad.extend_from_slice(ephemeral_public_key);
+    aad.push(0);
+    aad.extend_from_slice(holder_public_key);
+    aad
+}
+
+#[derive(Debug, Error, Clone, PartialEq, Eq)]
+pub enum WalletRecoveryError {
+    #[error("wallet recovery phrase is longer than the fixed seed field")]
+    SeedTooLong,
+    #[error("wallet recovery share count is invalid")]
+    InvalidShareCount,
+    #[error("wallet recovery share set is empty or invalid")]
+    InvalidShareSet,
+    #[error("wallet recovery shares have different lengths")]
+    MismatchedShareLength,
+    #[error("wallet recovery recipient public key is invalid")]
+    InvalidRecipient,
+    #[error("wallet recovery encrypted share is malformed")]
+    MalformedEnvelope,
+    #[error("secure entropy is unavailable")]
+    EntropyUnavailable,
+    #[error("wallet recovery share encryption failed")]
+    EncryptionFailed,
+    #[error("wallet recovery share authentication failed")]
+    AuthenticationFailed,
+}
+
 #[derive(Debug, Error, Clone, PartialEq, Eq)]
 pub enum WalletError {
     #[error("wallet account id is invalid")]
@@ -538,5 +1501,247 @@ mod tests {
         assert_eq!(refund.kind, LedgerEntryKind::Refund);
         assert_eq!(ledger.accounts[&buyer].balance("USD"), 1_000);
         assert_eq!(ledger.accounts[&seller].balance("USD"), 0);
+    }
+}
+
+
+#[cfg(test)]
+mod wallet_runtime_tests {
+    use super::*;
+    use std::sync::Mutex;
+
+    struct TestProtectionProvider {
+        id: &'static str,
+        kind: WalletKeyProtectionKind,
+        wrapping_key: [u8; WALLET_KEY_BYTES],
+        removed: Mutex<Vec<String>>,
+    }
+
+    impl TestProtectionProvider {
+        fn new(id: &'static str, kind: WalletKeyProtectionKind, byte: u8) -> Self {
+            Self {
+                id,
+                kind,
+                wrapping_key: [byte; WALLET_KEY_BYTES],
+                removed: Mutex::new(Vec::new()),
+            }
+        }
+    }
+
+    impl WalletProtectionProvider for TestProtectionProvider {
+        fn id(&self) -> &'static str {
+            self.id
+        }
+
+        fn kind(&self) -> WalletKeyProtectionKind {
+            self.kind
+        }
+
+        fn enroll(&self) -> Result<WalletProtectionMaterial, WalletProtectionError> {
+            Ok(WalletProtectionMaterial {
+                reference: format!("handle:{}", self.id),
+                wrapping_key: WalletSecretBytes::new(self.wrapping_key.to_vec()),
+            })
+        }
+
+        fn unwrap(&self, reference: &str) -> Result<WalletSecretBytes, WalletProtectionError> {
+            if reference != format!("handle:{}", self.id) {
+                return Err(WalletProtectionError::Absent);
+            }
+            Ok(WalletSecretBytes::new(self.wrapping_key.to_vec()))
+        }
+
+        fn remove(&self, reference: &str) -> Result<(), WalletProtectionError> {
+            self.removed.lock().unwrap().push(reference.to_string());
+            Ok(())
+        }
+    }
+
+    #[test]
+    fn key_protection_fences_stale_epoch_and_never_persists_plaintext_key() {
+        let provider =
+            TestProtectionProvider::new("system", WalletKeyProtectionKind::System, 0x5a);
+        let wallet_key = WalletSecretBytes::new(vec![0x33; WALLET_KEY_BYTES]);
+        let mut state = WalletKeyProtectionState::default();
+
+        let epoch = state.install(0, &provider, &wallet_key).unwrap();
+        let envelope = state.envelope.as_ref().unwrap();
+        assert_eq!(epoch, 1);
+        assert_eq!(envelope.provider_id, "system");
+        assert!(!envelope.ciphertext.windows(WALLET_KEY_BYTES).any(|window| window == wallet_key.expose()));
+        assert!(matches!(
+            state.unlock(0, &provider),
+            Err(WalletProtectionError::StaleEpoch { current: 1, .. })
+        ));
+
+        let unlocked = state.unlock(epoch, &provider).unwrap();
+        assert_eq!(unlocked.expose(), wallet_key.expose());
+        assert!(!state.locked);
+    }
+
+    #[test]
+    fn key_protection_rotation_commits_new_envelope_and_retires_old_handle() {
+        let first =
+            TestProtectionProvider::new("passcode", WalletKeyProtectionKind::Passcode, 0x11);
+        let second =
+            TestProtectionProvider::new("hardware", WalletKeyProtectionKind::Hardware, 0x22);
+        let wallet_key = WalletSecretBytes::new(vec![0x7c; WALLET_KEY_BYTES]);
+        let mut state = WalletKeyProtectionState::default();
+        let installed = state.install(0, &first, &wallet_key).unwrap();
+        let rotated = state.rotate(installed, &first, &second).unwrap();
+
+        assert_eq!(rotated, 2);
+        assert_eq!(state.envelope.as_ref().unwrap().provider_id, "hardware");
+        assert_eq!(
+            second.unwrap(&state.envelope.as_ref().unwrap().provider_reference)
+                .unwrap()
+                .expose(),
+            [0x22; WALLET_KEY_BYTES]
+        );
+        assert_eq!(
+            first.removed.lock().unwrap().as_slice(),
+            ["handle:passcode".to_string()]
+        );
+        let unlocked = state.unlock(rotated, &second).unwrap();
+        assert_eq!(unlocked.expose(), wallet_key.expose());
+    }
+
+    #[test]
+    fn recovery_phrase_split_combine_and_holder_encryption_fail_closed() {
+        let words = vec![
+            "lotus".to_string(),
+            "river".to_string(),
+            "moon".to_string(),
+        ];
+        let seed = recovery_seed_from_words(&words).unwrap();
+        assert_eq!(seed.len(), WALLET_RECOVERY_SEED_BYTES);
+        assert!(seed.starts_with(b"lotus river moon"));
+
+        let shares = split_recovery_seed(&seed, 3).unwrap();
+        assert_eq!(shares.len(), 3);
+        assert_eq!(combine_recovery_shares(&shares).unwrap(), seed);
+        let mut broken = shares.clone();
+        broken[2].pop();
+        assert_eq!(
+            combine_recovery_shares(&broken),
+            Err(WalletRecoveryError::MismatchedShareLength)
+        );
+
+        let holder = RecoveryShareKeyPair::generate().unwrap();
+        let mut encrypted =
+            encrypt_recovery_share(&holder.public_key(), &shares[0]).unwrap();
+        assert_eq!(holder.decrypt(&encrypted).unwrap(), shares[0]);
+        encrypted.ciphertext[0] ^= 0x40;
+        assert_eq!(
+            holder.decrypt(&encrypted),
+            Err(WalletRecoveryError::AuthenticationFailed)
+        );
+    }
+
+    #[test]
+    fn rates_preserve_selected_currency_and_use_5m_refresh_30s_retry() {
+        let mut rates = WalletRateState::default();
+        rates.set_currency(" eur ").unwrap();
+        rates
+            .apply_snapshot(
+                [
+                    ("USD".to_string(), 1_000_000),
+                    ("eur".to_string(), 920_000),
+                ],
+                1_000,
+            )
+            .unwrap();
+        assert_eq!(rates.selected_currency, "EUR");
+        assert_eq!(rates.current_quote_micros(), Some(920_000));
+        assert_eq!(rates.refresh_at_ms, 1_000 + WALLET_RATE_REFRESH_MS);
+        assert!(!rates.refresh_due(rates.refresh_at_ms - 1));
+        assert!(rates.refresh_due(rates.refresh_at_ms));
+        assert_eq!(rates.currencies(), vec!["EUR".to_string(), "USD".to_string()]);
+
+        rates.mark_refresh_failure(2_000);
+        assert!(rates.retrying);
+        assert_eq!(rates.refresh_at_ms, 2_000 + WALLET_RATE_RETRY_MS);
+        assert_eq!(
+            rates.apply_snapshot(Vec::<(String, i64)>::new(), 3_000),
+            Err(WalletRateError::EmptySnapshot)
+        );
+    }
+
+    #[test]
+    fn onramp_replacement_fences_stale_callback_and_optional_base_currency_falls_back() {
+        let mut onramp = WalletOnrampState::default();
+        let first = onramp
+            .begin("wallet-address", "asset", Some("EUR"))
+            .unwrap();
+        let second = onramp
+            .begin("replacement-address", "asset", Some("EUR"))
+            .unwrap();
+        assert!(matches!(
+            onramp.resolve_provider(first, &[]),
+            Err(WalletOnrampError::StaleRequest { expected, received })
+                if expected == second && received == first
+        ));
+
+        let provider = OnrampProviderInfo::new("provider-1", None::<Vec<String>>);
+        let spec = onramp.resolve_provider(second, &[provider]).unwrap();
+        assert_eq!(spec.provider_id, "provider-1");
+        assert_eq!(spec.base_currency, None);
+        assert_eq!(
+            onramp.complete(second, Some("  https://example.invalid/session  ")).unwrap(),
+            Some("https://example.invalid/session".to_string())
+        );
+        assert_eq!(
+            onramp.active.as_ref().unwrap().status,
+            WalletOnrampStatus::Completed
+        );
+    }
+
+    #[test]
+    fn panel_state_is_singleton_and_restore_reuses_generation() {
+        let mut panel = WalletPanelState::default();
+        let first = panel.show();
+        assert_eq!(first, 1);
+        assert!(panel.minimize());
+        let restored = panel.show();
+        assert_eq!(restored, first);
+        assert!(panel.visible && panel.active && !panel.minimized);
+        assert!(panel.close());
+        let reopened = panel.show();
+        assert_eq!(reopened, 2);
+    }
+
+    #[test]
+    fn sending_effect_math_matches_clock_and_glare_contract() {
+        assert_eq!(
+            sending_clock_pose(500),
+            SendingClockPose {
+                minute_turns: 0.75,
+                hour_turns: 0.5,
+            }
+        );
+        let mut cycle = GlareCycle::default();
+        assert!(!cycle.tick(100, 400, 200));
+        assert!(cycle.tick(201, 400, 200));
+        assert_eq!(cycle.progress(201), Some(0.0));
+        assert_eq!(cycle.progress(401), Some(0.5));
+        assert_eq!(cycle.progress(602), None);
+        assert_eq!(
+            compute_glare_band(0.5, 100.0, 20.0),
+            GlareBand {
+                from: 50.0,
+                till: 70.0,
+            }
+        );
+    }
+
+    #[test]
+    fn runtime_state_is_durable_inside_existing_wallet_ledger_owner() {
+        let mut ledger = WalletLedger::default();
+        ledger.runtime.rates.set_currency("JPY").unwrap();
+        ledger.runtime.panel.show();
+        let encoded = serde_json::to_string(&ledger).unwrap();
+        let restored: WalletLedger = serde_json::from_str(&encoded).unwrap();
+        assert_eq!(restored.runtime.rates.selected_currency, "JPY");
+        assert!(restored.runtime.panel.visible);
     }
 }
