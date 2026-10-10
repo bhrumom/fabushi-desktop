@@ -3,7 +3,7 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_repository": "telegramdesktop/tdesktop",
-  "upstream_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+  "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
   "discovery": {
     "evidence_run_id": 37837273028,
     "evidence_head_sha": "3929d875d414f522f9b71b7fe6db33b81ccf4451",
@@ -13,7 +13,7 @@
     "candidate_lines_total": 330,
     "immutable_commit_pin_occurrences_classified": 0,
     "candidate_lines_pending_classification": 0,
-    "note": "Live 65e23ba7 mac_packaged.yml adds/repositions Rust/tlottie/wallet-engine packaging acquisitions; exact sparse scan finds 330 candidates. Fresh descendant resolver artifact required.",
+    "note": "Live 6fed91ff changes only ten existing root blobs (version metadata, photo enlarge interaction, media-viewer Ctrl+S arbitration, style token, changelog); build-time acquisition candidate set remains 330. Fresh descendant resolver evidence is required.",
     "candidate_lines_classified": 330,
     "disposition_closure_status": "complete-current-330-candidate-classification",
     "recursive_authority_closure_status": "open",

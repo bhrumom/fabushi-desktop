@@ -4,8 +4,8 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
-    "tree": "9d8fa87ce68c832d2f4c99f372a5bb672463c3e1",
+    "commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+    "tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
     "baseline_identity_accepted": false
   },
   "inventory": {
@@ -46,32 +46,39 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live authority exact through recursive order 6,853; first unread is 6,854 Telegram/ThirdParty/MicroTeX::src/core/macro_def.cpp; unread_minimum is 9,272; unknown remains 15,845; omitted remains 0.",
+  "note": "Live authority 6fed91ff exact through recursive order 6,853 after explicit reconciliation of ten changed root blobs; first unread is 6,854 Telegram/ThirdParty/MicroTeX::src/core/macro_def.cpp; unread_minimum is 9,272; unknown remains 15,845; omitted remains 0.",
   "rebaseline": {
-    "from_commit": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
-    "to_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
-    "ahead_by": 3,
-    "changed_paths": 4,
+    "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+    "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+    "ahead_by": 4,
+    "changed_paths": 10,
     "changed_prefix_orders": [
-      11,
-      4495,
-      5722,
-      5759
+      3155,
+      3201,
+      3202,
+      3766,
+      4521,
+      4522,
+      5166,
+      5943,
+      6541,
+      6627
     ],
     "current_source_read_through": 6853,
     "first_unread_order": 6854,
     "first_unread_path": "Telegram/ThirdParty/MicroTeX::src/core/macro_def.cpp",
-    "current_head_source_authority_evidence": "Exact read/responsibility decomposition extends through recursive order 6,853. Localized decimal input normalization maps into the existing canonical KaTeX owner; production normalization and a focused all-block strict/recovery contract are implemented and descendant exact-head verification is required."
+    "current_head_source_authority_evidence": "Accepted authority advanced to 6fed91ff with ten modified root blobs and no path-count/order changes. All ten changed blobs inside the read prefix were re-read and responsibility-reconciled through the explicit rebaseline override; MicroTeX order 6,853 remains the same component blob. Fresh descendant exact-head GitHub Actions evidence is required."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
-    "upstream_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+    "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "deterministic_prefix_closed": 57,
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
     "read_through": 6853,
     "first_unread_order": 6854,
-    "first_unread_path": "Telegram/ThirdParty/MicroTeX::src/core/macro_def.cpp"
+    "first_unread_path": "Telegram/ThirdParty/MicroTeX::src/core/macro_def.cpp",
+    "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }

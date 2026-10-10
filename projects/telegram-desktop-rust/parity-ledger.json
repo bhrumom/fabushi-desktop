@@ -2,7 +2,7 @@
   "format_version": 3,
   "project_id": "TDRP-001",
   "spec_revision": 9,
-  "upstream_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+  "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
   "target_commit": "3bc92400826cc4ca7ac665b467708e22261edc61",
   "coverage": {
     "source_entries_total": 16125,
@@ -13486,14 +13486,15 @@
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
-    "upstream_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+    "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "deterministic_prefix_closed": 57,
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
     "read_through": 6853,
     "first_unread_order": 6854,
-    "first_unread_path": "Telegram/ThirdParty/MicroTeX::src/core/macro_def.cpp"
+    "first_unread_path": "Telegram/ThirdParty/MicroTeX::src/core/macro_def.cpp",
+    "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
     "status": "historical-only",

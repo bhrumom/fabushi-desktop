@@ -8,16 +8,16 @@
     "repository": "telegramdesktop/tdesktop",
     "url": "https://github.com/telegramdesktop/tdesktop",
     "discovery_ref": "refs/heads/dev",
-    "commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
-    "tree": "9d8fa87ce68c832d2f4c99f372a5bb672463c3e1",
-    "committed_at": "2026-10-10T07:46:09Z",
+    "commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+    "tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
+    "committed_at": "2026-10-10T08:14:37Z",
     "accepted": true
   },
   "previous_historical_baseline": {
-    "commit": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
-    "tree": "6b616494f3465324e749a04dcd1c9d508657a998",
+    "commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+    "tree": "9d8fa87ce68c832d2f4c99f372a5bb672463c3e1",
     "evidence_status": "historical-only",
-    "reason": "Live dev advanced three commits; 04ce03c8 Actions prove only the predecessor authority and the new baseline requires fresh exact-head evidence."
+    "reason": "Live dev advanced four commits to 6fed91ff; ten root blobs changed with no path additions/removals. The predecessor target evidence is diagnostic only and fresh exact-head Actions are required."
   },
   "observed_root_inventory": {
     "tree_truncated": false,
@@ -29,10 +29,10 @@
     "root_non_directory_count": 6653
   },
   "delta_from_previous_baseline": {
-    "ahead_by": 3,
-    "changed_paths": 4,
+    "ahead_by": 4,
+    "changed_paths": 10,
     "added_paths": 0,
-    "modified_paths": 4
+    "modified_paths": 10
   },
   "direct_gitlinks": [
     {
@@ -268,7 +268,7 @@
     "unknown_minimum": 15845,
     "unread_minimum": 9272,
     "omitted_known": 0,
-    "note": "Accepted 28ac576967a1026ecc89a927360fa0e138d7c88c tree 9d8fa87ce68c832d2f4c99f372a5bb672463c3e1; exact read-through 6,853; unknown=15,845, unread=9,272, omitted=0."
+    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 6,853; unknown=15,845, unread=9,272, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -282,7 +282,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Live upstream 28ac5769; source/product/release closure remains open and fresh descendant exact-head evidence is required."
+    "note": "Live upstream 6fed91ff; source/product/release closure remains open and fresh descendant exact-head evidence is required."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",
@@ -296,7 +296,7 @@
     "artifact_digest": "sha256:2282fdfe4cdc4835240a503092b107ae6037749e1d615978a34a36829f9affca",
     "upstream_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
     "recursive_non_directory_entries": 15788,
-    "superseded_by_upstream_commit": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f"
+    "superseded_by_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941"
   },
   "recursive_inventory_evidence": {
     "status": "historical-only",
@@ -311,7 +311,7 @@
     "upstream_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
     "recursive_non_directory_entries": 15788,
     "source_closure_ready": false,
-    "superseded_by_upstream_commit": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f"
+    "superseded_by_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941"
   },
   "build_time_acquisition_inventory": {
     "path": "projects/telegram-desktop-rust/inventory/build-time-acquisitions.json",
@@ -629,14 +629,15 @@
   },
   "source_disposition_evidence": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
-    "upstream_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+    "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "deterministic_prefix_closed": 57,
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
     "read_through": 6853,
     "first_unread_order": 6854,
-    "first_unread_path": "Telegram/ThirdParty/MicroTeX::src/core/macro_def.cpp"
+    "first_unread_path": "Telegram/ThirdParty/MicroTeX::src/core/macro_def.cpp",
+    "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
     "status": "historical-only",

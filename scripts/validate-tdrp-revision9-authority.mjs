@@ -94,13 +94,15 @@ const acquisitionInventory=await readJson('projects/telegram-desktop-rust/invent
 const sourceDispositionsIndex=await readJson('projects/telegram-desktop-rust/inventory/source-dispositions.json');
 const sourceDispositions=await (async () => {
   const shards=sourceDispositionsIndex.shards;
-  if (!Array.isArray(shards)) return sourceDispositionsIndex;
+  if (!Array.isArray(shards)) return {...sourceDispositionsIndex,shardAuthorities:[]};
   const rows=[];
+  const shardAuthorities=[];
   let expectedOrder=1;
   for (const shardRef of shards) {
     fail(typeof shardRef?.path==='string' && shardRef.path.length>0,'source-dispositions shard path missing');
     const shard=await readJson(shardRef.path);
-    fail(shard.upstream?.commit===sourceDispositionsIndex.upstream?.commit && shard.upstream?.tree===sourceDispositionsIndex.upstream?.tree,'source-dispositions shard authority drift: '+shardRef.path);
+    fail(/^[0-9a-f]{40}$/.test(shard.upstream?.commit||'') && /^[0-9a-f]{40}$/.test(shard.upstream?.tree||''),'source-dispositions shard provenance identity malformed: '+shardRef.path);
+    shardAuthorities.push({path:shardRef.path,commit:shard.upstream.commit,tree:shard.upstream.tree});
     fail(shard.range?.first_order===expectedOrder,'source-dispositions shard order gap: '+shardRef.path);
     fail(shard.range?.last_order===shardRef.last_order && shard.range?.first_order===shardRef.first_order,'source-dispositions shard range drift: '+shardRef.path);
     fail(Array.isArray(shard.rows) && shard.rows.length===shard.range.entries,'source-dispositions shard row count drift: '+shardRef.path);
@@ -111,14 +113,41 @@ const sourceDispositions=await (async () => {
     }
   }
   fail(expectedOrder-1===sourceDispositionsIndex.deterministic_recursive_prefix?.last_order,'source-dispositions sharded prefix incomplete');
-  return {...sourceDispositionsIndex,rows};
+  return {...sourceDispositionsIndex,rows,shardAuthorities};
 })();
+const sourceDispositionRebaseline=sourceDispositionsIndex.rebaseline_overrides?.path
+  ? await readJson(sourceDispositionsIndex.rebaseline_overrides.path)
+  : null;
 
 fail(lock.project_id==='TDRP-001' && lock.spec_revision===9,'lock is not TDRP Revision 9');
 const authorityCommit=lock.upstream?.commit;
 const authorityTree=lock.upstream?.tree;
 fail(/^[0-9a-f]{40}$/.test(authorityCommit||''),'lock upstream commit is not exact');
 fail(/^[0-9a-f]{40}$/.test(authorityTree||''),'lock upstream tree is not exact');
+const acceptedAncestorCache=new Map();
+async function acceptedAncestorTree(commit,label) {
+  if (acceptedAncestorCache.has(commit)) return acceptedAncestorCache.get(commit);
+  const promise=(async () => {
+    fail(/^[0-9a-f]{40}$/.test(commit||''),label+' provenance commit is not exact');
+    const object=await get(`https://api.github.com/repos/${lock.upstream.repository}/git/commits/${commit}`);
+    const tree=object.tree?.sha;
+    fail(/^[0-9a-f]{40}$/.test(tree||''),label+' provenance tree is not exact');
+    if (commit!==authorityCommit) {
+      const comparison=await get(`https://api.github.com/repos/${lock.upstream.repository}/compare/${commit}...${authorityCommit}`);
+      fail(comparison.merge_base_commit?.sha===commit && comparison.status==='ahead',
+        label+' provenance commit is not an ancestor of accepted authority');
+    } else {
+      fail(tree===authorityTree,label+' accepted authority tree drift');
+    }
+    return tree;
+  })();
+  acceptedAncestorCache.set(commit,promise);
+  return promise;
+}
+for (const shardAuthority of sourceDispositions.shardAuthorities||[]) {
+  const tree=await acceptedAncestorTree(shardAuthority.commit,'source-dispositions shard '+shardAuthority.path);
+  fail(tree===shardAuthority.tree,'source-dispositions shard provenance tree drift: '+shardAuthority.path);
+}
 const authorityDocs=[
   ['FBCP SOURCE_OF_TRUTH',fbcSourceOfTruth],
   ['TDRP SOURCE_OF_TRUTH',tdrpSourceOfTruth],
@@ -740,12 +769,17 @@ const responsibilityIds=new Set();
 const targetSymbolOwners=new Map();
 for (const row of ledger.rows) {
   for (const key of rowRequired) fail(Object.prototype.hasOwnProperty.call(row,key),'ledger row '+(row.responsibility_id||'<unknown>')+' missing required field '+key);
-  fail(row.source_commit===lock.upstream.commit,'row '+row.responsibility_id+' source commit differs from accepted upstream');
+  const rowProvenanceTree=await acceptedAncestorTree(row.source_commit,'ledger row '+row.responsibility_id);
   fail(!responsibilityIds.has(row.responsibility_id),'duplicate responsibility id '+row.responsibility_id);
   responsibilityIds.add(row.responsibility_id);
   const sourceObject=(await ghTree(lock.upstream.repository,lock.upstream.commit)).tree.find(e=>e.path===row.source_path);
   fail(sourceObject,'row source path absent from accepted upstream tree: '+row.source_path);
   fail(sourceObject.sha===row.source_blob_sha,'row source blob mismatch: '+row.source_path);
+  if (row.source_commit!==authorityCommit) {
+    const historicalSource=(await ghTree(lock.upstream.repository,row.source_commit)).tree.find(e=>e.path===row.source_path);
+    fail(historicalSource?.sha===row.source_blob_sha,'ledger row historical provenance blob mismatch: '+row.source_path);
+    fail(rowProvenanceTree,'ledger row provenance tree missing: '+row.responsibility_id);
+  }
   fail(await fs.stat(path.join(root,row.source_analysis_path)).then(()=>true).catch(()=>false),'row dossier missing: '+row.source_analysis_path);
   fail(row.existing_owner || row.novel_capability===true,'existing-owner-first unresolved for '+row.responsibility_id);
   if (row.novel_capability!==true) {
@@ -914,8 +948,50 @@ recursiveInventory.push(...childEntries.map(e=>({
 
 const dispositionPrefix=sourceDispositions.deterministic_recursive_prefix;
 fail(sourceDispositions.upstream?.commit===authorityCommit && sourceDispositions.upstream?.tree===authorityTree,'source-dispositions upstream authority drift');
+
+const rebaselineRows=sourceDispositionRebaseline?.rows||[];
+const overrideByOrder=new Map();
+if (sourceDispositionRebaseline) {
+  fail(sourceDispositionRebaseline.from?.commit && sourceDispositionRebaseline.from?.tree,'source-dispositions rebaseline predecessor identity missing');
+  fail(sourceDispositionRebaseline.to?.commit===authorityCommit && sourceDispositionRebaseline.to?.tree===authorityTree,'source-dispositions rebaseline target authority drift');
+  const predecessorTree=await acceptedAncestorTree(sourceDispositionRebaseline.from.commit,'source-dispositions rebaseline predecessor');
+  fail(predecessorTree===sourceDispositionRebaseline.from.tree,'source-dispositions rebaseline predecessor tree drift');
+  const previousEntries=(await ghTree(lock.upstream.repository,sourceDispositionRebaseline.from.commit)).tree.filter(e=>e.type!=='tree');
+  for (const override of rebaselineRows) {
+    fail(Number.isInteger(override.recursive_order) && override.recursive_order>=1 && override.recursive_order<=dispositionPrefix.last_order,'source-dispositions rebaseline override order invalid');
+    fail(!overrideByOrder.has(override.recursive_order),'duplicate source-dispositions rebaseline override order '+override.recursive_order);
+    const recorded=sourceDispositions.rows[override.recursive_order-1];
+    const current=recursiveInventory[override.recursive_order-1];
+    const previous=previousEntries[override.recursive_order-1];
+    fail(recorded?.source_path===override.source_path && current?.scope==='root' && current.path===override.source_path,'source-dispositions rebaseline override path/order drift at '+override.recursive_order);
+    fail(previous?.path===override.source_path,'source-dispositions predecessor order drift at '+override.recursive_order);
+    fail(recorded.source_blob_sha===override.previous_blob_sha && previous.sha===override.previous_blob_sha,'source-dispositions predecessor blob drift at '+override.recursive_order);
+    fail(current.object===override.current_blob_sha && override.current_blob_sha!==override.previous_blob_sha,'source-dispositions current blob override drift at '+override.recursive_order);
+    fail(override.read_complete===true && override.responsibility_reconciled===true && typeof override.responsibility_delta==='string' && override.responsibility_delta.length>0,'source-dispositions override lacks reread/responsibility reconciliation at '+override.recursive_order);
+    overrideByOrder.set(override.recursive_order,override);
+  }
+  const changedInsidePrefix=[];
+  for (let order=1; order<=Math.min(dispositionPrefix.last_order,previousEntries.length); order++) {
+    const current=recursiveInventory[order-1];
+    const previous=previousEntries[order-1];
+    if (current?.scope==='root' && previous?.path===current.path && previous.sha!==current.object) changedInsidePrefix.push(order);
+  }
+  fail(changedInsidePrefix.length===overrideByOrder.size && changedInsidePrefix.every(order=>overrideByOrder.has(order)),
+    'source-dispositions rebaseline overrides do not exactly cover changed accepted root blobs inside read prefix');
+}
+const currentDispositionRows=sourceDispositions.rows.map((row,index) => {
+  const expected=recursiveInventory[index];
+  if (expected?.scope!=='root') return row;
+  const override=overrideByOrder.get(row.recursive_order);
+  const object=override?.current_blob_sha || row.source_blob_sha;
+  return {
+    ...row,
+    source_blob_sha:object,
+    source_identity:row.source_identity ? {...row.source_identity,commit:authorityCommit,object,size:expected.size??null} : row.source_identity,
+  };
+});
 checkSourceDispositionPrefix({
-  rows:sourceDispositions.rows,
+  rows:currentDispositionRows,
   prefix:dispositionPrefix,
   entries:recursiveInventory
 });
