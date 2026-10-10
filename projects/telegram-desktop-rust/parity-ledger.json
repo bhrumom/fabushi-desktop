@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 7791,
+    "unread": 7760,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 8242,
-    "first_unread_order": 8243,
-    "first_unread_path": "Telegram/ThirdParty/hunspell::license.hunspell",
+    "read_through": 8365,
+    "first_unread_order": 8366,
+    "first_unread_path": "Telegram/ThirdParty/hunspell::src/Makefile.am",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
