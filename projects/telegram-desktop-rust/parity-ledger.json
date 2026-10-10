@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 8193,
+    "unread": 8177,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,11 +13478,11 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Accepted prefix 7,932/16,125; Hime dark-tail/gray icon window 7,917–7,932 exact-read from current source-authority artifact and visually/textually inspected; unread 8,193; unknown 15,845; omitted 0. Next is gray en-kana-nippon.png.",
-    "source_authority_evidence": "GitHub Actions source-authority artifact 11680279359 (sha256:8a11aad8a061722e2f1a7024cb5fd3bdbfb3bfdaec01e2de86c9ab04f1d6ca82) at 11caed45b8b0a4e8215a6d93cc814b9f048c95a0 plus accepted Hime tree identity for 7,917–7,932; 15 PNGs visually inspected and exact gray-set COPYING text read. Source reading only; descendant exact-head Actions required.",
-    "current_source_read_through": 7932,
-    "first_unread_order": 7933,
-    "first_unread_path": "Telegram/ThirdParty/hime::icons/gray/en-kana-nippon.png"
+    "source_read_reconciliation": "Accepted prefix 7,948/16,125; Hime gray language/input-method/width/script-variant window 7,933–7,948 exact-read and visually inspected; unread 8,177; unknown 15,845; omitted 0. Next is gray hime-tray.png.",
+    "source_authority_evidence": "GitHub Actions source-authority artifact 11680793020 (sha256:b767c2137f6f7c3e0d451197583a45868c7da1c2c33f7eb7e917950ec8ff22ee) at 2b3711e8f0f35d664af5dafe567e2089201f869d materialized accepted Hime 7,933–7,948; all PNGs visually inspected. The full/half × simplified/traditional and halfwidth-kana rows prove independent typed status axes. Source reading only; descendant exact-head Actions required.",
+    "current_source_read_through": 7948,
+    "first_unread_order": 7949,
+    "first_unread_path": "Telegram/ThirdParty/hime::icons/gray/hime-tray.png"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 7932,
-    "first_unread_order": 7933,
-    "first_unread_path": "Telegram/ThirdParty/hime::icons/gray/en-kana-nippon.png",
+    "read_through": 7948,
+    "first_unread_order": 7949,
+    "first_unread_path": "Telegram/ThirdParty/hime::icons/gray/hime-tray.png",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {

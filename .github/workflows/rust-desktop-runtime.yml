@@ -1184,6 +1184,7 @@ jobs:
       - name: Materialize current source review window artifact
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          TDRP_SOURCE_REVIEW_WINDOW: "64"
         run: node scripts/tdrp-current-source-review-artifact.mjs
       - name: Require accepted mode to fail closed only on incomplete acceptance
         env:

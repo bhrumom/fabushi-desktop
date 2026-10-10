@@ -14,27 +14,26 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 8193,
+    "unread_minimum": 8177,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through 7,932; unread 8,193; unknown 15,845; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition through 7,948; unread 8,177; unknown 15,845; omitted 0."
   },
   "latest_recursive_evidence": {
-    "run_id": 38081540911,
+    "run_id": 38082596300,
     "run_attempt": 1,
-    "job_id": 114299311128,
-    "head_sha": "11caed45b8b0a4e8215a6d93cc814b9f048c95a0",
-    "artifact_id": 11680279359,
-    "artifact_digest": "sha256:8a11aad8a061722e2f1a7024cb5fd3bdbfb3bfdaec01e2de86c9ab04f1d6ca82",
+    "job_id": 114302414470,
+    "head_sha": "2b3711e8f0f35d664af5dafe567e2089201f869d",
+    "artifact_id": 11680793020,
+    "artifact_digest": "sha256:b767c2137f6f7c3e0d451197583a45868c7da1c2c33f7eb7e917950ec8ff22ee",
     "artifact_files": [
       "upstream-recursive-inventory.json",
       "current-first-unread/window-manifest.json",
-      "current-first-unread/07917-telecode.png",
-      "current-first-unread/07924-COPYING",
-      "current-first-unread/07932-dayi3.png"
+      "current-first-unread/07933-en-kana-nippon.png",
+      "current-first-unread/07948-hangul.png"
     ],
     "evidence_status": "historical-diagnostic-after-descendant-accounting-commit",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
-    "note": "Exact-head source authority succeeded at 11caed45 and materialized 7,917–7,932; this descendant accounting commit requires fresh Actions."
+    "note": "Exact-head source authority succeeded at 2b3711e8 and materialized 7,933–7,948; this descendant accounting commit requires fresh Actions."
   },
   "closure_rules": {
     "executable_runner": "github-actions",
@@ -44,7 +43,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live authority exact through 7,932; first unread 7,933 Telegram/ThirdParty/hime::icons/gray/en-kana-nippon.png; unread_minimum is 8,193; unknown remains 15,845; omitted remains 0.",
+  "note": "Live authority exact through 7,948; first unread 7,949 Telegram/ThirdParty/hime::icons/gray/hime-tray.png; unread_minimum is 8,177; unknown remains 15,845; omitted remains 0.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -62,10 +61,10 @@
       6541,
       6627
     ],
-    "current_source_read_through": 7932,
-    "first_unread_order": 7933,
-    "first_unread_path": "Telegram/ThirdParty/hime::icons/gray/en-kana-nippon.png",
-    "current_head_source_authority_evidence": "GitHub Actions source-authority artifact 11680279359 (sha256:8a11aad8a061722e2f1a7024cb5fd3bdbfb3bfdaec01e2de86c9ab04f1d6ca82) at 11caed45b8b0a4e8215a6d93cc814b9f048c95a0 materialized 7,917–7,932 with manifest identity/mode/size/SHA-256; 15 PNGs were visually inspected and 7,924 COPYING was text-read. Reading closes no unknown. Descendant exact-head Actions are required after accounting."
+    "current_source_read_through": 7948,
+    "first_unread_order": 7949,
+    "first_unread_path": "Telegram/ThirdParty/hime::icons/gray/hime-tray.png",
+    "current_head_source_authority_evidence": "GitHub Actions source-authority artifact 11680793020 (sha256:b767c2137f6f7c3e0d451197583a45868c7da1c2c33f7eb7e917950ec8ff22ee) at 2b3711e8f0f35d664af5dafe567e2089201f869d materialized 7,933–7,948 with exact manifest identity/mode/size/SHA-256; all 16 PNGs were visually inspected. Reading closes no unknown. Descendant exact-head Actions are required after accounting."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -74,9 +73,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 7932,
-    "first_unread_order": 7933,
-    "first_unread_path": "Telegram/ThirdParty/hime::icons/gray/en-kana-nippon.png",
+    "read_through": 7948,
+    "first_unread_order": 7949,
+    "first_unread_path": "Telegram/ThirdParty/hime::icons/gray/hime-tray.png",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }
