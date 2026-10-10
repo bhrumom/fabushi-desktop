@@ -31,6 +31,7 @@ use crate::wallet::{
     OutboundTransferTerminal, WalletAccountId, WalletAddressDirectoryError, WalletError,
     WalletLedger, WalletLiveError, WalletLivePresence, WalletOnrampError, WalletRateError,
     WalletRuntimeState, WalletSponsoredFeeError, WalletSponsoredFeeInfo, WalletTransferIdentity,
+    WalletTransferQuote, WalletTransferQuoteError,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
@@ -307,6 +308,12 @@ pub enum Command {
     },
     JournalOutboundTransfer {
         record: OutboundTransferRecord,
+    },
+    JournalQuotedOutboundTransfer {
+        record: OutboundTransferRecord,
+        quote: WalletTransferQuote,
+        balance_nano: i64,
+        observed_at_ms: i64,
     },
     MarkOutboundTransferHandoff {
         record_id: String,
@@ -966,6 +973,8 @@ pub enum EngineError {
     WalletLive(#[from] WalletLiveError),
     #[error(transparent)]
     WalletSponsoredFee(#[from] WalletSponsoredFeeError),
+    #[error(transparent)]
+    WalletTransferQuote(#[from] WalletTransferQuoteError),
     #[error(transparent)]
     ConnectedApp(#[from] ConnectedAppError),
     #[error("Mini App {0} is not installed")]
@@ -2887,6 +2896,21 @@ impl MessagingEngine {
             Command::JournalOutboundTransfer { record } => {
                 let mut runtime = self.state.wallet.runtime.clone();
                 runtime.outbound_transfers.prepare(record)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::JournalQuotedOutboundTransfer {
+                record,
+                quote,
+                balance_nano,
+                observed_at_ms,
+            } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime.journal_quoted_outbound_transfer(
+                    record,
+                    &quote,
+                    balance_nano,
+                    observed_at_ms,
+                )?;
                 Ok(vec![Event::WalletRuntimeChanged { runtime }])
             }
             Command::MarkOutboundTransferHandoff {
@@ -5303,6 +5327,117 @@ mod wallet_address_engine_tests {
     }
 }
 
+
+#[cfg(test)]
+mod wallet_quoted_transfer_engine_tests {
+    use super::*;
+    use crate::wallet::{OutboundTransferHandoff, WalletSponsoredFeeState};
+
+    fn identity() -> WalletTransferIdentity {
+        WalletTransferIdentity {
+            network: 1,
+            address: "EQ-wallet".into(),
+            public_key: vec![6; 32],
+            revision: 1,
+        }
+    }
+
+    #[test]
+    fn engine_journals_sponsored_quote_through_single_outbound_owner() {
+        let mut engine = MessagingEngine::new();
+        engine
+            .execute(Command::ResetWalletSponsoredFeeGeneration {
+                network_generation: 6,
+            })
+            .unwrap();
+        let who = identity();
+        engine
+            .execute(Command::BeginWalletSponsoredFeeRequest {
+                network_generation: 6,
+                identity: who.clone(),
+                transfer_min_nano: 100_000_000,
+                configured_min_nano: 100_000_000,
+                observed_at_ms: 1_000,
+                force: false,
+            })
+            .unwrap();
+        let serial = engine
+            .state()
+            .wallet
+            .runtime
+            .sponsored_fees
+            .active_request
+            .as_ref()
+            .unwrap()
+            .serial;
+        engine
+            .execute(Command::ApplyWalletSponsoredFeeInfo {
+                serial,
+                network_generation: 6,
+                identity: who.clone(),
+                info: WalletSponsoredFeeInfo {
+                    relayer_address: "EQ-relayer".into(),
+                    min_amount_nano: 100_000_000,
+                    reset_at_ms: 100_000,
+                    left: 2,
+                    available: true,
+                },
+                observed_at_ms: 2_000,
+            })
+            .unwrap();
+
+        let mut fee_state: WalletSponsoredFeeState =
+            engine.state().wallet.runtime.sponsored_fees.clone();
+        let quote = fee_state
+            .quote_transfer(
+                6,
+                who.clone(),
+                100_000_000,
+                100_000_000,
+                300_000_000,
+                "EQ-destination".into(),
+                25_000_000,
+                2_001,
+            )
+            .unwrap();
+        assert!(quote.paired);
+        let record = OutboundTransferRecord {
+            record_id: "r1".into(),
+            network: who.network,
+            address: who.address.clone(),
+            public_key: who.public_key.clone(),
+            operation_id: "op1".into(),
+            destination: quote.destination.clone(),
+            comment: String::new(),
+            collectible: None,
+            amount_nano: quote.amount_nano,
+            posted_at_ms: 2_001,
+            handoff: OutboundTransferHandoff::Preparation,
+            terminal: OutboundTransferTerminal::None,
+            message_token: None,
+            confirmed_hash: None,
+            lookup_attempts: 0,
+            lookup_stopped: false,
+            paired: true,
+            bounce: false,
+        };
+        engine
+            .execute(Command::JournalQuotedOutboundTransfer {
+                record,
+                quote,
+                balance_nano: 300_000_000,
+                observed_at_ms: 2_002,
+            })
+            .unwrap();
+        assert_eq!(
+            engine.state().wallet.runtime.outbound_transfers.records.len(),
+            1
+        );
+        assert!(
+            engine.state().wallet.runtime.outbound_transfers.records[0].paired
+        );
+    }
+}
 
 #[cfg(test)]
 mod wallet_sponsored_fee_engine_tests {
