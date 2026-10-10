@@ -1223,6 +1223,286 @@ impl WalletPanelState {
 }
 
 
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum WalletEmulationActionKind {
+    Withdraw,
+    Deposit,
+    Transfer,
+    Excess,
+    CallContract,
+    DeployContract,
+    Unknown,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum WalletEmulationActionSide {
+    None,
+    Incoming,
+    Outgoing,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WalletEmulationAction {
+    pub kind: WalletEmulationActionKind,
+    pub side: WalletEmulationActionSide,
+    pub amount_nano: Option<i64>,
+    pub counterparty: String,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum WalletEmulationStatus {
+    Shown,
+    Failed,
+    Aborted,
+    Incomplete,
+    Empty,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WalletEmulation {
+    pub actions: Vec<WalletEmulationAction>,
+    pub net_nano: i64,
+    pub status: WalletEmulationStatus,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WalletEmulationSourceAction {
+    pub kind: String,
+    pub succeeded: bool,
+    pub details_json: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WalletEmulationSource {
+    pub trace_succeeded: bool,
+    pub is_incomplete: bool,
+    pub actions: Vec<WalletEmulationSourceAction>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum WalletEmulationSourceKind {
+    Transfer,
+    CallContract,
+    ContractDeploy,
+    Skipped,
+    Other,
+}
+
+fn wallet_emulation_source_kind(kind: &str) -> WalletEmulationSourceKind {
+    match kind {
+        "ton_transfer" | "extra_currency_transfer" => WalletEmulationSourceKind::Transfer,
+        "call_contract" => WalletEmulationSourceKind::CallContract,
+        "contract_deploy" => WalletEmulationSourceKind::ContractDeploy,
+        "unknown" => WalletEmulationSourceKind::Skipped,
+        _ => WalletEmulationSourceKind::Other,
+    }
+}
+
+fn wallet_emulation_details(action: &WalletEmulationSourceAction) -> serde_json::Map<String, serde_json::Value> {
+    serde_json::from_str::<serde_json::Value>(&action.details_json)
+        .ok()
+        .and_then(|value| value.as_object().cloned())
+        .unwrap_or_default()
+}
+
+fn wallet_emulation_address(
+    details: &serde_json::Map<String, serde_json::Value>,
+    key: &str,
+) -> String {
+    details
+        .get(key)
+        .and_then(serde_json::Value::as_str)
+        .filter(|value| validate_wallet_address(value).is_ok())
+        .unwrap_or_default()
+        .to_string()
+}
+
+fn wallet_emulation_nano(
+    details: &serde_json::Map<String, serde_json::Value>,
+) -> Option<i64> {
+    let text = details.get("value")?.as_str()?;
+    if text.is_empty() || !text.as_bytes().iter().all(u8::is_ascii_digit) {
+        return None;
+    }
+    text.parse().ok()
+}
+
+fn wallet_emulation_opcode(
+    details: &serde_json::Map<String, serde_json::Value>,
+) -> Option<u32> {
+    let value = details.get("opcode")?;
+    if let Some(text) = value.as_str() {
+        let digits = text
+            .strip_prefix("0x")
+            .or_else(|| text.strip_prefix("0X"))?;
+        if digits.is_empty()
+            || digits.len() > 8
+            || !digits.as_bytes().iter().all(u8::is_ascii_hexdigit)
+        {
+            return None;
+        }
+        return u32::from_str_radix(digits, 16).ok();
+    }
+    if let Some(number) = value.as_i64() {
+        if number < i32::MIN as i64 || number > u32::MAX as i64 {
+            return None;
+        }
+        return Some(if number < 0 {
+            (number as i32) as u32
+        } else {
+            number as u32
+        });
+    }
+    value
+        .as_u64()
+        .filter(|number| *number <= u32::MAX as u64)
+        .map(|number| number as u32)
+}
+
+fn wallet_emulation_side(
+    source: &str,
+    destination: &str,
+    own: &str,
+) -> WalletEmulationActionSide {
+    if !source.is_empty() && source == own {
+        WalletEmulationActionSide::Outgoing
+    } else if !destination.is_empty() && destination == own {
+        WalletEmulationActionSide::Incoming
+    } else {
+        WalletEmulationActionSide::None
+    }
+}
+
+fn wallet_emulation_action_kind(
+    kind: WalletEmulationSourceKind,
+    side: WalletEmulationActionSide,
+    details: &serde_json::Map<String, serde_json::Value>,
+) -> WalletEmulationActionKind {
+    match kind {
+        WalletEmulationSourceKind::Transfer => match side {
+            WalletEmulationActionSide::Outgoing => WalletEmulationActionKind::Withdraw,
+            WalletEmulationActionSide::Incoming => WalletEmulationActionKind::Deposit,
+            WalletEmulationActionSide::None => WalletEmulationActionKind::Transfer,
+        },
+        WalletEmulationSourceKind::CallContract => {
+            if wallet_emulation_opcode(details) == Some(0xd53276db) {
+                WalletEmulationActionKind::Excess
+            } else {
+                WalletEmulationActionKind::CallContract
+            }
+        }
+        WalletEmulationSourceKind::ContractDeploy => WalletEmulationActionKind::DeployContract,
+        WalletEmulationSourceKind::Skipped | WalletEmulationSourceKind::Other => {
+            WalletEmulationActionKind::Unknown
+        }
+    }
+}
+
+pub fn parse_wallet_emulation(
+    source: &WalletEmulationSource,
+    wallet_address: &str,
+    request_total_nano: i64,
+) -> WalletEmulation {
+    let mut status = if !source.trace_succeeded {
+        let failed = source.actions.iter().any(|action| {
+            !action.succeeded
+                && wallet_emulation_source_kind(&action.kind) != WalletEmulationSourceKind::Skipped
+        });
+        if failed {
+            WalletEmulationStatus::Failed
+        } else {
+            WalletEmulationStatus::Aborted
+        }
+    } else if source.is_incomplete {
+        WalletEmulationStatus::Incomplete
+    } else {
+        WalletEmulationStatus::Shown
+    };
+
+    let own = if validate_wallet_address(wallet_address).is_ok() {
+        wallet_address
+    } else {
+        ""
+    };
+    let mut valid = !own.is_empty();
+    let mut credited = 0i64;
+    let mut actions = Vec::new();
+
+    if valid {
+        for source_action in &source.actions {
+            let source_kind = wallet_emulation_source_kind(&source_action.kind);
+            if source_kind == WalletEmulationSourceKind::Skipped {
+                continue;
+            }
+            let details = wallet_emulation_details(source_action);
+            let source_address = wallet_emulation_address(&details, "source");
+            let destination = wallet_emulation_address(&details, "destination");
+            if source_kind == WalletEmulationSourceKind::ContractDeploy {
+                actions.push(WalletEmulationAction {
+                    kind: WalletEmulationActionKind::DeployContract,
+                    side: WalletEmulationActionSide::None,
+                    amount_nano: None,
+                    counterparty: destination,
+                });
+                continue;
+            }
+            let side = wallet_emulation_side(&source_address, &destination, own);
+            let amount_nano = wallet_emulation_nano(&details);
+            let basic = matches!(
+                source_kind,
+                WalletEmulationSourceKind::Transfer | WalletEmulationSourceKind::CallContract
+            );
+            if basic && destination == own {
+                if let Some(amount) = amount_nano {
+                    match credited.checked_add(amount) {
+                        Some(next) => credited = next,
+                        None => valid = false,
+                    }
+                }
+            }
+            let counterparty = if side == WalletEmulationActionSide::Incoming {
+                source_address
+            } else {
+                destination
+            };
+            actions.push(WalletEmulationAction {
+                kind: wallet_emulation_action_kind(source_kind, side, &details),
+                side,
+                amount_nano,
+                counterparty,
+            });
+        }
+    }
+
+    let net_nano = if valid {
+        match credited.checked_sub(request_total_nano) {
+            Some(value) => value,
+            None => {
+                valid = false;
+                0
+            }
+        }
+    } else {
+        0
+    };
+    if status == WalletEmulationStatus::Shown && (!valid || actions.is_empty()) {
+        status = WalletEmulationStatus::Empty;
+    }
+    WalletEmulation {
+        actions,
+        net_nano,
+        status,
+    }
+}
+
 pub const OUTBOUND_TRANSFER_MAX_RECORDS: usize = 64;
 pub const OUTBOUND_TRANSFER_MAX_BYTES: usize = 4 * 1024 * 1024;
 pub const OUTBOUND_TRANSFER_TOKEN_MAX_BYTES: usize = 1024 * 1024;
@@ -4544,3 +4824,146 @@ mod wallet_address_directory_tests {
         assert_eq!(owner.public_key, vec![9; 32]);
     }
 }
+
+#[cfg(test)]
+mod ton_connect_emulation_source_tests {
+    use super::*;
+
+    fn action(kind: &str, succeeded: bool, details_json: &str) -> WalletEmulationSourceAction {
+        WalletEmulationSourceAction {
+            kind: kind.to_string(),
+            succeeded,
+            details_json: details_json.to_string(),
+        }
+    }
+
+    #[test]
+    fn emulation_projects_actions_sides_excess_and_overflow_safe_net() {
+        let source = WalletEmulationSource {
+            trace_succeeded: true,
+            is_incomplete: false,
+            actions: vec![
+                action(
+                    "ton_transfer",
+                    true,
+                    r#"{"source":"EQ-own","destination":"EQ-dest","value":"10"}"#,
+                ),
+                action(
+                    "extra_currency_transfer",
+                    true,
+                    r#"{"source":"EQ-peer","destination":"EQ-own","value":"3"}"#,
+                ),
+                action(
+                    "call_contract",
+                    true,
+                    r#"{"source":"EQ-peer","destination":"EQ-own","value":"2","opcode":"0xd53276db"}"#,
+                ),
+                action(
+                    "contract_deploy",
+                    true,
+                    r#"{"destination":"EQ-contract"}"#,
+                ),
+                action("unknown", false, r#"{}"#),
+            ],
+        };
+        let parsed = parse_wallet_emulation(&source, "EQ-own", 10);
+        assert_eq!(parsed.status, WalletEmulationStatus::Shown);
+        assert_eq!(parsed.net_nano, -5);
+        assert_eq!(parsed.actions.len(), 4);
+        assert_eq!(parsed.actions[0].kind, WalletEmulationActionKind::Withdraw);
+        assert_eq!(parsed.actions[0].side, WalletEmulationActionSide::Outgoing);
+        assert_eq!(parsed.actions[1].kind, WalletEmulationActionKind::Deposit);
+        assert_eq!(parsed.actions[1].side, WalletEmulationActionSide::Incoming);
+        assert_eq!(parsed.actions[2].kind, WalletEmulationActionKind::Excess);
+        assert_eq!(parsed.actions[3].kind, WalletEmulationActionKind::DeployContract);
+
+        let overflow = WalletEmulationSource {
+            trace_succeeded: true,
+            is_incomplete: false,
+            actions: vec![action(
+                "ton_transfer",
+                true,
+                r#"{"source":"EQ-peer","destination":"EQ-own","value":"1"}"#,
+            )],
+        };
+        assert_eq!(
+            parse_wallet_emulation(&overflow, "EQ-own", i64::MIN).status,
+            WalletEmulationStatus::Empty
+        );
+    }
+
+    #[test]
+    fn emulation_distinguishes_failed_aborted_incomplete_and_empty() {
+        let failed = WalletEmulationSource {
+            trace_succeeded: false,
+            is_incomplete: false,
+            actions: vec![action("call_contract", false, r#"{}"#)],
+        };
+        assert_eq!(
+            parse_wallet_emulation(&failed, "EQ-own", 0).status,
+            WalletEmulationStatus::Failed
+        );
+
+        let aborted = WalletEmulationSource {
+            trace_succeeded: false,
+            is_incomplete: false,
+            actions: vec![action("unknown", false, r#"{}"#)],
+        };
+        assert_eq!(
+            parse_wallet_emulation(&aborted, "EQ-own", 0).status,
+            WalletEmulationStatus::Aborted
+        );
+
+        let incomplete = WalletEmulationSource {
+            trace_succeeded: true,
+            is_incomplete: true,
+            actions: vec![action("call_contract", true, r#"{}"#)],
+        };
+        assert_eq!(
+            parse_wallet_emulation(&incomplete, "EQ-own", 0).status,
+            WalletEmulationStatus::Incomplete
+        );
+
+        let shown_without_actions = WalletEmulationSource {
+            trace_succeeded: true,
+            is_incomplete: false,
+            actions: vec![action("unknown", true, r#"{}"#)],
+        };
+        assert_eq!(
+            parse_wallet_emulation(&shown_without_actions, "EQ-own", 0).status,
+            WalletEmulationStatus::Empty
+        );
+        assert_eq!(
+            parse_wallet_emulation(&shown_without_actions, "", 0).status,
+            WalletEmulationStatus::Empty
+        );
+    }
+
+    #[test]
+    fn emulation_opcode_accepts_signed_numeric_bits_and_rejects_malformed_amounts() {
+        let negative_excess = -(0x2acd8925_i64);
+        let source = WalletEmulationSource {
+            trace_succeeded: true,
+            is_incomplete: false,
+            actions: vec![
+                action(
+                    "call_contract",
+                    true,
+                    &format!(
+                        r#"{{"source":"EQ-peer","destination":"EQ-own","value":"12x","opcode":{negative_excess}}}"#
+                    ),
+                ),
+                action(
+                    "other",
+                    true,
+                    r#"{"source":"EQ-peer","destination":"EQ-other","opcode":"0x123456789"}"#,
+                ),
+            ],
+        };
+        let parsed = parse_wallet_emulation(&source, "EQ-own", 0);
+        assert_eq!(parsed.actions[0].kind, WalletEmulationActionKind::Excess);
+        assert_eq!(parsed.actions[0].amount_nano, None);
+        assert_eq!(parsed.actions[1].kind, WalletEmulationActionKind::Unknown);
+    }
+}
+
