@@ -633,9 +633,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 8242,
-    "first_unread_order": 8243,
-    "first_unread_path": "Telegram/ThirdParty/hunspell::license.hunspell",
+    "read_through": 8257,
+    "first_unread_order": 8258,
+    "first_unread_path": "Telegram/ThirdParty/hunspell::man/Makefile.am",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
