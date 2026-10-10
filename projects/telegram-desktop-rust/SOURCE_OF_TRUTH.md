@@ -1,5 +1,5 @@
-Live Revision 9 authority (2026-10-10): telegramdesktop/tdesktop@28ac576967a1026ecc89a927360fa0e138d7c88c (root tree 9d8fa87ce68c832d2f4c99f372a5bb672463c3e1). Root non-directory=6,653; recursive non-directory=16,125; read-through=6,483; first unread=6,484 Telegram/ThirdParty/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37; unread=9,642; unknown=15,846; omitted=0. Reading alone never closes unknown. Fresh descendant exact-head GitHub Actions evidence is required.
-<!-- TDRP_CURRENT_SUMMARY read-through=6483 unread=9642 unknown=15846 omitted=0 first-unread=6484 path=Telegram/ThirdParty/GSL -->
+Live Revision 9 authority (2026-10-10): telegramdesktop/tdesktop@28ac576967a1026ecc89a927360fa0e138d7c88c (root tree 9d8fa87ce68c832d2f4c99f372a5bb672463c3e1). Root non-directory=6,653; recursive non-directory=16,125; read-through=6,505; first unread=6,506 Telegram/build/build.bat@3e5f698f99c5944e237c514d60124bc25489ea76; unread=9,620; unknown=15,846; omitted=0. Reading alone never closes unknown. Fresh descendant exact-head GitHub Actions evidence is required.
+<!-- TDRP_CURRENT_SUMMARY read-through=6505 unread=9620 unknown=15846 omitted=0 first-unread=6506 path=Telegram/build/build.bat -->
 
 # Telegram 源码 → Fabushi 全量等价重写 — Source of Truth
 
@@ -557,3 +557,7 @@ Orders **6,449-6,458** are exact-blob read-complete and responsibility-decompose
 ### Revision 9 live read-through note: 6459-6483
 
 Orders **6,459-6,483** close the upstream macOS bundle plist, helper/app entitlements, icon-catalog manifest and every referenced 16/32/128/256/512 1x/2x icon blob by exact identity. The applicable responsibility is bundle/privacy/protocol/signing/sandbox/icon coverage under **Fabushi** identity; Telegram/TON schemes and Telegram artwork are explicitly not migrated. Current `desktop/package.json` already owns `com.ombhrum.fabushi`, the `fabushi` scheme, Fabushi icon, forced signing, notarization, and microphone/camera usage; current MAS entitlements own sandbox/network/user-selected/mic/camera. Downloads/bookmarks/location remain applicability-open and are not added without a shipping need. Accounting: **6,483/16,125 read; 9,642 unread; 15,846 unknown; 0 omitted**. First unread: **6,484 `Telegram/ThirdParty/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37`**.
+
+### Revision 9 live read-through note: 6484-6505
+
+Orders **6,484-6,505** close the root ThirdParty gitlink identity layer: exact pinned commits and `.gitmodules` repositories are mapped to source-neutral capability/implementation roles. This includes generic C++ support (GSL/expected/range-v3/TooManyCooks), math/Markdown/QR/syntax/image/language/spell utilities, Linux IME/portal adapters, CBOR/FIDO2/passkey dependencies, compression/hash/password-strength primitives, and `tgcalls`. The root pin does **not** close any nested recursive source; all nested entries remain independently unread/unknown until their later deterministic orders. No Telegram runtime/library is automatically retained. Accounting: **6,505/16,125 read; 9,620 unread; 15,846 unknown; 0 omitted**. First unread: **6,506 `Telegram/build/build.bat@3e5f698f99c5944e237c514d60124bc25489ea76`**.

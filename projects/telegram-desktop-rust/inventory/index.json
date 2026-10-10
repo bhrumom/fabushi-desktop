@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15846,
-    "unread_minimum": 9642,
+    "unread_minimum": 9620,
     "omitted_known": 0,
-    "note": "Live 28ac5769 recursive census 16,125; exact read-through 6,483; unknown 15,846, unread 9,642, omitted 0; first unread 6,484 Telegram/ThirdParty/GSL gitlink."
+    "note": "Live 28ac5769 recursive census 16,125; exact read-through 6,505; unknown 15,846, unread 9,620, omitted 0; root ThirdParty gitlinks 6,484-6,505 have pin/role provenance only; nested recursive source remains independently open."
   },
   "latest_recursive_evidence": {
     "run_id": 37998467124,
@@ -46,7 +46,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live authority exact through deterministic source order 6,483; unknown remains fail-closed; first unread is the GSL gitlink at 6,484.",
+  "note": "Live authority exact through deterministic source order 6,505; nested gitlink source remains fail-closed; first unread 6,506 build/build.bat.",
   "rebaseline": {
     "from_commit": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
     "to_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
@@ -58,10 +58,10 @@
       5722,
       5759
     ],
-    "current_source_read_through": 6483,
-    "first_unread_order": 6484,
-    "first_unread_path": "Telegram/ThirdParty/GSL",
-    "current_head_source_authority_evidence": "Accepted 28ac5769 source order preserved through exact text/blob metadata inspection 6,483; descendant Actions required."
+    "current_source_read_through": 6505,
+    "first_unread_order": 6506,
+    "first_unread_path": "Telegram/build/build.bat",
+    "current_head_source_authority_evidence": "Accepted root gitlink identities 6,484-6,505 reconciled without claiming nested source closure; descendant Actions required."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -70,6 +70,6 @@
     "development_only_non_applicable": 69,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 6483
+    "read_through": 6505
   }
 }
