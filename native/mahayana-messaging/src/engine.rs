@@ -22,7 +22,10 @@ use crate::story::{
     Story, StoryError, StoryId, StoryStealthState, STORY_STEALTH_ACTIVE_MS,
     STORY_STEALTH_COOLDOWN_MS, STORY_STEALTH_PRODUCT_ID, STORY_STEALTH_RETROACTIVE_MS,
 };
-use crate::wallet::{LedgerEntry, WalletAccountId, WalletError, WalletLedger};
+use crate::wallet::{
+    LedgerEntry, OnrampProviderInfo, WalletAccountId, WalletError, WalletLedger,
+    WalletOnrampError, WalletRateError, WalletRuntimeState,
+};
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 use thiserror::Error;
@@ -263,6 +266,38 @@ pub enum Command {
         amount: Money,
         reference: Option<String>,
         settled_at_ms: i64,
+    },
+    SetWalletFiatCurrency {
+        currency: String,
+    },
+    ApplyWalletRateSnapshot {
+        rates: BTreeMap<String, i64>,
+        observed_at_ms: i64,
+    },
+    MarkWalletRateRefreshFailed {
+        observed_at_ms: i64,
+    },
+    BeginWalletFunding {
+        address: String,
+        asset: String,
+        base_currency: Option<String>,
+    },
+    ResolveWalletFundingProvider {
+        request_id: u64,
+        providers: Vec<OnrampProviderInfo>,
+    },
+    CompleteWalletFunding {
+        request_id: u64,
+        session_url: Option<String>,
+    },
+    CancelWalletFunding {
+        request_id: u64,
+    },
+    ShowWalletPanel,
+    MinimizeWalletPanel,
+    CloseWalletPanel,
+    SetWalletTransactionsVisible {
+        visible: bool,
     },
     ReconcileEntitlement {
         entitlement: Entitlement,
@@ -571,6 +606,9 @@ pub enum Event {
         wallet: WalletLedger,
         entry: LedgerEntry,
     },
+    WalletRuntimeChanged {
+        runtime: WalletRuntimeState,
+    },
     EntitlementReconciled {
         entitlement: Entitlement,
     },
@@ -801,6 +839,12 @@ pub enum EngineError {
     OrderNotRefundable(String),
     #[error(transparent)]
     Wallet(#[from] WalletError),
+    #[error(transparent)]
+    WalletRate(#[from] WalletRateError),
+    #[error(transparent)]
+    WalletOnramp(#[from] WalletOnrampError),
+    #[error("wallet panel is not visible")]
+    WalletPanelNotVisible,
     #[error("Mini App {0} is not installed")]
     MiniAppNotFound(String),
     #[error("Mini App session {0} does not exist")]
@@ -2641,6 +2685,82 @@ impl MessagingEngine {
                     wallet.credit(request_id, &account_id, amount, reference, settled_at_ms)?;
                 Ok(vec![Event::WalletChanged { wallet, entry }])
             }
+            Command::SetWalletFiatCurrency { currency } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime.rates.set_currency(&currency)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::ApplyWalletRateSnapshot {
+                rates,
+                observed_at_ms,
+            } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime.rates.apply_snapshot(rates, observed_at_ms)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::MarkWalletRateRefreshFailed { observed_at_ms } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime.rates.mark_refresh_failure(observed_at_ms);
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::BeginWalletFunding {
+                address,
+                asset,
+                base_currency,
+            } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime
+                    .onramp
+                    .begin(address, asset, base_currency.as_deref())?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::ResolveWalletFundingProvider {
+                request_id,
+                providers,
+            } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime.onramp.resolve_provider(request_id, &providers)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::CompleteWalletFunding {
+                request_id,
+                session_url,
+            } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime
+                    .onramp
+                    .complete(request_id, session_url.as_deref())?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::CancelWalletFunding { request_id } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime.onramp.cancel(request_id)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::ShowWalletPanel => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime.panel.show();
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::MinimizeWalletPanel => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                if !runtime.panel.minimize() {
+                    return Err(EngineError::WalletPanelNotVisible);
+                }
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::CloseWalletPanel => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                if !runtime.panel.close() {
+                    return Err(EngineError::WalletPanelNotVisible);
+                }
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::SetWalletTransactionsVisible { visible } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime.panel.set_transactions_visible(visible);
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
             Command::ReconcileEntitlement { entitlement } => {
                 self.require_actor(&entitlement.owner_id)?;
                 if entitlement.id.trim().is_empty()
@@ -4231,6 +4351,9 @@ impl MessagingEngine {
             Event::WalletChanged { wallet, .. } => {
                 self.state.wallet = wallet;
             }
+            Event::WalletRuntimeChanged { runtime } => {
+                self.state.wallet.runtime = runtime;
+            }
             Event::EntitlementReconciled { entitlement } => {
                 self.state.entitlements.insert(entitlement.id.clone(), entitlement);
             }
@@ -4471,5 +4594,132 @@ mod recent_open_history_tests {
 
         let restored = MessagingEngine::from_state(engine.state().clone());
         assert!(restored.recent_open_destinations(&actor_id).is_empty());
+    }
+}
+
+
+#[cfg(test)]
+mod wallet_runtime_command_tests {
+    use super::*;
+
+    #[test]
+    fn wallet_rate_runtime_commands_are_durable_and_fail_closed() {
+        let mut engine = MessagingEngine::new();
+        engine
+            .execute(Command::SetWalletFiatCurrency {
+                currency: "eur".into(),
+            })
+            .unwrap();
+        engine
+            .execute(Command::ApplyWalletRateSnapshot {
+                rates: BTreeMap::from([
+                    ("EUR".into(), 920_000),
+                    ("USD".into(), 1_000_000),
+                ]),
+                observed_at_ms: 1_000,
+            })
+            .unwrap();
+        assert_eq!(
+            engine.state().wallet.runtime.rates.current_quote_micros(),
+            Some(920_000)
+        );
+        assert!(matches!(
+            engine.execute(Command::SetWalletFiatCurrency {
+                currency: "not-a-currency".into(),
+            }),
+            Err(EngineError::WalletRate(WalletRateError::InvalidCurrency(_)))
+        ));
+    }
+
+    #[test]
+    fn wallet_funding_runtime_fences_replaced_request_generation() {
+        let mut engine = MessagingEngine::new();
+        engine
+            .execute(Command::BeginWalletFunding {
+                address: "first-address".into(),
+                asset: "asset".into(),
+                base_currency: Some("EUR".into()),
+            })
+            .unwrap();
+        let first = engine
+            .state()
+            .wallet
+            .runtime
+            .onramp
+            .active
+            .as_ref()
+            .unwrap()
+            .request_id;
+        engine
+            .execute(Command::BeginWalletFunding {
+                address: "second-address".into(),
+                asset: "asset".into(),
+                base_currency: Some("EUR".into()),
+            })
+            .unwrap();
+        let second = engine
+            .state()
+            .wallet
+            .runtime
+            .onramp
+            .active
+            .as_ref()
+            .unwrap()
+            .request_id;
+
+        assert!(matches!(
+            engine.execute(Command::ResolveWalletFundingProvider {
+                request_id: first,
+                providers: vec![OnrampProviderInfo::new(
+                    "provider-old",
+                    None::<Vec<String>>,
+                )],
+            }),
+            Err(EngineError::WalletOnramp(WalletOnrampError::StaleRequest {
+                expected,
+                received
+            })) if expected == second && received == first
+        ));
+
+        engine
+            .execute(Command::ResolveWalletFundingProvider {
+                request_id: second,
+                providers: vec![OnrampProviderInfo::new(
+                    "provider-current",
+                    Some(vec!["USD".to_string()]),
+                )],
+            })
+            .unwrap();
+        engine
+            .execute(Command::CompleteWalletFunding {
+                request_id: second,
+                session_url: Some("https://example.invalid/funding".into()),
+            })
+            .unwrap();
+        let active = engine.state().wallet.runtime.onramp.active.as_ref().unwrap();
+        assert_eq!(active.provider_id.as_deref(), Some("provider-current"));
+        assert_eq!(
+            active.session_url.as_deref(),
+            Some("https://example.invalid/funding")
+        );
+    }
+
+    #[test]
+    fn wallet_panel_runtime_reuses_single_shipping_surface_generation() {
+        let mut engine = MessagingEngine::new();
+        engine.execute(Command::ShowWalletPanel).unwrap();
+        let generation = engine.state().wallet.runtime.panel.generation;
+        engine.execute(Command::MinimizeWalletPanel).unwrap();
+        engine.execute(Command::ShowWalletPanel).unwrap();
+        assert_eq!(engine.state().wallet.runtime.panel.generation, generation);
+        engine
+            .execute(Command::SetWalletTransactionsVisible { visible: true })
+            .unwrap();
+        assert!(engine.state().wallet.runtime.panel.transactions_visible);
+        engine.execute(Command::CloseWalletPanel).unwrap();
+        assert!(matches!(
+            engine.execute(Command::CloseWalletPanel),
+            Err(EngineError::WalletPanelNotVisible)
+        ));
     }
 }
