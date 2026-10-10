@@ -1,5 +1,5 @@
-Live Revision 9 authority (2026-10-10): telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 (root tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6). Root non-directory=6,653; recursive non-directory=16,125; read-through=6,932; first unread=6,933 Telegram/ThirdParty/MicroTeX::src/res/font/stmary10.def.cpp@c687e395f8bc4d585b295ccc37eb92ef4b03db72; unread=9,193; unknown=15,845; omitted=0. Orders 6,922-6,932 exact-read MicroTeX delimiter-extension, AMS/math-alphabet and roman/sans compatibility font contracts; reading alone closes no unknown. Fresh descendant exact-head GitHub Actions evidence is required.
-<!-- TDRP_CURRENT_SUMMARY read-through=6932 unread=9193 unknown=15845 omitted=0 first-unread=6933 path=Telegram/ThirdParty/MicroTeX::src/res/font/stmary10.def.cpp -->
+Live Revision 9 authority (2026-10-10): telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 (root tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6). Root non-directory=6,653; recursive non-directory=16,125; read-through=6,948; first unread=6,949 Telegram/ThirdParty/MicroTeX::src/samples/gtkmm_main.cpp@d491af61d05fbcc5d17c48f64e76664f91d5fce8; unread=9,177; unknown=15,845; omitted=0. Orders 6,933-6,948 exact-read MicroTeX remaining font, definition macros, resource/registry build closure and AMS/base/StMary/special symbol mappings; reading alone closes no unknown. Fresh descendant exact-head GitHub Actions evidence is required.
+<!-- TDRP_CURRENT_SUMMARY read-through=6948 unread=9177 unknown=15845 omitted=0 first-unread=6949 path=Telegram/ThirdParty/MicroTeX::src/samples/gtkmm_main.cpp -->
 
 # Telegram 源码 → Fabushi 全量等价重写 — Source of Truth
 
@@ -647,3 +647,8 @@ Orders **6,911-6,921** are exact-blob read-complete/responsibility-decomposed fo
 ### Source closure through 6,932
 
 Orders **6,922-6,932** are exact-blob read-complete/responsibility-decomposed across moustache extensible delimiter pieces, AMS symbol/blackboard fonts, roman/sans compatibility variants, RSFS script kern data and special/sans glyph metrics. They stay mapped-open to the existing AssistantMath/KaTeX dependency interface plus Build/Release provenance owner; no second font runtime is introduced. Accounting: **6,932/16,125 read; 9,193 unread; 15,845 unknown; 0 omitted**. First unread is 6,933 `Telegram/ThirdParty/MicroTeX::src/res/font/stmary10.def.cpp@c687e395…`. Reading grants no implementation or release credit.
+
+
+### Source closure through 6,948
+
+Orders **6,933-6,948** are exact-blob read-complete/responsibility-decomposed across StMary/mono typography, font/symbol definition macros, dependency registries, resource Meson closure and AMS/base/StMary/special symbol mappings. They remain mapped-open to the existing AssistantMath/KaTeX dependency interface plus Build/Release provenance owner; no second registry or MicroTeX runtime is introduced. Accounting: **6,948/16,125 read; 9,177 unread; 15,845 unknown; 0 omitted**. First unread is 6,949 `Telegram/ThirdParty/MicroTeX::src/samples/gtkmm_main.cpp@d491af61…`. Reading grants no implementation, verification, baseline or release credit.
