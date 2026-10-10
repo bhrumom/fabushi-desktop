@@ -10798,8 +10798,8 @@
       "omitted": false,
       "consumer_symbol": "forwarded_status",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:685:whenOriginal: icon {{ \"menu/forwarded_status\", windowBoldFg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:686:whenOriginalOver: icon {{ \"menu/forwarded_status\", windowBoldFg }};"
+        "Telegram/SourceFiles/ui/chat/chat.style:686:whenOriginal: icon {{ \"menu/forwarded_status\", windowBoldFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:687:whenOriginalOver: icon {{ \"menu/forwarded_status\", windowBoldFg }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained for semantic evidence only; Telegram artwork/branding is not imported.",
@@ -10817,7 +10817,7 @@
         "recursive_order": 1752,
         "evidence_status": "live-github-tree-bound-current-head-actions-pending"
       },
-      "notes": "Preserve original-source/date provenance."
+      "notes": "Preserve original-source/date provenance. Re-attested on accepted 6fed91ff after upstream chat.style line insertion; semantic token/consumer is unchanged."
     },
     {
       "recursive_order": 1753,
@@ -10841,8 +10841,8 @@
       "omitted": false,
       "consumer_symbol": "forwarded_status",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:685:whenOriginal: icon {{ \"menu/forwarded_status\", windowBoldFg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:686:whenOriginalOver: icon {{ \"menu/forwarded_status\", windowBoldFg }};"
+        "Telegram/SourceFiles/ui/chat/chat.style:686:whenOriginal: icon {{ \"menu/forwarded_status\", windowBoldFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:687:whenOriginalOver: icon {{ \"menu/forwarded_status\", windowBoldFg }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained for semantic evidence only; Telegram artwork/branding is not imported.",
@@ -10860,7 +10860,7 @@
         "recursive_order": 1753,
         "evidence_status": "live-github-tree-bound-current-head-actions-pending"
       },
-      "notes": "Preserve original-source/date provenance."
+      "notes": "Preserve original-source/date provenance. Re-attested on accepted 6fed91ff after upstream chat.style line insertion; semantic token/consumer is unchanged."
     },
     {
       "recursive_order": 1754,
@@ -10884,8 +10884,8 @@
       "omitted": false,
       "consumer_symbol": "forwarded_status",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:685:whenOriginal: icon {{ \"menu/forwarded_status\", windowBoldFg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:686:whenOriginalOver: icon {{ \"menu/forwarded_status\", windowBoldFg }};"
+        "Telegram/SourceFiles/ui/chat/chat.style:686:whenOriginal: icon {{ \"menu/forwarded_status\", windowBoldFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:687:whenOriginalOver: icon {{ \"menu/forwarded_status\", windowBoldFg }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained for semantic evidence only; Telegram artwork/branding is not imported.",
@@ -10903,7 +10903,7 @@
         "recursive_order": 1754,
         "evidence_status": "live-github-tree-bound-current-head-actions-pending"
       },
-      "notes": "Preserve original-source/date provenance."
+      "notes": "Preserve original-source/date provenance. Re-attested on accepted 6fed91ff after upstream chat.style line insertion; semantic token/consumer is unchanged."
     },
     {
       "recursive_order": 1755,
@@ -11731,8 +11731,8 @@
       "omitted": false,
       "consumer_symbol": "header_mode_day",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:889:\ticon: icon {{ \"menu/header_mode_day\", boxTitleCloseFg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:890:\ticonOver: icon {{ \"menu/header_mode_day\", boxTitleCloseFgOver }};"
+        "Telegram/SourceFiles/ui/chat/chat.style:890:\\ticon: icon {{ \"menu/header_mode_day\", boxTitleCloseFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:891:\\ticonOver: icon {{ \"menu/header_mode_day\", boxTitleCloseFgOver }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained for semantic evidence only; Telegram artwork/branding is not imported.",
@@ -11750,7 +11750,7 @@
         "recursive_order": 1773,
         "evidence_status": "live-github-tree-bound-current-head-actions-pending"
       },
-      "notes": "Reuse semantic tokens and persisted theme state; no source-specific theme root."
+      "notes": "Reuse semantic tokens and persisted theme state; no source-specific theme root. Re-attested on accepted 6fed91ff after upstream chat.style line insertion; semantic token/consumer is unchanged."
     },
     {
       "recursive_order": 1774,
@@ -11774,8 +11774,8 @@
       "omitted": false,
       "consumer_symbol": "header_mode_day",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:889:\ticon: icon {{ \"menu/header_mode_day\", boxTitleCloseFg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:890:\ticonOver: icon {{ \"menu/header_mode_day\", boxTitleCloseFgOver }};"
+        "Telegram/SourceFiles/ui/chat/chat.style:890:\\ticon: icon {{ \"menu/header_mode_day\", boxTitleCloseFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:891:\\ticonOver: icon {{ \"menu/header_mode_day\", boxTitleCloseFgOver }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained for semantic evidence only; Telegram artwork/branding is not imported.",
@@ -11793,7 +11793,7 @@
         "recursive_order": 1774,
         "evidence_status": "live-github-tree-bound-current-head-actions-pending"
       },
-      "notes": "Reuse semantic tokens and persisted theme state; no source-specific theme root."
+      "notes": "Reuse semantic tokens and persisted theme state; no source-specific theme root. Re-attested on accepted 6fed91ff after upstream chat.style line insertion; semantic token/consumer is unchanged."
     },
     {
       "recursive_order": 1775,
@@ -11817,8 +11817,8 @@
       "omitted": false,
       "consumer_symbol": "header_mode_day",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:889:\ticon: icon {{ \"menu/header_mode_day\", boxTitleCloseFg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:890:\ticonOver: icon {{ \"menu/header_mode_day\", boxTitleCloseFgOver }};"
+        "Telegram/SourceFiles/ui/chat/chat.style:890:\\ticon: icon {{ \"menu/header_mode_day\", boxTitleCloseFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:891:\\ticonOver: icon {{ \"menu/header_mode_day\", boxTitleCloseFgOver }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained for semantic evidence only; Telegram artwork/branding is not imported.",
@@ -11836,7 +11836,7 @@
         "recursive_order": 1775,
         "evidence_status": "live-github-tree-bound-current-head-actions-pending"
       },
-      "notes": "Reuse semantic tokens and persisted theme state; no source-specific theme root."
+      "notes": "Reuse semantic tokens and persisted theme state; no source-specific theme root. Re-attested on accepted 6fed91ff after upstream chat.style line insertion; semantic token/consumer is unchanged."
     },
     {
       "recursive_order": 1776,
@@ -11860,8 +11860,8 @@
       "omitted": false,
       "consumer_symbol": "header_mode_night",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:881:\ticon: icon {{ \"menu/header_mode_night\", boxTitleCloseFg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:882:\ticonOver: icon {{ \"menu/header_mode_night\", boxTitleCloseFgOver }};"
+        "Telegram/SourceFiles/ui/chat/chat.style:882:\\ticon: icon {{ \"menu/header_mode_night\", boxTitleCloseFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:883:\\ticonOver: icon {{ \"menu/header_mode_night\", boxTitleCloseFgOver }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained for semantic evidence only; Telegram artwork/branding is not imported.",
@@ -11879,7 +11879,7 @@
         "recursive_order": 1776,
         "evidence_status": "live-github-tree-bound-current-head-actions-pending"
       },
-      "notes": "Reuse semantic tokens and persisted theme state; no source-specific theme root."
+      "notes": "Reuse semantic tokens and persisted theme state; no source-specific theme root. Re-attested on accepted 6fed91ff after upstream chat.style line insertion; semantic token/consumer is unchanged."
     },
     {
       "recursive_order": 1777,
@@ -11903,8 +11903,8 @@
       "omitted": false,
       "consumer_symbol": "header_mode_night",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:881:\ticon: icon {{ \"menu/header_mode_night\", boxTitleCloseFg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:882:\ticonOver: icon {{ \"menu/header_mode_night\", boxTitleCloseFgOver }};"
+        "Telegram/SourceFiles/ui/chat/chat.style:882:\\ticon: icon {{ \"menu/header_mode_night\", boxTitleCloseFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:883:\\ticonOver: icon {{ \"menu/header_mode_night\", boxTitleCloseFgOver }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained for semantic evidence only; Telegram artwork/branding is not imported.",
@@ -11922,7 +11922,7 @@
         "recursive_order": 1777,
         "evidence_status": "live-github-tree-bound-current-head-actions-pending"
       },
-      "notes": "Reuse semantic tokens and persisted theme state; no source-specific theme root."
+      "notes": "Reuse semantic tokens and persisted theme state; no source-specific theme root. Re-attested on accepted 6fed91ff after upstream chat.style line insertion; semantic token/consumer is unchanged."
     },
     {
       "recursive_order": 1778,
@@ -11946,8 +11946,8 @@
       "omitted": false,
       "consumer_symbol": "header_mode_night",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:881:\ticon: icon {{ \"menu/header_mode_night\", boxTitleCloseFg }};",
-        "Telegram/SourceFiles/ui/chat/chat.style:882:\ticonOver: icon {{ \"menu/header_mode_night\", boxTitleCloseFgOver }};"
+        "Telegram/SourceFiles/ui/chat/chat.style:882:\\ticon: icon {{ \"menu/header_mode_night\", boxTitleCloseFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:883:\\ticonOver: icon {{ \"menu/header_mode_night\", boxTitleCloseFgOver }};"
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained for semantic evidence only; Telegram artwork/branding is not imported.",
@@ -11965,7 +11965,7 @@
         "recursive_order": 1778,
         "evidence_status": "live-github-tree-bound-current-head-actions-pending"
       },
-      "notes": "Reuse semantic tokens and persisted theme state; no source-specific theme root."
+      "notes": "Reuse semantic tokens and persisted theme state; no source-specific theme root. Re-attested on accepted 6fed91ff after upstream chat.style line insertion; semantic token/consumer is unchanged."
     },
     {
       "recursive_order": 1779,
