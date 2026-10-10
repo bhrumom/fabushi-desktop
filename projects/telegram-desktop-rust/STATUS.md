@@ -1,5 +1,5 @@
-Live Revision 9 authority (2026-10-10): telegramdesktop/tdesktop@28ac576967a1026ecc89a927360fa0e138d7c88c (root tree 9d8fa87ce68c832d2f4c99f372a5bb672463c3e1). Root non-directory=6,653; recursive non-directory=16,125; read-through=6,388; first unread=6,389 Telegram/SourceFiles/window/section_memento.h@d139928a9996a6333e541a5db9c77e64056b41fd; unread=9,737; unknown=15,846; omitted=0. Reading alone never closes unknown. Fresh descendant exact-head GitHub Actions evidence is required.
-<!-- TDRP_CURRENT_SUMMARY read-through=6388 unread=9737 unknown=15846 omitted=0 first-unread=6389 path=Telegram/SourceFiles/window/section_memento.h -->
+Live Revision 9 authority (2026-10-10): telegramdesktop/tdesktop@28ac576967a1026ecc89a927360fa0e138d7c88c (root tree 9d8fa87ce68c832d2f4c99f372a5bb672463c3e1). Root non-directory=6,653; recursive non-directory=16,125; read-through=6,392; first unread=6,393 Telegram/SourceFiles/window/themes/window_theme.cpp@2ead4b28873908361728df3f622318ed073cdee2; unread=9,733; unknown=15,846; omitted=0. Reading alone never closes unknown. Fresh descendant exact-head GitHub Actions evidence is required.
+<!-- TDRP_CURRENT_SUMMARY read-through=6392 unread=9733 unknown=15846 omitted=0 first-unread=6393 path=Telegram/SourceFiles/window/themes/window_theme.cpp -->
 
 # Telegram Desktop → Fabushi 全量等价重写 — Status
 
@@ -274,3 +274,8 @@ BlueZ interface and common WebAuthn security-key/CaBLE orchestration are exact-b
 ### Revision 9 read-through 6381-6388
 
 Main window and first notification-manager tranche are exact-blob read/responsibility-decomposed against existing Electron main/window-state/window-chrome/dock-badge/OS-notification owners. Existing geometry/focus/maximized/badge and scoped notification action behavior is retained; close-to-tray/background, privacy-aware OS title, full canonical conversation notification mute/privacy/grouping/device-delay and fallback/resource lifecycle remain explicitly mapped-open. Accounting: 6,388/16,125 read; 9,737 unread; 15,846 unknown; 0 omitted. First unread: 6,389 `Telegram/SourceFiles/window/section_memento.h@d139928a9996a6333e541a5db9c77e64056b41fd`.
+
+
+### Revision 9 read-through 6389-6392
+
+Section navigation/workspace contracts and draw-to-reply media flow are exact-blob read/responsibility-decomposed. Qt widget/slide/painting is not copied; routing, memento identity, focus/search/permission/theme behavior and async draw-to-reply target/payment/ephemeral safeguards map into existing ProductShell/ConversationWorkspace/Search/Permissions/Composer/Resource/Message owners. Accounting: 6,392/16,125 read; 9,733 unread; 15,846 unknown; 0 omitted. First unread: 6,393 `Telegram/SourceFiles/window/themes/window_theme.cpp@2ead4b28873908361728df3f622318ed073cdee2`.

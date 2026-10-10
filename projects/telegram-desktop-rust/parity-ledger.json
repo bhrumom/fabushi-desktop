@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15846,
-    "unread": 9737,
+    "unread": 9733,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 69,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 6388,
-    "first_unread_order": 6389,
-    "first_unread_path": "Telegram/SourceFiles/window/section_memento.h"
+    "read_through": 6392,
+    "first_unread_order": 6393,
+    "first_unread_path": "Telegram/SourceFiles/window/themes/window_theme.cpp"
   },
   "historical_exact_head_evidence": {
     "status": "historical-only",
