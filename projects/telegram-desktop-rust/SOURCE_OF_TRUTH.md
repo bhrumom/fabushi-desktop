@@ -1,5 +1,5 @@
-Live Revision 9 authority (2026-10-10): telegramdesktop/tdesktop@28ac576967a1026ecc89a927360fa0e138d7c88c (root tree 9d8fa87ce68c832d2f4c99f372a5bb672463c3e1). Root non-directory=6,653; recursive non-directory=16,125; read-through=6,448; first unread=6,449 Telegram/SourceFiles/window/window_session_controller.cpp@df216237e47d22c200a51b2c7fda31175682d3c5; unread=9,677; unknown=15,846; omitted=0. Reading alone never closes unknown. Fresh descendant exact-head GitHub Actions evidence is required.
-<!-- TDRP_CURRENT_SUMMARY read-through=6448 unread=9677 unknown=15846 omitted=0 first-unread=6449 path=Telegram/SourceFiles/window/window_session_controller.cpp -->
+Live Revision 9 authority (2026-10-10): telegramdesktop/tdesktop@28ac576967a1026ecc89a927360fa0e138d7c88c (root tree 9d8fa87ce68c832d2f4c99f372a5bb672463c3e1). Root non-directory=6,653; recursive non-directory=16,125; read-through=6,458; first unread=6,459 Telegram/Telegram.plist@d156eda29c86bbd11b3c7757b9d419e2c863ea8b; unread=9,667; unknown=15,846; omitted=0. Reading alone never closes unknown. Fresh descendant exact-head GitHub Actions evidence is required.
+<!-- TDRP_CURRENT_SUMMARY read-through=6458 unread=9667 unknown=15846 omitted=0 first-unread=6459 path=Telegram/Telegram.plist -->
 
 # Telegram 源码 → Fabushi 全量等价重写 — Source of Truth
 
@@ -549,3 +549,7 @@ Orders **6,424-6,437** are exact-blob read-complete and responsibility-decompose
 ### Revision 9 live read-through note: 6438-6448
 
 Orders **6,438-6,448** are exact-blob read-complete and responsibility-decomposed on accepted `28ac5769`. They cover media-preview resource/playback lifetime, context-sensitive canonical conversation commands, temporary restore shells, durable multi-window/account/conversation restore, section fallback semantics, and detachable-window route/security identity. All remain **mapped-open**. Current `source/electron-main/window-state-persistence.ts` is explicit partial parity: it persists one main-window placement but not durable account/conversation multi-window restore. Reading alone closes no unknown. Accounting: **6,448/16,125 read; 9,677 unread; 15,846 unknown; 0 omitted**. First unread: **6,449 `Telegram/SourceFiles/window/window_session_controller.cpp@df216237e47d22c200a51b2c7fda31175682d3c5`**.
+
+### Revision 9 live read-through note: 6449-6458
+
+Orders **6,449-6,458** are exact-blob read-complete and responsibility-decomposed. The large SessionController is decomposed into canonical Navigation/Conversation/Search/Window/Resource/Permissions/Calls/Settings/Theme/Story owners rather than ported as a new monolith. The range also captures typed deep-link intent, setup-email enrollment/verification with flood/expiry handling, canonical motion/adaptive-top-bar semantics, and passcode unlock exactly-once convergence across windows. All remain **mapped-open**. Accounting: **6,458/16,125 read; 9,667 unread; 15,846 unknown; 0 omitted**. First unread: **6,459 `Telegram/Telegram.plist@d156eda29c86bbd11b3c7757b9d419e2c863ea8b`**.

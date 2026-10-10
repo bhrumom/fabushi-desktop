@@ -1,4 +1,4 @@
-Live TDRP Revision 9 upstream authority: telegramdesktop/tdesktop@28ac576967a1026ecc89a927360fa0e138d7c88c (root tree 9d8fa87ce68c832d2f4c99f372a5bb672463c3e1); recursive total 16,125; read-through 6,448; first unread 6,449 Telegram/SourceFiles/window/window_session_controller.cpp@df216237e47d22c200a51b2c7fda31175682d3c5; unread 9,677; unknown 15,846; omitted 0.
+Live TDRP Revision 9 upstream authority: telegramdesktop/tdesktop@28ac576967a1026ecc89a927360fa0e138d7c88c (root tree 9d8fa87ce68c832d2f4c99f372a5bb672463c3e1); recursive total 16,125; read-through 6,458; first unread 6,459 Telegram/Telegram.plist@d156eda29c86bbd11b3c7757b9d419e2c863ea8b; unread 9,667; unknown 15,846; omitted 0.
 
 Live Revision 9 authority (2026-10-10): telegramdesktop/tdesktop@65e23ba7137ea4129b6bc1b2616104a1f59495ef (root tree 6b616494f3465324e749a04dcd1c9d508657a998). Root non-directory=6,653; recursive non-directory=16,125; read-through=5,836; first unread=5,837 Telegram/SourceFiles/test/test_wallet_intercept.cpp@7a0885063d4f393de43cd05f368e6671dfd40b7d; unread=10,289; unknown=15,846; omitted=0. The b0d1fe5e→65e23ba7 delta is ten commits / 25 modified paths; all 18 changed blobs inside the prior prefix were explicitly re-read and reconciled before retaining prefix credit. Orders 5,831-5,836 were then read/decomposed on the same live authority. Fresh descendant exact-head GitHub Actions evidence is required; b0400d+b0d1fe5 runs are predecessor-only.
 
@@ -196,3 +196,7 @@ Exact accepted blobs for Window favorite/filter navigation, history overlay dism
 ### TDRP read-through 6438-6448
 
 Exact accepted blobs are read/decomposed through order 6,448. Media preview, canonical peer commands, window restore and detachable-window identity remain mapped-open to existing source-neutral owners. Main-window state persistence is partial parity, not multi-window restore evidence. Accounting: **6,448/16,125 read; 9,677 unread; 15,846 unknown; 0 omitted**. First unread is 6,449 `window/window_session_controller.cpp@df216237e47d22c200a51b2c7fda31175682d3c5`.
+
+### TDRP read-through 6449-6458
+
+Exact accepted blobs are read/decomposed through order 6,458. Session-scoped navigation/composition, deep-link intents, email enrollment, motion/adaptive top bar and unlock-passcode semantics remain mapped-open to canonical owners. Accounting: **6,458/16,125 read; 9,667 unread; 15,846 unknown; 0 omitted**. First unread is 6,459 `Telegram/Telegram.plist`.
