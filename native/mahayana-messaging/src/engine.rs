@@ -6789,6 +6789,7 @@ mod connected_app_claim_recovery_engine_source_tests {
             public_key: vec![8; 32],
             revision: 1,
         };
+        engine.execute(Command::TakeNextConnectedAppRequest { observed_at_ms: 150 }).unwrap();
         engine.execute(Command::ResolveConnectedAppWalletRequest {
             session_id: 1991,
             message_id: 9901,
@@ -6806,6 +6807,10 @@ mod connected_app_claim_recovery_engine_source_tests {
             message_id: 9901,
             request_id: "engine-recovery-request".into(),
             operation_id: "operation-engine".into(),
+        }).unwrap();
+        engine.execute(Command::FinishConnectedAppRequest {
+            message_id: 9901,
+            claimed: true,
         }).unwrap();
         engine.execute(Command::ReconcileConnectedAppClaimRecovery {
             wallet_identity: Some(wallet),

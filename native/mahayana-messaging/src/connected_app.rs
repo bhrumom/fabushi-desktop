@@ -3001,6 +3001,10 @@ mod connected_app_claim_recovery_scheduler_source_tests {
         identity: WalletTransferIdentity,
     ) {
         state.queue_request(request(message_id, request_id), 100).unwrap();
+        assert_eq!(
+            state.take_next_request(150).unwrap().map(|entry| entry.message_id),
+            Some(message_id)
+        );
         state
             .record_wallet_claim_with_recovery(
                 771,
@@ -3015,6 +3019,7 @@ mod connected_app_claim_recovery_scheduler_source_tests {
                 200,
             )
             .unwrap();
+        state.finish_request(message_id, true).unwrap();
     }
 
     #[test]
@@ -3089,6 +3094,10 @@ mod connected_app_claim_recovery_scheduler_source_tests {
         assert!(state.request_runtime.waiting.is_empty());
 
         state.queue_request(request(202, "answer"), 100).unwrap();
+        assert_eq!(
+            state.take_next_request(150).unwrap().map(|entry| entry.message_id),
+            Some(202)
+        );
         state
             .record_claim(
                 771,
@@ -3101,6 +3110,7 @@ mod connected_app_claim_recovery_scheduler_source_tests {
                 200,
             )
             .unwrap();
+        state.finish_request(202, true).unwrap();
         state.reconcile_claim_recovery(None, Vec::new(), 300).unwrap();
         assert_eq!(
             state.request_runtime.recovery_submissions[&202].kind,
