@@ -1,5 +1,5 @@
-Live Revision 9 authority (2026-10-10): telegramdesktop/tdesktop@65e23ba7137ea4129b6bc1b2616104a1f59495ef (root tree 6b616494f3465324e749a04dcd1c9d508657a998). Root non-directory=6,653; recursive non-directory=16,125; read-through=6,269; first unread=6,270 Telegram/SourceFiles/ui/widgets/marquee_label.cpp@ddb4fac4dc2eb2f4d990b283aad018416ce7d1d2; unread=9,856; unknown=15,846; omitted=0. Reading alone never closes unknown. Fresh descendant exact-head GitHub Actions evidence is required.
-<!-- TDRP_CURRENT_SUMMARY read-through=6269 unread=9856 unknown=15846 omitted=0 first-unread=6270 path=Telegram/SourceFiles/ui/widgets/marquee_label.cpp -->
+Live Revision 9 authority (2026-10-10): telegramdesktop/tdesktop@65e23ba7137ea4129b6bc1b2616104a1f59495ef (root tree 6b616494f3465324e749a04dcd1c9d508657a998). Root non-directory=6,653; recursive non-directory=16,125; read-through=6,303; first unread=6,304 Telegram/SourceFiles/wallet/wallet_card_angle.cpp@94800a1532b5ca0baaa878c4d06785f084120ec5; unread=9,822; unknown=15,846; omitted=0. Reading alone never closes unknown. Fresh descendant exact-head GitHub Actions evidence is required.
+<!-- TDRP_CURRENT_SUMMARY read-through=6303 unread=9822 unknown=15846 omitted=0 first-unread=6304 path=Telegram/SourceFiles/wallet/wallet_card_angle.cpp -->
 
 # Telegram 源码 → Fabushi 全量等价重写 — Source of Truth
 
