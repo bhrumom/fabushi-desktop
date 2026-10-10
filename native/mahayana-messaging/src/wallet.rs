@@ -2137,6 +2137,219 @@ pub enum WalletLiveError {
     HistoryPageBudgetExhausted,
 }
 
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum WalletParkedFunds {
+    #[default]
+    Checking,
+    Empty,
+    Funded,
+    Unknown,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WalletParkedCheck {
+    pub funds: WalletParkedFunds,
+    pub balance_nano: i64,
+    pub request_serial: Option<u64>,
+}
+
+impl Default for WalletParkedCheck {
+    fn default() -> Self {
+        Self {
+            funds: WalletParkedFunds::Checking,
+            balance_nano: 0,
+            request_serial: None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum WalletParkedCheckOutcome {
+    Unknown,
+    Empty,
+    Funded { balance_nano: i64 },
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WalletParkedState {
+    pub checks: BTreeMap<String, WalletParkedCheck>,
+    pub next_serial: u64,
+}
+
+impl WalletParkedState {
+    pub fn sync_addresses(
+        &mut self,
+        served_address: &str,
+        addresses: &[String],
+    ) -> Result<(), WalletParkedError> {
+        validate_wallet_address(served_address).map_err(|_| WalletParkedError::InvalidAddress)?;
+        let mut wanted = BTreeSet::new();
+        for address in addresses {
+            validate_wallet_address(address).map_err(|_| WalletParkedError::InvalidAddress)?;
+            if address != served_address {
+                wanted.insert(address.clone());
+            }
+        }
+        self.checks.retain(|address, _| wanted.contains(address));
+        for address in wanted {
+            self.checks.entry(address).or_default();
+        }
+        Ok(())
+    }
+
+    pub fn begin_check(
+        &mut self,
+        address: &str,
+        refresh: bool,
+        presence: WalletLivePresence,
+    ) -> Result<Option<u64>, WalletParkedError> {
+        if presence != WalletLivePresence::Ready {
+            return Ok(None);
+        }
+        let check = self
+            .checks
+            .get(address)
+            .ok_or(WalletParkedError::AddressNotTracked)?;
+        if check.request_serial.is_some() {
+            return Ok(None);
+        }
+        let eligible = check.funds == WalletParkedFunds::Checking
+            || (refresh
+                && matches!(
+                    check.funds,
+                    WalletParkedFunds::Funded | WalletParkedFunds::Unknown
+                ));
+        if !eligible {
+            return Ok(None);
+        }
+        self.next_serial = self
+            .next_serial
+            .checked_add(1)
+            .ok_or(WalletParkedError::SerialOverflow)?;
+        let serial = self.next_serial;
+        self.checks
+            .get_mut(address)
+            .expect("tracked parked wallet disappeared")
+            .request_serial = Some(serial);
+        Ok(Some(serial))
+    }
+
+    pub fn apply_check(
+        &mut self,
+        address: &str,
+        serial: u64,
+        outcome: WalletParkedCheckOutcome,
+    ) -> Result<(), WalletParkedError> {
+        if serial == 0 {
+            return Err(WalletParkedError::InvalidSerial);
+        }
+        if matches!(
+            outcome,
+            WalletParkedCheckOutcome::Funded { balance_nano } if balance_nano < 0
+        ) {
+            return Err(WalletParkedError::InvalidBalance);
+        }
+        let check = self
+            .checks
+            .get_mut(address)
+            .ok_or(WalletParkedError::AddressNotTracked)?;
+        if check.request_serial != Some(serial) {
+            return Err(WalletParkedError::StaleCheck {
+                expected: check.request_serial,
+                received: serial,
+            });
+        }
+        check.request_serial = None;
+        match outcome {
+            WalletParkedCheckOutcome::Unknown => {
+                check.funds = WalletParkedFunds::Unknown;
+                check.balance_nano = 0;
+            }
+            WalletParkedCheckOutcome::Empty => {
+                check.funds = WalletParkedFunds::Empty;
+                check.balance_nano = 0;
+            }
+            WalletParkedCheckOutcome::Funded { balance_nano } => {
+                check.funds = WalletParkedFunds::Funded;
+                check.balance_nano = balance_nano;
+            }
+        }
+        Ok(())
+    }
+
+    pub fn mark_drop_failed(&mut self, address: &str) -> Result<(), WalletParkedError> {
+        let check = self
+            .checks
+            .get_mut(address)
+            .ok_or(WalletParkedError::AddressNotTracked)?;
+        if check.funds == WalletParkedFunds::Empty {
+            check.funds = WalletParkedFunds::Unknown;
+            check.balance_nano = 0;
+        }
+        Ok(())
+    }
+
+    pub fn aggregate_balance_nano(&self) -> Result<Option<i64>, WalletParkedError> {
+        let mut total = 0_i64;
+        for check in self.checks.values() {
+            match check.funds {
+                WalletParkedFunds::Unknown => return Ok(None),
+                WalletParkedFunds::Funded => {
+                    total = total
+                        .checked_add(check.balance_nano)
+                        .ok_or(WalletParkedError::BalanceOverflow)?;
+                }
+                WalletParkedFunds::Checking | WalletParkedFunds::Empty => {}
+            }
+        }
+        Ok(Some(total))
+    }
+
+    pub fn hidden(&self, address: &str) -> bool {
+        self.checks.get(address).is_some_and(|check| {
+            matches!(
+                check.funds,
+                WalletParkedFunds::Checking | WalletParkedFunds::Empty
+            )
+        })
+    }
+
+    pub fn empty_drop_candidates(&self) -> Vec<String> {
+        self.checks
+            .iter()
+            .filter_map(|(address, check)| {
+                (check.funds == WalletParkedFunds::Empty).then(|| address.clone())
+            })
+            .collect()
+    }
+}
+
+#[derive(Debug, Error, Clone, PartialEq, Eq)]
+pub enum WalletParkedError {
+    #[error("parked wallet address is invalid")]
+    InvalidAddress,
+    #[error("parked wallet address is not tracked")]
+    AddressNotTracked,
+    #[error("parked wallet request serial is invalid")]
+    InvalidSerial,
+    #[error("parked wallet request serial overflowed")]
+    SerialOverflow,
+    #[error("parked wallet check is stale: expected {expected:?}, received {received}")]
+    StaleCheck {
+        expected: Option<u64>,
+        received: u64,
+    },
+    #[error("parked wallet balance is invalid")]
+    InvalidBalance,
+    #[error("parked wallet balance overflowed")]
+    BalanceOverflow,
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WalletRuntimeState {
@@ -2156,6 +2369,10 @@ pub struct WalletRuntimeState {
     /// service rather than replaying stale network authority.
     #[serde(skip, default)]
     pub live: WalletLiveState,
+    /// Parked-wallet discovery is derived from live custody plus remote balance
+    /// checks. Restart must rebuild it rather than trusting stale network facts.
+    #[serde(skip, default)]
+    pub parked: WalletParkedState,
 }
 
 impl WalletRuntimeState {
@@ -2180,6 +2397,105 @@ impl WalletRuntimeState {
         self.outbound_transfers
             .prepare(record)
             .map_err(WalletTransferQuoteError::OutboundTransfer)
+    }
+}
+
+
+#[cfg(test)]
+mod parked_wallet_tests {
+    use super::*;
+
+    #[test]
+    fn sync_deduplicates_candidates_and_never_tracks_served_wallet() {
+        let mut state = WalletParkedState::default();
+        state
+            .sync_addresses(
+                "EQ-current",
+                &[
+                    "EQ-current".into(),
+                    "EQ-old-a".into(),
+                    "EQ-old-a".into(),
+                    "EQ-old-b".into(),
+                ],
+            )
+            .unwrap();
+        assert_eq!(
+            state.checks.keys().cloned().collect::<Vec<_>>(),
+            vec!["EQ-old-a".to_string(), "EQ-old-b".to_string()]
+        );
+        assert!(state.hidden("EQ-old-a"));
+        assert_eq!(state.aggregate_balance_nano().unwrap(), Some(0));
+    }
+
+    #[test]
+    fn checks_are_ready_gated_stale_safe_and_refresh_funded_without_hiding_it() {
+        let mut state = WalletParkedState::default();
+        state
+            .sync_addresses("EQ-current", &["EQ-old".into()])
+            .unwrap();
+        assert_eq!(
+            state
+                .begin_check("EQ-old", false, WalletLivePresence::Unknown)
+                .unwrap(),
+            None
+        );
+        let first = state
+            .begin_check("EQ-old", false, WalletLivePresence::Ready)
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            state.apply_check(
+                "EQ-old",
+                first + 1,
+                WalletParkedCheckOutcome::Funded { balance_nano: 7 },
+            ),
+            Err(WalletParkedError::StaleCheck {
+                expected: Some(first),
+                received: first + 1,
+            })
+        );
+        state
+            .apply_check(
+                "EQ-old",
+                first,
+                WalletParkedCheckOutcome::Funded { balance_nano: 7 },
+            )
+            .unwrap();
+        assert!(!state.hidden("EQ-old"));
+        assert_eq!(state.aggregate_balance_nano().unwrap(), Some(7));
+
+        let refresh = state
+            .begin_check("EQ-old", true, WalletLivePresence::Ready)
+            .unwrap()
+            .unwrap();
+        assert!(!state.hidden("EQ-old"));
+        state
+            .apply_check("EQ-old", refresh, WalletParkedCheckOutcome::Unknown)
+            .unwrap();
+        assert_eq!(state.aggregate_balance_nano().unwrap(), None);
+    }
+
+    #[test]
+    fn empty_wallets_are_hidden_drop_candidates_and_failed_drop_becomes_unknown() {
+        let mut state = WalletParkedState::default();
+        state
+            .sync_addresses("EQ-current", &["EQ-empty".into()])
+            .unwrap();
+        let serial = state
+            .begin_check("EQ-empty", false, WalletLivePresence::Ready)
+            .unwrap()
+            .unwrap();
+        state
+            .apply_check("EQ-empty", serial, WalletParkedCheckOutcome::Empty)
+            .unwrap();
+        assert!(state.hidden("EQ-empty"));
+        assert_eq!(
+            state.empty_drop_candidates(),
+            vec!["EQ-empty".to_string()]
+        );
+        state.mark_drop_failed("EQ-empty").unwrap();
+        assert!(!state.hidden("EQ-empty"));
+        assert_eq!(state.aggregate_balance_nano().unwrap(), None);
     }
 }
 

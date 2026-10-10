@@ -29,9 +29,9 @@ use crate::story::{
 use crate::wallet::{
     LedgerEntry, OnrampProviderInfo, OutboundTransferError, OutboundTransferRecord,
     OutboundTransferTerminal, WalletAccountId, WalletAddressDirectoryError, WalletError,
-    WalletLedger, WalletLiveError, WalletLivePresence, WalletOnrampError, WalletRateError,
-    WalletRuntimeState, WalletSponsoredFeeError, WalletSponsoredFeeInfo, WalletTransferIdentity,
-    WalletTransferQuote, WalletTransferQuoteError,
+    WalletLedger, WalletLiveError, WalletLivePresence, WalletOnrampError, WalletParkedCheckOutcome,
+    WalletParkedError, WalletRateError, WalletRuntimeState, WalletSponsoredFeeError,
+    WalletSponsoredFeeInfo, WalletTransferIdentity, WalletTransferQuote, WalletTransferQuoteError,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
@@ -367,6 +367,22 @@ pub enum Command {
     },
     RearmWalletHistoryWalk {
         generation: u64,
+    },
+    SyncWalletParkedAddresses {
+        served_address: String,
+        addresses: Vec<String>,
+    },
+    BeginWalletParkedCheck {
+        address: String,
+        refresh: bool,
+    },
+    ApplyWalletParkedCheck {
+        address: String,
+        serial: u64,
+        outcome: WalletParkedCheckOutcome,
+    },
+    MarkWalletParkedDropFailed {
+        address: String,
     },
     BeginWalletSponsoredFeeRequest {
         network_generation: u64,
@@ -981,6 +997,8 @@ pub enum EngineError {
     WalletAddressDirectory(#[from] WalletAddressDirectoryError),
     #[error(transparent)]
     WalletLive(#[from] WalletLiveError),
+    #[error(transparent)]
+    WalletParked(#[from] WalletParkedError),
     #[error(transparent)]
     WalletSponsoredFee(#[from] WalletSponsoredFeeError),
     #[error(transparent)]
@@ -3042,6 +3060,37 @@ impl MessagingEngine {
                 runtime.live.rearm_history_walk(generation)?;
                 Ok(vec![Event::WalletRuntimeChanged { runtime }])
             }
+            Command::SyncWalletParkedAddresses {
+                served_address,
+                addresses,
+            } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime
+                    .parked
+                    .sync_addresses(&served_address, &addresses)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::BeginWalletParkedCheck { address, refresh } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime
+                    .parked
+                    .begin_check(&address, refresh, runtime.live.presence)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::ApplyWalletParkedCheck {
+                address,
+                serial,
+                outcome,
+            } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime.parked.apply_check(&address, serial, outcome)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::MarkWalletParkedDropFailed { address } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime.parked.mark_drop_failed(&address)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
             Command::BeginWalletSponsoredFeeRequest {
                 network_generation,
                 identity,
@@ -5013,6 +5062,61 @@ mod recent_open_history_tests {
 #[cfg(test)]
 mod wallet_runtime_command_tests {
     use super::*;
+
+    #[test]
+    fn parked_wallet_checks_are_ready_gated_stale_safe_and_runtime_only() {
+        let mut engine = MessagingEngine::new();
+        engine.execute(Command::BeginWalletLiveGeneration).unwrap();
+        engine
+            .execute(Command::ReconcileWalletLivePresence {
+                generation: 1,
+                presence: WalletLivePresence::Ready,
+                observed_at_ms: 100,
+            })
+            .unwrap();
+        engine
+            .execute(Command::SyncWalletParkedAddresses {
+                served_address: "EQ-current".into(),
+                addresses: vec!["EQ-current".into(), "EQ-old".into()],
+            })
+            .unwrap();
+        engine
+            .execute(Command::BeginWalletParkedCheck {
+                address: "EQ-old".into(),
+                refresh: false,
+            })
+            .unwrap();
+        let serial = engine
+            .state()
+            .wallet
+            .runtime
+            .parked
+            .checks
+            .get("EQ-old")
+            .and_then(|check| check.request_serial)
+            .unwrap();
+        engine
+            .execute(Command::ApplyWalletParkedCheck {
+                address: "EQ-old".into(),
+                serial,
+                outcome: WalletParkedCheckOutcome::Funded { balance_nano: 42 },
+            })
+            .unwrap();
+        assert_eq!(
+            engine
+                .state()
+                .wallet
+                .runtime
+                .parked
+                .aggregate_balance_nano()
+                .unwrap(),
+            Some(42)
+        );
+
+        let encoded = serde_json::to_string(engine.state()).unwrap();
+        let restored: MessagingState = serde_json::from_str(&encoded).unwrap();
+        assert!(restored.wallet.runtime.parked.checks.is_empty());
+    }
 
     #[test]
     fn wallet_rate_runtime_commands_are_durable_and_fail_closed() {
