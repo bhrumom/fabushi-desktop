@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 8353,
+    "unread": 8337,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,11 +13478,11 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Accepted prefix 7,772/16,125; Hime formatting gate, GPLv2 provenance, exact mode-120000 blue icon alias and symmetric icon packaging read/decomposed; unread 8,353; unknown 15,845; omitted 0. Next is first black binary icon.",
-    "source_authority_evidence": "Accepted exact Hime blobs 7,769–7,772 read; symlink identity explicitly mode=120000/content=blue. Descendant exact-head Actions and binary visual review for 7,773+ required.",
-    "current_source_read_through": 7772,
-    "first_unread_order": 7773,
-    "first_unread_path": "Telegram/ThirdParty/hime::icons/black/4corner.png"
+    "source_read_reconciliation": "Accepted prefix 7,788/16,125; first black Hime input-mode icon window exact-byte plus visual inspected and LGPL v2.1-or-later COPYING read; unread 8,337; unknown 15,845; omitted 0. Next black icon is fcitx-wanfeng.",
+    "source_authority_evidence": "Artifact 11680335933 (sha256:e425c4b675c000fe5effe8170f9b294272be66606acab7c380b7d7ca7eed17bf) exact-materialized 7,773–7,788; all identities matched and image semantics visually reviewed. Descendant exact-head Actions required.",
+    "current_source_read_through": 7788,
+    "first_unread_order": 7789,
+    "first_unread_path": "Telegram/ThirdParty/hime::icons/black/fcitx-wanfeng.png"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 7772,
-    "first_unread_order": 7773,
-    "first_unread_path": "Telegram/ThirdParty/hime::icons/black/4corner.png",
+    "read_through": 7788,
+    "first_unread_order": 7789,
+    "first_unread_path": "Telegram/ThirdParty/hime::icons/black/fcitx-wanfeng.png",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {

@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 8353,
+    "unread_minimum": 8337,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through 7,772; unread 8,353; unknown 15,845; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition through 7,788; unread 8,337; unknown 15,845; omitted 0."
   },
   "latest_recursive_evidence": {
     "run_id": 38077755131,
@@ -43,7 +43,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live authority exact through 7,772; first unread 7,773 Telegram/ThirdParty/hime::icons/black/4corner.png; unread_minimum is 8,353; unknown remains 15,845; omitted remains 0.",
+  "note": "Live authority exact through 7,788; first unread 7,789 Telegram/ThirdParty/hime::icons/black/fcitx-wanfeng.png; unread_minimum is 8,337; unknown remains 15,845; omitted remains 0.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -61,10 +61,10 @@
       6541,
       6627
     ],
-    "current_source_read_through": 7772,
-    "first_unread_order": 7773,
-    "first_unread_path": "Telegram/ThirdParty/hime::icons/black/4corner.png",
-    "current_head_source_authority_evidence": "7,769–7,772 exact-read/decomposed: strict formatting hook, GPLv2 provenance, mode-120000 icon alias target `blue`, and symmetric icon packaging; next binary icon requires visual review; reading closes no unknown."
+    "current_source_read_through": 7788,
+    "first_unread_order": 7789,
+    "first_unread_path": "Telegram/ThirdParty/hime::icons/black/fcitx-wanfeng.png",
+    "current_head_source_authority_evidence": "7,773–7,788 exact materialization from artifact 11680335933; every Git blob identity/size verified and black input-mode glyphs visually inspected; icon-set LGPL v2.1-or-later provenance read; reading closes no unknown."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -73,9 +73,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 7772,
-    "first_unread_order": 7773,
-    "first_unread_path": "Telegram/ThirdParty/hime::icons/black/4corner.png",
+    "read_through": 7788,
+    "first_unread_order": 7789,
+    "first_unread_path": "Telegram/ThirdParty/hime::icons/black/fcitx-wanfeng.png",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }
