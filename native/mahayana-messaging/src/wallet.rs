@@ -995,6 +995,143 @@ pub enum WalletOnrampError {
     RequestIdOverflow,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WalletExistingBalanceRequest {
+    pub serial: u64,
+    pub panel_generation: u64,
+    pub network_generation: u64,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WalletExistingBalanceState {
+    pub requested_generation: Option<u64>,
+    pub in_flight: Option<WalletExistingBalanceRequest>,
+    pub next_serial: u64,
+    pub url: Option<String>,
+}
+
+impl WalletExistingBalanceState {
+    fn clear_opening(&mut self) {
+        self.requested_generation = None;
+        self.in_flight = None;
+        self.url = None;
+    }
+
+    fn begin(
+        &mut self,
+        panel_generation: u64,
+        network_generation: u64,
+    ) -> Result<Option<WalletExistingBalanceRequest>, WalletExistingBalanceError> {
+        if panel_generation == 0 {
+            return Err(WalletExistingBalanceError::PanelNotOpen);
+        }
+        if network_generation == 0 {
+            return Err(WalletExistingBalanceError::NetworkNotReady);
+        }
+        if self.requested_generation == Some(panel_generation) {
+            return Ok(None);
+        }
+        self.next_serial = self
+            .next_serial
+            .checked_add(1)
+            .ok_or(WalletExistingBalanceError::SerialOverflow)?;
+        let request = WalletExistingBalanceRequest {
+            serial: self.next_serial,
+            panel_generation,
+            network_generation,
+        };
+        self.requested_generation = Some(panel_generation);
+        self.in_flight = Some(request);
+        Ok(Some(request))
+    }
+
+    fn apply(
+        &mut self,
+        panel_generation: u64,
+        current_network_generation: u64,
+        serial: u64,
+        url: Option<String>,
+    ) -> Result<bool, WalletExistingBalanceError> {
+        let request = self.take_matching(panel_generation, serial)?;
+        if request.network_generation != current_network_generation {
+            return Ok(false);
+        }
+        self.url = normalize_existing_balance_url(url)?;
+        Ok(true)
+    }
+
+    fn fail(
+        &mut self,
+        panel_generation: u64,
+        serial: u64,
+    ) -> Result<(), WalletExistingBalanceError> {
+        self.take_matching(panel_generation, serial)?;
+        Ok(())
+    }
+
+    fn take_matching(
+        &mut self,
+        panel_generation: u64,
+        serial: u64,
+    ) -> Result<WalletExistingBalanceRequest, WalletExistingBalanceError> {
+        if serial == 0 {
+            return Err(WalletExistingBalanceError::InvalidSerial);
+        }
+        let request = self
+            .in_flight
+            .ok_or(WalletExistingBalanceError::NoActiveRequest)?;
+        if request.serial != serial || request.panel_generation != panel_generation {
+            return Err(WalletExistingBalanceError::StaleRequest {
+                expected: self.in_flight,
+                received_serial: serial,
+                received_panel_generation: panel_generation,
+            });
+        }
+        self.in_flight = None;
+        Ok(request)
+    }
+}
+
+fn normalize_existing_balance_url(
+    url: Option<String>,
+) -> Result<Option<String>, WalletExistingBalanceError> {
+    let Some(url) = url else {
+        return Ok(None);
+    };
+    let trimmed = url.trim();
+    if trimmed.is_empty()
+        || trimmed.len() > 4096
+        || trimmed.chars().any(char::is_control)
+    {
+        return Err(WalletExistingBalanceError::InvalidUrl);
+    }
+    Ok(Some(trimmed.to_string()))
+}
+
+#[derive(Debug, Error, Clone, PartialEq, Eq)]
+pub enum WalletExistingBalanceError {
+    #[error("wallet panel is not open")]
+    PanelNotOpen,
+    #[error("wallet network generation is not ready")]
+    NetworkNotReady,
+    #[error("wallet existing-balance request serial is invalid")]
+    InvalidSerial,
+    #[error("wallet existing-balance request serial overflowed")]
+    SerialOverflow,
+    #[error("wallet existing-balance request is not active")]
+    NoActiveRequest,
+    #[error("wallet existing-balance request is stale")]
+    StaleRequest {
+        expected: Option<WalletExistingBalanceRequest>,
+        received_serial: u64,
+        received_panel_generation: u64,
+    },
+    #[error("wallet existing-balance url is invalid")]
+    InvalidUrl,
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WalletPanelState {
@@ -1003,6 +1140,10 @@ pub struct WalletPanelState {
     pub minimized: bool,
     pub active: bool,
     pub transactions_visible: bool,
+    /// Existing legacy-balance discovery belongs to one visible panel opening.
+    /// It is live service state and must never survive restart.
+    #[serde(skip, default)]
+    pub existing_balance: WalletExistingBalanceState,
 }
 
 impl WalletPanelState {
@@ -1011,6 +1152,7 @@ impl WalletPanelState {
     pub fn show(&mut self) -> u64 {
         if !self.visible {
             self.generation = self.generation.saturating_add(1);
+            self.existing_balance.clear_opening();
         }
         self.visible = true;
         self.minimized = false;
@@ -1034,7 +1176,45 @@ impl WalletPanelState {
         self.visible = false;
         self.minimized = false;
         self.active = false;
+        self.existing_balance.clear_opening();
         true
+    }
+
+    pub fn begin_existing_balance_request(
+        &mut self,
+        network_generation: u64,
+    ) -> Result<Option<WalletExistingBalanceRequest>, WalletExistingBalanceError> {
+        if !self.visible {
+            return Err(WalletExistingBalanceError::PanelNotOpen);
+        }
+        self.existing_balance.begin(self.generation, network_generation)
+    }
+
+    pub fn apply_existing_balance_result(
+        &mut self,
+        current_network_generation: u64,
+        serial: u64,
+        url: Option<String>,
+    ) -> Result<bool, WalletExistingBalanceError> {
+        if !self.visible {
+            return Err(WalletExistingBalanceError::PanelNotOpen);
+        }
+        self.existing_balance.apply(
+            self.generation,
+            current_network_generation,
+            serial,
+            url,
+        )
+    }
+
+    pub fn fail_existing_balance_request(
+        &mut self,
+        serial: u64,
+    ) -> Result<(), WalletExistingBalanceError> {
+        if !self.visible {
+            return Err(WalletExistingBalanceError::PanelNotOpen);
+        }
+        self.existing_balance.fail(self.generation, serial)
     }
 
     pub fn set_transactions_visible(&mut self, visible: bool) {
@@ -3156,6 +3336,56 @@ mod wallet_runtime_tests {
         assert!(panel.close());
         let reopened = panel.show();
         assert_eq!(reopened, 2);
+    }
+
+    #[test]
+    fn existing_balance_is_once_per_opening_and_failure_retries_only_after_reopen() {
+        let mut panel = WalletPanelState::default();
+        panel.show();
+        let first = panel
+            .begin_existing_balance_request(7)
+            .unwrap()
+            .unwrap();
+        panel.fail_existing_balance_request(first.serial).unwrap();
+        assert!(panel
+            .begin_existing_balance_request(7)
+            .unwrap()
+            .is_none());
+
+        assert!(panel.close());
+        panel.show();
+        let second = panel
+            .begin_existing_balance_request(7)
+            .unwrap()
+            .unwrap();
+        assert!(second.serial > first.serial);
+    }
+
+    #[test]
+    fn existing_balance_drops_stale_network_result_and_clears_on_close() {
+        let mut panel = WalletPanelState::default();
+        panel.show();
+        let request = panel
+            .begin_existing_balance_request(11)
+            .unwrap()
+            .unwrap();
+        assert!(!panel
+            .apply_existing_balance_result(
+                12,
+                request.serial,
+                Some("https://example.invalid/recover".into()),
+            )
+            .unwrap());
+        assert_eq!(panel.existing_balance.url, None);
+        assert!(panel
+            .begin_existing_balance_request(12)
+            .unwrap()
+            .is_none());
+
+        assert!(panel.close());
+        assert_eq!(panel.existing_balance.url, None);
+        assert_eq!(panel.existing_balance.requested_generation, None);
+        assert_eq!(panel.existing_balance.in_flight, None);
     }
 
     #[test]

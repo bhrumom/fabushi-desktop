@@ -29,8 +29,9 @@ use crate::story::{
 use crate::wallet::{
     LedgerEntry, OnrampProviderInfo, OutboundTransferError, OutboundTransferRecord,
     OutboundTransferTerminal, WalletAccountId, WalletAddressDirectoryError, WalletError,
-    WalletLedger, WalletLiveError, WalletLivePresence, WalletOnrampError, WalletParkedCheckOutcome,
-    WalletParkedError, WalletRateError, WalletRuntimeState, WalletSponsoredFeeError,
+    WalletExistingBalanceError, WalletLedger, WalletLiveError, WalletLivePresence, WalletOnrampError,
+    WalletParkedCheckOutcome, WalletParkedError, WalletRateError, WalletRuntimeState,
+    WalletSponsoredFeeError,
     WalletSponsoredFeeInfo, WalletTransferIdentity, WalletTransferQuote, WalletTransferQuoteError,
 };
 use serde::{Deserialize, Serialize};
@@ -303,6 +304,14 @@ pub enum Command {
     ShowWalletPanel,
     MinimizeWalletPanel,
     CloseWalletPanel,
+    BeginWalletExistingBalanceRequest,
+    ApplyWalletExistingBalanceResult {
+        serial: u64,
+        url: Option<String>,
+    },
+    FailWalletExistingBalanceRequest {
+        serial: u64,
+    },
     SetWalletTransactionsVisible {
         visible: bool,
     },
@@ -991,6 +1000,8 @@ pub enum EngineError {
     WalletOnramp(#[from] WalletOnrampError),
     #[error("wallet panel is not visible")]
     WalletPanelNotVisible,
+    #[error(transparent)]
+    WalletExistingBalance(#[from] WalletExistingBalanceError),
     #[error(transparent)]
     OutboundTransfer(#[from] OutboundTransferError),
     #[error(transparent)]
@@ -2914,6 +2925,27 @@ impl MessagingEngine {
                 if !runtime.panel.close() {
                     return Err(EngineError::WalletPanelNotVisible);
                 }
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::BeginWalletExistingBalanceRequest => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime
+                    .panel
+                    .begin_existing_balance_request(runtime.live.generation)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::ApplyWalletExistingBalanceResult { serial, url } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime.panel.apply_existing_balance_result(
+                    runtime.live.generation,
+                    serial,
+                    url,
+                )?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::FailWalletExistingBalanceRequest { serial } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime.panel.fail_existing_balance_request(serial)?;
                 Ok(vec![Event::WalletRuntimeChanged { runtime }])
             }
             Command::SetWalletTransactionsVisible { visible } => {
@@ -5116,6 +5148,67 @@ mod wallet_runtime_command_tests {
         let encoded = serde_json::to_string(engine.state()).unwrap();
         let restored: MessagingState = serde_json::from_str(&encoded).unwrap();
         assert!(restored.wallet.runtime.parked.checks.is_empty());
+    }
+
+    #[test]
+    fn existing_balance_engine_flow_is_bound_to_panel_and_live_generation() {
+        let mut engine = MessagingEngine::new();
+        engine.execute(Command::ShowWalletPanel).unwrap();
+        assert!(matches!(
+            engine.execute(Command::BeginWalletExistingBalanceRequest),
+            Err(EngineError::WalletExistingBalance(
+                WalletExistingBalanceError::NetworkNotReady
+            ))
+        ));
+
+        engine.execute(Command::BeginWalletLiveGeneration).unwrap();
+        engine
+            .execute(Command::BeginWalletExistingBalanceRequest)
+            .unwrap();
+        let serial = engine
+            .state()
+            .wallet
+            .runtime
+            .panel
+            .existing_balance
+            .in_flight
+            .unwrap()
+            .serial;
+
+        engine.execute(Command::BeginWalletLiveGeneration).unwrap();
+        engine
+            .execute(Command::ApplyWalletExistingBalanceResult {
+                serial,
+                url: Some("https://example.invalid/legacy".into()),
+            })
+            .unwrap();
+        assert_eq!(
+            engine.state().wallet.runtime.panel.existing_balance.url,
+            None
+        );
+        assert!(engine
+            .execute(Command::BeginWalletExistingBalanceRequest)
+            .unwrap()
+            .iter()
+            .any(|event| matches!(event, Event::WalletRuntimeChanged { .. })));
+        assert_eq!(
+            engine
+                .state()
+                .wallet
+                .runtime
+                .panel
+                .existing_balance
+                .in_flight,
+            None
+        );
+
+        engine.execute(Command::CloseWalletPanel).unwrap();
+        assert!(matches!(
+            engine.execute(Command::BeginWalletExistingBalanceRequest),
+            Err(EngineError::WalletExistingBalance(
+                WalletExistingBalanceError::PanelNotOpen
+            ))
+        ));
     }
 
     #[test]
