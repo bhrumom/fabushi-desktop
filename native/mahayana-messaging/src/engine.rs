@@ -30,7 +30,7 @@ use crate::wallet::{
     LedgerEntry, OnrampProviderInfo, OutboundTransferError, OutboundTransferRecord,
     OutboundTransferTerminal, WalletAccountId, WalletAddressDirectoryError, WalletError,
     WalletLedger, WalletLiveError, WalletLivePresence, WalletOnrampError, WalletRateError,
-    WalletRuntimeState,
+    WalletRuntimeState, WalletSponsoredFeeError, WalletSponsoredFeeInfo, WalletTransferIdentity,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
@@ -360,6 +360,30 @@ pub enum Command {
     },
     RearmWalletHistoryWalk {
         generation: u64,
+    },
+    BeginWalletSponsoredFeeRequest {
+        network_generation: u64,
+        identity: WalletTransferIdentity,
+        transfer_min_nano: i64,
+        configured_min_nano: i64,
+        observed_at_ms: i64,
+        force: bool,
+    },
+    ApplyWalletSponsoredFeeInfo {
+        serial: u64,
+        network_generation: u64,
+        identity: WalletTransferIdentity,
+        info: WalletSponsoredFeeInfo,
+        observed_at_ms: i64,
+    },
+    FailWalletSponsoredFeeRequest {
+        serial: u64,
+        network_generation: u64,
+        identity: WalletTransferIdentity,
+        observed_at_ms: i64,
+    },
+    ResetWalletSponsoredFeeGeneration {
+        network_generation: u64,
     },
     UpsertConnectedAppSession {
         session: ConnectedAppSession,
@@ -940,6 +964,8 @@ pub enum EngineError {
     WalletAddressDirectory(#[from] WalletAddressDirectoryError),
     #[error(transparent)]
     WalletLive(#[from] WalletLiveError),
+    #[error(transparent)]
+    WalletSponsoredFee(#[from] WalletSponsoredFeeError),
     #[error(transparent)]
     ConnectedApp(#[from] ConnectedAppError),
     #[error("Mini App {0} is not installed")]
@@ -2980,6 +3006,64 @@ impl MessagingEngine {
             Command::RearmWalletHistoryWalk { generation } => {
                 let mut runtime = self.state.wallet.runtime.clone();
                 runtime.live.rearm_history_walk(generation)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::BeginWalletSponsoredFeeRequest {
+                network_generation,
+                identity,
+                transfer_min_nano,
+                configured_min_nano,
+                observed_at_ms,
+                force,
+            } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime.sponsored_fees.begin_request(
+                    network_generation,
+                    identity,
+                    transfer_min_nano,
+                    configured_min_nano,
+                    observed_at_ms,
+                    force,
+                )?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::ApplyWalletSponsoredFeeInfo {
+                serial,
+                network_generation,
+                identity,
+                info,
+                observed_at_ms,
+            } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime.sponsored_fees.apply_info(
+                    serial,
+                    network_generation,
+                    &identity,
+                    info,
+                    observed_at_ms,
+                )?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::FailWalletSponsoredFeeRequest {
+                serial,
+                network_generation,
+                identity,
+                observed_at_ms,
+            } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime.sponsored_fees.fail_request(
+                    serial,
+                    network_generation,
+                    &identity,
+                    observed_at_ms,
+                )?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::ResetWalletSponsoredFeeGeneration { network_generation } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime
+                    .sponsored_fees
+                    .reset_for_network_generation(network_generation);
                 Ok(vec![Event::WalletRuntimeChanged { runtime }])
             }
             Command::UpsertConnectedAppSession { session } => {
@@ -5219,6 +5303,126 @@ mod wallet_address_engine_tests {
     }
 }
 
+
+#[cfg(test)]
+mod wallet_sponsored_fee_engine_tests {
+    use super::*;
+
+    fn identity(address: &str, revision: u64) -> WalletTransferIdentity {
+        WalletTransferIdentity {
+            network: 1,
+            address: address.into(),
+            public_key: vec![5; 32],
+            revision,
+        }
+    }
+
+    #[test]
+    fn engine_wires_sponsored_fee_request_response_and_failure_fences() {
+        let mut engine = MessagingEngine::new();
+        engine
+            .execute(Command::ResetWalletSponsoredFeeGeneration {
+                network_generation: 7,
+            })
+            .unwrap();
+        let who = identity("EQ-wallet", 4);
+        engine
+            .execute(Command::BeginWalletSponsoredFeeRequest {
+                network_generation: 7,
+                identity: who.clone(),
+                transfer_min_nano: 100_000_000,
+                configured_min_nano: 200_000_000,
+                observed_at_ms: 1_000,
+                force: false,
+            })
+            .unwrap();
+        let serial = engine
+            .state()
+            .wallet
+            .runtime
+            .sponsored_fees
+            .active_request
+            .as_ref()
+            .unwrap()
+            .serial;
+
+        assert_eq!(
+            engine.execute(Command::ApplyWalletSponsoredFeeInfo {
+                serial,
+                network_generation: 8,
+                identity: who.clone(),
+                info: WalletSponsoredFeeInfo {
+                    relayer_address: "EQ-relayer".into(),
+                    min_amount_nano: 300_000_000,
+                    reset_at_ms: 100_000,
+                    left: 1,
+                    available: true,
+                },
+                observed_at_ms: 2_000,
+            }),
+            Err(EngineError::WalletSponsoredFee(
+                WalletSponsoredFeeError::StaleNetworkGeneration {
+                    current: 7,
+                    received: 8,
+                }
+            ))
+        );
+
+        engine
+            .execute(Command::ApplyWalletSponsoredFeeInfo {
+                serial,
+                network_generation: 7,
+                identity: who.clone(),
+                info: WalletSponsoredFeeInfo {
+                    relayer_address: "EQ-relayer".into(),
+                    min_amount_nano: 300_000_000,
+                    reset_at_ms: 100_000,
+                    left: 1,
+                    available: true,
+                },
+                observed_at_ms: 2_000,
+            })
+            .unwrap();
+        assert_eq!(
+            engine.state().wallet.runtime.sponsored_fees.terms.effective_min_nano,
+            300_000_000
+        );
+        assert!(engine.state().wallet.runtime.sponsored_fees.terms.usable);
+
+        engine
+            .execute(Command::BeginWalletSponsoredFeeRequest {
+                network_generation: 7,
+                identity: who.clone(),
+                transfer_min_nano: 100_000_000,
+                configured_min_nano: 200_000_000,
+                observed_at_ms: 17_000,
+                force: true,
+            })
+            .unwrap();
+        let second = engine
+            .state()
+            .wallet
+            .runtime
+            .sponsored_fees
+            .active_request
+            .as_ref()
+            .unwrap()
+            .serial;
+        engine
+            .execute(Command::FailWalletSponsoredFeeRequest {
+                serial: second,
+                network_generation: 7,
+                identity: who,
+                observed_at_ms: 17_001,
+            })
+            .unwrap();
+        assert!(!engine.state().wallet.runtime.sponsored_fees.terms.fresh);
+        assert!(!engine.state().wallet.runtime.sponsored_fees.terms.usable);
+
+        let serialized = serde_json::to_string(engine.state()).unwrap();
+        assert!(!serialized.contains("sponsoredFees"));
+    }
+}
 
 #[cfg(test)]
 mod wallet_live_engine_tests {
