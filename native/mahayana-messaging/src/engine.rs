@@ -27,7 +27,8 @@ use crate::story::{
     STORY_STEALTH_COOLDOWN_MS, STORY_STEALTH_PRODUCT_ID, STORY_STEALTH_RETROACTIVE_MS,
 };
 use crate::wallet::{
-    LedgerEntry, OnrampProviderInfo, WalletAccountId, WalletError, WalletLedger,
+    LedgerEntry, OnrampProviderInfo, OutboundTransferError, OutboundTransferRecord,
+    OutboundTransferTerminal, WalletAccountId, WalletError, WalletLedger,
     WalletOnrampError, WalletRateError, WalletRuntimeState,
 };
 use serde::{Deserialize, Serialize};
@@ -302,6 +303,24 @@ pub enum Command {
     CloseWalletPanel,
     SetWalletTransactionsVisible {
         visible: bool,
+    },
+    JournalOutboundTransfer {
+        record: OutboundTransferRecord,
+    },
+    MarkOutboundTransferHandoff {
+        record_id: String,
+        message_token: Vec<u8>,
+    },
+    RecordOutboundTransferLookup {
+        record_id: String,
+    },
+    StopOutboundTransferLookup {
+        record_id: String,
+    },
+    SettleOutboundTransfer {
+        record_id: String,
+        terminal: OutboundTransferTerminal,
+        confirmed_hash: Option<Vec<u8>>,
     },
     UpsertConnectedAppSession {
         session: ConnectedAppSession,
@@ -876,6 +895,8 @@ pub enum EngineError {
     WalletOnramp(#[from] WalletOnrampError),
     #[error("wallet panel is not visible")]
     WalletPanelNotVisible,
+    #[error(transparent)]
+    OutboundTransfer(#[from] OutboundTransferError),
     #[error(transparent)]
     ConnectedApp(#[from] ConnectedAppError),
     #[error("Mini App {0} is not installed")]
@@ -2792,6 +2813,42 @@ impl MessagingEngine {
             Command::SetWalletTransactionsVisible { visible } => {
                 let mut runtime = self.state.wallet.runtime.clone();
                 runtime.panel.set_transactions_visible(visible);
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::JournalOutboundTransfer { record } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime.outbound_transfers.prepare(record)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::MarkOutboundTransferHandoff {
+                record_id,
+                message_token,
+            } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime
+                    .outbound_transfers
+                    .mark_handoff_possible(&record_id, message_token)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::RecordOutboundTransferLookup { record_id } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime.outbound_transfers.note_lookup_attempt(&record_id)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::StopOutboundTransferLookup { record_id } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime.outbound_transfers.stop_lookup(&record_id)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::SettleOutboundTransfer {
+                record_id,
+                terminal,
+                confirmed_hash,
+            } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime
+                    .outbound_transfers
+                    .settle(&record_id, terminal, confirmed_hash)?;
                 Ok(vec![Event::WalletRuntimeChanged { runtime }])
             }
             Command::UpsertConnectedAppSession { session } => {
@@ -4903,5 +4960,81 @@ mod connected_app_engine_tests {
             engine.state().connected_apps.sessions.get(&91).unwrap().status,
             ConnectedAppSessionStatus::Closed
         );
+    }
+}
+
+
+#[cfg(test)]
+mod outbound_transfer_engine_tests {
+    use super::*;
+    use crate::wallet::{
+        OutboundTransferHandoff, OutboundTransferRecord, OutboundTransferTerminal,
+    };
+
+    fn transfer() -> OutboundTransferRecord {
+        OutboundTransferRecord {
+            record_id: "transfer-1".into(),
+            network: 1,
+            address: "source-address".into(),
+            public_key: vec![1; 32],
+            operation_id: "operation-1".into(),
+            destination: "destination-address".into(),
+            comment: String::new(),
+            collectible: None,
+            amount_nano: 100_000_000,
+            posted_at_ms: 100,
+            handoff: OutboundTransferHandoff::Preparation,
+            terminal: OutboundTransferTerminal::None,
+            message_token: None,
+            confirmed_hash: None,
+            lookup_attempts: 0,
+            lookup_stopped: false,
+            paired: false,
+            bounce: false,
+        }
+    }
+
+    #[test]
+    fn engine_persists_submission_unknown_before_lookup_or_terminal_settlement() {
+        let mut engine = MessagingEngine::new();
+        engine
+            .execute(Command::JournalOutboundTransfer { record: transfer() })
+            .unwrap();
+        engine
+            .execute(Command::MarkOutboundTransferHandoff {
+                record_id: "transfer-1".into(),
+                message_token: vec![8; 32],
+            })
+            .unwrap();
+        assert_eq!(
+            engine
+                .state()
+                .wallet
+                .runtime
+                .outbound_transfers
+                .submission_unknown()
+                .len(),
+            1
+        );
+
+        engine
+            .execute(Command::RecordOutboundTransferLookup {
+                record_id: "transfer-1".into(),
+            })
+            .unwrap();
+        engine
+            .execute(Command::SettleOutboundTransfer {
+                record_id: "transfer-1".into(),
+                terminal: OutboundTransferTerminal::Confirmed,
+                confirmed_hash: Some(vec![9; 32]),
+            })
+            .unwrap();
+        assert!(engine
+            .state()
+            .wallet
+            .runtime
+            .outbound_transfers
+            .submission_unknown()
+            .is_empty());
     }
 }

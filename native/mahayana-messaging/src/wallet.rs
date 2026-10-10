@@ -1042,6 +1042,277 @@ impl WalletPanelState {
     }
 }
 
+
+pub const OUTBOUND_TRANSFER_MAX_RECORDS: usize = 64;
+pub const OUTBOUND_TRANSFER_MAX_BYTES: usize = 4 * 1024 * 1024;
+pub const OUTBOUND_TRANSFER_TOKEN_MAX_BYTES: usize = 1024 * 1024;
+pub const OUTBOUND_TRANSFER_LOOKUP_MAX_ATTEMPTS: u32 = 1024;
+pub const OUTBOUND_TRANSFER_COMMENT_MAX_BYTES: usize = 960;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum OutboundTransferHandoff {
+    Preparation,
+    Possible,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum OutboundTransferTerminal {
+    None,
+    Confirmed,
+    Replaced,
+    SequenceNumberConsumed,
+    Expired,
+    Superseded,
+    Failed,
+    Cancelled,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OutboundTransferRecord {
+    pub record_id: String,
+    pub network: u8,
+    pub address: String,
+    pub public_key: Vec<u8>,
+    pub operation_id: String,
+    pub destination: String,
+    pub comment: String,
+    pub collectible: Option<String>,
+    pub amount_nano: i64,
+    pub posted_at_ms: i64,
+    pub handoff: OutboundTransferHandoff,
+    pub terminal: OutboundTransferTerminal,
+    pub message_token: Option<Vec<u8>>,
+    pub confirmed_hash: Option<Vec<u8>>,
+    pub lookup_attempts: u32,
+    pub lookup_stopped: bool,
+    pub paired: bool,
+    pub bounce: bool,
+}
+
+impl OutboundTransferRecord {
+    pub fn validate(&self) -> Result<(), OutboundTransferError> {
+        if self.record_id.trim().is_empty()
+            || self.record_id.len() > 256
+            || self.operation_id.trim().is_empty()
+            || self.operation_id.len() > 256
+            || !matches!(self.network, 1 | 2)
+            || self.address.trim().is_empty()
+            || self.address.len() > 128
+            || self.public_key.len() != 32
+            || self.destination.trim().is_empty()
+            || self.destination.len() > 128
+            || self.comment.as_bytes().len() > OUTBOUND_TRANSFER_COMMENT_MAX_BYTES
+            || self.collectible.as_deref().is_some_and(|value| value.len() > 128)
+            || self.amount_nano <= 0
+            || self.posted_at_ms <= 0
+            || self.lookup_attempts > OUTBOUND_TRANSFER_LOOKUP_MAX_ATTEMPTS
+            || self
+                .message_token
+                .as_ref()
+                .is_some_and(|token| token.is_empty() || token.len() > OUTBOUND_TRANSFER_TOKEN_MAX_BYTES)
+            || self
+                .confirmed_hash
+                .as_ref()
+                .is_some_and(|hash| hash.len() != 32)
+            || (self.confirmed_hash.is_some()
+                && self.terminal != OutboundTransferTerminal::Confirmed)
+            || (self.lookup_attempts > 0 && self.message_token.is_none())
+        {
+            return Err(OutboundTransferError::InvalidRecord);
+        }
+        if self.handoff == OutboundTransferHandoff::Preparation
+            && (self.message_token.is_some()
+                || self.terminal != OutboundTransferTerminal::None
+                || self.lookup_attempts != 0
+                || self.lookup_stopped)
+        {
+            return Err(OutboundTransferError::InvalidRecord);
+        }
+        Ok(())
+    }
+
+    fn identity_matches(&self, other: &Self) -> bool {
+        self.network == other.network
+            && self.address == other.address
+            && self.public_key == other.public_key
+            && self.operation_id == other.operation_id
+    }
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct OutboundTransferJournal {
+    pub records: Vec<OutboundTransferRecord>,
+}
+
+impl OutboundTransferJournal {
+    pub fn prepare(
+        &mut self,
+        record: OutboundTransferRecord,
+    ) -> Result<(), OutboundTransferError> {
+        record.validate()?;
+        if record.handoff != OutboundTransferHandoff::Preparation
+            || record.terminal != OutboundTransferTerminal::None
+        {
+            return Err(OutboundTransferError::InvalidTransition);
+        }
+        if self.records.len() >= OUTBOUND_TRANSFER_MAX_RECORDS {
+            return Err(OutboundTransferError::CapacityExceeded);
+        }
+        if self.records.iter().any(|item| {
+            item.record_id == record.record_id || item.identity_matches(&record)
+        }) {
+            return Err(OutboundTransferError::DuplicateIdentity);
+        }
+        let mut candidate = self.records.clone();
+        candidate.push(record);
+        require_transfer_journal_size(&candidate)?;
+        self.records = candidate;
+        Ok(())
+    }
+
+    /// The durable owner must commit this transition before the network
+    /// adapter may submit the already-signed transfer. From this point on a
+    /// transport failure is "submission unknown" and recovery/lookup owns the
+    /// outcome; a caller must never blindly resubmit it.
+    pub fn mark_handoff_possible(
+        &mut self,
+        record_id: &str,
+        message_token: Vec<u8>,
+    ) -> Result<(), OutboundTransferError> {
+        if message_token.is_empty() || message_token.len() > OUTBOUND_TRANSFER_TOKEN_MAX_BYTES {
+            return Err(OutboundTransferError::InvalidToken);
+        }
+        let index = self.index(record_id)?;
+        let mut candidate = self.records.clone();
+        let record = &mut candidate[index];
+        if record.handoff != OutboundTransferHandoff::Preparation
+            || record.terminal != OutboundTransferTerminal::None
+        {
+            return Err(OutboundTransferError::InvalidTransition);
+        }
+        record.handoff = OutboundTransferHandoff::Possible;
+        record.message_token = Some(message_token);
+        record.validate()?;
+        require_transfer_journal_size(&candidate)?;
+        self.records = candidate;
+        Ok(())
+    }
+
+    pub fn note_lookup_attempt(&mut self, record_id: &str) -> Result<u32, OutboundTransferError> {
+        let index = self.index(record_id)?;
+        let record = &mut self.records[index];
+        if record.handoff != OutboundTransferHandoff::Possible
+            || record.terminal != OutboundTransferTerminal::None
+            || record.message_token.is_none()
+            || record.lookup_stopped
+        {
+            return Err(OutboundTransferError::InvalidTransition);
+        }
+        if record.lookup_attempts >= OUTBOUND_TRANSFER_LOOKUP_MAX_ATTEMPTS {
+            record.lookup_stopped = true;
+            return Err(OutboundTransferError::LookupLimitReached);
+        }
+        record.lookup_attempts += 1;
+        Ok(record.lookup_attempts)
+    }
+
+    pub fn stop_lookup(&mut self, record_id: &str) -> Result<(), OutboundTransferError> {
+        let index = self.index(record_id)?;
+        let record = &mut self.records[index];
+        if record.handoff != OutboundTransferHandoff::Possible
+            || record.terminal != OutboundTransferTerminal::None
+        {
+            return Err(OutboundTransferError::InvalidTransition);
+        }
+        record.lookup_stopped = true;
+        Ok(())
+    }
+
+    pub fn settle(
+        &mut self,
+        record_id: &str,
+        terminal: OutboundTransferTerminal,
+        confirmed_hash: Option<Vec<u8>>,
+    ) -> Result<(), OutboundTransferError> {
+        if terminal == OutboundTransferTerminal::None {
+            return Err(OutboundTransferError::InvalidTransition);
+        }
+        if terminal == OutboundTransferTerminal::Confirmed {
+            if confirmed_hash.as_ref().is_none_or(|hash| hash.len() != 32) {
+                return Err(OutboundTransferError::InvalidConfirmation);
+            }
+        } else if confirmed_hash.is_some() {
+            return Err(OutboundTransferError::InvalidConfirmation);
+        }
+        let index = self.index(record_id)?;
+        let record = &mut self.records[index];
+        if record.handoff != OutboundTransferHandoff::Possible
+            || record.terminal != OutboundTransferTerminal::None
+        {
+            return Err(OutboundTransferError::InvalidTransition);
+        }
+        record.terminal = terminal;
+        record.confirmed_hash = confirmed_hash;
+        record.lookup_stopped = true;
+        record.validate()
+    }
+
+    pub fn submission_unknown(&self) -> Vec<&OutboundTransferRecord> {
+        self.records
+            .iter()
+            .filter(|record| {
+                record.handoff == OutboundTransferHandoff::Possible
+                    && record.terminal == OutboundTransferTerminal::None
+            })
+            .collect()
+    }
+
+    fn index(&self, record_id: &str) -> Result<usize, OutboundTransferError> {
+        self.records
+            .iter()
+            .position(|record| record.record_id == record_id)
+            .ok_or(OutboundTransferError::RecordNotFound)
+    }
+}
+
+fn require_transfer_journal_size(
+    records: &[OutboundTransferRecord],
+) -> Result<(), OutboundTransferError> {
+    if records.len() > OUTBOUND_TRANSFER_MAX_RECORDS {
+        return Err(OutboundTransferError::CapacityExceeded);
+    }
+    let bytes = serde_json::to_vec(records)
+        .map_err(|_| OutboundTransferError::InvalidRecord)?;
+    if bytes.len() > OUTBOUND_TRANSFER_MAX_BYTES {
+        return Err(OutboundTransferError::CapacityExceeded);
+    }
+    Ok(())
+}
+
+#[derive(Debug, Error, Clone, PartialEq, Eq)]
+pub enum OutboundTransferError {
+    #[error("outbound transfer journal record is invalid")]
+    InvalidRecord,
+    #[error("outbound transfer journal identity already exists")]
+    DuplicateIdentity,
+    #[error("outbound transfer journal capacity was exceeded")]
+    CapacityExceeded,
+    #[error("outbound transfer journal record was not found")]
+    RecordNotFound,
+    #[error("outbound transfer journal transition is invalid")]
+    InvalidTransition,
+    #[error("outbound transfer journal token is invalid")]
+    InvalidToken,
+    #[error("outbound transfer lookup limit was reached")]
+    LookupLimitReached,
+    #[error("outbound transfer confirmation is invalid")]
+    InvalidConfirmation,
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WalletRuntimeState {
@@ -1049,6 +1320,7 @@ pub struct WalletRuntimeState {
     pub rates: WalletRateState,
     pub onramp: WalletOnrampState,
     pub panel: WalletPanelState,
+    pub outbound_transfers: OutboundTransferJournal,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -1743,5 +2015,107 @@ mod wallet_runtime_tests {
         let restored: WalletLedger = serde_json::from_str(&encoded).unwrap();
         assert_eq!(restored.runtime.rates.selected_currency, "JPY");
         assert!(restored.runtime.panel.visible);
+    }
+}
+
+
+#[cfg(test)]
+mod outbound_transfer_journal_tests {
+    use super::*;
+
+    fn prepared(id: &str, operation: &str) -> OutboundTransferRecord {
+        OutboundTransferRecord {
+            record_id: id.into(),
+            network: 1,
+            address: "source-address".into(),
+            public_key: vec![7; 32],
+            operation_id: operation.into(),
+            destination: "destination-address".into(),
+            comment: "hello".into(),
+            collectible: None,
+            amount_nano: 100_000_000,
+            posted_at_ms: 100,
+            handoff: OutboundTransferHandoff::Preparation,
+            terminal: OutboundTransferTerminal::None,
+            message_token: None,
+            confirmed_hash: None,
+            lookup_attempts: 0,
+            lookup_stopped: false,
+            paired: false,
+            bounce: false,
+        }
+    }
+
+    #[test]
+    fn handoff_is_committed_before_submission_unknown_state_exists() {
+        let mut journal = OutboundTransferJournal::default();
+        journal.prepare(prepared("record-1", "operation-1")).unwrap();
+        assert!(journal.submission_unknown().is_empty());
+
+        journal
+            .mark_handoff_possible("record-1", vec![0x42; 32])
+            .unwrap();
+        assert_eq!(journal.submission_unknown().len(), 1);
+        assert_eq!(journal.note_lookup_attempt("record-1").unwrap(), 1);
+        assert_eq!(journal.submission_unknown()[0].lookup_attempts, 1);
+    }
+
+    #[test]
+    fn journal_identity_is_exactly_once_across_record_ids() {
+        let mut journal = OutboundTransferJournal::default();
+        journal.prepare(prepared("record-a", "operation-a")).unwrap();
+        let mut duplicate = prepared("record-b", "operation-a");
+        assert_eq!(
+            journal.prepare(duplicate.clone()),
+            Err(OutboundTransferError::DuplicateIdentity)
+        );
+        duplicate.operation_id = "operation-b".into();
+        journal.prepare(duplicate).unwrap();
+        assert_eq!(journal.records.len(), 2);
+    }
+
+    #[test]
+    fn confirmed_terminal_requires_exact_hash_and_never_resubmits() {
+        let mut journal = OutboundTransferJournal::default();
+        journal.prepare(prepared("record-1", "operation-1")).unwrap();
+        journal
+            .mark_handoff_possible("record-1", vec![0x11; 32])
+            .unwrap();
+        assert_eq!(
+            journal.settle(
+                "record-1",
+                OutboundTransferTerminal::Confirmed,
+                Some(vec![9; 31]),
+            ),
+            Err(OutboundTransferError::InvalidConfirmation)
+        );
+        journal
+            .settle(
+                "record-1",
+                OutboundTransferTerminal::Confirmed,
+                Some(vec![9; 32]),
+            )
+            .unwrap();
+        assert!(journal.submission_unknown().is_empty());
+        assert_eq!(
+            journal.mark_handoff_possible("record-1", vec![1; 32]),
+            Err(OutboundTransferError::InvalidTransition)
+        );
+    }
+
+    #[test]
+    fn journal_is_durable_inside_wallet_runtime() {
+        let mut runtime = WalletRuntimeState::default();
+        runtime
+            .outbound_transfers
+            .prepare(prepared("record-1", "operation-1"))
+            .unwrap();
+        runtime
+            .outbound_transfers
+            .mark_handoff_possible("record-1", vec![3; 32])
+            .unwrap();
+        let encoded = serde_json::to_string(&runtime).unwrap();
+        let restored: WalletRuntimeState = serde_json::from_str(&encoded).unwrap();
+        assert_eq!(restored.outbound_transfers.submission_unknown().len(), 1);
     }
 }
