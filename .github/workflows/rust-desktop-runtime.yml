@@ -219,6 +219,9 @@ jobs:
         with:
           workspaces: source/mahayana/mahayana-rs -> target
           shared-key: mahayana-platform-worker-wasm-1.97.1
+      - name: Test Mahayana platform Worker contracts
+        shell: bash
+        run: cargo test -p mahayana-platform-worker --manifest-path source/mahayana/mahayana-rs/Cargo.toml
       - name: Check Mahayana platform Worker
         shell: bash
         run: cargo check --target wasm32-unknown-unknown -p mahayana-platform-worker --manifest-path source/mahayana/mahayana-rs/Cargo.toml
