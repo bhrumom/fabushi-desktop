@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 9225,
+    "unread_minimum": 9215,
     "omitted_known": 0,
-    "note": "Recursive source census 16,125; unknown 15,845, unread 9,225, omitted 0. Exact read/responsibility decomposition extends through order 6,900; MicroTeX builtin formula/symbol/layout/font-resource responsibilities remain mapped-open under the existing canonical math and Build/Release owners."
+    "note": "Recursive source census 16,125; unknown 15,845, unread 9,215, omitted 0. Exact read/responsibility decomposition extends through order 6,910; MicroTeX math font metric/fallback/extension/ligature/kern responsibilities remain mapped-open under the existing AssistantMath/KaTeX and Build/Release owners."
   },
   "latest_recursive_evidence": {
     "run_id": 37998467124,
@@ -46,7 +46,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live authority 6fed91ff exact through recursive order 6,900; first unread is 6,901 Telegram/ThirdParty/MicroTeX::src/res/font/cmbsy10.def.cpp; unread_minimum is 9,225; unknown remains 15,845; omitted remains 0.",
+  "note": "Live authority 6fed91ff exact through recursive order 6,910; first unread is 6,911 Telegram/ThirdParty/MicroTeX::src/res/font/cmssbx10.def.cpp; unread_minimum is 9,215; unknown remains 15,845; omitted remains 0.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -64,10 +64,10 @@
       6541,
       6627
     ],
-    "current_source_read_through": 6900,
-    "first_unread_order": 6901,
-    "first_unread_path": "Telegram/ThirdParty/MicroTeX::src/res/font/cmbsy10.def.cpp",
-    "current_head_source_authority_evidence": "Accepted authority remains 6fed91ff. Deterministic component read-through extends through MicroTeX bx10.def.cpp at order 6,900; Unicode/formula mappings, symbol taxonomy, TeX layout parameters, resource build closure and font provenance/metrics remain mapped-open pending canonical production evidence and fresh descendant exact-head Actions."
+    "current_source_read_through": 6910,
+    "first_unread_order": 6911,
+    "first_unread_path": "Telegram/ThirdParty/MicroTeX::src/res/font/cmssbx10.def.cpp",
+    "current_head_source_authority_evidence": "Accepted authority remains 6fed91ff. Deterministic component read-through extends through MicroTeX cmss10.def.cpp order 6,910; font metric/style fallback, delimiter extension, larger glyph, ligature, kern and skew responsibilities remain mapped-open pending canonical KaTeX production evidence and descendant exact-head Actions."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -76,9 +76,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 6900,
-    "first_unread_order": 6901,
-    "first_unread_path": "Telegram/ThirdParty/MicroTeX::src/res/font/cmbsy10.def.cpp",
+    "read_through": 6910,
+    "first_unread_order": 6911,
+    "first_unread_path": "Telegram/ThirdParty/MicroTeX::src/res/font/cmssbx10.def.cpp",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }
