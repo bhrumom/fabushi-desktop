@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 9534,
+    "unread_minimum": 9499,
     "omitted_known": 0,
-    "note": "Recursive source census 16,125; unknown 15,845, unread 9,534, omitted 0. Root deterministic read-through is 6,591; gitlink child inventory remains recursively counted and separately evidenced."
+    "note": "Recursive source census 16,125; unknown 15,845, unread 9,499, omitted 0. Root deterministic read-through is 6,626; shader responsibilities remain mapped-open pending production/visual evidence."
   },
   "latest_recursive_evidence": {
     "run_id": 37998467124,
@@ -46,7 +46,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live authority exact through deterministic root source order 6,591; first unread 6,592 Telegram/shaders/argb32.frag; unread_minimum is 9,534; unknown remains 15,845; omitted remains 0.",
+  "note": "Live authority exact through deterministic root source order 6,626; first unread 6,627 changelog.txt; unread_minimum is 9,499; unknown remains 15,845; omitted remains 0.",
   "rebaseline": {
     "from_commit": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
     "to_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
@@ -58,10 +58,10 @@
       5722,
       5759
     ],
-    "current_source_read_through": 6591,
-    "first_unread_order": 6592,
-    "first_unread_path": "Telegram/shaders/argb32.frag",
-    "current_head_source_authority_evidence": "Accepted exact root entries through 6,591 responsibility-decomposed; gitlink child trees inspected; fresh descendant Actions and release evidence required."
+    "current_source_read_through": 6626,
+    "first_unread_order": 6627,
+    "first_unread_path": "changelog.txt",
+    "current_head_source_authority_evidence": "Accepted exact root blobs through 6,626 responsibility-decomposed; shader format/lifecycle semantics mapped to canonical rendering owners; descendant Actions/visual evidence required."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -70,6 +70,6 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 6591
+    "read_through": 6626
   }
 }
