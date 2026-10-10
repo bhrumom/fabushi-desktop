@@ -21479,7 +21479,7 @@
       "omitted": false,
       "consumer_symbol": "boosts_mini",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:989:\ticon: icon {{ \"stories/boosts_mini\", windowFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:990:\ticon: icon {{ \"stories/boosts_mini\", windowFg }};",
         "Caller audit confirms state/service effects remain owned by the named canonical domain; artwork is presentation evidence only."
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
@@ -21522,7 +21522,7 @@
       "omitted": false,
       "consumer_symbol": "boosts_mini",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:989:\ticon: icon {{ \"stories/boosts_mini\", windowFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:990:\ticon: icon {{ \"stories/boosts_mini\", windowFg }};",
         "Caller audit confirms state/service effects remain owned by the named canonical domain; artwork is presentation evidence only."
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
@@ -21565,7 +21565,7 @@
       "omitted": false,
       "consumer_symbol": "boosts_mini",
       "consumer_evidence": [
-        "Telegram/SourceFiles/ui/chat/chat.style:989:\ticon: icon {{ \"stories/boosts_mini\", windowFg }};",
+        "Telegram/SourceFiles/ui/chat/chat.style:990:\ticon: icon {{ \"stories/boosts_mini\", windowFg }};",
         "Caller audit confirms state/service effects remain owned by the named canonical domain; artwork is presentation evidence only."
       ],
       "reachability_status": "accepted-tree-exact-resource-consumer-proven",
