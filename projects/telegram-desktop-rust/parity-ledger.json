@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 9428,
+    "unread": 9411,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 6697,
-    "first_unread_order": 6698,
-    "first_unread_path": "Telegram/ThirdParty/MicroTeX::.github/workflows/ubuntu-gtk.yml"
+    "read_through": 6714,
+    "first_unread_order": 6715,
+    "first_unread_path": "Telegram/ThirdParty/MicroTeX::readme/example_bw_false.svg"
   },
   "historical_exact_head_evidence": {
     "status": "historical-only",
