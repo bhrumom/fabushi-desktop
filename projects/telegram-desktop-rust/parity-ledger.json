@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 8289,
+    "unread": 8273,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,11 +13478,11 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Accepted prefix 7,836/16,125; existing durable 7,821–7,836 Hime black-tail/blue icon shard reconciled into master accounting; unread 8,289; unknown 15,845; omitted 0. Next is blue ez.png.",
-    "source_authority_evidence": "Predecessor artifact 11680237607 (sha256:ec7d9a56248c20177ea718d0da67c9d81d10587e343270e5efb766691d1c9e4d) exact-materialized 7,821–7,836; all recorded identities/sizes matched and glyph semantics were visually reviewed. Descendant exact-head Actions required.",
-    "current_source_read_through": 7836,
-    "first_unread_order": 7837,
-    "first_unread_path": "Telegram/ThirdParty/hime::icons/blue/ez.png"
+    "source_read_reconciliation": "Accepted prefix 7,852/16,125; Hime blue icon window 7,837–7,852 exact-read and visually inspected; unread 8,273; unknown 15,845; omitted 0. Next is blue jyutping.png.",
+    "source_authority_evidence": "Pinned Hime Git tree plus exact connector blob fetch/visual inspection for 7,837–7,852; source reading only. Descendant exact-head Actions required.",
+    "current_source_read_through": 7852,
+    "first_unread_order": 7853,
+    "first_unread_path": "Telegram/ThirdParty/hime::icons/blue/jyutping.png"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 7836,
-    "first_unread_order": 7837,
-    "first_unread_path": "Telegram/ThirdParty/hime::icons/blue/ez.png",
+    "read_through": 7852,
+    "first_unread_order": 7853,
+    "first_unread_path": "Telegram/ThirdParty/hime::icons/blue/jyutping.png",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
