@@ -1,5 +1,5 @@
 Live Revision 9 authority (2026-10-10): telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 (root tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6). Root non-directory=6,653; recursive non-directory=16,125; read-through=7,241; first unread=7,242 Telegram/ThirdParty/cmark-gfm::.editorconfig@12032e647502de7a91f241f75fcd7666be375875; unread=8,884; unknown=15,845; omitted=0. Orders 7,155-7,241 exact-read pinned google/cld3: UTF-8/interchange/script normalization, bounded ngram/script feature extraction, embedded neural language inference, probability/reliability output, multilingual/invalid-input tests, generated model parameters and build/license inputs. Telegram shipping consumers use Platform::Language::Recognize for translation/AI-compose flows. Fabushi currently has no shipping classifier/translation implementation, so the capability remains mapped-open and unknown is unchanged. Fresh descendant exact-head GitHub Actions evidence is required.
-<!-- TDRP_CURRENT_SUMMARY read-through=7056 unread=9069 unknown=15845 omitted=0 first-unread=7057 path=Telegram/ThirdParty/TooManyCooks::include/tmc/all_headers.hpp -->
+<!-- TDRP_CURRENT_SUMMARY read-through=7241 unread=8884 unknown=15845 omitted=0 first-unread=7242 path=Telegram/ThirdParty/cmark-gfm::.editorconfig -->
 
 # Telegram Desktop → Fabushi 全量等价重写 — Status
 
