@@ -268,7 +268,7 @@
     "unknown_minimum": 15845,
     "unread_minimum": 7963,
     "omitted_known": 0,
-    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; corrected deterministic exact read-through 8,162; unknown=15,845, unread=7,963, omitted=0."
+    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 8,162; unknown=15,845, unread=7,963, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
