@@ -94,7 +94,7 @@ test('canonical math renderer bounds structural group depth before runtime invoc
   expect(() => renderKatexMarkup(runtime, overLimit, false)).toThrow(/group nesting/u);
   expect(calls).toBe(1);
 
-  const escapedAndCommented = `\\\\{x\\\\} % ${'{'.repeat(MAX_ASSISTANT_MATH_GROUP_DEPTH + 20)}\n y`;
+  const escapedAndCommented = `${'\\\\{'.repeat(MAX_ASSISTANT_MATH_GROUP_DEPTH + 20)} % ${'{'.repeat(MAX_ASSISTANT_MATH_GROUP_DEPTH + 20)}\n y`;
   expect(renderKatexMarkup(runtime, escapedAndCommented, false)).toContain('katex');
   expect(calls).toBe(2);
 });
