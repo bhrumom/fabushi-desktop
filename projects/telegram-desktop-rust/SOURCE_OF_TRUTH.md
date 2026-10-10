@@ -1,5 +1,5 @@
-Live Revision 9 authority (2026-10-10): telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 (root tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6). Root non-directory=6,653; recursive non-directory=16,125; read-through=6,872; first unread=6,873 Telegram/ThirdParty/MicroTeX::src/fonts/tex_font.h@1efb8ec41d24d7e0c4e01185d35fbd4e6199b9f4; unread=9,253; unknown=15,845; omitted=0. Orders 6,862-6,872 exact-read MicroTeX alphabet/font metric/registration/build lifecycle contracts; reading alone closes no unknown. Fresh descendant exact-head GitHub Actions evidence is required.
-<!-- TDRP_CURRENT_SUMMARY read-through=6872 unread=9253 unknown=15845 omitted=0 first-unread=6873 path=Telegram/ThirdParty/MicroTeX::src/fonts/tex_font.h -->
+Live Revision 9 authority (2026-10-10): telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 (root tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6). Root non-directory=6,653; recursive non-directory=16,125; read-through=6,892; first unread=6,893 Telegram/ThirdParty/MicroTeX::src/res/builtin/formula_mappings.res.cpp@51c4d0a62987eb97590bc2ef151b9b69b2f69127; unread=9,233; unknown=15,845; omitted=0. Orders 6,873-6,892 exact-read MicroTeX TeXFont/graphics/platform/render lifecycle and numeric-safety contracts; reading alone closes no unknown. Fresh descendant exact-head GitHub Actions evidence is required.
+<!-- TDRP_CURRENT_SUMMARY read-through=6892 unread=9233 unknown=15845 omitted=0 first-unread=6893 path=Telegram/ThirdParty/MicroTeX::src/res/builtin/formula_mappings.res.cpp -->
 
 # Telegram 源码 → Fabushi 全量等价重写 — Source of Truth
 
@@ -622,3 +622,8 @@ Accepted upstream advanced by four commits to `6fed91ffab9861771a75f29df65031b3c
 ### Read-through 6862-6872 — MicroTeX font lifecycle
 
 Exact component blobs cover Unicode classification, glyph metrics/extensions, safe missing lookup, font/style/symbol registration, global sizing reset boundaries and build composition. Fabushi keeps one source-neutral math owner: the existing Transcript math wrapper and shipped KaTeX dependency plus Build/Release provenance. No MicroTeX font runtime is ported. These rows remain mapped-open until focused production behavior and descendant exact-head Actions verify applicable fallback/isolation/build contracts. Accounting: **6,872/16,125 read; 9,253 unread; 15,845 unknown; 0 omitted**; first unread is **6,873 `Telegram/ThirdParty/MicroTeX::src/fonts/tex_font.h`**.
+
+
+### Read-through 6873-6892 — MicroTeX rendering boundary
+
+TeXFont/graphics/resource/platform/render sources are exact-read. Existing-owner-first maps them to the sole Transcript math wrapper, Electron/DOM rendering boundary and Build/Release provenance. Applicable invariants include clamping non-finite color inputs, saturating huge raster bounds instead of integer overflow, restoring transform/color after draw failures, deterministic font/resource lookup failure and single init/release ownership. Platform-specific Cairo/GDI/Qt/Skia code is evidence, not target architecture. Accounting: **6,892/16,125 read; 9,233 unread; 15,845 unknown; 0 omitted**.

@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 9253,
+    "unread": 9233,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,11 +13478,11 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Ten changed root blobs inside the accepted prefix were re-read/responsibility-reconciled through the explicit 28ac5769-to-6fed91ff override; deterministic recursive read-through=6872/16125, unread=9253, unknown=15845, omitted=0.",
-    "source_authority_evidence": "Accepted Telegram authority 6fed91ffab9861771a75f29df65031b3c80b6941 / tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; source-disposition prefix is exact through MicroTeX symbol_reg.h order 6872 and requires descendant exact-head GitHub Actions evidence.",
-    "current_source_read_through": 6872,
-    "first_unread_order": 6873,
-    "first_unread_path": "Telegram/ThirdParty/MicroTeX::src/fonts/tex_font.h"
+    "source_read_reconciliation": "Ten changed root blobs inside the accepted prefix were reconciled; deterministic recursive read-through=6892/16125, unread=9233, unknown=15845, omitted=0.",
+    "source_authority_evidence": "Accepted Telegram authority 6fed91ffab9861771a75f29df65031b3c80b6941 / tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; prefix exact through MicroTeX render.h order 6892; fresh exact-head Actions required.",
+    "current_source_read_through": 6892,
+    "first_unread_order": 6893,
+    "first_unread_path": "Telegram/ThirdParty/MicroTeX::src/res/builtin/formula_mappings.res.cpp"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 6872,
-    "first_unread_order": 6873,
-    "first_unread_path": "Telegram/ThirdParty/MicroTeX::src/fonts/tex_font.h",
+    "read_through": 6892,
+    "first_unread_order": 6893,
+    "first_unread_path": "Telegram/ThirdParty/MicroTeX::src/res/builtin/formula_mappings.res.cpp",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
