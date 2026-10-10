@@ -720,6 +720,8 @@ export function PromptRichTextEditor({ prompt, richText, scopeKey = "", clearGen
   const scopeFence = useRef<{ scopeKey: string; before: string } | null>(null);
   const compositionActive = useRef(false);
   const compositionScopeFence = useRef<string | null>(null);
+  const compositionGeneration = useRef(0);
+  const inputFocus = useRef<"focused" | "blurred" | "unknown">("unknown");
   const [compositionSettlementGeneration, setCompositionSettlementGeneration] = useState(0);
   const emittedChangeSerial = useRef(0);
   const observedScopeKey = useRef(scopeKey);
@@ -740,22 +742,57 @@ export function PromptRichTextEditor({ prompt, richText, scopeKey = "", clearGen
         role: "textbox"
       },
       handleDOMEvents: {
-        compositionstart: () => {
-          // A composition that starts after a scope change is a fresh user-owned
-          // edit in the new scope. A composition already in progress when the
-          // scope changes is fenced separately below and must not be released by
-          // its trailing beforeinput/input events.
+        focus: () => {
+          inputFocus.current = "focused";
+          callbacks.current.onInputStatusChange?.(compositionOnlyInputStatus(compositionActive.current, {
+            focus: "focused",
+            lifecycle: "focus",
+            generation: compositionGeneration.current,
+          }));
+          return false;
+        },
+        blur: () => {
+          inputFocus.current = "blurred";
+          callbacks.current.onInputStatusChange?.(compositionOnlyInputStatus(compositionActive.current, {
+            focus: "blurred",
+            lifecycle: "blur",
+            generation: compositionGeneration.current,
+          }));
+          return false;
+        },
+        compositionstart: (_view, event) => {
           compositionActive.current = true;
-          callbacks.current.onInputStatusChange?.(compositionOnlyInputStatus(true));
+          compositionGeneration.current += 1;
+          const data = event instanceof CompositionEvent ? event.data : "";
+          callbacks.current.onInputStatusChange?.(compositionOnlyInputStatus(true, {
+            focus: inputFocus.current,
+            lifecycle: "composition-start",
+            generation: compositionGeneration.current,
+            preeditPresent: data.length > 0,
+          }));
           compositionScopeFence.current = null;
           scopeFence.current = null;
           return false;
         },
-        compositionend: () => {
+        compositionupdate: (_view, event) => {
+          const data = event instanceof CompositionEvent ? event.data : "";
+          callbacks.current.onInputStatusChange?.(compositionOnlyInputStatus(true, {
+            focus: inputFocus.current,
+            lifecycle: "composition-update",
+            generation: compositionGeneration.current,
+            preeditPresent: data.length > 0,
+          }));
+          return false;
+        },
+        compositionend: (_view, event) => {
+          const data = event instanceof CompositionEvent ? event.data : "";
           compositionActive.current = false;
-          callbacks.current.onInputStatusChange?.(compositionOnlyInputStatus(false));
-          // Force the external-content reconciliation effect to run even when
-          // the parent props were last updated while composition was active.
+          callbacks.current.onInputStatusChange?.(compositionOnlyInputStatus(false, {
+            focus: inputFocus.current,
+            lifecycle: "composition-end",
+            generation: compositionGeneration.current,
+            preeditPresent: data.length > 0,
+          }));
           setCompositionSettlementGeneration((generation) => generation + 1);
           return false;
         },

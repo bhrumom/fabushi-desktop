@@ -26,25 +26,59 @@ export interface PlatformInputStatusValue {
   readonly value?: string;
 }
 
+export type PlatformInputFocus = "focused" | "blurred" | "unknown";
+export type PlatformInputLifecycle =
+  | "idle"
+  | "focus"
+  | "blur"
+  | "composition-start"
+  | "composition-update"
+  | "composition-end";
+
 export interface PlatformInputStatusSnapshot {
   readonly composition: "active" | "idle";
   readonly method: PlatformInputStatusValue;
   readonly language: PlatformInputStatusValue;
   readonly width: PlatformInputStatusValue;
   readonly scriptVariant: PlatformInputStatusValue;
-  readonly source: "composition-only" | "native";
+  /** Native IME preedit presence delivered by Chromium composition events. */
+  readonly preedit: PlatformInputStatusValue;
+  /** Candidate UI/content is deliberately unknown until a native adapter reports it. */
+  readonly candidate: PlatformInputStatusValue;
+  readonly focus: PlatformInputFocus;
+  readonly lifecycle: PlatformInputLifecycle;
+  readonly generation: number;
+  readonly source: "dom-ime" | "native";
 }
 
 const UNKNOWN_PLATFORM_INPUT_VALUE: PlatformInputStatusValue = Object.freeze({ kind: "unknown" });
 
-export function compositionOnlyInputStatus(active: boolean): PlatformInputStatusSnapshot {
+export interface CompositionInputStatusDetails {
+  readonly focus?: PlatformInputFocus;
+  readonly lifecycle?: PlatformInputLifecycle;
+  readonly generation?: number;
+  /** undefined means Chromium has not supplied a preedit signal. */
+  readonly preeditPresent?: boolean;
+}
+
+export function compositionOnlyInputStatus(
+  active: boolean,
+  details: CompositionInputStatusDetails = {},
+): PlatformInputStatusSnapshot {
   return {
     composition: active ? "active" : "idle",
     method: UNKNOWN_PLATFORM_INPUT_VALUE,
     language: UNKNOWN_PLATFORM_INPUT_VALUE,
     width: UNKNOWN_PLATFORM_INPUT_VALUE,
     scriptVariant: UNKNOWN_PLATFORM_INPUT_VALUE,
-    source: "composition-only",
+    preedit: details.preeditPresent === undefined
+      ? UNKNOWN_PLATFORM_INPUT_VALUE
+      : { kind: "known", value: details.preeditPresent ? "active" : "empty" },
+    candidate: UNKNOWN_PLATFORM_INPUT_VALUE,
+    focus: details.focus ?? "unknown",
+    lifecycle: details.lifecycle ?? (active ? "composition-start" : "idle"),
+    generation: details.generation ?? 0,
+    source: "dom-ime",
   };
 }
 
@@ -53,7 +87,8 @@ export function platformInputStatusText(status: PlatformInputStatusSnapshot): st
   const unknown = [status.method, status.language, status.width, status.scriptVariant]
     .every((value) => value.kind === "unknown");
   if (unknown) {
-    return "Composing text. Input method, language, width mode, and script variant are not reported by the platform.";
+    const preedit = status.preedit.kind === "known" ? ` Preedit signal: ${status.preedit.value ?? "present"}.` : "";
+    return `Composing text.${preedit} Input method, language, width mode, script variant, and candidate state are not reported by the native platform adapter.`;
   }
   const value = (label: string, state: PlatformInputStatusValue) =>
     state.kind === "known" && state.value ? `${label}: ${state.value}` : `${label}: unknown`;

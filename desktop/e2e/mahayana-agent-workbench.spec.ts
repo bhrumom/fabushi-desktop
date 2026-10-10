@@ -840,6 +840,24 @@ test('Human reply, attachment, reaction, and search stay on the shipping convers
 
     const prompt = page.getByRole('textbox', { name: 'Prompt' });
     await expect(prompt).toHaveAttribute('contenteditable', 'true', { timeout: 15_000 });
+
+    // Chromium composition events are the truthful renderer-side IME lifecycle.
+    // They surface preedit/focus without inventing OS source, locale, width,
+    // script-variant, or candidate values that the native adapter has not supplied.
+    await prompt.focus();
+    await prompt.evaluate((element) => {
+      element.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true, data: '' }));
+      element.dispatchEvent(new CompositionEvent('compositionupdate', { bubbles: true, data: '輸' }));
+    });
+    const inputStatus = page.getByTestId('input-composition-status');
+    await expect(inputStatus).toContainText('Composing text.');
+    await expect(inputStatus).toContainText('Preedit signal: active.');
+    await expect(inputStatus).toContainText('candidate state are not reported by the native platform adapter.');
+    await prompt.evaluate((element) => {
+      element.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true, data: '輸' }));
+    });
+    await expect(inputStatus).toHaveCount(0);
+
     const rootText = 'Human parity root for reply search.';
     await prompt.pressSequentially(rootText);
     await page.getByRole('button', { name: 'Send message' }).click();
