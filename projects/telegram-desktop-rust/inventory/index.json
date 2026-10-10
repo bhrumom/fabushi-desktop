@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 9267,
+    "unread_minimum": 9264,
     "omitted_known": 0,
-    "note": "Recursive source census 16,125; unknown 15,845, unread 9,272, omitted 0. Exact read/responsibility decomposition extends through order 6,853, including localized decimal input normalization; implementation/verification closure remains open."
+    "note": "Recursive source census 16,125; unknown 15,845, unread 9,264, omitted 0. Exact read/responsibility decomposition extends through order 6,861; current production closes per-attempt macro isolation and 48-level structural brace-depth preflight while remaining parser grammar responsibilities stay mapped-open."
   },
   "latest_recursive_evidence": {
     "run_id": 37998467124,
@@ -64,10 +64,10 @@
       6541,
       6627
     ],
-    "current_source_read_through": 6853,
-    "first_unread_order": 6854,
-    "first_unread_path": "Telegram/ThirdParty/MicroTeX::src/core/macro_def.cpp",
-    "current_head_source_authority_evidence": "Accepted authority advanced to 6fed91ff with ten modified root blobs and no path-count/order changes. All ten changed blobs inside the read prefix were re-read and responsibility-reconciled through the explicit rebaseline override; MicroTeX order 6,853 remains the same component blob. Fresh descendant exact-head GitHub Actions evidence is required."
+    "current_source_read_through": 6861,
+    "first_unread_order": 6862,
+    "first_unread_path": "Telegram/ThirdParty/MicroTeX::src/fonts/alphabet.cpp",
+    "current_head_source_authority_evidence": "Accepted authority remains 6fed91ff with ten modified root blobs and no path-count/order changes. All ten changed blobs inside the accepted prefix are reread/reconciled; deterministic component read-through now extends through MicroTeX parser.h at order 6,861. Fresh descendant exact-head GitHub Actions evidence is required."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
