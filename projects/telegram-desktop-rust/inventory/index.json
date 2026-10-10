@@ -4,8 +4,8 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
-    "tree": "6b616494f3465324e749a04dcd1c9d508657a998",
+    "commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+    "tree": "9d8fa87ce68c832d2f4c99f372a5bb672463c3e1",
     "baseline_identity_accepted": false
   },
   "inventory": {
@@ -16,7 +16,7 @@
     "unknown_minimum": 15846,
     "unread_minimum": 9782,
     "omitted_known": 0,
-    "note": "Live 65e23ba recursive census remains 16,125; exact read-through 6,343; unknown 15,846, unread 9,782, omitted 0. Orders 6,340-6,343 are read/decomposed and mapped-open; fresh current-head Actions remain required."
+    "note": "Live 28ac5769 recursive census remains 16,125; exact read-through 6,343; unknown 15,846, unread 9,782, omitted 0. Four changed-prefix blobs (orders 11, 4495, 5722, 5759) were re-read/re-decomposed; first unread remains 6,344 wallet_ton_connect.cpp."
   },
   "latest_recursive_evidence": {
     "run_id": 37998467124,
@@ -48,38 +48,24 @@
   },
   "note": "Live authority exact through deterministic blob order 6,343; unread_minimum is 9,782; unknown remains 15,846; omitted remains 0. Reading alone does not reduce unknown; fresh exact-head source-authority evidence is required.",
   "rebaseline": {
-    "from_commit": "b0d1fe5e08c963402b8b71648c70a2bf68e6fab2",
-    "to_commit": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
-    "ahead_by": 10,
-    "changed_paths": 25,
+    "from_commit": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
+    "to_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+    "ahead_by": 3,
+    "changed_paths": 4,
     "changed_prefix_orders": [
       11,
-      67,
-      3546,
-      3602,
-      4084,
-      4433,
-      4434,
-      5503,
-      5759,
-      5762,
-      5763,
-      5764,
-      5765,
-      5772,
-      5773,
-      5800,
-      5801,
-      5803
+      4495,
+      5722,
+      5759
     ],
     "current_source_read_through": 6343,
     "first_unread_order": 6344,
     "first_unread_path": "Telegram/SourceFiles/wallet/wallet_ton_connect.cpp",
-    "current_head_source_authority_evidence": "Accepted exact-blob reading through order 6343. Wallet production descendant 27d46f3b653952d768d11aefa26951e04894cec6 implements parked/legacy-balance/claim/stream slices; predecessor 507e73 canonical messaging artifact 11662962449 sha256:8b9549bd1a6353077547d8980363cc4c9a8c16b9ff9badfd78187fa3f6df6ed5; fresh accounting-head Actions required."
+    "current_head_source_authority_evidence": "Rebaseline to 28ac5769 re-reads all four changed-prefix blobs while preserving deterministic path order and read-through 6343; fresh descendant GitHub Actions source-authority evidence required."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
-    "upstream_commit": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
+    "upstream_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "deterministic_prefix_closed": 57,
     "development_only_non_applicable": 69,
     "unknown_closed": 279,

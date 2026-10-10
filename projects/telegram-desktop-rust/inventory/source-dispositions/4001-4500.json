@@ -4,8 +4,8 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
-    "tree": "6b616494f3465324e749a04dcd1c9d508657a998"
+    "commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+    "tree": "9d8fa87ce68c832d2f4c99f372a5bb672463c3e1"
   },
   "range": {
     "first_order": 4001,
@@ -20761,26 +20761,26 @@
     {
       "recursive_order": 4495,
       "source_path": "Telegram/SourceFiles/history/view/media/history_view_gif.cpp",
-      "source_blob_sha": "17584bbfa5939f7dfc3859fafde892575cc72fd7",
+      "source_blob_sha": "0e25d53afd1c6093df116ef6b98e24af2e485820",
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "responsibility": "GIF media lifecycle",
+      "responsibility": "GIF media lifecycle plus source-photo-aware fast-share action geometry and matching draw/hit-test bounds.",
       "upstream_owner": "Canonical Media owner",
-      "state_machine": "download/stream/play/pause/visibility/thumbnail/progress/repaint and teardown: authoritative/message/UI/media input -> validated scoped state -> canonical projection/action -> async resource/service settlement -> unload/destroy/cancel convergence.",
+      "state_machine": "authoritative message/media/layout input -> source-photo-aware fast-share fit boundary shared by draw/textState -> validated scoped media state -> download/stream/play/pause/visibility/thumbnail/progress/repaint -> async resource settlement -> unload/destroy/cancel convergence.",
       "side_effects": "Conversation/media/network/call/payment/UI side effects stay with Canonical Media owner; no Telegram-shaped parallel owner.",
       "failure_cases": "Stale/destroyed message or child; permission/action race; async media/download/transcribe/translate failure; pinned/reply target disappearance; schedule/reaction settlement race; offscreen resource leak; inaccessible selection/control; missing exact-head evidence.",
       "ui_disposition": "Reuse canonical Fabushi TranscriptEntry/Toolbar/Tabs/ParticipantRow/Toast/Button/IconButton/Progress/LoadingState/ErrorState and Media Viewer primitives as applicable.",
       "fabushi_canonical_owner": "Canonical Media owner",
-      "fabushi_target": "OPEN: bind shipping owner and close missing download/stream/play/pause/visibility/thumbnail/progress/repaint and teardown with lifecycle/resource bounds, persistence/restart where applicable, concurrency, security/payment/service, a11y/visual/performance and tests.",
+      "fabushi_target": "OPEN: bind shipping Media/Transcript owner and close missing download/stream/play/pause/visibility/thumbnail/progress/repaint/teardown plus source-photo-aware fast-share action geometry/hit-testing with lifecycle/resource bounds, a11y/visual/performance and focused tests.",
       "platform_differences": "Telegram Qt/C++/MTProto mechanics are reference behavior; Fabushi preserves applicable semantics in canonical Rust/TypeScript/Electron/service owners.",
-      "production_evidence": "projects/telegram-desktop-rust/dossiers/history-media-4401-4500-complete-read.md; exact-source read only; implementation/verification remains open.",
+      "production_evidence": "Exact live 28ac5769 changed-prefix blob re-read/reconciled; canonical implementation/verification remains open.",
       "test_evidence": "Accepted-tree Source authority run 37872749663 job 113634587680 artifact 11591390327; current-head product evidence remains open.",
       "disposition": "mapped-open-media-gif",
       "unknown_closed": false,
       "omitted": false,
       "consumer_symbol": "history_view_gif.cpp",
       "consumer_evidence": [
-        "Direct exact-source read completed for Telegram/SourceFiles/history/view/media/history_view_gif.cpp; symbols/state consumers, service/resource side effects and lifetime failure cases were decomposed into the canonical owner."
+        "Direct exact-source re-read completed for Telegram/SourceFiles/history/view/media/history_view_gif.cpp; draw and textState now share the fitRight rule (source photo -> maxRight, otherwise parent width), while broader media lifecycle remains mapped to the canonical Media owner."
       ],
       "reachability_status": "accepted-tree-source-owner-proven; shipping verification remains open",
       "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
@@ -20790,15 +20790,15 @@
         "artifact_id": 11591390327,
         "artifact_digest": "sha256:9e8d9d297b9f957c5c60e069a3ede35c517d56e18662bcf7573946663b971d65",
         "artifact_member": "upstream-recursive-inventory.json",
-        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+        "accepted_upstream": "28ac576967a1026ecc89a927360fa0e138d7c88c",
         "evidence_contract": "exact accepted-tree recursive inventory object/size/type binding",
-        "verified_blob_sha": "17584bbfa5939f7dfc3859fafde892575cc72fd7",
-        "byte_size": 82992,
+        "verified_blob_sha": "0e25d53afd1c6093df116ef6b98e24af2e485820",
+        "byte_size": 83168,
         "file_type": "blob",
         "recursive_order": 4495,
-        "evidence_status": "live-github-tree-bound-current-head-actions-pending"
+        "evidence_status": "live-github-tree-bound-current-head-actions-required"
       },
-      "notes": "Read-complete does not promote implementation_status or release verification."
+      "notes": "Changed-prefix re-read on 2026-10-10 captured the new source-photo-aware fast-share geometry/hit-test invariant. Read-complete does not promote implementation_status or release verification."
     },
     {
       "recursive_order": 4496,

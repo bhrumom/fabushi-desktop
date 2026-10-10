@@ -4,8 +4,8 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
-    "tree": "6b616494f3465324e749a04dcd1c9d508657a998"
+    "commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+    "tree": "9d8fa87ce68c832d2f4c99f372a5bb672463c3e1"
   },
   "range": {
     "first_order": 5617,

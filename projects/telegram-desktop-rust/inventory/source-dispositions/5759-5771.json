@@ -4,8 +4,8 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
-    "tree": "6b616494f3465324e749a04dcd1c9d508657a998"
+    "commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+    "tree": "9d8fa87ce68c832d2f4c99f372a5bb672463c3e1"
   },
   "range": {
     "first_order": 5759,
@@ -16,10 +16,10 @@
     {
       "recursive_order": 5759,
       "source_path": "Telegram/SourceFiles/test/README.md",
-      "source_blob_sha": "941ef4abe8775bcca820d3318d2cb819154af5b1",
+      "source_blob_sha": "8ca6b81322d1197066eecf3572f1bbc95fed59ff",
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "responsibility": "Task-test harness authority for non-activating launch, shared fresh console-lock readings, exposure/activation/refusal/crash evidence, telemetry-safe diagnostics, and the macOS whole-run NSProcessInfo App Nap hold with an explicit TDESKTOP_TEST_APP_NAP=allow opt-out.",
+      "responsibility": "Task-test harness authority for non-activating launch, refusal-safe inactive window ordering versus true OS activation, fresh console-lock/App Nap evidence, exposure/activation/crash diagnostics, telemetry-safe capture, and the macOS whole-run NSProcessInfo latency-critical hold with explicit opt-out.",
       "upstream_owner": "Canonical professional cross-platform test/evidence harness owner",
       "state_machine": "test precondition -> pure bounded readiness -> exact action/assertion -> structured capture/result -> explicit teardown/diagnostics",
       "side_effects": "Test-only: may activate/focus windows, manipulate harness-owned clipboard sentinels, read protected fixtures, inject input, advance harness clocks and capture product surfaces.",
@@ -28,23 +28,23 @@
       "fabushi_canonical_owner": "Canonical professional cross-platform test/evidence harness owner",
       "fabushi_target": "MAPPED OPEN.",
       "platform_differences": "Qt helper mechanics are upstream-specific. Preserve test semantics: preconditions cannot hide product failure, readiness stays pure, fixture secrets never leak, captures target real paint owners, platform focus/clipboard differences are explicit evidence.",
-      "production_evidence": "Exact live 65e23ba7 changed-prefix blob re-read/reconciled; reading alone gives no new shipping/release credit.",
-      "test_evidence": "Fresh exact-descendant GitHub Actions evidence required; predecessor b0400d/b0d1fe5e runs remain historical-only.",
+      "production_evidence": "Exact live 28ac5769 changed-prefix blob re-read/reconciled; reading alone gives no new shipping/release credit.",
+      "test_evidence": "Fresh exact-descendant GitHub Actions evidence required; predecessor evidence remains historical-only.",
       "disposition": "mapped-open-test-harness",
       "unknown_closed": false,
       "omitted": false,
       "consumer_evidence": [],
       "reachability_status": "accepted-tree exact blob responsibility proven; test-harness closure open",
       "license_and_provenance": "tdesktop provenance retained.",
-      "notes": "Changed accepted-prefix blob explicitly re-read under live 65e23ba7; classification retained only after responsibility re-decomposition; omitted remains false.",
+      "notes": "Changed accepted-prefix blob explicitly re-read under live 28ac5769; test authority now records that inactive windows may still order front and that occlusion alone does not determine App Nap. Classification remains test/evidence only; omitted remains false.",
       "consumer_symbol": "README.md",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-required",
-        "accepted_upstream": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
-        "verified_blob_sha": "941ef4abe8775bcca820d3318d2cb819154af5b1",
+        "accepted_upstream": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+        "verified_blob_sha": "8ca6b81322d1197066eecf3572f1bbc95fed59ff",
         "file_type": "blob",
         "recursive_order": 5759,
-        "byte_size": 250683
+        "byte_size": 251831
       }
     },
     {

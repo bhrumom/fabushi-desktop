@@ -4,8 +4,8 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
-    "tree": "6b616494f3465324e749a04dcd1c9d508657a998"
+    "commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+    "tree": "9d8fa87ce68c832d2f4c99f372a5bb672463c3e1"
   },
   "range": {
     "first_order": 5722,
@@ -16,19 +16,19 @@
     {
       "recursive_order": 5722,
       "source_path": "Telegram/SourceFiles/storage/storage_account.cpp",
-      "source_blob_sha": "5888ffa1164327b7170a2a3d8df7793a3fa467da",
+      "source_blob_sha": "52036077e07521b6fd7c7a7766add1245b09dedc",
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "responsibility": "Account-scoped encrypted local persistence for drafts/cursors, locations, settings/session/MTP data, caches, stickers/custom emoji/GIFs, search, trusted peer/payment/webview state, bot storage, export/playback state and wallet-engine records.",
+      "responsibility": "Account-scoped encrypted local persistence for drafts/cursors and canonical current-format tag compatibility (including kDraftsTag2 without legacy fallback), plus locations, settings/session/MTP data, caches, stickers/custom emoji/GIFs, search, trusted peer/payment/webview state, bot storage, export/playback state and wallet-engine records.",
       "upstream_owner": "tdesktop account/domain storage",
-      "state_machine": "authorized account/security/storage intent -> exact owner -> bounded derive/decrypt/read/write/cache/download -> validate/commit/project -> teardown/restart reconciliation",
+      "state_machine": "authorized account/security/storage intent -> exact format-tag classification (current tags stay current; only unknown tags enter legacy path) -> exact owner -> bounded derive/decrypt/read/write/cache/download -> validate/commit/project -> teardown/restart reconciliation",
       "side_effects": "Account/domain-local persistence, security key derivation/wrapping, wallet/trust state, bounded resource extraction or cache projection.",
       "failure_cases": "wrong/unsupported KDF; stale verification; corrupt/truncated/future data; crash between staged/committed generation; failed write; account switch/logout; stale async result; wallet corruption; archive limit/integrity failure; reload/restart",
       "ui_disposition": "No Telegram-derived UI; reuse canonical App Lock/Wallet/Account/Settings/Composer/Attachment/Profile/Toast/Error surfaces.",
       "fabushi_canonical_owner": "Canonical account Persistence + Messaging state + Trust/Payments/WebView + Wallet storage owners",
       "fabushi_target": "MAPPED OPEN.",
       "platform_differences": "Telegram/MTP/Qt formats are migration inputs only; preserve fencing, KDF bounds, cleansing, fresh verification, crash-safe commit, wallet protection, bounded extraction and cache-vs-authority semantics.",
-      "production_evidence": "Exact accepted blob read; canonical production closure remains open.",
+      "production_evidence": "Exact live 28ac5769 changed-prefix blob re-read/reconciled; canonical production closure remains open.",
       "test_evidence": "wrong passcode/KDF limits; cleansing; verification replay/staleness; passcode create/change/remove; App Lock enable/disable; wallet corruption/absence; crash-mid-commit; legacy migration; account switch/logout; delayed-write teardown; cloud/archive failure; cache invalidation; reload/restart; canonical UI/a11y.",
       "disposition": "mapped-open-account-storage",
       "unknown_closed": false,
@@ -36,14 +36,15 @@
       "consumer_evidence": [],
       "reachability_status": "accepted-tree exact blob responsibility proven; canonical closure open",
       "license_and_provenance": "tdesktop provenance retained.",
-      "notes": "Reading closes no unknown; local-security rows strengthen but do not close Local Passcode/App Lock/Wallet key protection.",
+      "notes": "Changed-prefix re-read captured kDraftsTag2 as a canonical current draft-with-cursors tag; it must not be misrouted through the legacy parser. Reading closes no unknown; storage/security closure remains open.",
       "consumer_symbol": "storage_account.cpp",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-required",
-        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
-        "verified_blob_sha": "5888ffa1164327b7170a2a3d8df7793a3fa467da",
+        "accepted_upstream": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+        "verified_blob_sha": "52036077e07521b6fd7c7a7766add1245b09dedc",
         "file_type": "blob",
-        "recursive_order": 5722
+        "recursive_order": 5722,
+        "byte_size": 116760
       }
     },
     {

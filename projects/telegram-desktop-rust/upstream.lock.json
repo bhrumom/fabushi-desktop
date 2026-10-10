@@ -8,16 +8,16 @@
     "repository": "telegramdesktop/tdesktop",
     "url": "https://github.com/telegramdesktop/tdesktop",
     "discovery_ref": "refs/heads/dev",
-    "commit": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
-    "tree": "6b616494f3465324e749a04dcd1c9d508657a998",
-    "committed_at": "2026-10-09T19:29:29Z",
+    "commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+    "tree": "9d8fa87ce68c832d2f4c99f372a5bb672463c3e1",
+    "committed_at": "2026-10-10T07:46:09Z",
     "accepted": true
   },
   "previous_historical_baseline": {
-    "commit": "b0d1fe5e08c963402b8b71648c70a2bf68e6fab2",
-    "tree": "e279373aec283ebfcc6e3bb7385e51205acd84a2",
+    "commit": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
+    "tree": "6b616494f3465324e749a04dcd1c9d508657a998",
     "evidence_status": "historical-only",
-    "reason": "Live dev advanced ten commits; b0400d/b0d1fe5 Actions prove only predecessor authority."
+    "reason": "Live dev advanced three commits; 04ce03c8 Actions prove only the predecessor authority and the new baseline requires fresh exact-head evidence."
   },
   "observed_root_inventory": {
     "tree_truncated": false,
@@ -29,10 +29,10 @@
     "root_non_directory_count": 6653
   },
   "delta_from_previous_baseline": {
-    "ahead_by": 10,
-    "changed_paths": 25,
+    "ahead_by": 3,
+    "changed_paths": 4,
     "added_paths": 0,
-    "modified_paths": 25
+    "modified_paths": 4
   },
   "direct_gitlinks": [
     {
@@ -268,7 +268,7 @@
     "unknown_minimum": 15846,
     "unread_minimum": 9782,
     "omitted_known": 0,
-    "note": "Accepted 65e23ba7137ea4129b6bc1b2616104a1f59495ef tree 6b616494f3465324e749a04dcd1c9d508657a998; exact read-through 6,343; unknown=15,846, unread=9,782, omitted=0."
+    "note": "Accepted 28ac576967a1026ecc89a927360fa0e138d7c88c tree 9d8fa87ce68c832d2f4c99f372a5bb672463c3e1; exact read-through 6,343; unknown=15,846, unread=9,782, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -282,7 +282,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Live upstream 65e23ba7; source/product/release closure remains open and fresh descendant exact-head evidence is required."
+    "note": "Live upstream 28ac5769; source/product/release closure remains open and fresh descendant exact-head evidence is required."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",
@@ -629,7 +629,7 @@
   },
   "source_disposition_evidence": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
-    "upstream_commit": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
+    "upstream_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "deterministic_prefix_closed": 57,
     "development_only_non_applicable": 69,
     "unknown_closed": 279,

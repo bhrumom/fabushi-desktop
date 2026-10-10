@@ -4,8 +4,8 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
-    "tree": "6b616494f3465324e749a04dcd1c9d508657a998"
+    "commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+    "tree": "9d8fa87ce68c832d2f4c99f372a5bb672463c3e1"
   },
   "range": {
     "first_order": 1,
@@ -226,10 +226,10 @@
     {
       "recursive_order": 11,
       "source_path": ".agents/shared/test-loop.md",
-      "source_blob_sha": "51c4b9c59100c1fbd65c6dd89782b75f33c98600",
+      "source_blob_sha": "b5a0287607909fa8df248efc46103486b9510c06",
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "responsibility": "Professional task-test loop authority for non-activating/background macOS launch, fresh console-lock evidence, bounded evidence collection, occlusion/exposure handling, crash/death diagnostics, and a run-wide App Nap opt-out/hold contract so timing-sensitive evidence keeps painting without stealing activation.",
+      "responsibility": "Professional task-test loop authority for non-activating/background macOS launch, refusal-safe inactive-window ordering evidence, console-lock/App Nap timing evidence, bounded capture/recovery, and a run-wide latency-critical activity hold that preserves paint/timer fidelity without claiming OS activation.",
       "upstream_owner": "Canonical development-only professional test orchestration owner",
       "state_machine": "bounded test/recovery state machine",
       "side_effects": "run development test campaigns and preserve evidence",
@@ -238,17 +238,17 @@
       "fabushi_canonical_owner": "Canonical development-only professional test orchestration owner",
       "fabushi_target": "none",
       "platform_differences": "platform-specific evidence drivers only",
-      "production_evidence": "Exact live 65e23ba7 changed-prefix blob re-read/reconciled; reading alone gives no new shipping/release credit.",
-      "test_evidence": "Fresh exact-descendant GitHub Actions evidence required; predecessor b0400d/b0d1fe5e runs remain historical-only.",
+      "production_evidence": "Exact live 28ac5769 changed-prefix blob re-read/reconciled; reading alone gives no new shipping/release credit.",
+      "test_evidence": "Fresh exact-descendant GitHub Actions evidence required; predecessor evidence remains historical-only.",
       "disposition": "development-only-non-applicable-with-canonical-test-replacement",
       "unknown_closed": true,
       "omitted": false,
-      "notes": "Changed accepted-prefix blob explicitly re-read under live 65e23ba7; classification retained only after responsibility re-decomposition; omitted remains false.",
+      "notes": "Changed accepted-prefix blob explicitly re-read under live 28ac5769. The evidence model distinguishes inactive window ordering from true application activation and treats App Nap/occlusion behavior as measured evidence rather than an invariant.",
       "source_binary_evidence": {
         "evidence_status": "live-github-tree-bound-current-head-actions-required",
-        "accepted_upstream": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
-        "verified_blob_sha": "51c4b9c59100c1fbd65c6dd89782b75f33c98600",
-        "byte_size": 76031,
+        "accepted_upstream": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+        "verified_blob_sha": "b5a0287607909fa8df248efc46103486b9510c06",
+        "byte_size": 77389,
         "file_type": "blob",
         "recursive_order": 11
       }
