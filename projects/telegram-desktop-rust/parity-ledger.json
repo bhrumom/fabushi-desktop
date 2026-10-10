@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15846,
-    "unread": 9782,
+    "unread": 9772,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 69,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 6343,
-    "first_unread_order": 6344,
-    "first_unread_path": "Telegram/SourceFiles/wallet/wallet_ton_connect.cpp"
+    "read_through": 6353,
+    "first_unread_order": 6354,
+    "first_unread_path": "Telegram/SourceFiles/wallet/wallet_ton_connect_request.cpp"
   },
   "historical_exact_head_evidence": {
     "status": "historical-only",

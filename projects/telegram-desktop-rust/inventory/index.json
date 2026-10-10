@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15846,
-    "unread_minimum": 9782,
+    "unread_minimum": 9772,
     "omitted_known": 0,
-    "note": "Live 28ac5769 recursive census remains 16,125; exact read-through 6,343; unknown 15,846, unread 9,782, omitted 0. Four changed-prefix blobs (orders 11, 4495, 5722, 5759) were re-read/re-decomposed; first unread remains 6,344 wallet_ton_connect.cpp."
+    "note": "Live 28ac5769 recursive census remains 16,125; exact read-through 6,353; unknown 15,846, unread 9,772, omitted 0. Orders 6,344-6,353 were exact-blob read/responsibility-decomposed; first unread is 6,354 wallet_ton_connect_request.cpp."
   },
   "latest_recursive_evidence": {
     "run_id": 37998467124,
@@ -58,10 +58,10 @@
       5722,
       5759
     ],
-    "current_source_read_through": 6343,
-    "first_unread_order": 6344,
-    "first_unread_path": "Telegram/SourceFiles/wallet/wallet_ton_connect.cpp",
-    "current_head_source_authority_evidence": "Rebaseline to 28ac5769 re-reads all four changed-prefix blobs while preserving deterministic path order and read-through 6343; fresh descendant GitHub Actions source-authority evidence required."
+    "current_source_read_through": 6353,
+    "first_unread_order": 6354,
+    "first_unread_path": "Telegram/SourceFiles/wallet/wallet_ton_connect_request.cpp",
+    "current_head_source_authority_evidence": "Accepted 28ac5769 deterministic path order preserved through exact-blob read/decomposition 6,353; fresh descendant GitHub Actions source-authority evidence required."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -70,6 +70,6 @@
     "development_only_non_applicable": 69,
     "unknown_closed": 279,
     "omitted": 0,
-    "read_through": 6343
+    "read_through": 6353
   }
 }
