@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 8818,
+    "unread_minimum": 8722,
     "omitted_known": 0,
-    "note": "Recursive source census 16,125; exact read/decomposition through 7,307; unread 8,818; unknown 15,845; omitted 0. cmark-gfm orders 7,242-7,307 are read/decomposed; shipping parser/security/bounded-work equivalence remains mapped-open."
+    "note": "Recursive source census 16,125; exact read/decomposition through 7,403; unread 8,722; unknown 15,845; omitted 0. All 162 cmark-gfm entries are read/decomposed; production parser/security/lifecycle/bounded-work equivalence remains mapped-open."
   },
   "latest_recursive_evidence": {
     "run_id": 38064993530,
@@ -42,7 +42,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live authority 6fed91ff exact through recursive order 7,307; first unread is 7,308 Telegram/ThirdParty/cmark-gfm::fuzz/CMakeLists.txt; unread_minimum is 8,818; unknown remains 15,845; omitted remains 0.",
+  "note": "Live authority 6fed91ff exact through recursive order 7,403; first unread is 7,404 Telegram/ThirdParty/expected::.appveyor.yml; unread_minimum is 8,722; unknown remains 15,845; omitted remains 0.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -60,10 +60,10 @@
       6541,
       6627
     ],
-    "current_source_read_through": 7307,
-    "first_unread_order": 7308,
-    "first_unread_path": "Telegram/ThirdParty/cmark-gfm::fuzz/CMakeLists.txt",
-    "current_head_source_authority_evidence": "Orders 7,242-7,307 exact-read pinned cmark-gfm and trace shipping use to IV Markdown parser. GFM semantics, parser memory/complexity limits and security regressions remain mapped-open in existing Fabushi rich-content/URL/Resource and Build-Release owners; no unknown closed."
+    "current_source_read_through": 7403,
+    "first_unread_order": 7404,
+    "first_unread_path": "Telegram/ThirdParty/expected::.appveyor.yml",
+    "current_head_source_authority_evidence": "Complete cmark-gfm 7,242-7,403 exact-read. Shipping IV consumer, parser lifecycle/limits, AST ownership, Unicode/escaping, GFM extensions and fuzz/pathological/spec oracles are mapped to existing Fabushi rich-content/URL/Resource and Build-Release owners. Development wrappers/build inputs are source evidence only. No unknown closed."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -72,9 +72,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 7307,
-    "first_unread_order": 7308,
-    "first_unread_path": "Telegram/ThirdParty/cmark-gfm::fuzz/CMakeLists.txt",
+    "read_through": 7403,
+    "first_unread_order": 7404,
+    "first_unread_path": "Telegram/ThirdParty/expected::.appveyor.yml",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }

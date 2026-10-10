@@ -9,7 +9,7 @@ Canonical project: `projects/fabushi-communication-platform`
 Companion implementation contract: `docs/specs/telegram-desktop-rust-equivalence-migration.md` (TDRP-001 Revision 9)  
 Implementation status: **requirements updated; full migration not accepted**
 
-Live execution authority (2026-10-10): accepted source read-through is now 7,241/16,125; unread=8,884, unknown=15,845, omitted=0. CLD3 local language identification is fully source-read but remains production-open because no current shipping TextLanguageClassifier/Translation gateway implementation exists. Full migration is not accepted.
+Live execution authority (2026-10-11): accepted source read-through is now 7,403/16,125; unread=8,722, unknown=15,845, omitted=0. Complete cmark-gfm 7,242-7,403 is exact-read and decomposed; parser/GFM/AST-lifecycle/Unicode/security/complexity equivalence remains production-open in existing canonical owners. Full migration is not accepted.
 
 > **最终产品是一个完整的 Fabushi Bot：在现有 Fabushi 架构内，逐文件、逐模块理解 `telegramdesktop/tdesktop`，把其全部非 UI 代码职责用最合适的语言等价重写；原 UI 表现层由统一 Fabushi UI 替代，但 UI 中承载的功能与业务逻辑不得遗漏。最终同时具备现有 Bot 的全部能力和 Telegram Desktop 源码所体现的全部产品能力，而不是绑定 Telegram、添加入口、做 Provider 接入、选择性借鉴或局部 Demo。**
 

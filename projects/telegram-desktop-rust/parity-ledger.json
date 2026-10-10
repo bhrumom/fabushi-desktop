@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 8818,
+    "unread": 8722,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,11 +13478,11 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Accepted prefix reaches 7,307/16,125; cmark-gfm orders 7,242-7,307 read/decomposed; unread=8,818, unknown=15,845, omitted=0. Reading closes no unknown.",
-    "source_authority_evidence": "cmark-gfm shipping reachability is direct through Telegram IV Markdown (<cmark-gfm.h>, parser options/extensions, td_iv link). Existing Fabushi rich-content/URL/Resource and Build-Release owners are the targets; exact parser/security/performance equivalence and descendant Actions evidence remain open.",
-    "current_source_read_through": 7307,
-    "first_unread_order": 7308,
-    "first_unread_path": "Telegram/ThirdParty/cmark-gfm::fuzz/CMakeLists.txt"
+    "source_read_reconciliation": "Accepted prefix reaches 7,403/16,125; all cmark-gfm 7,242-7,403 exact-read/decomposed; unread=8,722, unknown=15,845, omitted=0. Reading closes no unknown.",
+    "source_authority_evidence": "cmark-gfm shipping reachability is direct through Telegram IV Markdown. Parser memory/depth/abort lifecycle, AST ownership/UAF protection, Unicode/entity/escaping, dangerous URL/raw HTML safety, GFM extensions, fuzz/pathological/spec/roundtrip oracles and development-only inputs are classified against existing source-neutral Fabushi owners. Production equivalence remains open.",
+    "current_source_read_through": 7403,
+    "first_unread_order": 7404,
+    "first_unread_path": "Telegram/ThirdParty/expected::.appveyor.yml"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 7307,
-    "first_unread_order": 7308,
-    "first_unread_path": "Telegram/ThirdParty/cmark-gfm::fuzz/CMakeLists.txt",
+    "read_through": 7403,
+    "first_unread_order": 7404,
+    "first_unread_path": "Telegram/ThirdParty/expected::.appveyor.yml",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
