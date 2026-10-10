@@ -2670,7 +2670,11 @@ impl<S: MessagingStateStore> MessagingService<S> {
             | Event::ConversationChildDestroyed { .. } => return None,
             Event::InvoiceCreated { invoice } => ServerEvent::InvoiceChanged { invoice },
             Event::OrderUpserted { order } => ServerEvent::OrderChanged { order },
-            Event::WalletChanged { .. } => return None,
+            // Wallet ledger/runtime state is native/server authority. The
+            // renderer receives purpose-built payment/order events rather than
+            // the private durable wallet state, key-protection metadata, rate
+            // cache, funding-session lifecycle or local panel state.
+            Event::WalletChanged { .. } | Event::WalletRuntimeChanged { .. } => return None,
             Event::EntitlementReconciled { .. } => return None,
             Event::StoryStealthChanged { actor_id: changed_actor_id, state } => {
                 if &changed_actor_id != actor_id {
