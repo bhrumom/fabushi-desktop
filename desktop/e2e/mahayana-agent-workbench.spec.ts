@@ -811,6 +811,7 @@ test('Mahayana renders one Hermes-style assistant turn instead of a completion W
     await page.waitForTimeout(1_000);
     await expect(turn).toHaveCount(1);
     await expect(turn.getByRole('group', { name: 'Agent message' })).toContainText('收到：请分析这个任务');
+    await expect(turn).not.toHaveAttribute('aria-busy', 'true', { timeout: 10_000 });
     const highlightedCode = turn.locator('pre.sand-code-block code.language-typescript[data-syntax-highlighted="true"]');
     await expect(highlightedCode).toContainText('const answer: number = 42;');
     await expect(highlightedCode.locator('.token.keyword').filter({ hasText: 'const' })).toHaveCount(1);

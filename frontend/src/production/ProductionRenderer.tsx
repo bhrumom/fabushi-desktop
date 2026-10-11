@@ -356,6 +356,11 @@ function mergeAuthoritativeTranscriptMessage(
     attachments: mergeTranscriptAttachments(current.attachments, incoming.attachments),
     clientNonce: incoming.clientNonce ?? current.clientNonce,
     delivery: incoming.delivery ?? current.delivery,
+    // Authoritative transcript projections only carry isStreaming while the
+    // row is actively growing. Absence on the durable/final row therefore
+    // settles the live projection instead of inheriting stale true state from
+    // the optimistic/live entry.
+    isStreaming: incoming.isStreaming === true,
   };
 }
 
