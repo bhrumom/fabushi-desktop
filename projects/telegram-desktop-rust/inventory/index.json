@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 6097,
+    "unread_minimum": 6033,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through deterministic order 10,028; unread 6,097; unknown 15,845; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition through deterministic order 10,092; unread 6,033; unknown 15,845; omitted 0."
   },
   "latest_recursive_evidence": {
     "run_id": 38118212864,
@@ -58,10 +58,10 @@
       6541,
       6627
     ],
-    "current_source_read_through": 10028,
-    "first_unread_order": 10029,
-    "first_unread_path": "Telegram/ThirdParty/libfido2::.github/workflows/macos_builds.yml",
-    "current_head_source_authority_evidence": "f936a5e run 38118212864/job 114407396444 attested exact recursive identities but failed strict narrative wording before review-window materialization. The wording is corrected in this descendant; libcbor tests 9,965–10,005 and libfido2 build/security authority 10,006–10,028 were read at exact upstream identities."
+    "current_source_read_through": 10092,
+    "first_unread_order": 10093,
+    "first_unread_path": "Telegram/ThirdParty/libfido2::man/es384_pk_new.3",
+    "current_head_source_authority_evidence": "53166126816c059a99298b28d4b3d8c2ca204910 run 38119139308/job 114410128913 attested exact recursive identities and materialized orders 10,029-10,092 in artifact 11693708963 (sha256:29a6feb40f3cbaa28f932d822bab4242821378bba701bdfbba1fb18f26a35542). The range covers libfido2 ceremony/device-management, fuzz/fault-injection, coverage and API/man contracts; all rows remain mapped-open pending shipping evidence."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -70,9 +70,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 10028,
-    "first_unread_order": 10029,
-    "first_unread_path": "Telegram/ThirdParty/libfido2::.github/workflows/macos_builds.yml",
+    "read_through": 10092,
+    "first_unread_order": 10093,
+    "first_unread_path": "Telegram/ThirdParty/libfido2::man/es384_pk_new.3",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }
