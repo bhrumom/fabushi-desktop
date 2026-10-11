@@ -282,7 +282,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Closure open. Read-through 12,076/16,125; first unread 12,077 src/gamemode.h@6b9d205754d16548d90b7ac7289b5cb6b6a6fffa; call-tone packaged audible/restart acceptance and full real Group/SFU shipping composition remain open."
+    "note": "Closure open. Read-through 12,204/16,125; first unread 12,205 Telegram/ThirdParty/xdg-desktop-portal::tests/test-xdp-utils.c@cc50e6cec6e155cd498ab8dd0b003fbb08089ac6; call-tone packaged audible/restart acceptance and full real Group/SFU shipping composition remain open."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",
@@ -635,9 +635,9 @@
     "development_only_non_applicable": 206,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 12140,
-    "first_unread_order": 12141,
-    "first_unread_path": "Telegram/ThirdParty/xdg-desktop-portal::src/xdp-app-info-snap-private.h",
+    "read_through": 12204,
+    "first_unread_order": 12205,
+    "first_unread_path": "Telegram/ThirdParty/xdg-desktop-portal::tests/test-xdp-utils.c",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
