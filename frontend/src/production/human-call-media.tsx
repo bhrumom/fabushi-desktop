@@ -229,6 +229,9 @@ export function HumanCallControls({
   const localStreamRef = useRef<MediaStream | null>(null);
   const remoteStreamRef = useRef<MediaStream | null>(null);
   const screenStreamRef = useRef<MediaStream | null>(null);
+  const cameraCaptureGenerationRef = useRef(0);
+  const cameraRecoveryInFlightRef = useRef(false);
+  const bindCameraTrackLifecycleRef = useRef<(stream: MediaStream, track: MediaStreamTrack) => void>(() => {});
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const configurePeerRef = useRef<((nextCall: HumanCall, nextLease: CallLease, local: MediaStream) => Promise<RTCPeerConnection>) | null>(null);
   const callRef = useRef<HumanCall | null>(null);
@@ -279,8 +282,8 @@ export function HumanCallControls({
 
   const updateMediaState = useCallback(async (nextCall: HumanCall, patch: Record<string, unknown>) => {
     const mediaCapabilities = {
-      audio: localStreamRef.current?.getAudioTracks().some((track) => track.enabled) === true,
-      video: localStreamRef.current?.getVideoTracks().some((track) => track.enabled) === true,
+      audio: localStreamRef.current?.getAudioTracks().some((track) => track.enabled && track.readyState === "live") === true,
+      video: localStreamRef.current?.getVideoTracks().some((track) => track.enabled && track.readyState === "live") === true,
       screenShare: screenSharing,
       ...patch,
     };
@@ -298,14 +301,27 @@ export function HumanCallControls({
     if (isCall(updated)) publish(updated);
   }, [client, publish, screenSharing]);
 
+  const updateMediaStateRef = useRef(updateMediaState);
+  updateMediaStateRef.current = updateMediaState;
+
+  const invalidateCameraCapture = useCallback(() => {
+    cameraCaptureGenerationRef.current += 1;
+    cameraRecoveryInFlightRef.current = false;
+  }, []);
+
   const bindCameraTrackLifecycle = useCallback((stream: MediaStream, track: MediaStreamTrack) => {
-    const isOwned = () => !disposedRef.current && localStreamRef.current === stream && stream.getVideoTracks().includes(track);
+    const generation = ++cameraCaptureGenerationRef.current;
+    cameraRecoveryInFlightRef.current = false;
+    const isOwned = () => !disposedRef.current
+      && cameraCaptureGenerationRef.current === generation
+      && localStreamRef.current === stream
+      && stream.getVideoTracks()[0] === track;
     const projectActivity = (paused: boolean) => {
       if (!isOwned()) return;
       setCameraCapturePaused(paused);
       const active = callRef.current;
       if (active == null || active.state === "ended" || active.state === "failed") return;
-      void updateMediaState(active, {
+      void updateMediaStateRef.current(active, {
         video: track.enabled,
         videoPaused: paused,
         videoActive: track.enabled && !paused && track.readyState === "live",
@@ -314,16 +330,69 @@ export function HumanCallControls({
     track.onmute = () => projectActivity(true);
     track.onunmute = () => projectActivity(false);
     track.onended = () => {
-      if (!isOwned()) return;
-      stream.removeTrack(track);
-      setCameraEnabled(false);
+      if (!track.enabled || !isOwned() || cameraRecoveryInFlightRef.current) return;
+      cameraRecoveryInFlightRef.current = true;
       setCameraCapturePaused(false);
-      const active = callRef.current;
-      if (active == null || active.state === "ended" || active.state === "failed") return;
-      void updateMediaState(active, { video: false, videoPaused: false, videoActive: false })
-        .catch((endedError) => setError(mediaFailure(endedError)));
+      void (async () => {
+        let replacement: MediaStreamTrack | null = null;
+        let sender: RTCRtpSender | null = null;
+        let addedSender: RTCRtpSender | null = null;
+        try {
+          const active = callRef.current;
+          if (active == null || active.state === "ended" || active.state === "failed") return;
+          const recoveryStream = await getPreferredUserMedia(bridge, { audio: false, video: true });
+          replacement = recoveryStream.getVideoTracks()[0] ?? null;
+          if (replacement == null) {
+            stopStream(recoveryStream);
+            throw new Error("Camera recovery did not provide a video track.");
+          }
+          if (!isOwned()) {
+            stopStream(recoveryStream);
+            return;
+          }
+          const pc = pcRef.current;
+          if (screenStreamRef.current == null && pc != null) {
+            sender = pc.getSenders().find((candidate) => candidate.track?.kind === "video") ?? null;
+          }
+          stream.removeTrack(track);
+          stream.addTrack(replacement);
+          if (sender != null) await sender.replaceTrack(replacement);
+          else if (screenStreamRef.current == null && pc != null) addedSender = pc.addTrack(replacement, stream);
+          try {
+            await updateMediaStateRef.current(active, {
+              video: true,
+              videoPaused: replacement.muted,
+              videoActive: !replacement.muted && replacement.readyState === "live",
+            });
+          } catch (projectionError) {
+            stream.removeTrack(replacement);
+            replacement.stop();
+            if (sender != null) await sender.replaceTrack(null).catch(() => undefined);
+            if (addedSender != null && pcRef.current === pc) pc.removeTrack(addedSender);
+            throw projectionError;
+          }
+          bindCameraTrackLifecycleRef.current(stream, replacement);
+          setCameraEnabled(true);
+          setCameraCapturePaused(replacement.muted);
+          if (localVideoRef.current != null) localVideoRef.current.srcObject = stream;
+        } catch (recoveryError) {
+          if (cameraCaptureGenerationRef.current !== generation || localStreamRef.current !== stream) return;
+          stream.removeTrack(track);
+          invalidateCameraCapture();
+          setCameraEnabled(false);
+          setCameraCapturePaused(false);
+          const active = callRef.current;
+          if (active != null && active.state !== "ended" && active.state !== "failed") {
+            await updateMediaStateRef.current(active, { video: false, videoPaused: false, videoActive: false }).catch(() => undefined);
+          }
+          setError(`Camera capture stopped after one recovery attempt: ${mediaFailure(recoveryError)}`);
+        } finally {
+          cameraRecoveryInFlightRef.current = false;
+        }
+      })();
     };
-  }, [updateMediaState]);
+  }, [bridge, invalidateCameraCapture]);
+  bindCameraTrackLifecycleRef.current = bindCameraTrackLifecycle;
 
   const sendSignal = useCallback(async (nextCall: HumanCall, kind: CallSignal["kind"], payload: Record<string, unknown>) => {
     const owner = await readLease(nextCall.id, true);
@@ -349,6 +418,7 @@ export function HumanCallControls({
       throw new Error("Microphone/camera permission was denied.");
     }
     const stream = await getPreferredUserMedia(bridge, { audio: true, video });
+    invalidateCameraCapture();
     stopStream(localStreamRef.current);
     localStreamRef.current = stream;
     setMuted(false);
@@ -358,7 +428,7 @@ export function HumanCallControls({
     if (cameraTrack != null) bindCameraTrackLifecycle(stream, cameraTrack);
     if (localVideoRef.current != null) localVideoRef.current.srcObject = stream;
     return stream;
-  }, [bindCameraTrackLifecycle, bridge.callMedia]);
+  }, [bindCameraTrackLifecycle, bridge.callMedia, invalidateCameraCapture]);
 
   const stopDiagnostics = useCallback(() => {
     diagnosticsGenerationRef.current += 1;
@@ -419,14 +489,16 @@ export function HumanCallControls({
       await transition(current, "fail", reason).catch(() => undefined);
     }
     closePeer();
+    invalidateCameraCapture();
     stopStream(localStreamRef.current);
     localStreamRef.current = null;
     stopStream(screenStreamRef.current);
     screenStreamRef.current = null;
     setScreenSharing(false);
     setScreenCapturePaused(false);
+    setCameraEnabled(false);
     setCameraCapturePaused(false);
-  }, [closePeer, transition]);
+  }, [closePeer, invalidateCameraCapture, transition]);
 
   const configurePeer = useCallback(async (nextCall: HumanCall, nextLease: CallLease, local: MediaStream) => {
     closePeer();
@@ -568,16 +640,18 @@ export function HumanCallControls({
       await transition(current, "decline", "declined").catch(() => undefined);
     }
     closePeer();
+    invalidateCameraCapture();
     stopStream(localStreamRef.current);
     localStreamRef.current = null;
     stopStream(screenStreamRef.current);
     screenStreamRef.current = null;
     setScreenSharing(false);
     setScreenCapturePaused(false);
+    setCameraEnabled(false);
     setCameraCapturePaused(false);
     setStatus("idle");
     publish(null, null);
-  }, [closePeer, publish, transition]);
+  }, [closePeer, invalidateCameraCapture, publish, transition]);
 
   const hangup = useCallback(async () => {
     const current = callRef.current;
@@ -585,6 +659,7 @@ export function HumanCallControls({
       await transition(current, "hangup", "user-ended").catch(() => undefined);
     }
     closePeer();
+    invalidateCameraCapture();
     stopStream(localStreamRef.current);
     localStreamRef.current = null;
     stopStream(screenStreamRef.current);
@@ -595,7 +670,7 @@ export function HumanCallControls({
     setCameraCapturePaused(false);
     setCameraEnabled(false);
     publish(null, null);
-  }, [closePeer, publish, transition]);
+  }, [closePeer, invalidateCameraCapture, publish, transition]);
 
   const toggleMute = useCallback(async () => {
     const commandLease = callCommandFence.acquire("toggle-mute");
@@ -630,7 +705,7 @@ export function HumanCallControls({
       const current = callRef.current;
       if (stream == null || current == null) return;
       const existing = stream.getVideoTracks()[0];
-      if (existing != null) {
+      if (existing != null && existing.readyState === "live") {
         const previousEnabled = existing.enabled;
         const nextEnabled = !cameraEnabled;
         existing.enabled = nextEnabled;
@@ -644,6 +719,10 @@ export function HumanCallControls({
           throw error;
         }
         return;
+      }
+      if (existing != null) {
+        invalidateCameraCapture();
+        stream.removeTrack(existing);
       }
       const permission = await bridge.callMedia.requestPermissions({ audio: false, video: true });
       if (permission.camera === "denied") throw new Error("Camera permission was denied.");
@@ -675,7 +754,7 @@ export function HumanCallControls({
       commandLease.release();
       setCameraPending(false);
     }
-  }, [bindCameraTrackLifecycle, bridge.callMedia, callCommandFence, cameraEnabled, updateMediaState]);
+  }, [bindCameraTrackLifecycle, bridge.callMedia, callCommandFence, cameraEnabled, invalidateCameraCapture, updateMediaState]);
 
   const closeDisplayPicker = useCallback(() => {
     displayPickerGenerationRef.current += 1;
@@ -838,13 +917,14 @@ export function HumanCallControls({
       setDisplayPickerOpen(false);
       window.clearInterval(timer);
       closePeer();
+      invalidateCameraCapture();
       stopStream(localStreamRef.current);
       localStreamRef.current = null;
       stopStream(screenStreamRef.current);
       screenStreamRef.current = null;
       publish(null, null);
     };
-  }, [closePeer, configurePeer, consumeSignals, conversation.id, publish, readLease, refresh]);
+  }, [closePeer, configurePeer, consumeSignals, conversation.id, invalidateCameraCapture, publish, readLease, refresh]);
 
   const incoming = call != null && lease?.role === "peer" && (call.state === "invited" || call.state === "ringing");
   const active = call != null && call.state !== "ended" && call.state !== "failed";

@@ -811,7 +811,7 @@
       "source_symbols": [
         "VideoCMIOCapture"
       ],
-      "responsibility": "Camera/CMIO capture start-stop, device switching, pause/active/fatal signaling, source ownership and frame adaptation map to existing HumanCallControls plus call-media adapter. This slice adds camera MediaStreamTrack mute/unmute/ended projection with stale-stream fencing and teardown reset.",
+      "responsibility": "Camera/CMIO capture start-stop, device switching, pause/active/fatal signaling, source ownership and frame adaptation map to existing HumanCallControls plus call-media adapter. Shipping camera lifecycle now projects mute/unmute state and performs one generation-fenced preferred-device reacquire attempt after unexpected track termination; successful recovery rebinds the owned track/sender and failed recovery disables video without looping.",
       "fabushi_canonical_owner": "CallSession / Permissions / Resource / platform adapter",
       "fabushi_target": "frontend/src/production/human-call-media.tsx and source/electron-main/call-media.ts."
     },
@@ -839,7 +839,7 @@
       "source_symbols": [
         "VideoCMIOCapture start/stop/frame callback"
       ],
-      "responsibility": "Camera/CMIO capture start-stop, device switching, pause/active/fatal signaling, source ownership and frame adaptation map to existing HumanCallControls plus call-media adapter. This slice adds camera MediaStreamTrack mute/unmute/ended projection with stale-stream fencing and teardown reset.",
+      "responsibility": "Camera/CMIO capture start-stop, device switching, pause/active/fatal signaling, source ownership and frame adaptation map to existing HumanCallControls plus call-media adapter. Shipping camera lifecycle now projects mute/unmute state and performs one generation-fenced preferred-device reacquire attempt after unexpected track termination; successful recovery rebinds the owned track/sender and failed recovery disables video without looping.",
       "fabushi_canonical_owner": "CallSession / Permissions / Resource / platform adapter",
       "fabushi_target": "frontend/src/production/human-call-media.tsx and source/electron-main/call-media.ts."
     },
@@ -867,7 +867,7 @@
       "source_symbols": [
         "VideoCameraCapturer"
       ],
-      "responsibility": "Camera/CMIO capture start-stop, device switching, pause/active/fatal signaling, source ownership and frame adaptation map to existing HumanCallControls plus call-media adapter. This slice adds camera MediaStreamTrack mute/unmute/ended projection with stale-stream fencing and teardown reset.",
+      "responsibility": "Camera/CMIO capture start-stop, device switching, pause/active/fatal signaling, source ownership and frame adaptation map to existing HumanCallControls plus call-media adapter. Shipping camera lifecycle now projects mute/unmute state and performs one generation-fenced preferred-device reacquire attempt after unexpected track termination; successful recovery rebinds the owned track/sender and failed recovery disables video without looping.",
       "fabushi_canonical_owner": "CallSession / Permissions / Resource / platform adapter",
       "fabushi_target": "frontend/src/production/human-call-media.tsx and source/electron-main/call-media.ts."
     },
@@ -895,7 +895,7 @@
       "source_symbols": [
         "VideoCameraCapturer state/pause/active/fatal"
       ],
-      "responsibility": "Camera/CMIO capture start-stop, device switching, pause/active/fatal signaling, source ownership and frame adaptation map to existing HumanCallControls plus call-media adapter. This slice adds camera MediaStreamTrack mute/unmute/ended projection with stale-stream fencing and teardown reset.",
+      "responsibility": "Camera/CMIO capture start-stop, device switching, pause/active/fatal signaling, source ownership and frame adaptation map to existing HumanCallControls plus call-media adapter. Shipping camera lifecycle now projects mute/unmute state and performs one generation-fenced preferred-device reacquire attempt after unexpected track termination; successful recovery rebinds the owned track/sender and failed recovery disables video without looping.",
       "fabushi_canonical_owner": "CallSession / Permissions / Resource / platform adapter",
       "fabushi_target": "frontend/src/production/human-call-media.tsx and source/electron-main/call-media.ts."
     },
@@ -923,7 +923,7 @@
       "source_symbols": [
         "VideoCameraCapturerMac"
       ],
-      "responsibility": "Camera/CMIO capture start-stop, device switching, pause/active/fatal signaling, source ownership and frame adaptation map to existing HumanCallControls plus call-media adapter. This slice adds camera MediaStreamTrack mute/unmute/ended projection with stale-stream fencing and teardown reset.",
+      "responsibility": "Camera/CMIO capture start-stop, device switching, pause/active/fatal signaling, source ownership and frame adaptation map to existing HumanCallControls plus call-media adapter. Shipping camera lifecycle now projects mute/unmute state and performs one generation-fenced preferred-device reacquire attempt after unexpected track termination; successful recovery rebinds the owned track/sender and failed recovery disables video without looping.",
       "fabushi_canonical_owner": "CallSession / Permissions / Resource / platform adapter",
       "fabushi_target": "frontend/src/production/human-call-media.tsx and source/electron-main/call-media.ts."
     },
@@ -951,7 +951,7 @@
       "source_symbols": [
         "VideoCameraCapturerMac state/pause/active/fatal"
       ],
-      "responsibility": "Camera/CMIO capture start-stop, device switching, pause/active/fatal signaling, source ownership and frame adaptation map to existing HumanCallControls plus call-media adapter. This slice adds camera MediaStreamTrack mute/unmute/ended projection with stale-stream fencing and teardown reset.",
+      "responsibility": "Camera/CMIO capture start-stop, device switching, pause/active/fatal signaling, source ownership and frame adaptation map to existing HumanCallControls plus call-media adapter. Shipping camera lifecycle now projects mute/unmute state and performs one generation-fenced preferred-device reacquire attempt after unexpected track termination; successful recovery rebinds the owned track/sender and failed recovery disables video without looping.",
       "fabushi_canonical_owner": "CallSession / Permissions / Resource / platform adapter",
       "fabushi_target": "frontend/src/production/human-call-media.tsx and source/electron-main/call-media.ts."
     },

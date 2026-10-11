@@ -282,7 +282,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Source/product/release closure open. Exact read-through 11,692/16,125; first unread 11,693 Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/macOS/TGRTCMTLI420Renderer.h@ceb4c410a5a890583f649ca87aaf4b6affef6ced; unread 4,433; unknown 15,845; omitted 0. Orders 11,629-11,692 are exact-blob read/decomposed existing-owner-first across CallSession/Permissions/Resource/WebRTC/platform adapters. Camera pause/active/fatal projection extends the canonical owner; group codec/SFU composition remains open; iOS-only audio files are individually non-shipping for Desktop. No tgcalls C++/ObjC runtime, FFI/sidecar, TelegramCallRuntime or second call/resource store is introduced."
+    "note": "Source/product/release closure open. Exact read-through 11,692/16,125; first unread 11,693 Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/macOS/TGRTCMTLI420Renderer.h@ceb4c410a5a890583f649ca87aaf4b6affef6ced; unread 4,433; unknown 15,845; omitted 0. Orders 11,629-11,692 are exact-blob read/decomposed existing-owner-first across CallSession/Permissions/Resource/WebRTC/platform adapters. Camera pause/active plus one-shot fatal recovery extends the canonical owner; group codec/SFU composition remains open; iOS-only audio files are individually non-shipping for Desktop. No tgcalls C++/ObjC runtime, FFI/sidecar, TelegramCallRuntime or second call/resource store is introduced."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",

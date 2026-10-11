@@ -52,16 +52,24 @@ test("screen sharing uses canonical selection UI and fences stale or vanished so
   assert.ok(source.includes("screenStreamRef.current !== capture"));
 });
 
-test("camera capture lifecycle maps pause, active, and fatal end into the canonical media owner", () => {
+test("camera capture lifecycle maps pause, one-shot fatal recovery, and teardown into the canonical media owner", () => {
   assert.ok(source.includes("const [cameraCapturePaused, setCameraCapturePaused] = useState(false);"));
+  assert.ok(source.includes("const cameraCaptureGenerationRef = useRef(0);"));
+  assert.ok(source.includes("const cameraRecoveryInFlightRef = useRef(false);"));
   assert.ok(source.includes("const bindCameraTrackLifecycle = useCallback"));
-  assert.ok(source.includes("localStreamRef.current === stream"));
+  assert.ok(source.includes("cameraCaptureGenerationRef.current === generation"));
   assert.ok(source.includes("track.onmute = () => projectActivity(true);"));
   assert.ok(source.includes("track.onunmute = () => projectActivity(false);"));
   assert.ok(source.includes("track.onended = () =>"));
-  assert.ok(source.includes("videoActive: track.enabled && !paused && track.readyState === \"live\""));
+  assert.ok(source.includes("cameraRecoveryInFlightRef.current = true;"));
+  assert.ok(source.includes("getPreferredUserMedia(bridge, { audio: false, video: true })"));
+  assert.ok(source.includes("await sender.replaceTrack(replacement);"));
+  assert.ok(source.includes("bindCameraTrackLifecycleRef.current(stream, replacement);"));
+  assert.ok(source.includes("Camera capture stopped after one recovery attempt"));
+  assert.ok(source.includes("existing != null && existing.readyState === \"live\""));
   assert.ok(source.includes("video: false, videoPaused: false, videoActive: false"));
   assert.ok(source.includes("Camera paused"));
+  assert.equal((source.match(/invalidateCameraCapture\(\)/g) ?? []).length >= 6, true);
 });
 
 test("screen capture pause and active lifecycle stay fenced to the selected capture", () => {
