@@ -31,7 +31,7 @@
     ],
     "evidence_status": "predecessor-exact-source-materialization-current-descendant-validation-pending",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
-    "note": "Accepted source accounting remains 11,756/16,125. 5cdf70e5 and runs 38172769183/38172769196 plus job 114568748017/artifact 11715061100 are predecessor evidence only. Exact-head f1a065f8 run 38173749265 passed binding/inventory/range attestation but failed the fail-closed validator on parity-ledger drift; diagnostic artifact 11714733439 is not acceptance evidence. Descendant exact-head Actions required."
+    "note": "Accepted source accounting remains 11,756/16,125. 5cdf70e5 and runs 38172769183/38172769196 plus job 114568748017/artifact 11715061100 are predecessor evidence only. Exact-head f1a065f8 run 38173749265 failed fail-closed validation on parity-ledger drift; diagnostic artifact 11714733439 is not acceptance evidence. Exact-head 8e4caba run 38174574599 passed binding/inventory/range attestation but failed the unchanged fail-closed validator on inventory narrative wording; diagnostic artifact 11715297534 is not acceptance evidence. Descendant exact-head Actions required."
   },
   "closure_rules": {
     "executable_runner": "github-actions",
@@ -41,7 +41,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live baseline accepted; closure open. Read-through 11,756; unread 4,369; unknown 15,845; omitted 0.",
+  "note": "Live baseline accepted; closure open. Read-through 11,756; unread_minimum is 4,369; unknown remains 15,845; omitted remains 0.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -62,7 +62,7 @@
     "current_source_read_through": 11756,
     "first_unread_order": 11757,
     "first_unread_path": "Telegram/ThirdParty/tgcalls::tgcalls/v2/SignalingTranslator.h",
-    "current_head_source_authority_evidence": "f1a065f8 run 38173749265 failed fail-closed validation on parity-ledger source-dispositions drift after binding/inventory/range attestation; diagnostic artifact 11714733439 only. Descendant exact-head validation required."
+    "current_head_source_authority_evidence": "8e4caba run 38174574599 failed unchanged fail-closed validation on inventory narrative wording after exact-head binding, recursive inventory, build-time acquisition scan and range attestation; diagnostic artifact 11715297534 only. Descendant exact-head validation required."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
