@@ -1,4 +1,15 @@
-Live TDRP Revision 9 upstream authority (2026-10-11): telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 (root tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6). Root non-directory=6,653; recursive non-directory=16,125; deterministic read-through=9,900; first unread=9,901 Telegram/ThirdParty/libcbor::examples/create_items.c@a6e67a9870ef366248263bffff467a002e38bfa7; unread=6,225; unknown=15,845; omitted=0. KImageFormats is fully read; libcbor/WebAuthn source review continues against existing Coordinator WebAuthn and canonical Account/Auth security owners, with packaged signer-helper evidence still open.
+Live TDRP Revision 9 upstream authority (2026-10-11): telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 (root tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6). Root non-directory=6,653; recursive non-directory=16,125; deterministic read-through=9,964; first unread=9,965 Telegram/ThirdParty/libcbor::src/cbor/tags.h@a7365df10208c949b303c7fb8afc9710a7ade78f; unread=6,161; unknown=15,845; omitted=0. libcbor core source reading now covers its examples, fuzz harness and implementation through tags.c; responsibilities remain mapped to existing WebAuthn/Account Auth security and Build/Quality/Release owners, with bounded helper-output hardening awaiting exact-head CI and packaged signer-helper evidence still open.
+
+### Revision 9 deterministic read-through — libcbor core 9,901–9,964
+
+Exact-head source-authority run `38117917553`, job `114406468676`, at `2bc832466e640f7a8bb11c569450bd1d5cb89045` succeeded through validation, source-range attestation, review-window regression, exact materialization and accepted-mode fail-closed checks. Artifact `11694536942` (digest `sha256:e1d914906cc18e4a1debb277afba53553e9e3f6c755f69fdef7b8988bd586187`) materializes orders 9,901–9,964.
+
+The range includes CBOR conformance fixtures, streaming/load examples, OSS-Fuzz with an explicit allocator budget, build/release tooling, and the core codec through `src/cbor/tags.c`. Applicable behavior includes malformed/incomplete/memory/syntax failure separation, size_t range checks, overflow-safe collection growth and serialized-size accounting, bounded parser nesting, strict UTF-8 validation, deterministic reference cleanup, and exact streaming progress/required-byte semantics.
+
+Existing-owner-first audit maps these behaviors into the current Coordinator WebAuthn provider/signing lifecycle plus canonical Account/Auth security and Build/Quality/Release. The staged production hardening caps external signer stdout at 1 MiB and signer event output at 256 KiB, fails closed on oversize/IO failure, and makes non-interactive signing reuse the same bounded path; focused Rust unit tests cover exact-boundary, over-boundary and IO-failure reads. This implementation is not verified until fresh descendant exact-head GitHub Actions pass.
+
+The external `sand-webauthn-signer` packaged-helper provenance/staging gap remains open. Accounting is **9,964/16,125 read; 6,161 unread; 15,845 unknown; 0 omitted**. Next is 9,965 `Telegram/ThirdParty/libcbor::src/cbor/tags.h@a7365df10208c949b303c7fb8afc9710a7ade78f`.
+
 
 ### Revision 9 deterministic read-through — libcbor build/docs/examples 9,837–9,900
 
