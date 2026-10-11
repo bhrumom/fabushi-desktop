@@ -66,7 +66,7 @@
         "scope": "direct-gitlink",
         "mount": "Telegram/ThirdParty/xdg-desktop-portal",
         "path": "src/generate-method-info.py",
-        "mode": "100644",
+        "mode": "100755",
         "type": "blob",
         "object": "c71ac24132bc6a455834e46e1db99998777c0da3",
         "size": 2062
