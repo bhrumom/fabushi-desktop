@@ -9,6 +9,8 @@ pub struct PluginManifest<Resource> {
     pub name: String,
     pub version: Option<String>,
     pub description: Option<String>,
+    /// SPDX identifier/expression or other publisher-declared license metadata.
+    pub license: Option<String>,
     pub keywords: Vec<String>,
     pub runtime_variants: Vec<PluginRuntimeVariant>,
     pub paths: PluginManifestPaths<Resource>,
@@ -140,6 +142,7 @@ impl<Resource> PluginManifest<Resource> {
             name,
             version,
             description,
+            license,
             keywords,
             runtime_variants,
             paths,
@@ -217,6 +220,7 @@ impl<Resource> PluginManifest<Resource> {
             name,
             version,
             description,
+            license,
             keywords,
             runtime_variants,
             paths: PluginManifestPaths {
