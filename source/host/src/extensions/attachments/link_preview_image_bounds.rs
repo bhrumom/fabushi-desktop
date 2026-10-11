@@ -68,12 +68,30 @@ fn property_indices(bytes:&[u8],ipma:IsoBox,item:u32)->Option<Vec<usize>>{
     }
     None
 }
-fn select_heic(bytes:&[u8])->Option<(usize,u8)>{
+fn rounded_ratio_u32(numerator:u32,denominator:u32)->Option<u32>{
+    if denominator==0{return None}
+    let rounded=(u64::from(numerator)+u64::from(denominator)/2)/u64::from(denominator);
+    u32::try_from(rounded).ok()
+}
+fn clean_aperture_dimensions(bytes:&[u8],body:usize,width:u32,height:u32)->Option<ImageSize>{
+    if body.checked_add(32)?>bytes.len(){return None}
+    let width_n=u32be(bytes,body)?;let width_d=u32be(bytes,body+4)?;
+    let height_n=u32be(bytes,body+8)?;let height_d=u32be(bytes,body+12)?;
+    let horizontal_offset_d=u32be(bytes,body+20)?;
+    let vertical_offset_d=u32be(bytes,body+28)?;
+    if width_d==0||height_d==0||horizontal_offset_d==0||vertical_offset_d==0{return None}
+    let crop_width=rounded_ratio_u32(width_n,width_d)?;
+    let crop_height=rounded_ratio_u32(height_n,height_d)?;
+    let cropped_width=if crop_width>0&&crop_width<width{crop_width}else{width};
+    let cropped_height=if crop_height>0&&crop_height<height{crop_height}else{height};
+    size(cropped_width,cropped_height)
+}
+fn select_heic(bytes:&[u8])->Option<(usize,u8,Option<usize>)>{
     let first_ispe=index_tag(bytes,*b"ispe");let first_irot=index_tag(bytes,*b"irot");
     let fallback=||{
         let at=first_ispe?;if at.saturating_add(16)>bytes.len(){return None}
         let turns=first_irot.and_then(|p|bytes.get(p+4).copied()).map(|v|v&3).unwrap_or(0);
-        Some((at+8,turns))
+        Some((at+8,turns,None))
     };
     let top=boxes(bytes,0,bytes.len());let Some(meta)=top.iter().copied().find(|x|x.kind==*b"meta") else{return fallback()};
     let children=boxes(bytes,meta.body.saturating_add(4),meta.end);
@@ -84,18 +102,25 @@ fn select_heic(bytes:&[u8])->Option<(usize,u8)>{
     let Some(ipma)=iprp_children.iter().copied().find(|x|x.kind==*b"ipma") else{return fallback()};
     let props=boxes(bytes,ipco.body,ipco.end);let Some(id)=primary_id(bytes,pitm) else{return fallback()};
     let Some(indices)=property_indices(bytes,ipma,id) else{return fallback()};
-    let mut ispe=None;let mut turns=0;
+    let mut ispe=None;let mut turns=0;let mut clap=None;
     for index in indices {
         let Some(prop)=index.checked_sub(1).and_then(|i|props.get(i)).copied() else{continue};
         if prop.kind==*b"ispe"&&ispe.is_none()&&prop.body.saturating_add(12)<=prop.end {ispe=Some(prop.body+4)}
+        else if prop.kind==*b"clap"&&clap.is_none()&&prop.body.saturating_add(32)<=prop.end {clap=Some(prop.body)}
         else if prop.kind==*b"irot"&&prop.body<prop.end {turns=*bytes.get(prop.body).unwrap_or(&0)&3}
     }
-    ispe.map(|body|(body,turns)).or_else(fallback)
+    ispe.map(|body|(body,turns,clap)).or_else(fallback)
 }
 pub fn read_heic_dimensions(bytes:&[u8])->Option<ImageSize>{
     if bytes.len()<12||tag(bytes,4)?!=*b"ftyp"{return None}
-    let (body,turns)=select_heic(bytes)?;let w=u32be(bytes,body)?;let h=u32be(bytes,body+4)?;
-    if matches!(turns,1|3){size(h,w)}else{size(w,h)}
+    let (body,turns,clap)=select_heic(bytes)?;
+    let mut width=u32be(bytes,body)?;let mut height=u32be(bytes,body+4)?;
+    if let Some(clap_body)=clap {
+        if let Some(cropped)=clean_aperture_dimensions(bytes,clap_body,width,height) {
+            width=cropped.width;height=cropped.height;
+        }
+    }
+    if matches!(turns,1|3){size(height,width)}else{size(width,height)}
 }
 pub fn read_webp_dimensions(bytes:&[u8])->Option<ImageSize>{
     if bytes.len()<30||tag(bytes,0)?!=*b"RIFF"||tag(bytes,8)?!=*b"WEBP"{return None}
