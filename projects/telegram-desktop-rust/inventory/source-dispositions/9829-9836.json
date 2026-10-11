@@ -46,8 +46,8 @@
         "source:.circleci/config.yml"
       ],
       "responsibility": "Cross-platform CI exercises gcc/clang, debug/release, 32-bit, ARM, sanitizers, Valgrind/memcheck, tests and coverage; this is quality authority for the CBOR parser vendored into lib_fido2.",
-      "fabushi_canonical_owner": "Identity/account authentication + protocol/resource boundary (existing-owner audit in progress)",
-      "fabushi_target": "existing Fabushi identity/account/security owners first; minimal source-neutral WebAuthn capability only if owner absence is proven",
+      "fabushi_canonical_owner": "Fabushi Node Agent Coordinator WebAuthn provider/signing boundary + canonical Account/Auth Passkeys + Build/Quality/Release",
+      "fabushi_target": "Extend current source-neutral WebAuthn/Account Auth/security owners first; no second WebAuthn/FIDO/libcbor runtime. Packaged signer-helper production evidence remains open.",
       "disposition": "mapped-open",
       "unknown_closed": false,
       "omitted": false
@@ -74,8 +74,8 @@
         "source:.cirrus.yml"
       ],
       "responsibility": "Additional platform CI validates portable build/test behavior for the shipping CBOR dependency.",
-      "fabushi_canonical_owner": "Identity/account authentication + protocol/resource boundary (existing-owner audit in progress)",
-      "fabushi_target": "existing Fabushi identity/account/security owners first; minimal source-neutral WebAuthn capability only if owner absence is proven",
+      "fabushi_canonical_owner": "Fabushi Node Agent Coordinator WebAuthn provider/signing boundary + canonical Account/Auth Passkeys + Build/Quality/Release",
+      "fabushi_target": "Extend current source-neutral WebAuthn/Account Auth/security owners first; no second WebAuthn/FIDO/libcbor runtime. Packaged signer-helper production evidence remains open.",
       "disposition": "mapped-open",
       "unknown_closed": false,
       "omitted": false
@@ -102,8 +102,8 @@
         "source:.clang-format"
       ],
       "responsibility": "Formatting configuration has no runtime behavior but is part of the accepted source/tooling surface.",
-      "fabushi_canonical_owner": "Identity/account authentication + protocol/resource boundary (existing-owner audit in progress)",
-      "fabushi_target": "existing Fabushi identity/account/security owners first; minimal source-neutral WebAuthn capability only if owner absence is proven",
+      "fabushi_canonical_owner": "Fabushi Node Agent Coordinator WebAuthn provider/signing boundary + canonical Account/Auth Passkeys + Build/Quality/Release",
+      "fabushi_target": "Extend current source-neutral WebAuthn/Account Auth/security owners first; no second WebAuthn/FIDO/libcbor runtime. Packaged signer-helper production evidence remains open.",
       "disposition": "mapped-open",
       "unknown_closed": false,
       "omitted": false
@@ -130,8 +130,8 @@
         "source:.github/ISSUE_TEMPLATE/bug_report.md"
       ],
       "responsibility": "Maintenance template records reproducibility/testing expectations for parser changes; runtime ownership remains the WebAuthn/FIDO protocol boundary.",
-      "fabushi_canonical_owner": "Identity/account authentication + protocol/resource boundary (existing-owner audit in progress)",
-      "fabushi_target": "existing Fabushi identity/account/security owners first; minimal source-neutral WebAuthn capability only if owner absence is proven",
+      "fabushi_canonical_owner": "Fabushi Node Agent Coordinator WebAuthn provider/signing boundary + canonical Account/Auth Passkeys + Build/Quality/Release",
+      "fabushi_target": "Extend current source-neutral WebAuthn/Account Auth/security owners first; no second WebAuthn/FIDO/libcbor runtime. Packaged signer-helper production evidence remains open.",
       "disposition": "mapped-open",
       "unknown_closed": false,
       "omitted": false
@@ -158,8 +158,8 @@
         "source:.github/PULL_REQUEST_TEMPLATE"
       ],
       "responsibility": "Maintenance template records reproducibility/testing expectations for parser changes; runtime ownership remains the WebAuthn/FIDO protocol boundary.",
-      "fabushi_canonical_owner": "Identity/account authentication + protocol/resource boundary (existing-owner audit in progress)",
-      "fabushi_target": "existing Fabushi identity/account/security owners first; minimal source-neutral WebAuthn capability only if owner absence is proven",
+      "fabushi_canonical_owner": "Fabushi Node Agent Coordinator WebAuthn provider/signing boundary + canonical Account/Auth Passkeys + Build/Quality/Release",
+      "fabushi_target": "Extend current source-neutral WebAuthn/Account Auth/security owners first; no second WebAuthn/FIDO/libcbor runtime. Packaged signer-helper production evidence remains open.",
       "disposition": "mapped-open",
       "unknown_closed": false,
       "omitted": false
@@ -186,8 +186,8 @@
         "source:.github/workflows/fuzz-pr.yml"
       ],
       "responsibility": "Fuzz workflows continuously drive decoder inputs under sanitizer/fuzzer infrastructure and require malformed network-like data to fail without memory corruption or leaks.",
-      "fabushi_canonical_owner": "Identity/account authentication + protocol/resource boundary (existing-owner audit in progress)",
-      "fabushi_target": "existing Fabushi identity/account/security owners first; minimal source-neutral WebAuthn capability only if owner absence is proven",
+      "fabushi_canonical_owner": "Fabushi Node Agent Coordinator WebAuthn provider/signing boundary + canonical Account/Auth Passkeys + Build/Quality/Release",
+      "fabushi_target": "Extend current source-neutral WebAuthn/Account Auth/security owners first; no second WebAuthn/FIDO/libcbor runtime. Packaged signer-helper production evidence remains open.",
       "disposition": "mapped-open",
       "unknown_closed": false,
       "omitted": false
@@ -214,8 +214,8 @@
         "source:.github/workflows/fuzz.yml"
       ],
       "responsibility": "Fuzz workflows continuously drive decoder inputs under sanitizer/fuzzer infrastructure and require malformed network-like data to fail without memory corruption or leaks.",
-      "fabushi_canonical_owner": "Identity/account authentication + protocol/resource boundary (existing-owner audit in progress)",
-      "fabushi_target": "existing Fabushi identity/account/security owners first; minimal source-neutral WebAuthn capability only if owner absence is proven",
+      "fabushi_canonical_owner": "Fabushi Node Agent Coordinator WebAuthn provider/signing boundary + canonical Account/Auth Passkeys + Build/Quality/Release",
+      "fabushi_target": "Extend current source-neutral WebAuthn/Account Auth/security owners first; no second WebAuthn/FIDO/libcbor runtime. Packaged signer-helper production evidence remains open.",
       "disposition": "mapped-open",
       "unknown_closed": false,
       "omitted": false
@@ -242,8 +242,8 @@
         "source:.gitignore"
       ],
       "responsibility": "Repository tooling input has no direct runtime behavior; the component itself is shipping-reachable through tdesktop lib_fido2.",
-      "fabushi_canonical_owner": "Identity/account authentication + protocol/resource boundary (existing-owner audit in progress)",
-      "fabushi_target": "existing Fabushi identity/account/security owners first; minimal source-neutral WebAuthn capability only if owner absence is proven",
+      "fabushi_canonical_owner": "Fabushi Node Agent Coordinator WebAuthn provider/signing boundary + canonical Account/Auth Passkeys + Build/Quality/Release",
+      "fabushi_target": "Extend current source-neutral WebAuthn/Account Auth/security owners first; no second WebAuthn/FIDO/libcbor runtime. Packaged signer-helper production evidence remains open.",
       "disposition": "mapped-open",
       "unknown_closed": false,
       "omitted": false
