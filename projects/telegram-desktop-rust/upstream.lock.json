@@ -266,9 +266,9 @@
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
     "unknown_minimum": 15845,
-    "unread_minimum": 4625,
+    "unread_minimum": 4561,
     "omitted_known": 0,
-    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 11,500; unknown=15,845, unread=4,625, omitted=0."
+    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 11,564; unknown=15,845, unread=4,561, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -282,7 +282,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Source/product/release closure open. Exact read-through 11,500/16,125; first unread 11,501 Telegram/ThirdParty/range-v3::test_package/example.cpp@bee0b2ab825f5733e9954514c07445b944ca5259; unread 4,625; unknown 15,845; omitted 0. range-v3 view/package regression responsibilities remain mapped existing-owner-first to Build/Quality/Dependency-Provenance/License and native runtime/lifecycle boundaries; no shipping range-v3 runtime or package-manager sidecar is introduced."
+    "note": "Source/product/release closure open. Exact read-through 11,564/16,125; first unread 11,565 Telegram/ThirdParty/tgcalls::tgcalls/TurnCustomizerImpl.h@6029f481555de3b0453fa2012da910ce5515a65c; unread 4,561; unknown 15,845; omitted 0. Orders 11,501-11,564 are formally read/decomposed and remain mapped-open existing-owner-first across Build/Quality/Dependency-Provenance/License and canonical CallSession/Conversation/Permissions/Resource/WebRTC/media/network owners; no tgcalls C++ runtime, Docker chain, Swift package, TelegramCallRuntime, or second call store is introduced."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",
