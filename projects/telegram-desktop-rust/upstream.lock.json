@@ -266,9 +266,9 @@
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
     "unknown_minimum": 15845,
-    "unread_minimum": 3601,
+    "unread_minimum": 3537,
     "omitted_known": 0,
-    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 12,524; unknown=15,845, unread=3,601, omitted=0."
+    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 12,588; unknown=15,845, unread=3,537, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -282,7 +282,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Closure open. Read-through 12,524/16,125; first unread 12,525 Telegram/lib_base::base/platform/linux/base_screen_reader_state_linux.cpp@e0d377d40d78c9b09c80e5a081854fb3226e9cb7; unknown remains 15,845; call-tone packaged audible/restart acceptance and full real Group/SFU shipping composition remain open."
+    "note": "Closure open. Read-through 12,588/16,125; first unread 12,589 Telegram/lib_base::base/platform/win/base_process_win.h@a1ed488479c2f8a516d95dc3de1bd96d55cfcc9c; unknown remains 15,845; call-tone packaged audible/restart acceptance and full real Group/SFU shipping composition remain open."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",
@@ -301,17 +301,17 @@
   "recursive_inventory_evidence": {
     "status": "predecessor-exact-source-window-current-descendant-validation-pending",
     "runner": "github-actions",
-    "run_id": 38185198807,
+    "run_id": 38185945096,
     "run_attempt": 1,
-    "job_id": 114606095405,
-    "validation_head_sha": "f65ae73978aebfe7c73abd4a33fdaad9e5e96578",
-    "artifact_id": 11719123359,
-    "artifact_name": "tdrp-revision9-authority-f65ae73978aebfe7c73abd4a33fdaad9e5e96578",
-    "artifact_digest": "sha256:c3b8b3968b84a5404ad05b7ffc1c54c079f1021b0022e604ebb8ecad084fdf67",
+    "job_id": 114608237180,
+    "validation_head_sha": "cd2dc77a8e6bf721f436444570a233a7647cfd4c",
+    "artifact_id": 11720055479,
+    "artifact_name": "tdrp-revision9-authority-cd2dc77a8e6bf721f436444570a233a7647cfd4c",
+    "artifact_digest": "sha256:6bd33849a7142d2c78e3964606b26fa6dff3166a85a35a3e269773e42fded111",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "recursive_non_directory_entries": 16125,
     "source_closure_ready": false,
-    "note": "Orders 12,461-12,524 were exact-blob materialized on f65ae739 and formally reviewed; the accounting descendant requires fresh exact-head Actions."
+    "note": "Orders 12,525-12,588 were exact-blob materialized on cd2dc77 and formally reviewed; the accounting descendant requires fresh exact-head Actions."
   },
   "build_time_acquisition_inventory": {
     "path": "projects/telegram-desktop-rust/inventory/build-time-acquisitions.json",
@@ -635,9 +635,9 @@
     "development_only_non_applicable": 206,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 12524,
-    "first_unread_order": 12525,
-    "first_unread_path": "Telegram/lib_base::base/platform/linux/base_screen_reader_state_linux.cpp",
+    "read_through": 12588,
+    "first_unread_order": 12589,
+    "first_unread_path": "Telegram/lib_base::base/platform/win/base_process_win.h",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
