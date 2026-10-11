@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 5457,
+    "unread": 5393,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,11 +13478,11 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Accepted prefix 10,668/16,125; exact-head source artifact materialized Nimf typed message/server/service, GTK/Qt adapter, Anthy/Libhangul and first m17n language-asset authority; unread 5,457; unknown 15,845; omitted 0.",
-    "source_authority_evidence": "Orders 10,605-10,668 exact-read from 188e67c679f86628c00bbd7ec0a116e4d5a63fab run 38130075791/job 114442445077 artifact 11698588655 (sha256:13f309ef6dda0b2fe85de73e4a4da8a3c3c2058efdb4782c10a021eb67b2499e); applicable Nimf request settlement/input lifecycle maps to existing PromptRichTextEditor/input-composition-state/platform-input, Settings, Electron lifecycle/security, Build/Quality and Localization owners with no second input runtime. Descendant exact-head evidence remains required.",
-    "current_source_read_through": 10668,
-    "first_unread_order": 10669,
-    "first_unread_path": "Telegram/ThirdParty/nimf::modules/engines/nimf-m17n/icons/scalable/nimf-m17n-hi.svg"
+    "source_read_reconciliation": "Accepted prefix 10,732/16,125; exact-head artifact independently re-materialized 40 m17n locale assets and 24 locale/method wrappers; unread 5,393; unknown 15,845; omitted 0.",
+    "source_authority_evidence": "Orders 10,669-10,732 exact-read from d42df92cfa70306d8d2d8a8a118306955040cdf6 run 38131353751/job 114446164953 artifact 11699176950 (sha256:80a523134f825e95d62539200283f449cffc708a472374450776fc52ff04dbe1); applicable locale/method semantics map to existing canonical owners; no second input runtime. Descendant exact-head evidence remains required.",
+    "current_source_read_through": 10732,
+    "first_unread_order": 10733,
+    "first_unread_path": "Telegram/ThirdParty/nimf::modules/engines/nimf-m17n/nimf-m17n-ii.c"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,23 +13491,23 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 10668,
-    "first_unread_order": 10669,
-    "first_unread_path": "Telegram/ThirdParty/nimf::modules/engines/nimf-m17n/icons/scalable/nimf-m17n-hi.svg",
+    "read_through": 10732,
+    "first_unread_order": 10733,
+    "first_unread_path": "Telegram/ThirdParty/nimf::modules/engines/nimf-m17n/nimf-m17n-ii.c",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
     "status": "historical-only-after-descendant-accounting-commit",
-    "target_head": "46dfaf8102187cc46824362b143e9ac4f3d4b4b9",
+    "target_head": "d42df92cfa70306d8d2d8a8a118306955040cdf6",
     "runs": [
       {
-        "id": 38084031087,
+        "id": 38131353751,
         "workflow": "Rust desktop runtime",
         "attempt": 1,
         "conclusion": "success"
       },
       {
-        "id": 38084031095,
+        "id": 38131353756,
         "workflow": "Desktop Chat Parity CI",
         "attempt": 1,
         "conclusion": "success"
@@ -13515,83 +13515,53 @@
     ],
     "jobs": [
       {
-        "id": 114306715585,
-        "name": "rust-host",
-        "conclusion": "success"
-      },
-      {
-        "id": 114306715724,
-        "name": "Updater contract / ubuntu-24.04",
-        "conclusion": "success"
-      },
-      {
-        "id": 114306715738,
-        "name": "Updater contract / macos-15",
-        "conclusion": "success"
-      },
-      {
-        "id": 114306715755,
-        "name": "Pressure profiler / windows-2025",
-        "conclusion": "success"
-      },
-      {
-        "id": 114306715769,
-        "name": "renderer",
-        "conclusion": "success"
-      },
-      {
-        "id": 114306715771,
+        "id": 114446164953,
         "name": "Source authority / recursive inventory",
         "conclusion": "success"
       },
       {
-        "id": 114306715790,
-        "name": "Pressure profiler / ubuntu-24.04",
+        "id": 114446164987,
+        "name": "rust-host",
         "conclusion": "success"
       },
       {
-        "id": 114306715795,
-        "name": "Pressure profiler / macos-15",
+        "id": 114446164844,
+        "name": "renderer",
         "conclusion": "success"
       },
       {
-        "id": 114306715852,
-        "name": "Updater contract / windows-2025",
-        "conclusion": "success"
-      },
-      {
-        "id": 114306715857,
+        "id": 114446164973,
         "name": "platform-worker",
         "conclusion": "success"
       },
       {
-        "id": 114306707677,
+        "id": 114446165006,
         "name": "Renderer typecheck and build",
         "conclusion": "success"
       },
       {
-        "id": 114306707712,
+        "id": 114446164848,
         "name": "Focused Electron chat E2E",
         "conclusion": "success"
       }
     ],
     "artifacts": [
       {
-        "id": 11681780325,
-        "name": "tdrp-revision9-authority-46dfaf8102187cc46824362b143e9ac4f3d4b4b9",
-        "digest": "sha256:92d496e33e3f5fdd523a0033ce41bcac995dd829643116fda6581650fb38ced8"
+        "id": 11699176950,
+        "name": "tdrp-revision9-authority-d42df92cfa70306d8d2d8a8a118306955040cdf6",
+        "digest": "sha256:80a523134f825e95d62539200283f449cffc708a472374450776fc52ff04dbe1"
       },
       {
-        "id": 11681353908,
-        "name": "rust-messaging-responsibilities-46dfaf8102187cc46824362b143e9ac4f3d4b4b9",
-        "digest": "sha256:ea91bd8a97e0854dffb1cf74d79c9abc08587af1f99ba4779c3a49fac0edac73"
+        "id": 11699023503,
+        "name": "rust-messaging-responsibilities-d42df92cfa70306d8d2d8a8a118306955040cdf6",
+        "digest": "sha256:2f04f2528bdcbecd776f3cf5a9ec16d4105bfe94f8f6ad08784b57ff69c8d2e1"
       },
       {
-        "id": 11682075159,
-        "name": "desktop-chat-parity-playwright-46dfaf8102187cc46824362b143e9ac4f3d4b4b9",
-        "digest": "sha256:ab4d05990ffaa90cb519b55559d0b0c5a53f2f52a581b08cc038fa08308726ec"
+        "id": 11698709276,
+        "name": "desktop-chat-parity-playwright-d42df92cfa70306d8d2d8a8a118306955040cdf6",
+        "digest": "sha256:f65fa79cf9eeed174c8e57a47fc9708b21cf8cbc09534674c9218e0d13c4e5eb"
       }
     ],
-    "note": "Valid exact-head evidence for 46dfaf only; main reconciliation/accounting descendants require fresh Actions."
+    "note": "Valid exact-head evidence for d42df92 only; the 10,669-10,732 accounting descendant requires fresh Actions."
   }
 }
