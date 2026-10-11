@@ -3,7 +3,7 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
-  "target_commit": "3bc92400826cc4ca7ac665b467708e22261edc61",
+  "target_commit": "371b72f1cd20de03dc4dff9a15ed761054968093",
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,

@@ -623,8 +623,8 @@
     },
     "total_recursive_non_directory_entries": 16125,
     "superseded_by_upstream_commit": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
-    "current_census_status": "live-65e23-authority-current-descendant-actions-required",
-    "current_upstream_commit": "65e23ba7137ea4129b6bc1b2616104a1f59495ef"
+    "current_census_status": "live-6fed91ff-authority-current-descendant-actions-required",
+    "current_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941"
   },
   "source_disposition_evidence": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -736,5 +736,5 @@
     ],
     "note": "Valid exact-head evidence for 46dfaf only; main reconciliation/accounting descendants require fresh Actions."
   },
-  "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 10,924; unknown=15,845, unread=5,201, omitted=0."
+  "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 10,988; unknown=15,845, unread=5,137, omitted=0; first unread=10,989 Telegram/ThirdParty/range-v3::include/range/v3/algorithm/minmax.hpp@3c5e6ab2f9789e3861a000efa269d42f688fae4c."
 }
