@@ -1,0 +1,1606 @@
+{
+  "format_version": 2,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+    "tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6"
+  },
+  "range": {
+    "first_order": 9773,
+    "last_order": 9828,
+    "entries": 56
+  },
+  "range_evidence": {
+    "source_evidence": {
+      "exact_head": "17af29979829565d5d7cc0d7ec81b6db78d03b82",
+      "workflow_run": 38115822404,
+      "job_id": 114400440327,
+      "artifact_id": 11692899297,
+      "artifact_digest": "sha256:95b4ca47e543b78d48f45a7bd3298655e187b8f9227e890e3265fdd3794abb9f"
+    },
+    "reachability_status": "Pinned tdesktop recursively checks out KImageFormats but does not compose KDE KImageFormats in product CMake; accepted packaging selects Qt qtimageformats. Source reading is complete for this component, product applicability remains responsibility-scoped.",
+    "closure_rule": "Rows remain mapped-open/unknown_closed=false until each responsibility is exact-head verified or evidence-backed non-applicable."
+  },
+  "rows": [
+    {
+      "recursive_order": 9773,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/jxl.cpp",
+      "source_blob_sha": "bb3f09bf96a794c455b1f002309e623eed88d1db",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/jxl.cpp",
+        "object": "bb3f09bf96a794c455b1f002309e623eed88d1db",
+        "mode": "100644",
+        "type": "blob",
+        "size": 31975
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats JPEG XL handler",
+      "source_symbols": [
+        "JXLHandler::canRead",
+        "JXLHandler::read",
+        "JXLHandler::write",
+        "JXLHandler::nextImageDelay"
+      ],
+      "responsibility": "JPEG XL handling constrains bounded dimensions/pixels/threads, color profile, alpha/precision, animation timing/loop and lossless/quality encode policy.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9774,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/jxl.desktop",
+      "source_blob_sha": "2d044982b377ce5d13a6a9f199ae318e6f6a8863",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/jxl.desktop",
+        "object": "2d044982b377ce5d13a6a9f199ae318e6f6a8863",
+        "mode": "100644",
+        "type": "blob",
+        "size": 144
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats plugin declaration/metadata",
+      "source_symbols": [
+        "source:src/imageformats/jxl.desktop"
+      ],
+      "responsibility": "Plugin declaration/metadata binds format keys, MIME/capability surface and handler interface; registration remains source-neutral and does not authorize a second Fabushi media registry.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9775,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/jxl.json",
+      "source_blob_sha": "d0a5c8c5c02798cb8f3524ff6800204020d79314",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/jxl.json",
+        "object": "d0a5c8c5c02798cb8f3524ff6800204020d79314",
+        "mode": "100644",
+        "type": "blob",
+        "size": 60
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats plugin declaration/metadata",
+      "source_symbols": [
+        "source:src/imageformats/jxl.json"
+      ],
+      "responsibility": "Plugin declaration/metadata binds format keys, MIME/capability surface and handler interface; registration remains source-neutral and does not authorize a second Fabushi media registry.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9776,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/jxl_p.h",
+      "source_blob_sha": "7a4af0b15d45accf7cc3b7f394d17d1f04535da4",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/jxl_p.h",
+        "object": "7a4af0b15d45accf7cc3b7f394d17d1f04535da4",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2354
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats plugin declaration/metadata",
+      "source_symbols": [
+        "source:src/imageformats/jxl_p.h"
+      ],
+      "responsibility": "Plugin declaration/metadata binds format keys, MIME/capability surface and handler interface; registration remains source-neutral and does not authorize a second Fabushi media registry.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9777,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/kra.cpp",
+      "source_blob_sha": "ef587d7a40a3c4ed4d756b1e4b757ebc56d52641",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/kra.cpp",
+        "object": "ef587d7a40a3c4ed4d756b1e4b757ebc56d52641",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2222
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats Krita package projection",
+      "source_symbols": [
+        "KraHandler::canRead",
+        "KraHandler::read"
+      ],
+      "responsibility": "KRA handling treats a ZIP package as read-only image projection, validates package/mimetype semantics, rejects sequential devices and decodes mergedimage.png through the canonical image reader.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9778,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/kra.desktop",
+      "source_blob_sha": "a25850456a541a3051227bca13df8479e326d0e4",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/kra.desktop",
+        "object": "a25850456a541a3051227bca13df8479e326d0e4",
+        "mode": "100644",
+        "type": "blob",
+        "size": 155
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats plugin declaration/metadata",
+      "source_symbols": [
+        "source:src/imageformats/kra.desktop"
+      ],
+      "responsibility": "Plugin declaration/metadata binds format keys, MIME/capability surface and handler interface; registration remains source-neutral and does not authorize a second Fabushi media registry.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9779,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/kra.h",
+      "source_blob_sha": "3b42d728f8caf732d155073816450acc4d4b5d7e",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/kra.h",
+        "object": "3b42d728f8caf732d155073816450acc4d4b5d7e",
+        "mode": "100644",
+        "type": "blob",
+        "size": 789
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats plugin declaration/metadata",
+      "source_symbols": [
+        "source:src/imageformats/kra.h"
+      ],
+      "responsibility": "Plugin declaration/metadata binds format keys, MIME/capability surface and handler interface; registration remains source-neutral and does not authorize a second Fabushi media registry.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9780,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/kra.json",
+      "source_blob_sha": "6307531f78fa15ecfea212030e09a6e64954a912",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/kra.json",
+        "object": "6307531f78fa15ecfea212030e09a6e64954a912",
+        "mode": "100644",
+        "type": "blob",
+        "size": 70
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats plugin declaration/metadata",
+      "source_symbols": [
+        "source:src/imageformats/kra.json"
+      ],
+      "responsibility": "Plugin declaration/metadata binds format keys, MIME/capability surface and handler interface; registration remains source-neutral and does not authorize a second Fabushi media registry.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9781,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/ora.cpp",
+      "source_blob_sha": "0b785b4f3893587c248d704864c04abbf0729e2f",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/ora.cpp",
+        "object": "0b785b4f3893587c248d704864c04abbf0729e2f",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2207
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats OpenRaster package projection",
+      "source_symbols": [
+        "OraHandler::canRead",
+        "OraHandler::read"
+      ],
+      "responsibility": "ORA handling treats a ZIP package as read-only image projection, validates package/mimetype semantics, rejects sequential devices and decodes mergedimage.png.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9782,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/ora.desktop",
+      "source_blob_sha": "7bb7865a1219ecd53b592e15912f8b326a48e931",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/ora.desktop",
+        "object": "7bb7865a1219ecd53b592e15912f8b326a48e931",
+        "mode": "100644",
+        "type": "blob",
+        "size": 152
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats plugin declaration/metadata",
+      "source_symbols": [
+        "source:src/imageformats/ora.desktop"
+      ],
+      "responsibility": "Plugin declaration/metadata binds format keys, MIME/capability surface and handler interface; registration remains source-neutral and does not authorize a second Fabushi media registry.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9783,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/ora.h",
+      "source_blob_sha": "58d134d3da8860648767d80725c809aeed8a6ed1",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/ora.h",
+        "object": "58d134d3da8860648767d80725c809aeed8a6ed1",
+        "mode": "100644",
+        "type": "blob",
+        "size": 788
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats plugin declaration/metadata",
+      "source_symbols": [
+        "source:src/imageformats/ora.h"
+      ],
+      "responsibility": "Plugin declaration/metadata binds format keys, MIME/capability surface and handler interface; registration remains source-neutral and does not authorize a second Fabushi media registry.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9784,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/ora.json",
+      "source_blob_sha": "c12d7f858216f4c3da7393484eda7870364b62ff",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/ora.json",
+        "object": "c12d7f858216f4c3da7393484eda7870364b62ff",
+        "mode": "100644",
+        "type": "blob",
+        "size": 67
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats plugin declaration/metadata",
+      "source_symbols": [
+        "source:src/imageformats/ora.json"
+      ],
+      "responsibility": "Plugin declaration/metadata binds format keys, MIME/capability surface and handler interface; registration remains source-neutral and does not authorize a second Fabushi media registry.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9785,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/pcx.cpp",
+      "source_blob_sha": "8801350cbc3f4b1351ecf6e9a8f2f217a4fe7da5",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/pcx.cpp",
+        "object": "8801350cbc3f4b1351ecf6e9a8f2f217a4fe7da5",
+        "mode": "100644",
+        "type": "blob",
+        "size": 18849
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats legacy image handler",
+      "source_symbols": [
+        "source:src/imageformats/pcx.cpp"
+      ],
+      "responsibility": "Exact handler source constrains header validation, dimensions/allocation, scanline/RLE, color/alpha/orientation and fail-closed malformed input. Direct KDE plugin composition is absent from pinned tdesktop shipping CMake.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9786,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/pcx.desktop",
+      "source_blob_sha": "5faad53e61e83ba73b63df483b343f3985f45c11",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/pcx.desktop",
+        "object": "5faad53e61e83ba73b63df483b343f3985f45c11",
+        "mode": "100644",
+        "type": "blob",
+        "size": 146
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats plugin declaration/metadata",
+      "source_symbols": [
+        "source:src/imageformats/pcx.desktop"
+      ],
+      "responsibility": "Plugin declaration/metadata binds format keys, MIME/capability surface and handler interface; registration remains source-neutral and does not authorize a second Fabushi media registry.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9787,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/pcx.json",
+      "source_blob_sha": "ffda8019b3628ffa04460f067a32418f9ca6925c",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/pcx.json",
+        "object": "ffda8019b3628ffa04460f067a32418f9ca6925c",
+        "mode": "100644",
+        "type": "blob",
+        "size": 62
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats plugin declaration/metadata",
+      "source_symbols": [
+        "source:src/imageformats/pcx.json"
+      ],
+      "responsibility": "Plugin declaration/metadata binds format keys, MIME/capability surface and handler interface; registration remains source-neutral and does not authorize a second Fabushi media registry.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9788,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/pcx_p.h",
+      "source_blob_sha": "3a9b8176143ccbf87a2e34c834146a8480020f12",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/pcx_p.h",
+        "object": "3a9b8176143ccbf87a2e34c834146a8480020f12",
+        "mode": "100644",
+        "type": "blob",
+        "size": 855
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats plugin declaration/metadata",
+      "source_symbols": [
+        "source:src/imageformats/pcx_p.h"
+      ],
+      "responsibility": "Plugin declaration/metadata binds format keys, MIME/capability surface and handler interface; registration remains source-neutral and does not authorize a second Fabushi media registry.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9789,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/pic.cpp",
+      "source_blob_sha": "1196bc025f78dec68db15038b2fd828d7b075d50",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/pic.cpp",
+        "object": "1196bc025f78dec68db15038b2fd828d7b075d50",
+        "mode": "100644",
+        "type": "blob",
+        "size": 13497
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats legacy image handler",
+      "source_symbols": [
+        "source:src/imageformats/pic.cpp"
+      ],
+      "responsibility": "Exact handler source constrains header validation, dimensions/allocation, scanline/RLE, color/alpha/orientation and fail-closed malformed input. Direct KDE plugin composition is absent from pinned tdesktop shipping CMake.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9790,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/pic.desktop",
+      "source_blob_sha": "34246771d1b047e8fbef5d820f98f2be5450c440",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/pic.desktop",
+        "object": "34246771d1b047e8fbef5d820f98f2be5450c440",
+        "mode": "100644",
+        "type": "blob",
+        "size": 146
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats plugin declaration/metadata",
+      "source_symbols": [
+        "source:src/imageformats/pic.desktop"
+      ],
+      "responsibility": "Plugin declaration/metadata binds format keys, MIME/capability surface and handler interface; registration remains source-neutral and does not authorize a second Fabushi media registry.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9791,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/pic.json",
+      "source_blob_sha": "0ebdd19bf8feac3204628174b587af50529fe5fc",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/pic.json",
+        "object": "0ebdd19bf8feac3204628174b587af50529fe5fc",
+        "mode": "100644",
+        "type": "blob",
+        "size": 62
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats plugin declaration/metadata",
+      "source_symbols": [
+        "source:src/imageformats/pic.json"
+      ],
+      "responsibility": "Plugin declaration/metadata binds format keys, MIME/capability surface and handler interface; registration remains source-neutral and does not authorize a second Fabushi media registry.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9792,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/pic_p.h",
+      "source_blob_sha": "874d0e825e8f91c935db829df513b49f76e38f18",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/pic_p.h",
+        "object": "874d0e825e8f91c935db829df513b49f76e38f18",
+        "mode": "100644",
+        "type": "blob",
+        "size": 5375
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats plugin declaration/metadata",
+      "source_symbols": [
+        "source:src/imageformats/pic_p.h"
+      ],
+      "responsibility": "Plugin declaration/metadata binds format keys, MIME/capability surface and handler interface; registration remains source-neutral and does not authorize a second Fabushi media registry.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9793,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/psd.cpp",
+      "source_blob_sha": "b0c76e23c3ab017980952b02c9e8a3a754eb67e9",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/psd.cpp",
+        "object": "b0c76e23c3ab017980952b02c9e8a3a754eb67e9",
+        "mode": "100644",
+        "type": "blob",
+        "size": 44453
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats PSD/PSB handler",
+      "source_symbols": [
+        "PSDHandler::canRead",
+        "PSDHandler::read"
+      ],
+      "responsibility": "PSD/PSB handling constrains signatures/version, dimensions/depth/channels, compression/RLE/scanline parsing, color modes and truncated-input failure.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9794,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/psd.desktop",
+      "source_blob_sha": "a21a634ee4c0a76a722eac77de076548cfb1f512",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/psd.desktop",
+        "object": "a21a634ee4c0a76a722eac77de076548cfb1f512",
+        "mode": "100644",
+        "type": "blob",
+        "size": 174
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats plugin declaration/metadata",
+      "source_symbols": [
+        "source:src/imageformats/psd.desktop"
+      ],
+      "responsibility": "Plugin declaration/metadata binds format keys, MIME/capability surface and handler interface; registration remains source-neutral and does not authorize a second Fabushi media registry.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9795,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/psd.json",
+      "source_blob_sha": "3d559d84092b6674b3fd90db10f1c498cf70a7ca",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/psd.json",
+        "object": "3d559d84092b6674b3fd90db10f1c498cf70a7ca",
+        "mode": "100644",
+        "type": "blob",
+        "size": 185
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats plugin declaration/metadata",
+      "source_symbols": [
+        "source:src/imageformats/psd.json"
+      ],
+      "responsibility": "Plugin declaration/metadata binds format keys, MIME/capability surface and handler interface; registration remains source-neutral and does not authorize a second Fabushi media registry.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9796,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/psd_p.h",
+      "source_blob_sha": "f0014a0aa4a89853de283c35e33ff8fe2e9f81f3",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/psd_p.h",
+        "object": "f0014a0aa4a89853de283c35e33ff8fe2e9f81f3",
+        "mode": "100644",
+        "type": "blob",
+        "size": 964
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats plugin declaration/metadata",
+      "source_symbols": [
+        "source:src/imageformats/psd_p.h"
+      ],
+      "responsibility": "Plugin declaration/metadata binds format keys, MIME/capability surface and handler interface; registration remains source-neutral and does not authorize a second Fabushi media registry.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9797,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/qoi.cpp",
+      "source_blob_sha": "985dadc5c394344317082b028491f618fc7beed5",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/qoi.cpp",
+        "object": "985dadc5c394344317082b028491f618fc7beed5",
+        "mode": "100644",
+        "type": "blob",
+        "size": 13622
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats legacy image handler",
+      "source_symbols": [
+        "source:src/imageformats/qoi.cpp"
+      ],
+      "responsibility": "Exact handler source constrains header validation, dimensions/allocation, scanline/RLE, color/alpha/orientation and fail-closed malformed input. Direct KDE plugin composition is absent from pinned tdesktop shipping CMake.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9798,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/qoi.desktop",
+      "source_blob_sha": "6cb753bd49b64c8eef1e4b097f6e1b6a71bce133",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/qoi.desktop",
+        "object": "6cb753bd49b64c8eef1e4b097f6e1b6a71bce133",
+        "mode": "100644",
+        "type": "blob",
+        "size": 144
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats plugin declaration/metadata",
+      "source_symbols": [
+        "source:src/imageformats/qoi.desktop"
+      ],
+      "responsibility": "Plugin declaration/metadata binds format keys, MIME/capability surface and handler interface; registration remains source-neutral and does not authorize a second Fabushi media registry.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9799,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/qoi.json",
+      "source_blob_sha": "434511623452809e675e16188b7fac57285a1a02",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/qoi.json",
+        "object": "434511623452809e675e16188b7fac57285a1a02",
+        "mode": "100644",
+        "type": "blob",
+        "size": 60
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats plugin declaration/metadata",
+      "source_symbols": [
+        "source:src/imageformats/qoi.json"
+      ],
+      "responsibility": "Plugin declaration/metadata binds format keys, MIME/capability surface and handler interface; registration remains source-neutral and does not authorize a second Fabushi media registry.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9800,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/qoi_p.h",
+      "source_blob_sha": "b125e9f59a1d67100d3becd04ad764c0abc7828f",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/qoi_p.h",
+        "object": "b125e9f59a1d67100d3becd04ad764c0abc7828f",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1004
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats plugin declaration/metadata",
+      "source_symbols": [
+        "source:src/imageformats/qoi_p.h"
+      ],
+      "responsibility": "Plugin declaration/metadata binds format keys, MIME/capability surface and handler interface; registration remains source-neutral and does not authorize a second Fabushi media registry.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9801,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/ras.cpp",
+      "source_blob_sha": "1a9413915d35efcd76f81a6e65287364a1101f08",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/ras.cpp",
+        "object": "1a9413915d35efcd76f81a6e65287364a1101f08",
+        "mode": "100644",
+        "type": "blob",
+        "size": 10001
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats legacy image handler",
+      "source_symbols": [
+        "source:src/imageformats/ras.cpp"
+      ],
+      "responsibility": "Exact handler source constrains header validation, dimensions/allocation, scanline/RLE, color/alpha/orientation and fail-closed malformed input. Direct KDE plugin composition is absent from pinned tdesktop shipping CMake.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9802,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/ras.desktop",
+      "source_blob_sha": "49b617a7250fa2f66f48c7aa552fc4f815d84cf9",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/ras.desktop",
+        "object": "49b617a7250fa2f66f48c7aa552fc4f815d84cf9",
+        "mode": "100644",
+        "type": "blob",
+        "size": 154
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats plugin declaration/metadata",
+      "source_symbols": [
+        "source:src/imageformats/ras.desktop"
+      ],
+      "responsibility": "Plugin declaration/metadata binds format keys, MIME/capability surface and handler interface; registration remains source-neutral and does not authorize a second Fabushi media registry.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9803,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/ras.json",
+      "source_blob_sha": "31a9f6a9a1340678c676c7d6890a5803dd812595",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/ras.json",
+        "object": "31a9f6a9a1340678c676c7d6890a5803dd812595",
+        "mode": "100644",
+        "type": "blob",
+        "size": 69
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats plugin declaration/metadata",
+      "source_symbols": [
+        "source:src/imageformats/ras.json"
+      ],
+      "responsibility": "Plugin declaration/metadata binds format keys, MIME/capability surface and handler interface; registration remains source-neutral and does not authorize a second Fabushi media registry.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9804,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/ras_p.h",
+      "source_blob_sha": "044e1e8b47b51d7902de3a75b5fdfa0b62d2a4c6",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/ras_p.h",
+        "object": "044e1e8b47b51d7902de3a75b5fdfa0b62d2a4c6",
+        "mode": "100644",
+        "type": "blob",
+        "size": 871
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats plugin declaration/metadata",
+      "source_symbols": [
+        "source:src/imageformats/ras_p.h"
+      ],
+      "responsibility": "Plugin declaration/metadata binds format keys, MIME/capability surface and handler interface; registration remains source-neutral and does not authorize a second Fabushi media registry.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9805,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/raw.cpp",
+      "source_blob_sha": "da1c4f9713d12828925f16554f43640e30bc60d8",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/raw.cpp",
+        "object": "da1c4f9713d12828925f16554f43640e30bc60d8",
+        "mode": "100644",
+        "type": "blob",
+        "size": 29501
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats camera RAW handler",
+      "source_symbols": [
+        "RAWHandler::canRead",
+        "RAWHandler::read",
+        "RAWHandler::option",
+        "RAWHandler::setOption"
+      ],
+      "responsibility": "Camera RAW handling constrains LibRaw identification/unpack, multi-image selection, interpolation, white balance, output color space, quality options and fail-closed decode.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9806,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/raw.desktop",
+      "source_blob_sha": "55385c29d278418b26ea353a653bf8c53329bc2c",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/raw.desktop",
+        "object": "55385c29d278418b26ea353a653bf8c53329bc2c",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1126
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats plugin declaration/metadata",
+      "source_symbols": [
+        "source:src/imageformats/raw.desktop"
+      ],
+      "responsibility": "Plugin declaration/metadata binds format keys, MIME/capability surface and handler interface; registration remains source-neutral and does not authorize a second Fabushi media registry.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9807,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/raw.json",
+      "source_blob_sha": "6f24a8b75c2958503dc5479ed0902c6c4db6300e",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/raw.json",
+        "object": "6f24a8b75c2958503dc5479ed0902c6c4db6300e",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1599
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats plugin declaration/metadata",
+      "source_symbols": [
+        "source:src/imageformats/raw.json"
+      ],
+      "responsibility": "Plugin declaration/metadata binds format keys, MIME/capability surface and handler interface; registration remains source-neutral and does not authorize a second Fabushi media registry.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9808,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/raw_p.h",
+      "source_blob_sha": "b4c5451877f1d627475430f51a1f9fae98b4d7ad",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/raw_p.h",
+        "object": "b4c5451877f1d627475430f51a1f9fae98b4d7ad",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3962
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats plugin declaration/metadata",
+      "source_symbols": [
+        "source:src/imageformats/raw_p.h"
+      ],
+      "responsibility": "Plugin declaration/metadata binds format keys, MIME/capability surface and handler interface; registration remains source-neutral and does not authorize a second Fabushi media registry.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9809,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/rgb.cpp",
+      "source_blob_sha": "99e3081d286c461847564db25d420a655a9c0a5d",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/rgb.cpp",
+        "object": "99e3081d286c461847564db25d420a655a9c0a5d",
+        "mode": "100644",
+        "type": "blob",
+        "size": 18623
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats legacy image handler",
+      "source_symbols": [
+        "source:src/imageformats/rgb.cpp"
+      ],
+      "responsibility": "Exact handler source constrains header validation, dimensions/allocation, scanline/RLE, color/alpha/orientation and fail-closed malformed input. Direct KDE plugin composition is absent from pinned tdesktop shipping CMake.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9810,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/rgb.desktop",
+      "source_blob_sha": "f1cf796735712b290bffea3a732a86bf0740663b",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/rgb.desktop",
+        "object": "f1cf796735712b290bffea3a732a86bf0740663b",
+        "mode": "100644",
+        "type": "blob",
+        "size": 158
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats plugin declaration/metadata",
+      "source_symbols": [
+        "source:src/imageformats/rgb.desktop"
+      ],
+      "responsibility": "Plugin declaration/metadata binds format keys, MIME/capability surface and handler interface; registration remains source-neutral and does not authorize a second Fabushi media registry.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9811,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/rgb.json",
+      "source_blob_sha": "e9f4df319204765eee397d0338d79fc0f855c984",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/rgb.json",
+        "object": "e9f4df319204765eee397d0338d79fc0f855c984",
+        "mode": "100644",
+        "type": "blob",
+        "size": 128
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats plugin declaration/metadata",
+      "source_symbols": [
+        "source:src/imageformats/rgb.json"
+      ],
+      "responsibility": "Plugin declaration/metadata binds format keys, MIME/capability surface and handler interface; registration remains source-neutral and does not authorize a second Fabushi media registry.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9812,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/rgb_p.h",
+      "source_blob_sha": "3d7b14cb364e55e850cdd7eb27602d1029b1a59b",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/rgb_p.h",
+        "object": "3d7b14cb364e55e850cdd7eb27602d1029b1a59b",
+        "mode": "100644",
+        "type": "blob",
+        "size": 844
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats plugin declaration/metadata",
+      "source_symbols": [
+        "source:src/imageformats/rgb_p.h"
+      ],
+      "responsibility": "Plugin declaration/metadata binds format keys, MIME/capability surface and handler interface; registration remains source-neutral and does not authorize a second Fabushi media registry.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9813,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/rle_p.h",
+      "source_blob_sha": "39f7eeab9a0e02d986ef02867452918ab7f8152f",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/rle_p.h",
+        "object": "39f7eeab9a0e02d986ef02867452918ab7f8152f",
+        "mode": "100644",
+        "type": "blob",
+        "size": 7975
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats scanline/RLE helper",
+      "source_symbols": [
+        "source:src/imageformats/rle_p.h"
+      ],
+      "responsibility": "Shared scanline/RLE helpers constrain bounded run lengths, row conversion, endian/channel handling and truncated-input behavior.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9814,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/scanlineconverter.cpp",
+      "source_blob_sha": "77a397a63a33d97db644d21aaa96bf7fb97d19de",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/scanlineconverter.cpp",
+        "object": "77a397a63a33d97db644d21aaa96bf7fb97d19de",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2903
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats scanline/RLE helper",
+      "source_symbols": [
+        "source:src/imageformats/scanlineconverter.cpp"
+      ],
+      "responsibility": "Shared scanline/RLE helpers constrain bounded run lengths, row conversion, endian/channel handling and truncated-input behavior.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9815,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/scanlineconverter_p.h",
+      "source_blob_sha": "82cf4aa06134e91711bd71534878daa6f603a447",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/scanlineconverter_p.h",
+        "object": "82cf4aa06134e91711bd71534878daa6f603a447",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2389
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats scanline/RLE helper",
+      "source_symbols": [
+        "source:src/imageformats/scanlineconverter_p.h"
+      ],
+      "responsibility": "Shared scanline/RLE helpers constrain bounded run lengths, row conversion, endian/channel handling and truncated-input behavior.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9816,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/tga.cpp",
+      "source_blob_sha": "f78f2169cff20e345cbb0018abc65ab9a5ad872e",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/tga.cpp",
+        "object": "f78f2169cff20e345cbb0018abc65ab9a5ad872e",
+        "mode": "100644",
+        "type": "blob",
+        "size": 16284
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats legacy image handler",
+      "source_symbols": [
+        "source:src/imageformats/tga.cpp"
+      ],
+      "responsibility": "Exact handler source constrains header validation, dimensions/allocation, scanline/RLE, color/alpha/orientation and fail-closed malformed input. Direct KDE plugin composition is absent from pinned tdesktop shipping CMake.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9817,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/tga.desktop",
+      "source_blob_sha": "4554c819f502bcc6fabc7a30fe085c82e171f30e",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/tga.desktop",
+        "object": "4554c819f502bcc6fabc7a30fe085c82e171f30e",
+        "mode": "100644",
+        "type": "blob",
+        "size": 146
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats plugin declaration/metadata",
+      "source_symbols": [
+        "source:src/imageformats/tga.desktop"
+      ],
+      "responsibility": "Plugin declaration/metadata binds format keys, MIME/capability surface and handler interface; registration remains source-neutral and does not authorize a second Fabushi media registry.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9818,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/tga.json",
+      "source_blob_sha": "7032405deea5937d56a1d405d7eed9bdb7dc14ab",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/tga.json",
+        "object": "7032405deea5937d56a1d405d7eed9bdb7dc14ab",
+        "mode": "100644",
+        "type": "blob",
+        "size": 62
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats plugin declaration/metadata",
+      "source_symbols": [
+        "source:src/imageformats/tga.json"
+      ],
+      "responsibility": "Plugin declaration/metadata binds format keys, MIME/capability surface and handler interface; registration remains source-neutral and does not authorize a second Fabushi media registry.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9819,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/tga_p.h",
+      "source_blob_sha": "9354227fc7839122d2e3379616b36cac63ba6613",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/tga_p.h",
+        "object": "9354227fc7839122d2e3379616b36cac63ba6613",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1009
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats plugin declaration/metadata",
+      "source_symbols": [
+        "source:src/imageformats/tga_p.h"
+      ],
+      "responsibility": "Plugin declaration/metadata binds format keys, MIME/capability surface and handler interface; registration remains source-neutral and does not authorize a second Fabushi media registry.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9820,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/util_p.h",
+      "source_blob_sha": "7a0d5dedb26d9d282ecf98340e495f793ebdf522",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/util_p.h",
+        "object": "7a0d5dedb26d9d282ecf98340e495f793ebdf522",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1172
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats shared allocation helper",
+      "source_symbols": [
+        "imageAlloc"
+      ],
+      "responsibility": "Shared codec allocation routes image creation through Qt allocation limits and rejects impossible dimensions before expensive decode.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9821,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/xcf.cpp",
+      "source_blob_sha": "8121a9bf1a1a7235ca4f59350616a9eb93d2d5d1",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/xcf.cpp",
+        "object": "8121a9bf1a1a7235ca4f59350616a9eb93d2d5d1",
+        "mode": "100644",
+        "type": "blob",
+        "size": 152963
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats XCF handler",
+      "source_symbols": [
+        "XCFHandler::canRead",
+        "XCFHandler::read"
+      ],
+      "responsibility": "XCF handling constrains layered image parsing, compression/tile data, color/alpha/profile semantics, bounds checks and malformed-input failure.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9822,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/xcf.desktop",
+      "source_blob_sha": "6614c7aa4023297615fd83c96fdf545f8695fca5",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/xcf.desktop",
+        "object": "6614c7aa4023297615fd83c96fdf545f8695fca5",
+        "mode": "100644",
+        "type": "blob",
+        "size": 147
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats plugin declaration/metadata",
+      "source_symbols": [
+        "source:src/imageformats/xcf.desktop"
+      ],
+      "responsibility": "Plugin declaration/metadata binds format keys, MIME/capability surface and handler interface; registration remains source-neutral and does not authorize a second Fabushi media registry.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9823,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/xcf.json",
+      "source_blob_sha": "abc4a49a4c860085fedd404286610b483bbc7d7c",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/xcf.json",
+        "object": "abc4a49a4c860085fedd404286610b483bbc7d7c",
+        "mode": "100644",
+        "type": "blob",
+        "size": 62
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats plugin declaration/metadata",
+      "source_symbols": [
+        "source:src/imageformats/xcf.json"
+      ],
+      "responsibility": "Plugin declaration/metadata binds format keys, MIME/capability surface and handler interface; registration remains source-neutral and does not authorize a second Fabushi media registry.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9824,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/xcf_p.h",
+      "source_blob_sha": "032479772c4724c1404b5ee85f8c9a0e37ffb08b",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/xcf_p.h",
+        "object": "032479772c4724c1404b5ee85f8c9a0e37ffb08b",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1222
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats plugin declaration/metadata",
+      "source_symbols": [
+        "source:src/imageformats/xcf_p.h"
+      ],
+      "responsibility": "Plugin declaration/metadata binds format keys, MIME/capability surface and handler interface; registration remains source-neutral and does not authorize a second Fabushi media registry.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9825,
+      "source_path": "Telegram/ThirdParty/kimageformats::tests/CMakeLists.txt",
+      "source_blob_sha": "19fe01f81c451c177208be89bb58b41e09e2bcf3",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "tests/CMakeLists.txt",
+        "object": "19fe01f81c451c177208be89bb58b41e09e2bcf3",
+        "mode": "100644",
+        "type": "blob",
+        "size": 430
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats codec test utility",
+      "source_symbols": [
+        "source:tests/CMakeLists.txt"
+      ],
+      "responsibility": "Test utility enumerates image formats/MIME types and exercises decode/encode/conversion/diagnostic behavior for plugin implementations.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9826,
+      "source_path": "Telegram/ThirdParty/kimageformats::tests/format-enum.h",
+      "source_blob_sha": "c9390ec291c9241e525e382222ffa6b3e70e0328",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "tests/format-enum.h",
+        "object": "c9390ec291c9241e525e382222ffa6b3e70e0328",
+        "mode": "100644",
+        "type": "blob",
+        "size": 835
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats codec test utility",
+      "source_symbols": [
+        "source:tests/format-enum.h"
+      ],
+      "responsibility": "Test utility enumerates image formats/MIME types and exercises decode/encode/conversion/diagnostic behavior for plugin implementations.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9827,
+      "source_path": "Telegram/ThirdParty/kimageformats::tests/imageconverter.cpp",
+      "source_blob_sha": "5240ed15464bf03425481472c8b18609067ac892",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "tests/imageconverter.cpp",
+        "object": "5240ed15464bf03425481472c8b18609067ac892",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3781
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats codec test utility",
+      "source_symbols": [
+        "source:tests/imageconverter.cpp"
+      ],
+      "responsibility": "Test utility enumerates image formats/MIME types and exercises decode/encode/conversion/diagnostic behavior for plugin implementations.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9828,
+      "source_path": "Telegram/ThirdParty/kimageformats::tests/imagedump.cpp",
+      "source_blob_sha": "f39b5d29c6d78116ed5d05d208fec05c151b1db8",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "tests/imagedump.cpp",
+        "object": "f39b5d29c6d78116ed5d05d208fec05c151b1db8",
+        "mode": "100644",
+        "type": "blob",
+        "size": 4745
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats codec test utility",
+      "source_symbols": [
+        "source:tests/imagedump.cpp"
+      ],
+      "responsibility": "Test utility enumerates image formats/MIME types and exercises decode/encode/conversion/diagnostic behavior for plugin implementations.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    }
+  ]
+}
