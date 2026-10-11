@@ -282,7 +282,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Source/product/release closure open. Exact read-through 11,308/16,125; first unread 11,309 Telegram/ThirdParty/range-v3::test/algorithm/mismatch.cpp@4a70c8a75afa1dabc6fe6e0628ab288919c1f753; unread 4,817; unknown 15,845; omitted 0. range-v3 action/algorithm regression responsibilities remain mapped existing-owner-first to Build/Quality/Dependency-Provenance/License and native runtime boundaries."
+    "note": "Source/product/release closure open. Exact read-through 11,372/16,125; first unread 11,373 Telegram/ThirdParty/range-v3::test/algorithm/starts_with.cpp@b8e9bbe5b0df44fcf4fb1bceac5d6f3845c292b9; unread 4,753; unknown 15,845; omitted 0. range-v3 algorithm/iterator/numeric/range/utility/view regression responsibilities remain mapped existing-owner-first to Build/Quality/Dependency-Provenance/License and native runtime/lifecycle boundaries."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",
@@ -737,5 +737,5 @@
     ],
     "note": "Valid exact-head evidence for 46dfaf only; main reconciliation/accounting descendants require fresh Actions."
   },
-  "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 11,308; unknown=15,845, unread=4,817, omitted=0; first unread=11,309 Telegram/ThirdParty/range-v3::test/algorithm/mismatch.cpp@4a70c8a75afa1dabc6fe6e0628ab288919c1f753."
+  "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 11,372; unknown=15,845, unread=4,753, omitted=0; first unread=11,373 Telegram/ThirdParty/range-v3::test/algorithm/starts_with.cpp@b8e9bbe5b0df44fcf4fb1bceac5d6f3845c292b9."
 }
