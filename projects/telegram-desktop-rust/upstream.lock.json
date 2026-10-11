@@ -266,9 +266,9 @@
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
     "unknown_minimum": 15845,
-    "unread_minimum": 4433,
+    "unread_minimum": 4369,
     "omitted_known": 0,
-    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 11,692; unknown=15,845, unread=4,433, omitted=0."
+    "note": "Accepted upstream; exact read-through 11,756; unknown=15,845, unread=4,369, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -282,7 +282,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Source/product/release closure open. Exact read-through 11,692/16,125; first unread 11,693 Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/macOS/TGRTCMTLI420Renderer.h@ceb4c410a5a890583f649ca87aaf4b6affef6ced; unread 4,433; unknown 15,845; omitted 0. Orders 11,629-11,692 are exact-blob read/decomposed existing-owner-first across CallSession/Permissions/Resource/WebRTC/platform adapters. Camera pause/active plus one-shot fatal recovery extends the canonical owner; call-tone playback and group codec/SFU composition remain open; iOS-only audio files 11,679-11,692 are individually non-shipping for Desktop. No tgcalls C++/ObjC runtime, FFI/sidecar, TelegramCallRuntime or second call/resource store is introduced."
+    "note": "Closure open. Read-through 11,756/16,125; first unread 11,757 SignalingTranslator.h@8136fc59ff35176f06e25539ede24e64f8af7dfe; call-tone implemented but current-head/package acceptance pending; group/SFU remains open because shipping service is one-to-one."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",
@@ -299,15 +299,15 @@
     "superseded_by_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941"
   },
   "recursive_inventory_evidence": {
-    "status": "exact-head-source-window-attested-descendant-accounting-pending",
+    "status": "predecessor-exact-source-window-current-descendant-validation-pending",
     "runner": "github-actions",
-    "run_id": 38169448756,
+    "run_id": 38170930654,
     "run_attempt": 1,
-    "job_id": 114558772727,
-    "validation_head_sha": "9e19096129b9e5d9c87ff91e9a0645544929d155",
-    "artifact_id": 11713142724,
-    "artifact_name": "tdrp-revision9-authority-9e19096129b9e5d9c87ff91e9a0645544929d155",
-    "artifact_digest": "sha256:e9667b498b5ab9ce45e0e73e81c6c8665866f7a739ef745f477aa175fa59720f",
+    "job_id": 114563229488,
+    "validation_head_sha": "072c76d9b70041f6d9ebff4ca1ca5e977b160d8d",
+    "artifact_id": 11714083420,
+    "artifact_name": "tdrp-revision9-authority-072c76d9b70041f6d9ebff4ca1ca5e977b160d8d",
+    "artifact_digest": "sha256:2a20ec87ef17d88a815faeceef8ebb7f8d463959f25a4dae9fb2b5bc0acf1b84",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "recursive_non_directory_entries": 16125,
     "source_closure_ready": false

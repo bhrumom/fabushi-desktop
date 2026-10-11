@@ -1426,16 +1426,16 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "applicable-human-call-audio-feedback-production-gap",
+      "disposition": "applicable-human-call-audio-feedback-implemented-awaiting-descendant-evidence",
       "unknown_closed": false,
       "omitted": false,
       "upstream_owner": "tgcalls call audio tone playback state",
       "source_symbols": [
         "CallAudioTone"
       ],
-      "responsibility": "Platform-neutral call-tone sample ownership, sample rate, loop count and playback offset are user-visible call feedback semantics despite the file living under the iOS source directory. Current Desktop Human Call has no verified canonical tone playback composition, so this remains mapped-open rather than platform N/A.",
-      "fabushi_canonical_owner": "CallSession / Resource / call audio feedback",
-      "fabushi_target": "Existing CallSession and Resource/audio owners; shipping call-tone playback and acceptance evidence open."
+      "responsibility": "Portable call-tone sample ownership is implemented in shipping HumanCallControls with Fabushi-owned Int16 samples, 48 kHz rate, finite loops, playback-offset accounting, ringing start, transition/terminal stop, teardown, blocked-audio alert and explicit retry. unknown_closed remains false until descendant exact-head and packaged audible/restart acceptance.",
+      "fabushi_canonical_owner": "Existing HumanCallControls / CallSession / Resource-audio owner",
+      "fabushi_target": "frontend/src/production/human-call-media.tsx; human-call-controls.contract.test.ts; desktop/e2e/mahayana-agent-workbench.spec.ts"
     },
     {
       "recursive_order": 11679,
