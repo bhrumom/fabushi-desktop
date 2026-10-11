@@ -1364,7 +1364,7 @@
       "source_identity": {
         "repository": "PJK/libcbor",
         "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
-        "scope": "nested-gitlink",
+        "scope": "direct-gitlink",
         "mount": "Telegram/ThirdParty/libcbor",
         "path": "doxygen-theme",
         "object": "46111c61a9f49b7a9886127e679d4317478fab1c",
