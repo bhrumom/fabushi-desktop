@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 5329,
+    "unread": 5265,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,11 +13478,11 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Accepted prefix 10,796/16,125; exact-head artifact independently re-materialized orders 10,733-10,796; all 64 files matched repository/commit/path/blob identity, Git blob SHA, SHA-256 and byte length; unread 5,329; unknown 15,845; omitted 0.",
-    "source_authority_evidence": "Exact-head 26f79c7113f39bb6c304fe35460f347143ac1119 run 38133138304/job 114451431129 artifact 11699683694 (sha256:c61f36f3f579e4292e3eece3ba9b71752ce65ebe33c8505ab633c10f49ef79b0) validated Revision 9 and materialized orders 10,733-10,796; descendant requires fresh exact-head validation.",
-    "current_source_read_through": 10796,
-    "first_unread_order": 10797,
-    "first_unread_path": "Telegram/ThirdParty/nimf::modules/services/preedit-window/Makefile.am"
+    "source_read_reconciliation": "Accepted prefix 10,860/16,125; exact-head artifact independently re-materialized orders 10,797-10,860; all 64 files matched repository/commit/path/blob identity, Git blob SHA, SHA-256 and byte length; unread 5,265; unknown 15,845; omitted 0.",
+    "source_authority_evidence": "Exact-head ab7fc412ff80f5858378e781c5b7039d22bb976e run 38134640557/job 114455966489 artifact 11700566936 (sha256:c474a4a2ea18b54068f030e52a3b40ebf765f942bc70cb98d384d627ef17ef45) validated Revision 9 and materialized orders 10,797-10,860; binary 10,830 raw bytes verified; descendant requires fresh exact-head validation.",
+    "current_source_read_through": 10860,
+    "first_unread_order": 10861,
+    "first_unread_path": "Telegram/ThirdParty/range-v3::cmake/gtest.cmake"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 10796,
-    "first_unread_order": 10797,
-    "first_unread_path": "Telegram/ThirdParty/nimf::modules/services/preedit-window/Makefile.am",
+    "read_through": 10860,
+    "first_unread_order": 10861,
+    "first_unread_path": "Telegram/ThirdParty/range-v3::cmake/gtest.cmake",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
