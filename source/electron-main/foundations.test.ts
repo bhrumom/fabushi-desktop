@@ -56,9 +56,10 @@ test("native spellcheck suggestions stay platform-owned, bounded, and dispatch t
     x: 0,
     y: 0,
     misspelledWord: "teh",
-    dictionarySuggestions: [" the ", "the", "", "tech", "ten", "tea", "then", "ignored"],
+    dictionarySuggestions: ["teh", " the ", "the", "", "tech", "ten", "tea", "then", "ignored"],
   };
   assert.deepEqual(nativeSpellcheckSuggestions(params), ["the", "tech", "ten", "tea", "then"]);
+  assert.deepEqual(nativeSpellcheckSuggestions({ ...params, dictionarySuggestions: [" teh ", "teh"] }), []);
   assert.deepEqual(nativeSpellcheckSuggestions({ ...params, isEditable: false }), []);
   assert.deepEqual(nativeSpellcheckSuggestions({ ...params, misspelledWord: "   " }), []);
 

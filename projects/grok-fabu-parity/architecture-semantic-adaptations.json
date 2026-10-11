@@ -1199,7 +1199,7 @@
       "referencePath": "source/electron-main/media/avatar-images.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "c65110a1204600afb4798da8f1825c77e034a940",
+      "targetBlobSha": "caa6498dabf7552168f4ddb47e21682d6124b5b3",
       "behavioralEvidence": [
         "source/electron-main/media/avatar-images.ts",
         "source/electron-main/adapters/avatar-images.ts",
@@ -1212,7 +1212,7 @@
         ".github/workflows/rust-desktop-runtime.yml",
         ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "rationale": "Extends the existing process-lifetime Electron WebContents context-menu owner with source-neutral native spelling suggestion projection for the canonical Fabushi Composer. Candidate generation and ordering remain owned by Chromium/Electron's platform-backed spellchecker; Fabushi only trims invalid entries, deduplicates while preserving platform order, caps the visible list at five, and dispatches the chosen candidate through WebContents.replaceMisspelling. The existing link/image/edit context menu, Composer/TipTap owner, Coordinator/Host/Runner boundaries, and dictionary truth remain unchanged. No Telegram/Hunspell runtime, provider, sidecar, second editor, or second dictionary owner is introduced, and this adaptation does not claim Hunspell-specific morphology, compound, FORCEUCASE, FORBIDDENWORD, or FULLSTRIP semantics are verified."
+      "rationale": "Extends the existing process-lifetime Electron WebContents context-menu owner with source-neutral native spelling suggestion projection for the canonical Fabushi Composer. Candidate generation and ordering remain owned by Chromium/Electron's platform-backed spellchecker; Fabushi trims invalid entries, rejects a candidate equal to the normalized misspelled word itself, deduplicates while preserving platform order, caps the visible list at five, and dispatches the chosen candidate through WebContents.replaceMisspelling. The self-suggestion rejection preserves the applicable gh1058 regression without importing Hunspell MAP logic. The existing link/image/edit context menu, Composer/TipTap owner, Coordinator/Host/Runner boundaries, and dictionary truth remain unchanged. No Telegram/Hunspell runtime, provider, sidecar, second editor, or second dictionary owner is introduced, and this adaptation does not claim Hunspell-specific morphology, compound, FORCEUCASE, FORBIDDENWORD, or FULLSTRIP semantics are verified."
     },
     {
       "referencePath": "source/electron-main/media/media-protocol.ts",

@@ -36,14 +36,15 @@ const MAX_NATIVE_SPELLCHECK_SUGGESTIONS = 5;
 export function nativeSpellcheckSuggestions(
   params: Pick<ImageContextMenuParams, "isEditable" | "misspelledWord" | "dictionarySuggestions">,
 ): string[] {
-  if (!params.isEditable || typeof params.misspelledWord !== "string" || params.misspelledWord.trim().length === 0) return [];
-  if (!Array.isArray(params.dictionarySuggestions)) return [];
+  if (!params.isEditable || typeof params.misspelledWord !== "string") return [];
+  const misspelledWord = params.misspelledWord.trim();
+  if (misspelledWord.length === 0 || !Array.isArray(params.dictionarySuggestions)) return [];
   const suggestions: string[] = [];
   const seen = new Set<string>();
   for (const raw of params.dictionarySuggestions) {
     if (typeof raw !== "string") continue;
     const candidate = raw.trim();
-    if (candidate.length === 0 || seen.has(candidate)) continue;
+    if (candidate.length === 0 || candidate === misspelledWord || seen.has(candidate)) continue;
     seen.add(candidate);
     suggestions.push(candidate);
     if (suggestions.length === MAX_NATIVE_SPELLCHECK_SUGGESTIONS) break;
