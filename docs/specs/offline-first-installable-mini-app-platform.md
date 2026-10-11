@@ -82,6 +82,8 @@ Evidence snapshot for this design:
 
 The **same Plugins Marketplace** exposes an installable type beside Connectors and Skills, with a distinct capability model:
 
+**Marketplace authority:** `docs/specs/fabushi-plugins-marketplace-open-ecosystem.md` (FPM-001) defines the single discovery/catalog/publisher/install-management UX and its mature Open VSX-inspired registry lifecycle. **OMA-001 remains authoritative for `.fabapp` package verification, browser isolation, offline execution, AI-created private-author trust and platform gates.** Neither document authorizes a second Marketplace, installer, Host or mobile executable runtime.
+
 - **Web mini app (offline-ready):** verified full content snapshot installed in Fabushi-owned storage; opens offline. Optional approved egress does not affect the advertised offline-core guarantee.
 - **Web mini app (online-only):** hosted Web app with a distinct UX badge and stricter remote navigation policy; **never labeled installed-offline**.
 - **MCP connector / Skill:** existing behavior and contracts remain; may not be treated as an installable Web package merely because listed in the same store.
