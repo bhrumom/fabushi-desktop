@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 5137,
+    "unread": 5073,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -3151,7 +3151,7 @@
         "typed Story actions",
         "comments/reaction projection"
       ],
-      "platform_delta": "Qt façade becomes typed React capability contract backed by existing Rust Story owner.",
+      "platform_delta": "Qt fa\u00e7ade becomes typed React capability contract backed by existing Rust Story owner.",
       "existing_owner": "Canonical Story owner + ProductShell capability surface + existing domain action owners",
       "fabushi_target_paths": [
         "native/mahayana-messaging/src/story.rs",
@@ -3399,14 +3399,14 @@
         "first async result mutates a replaced Story",
         "comments/reactions use second store"
       ],
-      "ui_disposition": "Delegation semantics retained; Qt controller façade itself is not ported.",
+      "ui_disposition": "Delegation semantics retained; Qt controller fa\u00e7ade itself is not ported.",
       "non_ui_responsibilities": [
         "Single action path",
         "pause reason continuity",
         "lifetime fencing",
         "comments/reaction authoritative projection"
       ],
-      "platform_delta": "Use typed hooks/controllers in existing ProductShell surface rather than C++ façade.",
+      "platform_delta": "Use typed hooks/controllers in existing ProductShell surface rather than C++ fa\u00e7ade.",
       "existing_owner": "Canonical Story owner + Resource playback + ProductShell action composition",
       "fabushi_target_paths": [
         "native/mahayana-messaging/src/story.rs",
@@ -13478,11 +13478,11 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Accepted prefix 10,988/16,125; exact-head artifact independently materialized orders 10,925-10,988 and all 64 pinned blob identities matched repository/commit/path/object identity and byte length; unread 5,137; unknown 15,845; omitted 0.",
-    "source_authority_evidence": "Exact-head 8b7f722d3df5f301f816ef51344d6eb1fe1fb841 run 38137121929/job 114463165742 artifact 11701397304 (sha256:b5d5766cfa0495a6d2e42ab2978af2cc92c71049b2c2770ce7e80711814e9a8b) validated Revision 9 and materialized orders 10,925-10,988; descendant accounting commit requires fresh exact-head validation.",
-    "current_source_read_through": 10988,
-    "first_unread_order": 10989,
-    "first_unread_path": "Telegram/ThirdParty/range-v3::include/range/v3/algorithm/minmax.hpp"
+    "source_read_reconciliation": "Accepted prefix 11,052/16,125; exact-head Actions validated and materialized orders 10,989-11,052 from pinned range-v3 with exact Git blob verification; unread 5,073; unknown 15,845; omitted 0.",
+    "source_authority_evidence": "Exact-head a790336594b1eea34816c20d051c695514484929 run 38141647544/job 114476566497 artifact 11702534129 (sha256:f5c8b708bc668829d02ad166e73c27913ae880acf342fbd57e5cd75712274edf) validated Revision 9 and materialized orders 10,989-11,052; descendant accounting commit requires fresh exact-head validation.",
+    "current_source_read_through": 11052,
+    "first_unread_order": 11053,
+    "first_unread_path": "Telegram/ThirdParty/range-v3::include/range/v3/functional/bind.hpp"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 10988,
-    "first_unread_order": 10989,
-    "first_unread_path": "Telegram/ThirdParty/range-v3::include/range/v3/algorithm/minmax.hpp",
+    "read_through": 11052,
+    "first_unread_order": 11053,
+    "first_unread_path": "Telegram/ThirdParty/range-v3::include/range/v3/functional/bind.hpp",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
