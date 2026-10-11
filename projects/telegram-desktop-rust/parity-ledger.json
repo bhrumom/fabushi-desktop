@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 6608,
+    "unread": 6545,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,11 +13478,11 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Accepted prefix 9,517/16,125; kimageformats PIC and AVIF fixture matrix exact-read; unread 6,608; unknown 15,845; omitted 0.",
-    "source_authority_evidence": "Orders 9,474–9,517 exact pinned text/raw-byte reads cover PIC compression/alpha/metadata/round-trip and AVIF channel/orientation transforms. Next exact source is 9,518 Telegram/ThirdParty/kimageformats::autotests/read/eps/bw.eps@3af28d5d28351a749cbcaf0e30e3652a159d830a. Existing owners remain canonical; source reading closes no unknown.",
-    "current_source_read_through": 9517,
-    "first_unread_order": 9518,
-    "first_unread_path": "Telegram/ThirdParty/kimageformats::autotests/read/eps/bw.eps"
+    "source_read_reconciliation": "Accepted prefix 9,580/16,125; kimageformats EPS through first 16-bit PSD range exact-read; unread 6,545; unknown 15,845; omitted 0.",
+    "source_authority_evidence": "Orders 9,518–9,580 exact pinned binary/text reads cover EPS/EXR/HDR/HEIF/HEJ2/JXL/KRA/ORA/PCX and initial PSD fixtures. Next exact source is 9,581 Telegram/ThirdParty/kimageformats::autotests/read/psd/16bit_photoshop.psb@c09d6bb5bc492441d4684531aaa1a6fbe67b4c60; current GitHub Contents connector does not return that >1 MiB binary payload, so it remains unread rather than inferred.",
+    "current_source_read_through": 9580,
+    "first_unread_order": 9581,
+    "first_unread_path": "Telegram/ThirdParty/kimageformats::autotests/read/psd/16bit_photoshop.psb"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 9517,
-    "first_unread_order": 9518,
-    "first_unread_path": "Telegram/ThirdParty/kimageformats::autotests/read/eps/bw.eps",
+    "read_through": 9580,
+    "first_unread_order": 9581,
+    "first_unread_path": "Telegram/ThirdParty/kimageformats::autotests/read/psd/16bit_photoshop.psb",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {

@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 6608,
+    "unread_minimum": 6545,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through deterministic order 9,517; unread 6,608; unknown 15,845; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition through deterministic order 9,580; unread 6,545; unknown 15,845; omitted 0."
   },
   "latest_recursive_evidence": {
     "run_id": 38106112583,
@@ -41,7 +41,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live baseline identity is accepted for telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 / tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6, matching upstream.lock upstream.accepted=true. This does not imply source/product/release closure: exact read-through is 9,517; unread_minimum is 6,608; unknown remains 15,845; omitted remains 0; acceptance.accepted and baseline_ready remain false until their gates close.",
+  "note": "Live baseline identity is accepted for telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 / tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6, matching upstream.lock upstream.accepted=true. This does not imply source/product/release closure: exact read-through is 9,580; unread_minimum is 6,545; unknown remains 15,845; omitted remains 0; acceptance.accepted and baseline_ready remain false until their gates close.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -59,10 +59,10 @@
       6541,
       6627
     ],
-    "current_source_read_through": 9517,
-    "first_unread_order": 9518,
-    "first_unread_path": "Telegram/ThirdParty/kimageformats::autotests/read/eps/bw.eps",
-    "current_head_source_authority_evidence": "Orders 9,474–9,517 exact-read kimageformats PIC and AVIF acceptance fixtures: PIC raw/RLE, alpha, deterministic write bytes, metadata/pre-read semantics and long runs; AVIF channel/alpha plus auto-orientation rotate/mirror matrix. Existing Media/Resource owner remains canonical; all rows remain mapped-open."
+    "current_source_read_through": 9580,
+    "first_unread_order": 9581,
+    "first_unread_path": "Telegram/ThirdParty/kimageformats::autotests/read/psd/16bit_photoshop.psb",
+    "current_head_source_authority_evidence": "Orders 9,518–9,580 exact-read EPS/EXR/HDR/HEIF/HEJ2/JXL/KRA/ORA/PCX and the first 16-bit PSD fixtures. Binary bytes, magic/header and paired reference dimensions were inspected; JXL orientation 1–8 converges through auto-transform. Pinned tdesktop main-repo search currently proves only the kimageformats gitlink, not shipping reachability, so rows remain mapped-open."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -71,9 +71,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 9517,
-    "first_unread_order": 9518,
-    "first_unread_path": "Telegram/ThirdParty/kimageformats::autotests/read/eps/bw.eps",
+    "read_through": 9580,
+    "first_unread_order": 9581,
+    "first_unread_path": "Telegram/ThirdParty/kimageformats::autotests/read/psd/16bit_photoshop.psb",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }
