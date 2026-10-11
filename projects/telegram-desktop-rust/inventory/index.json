@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 6417,
+    "unread_minimum": 6353,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through deterministic order 9,708; unread 6,417; unknown 15,845; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition through deterministic order 9,772; unread 6,353; unknown 15,845; omitted 0."
   },
   "latest_recursive_evidence": {
     "run_id": 38106112583,
@@ -59,10 +59,10 @@
       6541,
       6627
     ],
-    "current_source_read_through": 9708,
-    "first_unread_order": 9709,
-    "first_unread_path": "Telegram/ThirdParty/kimageformats::autotests/read/xcf/fruktpilot_icc.xcf",
-    "current_head_source_authority_evidence": "Orders 9,645–9,708 exact-read from current-head Actions artifact 11692612830: SGI RGB covers RLE/aggressive-RLE/verbatim; TGA covers 24/32-bit RGB/RGBA, RLE/raw and upper/lower-left origin; XCF covers v0/v11/v12, RGB/gray/alpha references, U8/U16/U32 integer plus half/float precision and ICC variants. All remain mapped-open pending pinned shipping reachability."
+    "current_source_read_through": 9772,
+    "first_unread_order": 9773,
+    "first_unread_path": "Telegram/ThirdParty/kimageformats::src/imageformats/jxl.cpp",
+    "current_head_source_authority_evidence": "Orders 9,709–9,772 exact-read from Actions artifact 11693336517: XCF/read/write harnesses, build/plugin metadata and ANI/AVIF/EPS/EXR/HDR/HEIF implementation contracts. Direct KDE KImageFormats product composition is absent from pinned tdesktop CMake; Qt qtimageformats is the packaged dependency. AVIF clean-aperture preview dimensions are implemented in the existing Fabushi BMFF owner; descendant exact-head verification remains required."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -71,9 +71,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 9708,
-    "first_unread_order": 9709,
-    "first_unread_path": "Telegram/ThirdParty/kimageformats::autotests/read/xcf/fruktpilot_icc.xcf",
+    "read_through": 9772,
+    "first_unread_order": 9773,
+    "first_unread_path": "Telegram/ThirdParty/kimageformats::src/imageformats/jxl.cpp",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }
