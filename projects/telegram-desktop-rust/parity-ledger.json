@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 7140,
+    "unread": 7076,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,11 +13478,11 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Accepted prefix 8,985/16,125; Hunspell regression fixtures through opentaal KEEPCASE exact-read and responsibility-decomposed; unread 7,140; unknown 15,845; omitted 0. Next is tests/pfxdot.aff.",
-    "source_authority_evidence": "Exact-head GitHub Actions run 38107313762 job 114375483242 artifact 11689378924 at 65338263987558dad9948090fe77318a8964ba46 materialized accepted recursive identity through the current boundary and proves first-unread 8,986 Telegram/ThirdParty/hunspell::tests/pfxdot.aff@e1cdc6186d1785b1572d350c32fee2b0ad6a4187. The job failed on stale unread accounting before this reconciliation, so fresh descendant exact-head Actions are required; source reading does not close unknown.",
-    "current_source_read_through": 8985,
-    "first_unread_order": 8986,
-    "first_unread_path": "Telegram/ThirdParty/hunspell::tests/pfxdot.aff"
+    "source_read_reconciliation": "Accepted prefix 9,049/16,125; Hunspell suggestion/phonetic/Unicode/time-bound regression window 8,986–9,049 exact-read and responsibility-decomposed; unread 7,076; unknown 15,845; omitted 0. Next is tests/utf8_bom.aff.",
+    "source_authority_evidence": "GitHub Actions run 38107313762 job 114375483242 artifact 11689378924 materialized accepted recursive identity for this window; direct exact pinned GitHub reads established the source behavior. Next is order 9,050 Telegram/ThirdParty/hunspell::tests/utf8_bom.aff@f56998b9f3465bd83bee84a07a7503042f58ae1c. Fresh descendant exact-head Actions are required; source reading does not close unknown.",
+    "current_source_read_through": 9049,
+    "first_unread_order": 9050,
+    "first_unread_path": "Telegram/ThirdParty/hunspell::tests/utf8_bom.aff"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 8985,
-    "first_unread_order": 8986,
-    "first_unread_path": "Telegram/ThirdParty/hunspell::tests/pfxdot.aff",
+    "read_through": 9049,
+    "first_unread_order": 9050,
+    "first_unread_path": "Telegram/ThirdParty/hunspell::tests/utf8_bom.aff",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
