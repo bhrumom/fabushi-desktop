@@ -428,7 +428,7 @@ async function ensureE2eAuthBackend(): Promise<string> {
         const isSelfHosted = body.includes(Buffer.from('自建 Bot', 'utf8'));
         const text = isSelfHosted
           ? '收到：自建 Bot 请规划步骤'
-          : '收到：请分析这个任务';
+          : '收到：请分析这个任务\\n\\n\\`\\`\\`typescript\\nconst answer: number = 42;\\n\\`\\`\\`';
         const providerRequest = JSON.parse(body.toString('utf8')) as { input?: unknown };
         const isToolContinuation = Array.isArray(providerRequest.input)
           && providerRequest.input.some((item) => item != null
@@ -500,7 +500,7 @@ async function ensureE2eAuthBackend(): Promise<string> {
         const isSelfHosted = body.includes(Buffer.from('自建 Bot', 'utf8'));
         const text = isSelfHosted
           ? '收到：自建 Bot 请规划步骤'
-          : '收到：请分析这个任务';
+          : '收到：请分析这个任务\\n\\n\\`\\`\\`typescript\\nconst answer: number = 42;\\n\\`\\`\\`';
         response.setHeader('content-type', 'application/connect+proto');
         response.statusCode = 200;
         response.end(Buffer.concat([
@@ -811,6 +811,10 @@ test('Mahayana renders one Hermes-style assistant turn instead of a completion W
     await page.waitForTimeout(1_000);
     await expect(turn).toHaveCount(1);
     await expect(turn.getByRole('group', { name: 'Agent message' })).toContainText('收到：请分析这个任务');
+    const highlightedCode = turn.locator('pre.sand-code-block code.language-typescript[data-syntax-highlighted="true"]');
+    await expect(highlightedCode).toContainText('const answer: number = 42;');
+    await expect(highlightedCode.locator('.token.keyword').filter({ hasText: 'const' })).toHaveCount(1);
+    await expect(highlightedCode.locator('.token.number').filter({ hasText: '42' })).toHaveCount(1);
     await expect(page.getByRole('button', { name: 'New Human chat', exact: true })).toHaveCount(0);
     await expect(promptInput).toBeVisible();
   } finally {

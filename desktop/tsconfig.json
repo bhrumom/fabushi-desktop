@@ -40,6 +40,12 @@
       ],
       "@tiptap/*": [
         "node_modules/@tiptap/*"
+      ],
+      "prismjs": [
+        "node_modules/prismjs"
+      ],
+      "prismjs/*": [
+        "node_modules/prismjs/*"
       ]
     },
     "types": [

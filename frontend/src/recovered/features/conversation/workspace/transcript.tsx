@@ -33,6 +33,7 @@ import { beginHorizontalScrollPointer, captureHorizontalScroll, clampHorizontalS
 import { reconcileAssistantContentProjection, type AssistantProjectionCandidate, type AssistantProjectionState } from "./assistant-content-projection";
 import { formatTranscriptToolCallName } from "./tool-call-label";
 import { copyTranscriptCodeText } from "./code-copy";
+import { TranscriptSyntaxCode } from "./syntax-highlight";
 import { isTranscriptNearBottom } from "./transcript-follow-state";
 import { isTranscriptDeliveryActionable, isTranscriptDeliveryBusy } from "./transcript-delivery-state";
 import { SandContextMenu, SandMenuContent, SandMenuItem, SandMenuRoot, SandMenuTrigger } from "../../../ui/sand-floating-primitives";
@@ -643,8 +644,8 @@ function AssistantCodeCopyButton({ code }: { code: string }) {
   }} type="button"><span aria-hidden="true" data-icon-name={iconName} data-size="base" style={{ fontFamily: "cursor-icons" }}>{String.fromCodePoint(iconCodePoint)}</span></button>;
 }
 
-function AssistantCodeBlock({ code, language, ownerId }: { code: string; language: string; ownerId: string }) {
-  const fallback = <div className="sand-code-figure"><RetainedHorizontalScrollRegion className="sand-code-scroll" label={language.length > 0 ? `${language} code` : "Code block"} ownerId={ownerId} revision={code}><pre className="sand-code-block"><code className={language.length > 0 ? `language-${language}` : "sand-code-fallback"}>{code}</code></pre></RetainedHorizontalScrollRegion><AssistantCodeCopyButton code={code} /></div>;
+function AssistantCodeBlock({ code, language, ownerId, isStreaming }: { code: string; language: string; ownerId: string; isStreaming: boolean }) {
+  const fallback = <div className="sand-code-figure"><RetainedHorizontalScrollRegion className="sand-code-scroll" label={language.length > 0 ? `${language} code` : "Code block"} ownerId={ownerId} revision={code}><pre className="sand-code-block"><TranscriptSyntaxCode code={code} enabled={!isStreaming} language={language} /></pre></RetainedHorizontalScrollRegion><AssistantCodeCopyButton code={code} /></div>;
   return language === "mermaid" ? <MermaidDiagram code={code} fallback={fallback} /> : fallback;
 }
 
@@ -751,7 +752,7 @@ export function AssistantMessageContent({ text, images, channel, isSourceTrusted
     const projectionEntry = projectedContent.projection.entries[index];
     if (projectionEntry == null) return null;
     return block.kind === "code"
-      ? <AssistantCodeBlock code={block.code} key={projectionEntry.key} language={block.language} ownerId={block.ownerId} />
+      ? <AssistantCodeBlock code={block.code} isStreaming={isStreaming} key={projectionEntry.key} language={block.language} ownerId={block.ownerId} />
       : <AssistantTextBlock block={block.block} key={projectionEntry.key} openExternal={openExternal} ownerId={block.ownerId} />;
   })}{images == null ? null : <SendMessageTextImages images={images} />}{channel == null ? null : <span className="sand-channel-tag" title={`Sent to ${channel}`}>{channel}</span>}</div>;
 }

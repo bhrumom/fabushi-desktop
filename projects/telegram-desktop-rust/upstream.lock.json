@@ -266,9 +266,9 @@
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
     "unknown_minimum": 15845,
-    "unread_minimum": 5905,
+    "unread_minimum": 5841,
     "omitted_known": 0,
-    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 10,220; unknown=15,845, unread=5,905, omitted=0."
+    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 10,284; unknown=15,845, unread=5,841, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -282,7 +282,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Source/product/release closure open. Exact read-through 10,220/16,125; first unread 10,221 Telegram/ThirdParty/libfido2::src/reset.c@4e09dbbca5cf968ddb9d728dcc13da88cdfd9264; unread 5,905; unknown 15,845; omitted 0. The libfido2 core/transport tranche remains mapped to the existing Coordinator WebAuthn/security, Host bridge, Settings/platform-device, Secrets/Security/Crypto, Platform/Resource and Build/Packaging/Release owners. This descendant adds a bounded WebAuthn ceremony deadline to the existing spawned signer; packaged sand-webauthn-signer producer/co-staging/provenance, real HID/NFC/PCSC hardware and broader security-key management/release evidence remain open."
+    "note": "Source/product/release closure open. Exact read-through 10,284/16,125; first unread 10,285 Telegram/ThirdParty/lz4::.circleci/images/primary/Dockerfile@77670148ccfef16d6490070911b62e2a8ff4ae8a; unread 5,841; unknown 15,845; omitted 0. libfido2 tail remains mapped to existing WebAuthn/security/platform owners. libprisma exposed a real shipping Transcript syntax-highlighting gap; the descendant extends the canonical React Transcript with a pinned offline PrismJS token projection and focused Electron evidence, while broad grammar-catalog parity remains open. LZ4 quality-source reading has started."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",
@@ -301,13 +301,13 @@
   "recursive_inventory_evidence": {
     "status": "exact-head-source-window-attested-descendant-accounting-pending",
     "runner": "github-actions",
-    "run_id": 38123961987,
+    "run_id": 38124618782,
     "run_attempt": 1,
-    "job_id": 114424363470,
-    "validation_head_sha": "8cd23e6ec07d69b186be674947ac45ce38f3453a",
-    "artifact_id": 11695949458,
-    "artifact_name": "tdrp-revision9-authority-8cd23e6ec07d69b186be674947ac45ce38f3453a",
-    "artifact_digest": "sha256:fa16db976f759301292bf23dd454bed9f6e70ad386c772333bfbb93c0b329291",
+    "job_id": 114426354062,
+    "validation_head_sha": "f810ac1eb2edba61afd6d2f89141d439b3f6e407",
+    "artifact_id": 11696915688,
+    "artifact_name": "tdrp-revision9-authority-f810ac1eb2edba61afd6d2f89141d439b3f6e407",
+    "artifact_digest": "sha256:306a7639eb06e2851ca640b6d6bc48ef5d552d7f194541c1263a42c72e041b9e",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "recursive_non_directory_entries": 16125,
     "source_closure_ready": false
@@ -633,9 +633,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 10220,
-    "first_unread_order": 10221,
-    "first_unread_path": "Telegram/ThirdParty/libfido2::src/reset.c",
+    "read_through": 10284,
+    "first_unread_order": 10285,
+    "first_unread_path": "Telegram/ThirdParty/lz4::.circleci/images/primary/Dockerfile",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {

@@ -166,9 +166,56 @@ html[data-platform="darwin"] .sand-agents-sidebar__new-actions {
 .fabushi-rich-content-scroll-region { touch-action: pan-y; }
 .sand-code-scroll:focus-visible,
 .fabushi-rich-content-scroll-region:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
-.sand-code-block { margin: 0; padding: 11px 12px; color: #d9ded4; background: #1a1d19; border: 1px solid #343932; border-radius: 8px; font: 11px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace; }
+.sand-code-block {
+  --fabushi-syntax-foreground: var(--cursor-syntax-foreground, var(--sand-text-primary));
+  --fabushi-syntax-background: var(--cursor-syntax-background, var(--sand-bg-elevated));
+  --fabushi-syntax-keyword: var(--cursor-syntax-keyword, var(--sand-text-accent));
+  --fabushi-syntax-string: var(--cursor-syntax-string, var(--sand-text-supplementary5));
+  --fabushi-syntax-function: var(--cursor-syntax-function, var(--sand-text-supplementary1));
+  --fabushi-syntax-number: var(--cursor-syntax-number, var(--sand-text-warning));
+  --fabushi-syntax-comment: var(--cursor-syntax-comment, var(--sand-text-tertiary));
+  --fabushi-syntax-constant: var(--cursor-syntax-constant, var(--sand-text-warning));
+  --fabushi-syntax-punctuation: var(--cursor-syntax-punctuation, var(--sand-text-primary));
+  --fabushi-syntax-link: var(--cursor-syntax-link, var(--sand-text-accent));
+  margin: 0;
+  padding: 11px 12px;
+  color: var(--fabushi-syntax-foreground);
+  background: var(--fabushi-syntax-background);
+  border: 1px solid var(--sand-border-default);
+  border-radius: 8px;
+  font: 11px/1.55 var(--cursor-font-family-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+}
 .sand-code-block code { white-space: pre; }
 .sand-code-fallback { white-space: pre; }
+.sand-code-block .token.comment,
+.sand-code-block .token.prolog,
+.sand-code-block .token.doctype,
+.sand-code-block .token.cdata { color: var(--fabushi-syntax-comment); }
+.sand-code-block .token.punctuation { color: var(--fabushi-syntax-punctuation); }
+.sand-code-block .token.property,
+.sand-code-block .token.tag,
+.sand-code-block .token.boolean,
+.sand-code-block .token.number,
+.sand-code-block .token.constant,
+.sand-code-block .token.symbol { color: var(--fabushi-syntax-number); }
+.sand-code-block .token.deleted { color: var(--sand-text-danger); }
+.sand-code-block .token.selector,
+.sand-code-block .token.attr-name,
+.sand-code-block .token.string,
+.sand-code-block .token.char,
+.sand-code-block .token.builtin,
+.sand-code-block .token.inserted { color: var(--fabushi-syntax-string); }
+.sand-code-block .token.operator,
+.sand-code-block .token.entity,
+.sand-code-block .token.url { color: var(--fabushi-syntax-link); }
+.sand-code-block .token.atrule,
+.sand-code-block .token.attr-value,
+.sand-code-block .token.keyword { color: var(--fabushi-syntax-keyword); }
+.sand-code-block .token.function,
+.sand-code-block .token.class-name { color: var(--fabushi-syntax-function); }
+.sand-code-block .token.regex,
+.sand-code-block .token.important,
+.sand-code-block .token.variable { color: var(--sand-text-supplementary4); }
 /*
  * @evidence src/app/dist/renderer/assets/index-lCyB53CO.css#byteOffset=341113
  * @evidence src/app/dist/renderer/assets/index-lCyB53CO.css#byteOffset=341216
