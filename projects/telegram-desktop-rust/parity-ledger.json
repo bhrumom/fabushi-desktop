@@ -13478,11 +13478,11 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Accepted prefix 10,732/16,125; exact-head artifact independently re-materialized 40 m17n locale assets and 24 locale/method wrappers; unread 5,393; unknown 15,845; omitted 0.",
-    "source_authority_evidence": "Orders 10,669-10,732 exact-read from d42df92cfa70306d8d2d8a8a118306955040cdf6 run 38131353751/job 114446164953 artifact 11699176950 (sha256:80a523134f825e95d62539200283f449cffc708a472374450776fc52ff04dbe1); applicable locale/method semantics map to existing canonical owners; no second input runtime. Descendant exact-head evidence remains required.",
-    "current_source_read_through": 10732,
-    "first_unread_order": 10733,
-    "first_unread_path": "Telegram/ThirdParty/nimf::modules/engines/nimf-m17n/nimf-m17n-ii.c"
+    "source_read_reconciliation": "Accepted prefix 10,796/16,125; exact-head artifact independently re-materialized orders 10,733-10,796; all 64 files matched repository/commit/path/blob identity, Git blob SHA, SHA-256 and byte length; unread 5,329; unknown 15,845; omitted 0.",
+    "source_authority_evidence": "Exact-head 26f79c7113f39bb6c304fe35460f347143ac1119 run 38133138304/job 114451431129 artifact 11699683694 (sha256:c61f36f3f579e4292e3eece3ba9b71752ce65ebe33c8505ab633c10f49ef79b0) validated Revision 9 and materialized orders 10,733-10,796; descendant requires fresh exact-head validation.",
+    "current_source_read_through": 10796,
+    "first_unread_order": 10797,
+    "first_unread_path": "Telegram/ThirdParty/nimf::modules/services/preedit-window/Makefile.am"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 10732,
-    "first_unread_order": 10733,
-    "first_unread_path": "Telegram/ThirdParty/nimf::modules/engines/nimf-m17n/nimf-m17n-ii.c",
+    "read_through": 10796,
+    "first_unread_order": 10797,
+    "first_unread_path": "Telegram/ThirdParty/nimf::modules/services/preedit-window/Makefile.am",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
