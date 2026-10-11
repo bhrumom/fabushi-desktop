@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 7396,
+    "unread": 7377,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,11 +13478,11 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Accepted prefix 8,729/16,125; Hunspell compound/condition/casing/flag window 8,666–8,729 exact-read and responsibility-decomposed; unread 7,396; unknown 15,845; omitted 0. Next is tests/forbiddenword.dic.",
-    "source_authority_evidence": "Orders 8,666–8,729 were exact-read from pinned hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b and bound by b1ab6c8e source-authority artifact 11686817472 (sha256:46190185768fdb08a210beb0d90974837732312ca7ffa4c710f86ebb7d8dc75c). They cover COMPOUNDRULE sequence/repetition/optionality across base/long/numeric flags, numeric percent/per-mille morphology, legacy and UTF affix conditions, continuation-prefix morphology, digit-word compounds, Turkish dotless-I casing, ISO-8859-15 ligature casing, flag-format parity, Swedish linking morphemes and the FORBIDDENWORD configuration entry. Every row remains mapped-open, unknown_closed=false and omitted=false; source reading closes no unknown. Fresh descendant exact-head GitHub Actions are mandatory.",
-    "current_source_read_through": 8729,
-    "first_unread_order": 8730,
-    "first_unread_path": "Telegram/ThirdParty/hunspell::tests/forbiddenword.dic"
+    "source_read_reconciliation": "Accepted prefix 8,748/16,125; Hunspell FORBIDDENWORD/FORCEUCASE/FULLSTRIP/German-compounding window 8,730–8,748 exact-read and responsibility-decomposed; unread 7,377; unknown 15,845; omitted 0. Next is the non-UTF-8 tests/gh-hunzip-overflow.aff.hz raw-byte fixture.",
+    "source_authority_evidence": "Orders 8,730–8,748 were exact-read from pinned hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b using run 38104688586 job 114367624265 source-authority identity evidence and direct exact-blob reads. They cover FORBIDDENWORD inheritance/homonym exceptions, FORCEUCASE compound acceptance/suggestions, FULLSTRIP, and current/legacy German compounding including case boundaries, Fuge elements, dash composition, forbidden exceptions and circumfix positioning. All remain mapped-open, unknown_closed=false and omitted=false. Order 8,749 remains unread because the connector cannot decode its non-UTF-8 compressed bytes; no false read closure was recorded.",
+    "current_source_read_through": 8748,
+    "first_unread_order": 8749,
+    "first_unread_path": "Telegram/ThirdParty/hunspell::tests/gh-hunzip-overflow.aff.hz"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 8729,
-    "first_unread_order": 8730,
-    "first_unread_path": "Telegram/ThirdParty/hunspell::tests/forbiddenword.dic",
+    "read_through": 8748,
+    "first_unread_order": 8749,
+    "first_unread_path": "Telegram/ThirdParty/hunspell::tests/gh-hunzip-overflow.aff.hz",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
