@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 7696,
+    "unread": 7632,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,11 +13478,11 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Accepted prefix 8,429/16,125; Hunspell core/parser/tool window 8,366–8,429 exact-read and responsibility-decomposed; unread 7,696; unknown 15,845; omitted 0. Next is src/tools/hzfuzzer.options.",
-    "source_authority_evidence": "GitHub Actions source-authority artifact 11686195087 (sha256:5d777a472ca1c07d3ea5b0f31250925802bb1fc3ec508518e22d7c6dc1120aaa) at a8e357341bcaa527e78b7ef7c8ca06d68831f6ce materialized accepted Hunspell 8,366–8,429. Core spell/suggest/affix/morphology, Unicode/encoding, dictionary state, parsers, fuzzers/generators and mature CLI orchestration were exact-read. Source reading only; descendant exact-head Actions required.",
-    "current_source_read_through": 8429,
-    "first_unread_order": 8430,
-    "first_unread_path": "Telegram/ThirdParty/hunspell::src/tools/hzfuzzer.options"
+    "source_read_reconciliation": "Accepted prefix 8,493/16,125; Hunspell tool/fuzzer/regression-fixture window 8,430–8,493 exact-read and responsibility-decomposed; unread 7,632; unknown 15,845; omitted 0. Next is tests/IJ.aff.",
+    "source_authority_evidence": "Pinned Hunspell exact blobs 8,430–8,493 were directly read against hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b. The range covers bounded hzip/morph/parser/personal-dictionary fuzzing and dictionary transforms plus explicit regression fixtures for historical crash/Unicode/suggestion/compound failures. Source reading only; descendant exact-head Actions required.",
+    "current_source_read_through": 8493,
+    "first_unread_order": 8494,
+    "first_unread_path": "Telegram/ThirdParty/hunspell::tests/IJ.aff"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 8429,
-    "first_unread_order": 8430,
-    "first_unread_path": "Telegram/ThirdParty/hunspell::src/tools/hzfuzzer.options",
+    "read_through": 8493,
+    "first_unread_order": 8494,
+    "first_unread_path": "Telegram/ThirdParty/hunspell::tests/IJ.aff",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {

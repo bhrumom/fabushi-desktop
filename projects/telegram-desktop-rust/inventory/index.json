@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 7696,
+    "unread_minimum": 7632,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through deterministic order 8,429; unread 7,696; unknown 15,845; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition through deterministic order 8,493; unread 7,632; unknown 15,845; omitted 0."
   },
   "latest_recursive_evidence": {
     "run_id": 38096221101,
@@ -47,7 +47,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live authority exact through deterministic order 8,429; first unread 8,430 Telegram/ThirdParty/hunspell::src/tools/hzfuzzer.options; unread_minimum is 7,696; unknown remains 15,845; omitted remains 0.",
+  "note": "Live authority exact through deterministic order 8,493; first unread 8,494 Telegram/ThirdParty/hunspell::tests/IJ.aff; unread_minimum is 7,632; unknown remains 15,845; omitted remains 0.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -65,10 +65,10 @@
       6541,
       6627
     ],
-    "current_source_read_through": 8429,
-    "first_unread_order": 8430,
-    "first_unread_path": "Telegram/ThirdParty/hunspell::src/tools/hzfuzzer.options",
-    "current_head_source_authority_evidence": "Orders 8,366–8,429 were exact-read from pinned hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b across core spell/suggest/affix/morphology, Unicode/encoding, dictionary persistence, parsers, generators, fuzzers and CLI/tool behavior. Source-authority artifact 11686195087 at predecessor a8e357341bcaa527e78b7ef7c8ca06d68831f6ce fixed exact identities; descendant exact-head GitHub Actions remain required and source reading closes no unknown."
+    "current_source_read_through": 8493,
+    "first_unread_order": 8494,
+    "first_unread_path": "Telegram/ThirdParty/hunspell::tests/IJ.aff",
+    "current_head_source_authority_evidence": "Orders 8,430–8,493 were exact-read from pinned hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b across remaining tools/fuzzers/dictionary transforms and regression fixtures for n-gram case correction, homonyms/NEEDAFFIX/compound rules, large AF/AM crash handling, Arabic Unicode IGNORE/affix conditions and compound-pattern flags. Descendant exact-head GitHub Actions remain required; source reading closes no unknown."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -77,9 +77,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 8429,
-    "first_unread_order": 8430,
-    "first_unread_path": "Telegram/ThirdParty/hunspell::src/tools/hzfuzzer.options",
+    "read_through": 8493,
+    "first_unread_order": 8494,
+    "first_unread_path": "Telegram/ThirdParty/hunspell::tests/IJ.aff",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }
