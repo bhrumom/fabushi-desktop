@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 7049,
+    "unread_minimum": 6985,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through deterministic order 9,076; unread 7,049; unknown 15,845; omitted 0. Hunspell direct-gitlink source-reading range is complete; production responsibility closure remains open."
+    "note": "Recursive 16,125; exact read/decomposition through deterministic order 9,140; unread 6,985; unknown 15,845; omitted 0."
   },
   "latest_recursive_evidence": {
     "run_id": 38106112583,
@@ -41,7 +41,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live authority exact through deterministic order 9,076; first unread 9,077 Telegram/ThirdParty/kcoreaddons::.git-blame-ignore-revs; unread_minimum is 7,049; unknown remains 15,845; omitted remains 0.",
+  "note": "Live authority exact through deterministic order 9,140; first unread 9,141 Telegram/ThirdParty/kcoreaddons::autotests/kfileutilstest.cpp; unread_minimum is 6,985; unknown remains 15,845; omitted remains 0.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -59,10 +59,10 @@
       6541,
       6627
     ],
-    "current_source_read_through": 9076,
-    "first_unread_order": 9077,
-    "first_unread_path": "Telegram/ThirdParty/kcoreaddons::.git-blame-ignore-revs",
-    "current_head_source_authority_evidence": "Orders 9,050–9,076 completed the pinned Hunspell direct-gitlink source-reading range using accepted recursive identities from GitHub Actions artifact 11689378924 plus direct exact GitHub reads. Responsibilities cover BOM stripping, supplementary-plane Unicode, UTF compound minimums, WARN policy, word-pair compound disambiguation and zero-affix morphology. Order 9,077 transitions to KDE/kcoreaddons@fd84da51b554eac25e35b1e3f373edaab3029b15 Telegram/ThirdParty/kcoreaddons::.git-blame-ignore-revs@4fa1a941b387399913902b44873d41a58c87661e. Fresh descendant exact-head Actions remain mandatory; mapped-open Hunspell responsibilities are not production-verified by source completion."
+    "current_source_read_through": 9140,
+    "first_unread_order": 9141,
+    "first_unread_path": "Telegram/ThirdParty/kcoreaddons::autotests/kfileutilstest.cpp",
+    "current_head_source_authority_evidence": "Orders 9,077–9,140 begin pinned KDE/kcoreaddons@fd84da51b554eac25e35b1e3f373edaab3029b15. Exact reads cover cross-platform build/dependency contracts, plugin desktop-to-JSON typed metadata conversion, license/provenance inputs, plugin factory/unload behavior, OS metadata parsing, autosave/stale-file/locking recovery, composite-job lifetime, legacy settings migration and directory-watch lifecycle/concurrency/performance. Recursive identity derives from GitHub Actions artifact 11689378924; direct pinned GitHub reads established semantics. Fresh descendant exact-head Actions remain mandatory."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -71,9 +71,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 9076,
-    "first_unread_order": 9077,
-    "first_unread_path": "Telegram/ThirdParty/kcoreaddons::.git-blame-ignore-revs",
+    "read_through": 9140,
+    "first_unread_order": 9141,
+    "first_unread_path": "Telegram/ThirdParty/kcoreaddons::autotests/kfileutilstest.cpp",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }
