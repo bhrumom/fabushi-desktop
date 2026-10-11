@@ -266,9 +266,9 @@
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
     "unknown_minimum": 15845,
-    "unread_minimum": 5777,
+    "unread_minimum": 5713,
     "omitted_known": 0,
-    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 10,348; unknown=15,845, unread=5,777, omitted=0."
+    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 10,412; unknown=15,845, unread=5,713, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -282,7 +282,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Source/product/release closure open. Exact read-through 10,348/16,125; first unread 10,349 Telegram/ThirdParty/lz4::contrib/gen_manual/.gitignore@6ea967f7c148b0a5e27b39ee35afaa509c588b33; unread 5,777; unknown 15,845; omitted 0. Orders 10,285-10,348 cover LZ4 build/CI/Windows/CMake/Debian/DJGPP quality and packaging inputs. Existing Fabushi Build/Quality/Platform/Packaging/Updater/License owners remain canonical; accepted tdesktop currently exposes LZ4 here as a direct gitlink plus Snap liblz4-dev build package, while current Fabushi has no LZ4/Zstd production dependency. No compression runtime gap is proven by this tranche; LZ4 core/consumer reachability remains open."
+    "note": "Source/product/release closure open. Exact read-through 10,412/16,125; first unread 10,413 Telegram/ThirdParty/lz4::ossfuzz/compress_fuzzer.c@edc8aad9a929dc7d384de191a812e83b632f22d8; unread 5,713; unknown 15,845; omitted 0. Orders 10,349-10,412 cover LZ4 manual/build/package, block/frame/file/HC/xxHash runtime contracts and first OSS-Fuzz authority. Existing Fabushi Resource/Storage/Build/Quality/Packaging/Updater/License owners remain canonical; shipping Host already uses flate2/tar for archive handling but has no LZ4/Zstd dependency. No LZ4-specific production gap is proven; consumer reachability remains open."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",
@@ -301,13 +301,13 @@
   "recursive_inventory_evidence": {
     "status": "exact-head-source-window-attested-descendant-accounting-pending",
     "runner": "github-actions",
-    "run_id": 38127286071,
+    "run_id": 38127755807,
     "run_attempt": 1,
-    "job_id": 114434237346,
-    "validation_head_sha": "c95e04afee5e8fa712c5329f6331c9d945668345",
-    "artifact_id": 11697319116,
-    "artifact_name": "tdrp-revision9-authority-c95e04afee5e8fa712c5329f6331c9d945668345",
-    "artifact_digest": "sha256:45e8495d4f0f015a97191be79bc98247423d00797a42aa6b05a532b7cc0c5314",
+    "job_id": 114435611847,
+    "validation_head_sha": "99e027714e9ee707e544073c6e9240fa0c77c289",
+    "artifact_id": 11697459714,
+    "artifact_name": "tdrp-revision9-authority-99e027714e9ee707e544073c6e9240fa0c77c289",
+    "artifact_digest": "sha256:c53bc4284dd3e358aa891df11d89083625fa56c2092d4f4b8ab1a509513a4953",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "recursive_non_directory_entries": 16125,
     "source_closure_ready": false
@@ -633,9 +633,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 10348,
-    "first_unread_order": 10349,
-    "first_unread_path": "Telegram/ThirdParty/lz4::contrib/gen_manual/.gitignore",
+    "read_through": 10412,
+    "first_unread_order": 10413,
+    "first_unread_path": "Telegram/ThirdParty/lz4::ossfuzz/compress_fuzzer.c",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {

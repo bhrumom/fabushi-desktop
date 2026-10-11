@@ -14,23 +14,23 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 5777,
+    "unread_minimum": 5713,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through deterministic order 10,348; unread 5,777; unknown 15,845; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition through deterministic order 10,412; unread 5,713; unknown 15,845; omitted 0."
   },
   "latest_recursive_evidence": {
-    "run_id": 38127286071,
+    "run_id": 38127755807,
     "run_attempt": 1,
-    "job_id": 114434237346,
-    "head_sha": "c95e04afee5e8fa712c5329f6331c9d945668345",
-    "artifact_id": 11697319116,
-    "artifact_digest": "sha256:45e8495d4f0f015a97191be79bc98247423d00797a42aa6b05a532b7cc0c5314",
+    "job_id": 114435611847,
+    "head_sha": "99e027714e9ee707e544073c6e9240fa0c77c289",
+    "artifact_id": 11697459714,
+    "artifact_digest": "sha256:c53bc4284dd3e358aa891df11d89083625fa56c2092d4f4b8ab1a509513a4953",
     "artifact_files": [
       "upstream-recursive-inventory.json"
     ],
     "evidence_status": "exact-head-range-attested-validator-success",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
-    "note": "c95e04a exact-head source-authority completed successfully and materialized orders 10,285-10,348. The descendant source-accounting commit requires fresh exact-head Actions."
+    "note": "99e0277 exact-head source-authority completed successfully and materialized orders 10,349-10,412. This descendant source-accounting commit requires fresh exact-head Actions."
   },
   "closure_rules": {
     "executable_runner": "github-actions",
@@ -40,7 +40,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live baseline identity remains accepted for telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 / tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6. This does not imply source/product/release closure: exact read-through is 10,348; unread_minimum is 5,777; unknown remains 15,845; omitted remains 0; acceptance.accepted and baseline_ready remain false until their gates close.",
+  "note": "Live baseline identity remains accepted for telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 / tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6. This does not imply source/product/release closure: exact read-through is 10,412; unread_minimum is 5,713; unknown remains 15,845; omitted remains 0; acceptance.accepted and baseline_ready remain false until their gates close.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -58,10 +58,10 @@
       6541,
       6627
     ],
-    "current_source_read_through": 10348,
-    "first_unread_order": 10349,
-    "first_unread_path": "Telegram/ThirdParty/lz4::contrib/gen_manual/.gitignore",
-    "current_head_source_authority_evidence": "Exact-head c95e04afee5e8fa712c5329f6331c9d945668345 run 38127286071/job 114434237346 artifact 11697319116 (sha256:45e8495d4f0f015a97191be79bc98247423d00797a42aa6b05a532b7cc0c5314) materialized exact recursive identities and bytes for orders 10,285-10,348 after successful Revision 9 validation. Descendant source-accounting changes require fresh exact-head validation."
+    "current_source_read_through": 10412,
+    "first_unread_order": 10413,
+    "first_unread_path": "Telegram/ThirdParty/lz4::ossfuzz/compress_fuzzer.c",
+    "current_head_source_authority_evidence": "Exact-head 99e027714e9ee707e544073c6e9240fa0c77c289 run 38127755807/job 114435611847 artifact 11697459714 (sha256:c53bc4284dd3e358aa891df11d89083625fa56c2092d4f4b8ab1a509513a4953) materialized exact recursive identities and bytes for orders 10,349-10,412 after successful Revision 9 validation. Descendant source-accounting changes require fresh exact-head validation."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -70,9 +70,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 10348,
-    "first_unread_order": 10349,
-    "first_unread_path": "Telegram/ThirdParty/lz4::contrib/gen_manual/.gitignore",
+    "read_through": 10412,
+    "first_unread_order": 10413,
+    "first_unread_path": "Telegram/ThirdParty/lz4::ossfuzz/compress_fuzzer.c",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }

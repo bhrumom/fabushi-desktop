@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 5777,
+    "unread": 5713,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13479,10 +13479,10 @@
     "ahead_by": 4,
     "changed_paths": 10,
     "source_read_reconciliation": "Accepted prefix 10,156/16,125; predecessor exact-head source artifact materialized libfido2 API/compat/regression authority; unread 5,969; unknown 15,845; omitted 0.",
-    "source_authority_evidence": "Orders 10,093-10,156 exact-read from b8a52c954b9ea63e9f64b31d68fc537e71e1f2bf run 38120045447/job 114412753321 artifact 11695420570 (sha256:f08d296699a1041550c1fd1421f78b47c04f53f5063eab901369157f37275ab5). Responsibilities include strict assertion/credential verification, device timeout/cancel/PIN/PUAT/biometric/largeBlob lifecycle, secret-memory hygiene/constant-time comparison and adversarial regression behavior. Existing owners remain canonical; PIN zeroization is implemented in this descendant while packaged helper/hardware release closure remains open.",
-    "current_source_read_through": 10348,
-    "first_unread_order": 10349,
-    "first_unread_path": "Telegram/ThirdParty/lz4::contrib/gen_manual/.gitignore"
+    "source_authority_evidence": "Orders 10,349-10,412 exact-read from 99e027714e9ee707e544073c6e9240fa0c77c289 run 38127755807/job 114435611847 artifact 11697459714 (sha256:c53bc4284dd3e358aa891df11d89083625fa56c2092d4f4b8ab1a509513a4953). Responsibilities cover LZ4 bounded block/frame/file/stream/dictionary/checksum/memory/error semantics plus build/package/license/fuzz inputs. Existing Fabushi owners remain canonical; no LZ4 shipping runtime gap is proven and all rows remain mapped-open pending consumer reachability and descendant exact-head evidence.",
+    "current_source_read_through": 10412,
+    "first_unread_order": 10413,
+    "first_unread_path": "Telegram/ThirdParty/lz4::ossfuzz/compress_fuzzer.c"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 10348,
-    "first_unread_order": 10349,
-    "first_unread_path": "Telegram/ThirdParty/lz4::contrib/gen_manual/.gitignore",
+    "read_through": 10412,
+    "first_unread_order": 10413,
+    "first_unread_path": "Telegram/ThirdParty/lz4::ossfuzz/compress_fuzzer.c",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
