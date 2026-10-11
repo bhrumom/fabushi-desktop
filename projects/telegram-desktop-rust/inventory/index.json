@@ -14,24 +14,24 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 3921,
+    "unread_minimum": 3857,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through deterministic order 12,204; unread 3,921; unknown 15,845; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition through deterministic order 12,268; unread 3,857; unknown 15,845; omitted 0."
   },
   "latest_recursive_evidence": {
-    "run_id": 38180456540,
+    "run_id": 38182309860,
     "run_attempt": 1,
-    "job_id": 114591744895,
-    "head_sha": "08365df580a07dc7f2eecc3a73b6310389bec152",
-    "artifact_id": 11717516388,
-    "artifact_digest": "sha256:da1ea8fd259ddcd8c5924091e0f4af297fb98917fae9af2005aba7d66f43f5ec",
+    "job_id": 114597318610,
+    "head_sha": "b629be6b4163b4a515c7e066ffecdb50f76520ae",
+    "artifact_id": 11718288179,
+    "artifact_digest": "sha256:de3d40be75a890311e975b5c0e68b2005a957ca586a804cc09068872c4e105b4",
     "artifact_files": [
       "upstream-recursive-inventory.json",
       "current-first-unread/window-manifest.json"
     ],
-    "evidence_status": "exact-source-materialization-current-head-runtime-and-chat-validation-pending",
+    "evidence_status": "exact-source-materialization-reviewed-descendant-validation-required",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
-    "note": "Exact-head 08365df source authority succeeded and materialized orders 12,141-12,204; reading alone does not reduce unknown."
+    "note": "Exact-head b629be6b source authority succeeded and materialized orders 12,205-12,268; these exact blobs were formally reviewed into descendant shards; reading alone does not reduce unknown."
   },
   "closure_rules": {
     "executable_runner": "github-actions",
@@ -41,7 +41,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live baseline accepted; closure open. Read-through 12,204; unread_minimum is 3,921; unknown remains 15,845; omitted remains 0; first unread order 12,205 is Telegram/ThirdParty/xdg-desktop-portal::tests/test-xdp-utils.c.",
+  "note": "Live baseline accepted; closure open. Read-through 12,268; unread_minimum is 3,857; unknown remains 15,845; omitted remains 0; first unread order 12,269 is Telegram/ThirdParty/xxHash::cli/xxhsum.c.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -59,12 +59,12 @@
       6541,
       6627
     ],
-    "current_source_read_through": 12204,
-    "first_unread_order": 12205,
-    "first_unread_path": "Telegram/ThirdParty/xdg-desktop-portal::tests/test-xdp-utils.c",
-    "current_head_source_authority_evidence": "Exact-head 08365df run 38180456540/job 114591744895 succeeded with artifact 11717516388; runtime/chat finalization remains independent.",
-    "source_read_reconciliation": "Accepted prefix 12,204/16,125; orders 12,141-12,204 formally dispositioned from exact artifact; unread 3,921; unknown 15,845; omitted 0.",
-    "source_authority_evidence": "Exact-head 08365df run 38180456540/job 114591744895 succeeded with artifact 11717516388; runtime/chat finalization remains independent."
+    "current_source_read_through": 12268,
+    "first_unread_order": 12269,
+    "first_unread_path": "Telegram/ThirdParty/xxHash::cli/xxhsum.c",
+    "current_head_source_authority_evidence": "Exact-head b629be6b run 38182309860/job 114597318610 succeeded with artifact 11718288179; the accounting descendant requires fresh same-head runtime/chat validation.",
+    "source_read_reconciliation": "Accepted prefix 12,268/16,125; orders 12,205-12,268 formally dispositioned from exact b629be6b artifact; unread 3,857; unknown 15,845; omitted 0.",
+    "source_authority_evidence": "Exact-head b629be6b run 38182309860/job 114597318610 succeeded with artifact 11718288179 (sha256:de3d40be75a890311e975b5c0e68b2005a957ca586a804cc09068872c4e105b4); descendant same-head validation required."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -73,9 +73,9 @@
     "development_only_non_applicable": 206,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 12204,
-    "first_unread_order": 12205,
-    "first_unread_path": "Telegram/ThirdParty/xdg-desktop-portal::tests/test-xdp-utils.c",
+    "read_through": 12268,
+    "first_unread_order": 12269,
+    "first_unread_path": "Telegram/ThirdParty/xxHash::cli/xxhsum.c",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }
