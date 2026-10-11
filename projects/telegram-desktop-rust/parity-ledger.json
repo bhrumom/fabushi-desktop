@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 5841,
+    "unread": 5777,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13480,9 +13480,9 @@
     "changed_paths": 10,
     "source_read_reconciliation": "Accepted prefix 10,156/16,125; predecessor exact-head source artifact materialized libfido2 API/compat/regression authority; unread 5,969; unknown 15,845; omitted 0.",
     "source_authority_evidence": "Orders 10,093-10,156 exact-read from b8a52c954b9ea63e9f64b31d68fc537e71e1f2bf run 38120045447/job 114412753321 artifact 11695420570 (sha256:f08d296699a1041550c1fd1421f78b47c04f53f5063eab901369157f37275ab5). Responsibilities include strict assertion/credential verification, device timeout/cancel/PIN/PUAT/biometric/largeBlob lifecycle, secret-memory hygiene/constant-time comparison and adversarial regression behavior. Existing owners remain canonical; PIN zeroization is implemented in this descendant while packaged helper/hardware release closure remains open.",
-    "current_source_read_through": 10156,
-    "first_unread_order": 10157,
-    "first_unread_path": "Telegram/ThirdParty/libfido2::regress/es384.c"
+    "current_source_read_through": 10348,
+    "first_unread_order": 10349,
+    "first_unread_path": "Telegram/ThirdParty/lz4::contrib/gen_manual/.gitignore"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 10284,
-    "first_unread_order": 10285,
-    "first_unread_path": "Telegram/ThirdParty/lz4::.circleci/images/primary/Dockerfile",
+    "read_through": 10348,
+    "first_unread_order": 10349,
+    "first_unread_path": "Telegram/ThirdParty/lz4::contrib/gen_manual/.gitignore",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {

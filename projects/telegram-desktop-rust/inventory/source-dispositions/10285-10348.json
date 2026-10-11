@@ -1,0 +1,1819 @@
+{
+  "format_version": 1,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+    "tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6"
+  },
+  "range": {
+    "first_order": 10285,
+    "last_order": 10348,
+    "entries": 64
+  },
+  "range_evidence": {
+    "identity_source": {
+      "head_sha": "c95e04afee5e8fa712c5329f6331c9d945668345",
+      "workflow_run": 38127286071,
+      "job_id": 114434237346,
+      "artifact_id": 11697319116,
+      "artifact_digest": "sha256:45e8495d4f0f015a97191be79bc98247423d00797a42aa6b05a532b7cc0c5314",
+      "note": "exact identities and all 64 materialized LZ4 blobs from current-head recursive source-authority artifact; direct blob reads independently reviewed build/quality/platform/package/license semantics and no shipping LZ4 runtime was inferred from build metadata"
+    }
+  },
+  "rows": [
+    {
+      "recursive_order": 10285,
+      "source_path": "Telegram/ThirdParty/lz4::.circleci/images/primary/Dockerfile",
+      "source_blob_sha": "77670148ccfef16d6490070911b62e2a8ff4ae8a",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": ".circleci/images/primary/Dockerfile",
+        "object": "77670148ccfef16d6490070911b62e2a8ff4ae8a",
+        "mode": "100644",
+        "type": "blob",
+        "size": 644
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 historical cross-toolchain CI image",
+      "source_symbols": [
+        "source:.circleci/images/primary/Dockerfile"
+      ],
+      "responsibility": "Defines CMake, Clang/GCC, Valgrind, QEMU and ARM/ARM64/i386/PPC cross-toolchains used to exercise portability and memory-safety checks.",
+      "fabushi_canonical_owner": "Canonical Build/Quality + platform matrix",
+      "fabushi_target": "Preserve equivalent current Fabushi cross-platform quality/resource-pressure coverage through existing GitHub Actions; do not copy the obsolete CircleCI image or create an LZ4 runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10286,
+      "source_path": "Telegram/ThirdParty/lz4::.cirrus.yml",
+      "source_blob_sha": "e42353855f1bd5f9e669732f5c245632eeee2b57",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": ".cirrus.yml",
+        "object": "e42353855f1bd5f9e669732f5c245632eeee2b57",
+        "mode": "100644",
+        "type": "blob",
+        "size": 99
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 historical FreeBSD CI",
+      "source_symbols": [
+        "source:.cirrus.yml"
+      ],
+      "responsibility": "Runs the library test suite on FreeBSD with gmake, carrying non-Linux portability expectations.",
+      "fabushi_canonical_owner": "Canonical Build/Quality + platform matrix",
+      "fabushi_target": "Treat FreeBSD behavior as portability authority while retaining Fabushi's supported-platform policy; no Cirrus infrastructure or compression runtime is introduced.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10287,
+      "source_path": "Telegram/ThirdParty/lz4::.gitattributes",
+      "source_blob_sha": "6212bd405b4a952331871f838c3b878609403e0c",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": ".gitattributes",
+        "object": "6212bd405b4a952331871f838c3b878609403e0c",
+        "mode": "100644",
+        "type": "blob",
+        "size": 348
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 source normalization policy",
+      "source_symbols": [
+        "source:.gitattributes"
+      ],
+      "responsibility": "Defines deterministic text/binary classification and LF/CRLF rules for source, Visual Studio metadata and binary assets.",
+      "fabushi_canonical_owner": "Canonical Build/Packaging + source hygiene",
+      "fabushi_target": "Carry reproducible source/resource normalization through existing repository and packaging owners where applicable; no second source-normalization subsystem.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10288,
+      "source_path": "Telegram/ThirdParty/lz4::.github/ISSUE_TEMPLATE/bug_report.md",
+      "source_blob_sha": "e47afe7257ccf73a3838edacc466611587e8d065",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": ".github/ISSUE_TEMPLATE/bug_report.md",
+        "object": "e47afe7257ccf73a3838edacc466611587e8d065",
+        "mode": "100644",
+        "type": "blob",
+        "size": 701
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 maintenance intake contract",
+      "source_symbols": [
+        "source:.github/ISSUE_TEMPLATE/bug_report.md"
+      ],
+      "responsibility": "Captures reproducibility data including OS, version, compiler, build system and hardware for defects.",
+      "fabushi_canonical_owner": "Canonical Quality/maintainability process",
+      "fabushi_target": "Use as engineering-quality evidence for diagnostic completeness; it does not create a shipping product owner.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10289,
+      "source_path": "Telegram/ThirdParty/lz4::.github/ISSUE_TEMPLATE/feature_request.md",
+      "source_blob_sha": "bbcbbe7d61558adde3cbfd0c7a63a67c27ed6d30",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": ".github/ISSUE_TEMPLATE/feature_request.md",
+        "object": "bbcbbe7d61558adde3cbfd0c7a63a67c27ed6d30",
+        "mode": "100644",
+        "type": "blob",
+        "size": 595
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 maintenance intake contract",
+      "source_symbols": [
+        "source:.github/ISSUE_TEMPLATE/feature_request.md"
+      ],
+      "responsibility": "Captures problem, desired behavior, alternatives and context for feature requests.",
+      "fabushi_canonical_owner": "Canonical Quality/maintainability process",
+      "fabushi_target": "Use as engineering-quality evidence for requirements intake; it does not create a shipping product owner.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10290,
+      "source_path": "Telegram/ThirdParty/lz4::.github/workflows/README.md",
+      "source_blob_sha": "306d875225ab10068b502e757eb3bdc617c30c5d",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": ".github/workflows/README.md",
+        "object": "306d875225ab10068b502e757eb3bdc617c30c5d",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2145
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 CI risk/exception documentation",
+      "source_symbols": [
+        "source:.github/workflows/README.md"
+      ],
+      "responsibility": "Documents sanitizer/compiler/cppcheck limitations and gaps between virtual and real-hardware coverage.",
+      "fabushi_canonical_owner": "Canonical Build/Quality + security testing",
+      "fabushi_target": "Carry disclosed risk cases into strict Fabushi quality review; upstream ignored failures are risk evidence, not permission to weaken Fabushi gates.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10291,
+      "source_path": "Telegram/ThirdParty/lz4::.github/workflows/ci.yml",
+      "source_blob_sha": "c490bc7cd6b94e90ecdccc5bee9ae5d8f8c16b23",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": ".github/workflows/ci.yml",
+        "object": "c490bc7cd6b94e90ecdccc5bee9ae5d8f8c16b23",
+        "mode": "100644",
+        "type": "blob",
+        "size": 29212
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 multi-platform quality matrix",
+      "source_symbols": [
+        "source:.github/workflows/ci.yml"
+      ],
+      "responsibility": "Exercises GCC/Clang generations, 32/x32, C/C++, freestanding, ABI/version/frame/fuzz/benchmark, allocator/distance, Valgrind/sanitizers/static analysis, OSS-Fuzz, QEMU architectures, macOS and Make/CMake/Meson install/build contracts.",
+      "fabushi_canonical_owner": "Canonical Build/Quality + platform + dependency assurance",
+      "fabushi_target": "Map applicable portability, sanitizer, fuzz, ABI/install and package-quality expectations onto existing Fabushi GitHub Actions; retain fail-closed gates rather than copying historical allow-failure exceptions.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10292,
+      "source_path": "Telegram/ThirdParty/lz4::.gitignore",
+      "source_blob_sha": "ed02057e53ac263b67de31422d39b9dbd2ee609f",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": ".gitignore",
+        "object": "ed02057e53ac263b67de31422d39b9dbd2ee609f",
+        "mode": "100644",
+        "type": "blob",
+        "size": 353
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 build-artifact hygiene",
+      "source_symbols": [
+        "source:.gitignore"
+      ],
+      "responsibility": "Separates generated objects, libraries, executables, IDE state, analyzer output and test artifacts from tracked source.",
+      "fabushi_canonical_owner": "Canonical Build/Quality + repository hygiene",
+      "fabushi_target": "Keep equivalent generated-output hygiene in existing Fabushi build owners; no product runtime responsibility is introduced.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10293,
+      "source_path": "Telegram/ThirdParty/lz4::.travis.yml",
+      "source_blob_sha": "0aeea6ef0acf87fd775e2ddac143a940e070675b",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": ".travis.yml",
+        "object": "0aeea6ef0acf87fd775e2ddac143a940e070675b",
+        "mode": "100644",
+        "type": "blob",
+        "size": 814
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 real-hardware/fuzz/release CI",
+      "source_symbols": [
+        "source:.travis.yml"
+      ],
+      "responsibility": "Exercises arm64/PPC64LE/s390x real hardware, tagged-release checks, OSS-Fuzz compilation and Unicode lint.",
+      "fabushi_canonical_owner": "Canonical Build/Quality + release assurance",
+      "fabushi_target": "Use as portability/release-quality authority when applicable to supported Fabushi targets; do not recreate Travis or relax current GitHub Actions gates.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10294,
+      "source_path": "Telegram/ThirdParty/lz4::INSTALL",
+      "source_blob_sha": "6aab067b94777894e771a101646a6a1d9357f4d6",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "INSTALL",
+        "object": "6aab067b94777894e771a101646a6a1d9357f4d6",
+        "mode": "100644",
+        "type": "blob",
+        "size": 630
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 installation contract",
+      "source_symbols": [
+        "source:INSTALL"
+      ],
+      "responsibility": "Documents parallel build, staged DESTDIR installation, Make variable redirection and install behavior.",
+      "fabushi_canonical_owner": "Canonical Build/Packaging",
+      "fabushi_target": "Map staged/reproducible install semantics to existing Fabushi package/release workflows only if the dependency becomes part of shipping composition.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10295,
+      "source_path": "Telegram/ThirdParty/lz4::LICENSE",
+      "source_blob_sha": "1b84cc30f0361b13d56bf8c2fbe043493c08fbe6",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "LICENSE",
+        "object": "1b84cc30f0361b13d56bf8c2fbe043493c08fbe6",
+        "mode": "100644",
+        "type": "blob",
+        "size": 635
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 license boundary",
+      "source_symbols": [
+        "source:LICENSE"
+      ],
+      "responsibility": "Distinguishes BSD-2-Clause library source from GPLv2 repository programs/tests/examples unless otherwise stated.",
+      "fabushi_canonical_owner": "Canonical License/Supply-chain provenance",
+      "fabushi_target": "Preserve exact license provenance and avoid copying GPL-governed tooling into Fabushi shipping code; dependency applicability remains open until consumer reachability closes.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10296,
+      "source_path": "Telegram/ThirdParty/lz4::Makefile",
+      "source_blob_sha": "e70c3dbd334ead295ce05f32170d5364c5b2eba1",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "Makefile",
+        "object": "e70c3dbd334ead295ce05f32170d5364c5b2eba1",
+        "mode": "100644",
+        "type": "blob",
+        "size": 9207
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 build/test orchestration",
+      "source_symbols": [
+        "source:Makefile"
+      ],
+      "responsibility": "Orchestrates library, CLI, examples, manuals, tests, install/uninstall, CMake, sanitizer/static-analysis, platform, language-standard and environment-variable propagation checks.",
+      "fabushi_canonical_owner": "Canonical Build/Quality + Packaging",
+      "fabushi_target": "Use these build/test behaviors as dependency-quality authority; existing Fabushi Actions/package owners remain canonical and no LZ4 runtime is added from build metadata alone.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10297,
+      "source_path": "Telegram/ThirdParty/lz4::Makefile.inc",
+      "source_blob_sha": "e78298c3204a2b242570bd90ff7adc915a3b3711",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "Makefile.inc",
+        "object": "e78298c3204a2b242570bd90ff7adc915a3b3711",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3304
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 platform build abstraction",
+      "source_symbols": [
+        "source:Makefile.inc"
+      ],
+      "responsibility": "Selects Windows/POSIX library naming, executable suffixes, symlink/copy behavior, null device and install tool/mode semantics.",
+      "fabushi_canonical_owner": "Canonical Build/Platform/Packaging",
+      "fabushi_target": "Map only applicable platform packaging semantics into existing Fabushi platform/package owners; avoid a source-specific platform layer.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10298,
+      "source_path": "Telegram/ThirdParty/lz4::NEWS",
+      "source_blob_sha": "0a56992128c05f1cc15418d21efde6bab78924dd",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "NEWS",
+        "object": "0a56992128c05f1cc15418d21efde6bab78924dd",
+        "mode": "100644",
+        "type": "blob",
+        "size": 17257
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 compatibility/security release history",
+      "source_symbols": [
+        "source:NEWS"
+      ],
+      "responsibility": "Records compression/decompression correctness fixes, OOB/corruption cases, streaming/dictionary/frame/checksum/API changes, allocator behavior and platform/build compatibility.",
+      "fabushi_canonical_owner": "Canonical Security/Quality + dependency provenance",
+      "fabushi_target": "Treat historical correctness/security changes as dependency-risk authority if compression becomes reachable; do not infer a current shipping compression owner from changelog history.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10299,
+      "source_path": "Telegram/ThirdParty/lz4::README.md",
+      "source_blob_sha": "b314e69911367d48a0e79b3c0958a7bc0334d242",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "README.md",
+        "object": "b314e69911367d48a0e79b3c0958a7bc0334d242",
+        "mode": "100644",
+        "type": "blob",
+        "size": 5154
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 library capability/provenance overview",
+      "source_symbols": [
+        "source:README.md"
+      ],
+      "responsibility": "Defines block/frame/dictionary compression scope, performance model, install model and BSD library licensing.",
+      "fabushi_canonical_owner": "Canonical Resource/Build + dependency provenance",
+      "fabushi_target": "Use as source authority for dependency semantics only after a real Fabushi consumer is proven; current Fabushi has no LZ4/Zstd production dependency.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10300,
+      "source_path": "Telegram/ThirdParty/lz4::appveyor.yml",
+      "source_blob_sha": "b4c27ef8240a075a5f81e212fd65047b03e92959",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "appveyor.yml",
+        "object": "b4c27ef8240a075a5f81e212fd65047b03e92959",
+        "mode": "100644",
+        "type": "blob",
+        "size": 6098
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 Windows quality/package/release matrix",
+      "source_symbols": [
+        "source:appveyor.yml"
+      ],
+      "responsibility": "Builds/tests MinGW32/64, Clang and multiple MSVC configurations, static/dynamic libraries, CLI/fuzzer/bench artifacts and tagged Windows archives.",
+      "fabushi_canonical_owner": "Canonical Windows Build/Quality/Packaging/Release",
+      "fabushi_target": "Map applicable Windows build/package/release expectations to existing Fabushi Windows Actions and electron-builder owners; do not recreate AppVeyor or its artifact topology.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10301,
+      "source_path": "Telegram/ThirdParty/lz4::build/.gitignore",
+      "source_blob_sha": "69e11119e5de0708976f568df1604e06962b280e",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "build/.gitignore",
+        "object": "69e11119e5de0708976f568df1604e06962b280e",
+        "mode": "100644",
+        "type": "blob",
+        "size": 154
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 build-artifact hygiene",
+      "source_symbols": [
+        "source:build/.gitignore"
+      ],
+      "responsibility": "Separates generated objects, libraries, executables, IDE state, analyzer output and test artifacts from tracked source.",
+      "fabushi_canonical_owner": "Canonical Build/Quality + repository hygiene",
+      "fabushi_target": "Keep equivalent generated-output hygiene in existing Fabushi build owners; no product runtime responsibility is introduced.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10302,
+      "source_path": "Telegram/ThirdParty/lz4::build/README.md",
+      "source_blob_sha": "d416aeb32fee6639b62f744b7cd6e17eda48146f",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "build/README.md",
+        "object": "d416aeb32fee6639b62f744b7cd6e17eda48146f",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2946
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 IDE/build topology documentation",
+      "source_symbols": [
+        "source:build/README.md"
+      ],
+      "responsibility": "Documents CMake and Visual Studio solution topology for CLI, test tools, static/dynamic libraries and DLL consumers.",
+      "fabushi_canonical_owner": "Canonical Windows Build/Quality + dependency provenance",
+      "fabushi_target": "Use as traceability for Windows library/test topology; existing Fabushi package composition remains authoritative.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10303,
+      "source_path": "Telegram/ThirdParty/lz4::build/VS2010/datagen/datagen.vcxproj",
+      "source_blob_sha": "e24f961de4d282c037630b878ec3f28fac29a152",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "build/VS2010/datagen/datagen.vcxproj",
+        "object": "e24f961de4d282c037630b878ec3f28fac29a152",
+        "mode": "100644",
+        "type": "blob",
+        "size": 9103
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 Visual Studio synthetic test-data generator",
+      "source_symbols": [
+        "source:build/VS2010/datagen/datagen.vcxproj"
+      ],
+      "responsibility": "Defines Win32/x64 Debug/Release compilation, warning/optimization/CRT/toolset settings and exact library/program/test source membership for the synthetic test-data generator.",
+      "fabushi_canonical_owner": "Canonical Windows Build/Quality/Packaging",
+      "fabushi_target": "Use as dependency build/test configuration authority when applicable; rely on current Fabushi GitHub Actions/electron-builder composition rather than importing this project file.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10304,
+      "source_path": "Telegram/ThirdParty/lz4::build/VS2010/frametest/frametest.vcxproj",
+      "source_blob_sha": "3196768729d48eeeaf0c0141754cb017a51518a1",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "build/VS2010/frametest/frametest.vcxproj",
+        "object": "3196768729d48eeeaf0c0141754cb017a51518a1",
+        "mode": "100644",
+        "type": "blob",
+        "size": 9447
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 Visual Studio frame-integrity test target",
+      "source_symbols": [
+        "source:build/VS2010/frametest/frametest.vcxproj"
+      ],
+      "responsibility": "Defines Win32/x64 Debug/Release compilation, warning/optimization/CRT/toolset settings and exact library/program/test source membership for the frame-integrity test target.",
+      "fabushi_canonical_owner": "Canonical Windows Build/Quality/Packaging",
+      "fabushi_target": "Use as dependency build/test configuration authority when applicable; rely on current Fabushi GitHub Actions/electron-builder composition rather than importing this project file.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10305,
+      "source_path": "Telegram/ThirdParty/lz4::build/VS2010/fullbench-dll/fullbench-dll.vcxproj",
+      "source_blob_sha": "8f503f565807d6a2818511be78d067153262c7c9",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "build/VS2010/fullbench-dll/fullbench-dll.vcxproj",
+        "object": "8f503f565807d6a2818511be78d067153262c7c9",
+        "mode": "100644",
+        "type": "blob",
+        "size": 10266
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 Visual Studio DLL-linked benchmark target",
+      "source_symbols": [
+        "source:build/VS2010/fullbench-dll/fullbench-dll.vcxproj"
+      ],
+      "responsibility": "Defines Win32/x64 Debug/Release compilation, warning/optimization/CRT/toolset settings and exact library/program/test source membership for the DLL-linked benchmark target.",
+      "fabushi_canonical_owner": "Canonical Windows Build/Quality/Packaging",
+      "fabushi_target": "Use as dependency build/test configuration authority when applicable; rely on current Fabushi GitHub Actions/electron-builder composition rather than importing this project file.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10306,
+      "source_path": "Telegram/ThirdParty/lz4::build/VS2010/fullbench/fullbench.vcxproj",
+      "source_blob_sha": "aa6743152a1ecb5be48563920ceea763749aac1b",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "build/VS2010/fullbench/fullbench.vcxproj",
+        "object": "aa6743152a1ecb5be48563920ceea763749aac1b",
+        "mode": "100644",
+        "type": "blob",
+        "size": 9447
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 Visual Studio benchmark target",
+      "source_symbols": [
+        "source:build/VS2010/fullbench/fullbench.vcxproj"
+      ],
+      "responsibility": "Defines Win32/x64 Debug/Release compilation, warning/optimization/CRT/toolset settings and exact library/program/test source membership for the benchmark target.",
+      "fabushi_canonical_owner": "Canonical Windows Build/Quality/Packaging",
+      "fabushi_target": "Use as dependency build/test configuration authority when applicable; rely on current Fabushi GitHub Actions/electron-builder composition rather than importing this project file.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10307,
+      "source_path": "Telegram/ThirdParty/lz4::build/VS2010/fuzzer/fuzzer.vcxproj",
+      "source_blob_sha": "21cbf5622ec2547371ffae49997e9ece6316c8c5",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "build/VS2010/fuzzer/fuzzer.vcxproj",
+        "object": "21cbf5622ec2547371ffae49997e9ece6316c8c5",
+        "mode": "100644",
+        "type": "blob",
+        "size": 9278
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 Visual Studio fuzz target",
+      "source_symbols": [
+        "source:build/VS2010/fuzzer/fuzzer.vcxproj"
+      ],
+      "responsibility": "Defines Win32/x64 Debug/Release compilation, warning/optimization/CRT/toolset settings and exact library/program/test source membership for the fuzz target.",
+      "fabushi_canonical_owner": "Canonical Windows Build/Quality/Packaging",
+      "fabushi_target": "Use as dependency build/test configuration authority when applicable; rely on current Fabushi GitHub Actions/electron-builder composition rather than importing this project file.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10308,
+      "source_path": "Telegram/ThirdParty/lz4::build/VS2010/liblz4-dll/liblz4-dll.rc",
+      "source_blob_sha": "e089c24cd7d427076d59cb65062ff15574cadc6e",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "build/VS2010/liblz4-dll/liblz4-dll.rc",
+        "object": "e089c24cd7d427076d59cb65062ff15574cadc6e",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1337
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 Windows version resource metadata",
+      "source_symbols": [
+        "source:build/VS2010/liblz4-dll/liblz4-dll.rc"
+      ],
+      "responsibility": "Binds library/CLI file and product versions, original filename, description and copyright into Windows resources.",
+      "fabushi_canonical_owner": "Canonical Windows Packaging/Release metadata",
+      "fabushi_target": "Use as version-resource provenance if the dependency is packaged; Fabushi's own product metadata remains canonical.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10309,
+      "source_path": "Telegram/ThirdParty/lz4::build/VS2010/liblz4-dll/liblz4-dll.vcxproj",
+      "source_blob_sha": "56ec3b98120fb8cf7d15d437d2756a7a7cdeeba0",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "build/VS2010/liblz4-dll/liblz4-dll.vcxproj",
+        "object": "56ec3b98120fb8cf7d15d437d2756a7a7cdeeba0",
+        "mode": "100644",
+        "type": "blob",
+        "size": 9438
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 Visual Studio dynamic-library target",
+      "source_symbols": [
+        "source:build/VS2010/liblz4-dll/liblz4-dll.vcxproj"
+      ],
+      "responsibility": "Defines Win32/x64 Debug/Release compilation, warning/optimization/CRT/toolset settings and exact library/program/test source membership for the dynamic-library target.",
+      "fabushi_canonical_owner": "Canonical Windows Build/Quality/Packaging",
+      "fabushi_target": "Use as dependency build/test configuration authority when applicable; rely on current Fabushi GitHub Actions/electron-builder composition rather than importing this project file.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10310,
+      "source_path": "Telegram/ThirdParty/lz4::build/VS2010/liblz4/liblz4.vcxproj",
+      "source_blob_sha": "61ea159b412bf8f3996498172aa561ff5ca51e60",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "build/VS2010/liblz4/liblz4.vcxproj",
+        "object": "61ea159b412bf8f3996498172aa561ff5ca51e60",
+        "mode": "100644",
+        "type": "blob",
+        "size": 9337
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 Visual Studio static-library target",
+      "source_symbols": [
+        "source:build/VS2010/liblz4/liblz4.vcxproj"
+      ],
+      "responsibility": "Defines Win32/x64 Debug/Release compilation, warning/optimization/CRT/toolset settings and exact library/program/test source membership for the static-library target.",
+      "fabushi_canonical_owner": "Canonical Windows Build/Quality/Packaging",
+      "fabushi_target": "Use as dependency build/test configuration authority when applicable; rely on current Fabushi GitHub Actions/electron-builder composition rather than importing this project file.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10311,
+      "source_path": "Telegram/ThirdParty/lz4::build/VS2010/lz4.sln",
+      "source_blob_sha": "78f223bf48713f4a041e61de11360cf4329432e7",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "build/VS2010/lz4.sln",
+        "object": "78f223bf48713f4a041e61de11360cf4329432e7",
+        "mode": "100644",
+        "type": "blob",
+        "size": 6663
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 Visual Studio solution topology",
+      "source_symbols": [
+        "source:build/VS2010/lz4.sln"
+      ],
+      "responsibility": "Groups static/dynamic library, CLI, datagen, frame test, benchmark and fuzzer projects across Win32/x64 Debug/Release configurations.",
+      "fabushi_canonical_owner": "Canonical Windows Build/Quality/Packaging",
+      "fabushi_target": "Carry applicable Windows configuration/test coverage in existing Actions; do not ship or recreate the LZ4 Visual Studio solution.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10312,
+      "source_path": "Telegram/ThirdParty/lz4::build/VS2010/lz4/lz4.rc",
+      "source_blob_sha": "5eec36bfc4a6dc69317bdeeaa6f7723100c81f6b",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "build/VS2010/lz4/lz4.rc",
+        "object": "5eec36bfc4a6dc69317bdeeaa6f7723100c81f6b",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1337
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 Windows version resource metadata",
+      "source_symbols": [
+        "source:build/VS2010/lz4/lz4.rc"
+      ],
+      "responsibility": "Binds library/CLI file and product versions, original filename, description and copyright into Windows resources.",
+      "fabushi_canonical_owner": "Canonical Windows Packaging/Release metadata",
+      "fabushi_target": "Use as version-resource provenance if the dependency is packaged; Fabushi's own product metadata remains canonical.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10313,
+      "source_path": "Telegram/ThirdParty/lz4::build/VS2010/lz4/lz4.vcxproj",
+      "source_blob_sha": "de7a7143eea78ba8c667164d473db45aaa541ed9",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "build/VS2010/lz4/lz4.vcxproj",
+        "object": "de7a7143eea78ba8c667164d473db45aaa541ed9",
+        "mode": "100644",
+        "type": "blob",
+        "size": 10097
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 Visual Studio CLI target",
+      "source_symbols": [
+        "source:build/VS2010/lz4/lz4.vcxproj"
+      ],
+      "responsibility": "Defines Win32/x64 Debug/Release compilation, warning/optimization/CRT/toolset settings and exact library/program/test source membership for the CLI target.",
+      "fabushi_canonical_owner": "Canonical Windows Build/Quality/Packaging",
+      "fabushi_target": "Use as dependency build/test configuration authority when applicable; rely on current Fabushi GitHub Actions/electron-builder composition rather than importing this project file.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10314,
+      "source_path": "Telegram/ThirdParty/lz4::build/VS2017/datagen/datagen.vcxproj",
+      "source_blob_sha": "30e159ea5d29df1293fc0ca73ef320128a9126c4",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "build/VS2017/datagen/datagen.vcxproj",
+        "object": "30e159ea5d29df1293fc0ca73ef320128a9126c4",
+        "mode": "100644",
+        "type": "blob",
+        "size": 9282
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 Visual Studio synthetic test-data generator",
+      "source_symbols": [
+        "source:build/VS2017/datagen/datagen.vcxproj"
+      ],
+      "responsibility": "Defines Win32/x64 Debug/Release compilation, warning/optimization/CRT/toolset settings and exact library/program/test source membership for the synthetic test-data generator.",
+      "fabushi_canonical_owner": "Canonical Windows Build/Quality/Packaging",
+      "fabushi_target": "Use as dependency build/test configuration authority when applicable; rely on current Fabushi GitHub Actions/electron-builder composition rather than importing this project file.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10315,
+      "source_path": "Telegram/ThirdParty/lz4::build/VS2017/frametest/frametest.vcxproj",
+      "source_blob_sha": "a3a403d1b1c82ed0d19f2869668403fc237a80d7",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "build/VS2017/frametest/frametest.vcxproj",
+        "object": "a3a403d1b1c82ed0d19f2869668403fc237a80d7",
+        "mode": "100644",
+        "type": "blob",
+        "size": 9626
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 Visual Studio frame-integrity test target",
+      "source_symbols": [
+        "source:build/VS2017/frametest/frametest.vcxproj"
+      ],
+      "responsibility": "Defines Win32/x64 Debug/Release compilation, warning/optimization/CRT/toolset settings and exact library/program/test source membership for the frame-integrity test target.",
+      "fabushi_canonical_owner": "Canonical Windows Build/Quality/Packaging",
+      "fabushi_target": "Use as dependency build/test configuration authority when applicable; rely on current Fabushi GitHub Actions/electron-builder composition rather than importing this project file.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10316,
+      "source_path": "Telegram/ThirdParty/lz4::build/VS2017/fullbench-dll/fullbench-dll.vcxproj",
+      "source_blob_sha": "d54a8d7281941b00a7f8e917fed4ace01ed6114a",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "build/VS2017/fullbench-dll/fullbench-dll.vcxproj",
+        "object": "d54a8d7281941b00a7f8e917fed4ace01ed6114a",
+        "mode": "100644",
+        "type": "blob",
+        "size": 10443
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 Visual Studio DLL-linked benchmark target",
+      "source_symbols": [
+        "source:build/VS2017/fullbench-dll/fullbench-dll.vcxproj"
+      ],
+      "responsibility": "Defines Win32/x64 Debug/Release compilation, warning/optimization/CRT/toolset settings and exact library/program/test source membership for the DLL-linked benchmark target.",
+      "fabushi_canonical_owner": "Canonical Windows Build/Quality/Packaging",
+      "fabushi_target": "Use as dependency build/test configuration authority when applicable; rely on current Fabushi GitHub Actions/electron-builder composition rather than importing this project file.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10317,
+      "source_path": "Telegram/ThirdParty/lz4::build/VS2017/fullbench/fullbench.vcxproj",
+      "source_blob_sha": "54c97439019c3fb3ed2c9285ddc7891cd9cc9fc1",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "build/VS2017/fullbench/fullbench.vcxproj",
+        "object": "54c97439019c3fb3ed2c9285ddc7891cd9cc9fc1",
+        "mode": "100644",
+        "type": "blob",
+        "size": 9626
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 Visual Studio benchmark target",
+      "source_symbols": [
+        "source:build/VS2017/fullbench/fullbench.vcxproj"
+      ],
+      "responsibility": "Defines Win32/x64 Debug/Release compilation, warning/optimization/CRT/toolset settings and exact library/program/test source membership for the benchmark target.",
+      "fabushi_canonical_owner": "Canonical Windows Build/Quality/Packaging",
+      "fabushi_target": "Use as dependency build/test configuration authority when applicable; rely on current Fabushi GitHub Actions/electron-builder composition rather than importing this project file.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10318,
+      "source_path": "Telegram/ThirdParty/lz4::build/VS2017/fuzzer/fuzzer.vcxproj",
+      "source_blob_sha": "aa6fe42508553a919487a3981318b3f6e828a68b",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "build/VS2017/fuzzer/fuzzer.vcxproj",
+        "object": "aa6fe42508553a919487a3981318b3f6e828a68b",
+        "mode": "100644",
+        "type": "blob",
+        "size": 9457
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 Visual Studio fuzz target",
+      "source_symbols": [
+        "source:build/VS2017/fuzzer/fuzzer.vcxproj"
+      ],
+      "responsibility": "Defines Win32/x64 Debug/Release compilation, warning/optimization/CRT/toolset settings and exact library/program/test source membership for the fuzz target.",
+      "fabushi_canonical_owner": "Canonical Windows Build/Quality/Packaging",
+      "fabushi_target": "Use as dependency build/test configuration authority when applicable; rely on current Fabushi GitHub Actions/electron-builder composition rather than importing this project file.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10319,
+      "source_path": "Telegram/ThirdParty/lz4::build/VS2017/liblz4-dll/liblz4-dll.rc",
+      "source_blob_sha": "e089c24cd7d427076d59cb65062ff15574cadc6e",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "build/VS2017/liblz4-dll/liblz4-dll.rc",
+        "object": "e089c24cd7d427076d59cb65062ff15574cadc6e",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1337
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 Windows version resource metadata",
+      "source_symbols": [
+        "source:build/VS2017/liblz4-dll/liblz4-dll.rc"
+      ],
+      "responsibility": "Binds library/CLI file and product versions, original filename, description and copyright into Windows resources.",
+      "fabushi_canonical_owner": "Canonical Windows Packaging/Release metadata",
+      "fabushi_target": "Use as version-resource provenance if the dependency is packaged; Fabushi's own product metadata remains canonical.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10320,
+      "source_path": "Telegram/ThirdParty/lz4::build/VS2017/liblz4-dll/liblz4-dll.vcxproj",
+      "source_blob_sha": "8e7ee3b978bb69a50853e9df29a15c5073b0db40",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "build/VS2017/liblz4-dll/liblz4-dll.vcxproj",
+        "object": "8e7ee3b978bb69a50853e9df29a15c5073b0db40",
+        "mode": "100644",
+        "type": "blob",
+        "size": 9615
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 Visual Studio dynamic-library target",
+      "source_symbols": [
+        "source:build/VS2017/liblz4-dll/liblz4-dll.vcxproj"
+      ],
+      "responsibility": "Defines Win32/x64 Debug/Release compilation, warning/optimization/CRT/toolset settings and exact library/program/test source membership for the dynamic-library target.",
+      "fabushi_canonical_owner": "Canonical Windows Build/Quality/Packaging",
+      "fabushi_target": "Use as dependency build/test configuration authority when applicable; rely on current Fabushi GitHub Actions/electron-builder composition rather than importing this project file.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10321,
+      "source_path": "Telegram/ThirdParty/lz4::build/VS2017/liblz4/liblz4.vcxproj",
+      "source_blob_sha": "948f7db377e75aa25e38df87f34842354d843aaf",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "build/VS2017/liblz4/liblz4.vcxproj",
+        "object": "948f7db377e75aa25e38df87f34842354d843aaf",
+        "mode": "100644",
+        "type": "blob",
+        "size": 9516
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 Visual Studio static-library target",
+      "source_symbols": [
+        "source:build/VS2017/liblz4/liblz4.vcxproj"
+      ],
+      "responsibility": "Defines Win32/x64 Debug/Release compilation, warning/optimization/CRT/toolset settings and exact library/program/test source membership for the static-library target.",
+      "fabushi_canonical_owner": "Canonical Windows Build/Quality/Packaging",
+      "fabushi_target": "Use as dependency build/test configuration authority when applicable; rely on current Fabushi GitHub Actions/electron-builder composition rather than importing this project file.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10322,
+      "source_path": "Telegram/ThirdParty/lz4::build/VS2017/lz4.sln",
+      "source_blob_sha": "6a2779f915b8f016c0eb0e23a6f7f7c805f6c529",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "build/VS2017/lz4.sln",
+        "object": "6a2779f915b8f016c0eb0e23a6f7f7c805f6c529",
+        "mode": "100644",
+        "type": "blob",
+        "size": 6838
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 Visual Studio solution topology",
+      "source_symbols": [
+        "source:build/VS2017/lz4.sln"
+      ],
+      "responsibility": "Groups static/dynamic library, CLI, datagen, frame test, benchmark and fuzzer projects across Win32/x64 Debug/Release configurations.",
+      "fabushi_canonical_owner": "Canonical Windows Build/Quality/Packaging",
+      "fabushi_target": "Carry applicable Windows configuration/test coverage in existing Actions; do not ship or recreate the LZ4 Visual Studio solution.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10323,
+      "source_path": "Telegram/ThirdParty/lz4::build/VS2017/lz4/lz4.rc",
+      "source_blob_sha": "5eec36bfc4a6dc69317bdeeaa6f7723100c81f6b",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "build/VS2017/lz4/lz4.rc",
+        "object": "5eec36bfc4a6dc69317bdeeaa6f7723100c81f6b",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1337
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 Windows version resource metadata",
+      "source_symbols": [
+        "source:build/VS2017/lz4/lz4.rc"
+      ],
+      "responsibility": "Binds library/CLI file and product versions, original filename, description and copyright into Windows resources.",
+      "fabushi_canonical_owner": "Canonical Windows Packaging/Release metadata",
+      "fabushi_target": "Use as version-resource provenance if the dependency is packaged; Fabushi's own product metadata remains canonical.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10324,
+      "source_path": "Telegram/ThirdParty/lz4::build/VS2017/lz4/lz4.vcxproj",
+      "source_blob_sha": "f16c1ec22d07ea9ab613c1647ce424272cb00062",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "build/VS2017/lz4/lz4.vcxproj",
+        "object": "f16c1ec22d07ea9ab613c1647ce424272cb00062",
+        "mode": "100644",
+        "type": "blob",
+        "size": 9221
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 Visual Studio CLI target",
+      "source_symbols": [
+        "source:build/VS2017/lz4/lz4.vcxproj"
+      ],
+      "responsibility": "Defines Win32/x64 Debug/Release compilation, warning/optimization/CRT/toolset settings and exact library/program/test source membership for the CLI target.",
+      "fabushi_canonical_owner": "Canonical Windows Build/Quality/Packaging",
+      "fabushi_target": "Use as dependency build/test configuration authority when applicable; rely on current Fabushi GitHub Actions/electron-builder composition rather than importing this project file.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10325,
+      "source_path": "Telegram/ThirdParty/lz4::build/VS2022/datagen/datagen.vcxproj",
+      "source_blob_sha": "69034d410e1c718abf9cac2abb8908b1ba352a2b",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "build/VS2022/datagen/datagen.vcxproj",
+        "object": "69034d410e1c718abf9cac2abb8908b1ba352a2b",
+        "mode": "100644",
+        "type": "blob",
+        "size": 9282
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 Visual Studio synthetic test-data generator",
+      "source_symbols": [
+        "source:build/VS2022/datagen/datagen.vcxproj"
+      ],
+      "responsibility": "Defines Win32/x64 Debug/Release compilation, warning/optimization/CRT/toolset settings and exact library/program/test source membership for the synthetic test-data generator.",
+      "fabushi_canonical_owner": "Canonical Windows Build/Quality/Packaging",
+      "fabushi_target": "Use as dependency build/test configuration authority when applicable; rely on current Fabushi GitHub Actions/electron-builder composition rather than importing this project file.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10326,
+      "source_path": "Telegram/ThirdParty/lz4::build/VS2022/frametest/frametest.vcxproj",
+      "source_blob_sha": "6b7ff756f3559daad56c1686376cf9f99d1585b8",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "build/VS2022/frametest/frametest.vcxproj",
+        "object": "6b7ff756f3559daad56c1686376cf9f99d1585b8",
+        "mode": "100644",
+        "type": "blob",
+        "size": 9626
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 Visual Studio frame-integrity test target",
+      "source_symbols": [
+        "source:build/VS2022/frametest/frametest.vcxproj"
+      ],
+      "responsibility": "Defines Win32/x64 Debug/Release compilation, warning/optimization/CRT/toolset settings and exact library/program/test source membership for the frame-integrity test target.",
+      "fabushi_canonical_owner": "Canonical Windows Build/Quality/Packaging",
+      "fabushi_target": "Use as dependency build/test configuration authority when applicable; rely on current Fabushi GitHub Actions/electron-builder composition rather than importing this project file.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10327,
+      "source_path": "Telegram/ThirdParty/lz4::build/VS2022/fullbench-dll/fullbench-dll.vcxproj",
+      "source_blob_sha": "143dc061458be7411b4d8e2dec8c9e623d5fd116",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "build/VS2022/fullbench-dll/fullbench-dll.vcxproj",
+        "object": "143dc061458be7411b4d8e2dec8c9e623d5fd116",
+        "mode": "100644",
+        "type": "blob",
+        "size": 10443
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 Visual Studio DLL-linked benchmark target",
+      "source_symbols": [
+        "source:build/VS2022/fullbench-dll/fullbench-dll.vcxproj"
+      ],
+      "responsibility": "Defines Win32/x64 Debug/Release compilation, warning/optimization/CRT/toolset settings and exact library/program/test source membership for the DLL-linked benchmark target.",
+      "fabushi_canonical_owner": "Canonical Windows Build/Quality/Packaging",
+      "fabushi_target": "Use as dependency build/test configuration authority when applicable; rely on current Fabushi GitHub Actions/electron-builder composition rather than importing this project file.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10328,
+      "source_path": "Telegram/ThirdParty/lz4::build/VS2022/fullbench/fullbench.vcxproj",
+      "source_blob_sha": "57f4b5a28e201f1567b2d8824386c6b440f99d76",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "build/VS2022/fullbench/fullbench.vcxproj",
+        "object": "57f4b5a28e201f1567b2d8824386c6b440f99d76",
+        "mode": "100644",
+        "type": "blob",
+        "size": 9626
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 Visual Studio benchmark target",
+      "source_symbols": [
+        "source:build/VS2022/fullbench/fullbench.vcxproj"
+      ],
+      "responsibility": "Defines Win32/x64 Debug/Release compilation, warning/optimization/CRT/toolset settings and exact library/program/test source membership for the benchmark target.",
+      "fabushi_canonical_owner": "Canonical Windows Build/Quality/Packaging",
+      "fabushi_target": "Use as dependency build/test configuration authority when applicable; rely on current Fabushi GitHub Actions/electron-builder composition rather than importing this project file.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10329,
+      "source_path": "Telegram/ThirdParty/lz4::build/VS2022/fuzzer/fuzzer.vcxproj",
+      "source_blob_sha": "83482c21727c665d76ee23c6c788ee98aef1d097",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "build/VS2022/fuzzer/fuzzer.vcxproj",
+        "object": "83482c21727c665d76ee23c6c788ee98aef1d097",
+        "mode": "100644",
+        "type": "blob",
+        "size": 9457
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 Visual Studio fuzz target",
+      "source_symbols": [
+        "source:build/VS2022/fuzzer/fuzzer.vcxproj"
+      ],
+      "responsibility": "Defines Win32/x64 Debug/Release compilation, warning/optimization/CRT/toolset settings and exact library/program/test source membership for the fuzz target.",
+      "fabushi_canonical_owner": "Canonical Windows Build/Quality/Packaging",
+      "fabushi_target": "Use as dependency build/test configuration authority when applicable; rely on current Fabushi GitHub Actions/electron-builder composition rather than importing this project file.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10330,
+      "source_path": "Telegram/ThirdParty/lz4::build/VS2022/liblz4-dll/liblz4-dll.rc",
+      "source_blob_sha": "e089c24cd7d427076d59cb65062ff15574cadc6e",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "build/VS2022/liblz4-dll/liblz4-dll.rc",
+        "object": "e089c24cd7d427076d59cb65062ff15574cadc6e",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1337
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 Windows version resource metadata",
+      "source_symbols": [
+        "source:build/VS2022/liblz4-dll/liblz4-dll.rc"
+      ],
+      "responsibility": "Binds library/CLI file and product versions, original filename, description and copyright into Windows resources.",
+      "fabushi_canonical_owner": "Canonical Windows Packaging/Release metadata",
+      "fabushi_target": "Use as version-resource provenance if the dependency is packaged; Fabushi's own product metadata remains canonical.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10331,
+      "source_path": "Telegram/ThirdParty/lz4::build/VS2022/liblz4-dll/liblz4-dll.vcxproj",
+      "source_blob_sha": "532ac751fc22395eaaa0beca2c447d833a2a0f01",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "build/VS2022/liblz4-dll/liblz4-dll.vcxproj",
+        "object": "532ac751fc22395eaaa0beca2c447d833a2a0f01",
+        "mode": "100644",
+        "type": "blob",
+        "size": 9615
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 Visual Studio dynamic-library target",
+      "source_symbols": [
+        "source:build/VS2022/liblz4-dll/liblz4-dll.vcxproj"
+      ],
+      "responsibility": "Defines Win32/x64 Debug/Release compilation, warning/optimization/CRT/toolset settings and exact library/program/test source membership for the dynamic-library target.",
+      "fabushi_canonical_owner": "Canonical Windows Build/Quality/Packaging",
+      "fabushi_target": "Use as dependency build/test configuration authority when applicable; rely on current Fabushi GitHub Actions/electron-builder composition rather than importing this project file.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10332,
+      "source_path": "Telegram/ThirdParty/lz4::build/VS2022/liblz4/liblz4.vcxproj",
+      "source_blob_sha": "fdddaaaad33207e6f0eefe161b0b10720fe36151",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "build/VS2022/liblz4/liblz4.vcxproj",
+        "object": "fdddaaaad33207e6f0eefe161b0b10720fe36151",
+        "mode": "100644",
+        "type": "blob",
+        "size": 9516
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 Visual Studio static-library target",
+      "source_symbols": [
+        "source:build/VS2022/liblz4/liblz4.vcxproj"
+      ],
+      "responsibility": "Defines Win32/x64 Debug/Release compilation, warning/optimization/CRT/toolset settings and exact library/program/test source membership for the static-library target.",
+      "fabushi_canonical_owner": "Canonical Windows Build/Quality/Packaging",
+      "fabushi_target": "Use as dependency build/test configuration authority when applicable; rely on current Fabushi GitHub Actions/electron-builder composition rather than importing this project file.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10333,
+      "source_path": "Telegram/ThirdParty/lz4::build/VS2022/lz4.sln",
+      "source_blob_sha": "6a2779f915b8f016c0eb0e23a6f7f7c805f6c529",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "build/VS2022/lz4.sln",
+        "object": "6a2779f915b8f016c0eb0e23a6f7f7c805f6c529",
+        "mode": "100644",
+        "type": "blob",
+        "size": 6838
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 Visual Studio solution topology",
+      "source_symbols": [
+        "source:build/VS2022/lz4.sln"
+      ],
+      "responsibility": "Groups static/dynamic library, CLI, datagen, frame test, benchmark and fuzzer projects across Win32/x64 Debug/Release configurations.",
+      "fabushi_canonical_owner": "Canonical Windows Build/Quality/Packaging",
+      "fabushi_target": "Carry applicable Windows configuration/test coverage in existing Actions; do not ship or recreate the LZ4 Visual Studio solution.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10334,
+      "source_path": "Telegram/ThirdParty/lz4::build/cmake/.gitignore",
+      "source_blob_sha": "0ad8240ba590a602181e2a1464f422d97cf518de",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "build/cmake/.gitignore",
+        "object": "0ad8240ba590a602181e2a1464f422d97cf518de",
+        "mode": "100644",
+        "type": "blob",
+        "size": 109
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 CMake build-artifact hygiene",
+      "source_symbols": [
+        "source:build/cmake/.gitignore"
+      ],
+      "responsibility": "Marks CMake cache, generated config/package files, build tree and CLI outputs as generated artifacts.",
+      "fabushi_canonical_owner": "Canonical Build/Quality + repository hygiene",
+      "fabushi_target": "Keep equivalent generated-output hygiene in existing Fabushi build/package owners.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10335,
+      "source_path": "Telegram/ThirdParty/lz4::build/cmake/CMakeLists.txt",
+      "source_blob_sha": "eb7007b4eadec37e98b01f3f657d793f33d7d972",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "build/cmake/CMakeLists.txt",
+        "object": "eb7007b4eadec37e98b01f3f657d793f33d7d972",
+        "mode": "100644",
+        "type": "blob",
+        "size": 9757
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 CMake build/export/install contract",
+      "source_symbols": [
+        "source:build/cmake/CMakeLists.txt"
+      ],
+      "responsibility": "Derives versions, controls bundled/static/shared/PIC/CLI modes, validates warning flags, builds library/CLI, and exports/installs targets, headers, pkg-config, CMake package files and Unix aliases.",
+      "fabushi_canonical_owner": "Canonical Build/Packaging + dependency provenance",
+      "fabushi_target": "Use as dependency packaging/build authority if LZ4 becomes a reachable Fabushi dependency; no duplicate compression runtime or package topology is added now.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10336,
+      "source_path": "Telegram/ThirdParty/lz4::build/cmake/lz4Config.cmake.in",
+      "source_blob_sha": "e9c94733d8c6cf8ec15d9059467f3351ef70e28d",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "build/cmake/lz4Config.cmake.in",
+        "object": "e9c94733d8c6cf8ec15d9059467f3351ef70e28d",
+        "mode": "100644",
+        "type": "blob",
+        "size": 70
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 CMake consumer export contract",
+      "source_symbols": [
+        "source:build/cmake/lz4Config.cmake.in"
+      ],
+      "responsibility": "Loads the generated exported CMake target set for downstream consumers.",
+      "fabushi_canonical_owner": "Canonical Build/Packaging + dependency provenance",
+      "fabushi_target": "Preserve consumer/export semantics only if a canonical Fabushi dependency consumer is later proven.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10337,
+      "source_path": "Telegram/ThirdParty/lz4::contrib/debian/changelog",
+      "source_blob_sha": "87ac0169eef884322f863cc5d05b1cea6897892b",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "contrib/debian/changelog",
+        "object": "87ac0169eef884322f863cc5d05b1cea6897892b",
+        "mode": "100644",
+        "type": "blob",
+        "size": 475
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 Debian packaging contract",
+      "source_symbols": [
+        "source:contrib/debian/changelog"
+      ],
+      "responsibility": "Defines historical Debian package metadata, compatibility level, install paths and CMake/debhelper rules for runtime and development packages.",
+      "fabushi_canonical_owner": "Canonical Linux Build/Packaging/Release",
+      "fabushi_target": "Use as Linux dependency-packaging authority only if reachable; do not replace Fabushi's existing electron-builder DEB packaging with upstream LZ4 package structure.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10338,
+      "source_path": "Telegram/ThirdParty/lz4::contrib/debian/compat",
+      "source_blob_sha": "7f8f011eb73d6043d2e6db9d2c101195ae2801f2",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "contrib/debian/compat",
+        "object": "7f8f011eb73d6043d2e6db9d2c101195ae2801f2",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 Debian packaging contract",
+      "source_symbols": [
+        "source:contrib/debian/compat"
+      ],
+      "responsibility": "Defines historical Debian package metadata, compatibility level, install paths and CMake/debhelper rules for runtime and development packages.",
+      "fabushi_canonical_owner": "Canonical Linux Build/Packaging/Release",
+      "fabushi_target": "Use as Linux dependency-packaging authority only if reachable; do not replace Fabushi's existing electron-builder DEB packaging with upstream LZ4 package structure.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10339,
+      "source_path": "Telegram/ThirdParty/lz4::contrib/debian/control",
+      "source_blob_sha": "ac3b4601e61f421fc95e74bfc7b95318d7510b53",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "contrib/debian/control",
+        "object": "ac3b4601e61f421fc95e74bfc7b95318d7510b53",
+        "mode": "100644",
+        "type": "blob",
+        "size": 612
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 Debian packaging contract",
+      "source_symbols": [
+        "source:contrib/debian/control"
+      ],
+      "responsibility": "Defines historical Debian package metadata, compatibility level, install paths and CMake/debhelper rules for runtime and development packages.",
+      "fabushi_canonical_owner": "Canonical Linux Build/Packaging/Release",
+      "fabushi_target": "Use as Linux dependency-packaging authority only if reachable; do not replace Fabushi's existing electron-builder DEB packaging with upstream LZ4 package structure.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10340,
+      "source_path": "Telegram/ThirdParty/lz4::contrib/debian/copyright",
+      "source_blob_sha": "091476860fe4227db0bf4acb0542ace373777168",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "contrib/debian/copyright",
+        "object": "091476860fe4227db0bf4acb0542ace373777168",
+        "mode": "100644",
+        "type": "blob",
+        "size": 321
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 Debian license provenance",
+      "source_symbols": [
+        "source:contrib/debian/copyright"
+      ],
+      "responsibility": "Declares Debian source copyright/provenance and GPL-2+ package metadata.",
+      "fabushi_canonical_owner": "Canonical Linux Packaging + License/Supply-chain",
+      "fabushi_target": "Retain as historical package-license input; Fabushi's own Debian license manifest/package remains canonical.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10341,
+      "source_path": "Telegram/ThirdParty/lz4::contrib/debian/dirs",
+      "source_blob_sha": "e77248175524d9f63749c2d6ca67159eeb4aa635",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "contrib/debian/dirs",
+        "object": "e77248175524d9f63749c2d6ca67159eeb4aa635",
+        "mode": "100644",
+        "type": "blob",
+        "size": 8
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 Debian packaging contract",
+      "source_symbols": [
+        "source:contrib/debian/dirs"
+      ],
+      "responsibility": "Defines historical Debian package metadata, compatibility level, install paths and CMake/debhelper rules for runtime and development packages.",
+      "fabushi_canonical_owner": "Canonical Linux Build/Packaging/Release",
+      "fabushi_target": "Use as Linux dependency-packaging authority only if reachable; do not replace Fabushi's existing electron-builder DEB packaging with upstream LZ4 package structure.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10342,
+      "source_path": "Telegram/ThirdParty/lz4::contrib/debian/docs",
+      "source_blob_sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "contrib/debian/docs",
+        "object": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+        "mode": "100644",
+        "type": "blob",
+        "size": 0
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 Debian packaging contract",
+      "source_symbols": [
+        "source:contrib/debian/docs"
+      ],
+      "responsibility": "Defines historical Debian package metadata, compatibility level, install paths and CMake/debhelper rules for runtime and development packages.",
+      "fabushi_canonical_owner": "Canonical Linux Build/Packaging/Release",
+      "fabushi_target": "Use as Linux dependency-packaging authority only if reachable; do not replace Fabushi's existing electron-builder DEB packaging with upstream LZ4 package structure.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10343,
+      "source_path": "Telegram/ThirdParty/lz4::contrib/debian/liblz4-dev.install",
+      "source_blob_sha": "3a029096f51ec5f13f704fccce318ac795495773",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "contrib/debian/liblz4-dev.install",
+        "object": "3a029096f51ec5f13f704fccce318ac795495773",
+        "mode": "100644",
+        "type": "blob",
+        "size": 35
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 Debian packaging contract",
+      "source_symbols": [
+        "source:contrib/debian/liblz4-dev.install"
+      ],
+      "responsibility": "Defines historical Debian package metadata, compatibility level, install paths and CMake/debhelper rules for runtime and development packages.",
+      "fabushi_canonical_owner": "Canonical Linux Build/Packaging/Release",
+      "fabushi_target": "Use as Linux dependency-packaging authority only if reachable; do not replace Fabushi's existing electron-builder DEB packaging with upstream LZ4 package structure.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10344,
+      "source_path": "Telegram/ThirdParty/lz4::contrib/debian/liblz4.install",
+      "source_blob_sha": "e444956d9c0f9cfe966a97e6840eb9e53434133a",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "contrib/debian/liblz4.install",
+        "object": "e444956d9c0f9cfe966a97e6840eb9e53434133a",
+        "mode": "100644",
+        "type": "blob",
+        "size": 30
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 Debian packaging contract",
+      "source_symbols": [
+        "source:contrib/debian/liblz4.install"
+      ],
+      "responsibility": "Defines historical Debian package metadata, compatibility level, install paths and CMake/debhelper rules for runtime and development packages.",
+      "fabushi_canonical_owner": "Canonical Linux Build/Packaging/Release",
+      "fabushi_target": "Use as Linux dependency-packaging authority only if reachable; do not replace Fabushi's existing electron-builder DEB packaging with upstream LZ4 package structure.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10345,
+      "source_path": "Telegram/ThirdParty/lz4::contrib/debian/rules",
+      "source_blob_sha": "c897bc50595f7156b970fe28c4bfa68ff4a0fd82",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "contrib/debian/rules",
+        "object": "c897bc50595f7156b970fe28c4bfa68ff4a0fd82",
+        "mode": "100755",
+        "type": "blob",
+        "size": 185
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 Debian packaging contract",
+      "source_symbols": [
+        "source:contrib/debian/rules"
+      ],
+      "responsibility": "Defines historical Debian package metadata, compatibility level, install paths and CMake/debhelper rules for runtime and development packages.",
+      "fabushi_canonical_owner": "Canonical Linux Build/Packaging/Release",
+      "fabushi_target": "Use as Linux dependency-packaging authority only if reachable; do not replace Fabushi's existing electron-builder DEB packaging with upstream LZ4 package structure.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10346,
+      "source_path": "Telegram/ThirdParty/lz4::contrib/djgpp/LICENSE",
+      "source_blob_sha": "fee0d3b3e235cebf10e459ba94f75e254298d2ba",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "contrib/djgpp/LICENSE",
+        "object": "fee0d3b3e235cebf10e459ba94f75e254298d2ba",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1292
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 DJGPP license provenance",
+      "source_symbols": [
+        "source:contrib/djgpp/LICENSE"
+      ],
+      "responsibility": "Carries the BSD-style license for the DJGPP contribution.",
+      "fabushi_canonical_owner": "Canonical License/Supply-chain provenance",
+      "fabushi_target": "Retain provenance for the read source; no DOS/DJGPP shipping target is introduced.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10347,
+      "source_path": "Telegram/ThirdParty/lz4::contrib/djgpp/Makefile",
+      "source_blob_sha": "8cd3580823992bb22052ce78d315975ab73abbde",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "contrib/djgpp/Makefile",
+        "object": "8cd3580823992bb22052ce78d315975ab73abbde",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3524
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 DOS/DJGPP portability input",
+      "source_symbols": [
+        "source:contrib/djgpp/Makefile"
+      ],
+      "responsibility": "Defines/documents i586-pc-msdosdjgpp cross-compilation, library/CLI build, install/uninstall footprint and optional debug/profiling.",
+      "fabushi_canonical_owner": "Canonical Build/Quality + platform provenance",
+      "fabushi_target": "Record legacy portability semantics without adding unsupported DOS/DJGPP product targets or a new compression runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10348,
+      "source_path": "Telegram/ThirdParty/lz4::contrib/djgpp/README.MD",
+      "source_blob_sha": "0f4cae6df76ca460d1fd6596e39bb9b1edd4140a",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "contrib/djgpp/README.MD",
+        "object": "0f4cae6df76ca460d1fd6596e39bb9b1edd4140a",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1125
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 DOS/DJGPP portability input",
+      "source_symbols": [
+        "source:contrib/djgpp/README.MD"
+      ],
+      "responsibility": "Defines/documents i586-pc-msdosdjgpp cross-compilation, library/CLI build, install/uninstall footprint and optional debug/profiling.",
+      "fabushi_canonical_owner": "Canonical Build/Quality + platform provenance",
+      "fabushi_target": "Record legacy portability semantics without adding unsupported DOS/DJGPP product targets or a new compression runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    }
+  ]
+}
