@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 6545,
+    "unread_minimum": 6481,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through deterministic order 9,580; unread 6,545; unknown 15,845; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition through deterministic order 9,644; unread 6,481; unknown 15,845; omitted 0."
   },
   "latest_recursive_evidence": {
     "run_id": 38106112583,
@@ -59,10 +59,10 @@
       6541,
       6627
     ],
-    "current_source_read_through": 9580,
-    "first_unread_order": 9581,
-    "first_unread_path": "Telegram/ThirdParty/kimageformats::autotests/read/psd/16bit_photoshop.psb",
-    "current_head_source_authority_evidence": "Orders 9,518–9,580 exact-read EPS/EXR/HDR/HEIF/HEJ2/JXL/KRA/ORA/PCX and the first 16-bit PSD fixtures. Binary bytes, magic/header and paired reference dimensions were inspected; JXL orientation 1–8 converges through auto-transform. Pinned tdesktop main-repo search currently proves only the kimageformats gitlink, not shipping reachability, so rows remain mapped-open."
+    "current_source_read_through": 9644,
+    "first_unread_order": 9645,
+    "first_unread_path": "Telegram/ThirdParty/kimageformats::autotests/read/rgb/rgb-gimp-2.8.10-aggressive-rle.rgb",
+    "current_head_source_authority_evidence": "Orders 9,581–9,644 exact-read from current-head Actions artifact 11692219924: PSD/PSB/PDD/TIFF fixtures cover version 1/2, 1/8/16/32-bit, 1–57 channels and Bitmap/Grayscale/Indexed/RGB/CMYK/Multichannel/Duotone/Lab; QOI covers RGB/RGBA and 1×1 through 256×256; Sun Raster and Kodak RAW references are included; SGI RGB coverage begins. All remain mapped-open pending pinned shipping reachability."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -71,9 +71,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 9580,
-    "first_unread_order": 9581,
-    "first_unread_path": "Telegram/ThirdParty/kimageformats::autotests/read/psd/16bit_photoshop.psb",
+    "read_through": 9644,
+    "first_unread_order": 9645,
+    "first_unread_path": "Telegram/ThirdParty/kimageformats::autotests/read/rgb/rgb-gimp-2.8.10-aggressive-rle.rgb",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }

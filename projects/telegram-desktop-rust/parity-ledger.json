@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 6545,
+    "unread": 6481,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,11 +13478,11 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Accepted prefix 9,580/16,125; kimageformats EPS through first 16-bit PSD range exact-read; unread 6,545; unknown 15,845; omitted 0.",
-    "source_authority_evidence": "Orders 9,518–9,580 exact pinned binary/text reads cover EPS/EXR/HDR/HEIF/HEJ2/JXL/KRA/ORA/PCX and initial PSD fixtures. Next exact source is 9,581 Telegram/ThirdParty/kimageformats::autotests/read/psd/16bit_photoshop.psb@c09d6bb5bc492441d4684531aaa1a6fbe67b4c60; current GitHub Contents connector does not return that >1 MiB binary payload, so it remains unread rather than inferred.",
-    "current_source_read_through": 9580,
-    "first_unread_order": 9581,
-    "first_unread_path": "Telegram/ThirdParty/kimageformats::autotests/read/psd/16bit_photoshop.psb"
+    "source_read_reconciliation": "Accepted prefix 9,644/16,125; current-head Actions exact-read PSD/PSB/QOI/RAS/RAW and initial SGI RGB fixture window; unread 6,481; unknown 15,845; omitted 0.",
+    "source_authority_evidence": "Orders 9,581–9,644 exact-read from current-head Actions artifact 11692219924: PSD/PSB/PDD/TIFF fixtures cover version 1/2, 1/8/16/32-bit, 1–57 channels and Bitmap/Grayscale/Indexed/RGB/CMYK/Multichannel/Duotone/Lab; QOI covers RGB/RGBA and 1×1 through 256×256; Sun Raster and Kodak RAW references are included; SGI RGB coverage begins. All remain mapped-open pending pinned shipping reachability. Next exact source is 9,645 Telegram/ThirdParty/kimageformats::autotests/read/rgb/rgb-gimp-2.8.10-aggressive-rle.rgb.",
+    "current_source_read_through": 9644,
+    "first_unread_order": 9645,
+    "first_unread_path": "Telegram/ThirdParty/kimageformats::autotests/read/rgb/rgb-gimp-2.8.10-aggressive-rle.rgb"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 9580,
-    "first_unread_order": 9581,
-    "first_unread_path": "Telegram/ThirdParty/kimageformats::autotests/read/psd/16bit_photoshop.psb",
+    "read_through": 9644,
+    "first_unread_order": 9645,
+    "first_unread_path": "Telegram/ThirdParty/kimageformats::autotests/read/rgb/rgb-gimp-2.8.10-aggressive-rle.rgb",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
