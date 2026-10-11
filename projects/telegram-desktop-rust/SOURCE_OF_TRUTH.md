@@ -1470,3 +1470,10 @@ Accounting is **9,197/16,125 read; 6,928 unread; 15,845 unknown; 0 omitted**. Fi
 Exact reads cover optional FAM file-watch and FreeBSD procstat dependency discovery, docs-only deprecated API preprocessing, and framework platform/release/library metadata. Existing Fabushi build, platform-capability, process-diagnostics, file-watch and packaging owners remain canonical; no optional KDE-era dependency is adopted merely because upstream can discover it.
 
 Accounting is **9,201/16,125 read; 6,924 unread; 15,845 unknown; 0 omitted**. First unread is order 9,202 `Telegram/ThirdParty/kcoreaddons::poqm/af/kcoreaddons5_qt.po@cfda626078de334eeecd25fa310e8fffd4b513cd`. Descendant exact-head GitHub Actions are mandatory.
+
+### Revision 9 read-through 12,141–12,204
+
+Exact source evidence: `08365df580a07dc7f2eecc3a73b6310389bec152`, run `38180456540`, source-authority job `114591744895` (success), artifact `11717516388` (`sha256:da1ea8fd259ddcd8c5924091e0f4af297fb98917fae9af2005aba7d66f43f5ec`). The 64 exact blobs cover xdg portal AppInfo/process identity, launch/background lifecycle, document/resource confinement, permission bridging, backend selection, Request/Session lifecycle, sealed FD security, restore persistence, USB policy, shared validation utilities, and their executable test/mock quality contracts. Existing-owner-first mapping keeps Identity, Permissions, Resource, Recovery/persistence and platform lifecycle canonical; test mocks are quality oracles only, never production evidence.
+
+Accounting: **12,204 / 16,125 read; unread 3,921; unknown 15,845; omitted 0**. Reading alone does not close unknown. Next unread is order 12,205 `Telegram/ThirdParty/xdg-desktop-portal::tests/test-xdp-utils.c@cc50e6cec6e155cd498ab8dd0b003fbb08089ac6`.
+
