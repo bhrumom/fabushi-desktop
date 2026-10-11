@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 3729,
+    "unread": 3722,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,11 +13478,11 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Accepted prefix 12,396/16,125; 12,333-12,347 close zxcvbn dictionary/runtime/build responsibility reading; 12,348-12,396 cover codegen common, emoji, localization and style generation contracts. Style responsibilities remain mapped to Fabushi canonical design-system/build owners rather than importing Telegram visual output. Unread 3,729; unknown 15,845; omitted 0; reading alone closes no unknown.",
-    "source_authority_evidence": "Exact-head f8ef44c source-authority run 38183407863/job 114600617044 artifact 11719100308 (sha256:452825df19243d3d425b9716b405782b708dab74f3655d56cdc1a7c0c6ccbe1d). Descendant same-head runtime/chat validation required.",
-    "current_source_read_through": 12396,
-    "first_unread_order": 12397,
-    "first_unread_path": "Telegram/codegen::codegen/style/parsed_file.h"
+    "source_read_reconciliation": "Accepted prefix 12,403/16,125; 12,397-12,403 complete the pinned desktop-app/codegen style parser/processor/SVG renderer/typed schema contracts. These remain mapped to Fabushi canonical Design System, Resource/artifact and Build/codegen Quality owners rather than importing Telegram visual output. Unread 3,722; unknown 15,845; omitted 0; reading alone closes no unknown.",
+    "source_authority_evidence": "Exact-head 8a07d98a source-authority run 38183734477/job 114601575522 artifact 11718378603 (sha256:b17afd2552005af0ce12269960ecd64d054b2ccf12e5decb9e420192a190f586). Descendant same-head runtime/chat validation required.",
+    "current_source_read_through": 12403,
+    "first_unread_order": 12404,
+    "first_unread_path": "Telegram/lib_base::CMakeLists.txt"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 206,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 12396,
-    "first_unread_order": 12397,
-    "first_unread_path": "Telegram/codegen::codegen/style/parsed_file.h",
+    "read_through": 12403,
+    "first_unread_order": 12404,
+    "first_unread_path": "Telegram/lib_base::CMakeLists.txt",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
