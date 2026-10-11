@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 6097,
+    "unread": 6033,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,11 +13478,11 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Accepted prefix 9,708/16,125; current-head Actions exact-read SGI RGB/TGA/XCF acceptance fixtures; unread 6,417; unknown 15,845; omitted 0.",
-    "source_authority_evidence": "Orders 9,645–9,708 exact-read from current-head Actions artifact 11692612830: SGI RGB covers RLE/aggressive-RLE/verbatim; TGA covers 24/32-bit RGB/RGBA, RLE/raw and upper/lower-left origin; XCF covers v0/v11/v12, RGB/gray/alpha references, U8/U16/U32 integer plus half/float precision and ICC variants. All remain mapped-open pending pinned shipping reachability. Next exact source is 9,709 Telegram/ThirdParty/kimageformats::autotests/read/xcf/fruktpilot_icc.xcf@c57c6548d7ddb8a3b0e9556a2df8323cde65be06.",
-    "current_source_read_through": 9708,
-    "first_unread_order": 9709,
-    "first_unread_path": "Telegram/ThirdParty/kimageformats::autotests/read/xcf/fruktpilot_icc.xcf"
+    "source_read_reconciliation": "Accepted prefix 10,092/16,125; current exact-head source artifact materialized libfido2 ceremony/device/fuzz/man authority; unread 6,033; unknown 15,845; omitted 0.",
+    "source_authority_evidence": "Orders 10,029-10,092 exact-read from 53166126816c059a99298b28d4b3d8c2ca204910 run 38119139308/job 114410128913 artifact 11693708963 (sha256:29a6feb40f3cbaa28f932d822bab4242821378bba701bdfbba1fb18f26a35542). Applicable responsibilities include cross-platform build/security matrices; credential/assertion verification; PIN/UV, resident credential, largeBlob, biometric, device-selection and reset lifecycle; adversarial fuzz/fault injection; and API/key-lifetime conformance. Existing owners remain canonical and rows stay mapped-open pending production/release evidence.",
+    "current_source_read_through": 10092,
+    "first_unread_order": 10093,
+    "first_unread_path": "Telegram/ThirdParty/libfido2::man/es384_pk_new.3"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 10028,
-    "first_unread_order": 10029,
-    "first_unread_path": "Telegram/ThirdParty/libfido2::.github/workflows/macos_builds.yml",
+    "read_through": 10092,
+    "first_unread_order": 10093,
+    "first_unread_path": "Telegram/ThirdParty/libfido2::man/es384_pk_new.3",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
