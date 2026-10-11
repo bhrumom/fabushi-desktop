@@ -59,10 +59,10 @@
       6541,
       6627
     ],
-    "current_source_read_through": 9168,
-    "first_unread_order": 9169,
-    "first_unread_path": "Telegram/ThirdParty/kcoreaddons::autotests/kpluginmetadatatest.cpp",
-    "current_head_source_authority_evidence": "Orders 9,149–9,168 exact-read kcoreaddons packaged helper discovery, open-file diagnostics, shell-safe macro expansion, memory telemetry, network/symlink path policy, OS metadata and plugin factory/loader tests. Existing-owner mapping stays within Host/Runner, Resource/platform, Settings, updater/diagnostics and canonical Plugins/MCP/Marketplace. Source reading closes no unknown; fresh descendant exact-head Actions remain mandatory."
+    "current_source_read_through": 9201,
+    "first_unread_order": 9202,
+    "first_unread_path": "Telegram/ThirdParty/kcoreaddons::poqm/af/kcoreaddons5_qt.po",
+    "current_head_source_authority_evidence": "Orders 9,169–9,201 exact-read kcoreaddons plugin metadata/process/shell contracts, text/render injection safety, URL resource transfer, OS principal and plugin-version fixtures, plus optional build/platform dependency provenance. Existing-owner-first mapping remains within canonical Plugins/MCP/Marketplace, Transcript/external-link, Resource, Host/Runner, platform/Computer, persistence/cache, build/packaging and release owners. Concrete increments include normalized plugin release-license metadata and focused Transcript malicious-URL regressions; broader responsibilities remain mapped-open and fresh descendant exact-head Actions are mandatory."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
