@@ -613,6 +613,9 @@ test("CONTRACT-TDRP-IV-PREPARED-LINK-EXTERNAL-COPY-001 transcript external links
   assert.equal(projectTranscriptExternalLink("file:///tmp/secret.md"), null);
   assert.equal(projectTranscriptExternalLink("../relative.md"), null);
   assert.equal(projectTranscriptExternalLink("mailto:%ZZ"), null);
+  assert.equal(projectTranscriptExternalLink('https://"><!--'), null);
+  assert.equal(projectTranscriptExternalLink('https://192.168.1.1:"><!--'), null);
+  assert.equal(projectTranscriptExternalLink('https://<IP>:/"><script>alert(1);</script><!--'), null);
   assert.equal(
     projectTranscriptExternalLink("https://example.com/docs", "Documentation").tooltip,
     "https://example.com/docs",
@@ -632,6 +635,7 @@ test("CONTRACT-TDRP-IV-PREPARED-LINK-EXTERNAL-COPY-001 transcript external links
 
   const transcript = readFileSync(new URL("./conversation/workspace/transcript.tsx", import.meta.url), "utf8");
   const actions = readFileSync(new URL("./conversation/cards/transcript-card/message-actions.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(transcript, /dangerouslySetInnerHTML/, "transcript text and link rendering must stay React-node escaped");
   assert.match(transcript, /projectTranscriptExternalLink\(mark\.attrs\.href, node\.text \?\? undefined\)/);
   assert.match(transcript, /data-transcript-copy-label=\{external\.copyLabel\}/);
   assert.match(transcript, /data-transcript-copy-text=\{external\.copyText\}/);
