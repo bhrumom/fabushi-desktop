@@ -9,8 +9,8 @@
   },
   "deterministic_recursive_prefix": {
     "first_order": 1,
-    "last_order": 12403,
-    "entries": 12403
+    "last_order": 12460,
+    "entries": 12460
   },
   "semantics": {
     "development_only_non_applicable_is_not_omission": true,
@@ -1835,6 +1835,12 @@
       "first_order": 12397,
       "last_order": 12403,
       "entries": 7
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/12404-12460.json",
+      "first_order": 12404,
+      "last_order": 12460,
+      "entries": 57
     }
   ],
   "rebaseline_overrides": {
