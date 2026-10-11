@@ -42,6 +42,50 @@ import { normalizeCommitStagedAttachmentsEdgeRequest, normalizeStageAttachmentEd
 import { createAttachmentEdgePort, type AttachmentEdgeDeps } from "./attachments/attachments.js";
 import { readDesktopAccessibilityState, setDesktopAccessibilitySupportEnabled } from "./accessibility-support.js";
 import { readDesktopPlatformInputState } from "./platform-input.js";
+import { buildImageContextMenuTemplate, nativeSpellcheckSuggestions, type ImageContextMenuParams } from "./media/avatar-images.js";
+
+
+test("native spellcheck suggestions stay platform-owned, bounded, and dispatch through the canonical context menu", () => {
+  const params: ImageContextMenuParams = {
+    srcURL: "",
+    linkURL: "",
+    mediaType: "none",
+    selectionText: "",
+    isEditable: true,
+    editFlags: { canCopy: true },
+    x: 0,
+    y: 0,
+    misspelledWord: "teh",
+    dictionarySuggestions: [" the ", "the", "", "tech", "ten", "tea", "then", "ignored"],
+  };
+  assert.deepEqual(nativeSpellcheckSuggestions(params), ["the", "tech", "ten", "tea", "then"]);
+  assert.deepEqual(nativeSpellcheckSuggestions({ ...params, isEditable: false }), []);
+  assert.deepEqual(nativeSpellcheckSuggestions({ ...params, misspelledWord: "   " }), []);
+
+  const replacements: string[] = [];
+  const template = buildImageContextMenuTemplate({
+    copyImageAt() {},
+    undo() {},
+    redo() {},
+    cut() {},
+    copy() {},
+    paste() {},
+    selectAll() {},
+    replaceMisspelling(candidate) { replacements.push(candidate); },
+  }, params, {
+    async openExternalUrl() {},
+    copyText() {},
+    imageActions: {
+      copyImage() {},
+      async saveImage() {},
+    },
+  });
+
+  assert.deepEqual(template.slice(0, 5).map((item) => item.label), ["the", "tech", "ten", "tea", "then"]);
+  assert.equal(template[5]?.type, "separator");
+  template[1]?.click?.();
+  assert.deepEqual(replacements, ["tech"]);
+});
 
 test("main edge accepts the shipping preload attachment wire contract", () => {
   const staged = normalizeStageAttachmentEdgeRequest({
