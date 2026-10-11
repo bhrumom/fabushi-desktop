@@ -54,6 +54,7 @@ pub const LINK_IMAGE_ACCEPT: &str =
     "image/png,image/jpeg,image/webp,image/gif,image/avif,image/x-icon,image/vnd.microsoft.icon";
 pub const ATTACHMENT_CHUNK_MAX_BYTES: usize = 8 * 1024 * 1024;
 pub const ATTACHMENT_TEXT_PREVIEW_BYTE_CAP: usize = 64 * 1024;
+pub const ATTACHMENT_PREVIEW_BYTE_CAP: u64 = ATTACHMENT_BYTE_LIMIT;
 pub const VIDEO_DIMENSIONS_HEAD_BYTES: usize = 1024 * 1024;
 pub const VIDEO_DIMENSIONS_TAIL_BYTES: usize = 8 * 1024 * 1024;
 
@@ -321,16 +322,16 @@ fn read_attachment_image_file_bounded(path: &Path) -> Option<Vec<u8>> {
     let metadata = file.metadata().ok()?;
     if !metadata.is_file()
         || metadata.len() == 0
-        || metadata.len() > ATTACHMENT_BYTE_LIMIT
+        || metadata.len() > ATTACHMENT_PREVIEW_BYTE_CAP
     {
         return None;
     }
     let capacity = usize::try_from(metadata.len()).ok()?;
     let mut data = Vec::with_capacity(capacity);
-    let mut bounded = file.take(ATTACHMENT_BYTE_LIMIT.saturating_add(1));
+    let mut bounded = file.take(ATTACHMENT_PREVIEW_BYTE_CAP.saturating_add(1));
     bounded.read_to_end(&mut data).ok()?;
     let bytes = u64::try_from(data.len()).ok()?;
-    if bytes == 0 || bytes > ATTACHMENT_BYTE_LIMIT || bytes != metadata.len() {
+    if bytes == 0 || bytes > ATTACHMENT_PREVIEW_BYTE_CAP || bytes != metadata.len() {
         return None;
     }
     Some(data)
@@ -1792,6 +1793,7 @@ mod tests {
 
     #[test]
     fn host_image_preview_rejects_empty_and_oversized_files_before_decode() {
+        assert_eq!(ATTACHMENT_PREVIEW_BYTE_CAP, ATTACHMENT_BYTE_LIMIT);
         let root = std::env::temp_dir().join(format!(
             "fabushi-host-image-preview-cap-{}-{}",
             std::process::id(),
@@ -1805,7 +1807,7 @@ mod tests {
         let oversized = root.join("oversized.png");
         let oversized_file = fs::File::create(&oversized).unwrap();
         oversized_file
-            .set_len(ATTACHMENT_BYTE_LIMIT.saturating_add(1))
+            .set_len(ATTACHMENT_PREVIEW_BYTE_CAP.saturating_add(1))
             .unwrap();
         assert!(read_host_attachment_image_with_root(&root, &oversized).is_none());
 
