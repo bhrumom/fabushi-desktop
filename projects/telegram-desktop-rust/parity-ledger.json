@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 6765,
+    "unread": 6745,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,11 +13478,11 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Accepted prefix 9,360/16,125; exact-read/decomposed kcoreaddons portal/job/about production source; unread 6,765; unknown 15,845; omitted 0.",
-    "source_authority_evidence": "Orders 9,345–9,360 exact pinned Git blob reads. Next exact source is 9,361 Telegram/ThirdParty/kcoreaddons::src/lib/kcoreaddons.h@77b482d1b75330c1e38908a7d9c974fced309dd7. Fresh descendant exact-head Actions required; source reading closes no unknown.",
-    "current_source_read_through": 9360,
-    "first_unread_order": 9361,
-    "first_unread_path": "Telegram/ThirdParty/kcoreaddons::src/lib/kcoreaddons.h"
+    "source_read_reconciliation": "Accepted prefix 9,380/16,125; exact-read/decomposed kcoreaddons licenses and plugin metadata/factory/loader production source; unread 6,745; unknown 15,845; omitted 0.",
+    "source_authority_evidence": "Orders 9,361–9,380 exact pinned Git blob reads. Existing-owner audit confirms canonical Fabushi manifest/marketplace/provenance owners; rows remain mapped-open. Next exact source is 9,381 Telegram/ThirdParty/kcoreaddons::src/lib/plugin/kstaticpluginhelpers.cpp@1bf196d1b85d1969f0fd70a10e5023b4a4a5522c.",
+    "current_source_read_through": 9380,
+    "first_unread_order": 9381,
+    "first_unread_path": "Telegram/ThirdParty/kcoreaddons::src/lib/plugin/kstaticpluginhelpers.cpp"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 9360,
-    "first_unread_order": 9361,
-    "first_unread_path": "Telegram/ThirdParty/kcoreaddons::src/lib/kcoreaddons.h",
+    "read_through": 9380,
+    "first_unread_order": 9381,
+    "first_unread_path": "Telegram/ThirdParty/kcoreaddons::src/lib/plugin/kstaticpluginhelpers.cpp",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {

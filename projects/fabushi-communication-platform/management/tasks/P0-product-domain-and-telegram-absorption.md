@@ -1,4 +1,13 @@
-Live TDRP Revision 9 upstream authority (2026-10-11): telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 (root tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6). Root non-directory=6,653; recursive non-directory=16,125; deterministic read-through=9,360; first unread=9,361 Telegram/ThirdParty/kcoreaddons::src/lib/kcoreaddons.h@77b482d1b75330c1e38908a7d9c974fced309dd7; unread=6,765; unknown=15,845; omitted=0. Orders 9,345–9,360 exact-read portal transfer, async/composite job lifecycle and About/SPDX/component identity responsibilities into existing Fabushi owners.
+Live TDRP Revision 9 upstream authority (2026-10-11): telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 (root tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6). Root non-directory=6,653; recursive non-directory=16,125; deterministic read-through=9,380; first unread=9,381 Telegram/ThirdParty/kcoreaddons::src/lib/plugin/kstaticpluginhelpers.cpp@1bf196d1b85d1969f0fd70a10e5023b4a4a5522c; unread=6,745; unknown=15,845; omitted=0. Orders 9,361–9,380 exact-read license/provenance and plugin metadata/factory/loader responsibilities into existing Fabushi Plugins/MCP/Marketplace and NOTICE owners.
+
+### Revision 9 deterministic read-through — licenses and plugin lifecycle 9,361–9,380
+
+Orders 9,361–9,380 exact-read the KCoreAddons runtime-version contract, installed license corpus, legacy desktop metadata parser, plugin factory/loader and typed plugin metadata. Applicable semantics include runtime-vs-build provenance, exact third-party license availability, strict typed metadata conversion, service-type/path resolution with malformed-input failure, concurrency-safe parser caching, stable plugin/source identity, load/error/lifecycle separation, MIME inheritance, default-enable state, localized metadata fallback and author/license/version provenance.
+
+Existing-owner-first audit found stronger shipping equivalents in `source/packages/cursor-plugins/manifest-parser.ts` and Mahayana `core-plugins`: manifest size is bounded, plugin/schema/path/id data is typed, invalid/duplicate entries are fenced, variables are recursively validated, and loader/store/cache/version lifecycle stays under the canonical Marketplace owner. Therefore no KDE/Qt plugin runtime or second schema truth is introduced. These rows remain `mapped-open` / `unknown_closed=false` until full applicability and same-head production evidence close them.
+
+Accounting: **9,380/16,125 read; 6,745 unread; 15,845 unknown; 0 omitted**. Next 9,381 `Telegram/ThirdParty/kcoreaddons::src/lib/plugin/kstaticpluginhelpers.cpp@1bf196d1b85d1969f0fd70a10e5023b4a4a5522c`.
+
 
 ### Revision 9 deterministic read-through — portal/job/provenance 9,345–9,360
 
