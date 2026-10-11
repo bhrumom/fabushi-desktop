@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 7301,
+    "unread": 7237,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,11 +13478,11 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Accepted prefix 8,824/16,125; Hunspell regression window 8,749–8,824 exact-read and responsibility-decomposed; unread 7,301; unknown 15,845; omitted 0. Next is tests/hu.aff.",
-    "source_authority_evidence": "Orders 8,749–8,812 were raw-byte materialized by GitHub Actions run 38105710749 job 114370739825 artifact 11689521875 at 9f6ea014; binary/non-UTF blobs 8,749 and 8,766 matched both exact Git blob SHA and manifest SHA-256. Orders 8,813–8,824 were exact-read from the pinned Hunspell commit. gh1058 self-suggestion behavior is source-neutrally implemented in the existing shipping Electron context-menu owner at 7db73f0d, with fresh descendant Actions required. All source rows remain unknown_closed=false and omitted=false.",
-    "current_source_read_through": 8824,
-    "first_unread_order": 8825,
-    "first_unread_path": "Telegram/ThirdParty/hunspell::tests/hu.aff"
+    "source_read_reconciliation": "Accepted prefix 8,888/16,125; Hunspell normalization/casing/compound window 8,825–8,888 exact-read and responsibility-decomposed; unread 7,237; unknown 15,845; omitted 0. Next is tests/limit-multiple-compounding.dic.",
+    "source_authority_evidence": "Orders 8,825–8,888 exact identities are bound by GitHub Actions run 38106112583 job 114371937159 artifact 11689542414 at 18413ebb9cabc4220c66983fce9081aa7206e4f1. That source-authority job failed, so this is diagnostic raw-identity evidence only; fresh descendant exact-head Actions are required. All source rows remain unknown_closed=false and omitted=false.",
+    "current_source_read_through": 8888,
+    "first_unread_order": 8889,
+    "first_unread_path": "Telegram/ThirdParty/hunspell::tests/limit-multiple-compounding.dic"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 8824,
-    "first_unread_order": 8825,
-    "first_unread_path": "Telegram/ThirdParty/hunspell::tests/hu.aff",
+    "read_through": 8888,
+    "first_unread_order": 8889,
+    "first_unread_path": "Telegram/ThirdParty/hunspell::tests/limit-multiple-compounding.dic",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
