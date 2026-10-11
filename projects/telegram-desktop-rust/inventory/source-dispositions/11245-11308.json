@@ -1,0 +1,1817 @@
+{
+  "format_version": 2,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+    "tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6"
+  },
+  "range": {
+    "first_order": 11245,
+    "last_order": 11308,
+    "entries": 64
+  },
+  "range_evidence": {
+    "head_sha": "3f9004497d0d69a149171e8320f100042d514015",
+    "workflow_run": 38152310164,
+    "job_id": 114508097974,
+    "artifact_id": 11707316697,
+    "artifact_digest": "sha256:fd1d889abe5e3320cd523ea78fee6769ee3469fd27335164b5e93fe38c49be13",
+    "note": "Exact-head GitHub Actions materialized orders 11,245-11,308 and verified exact Git blob identity/byte length. Rows remain mapped-open; generic range-v3 action/algorithm test responsibilities map existing-owner-first to Build/Quality/runtime boundaries."
+  },
+  "rows": [
+    {
+      "recursive_order": 11245,
+      "source_path": "Telegram/ThirdParty/range-v3::test/action/slice.cpp",
+      "source_blob_sha": "ff01398e6d72622e3c105dcf3bc9a23380f8c7bc",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/action/slice.cpp",
+        "object": "ff01398e6d72622e3c105dcf3bc9a23380f8c7bc",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2068
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 action regression contracts",
+      "source_symbols": [
+        "slice"
+      ],
+      "responsibility": "Development-time regression coverage for generic mutating range actions, including slice/sort/split/stable-sort/stride/take/take-while/transform/unique/unstable-remove semantics, reference stability, bounds and iterator-category constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11246,
+      "source_path": "Telegram/ThirdParty/range-v3::test/action/sort.cpp",
+      "source_blob_sha": "8c6ef67f1c19aac8ee3426e020c43f532d472957",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/action/sort.cpp",
+        "object": "8c6ef67f1c19aac8ee3426e020c43f532d472957",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1876
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 action regression contracts",
+      "source_symbols": [
+        "sort"
+      ],
+      "responsibility": "Development-time regression coverage for generic mutating range actions, including slice/sort/split/stable-sort/stride/take/take-while/transform/unique/unstable-remove semantics, reference stability, bounds and iterator-category constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11247,
+      "source_path": "Telegram/ThirdParty/range-v3::test/action/split.cpp",
+      "source_blob_sha": "57d439e75787c26c09ac88479cdf955fb79de689",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/action/split.cpp",
+        "object": "57d439e75787c26c09ac88479cdf955fb79de689",
+        "mode": "100644",
+        "type": "blob",
+        "size": 4305
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 action regression contracts",
+      "source_symbols": [
+        "split"
+      ],
+      "responsibility": "Development-time regression coverage for generic mutating range actions, including slice/sort/split/stable-sort/stride/take/take-while/transform/unique/unstable-remove semantics, reference stability, bounds and iterator-category constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11248,
+      "source_path": "Telegram/ThirdParty/range-v3::test/action/stable_sort.cpp",
+      "source_blob_sha": "1cc5303ea4202cd8c214f7593ba61506f3e3d747",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/action/stable_sort.cpp",
+        "object": "1cc5303ea4202cd8c214f7593ba61506f3e3d747",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2385
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 action regression contracts",
+      "source_symbols": [
+        "stable_sort"
+      ],
+      "responsibility": "Development-time regression coverage for generic mutating range actions, including slice/sort/split/stable-sort/stride/take/take-while/transform/unique/unstable-remove semantics, reference stability, bounds and iterator-category constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11249,
+      "source_path": "Telegram/ThirdParty/range-v3::test/action/stride.cpp",
+      "source_blob_sha": "a1d46171aae1cd34861d196bdd812e5becbfe47c",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/action/stride.cpp",
+        "object": "a1d46171aae1cd34861d196bdd812e5becbfe47c",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1240
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 action regression contracts",
+      "source_symbols": [
+        "stride"
+      ],
+      "responsibility": "Development-time regression coverage for generic mutating range actions, including slice/sort/split/stable-sort/stride/take/take-while/transform/unique/unstable-remove semantics, reference stability, bounds and iterator-category constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11250,
+      "source_path": "Telegram/ThirdParty/range-v3::test/action/take.cpp",
+      "source_blob_sha": "3f89ef0938c4ea5c1ab5a83dc5aeae9d25dd1921",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/action/take.cpp",
+        "object": "3f89ef0938c4ea5c1ab5a83dc5aeae9d25dd1921",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1012
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 action regression contracts",
+      "source_symbols": [
+        "take"
+      ],
+      "responsibility": "Development-time regression coverage for generic mutating range actions, including slice/sort/split/stable-sort/stride/take/take-while/transform/unique/unstable-remove semantics, reference stability, bounds and iterator-category constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11251,
+      "source_path": "Telegram/ThirdParty/range-v3::test/action/take_while.cpp",
+      "source_blob_sha": "8fd3db4f2984ed91eca350575fd1c6df79d94cd9",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/action/take_while.cpp",
+        "object": "8fd3db4f2984ed91eca350575fd1c6df79d94cd9",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1205
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 action regression contracts",
+      "source_symbols": [
+        "take_while"
+      ],
+      "responsibility": "Development-time regression coverage for generic mutating range actions, including slice/sort/split/stable-sort/stride/take/take-while/transform/unique/unstable-remove semantics, reference stability, bounds and iterator-category constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11252,
+      "source_path": "Telegram/ThirdParty/range-v3::test/action/transform.cpp",
+      "source_blob_sha": "5b3920dd7428e067cd8faaa4eabec4f983451544",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/action/transform.cpp",
+        "object": "5b3920dd7428e067cd8faaa4eabec4f983451544",
+        "mode": "100644",
+        "type": "blob",
+        "size": 980
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 action regression contracts",
+      "source_symbols": [
+        "transform"
+      ],
+      "responsibility": "Development-time regression coverage for generic mutating range actions, including slice/sort/split/stable-sort/stride/take/take-while/transform/unique/unstable-remove semantics, reference stability, bounds and iterator-category constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11253,
+      "source_path": "Telegram/ThirdParty/range-v3::test/action/unique.cpp",
+      "source_blob_sha": "8881ea966c8730e28a3a7121398e50ac042ebf97",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/action/unique.cpp",
+        "object": "8881ea966c8730e28a3a7121398e50ac042ebf97",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1272
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 action regression contracts",
+      "source_symbols": [
+        "unique"
+      ],
+      "responsibility": "Development-time regression coverage for generic mutating range actions, including slice/sort/split/stable-sort/stride/take/take-while/transform/unique/unstable-remove semantics, reference stability, bounds and iterator-category constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11254,
+      "source_path": "Telegram/ThirdParty/range-v3::test/action/unstable_remove_if.cpp",
+      "source_blob_sha": "c6679c5dd7435e844d05c7c4c6f89e799daef0fb",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/action/unstable_remove_if.cpp",
+        "object": "c6679c5dd7435e844d05c7c4c6f89e799daef0fb",
+        "mode": "100644",
+        "type": "blob",
+        "size": 7558
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 action regression contracts",
+      "source_symbols": [
+        "unstable_remove_if"
+      ],
+      "responsibility": "Development-time regression coverage for generic mutating range actions, including slice/sort/split/stable-sort/stride/take/take-while/transform/unique/unstable-remove semantics, reference stability, bounds and iterator-category constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11255,
+      "source_path": "Telegram/ThirdParty/range-v3::test/algorithm/CMakeLists.txt",
+      "source_blob_sha": "24f99d1ecc135951648ae4d160cae3a470bb4514",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/algorithm/CMakeLists.txt",
+        "object": "24f99d1ecc135951648ae4d160cae3a470bb4514",
+        "mode": "100644",
+        "type": "blob",
+        "size": 7896
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 algorithm test build manifest",
+      "source_symbols": [
+        "CMakeLists"
+      ],
+      "responsibility": "Build/quality registration for generic algorithm test targets; development-only dependency quality infrastructure, not a Fabushi product runtime.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11256,
+      "source_path": "Telegram/ThirdParty/range-v3::test/algorithm/adjacent_find.cpp",
+      "source_blob_sha": "81ce6830c97fc44677247edade9263d4265d2807",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/algorithm/adjacent_find.cpp",
+        "object": "81ce6830c97fc44677247edade9263d4265d2807",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1600
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm regression contracts",
+      "source_symbols": [
+        "adjacent_find"
+      ],
+      "responsibility": "Development-time regression coverage for generic algorithms: adjacency/predicate/search/copy/count/equality/fill/find/fold/iteration/generation/includes/merge, heap and permutation invariants, ordering/sortedness, binary bounds and min/max result semantics, with iterator/sentinel/projection/lifetime constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11257,
+      "source_path": "Telegram/ThirdParty/range-v3::test/algorithm/adjacent_remove_if.cpp",
+      "source_blob_sha": "556fd72d6e0ec4431674ea53ab392a25e067c9ee",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/algorithm/adjacent_remove_if.cpp",
+        "object": "556fd72d6e0ec4431674ea53ab392a25e067c9ee",
+        "mode": "100644",
+        "type": "blob",
+        "size": 7382
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm regression contracts",
+      "source_symbols": [
+        "adjacent_remove_if"
+      ],
+      "responsibility": "Development-time regression coverage for generic algorithms: adjacency/predicate/search/copy/count/equality/fill/find/fold/iteration/generation/includes/merge, heap and permutation invariants, ordering/sortedness, binary bounds and min/max result semantics, with iterator/sentinel/projection/lifetime constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11258,
+      "source_path": "Telegram/ThirdParty/range-v3::test/algorithm/all_of.cpp",
+      "source_blob_sha": "7a6ddad0c487b81856504a494f6bd0a13b8db5c0",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/algorithm/all_of.cpp",
+        "object": "7a6ddad0c487b81856504a494f6bd0a13b8db5c0",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2366
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm regression contracts",
+      "source_symbols": [
+        "all_of"
+      ],
+      "responsibility": "Development-time regression coverage for generic algorithms: adjacency/predicate/search/copy/count/equality/fill/find/fold/iteration/generation/includes/merge, heap and permutation invariants, ordering/sortedness, binary bounds and min/max result semantics, with iterator/sentinel/projection/lifetime constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11259,
+      "source_path": "Telegram/ThirdParty/range-v3::test/algorithm/any_of.cpp",
+      "source_blob_sha": "df31feab7accdb64d6003b0be81784945afd82f4",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/algorithm/any_of.cpp",
+        "object": "df31feab7accdb64d6003b0be81784945afd82f4",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2354
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm regression contracts",
+      "source_symbols": [
+        "any_of"
+      ],
+      "responsibility": "Development-time regression coverage for generic algorithms: adjacency/predicate/search/copy/count/equality/fill/find/fold/iteration/generation/includes/merge, heap and permutation invariants, ordering/sortedness, binary bounds and min/max result semantics, with iterator/sentinel/projection/lifetime constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11260,
+      "source_path": "Telegram/ThirdParty/range-v3::test/algorithm/binary_search.cpp",
+      "source_blob_sha": "0073834348f1da8cee90ebf8a63b2daff36b4c0a",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/algorithm/binary_search.cpp",
+        "object": "0073834348f1da8cee90ebf8a63b2daff36b4c0a",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2328
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm regression contracts",
+      "source_symbols": [
+        "binary_search"
+      ],
+      "responsibility": "Development-time regression coverage for generic algorithms: adjacency/predicate/search/copy/count/equality/fill/find/fold/iteration/generation/includes/merge, heap and permutation invariants, ordering/sortedness, binary bounds and min/max result semantics, with iterator/sentinel/projection/lifetime constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11261,
+      "source_path": "Telegram/ThirdParty/range-v3::test/algorithm/contains.cpp",
+      "source_blob_sha": "a61b529e054571c3819791a153e7992d52907807",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/algorithm/contains.cpp",
+        "object": "a61b529e054571c3819791a153e7992d52907807",
+        "mode": "100644",
+        "type": "blob",
+        "size": 961
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm regression contracts",
+      "source_symbols": [
+        "contains"
+      ],
+      "responsibility": "Development-time regression coverage for generic algorithms: adjacency/predicate/search/copy/count/equality/fill/find/fold/iteration/generation/includes/merge, heap and permutation invariants, ordering/sortedness, binary bounds and min/max result semantics, with iterator/sentinel/projection/lifetime constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11262,
+      "source_path": "Telegram/ThirdParty/range-v3::test/algorithm/copy.cpp",
+      "source_blob_sha": "d4c42898af6b93067aa042bd28459f6b7d16a48f",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/algorithm/copy.cpp",
+        "object": "d4c42898af6b93067aa042bd28459f6b7d16a48f",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3192
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm regression contracts",
+      "source_symbols": [
+        "copy"
+      ],
+      "responsibility": "Development-time regression coverage for generic algorithms: adjacency/predicate/search/copy/count/equality/fill/find/fold/iteration/generation/includes/merge, heap and permutation invariants, ordering/sortedness, binary bounds and min/max result semantics, with iterator/sentinel/projection/lifetime constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11263,
+      "source_path": "Telegram/ThirdParty/range-v3::test/algorithm/copy_backward.cpp",
+      "source_blob_sha": "8438dff747ea2251b0b6d5350fd60dac31aea6a7",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/algorithm/copy_backward.cpp",
+        "object": "8438dff747ea2251b0b6d5350fd60dac31aea6a7",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2701
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm regression contracts",
+      "source_symbols": [
+        "copy_backward"
+      ],
+      "responsibility": "Development-time regression coverage for generic algorithms: adjacency/predicate/search/copy/count/equality/fill/find/fold/iteration/generation/includes/merge, heap and permutation invariants, ordering/sortedness, binary bounds and min/max result semantics, with iterator/sentinel/projection/lifetime constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11264,
+      "source_path": "Telegram/ThirdParty/range-v3::test/algorithm/copy_if.cpp",
+      "source_blob_sha": "c4d88aa0e663d5c17a60df3153f8b13adc3a35dd",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/algorithm/copy_if.cpp",
+        "object": "c4d88aa0e663d5c17a60df3153f8b13adc3a35dd",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1153
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm regression contracts",
+      "source_symbols": [
+        "copy_if"
+      ],
+      "responsibility": "Development-time regression coverage for generic algorithms: adjacency/predicate/search/copy/count/equality/fill/find/fold/iteration/generation/includes/merge, heap and permutation invariants, ordering/sortedness, binary bounds and min/max result semantics, with iterator/sentinel/projection/lifetime constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11265,
+      "source_path": "Telegram/ThirdParty/range-v3::test/algorithm/copy_n.cpp",
+      "source_blob_sha": "fb717ed97a96f6d0755f0df6c6fec6d6511b024d",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/algorithm/copy_n.cpp",
+        "object": "fb717ed97a96f6d0755f0df6c6fec6d6511b024d",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1122
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm regression contracts",
+      "source_symbols": [
+        "copy_n"
+      ],
+      "responsibility": "Development-time regression coverage for generic algorithms: adjacency/predicate/search/copy/count/equality/fill/find/fold/iteration/generation/includes/merge, heap and permutation invariants, ordering/sortedness, binary bounds and min/max result semantics, with iterator/sentinel/projection/lifetime constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11266,
+      "source_path": "Telegram/ThirdParty/range-v3::test/algorithm/count.cpp",
+      "source_blob_sha": "c8746d061f1deeb8ab32897c1af6ce8a92c6bd2d",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/algorithm/count.cpp",
+        "object": "c8746d061f1deeb8ab32897c1af6ce8a92c6bd2d",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2297
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm regression contracts",
+      "source_symbols": [
+        "count"
+      ],
+      "responsibility": "Development-time regression coverage for generic algorithms: adjacency/predicate/search/copy/count/equality/fill/find/fold/iteration/generation/includes/merge, heap and permutation invariants, ordering/sortedness, binary bounds and min/max result semantics, with iterator/sentinel/projection/lifetime constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11267,
+      "source_path": "Telegram/ThirdParty/range-v3::test/algorithm/count_if.cpp",
+      "source_blob_sha": "b37e5826bfeaa3509c54c21291e868ceacc23683",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/algorithm/count_if.cpp",
+        "object": "b37e5826bfeaa3509c54c21291e868ceacc23683",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3235
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm regression contracts",
+      "source_symbols": [
+        "count_if"
+      ],
+      "responsibility": "Development-time regression coverage for generic algorithms: adjacency/predicate/search/copy/count/equality/fill/find/fold/iteration/generation/includes/merge, heap and permutation invariants, ordering/sortedness, binary bounds and min/max result semantics, with iterator/sentinel/projection/lifetime constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11268,
+      "source_path": "Telegram/ThirdParty/range-v3::test/algorithm/ends_with.cpp",
+      "source_blob_sha": "596a187f006d740231e2b6c512ca386db65f4e42",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/algorithm/ends_with.cpp",
+        "object": "596a187f006d740231e2b6c512ca386db65f4e42",
+        "mode": "100644",
+        "type": "blob",
+        "size": 4804
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm regression contracts",
+      "source_symbols": [
+        "ends_with"
+      ],
+      "responsibility": "Development-time regression coverage for generic algorithms: adjacency/predicate/search/copy/count/equality/fill/find/fold/iteration/generation/includes/merge, heap and permutation invariants, ordering/sortedness, binary bounds and min/max result semantics, with iterator/sentinel/projection/lifetime constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11269,
+      "source_path": "Telegram/ThirdParty/range-v3::test/algorithm/equal.cpp",
+      "source_blob_sha": "9e03d4281bf50cf793a64f1fbae841108c2e91d6",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/algorithm/equal.cpp",
+        "object": "9e03d4281bf50cf793a64f1fbae841108c2e91d6",
+        "mode": "100644",
+        "type": "blob",
+        "size": 13000
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm regression contracts",
+      "source_symbols": [
+        "equal"
+      ],
+      "responsibility": "Development-time regression coverage for generic algorithms: adjacency/predicate/search/copy/count/equality/fill/find/fold/iteration/generation/includes/merge, heap and permutation invariants, ordering/sortedness, binary bounds and min/max result semantics, with iterator/sentinel/projection/lifetime constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11270,
+      "source_path": "Telegram/ThirdParty/range-v3::test/algorithm/equal_range.cpp",
+      "source_blob_sha": "2ea3e4572d1292c239f2a61c7c7f6605f9544a0d",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/algorithm/equal_range.cpp",
+        "object": "2ea3e4572d1292c239f2a61c7c7f6605f9544a0d",
+        "mode": "100644",
+        "type": "blob",
+        "size": 6250
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm regression contracts",
+      "source_symbols": [
+        "equal_range"
+      ],
+      "responsibility": "Development-time regression coverage for generic algorithms: adjacency/predicate/search/copy/count/equality/fill/find/fold/iteration/generation/includes/merge, heap and permutation invariants, ordering/sortedness, binary bounds and min/max result semantics, with iterator/sentinel/projection/lifetime constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11271,
+      "source_path": "Telegram/ThirdParty/range-v3::test/algorithm/fill.cpp",
+      "source_blob_sha": "0f4a1acad104242bbf809075e9a2b6af1f177c41",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/algorithm/fill.cpp",
+        "object": "0f4a1acad104242bbf809075e9a2b6af1f177c41",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3285
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm regression contracts",
+      "source_symbols": [
+        "fill"
+      ],
+      "responsibility": "Development-time regression coverage for generic algorithms: adjacency/predicate/search/copy/count/equality/fill/find/fold/iteration/generation/includes/merge, heap and permutation invariants, ordering/sortedness, binary bounds and min/max result semantics, with iterator/sentinel/projection/lifetime constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11272,
+      "source_path": "Telegram/ThirdParty/range-v3::test/algorithm/fill_n.cpp",
+      "source_blob_sha": "0b2738e9de66f82c6bf32fdea43ec8b4fa1b6793",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/algorithm/fill_n.cpp",
+        "object": "0b2738e9de66f82c6bf32fdea43ec8b4fa1b6793",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2219
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm regression contracts",
+      "source_symbols": [
+        "fill_n"
+      ],
+      "responsibility": "Development-time regression coverage for generic algorithms: adjacency/predicate/search/copy/count/equality/fill/find/fold/iteration/generation/includes/merge, heap and permutation invariants, ordering/sortedness, binary bounds and min/max result semantics, with iterator/sentinel/projection/lifetime constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11273,
+      "source_path": "Telegram/ThirdParty/range-v3::test/algorithm/find.cpp",
+      "source_blob_sha": "170d078fb8f1e22e0f2d534c3aa0f7c268350bcf",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/algorithm/find.cpp",
+        "object": "170d078fb8f1e22e0f2d534c3aa0f7c268350bcf",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3045
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm regression contracts",
+      "source_symbols": [
+        "find"
+      ],
+      "responsibility": "Development-time regression coverage for generic algorithms: adjacency/predicate/search/copy/count/equality/fill/find/fold/iteration/generation/includes/merge, heap and permutation invariants, ordering/sortedness, binary bounds and min/max result semantics, with iterator/sentinel/projection/lifetime constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11274,
+      "source_path": "Telegram/ThirdParty/range-v3::test/algorithm/find_end.cpp",
+      "source_blob_sha": "506c00e5613723f3da3e178cf9f6b273882ace94",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/algorithm/find_end.cpp",
+        "object": "506c00e5613723f3da3e178cf9f6b273882ace94",
+        "mode": "100644",
+        "type": "blob",
+        "size": 21893
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm regression contracts",
+      "source_symbols": [
+        "find_end"
+      ],
+      "responsibility": "Development-time regression coverage for generic algorithms: adjacency/predicate/search/copy/count/equality/fill/find/fold/iteration/generation/includes/merge, heap and permutation invariants, ordering/sortedness, binary bounds and min/max result semantics, with iterator/sentinel/projection/lifetime constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11275,
+      "source_path": "Telegram/ThirdParty/range-v3::test/algorithm/find_first_of.cpp",
+      "source_blob_sha": "8cce647f6405f8ce6e9b14c7088e0aed5a8683e2",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/algorithm/find_first_of.cpp",
+        "object": "8cce647f6405f8ce6e9b14c7088e0aed5a8683e2",
+        "mode": "100644",
+        "type": "blob",
+        "size": 12568
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm regression contracts",
+      "source_symbols": [
+        "find_first_of"
+      ],
+      "responsibility": "Development-time regression coverage for generic algorithms: adjacency/predicate/search/copy/count/equality/fill/find/fold/iteration/generation/includes/merge, heap and permutation invariants, ordering/sortedness, binary bounds and min/max result semantics, with iterator/sentinel/projection/lifetime constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11276,
+      "source_path": "Telegram/ThirdParty/range-v3::test/algorithm/find_if.cpp",
+      "source_blob_sha": "9875c75b4a78712bb12d1e7376ccd36ec7c67848",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/algorithm/find_if.cpp",
+        "object": "9875c75b4a78712bb12d1e7376ccd36ec7c67848",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3352
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm regression contracts",
+      "source_symbols": [
+        "find_if"
+      ],
+      "responsibility": "Development-time regression coverage for generic algorithms: adjacency/predicate/search/copy/count/equality/fill/find/fold/iteration/generation/includes/merge, heap and permutation invariants, ordering/sortedness, binary bounds and min/max result semantics, with iterator/sentinel/projection/lifetime constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11277,
+      "source_path": "Telegram/ThirdParty/range-v3::test/algorithm/find_if_not.cpp",
+      "source_blob_sha": "a91a7a0f9fd6bdbec748287f0a0002703367d5ed",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/algorithm/find_if_not.cpp",
+        "object": "a91a7a0f9fd6bdbec748287f0a0002703367d5ed",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1299
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm regression contracts",
+      "source_symbols": [
+        "find_if_not"
+      ],
+      "responsibility": "Development-time regression coverage for generic algorithms: adjacency/predicate/search/copy/count/equality/fill/find/fold/iteration/generation/includes/merge, heap and permutation invariants, ordering/sortedness, binary bounds and min/max result semantics, with iterator/sentinel/projection/lifetime constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11278,
+      "source_path": "Telegram/ThirdParty/range-v3::test/algorithm/fold.cpp",
+      "source_blob_sha": "918ab57db637b0c6bb4cf8932686bf76d456f013",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/algorithm/fold.cpp",
+        "object": "918ab57db637b0c6bb4cf8932686bf76d456f013",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3371
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm regression contracts",
+      "source_symbols": [
+        "fold"
+      ],
+      "responsibility": "Development-time regression coverage for generic algorithms: adjacency/predicate/search/copy/count/equality/fill/find/fold/iteration/generation/includes/merge, heap and permutation invariants, ordering/sortedness, binary bounds and min/max result semantics, with iterator/sentinel/projection/lifetime constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11279,
+      "source_path": "Telegram/ThirdParty/range-v3::test/algorithm/for_each.cpp",
+      "source_blob_sha": "f206dc1369821211693455632d0b6445a26c0f4d",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/algorithm/for_each.cpp",
+        "object": "f206dc1369821211693455632d0b6445a26c0f4d",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1628
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm regression contracts",
+      "source_symbols": [
+        "for_each"
+      ],
+      "responsibility": "Development-time regression coverage for generic algorithms: adjacency/predicate/search/copy/count/equality/fill/find/fold/iteration/generation/includes/merge, heap and permutation invariants, ordering/sortedness, binary bounds and min/max result semantics, with iterator/sentinel/projection/lifetime constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11280,
+      "source_path": "Telegram/ThirdParty/range-v3::test/algorithm/for_each_n.cpp",
+      "source_blob_sha": "ec8f451fe1669c0c3896d9032e5397bc1a9d0d5a",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/algorithm/for_each_n.cpp",
+        "object": "ec8f451fe1669c0c3896d9032e5397bc1a9d0d5a",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2164
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm regression contracts",
+      "source_symbols": [
+        "for_each_n"
+      ],
+      "responsibility": "Development-time regression coverage for generic algorithms: adjacency/predicate/search/copy/count/equality/fill/find/fold/iteration/generation/includes/merge, heap and permutation invariants, ordering/sortedness, binary bounds and min/max result semantics, with iterator/sentinel/projection/lifetime constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11281,
+      "source_path": "Telegram/ThirdParty/range-v3::test/algorithm/generate.cpp",
+      "source_blob_sha": "93675a5946166c6ccd87a8e45b9a9e0e0f25cf96",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/algorithm/generate.cpp",
+        "object": "93675a5946166c6ccd87a8e45b9a9e0e0f25cf96",
+        "mode": "100644",
+        "type": "blob",
+        "size": 4305
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm regression contracts",
+      "source_symbols": [
+        "generate"
+      ],
+      "responsibility": "Development-time regression coverage for generic algorithms: adjacency/predicate/search/copy/count/equality/fill/find/fold/iteration/generation/includes/merge, heap and permutation invariants, ordering/sortedness, binary bounds and min/max result semantics, with iterator/sentinel/projection/lifetime constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11282,
+      "source_path": "Telegram/ThirdParty/range-v3::test/algorithm/generate_n.cpp",
+      "source_blob_sha": "aacb7c2b75a47dcfb279337ae1112e51c28a5e7a",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/algorithm/generate_n.cpp",
+        "object": "aacb7c2b75a47dcfb279337ae1112e51c28a5e7a",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3190
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm regression contracts",
+      "source_symbols": [
+        "generate_n"
+      ],
+      "responsibility": "Development-time regression coverage for generic algorithms: adjacency/predicate/search/copy/count/equality/fill/find/fold/iteration/generation/includes/merge, heap and permutation invariants, ordering/sortedness, binary bounds and min/max result semantics, with iterator/sentinel/projection/lifetime constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11283,
+      "source_path": "Telegram/ThirdParty/range-v3::test/algorithm/includes.cpp",
+      "source_blob_sha": "c0694a46ccc647054c05e5a9749edb29722f945e",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/algorithm/includes.cpp",
+        "object": "c0694a46ccc647054c05e5a9749edb29722f945e",
+        "mode": "100644",
+        "type": "blob",
+        "size": 6301
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm regression contracts",
+      "source_symbols": [
+        "includes"
+      ],
+      "responsibility": "Development-time regression coverage for generic algorithms: adjacency/predicate/search/copy/count/equality/fill/find/fold/iteration/generation/includes/merge, heap and permutation invariants, ordering/sortedness, binary bounds and min/max result semantics, with iterator/sentinel/projection/lifetime constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11284,
+      "source_path": "Telegram/ThirdParty/range-v3::test/algorithm/inplace_merge.cpp",
+      "source_blob_sha": "3dc4da48e5b55f5b9a3c00fb18410a8457164cd5",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/algorithm/inplace_merge.cpp",
+        "object": "3dc4da48e5b55f5b9a3c00fb18410a8457164cd5",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3792
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm regression contracts",
+      "source_symbols": [
+        "inplace_merge"
+      ],
+      "responsibility": "Development-time regression coverage for generic algorithms: adjacency/predicate/search/copy/count/equality/fill/find/fold/iteration/generation/includes/merge, heap and permutation invariants, ordering/sortedness, binary bounds and min/max result semantics, with iterator/sentinel/projection/lifetime constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11285,
+      "source_path": "Telegram/ThirdParty/range-v3::test/algorithm/is_heap.hpp",
+      "source_blob_sha": "b81adcb4cb976b723c8ad6b9c8c9376b50e31a6d",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/algorithm/is_heap.hpp",
+        "object": "b81adcb4cb976b723c8ad6b9c8c9376b50e31a6d",
+        "mode": "100644",
+        "type": "blob",
+        "size": 82332
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm regression contracts",
+      "source_symbols": [
+        "is_heap"
+      ],
+      "responsibility": "Development-time regression coverage for generic algorithms: adjacency/predicate/search/copy/count/equality/fill/find/fold/iteration/generation/includes/merge, heap and permutation invariants, ordering/sortedness, binary bounds and min/max result semantics, with iterator/sentinel/projection/lifetime constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11286,
+      "source_path": "Telegram/ThirdParty/range-v3::test/algorithm/is_heap1.cpp",
+      "source_blob_sha": "7b1a8553274906116b49bc08128473ac15c98ce4",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/algorithm/is_heap1.cpp",
+        "object": "7b1a8553274906116b49bc08128473ac15c98ce4",
+        "mode": "100644",
+        "type": "blob",
+        "size": 367
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm regression contracts",
+      "source_symbols": [
+        "is_heap1"
+      ],
+      "responsibility": "Development-time regression coverage for generic algorithms: adjacency/predicate/search/copy/count/equality/fill/find/fold/iteration/generation/includes/merge, heap and permutation invariants, ordering/sortedness, binary bounds and min/max result semantics, with iterator/sentinel/projection/lifetime constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11287,
+      "source_path": "Telegram/ThirdParty/range-v3::test/algorithm/is_heap2.cpp",
+      "source_blob_sha": "089d9cb31d8d35a35a33ef7b47ce36da567cb3cc",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/algorithm/is_heap2.cpp",
+        "object": "089d9cb31d8d35a35a33ef7b47ce36da567cb3cc",
+        "mode": "100644",
+        "type": "blob",
+        "size": 367
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm regression contracts",
+      "source_symbols": [
+        "is_heap2"
+      ],
+      "responsibility": "Development-time regression coverage for generic algorithms: adjacency/predicate/search/copy/count/equality/fill/find/fold/iteration/generation/includes/merge, heap and permutation invariants, ordering/sortedness, binary bounds and min/max result semantics, with iterator/sentinel/projection/lifetime constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11288,
+      "source_path": "Telegram/ThirdParty/range-v3::test/algorithm/is_heap3.cpp",
+      "source_blob_sha": "96512df6c328909444d15a1f26daa60df0228084",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/algorithm/is_heap3.cpp",
+        "object": "96512df6c328909444d15a1f26daa60df0228084",
+        "mode": "100644",
+        "type": "blob",
+        "size": 367
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm regression contracts",
+      "source_symbols": [
+        "is_heap3"
+      ],
+      "responsibility": "Development-time regression coverage for generic algorithms: adjacency/predicate/search/copy/count/equality/fill/find/fold/iteration/generation/includes/merge, heap and permutation invariants, ordering/sortedness, binary bounds and min/max result semantics, with iterator/sentinel/projection/lifetime constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11289,
+      "source_path": "Telegram/ThirdParty/range-v3::test/algorithm/is_heap4.cpp",
+      "source_blob_sha": "c9f5497819ae0831436958bc3cc27f3e513618bc",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/algorithm/is_heap4.cpp",
+        "object": "c9f5497819ae0831436958bc3cc27f3e513618bc",
+        "mode": "100644",
+        "type": "blob",
+        "size": 367
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm regression contracts",
+      "source_symbols": [
+        "is_heap4"
+      ],
+      "responsibility": "Development-time regression coverage for generic algorithms: adjacency/predicate/search/copy/count/equality/fill/find/fold/iteration/generation/includes/merge, heap and permutation invariants, ordering/sortedness, binary bounds and min/max result semantics, with iterator/sentinel/projection/lifetime constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11290,
+      "source_path": "Telegram/ThirdParty/range-v3::test/algorithm/is_heap_until.hpp",
+      "source_blob_sha": "105598140f1ae35c5137c6bced80695315fba9b1",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/algorithm/is_heap_until.hpp",
+        "object": "105598140f1ae35c5137c6bced80695315fba9b1",
+        "mode": "100644",
+        "type": "blob",
+        "size": 62494
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm regression contracts",
+      "source_symbols": [
+        "is_heap_until"
+      ],
+      "responsibility": "Development-time regression coverage for generic algorithms: adjacency/predicate/search/copy/count/equality/fill/find/fold/iteration/generation/includes/merge, heap and permutation invariants, ordering/sortedness, binary bounds and min/max result semantics, with iterator/sentinel/projection/lifetime constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11291,
+      "source_path": "Telegram/ThirdParty/range-v3::test/algorithm/is_heap_until1.cpp",
+      "source_blob_sha": "87da2c36ce66257f2bd15f901876b9196a9e3638",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/algorithm/is_heap_until1.cpp",
+        "object": "87da2c36ce66257f2bd15f901876b9196a9e3638",
+        "mode": "100644",
+        "type": "blob",
+        "size": 379
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm regression contracts",
+      "source_symbols": [
+        "is_heap_until1"
+      ],
+      "responsibility": "Development-time regression coverage for generic algorithms: adjacency/predicate/search/copy/count/equality/fill/find/fold/iteration/generation/includes/merge, heap and permutation invariants, ordering/sortedness, binary bounds and min/max result semantics, with iterator/sentinel/projection/lifetime constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11292,
+      "source_path": "Telegram/ThirdParty/range-v3::test/algorithm/is_heap_until2.cpp",
+      "source_blob_sha": "882e1c89a2df8b43509395cd4c20e275aaa41b5d",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/algorithm/is_heap_until2.cpp",
+        "object": "882e1c89a2df8b43509395cd4c20e275aaa41b5d",
+        "mode": "100644",
+        "type": "blob",
+        "size": 379
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm regression contracts",
+      "source_symbols": [
+        "is_heap_until2"
+      ],
+      "responsibility": "Development-time regression coverage for generic algorithms: adjacency/predicate/search/copy/count/equality/fill/find/fold/iteration/generation/includes/merge, heap and permutation invariants, ordering/sortedness, binary bounds and min/max result semantics, with iterator/sentinel/projection/lifetime constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11293,
+      "source_path": "Telegram/ThirdParty/range-v3::test/algorithm/is_heap_until3.cpp",
+      "source_blob_sha": "fb72e0a204ad640fa954bb20231e2640a4104146",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/algorithm/is_heap_until3.cpp",
+        "object": "fb72e0a204ad640fa954bb20231e2640a4104146",
+        "mode": "100644",
+        "type": "blob",
+        "size": 379
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm regression contracts",
+      "source_symbols": [
+        "is_heap_until3"
+      ],
+      "responsibility": "Development-time regression coverage for generic algorithms: adjacency/predicate/search/copy/count/equality/fill/find/fold/iteration/generation/includes/merge, heap and permutation invariants, ordering/sortedness, binary bounds and min/max result semantics, with iterator/sentinel/projection/lifetime constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11294,
+      "source_path": "Telegram/ThirdParty/range-v3::test/algorithm/is_heap_until4.cpp",
+      "source_blob_sha": "106d25ee56fd0bd4ca3fed410d101fa493fca739",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/algorithm/is_heap_until4.cpp",
+        "object": "106d25ee56fd0bd4ca3fed410d101fa493fca739",
+        "mode": "100644",
+        "type": "blob",
+        "size": 379
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm regression contracts",
+      "source_symbols": [
+        "is_heap_until4"
+      ],
+      "responsibility": "Development-time regression coverage for generic algorithms: adjacency/predicate/search/copy/count/equality/fill/find/fold/iteration/generation/includes/merge, heap and permutation invariants, ordering/sortedness, binary bounds and min/max result semantics, with iterator/sentinel/projection/lifetime constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11295,
+      "source_path": "Telegram/ThirdParty/range-v3::test/algorithm/is_partitioned.cpp",
+      "source_blob_sha": "46114e8bfb1989b9f943c07a1a4c7eccbeb81b24",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/algorithm/is_partitioned.cpp",
+        "object": "46114e8bfb1989b9f943c07a1a4c7eccbeb81b24",
+        "mode": "100644",
+        "type": "blob",
+        "size": 4468
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm regression contracts",
+      "source_symbols": [
+        "is_partitioned"
+      ],
+      "responsibility": "Development-time regression coverage for generic algorithms: adjacency/predicate/search/copy/count/equality/fill/find/fold/iteration/generation/includes/merge, heap and permutation invariants, ordering/sortedness, binary bounds and min/max result semantics, with iterator/sentinel/projection/lifetime constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11296,
+      "source_path": "Telegram/ThirdParty/range-v3::test/algorithm/is_permutation.cpp",
+      "source_blob_sha": "27bb753a0d6837a3924e888964d29a0b70d118a2",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/algorithm/is_permutation.cpp",
+        "object": "27bb753a0d6837a3924e888964d29a0b70d118a2",
+        "mode": "100644",
+        "type": "blob",
+        "size": 45917
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm regression contracts",
+      "source_symbols": [
+        "is_permutation"
+      ],
+      "responsibility": "Development-time regression coverage for generic algorithms: adjacency/predicate/search/copy/count/equality/fill/find/fold/iteration/generation/includes/merge, heap and permutation invariants, ordering/sortedness, binary bounds and min/max result semantics, with iterator/sentinel/projection/lifetime constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11297,
+      "source_path": "Telegram/ThirdParty/range-v3::test/algorithm/is_sorted.cpp",
+      "source_blob_sha": "bb046b6150963a77c5cd96563098bd26cb3705c2",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/algorithm/is_sorted.cpp",
+        "object": "bb046b6150963a77c5cd96563098bd26cb3705c2",
+        "mode": "100644",
+        "type": "blob",
+        "size": 11871
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm regression contracts",
+      "source_symbols": [
+        "is_sorted"
+      ],
+      "responsibility": "Development-time regression coverage for generic algorithms: adjacency/predicate/search/copy/count/equality/fill/find/fold/iteration/generation/includes/merge, heap and permutation invariants, ordering/sortedness, binary bounds and min/max result semantics, with iterator/sentinel/projection/lifetime constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11298,
+      "source_path": "Telegram/ThirdParty/range-v3::test/algorithm/is_sorted_until.cpp",
+      "source_blob_sha": "c8e915ea7a3e5d2ab3c0c5948aaab8674f035339",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/algorithm/is_sorted_until.cpp",
+        "object": "c8e915ea7a3e5d2ab3c0c5948aaab8674f035339",
+        "mode": "100644",
+        "type": "blob",
+        "size": 14290
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm regression contracts",
+      "source_symbols": [
+        "is_sorted_until"
+      ],
+      "responsibility": "Development-time regression coverage for generic algorithms: adjacency/predicate/search/copy/count/equality/fill/find/fold/iteration/generation/includes/merge, heap and permutation invariants, ordering/sortedness, binary bounds and min/max result semantics, with iterator/sentinel/projection/lifetime constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11299,
+      "source_path": "Telegram/ThirdParty/range-v3::test/algorithm/lexicographical_compare.cpp",
+      "source_blob_sha": "3832af6d363e33ebe603ed0850f52eee954567c0",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/algorithm/lexicographical_compare.cpp",
+        "object": "3832af6d363e33ebe603ed0850f52eee954567c0",
+        "mode": "100644",
+        "type": "blob",
+        "size": 11396
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm regression contracts",
+      "source_symbols": [
+        "lexicographical_compare"
+      ],
+      "responsibility": "Development-time regression coverage for generic algorithms: adjacency/predicate/search/copy/count/equality/fill/find/fold/iteration/generation/includes/merge, heap and permutation invariants, ordering/sortedness, binary bounds and min/max result semantics, with iterator/sentinel/projection/lifetime constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11300,
+      "source_path": "Telegram/ThirdParty/range-v3::test/algorithm/lower_bound.cpp",
+      "source_blob_sha": "0b803d7b7c6147e4131b2f387c0ba812d1318f1c",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/algorithm/lower_bound.cpp",
+        "object": "0b803d7b7c6147e4131b2f387c0ba812d1318f1c",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3823
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm regression contracts",
+      "source_symbols": [
+        "lower_bound"
+      ],
+      "responsibility": "Development-time regression coverage for generic algorithms: adjacency/predicate/search/copy/count/equality/fill/find/fold/iteration/generation/includes/merge, heap and permutation invariants, ordering/sortedness, binary bounds and min/max result semantics, with iterator/sentinel/projection/lifetime constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11301,
+      "source_path": "Telegram/ThirdParty/range-v3::test/algorithm/make_heap.cpp",
+      "source_blob_sha": "cc38aaca2a519e2740d12658b80e90d21721426e",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/algorithm/make_heap.cpp",
+        "object": "cc38aaca2a519e2740d12658b80e90d21721426e",
+        "mode": "100644",
+        "type": "blob",
+        "size": 6295
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm regression contracts",
+      "source_symbols": [
+        "make_heap"
+      ],
+      "responsibility": "Development-time regression coverage for generic algorithms: adjacency/predicate/search/copy/count/equality/fill/find/fold/iteration/generation/includes/merge, heap and permutation invariants, ordering/sortedness, binary bounds and min/max result semantics, with iterator/sentinel/projection/lifetime constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11302,
+      "source_path": "Telegram/ThirdParty/range-v3::test/algorithm/max.cpp",
+      "source_blob_sha": "5f0f6f71edc9f5c89c43845df567163bdc8eac77",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/algorithm/max.cpp",
+        "object": "5f0f6f71edc9f5c89c43845df567163bdc8eac77",
+        "mode": "100644",
+        "type": "blob",
+        "size": 4298
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm regression contracts",
+      "source_symbols": [
+        "max"
+      ],
+      "responsibility": "Development-time regression coverage for generic algorithms: adjacency/predicate/search/copy/count/equality/fill/find/fold/iteration/generation/includes/merge, heap and permutation invariants, ordering/sortedness, binary bounds and min/max result semantics, with iterator/sentinel/projection/lifetime constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11303,
+      "source_path": "Telegram/ThirdParty/range-v3::test/algorithm/max_element.cpp",
+      "source_blob_sha": "21439f20cca523c4acfd10b2774e9000ff1d5306",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/algorithm/max_element.cpp",
+        "object": "21439f20cca523c4acfd10b2774e9000ff1d5306",
+        "mode": "100644",
+        "type": "blob",
+        "size": 4941
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm regression contracts",
+      "source_symbols": [
+        "max_element"
+      ],
+      "responsibility": "Development-time regression coverage for generic algorithms: adjacency/predicate/search/copy/count/equality/fill/find/fold/iteration/generation/includes/merge, heap and permutation invariants, ordering/sortedness, binary bounds and min/max result semantics, with iterator/sentinel/projection/lifetime constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11304,
+      "source_path": "Telegram/ThirdParty/range-v3::test/algorithm/merge.cpp",
+      "source_blob_sha": "df7184b3098e28aa7a0e9b8f2b9c9cad56f3e3bb",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/algorithm/merge.cpp",
+        "object": "df7184b3098e28aa7a0e9b8f2b9c9cad56f3e3bb",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3833
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm regression contracts",
+      "source_symbols": [
+        "merge"
+      ],
+      "responsibility": "Development-time regression coverage for generic algorithms: adjacency/predicate/search/copy/count/equality/fill/find/fold/iteration/generation/includes/merge, heap and permutation invariants, ordering/sortedness, binary bounds and min/max result semantics, with iterator/sentinel/projection/lifetime constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11305,
+      "source_path": "Telegram/ThirdParty/range-v3::test/algorithm/min.cpp",
+      "source_blob_sha": "c548024874ce567fe8fee2143ad14abbb09894ad",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/algorithm/min.cpp",
+        "object": "c548024874ce567fe8fee2143ad14abbb09894ad",
+        "mode": "100644",
+        "type": "blob",
+        "size": 4289
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm regression contracts",
+      "source_symbols": [
+        "min"
+      ],
+      "responsibility": "Development-time regression coverage for generic algorithms: adjacency/predicate/search/copy/count/equality/fill/find/fold/iteration/generation/includes/merge, heap and permutation invariants, ordering/sortedness, binary bounds and min/max result semantics, with iterator/sentinel/projection/lifetime constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11306,
+      "source_path": "Telegram/ThirdParty/range-v3::test/algorithm/min_element.cpp",
+      "source_blob_sha": "7f58a51516dfe7548e5cbc1d1a662ddc4ab13ab4",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/algorithm/min_element.cpp",
+        "object": "7f58a51516dfe7548e5cbc1d1a662ddc4ab13ab4",
+        "mode": "100644",
+        "type": "blob",
+        "size": 4945
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm regression contracts",
+      "source_symbols": [
+        "min_element"
+      ],
+      "responsibility": "Development-time regression coverage for generic algorithms: adjacency/predicate/search/copy/count/equality/fill/find/fold/iteration/generation/includes/merge, heap and permutation invariants, ordering/sortedness, binary bounds and min/max result semantics, with iterator/sentinel/projection/lifetime constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11307,
+      "source_path": "Telegram/ThirdParty/range-v3::test/algorithm/minmax.cpp",
+      "source_blob_sha": "4c2d2ae7778461332edeb9815bf51d777dcdb65d",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/algorithm/minmax.cpp",
+        "object": "4c2d2ae7778461332edeb9815bf51d777dcdb65d",
+        "mode": "100644",
+        "type": "blob",
+        "size": 5710
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm regression contracts",
+      "source_symbols": [
+        "minmax"
+      ],
+      "responsibility": "Development-time regression coverage for generic algorithms: adjacency/predicate/search/copy/count/equality/fill/find/fold/iteration/generation/includes/merge, heap and permutation invariants, ordering/sortedness, binary bounds and min/max result semantics, with iterator/sentinel/projection/lifetime constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    },
+    {
+      "recursive_order": 11308,
+      "source_path": "Telegram/ThirdParty/range-v3::test/algorithm/minmax_element.cpp",
+      "source_blob_sha": "636a63b96f8673c7b99e234208c89591c4a5774d",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "test/algorithm/minmax_element.cpp",
+        "object": "636a63b96f8673c7b99e234208c89591c4a5774d",
+        "mode": "100644",
+        "type": "blob",
+        "size": 7723
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm regression contracts",
+      "source_symbols": [
+        "minmax_element"
+      ],
+      "responsibility": "Development-time regression coverage for generic algorithms: adjacency/predicate/search/copy/count/equality/fill/find/fold/iteration/generation/includes/merge, heap and permutation invariants, ordering/sortedness, binary bounds and min/max result semantics, with iterator/sentinel/projection/lifetime constraints.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime and Quality owners; no shipping range-v3 consumer or product-domain owner."
+    }
+  ]
+}

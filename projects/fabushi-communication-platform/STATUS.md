@@ -11,15 +11,21 @@ Complete: false
 | Existing-owner-first absorption | specified | new owners require ADR |
 | Native Fabushi network | in progress | canonical Rust messaging service and real Host HTTP API transport exist; broader service/release closure remains open |
 | Exact existing-owner inventory | in progress | canonical owners are audited continuously; full 16,125-entry absorption is not closed |
-| Telegram capability graph | in progress | deterministic source review is 11,244/16,125; unread/unknown remain open |
+| Telegram capability graph | in progress | deterministic source review is 11,308/16,125; unread/unknown remain open |
 | Capability → owner mapping | in progress | reviewed responsibilities map existing-owner-first; full source→shipping evidence graph remains open |
 | Conversation/message model evolution | in progress | native/mahayana-messaging has canonical Conversation/protocol/service evolution; mapped-open product closure remains |
 | Native messaging infrastructure | in progress | canonical messaging service plus source/host real API transport are implemented; broader server/platform/release evidence remains |
 | Human messaging in existing workspace | in progress | existing Composer/submission/Host path carries human send including silent/scheduled semantics; full regression/release closure remains |
 | Human + Agent unified flow | in progress | canonical ConversationWorkspace/Composer infrastructure is shared; complete Hybrid creation/policy/regression evidence remains open |
-| Full feature absorption | in progress | source/product mapping is active; unread=4,881 and unknown=15,845 prevent closure |
+| Full feature absorption | in progress | source/product mapping is active; unread=4,817 and unknown=15,845 prevent closure |
 | Packaged acceptance | blocked | no artifact |
 | Release | blocked | ACs incomplete |
+
+## 2026-10-11 range-v3 action/algorithm source accounting
+
+Exact-head `3f9004497d0d69a149171e8320f100042d514015` source-authority job `114508097974` under Rust desktop runtime `38152310164` completed/success and materialized 11,245–11,308 into artifact `11707316697` (`sha256:fd1d889abe5e3320cd523ea78fee6769ee3469fd27335164b5e93fe38c49be13`), verifying exact Git blob identity and byte length. Prepared accounting is **11,308/16,125 read; 4,817 unread; 15,845 unknown; 0 omitted**; first unread becomes 11,309 `Telegram/ThirdParty/range-v3::test/algorithm/mismatch.cpp@4a70c8a75afa1dabc6fe6e0628ab288919c1f753`.
+
+This window is generic range-v3 action/algorithm test responsibility and remains mapped existing-owner-first to Build / Quality / Dependency-Provenance / License and native runtime boundaries. Product/release acceptance remains open.
 
 ## 2026-10-11 range-v3 views/build provenance/action source accounting
 
