@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 4113,
+    "unread": 4049,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,22 +13478,22 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Accepted prefix 12,012/16,125; orders 11,949-12,012 were exact-blob materialized from 4dd6d4cd source-authority evidence and formally dispositioned; unread 4,113; unknown 15,845; omitted 0. Document portal FUSE/resource/permission/persistence responsibilities map existing-owner-first; reading alone does not reduce unknown.",
-    "source_authority_evidence": "Exact-head 4dd6d4cd0ca78de2c6c37c41df5cec3fab1e14ce run 38178170763/job 114584965485 completed fail-closed Revision 9 validation and materialized artifact 11717201205 (sha256:2cf42542729fa6e02e7dcb42e1aa2b2e973193628b385972dff02ef6e5ec3f86); descendant same-head Actions are required after accounting lands.",
-    "current_source_read_through": 12012,
-    "first_unread_order": 12013,
-    "first_unread_path": "Telegram/ThirdParty/xdg-desktop-portal::document-portal/permission-db.h"
+    "source_read_reconciliation": "Accepted prefix 12,076/16,125; orders 12,013-12,076 formally dispositioned from exact 8eb26c artifact; unread 4,049; unknown 15,845; omitted 0. Permission store and portal account/background/camera/clipboard/launcher/email/file-chooser/process/GameMode responsibilities map existing-owner-first; reading alone does not reduce unknown.",
+    "source_authority_evidence": "Exact-head 8eb26c340281877d02650cfb8bfafb8805221618 run 38178536353/job 114586034817 completed fail-closed Revision 9 validation and artifact 11716347948; descendant same-head Actions required.",
+    "current_source_read_through": 12076,
+    "first_unread_order": 12077,
+    "first_unread_path": "Telegram/ThirdParty/xdg-desktop-portal::src/gamemode.h"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "deterministic_prefix_closed": 57,
-    "development_only_non_applicable": 171,
+    "development_only_non_applicable": 206,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 12012,
-    "first_unread_order": 12013,
-    "first_unread_path": "Telegram/ThirdParty/xdg-desktop-portal::document-portal/permission-db.h",
+    "read_through": 12076,
+    "first_unread_order": 12077,
+    "first_unread_path": "Telegram/ThirdParty/xdg-desktop-portal::src/gamemode.h",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
