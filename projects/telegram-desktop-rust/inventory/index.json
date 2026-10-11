@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 6681,
+    "unread_minimum": 6672,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through deterministic order 9,444; unread 6,681; unknown 15,845; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition through deterministic order 9,453; unread 6,672; unknown 15,845; omitted 0."
   },
   "latest_recursive_evidence": {
     "run_id": 38106112583,
@@ -41,7 +41,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live baseline identity is accepted for telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 / tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6, matching upstream.lock upstream.accepted=true. This does not imply source/product/release closure: exact read-through is 9,444; unread_minimum is 6,681; unknown remains 15,845; omitted remains 0; acceptance.accepted and baseline_ready remain false until their gates close.",
+  "note": "Live baseline identity is accepted for telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 / tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6, matching upstream.lock upstream.accepted=true. This does not imply source/product/release closure: exact read-through is 9,453; unread_minimum is 6,672; unknown remains 15,845; omitted remains 0; acceptance.accepted and baseline_ready remain false until their gates close.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -59,10 +59,10 @@
       6541,
       6627
     ],
-    "current_source_read_through": 9444,
-    "first_unread_order": 9445,
+    "current_source_read_through": 9453,
+    "first_unread_order": 9454,
     "first_unread_path": "Telegram/ThirdParty/kimageformats::.git-blame-ignore-revs",
-    "current_head_source_authority_evidence": "Orders 9,401–9,444 exact-read the kcoreaddons tail: safe rendering/emoticon boundary, legacy settings migration, locale formatting, libexec/open-files/memory/OS/process/platform/sandbox/shell/signal/user-group semantics and complete KDE MIME resource corpus (57 types / 73 globs / 26 subclasses / 9 magic / 3 aliases). kcoreaddons direct-gitlink source is now read through its component tail; next component is kimageformats."
+    "current_head_source_authority_evidence": "Orders 9,445–9,453 exact-read the actual kcoreaddons test/demo tail after CI exposed that the previous MIME boundary was not the component tail: optional test build wiring, face-icon fallback/scaling, directory-watch dirty/created/deleted plus stop/restart/multi-watcher lifecycle, deterministic non-security random sequence/shuffle, and plaintext-to-safe-HTML demo behavior. kcoreaddons direct-gitlink source is now truly read through all 377 non-directory entries; next component is kimageformats."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -71,8 +71,8 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 9444,
-    "first_unread_order": 9445,
+    "read_through": 9453,
+    "first_unread_order": 9454,
     "first_unread_path": "Telegram/ThirdParty/kimageformats::.git-blame-ignore-revs",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
