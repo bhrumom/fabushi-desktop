@@ -14,24 +14,24 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 3729,
+    "unread_minimum": 3722,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through deterministic order 12,396; unread 3,729; unknown 15,845; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition through deterministic order 12,403; unread 3,722; unknown 15,845; omitted 0."
   },
   "latest_recursive_evidence": {
-    "run_id": 38182309860,
+    "run_id": 38183734477,
     "run_attempt": 1,
-    "job_id": 114597318610,
-    "head_sha": "b629be6b4163b4a515c7e066ffecdb50f76520ae",
-    "artifact_id": 11718288179,
-    "artifact_digest": "sha256:de3d40be75a890311e975b5c0e68b2005a957ca586a804cc09068872c4e105b4",
+    "job_id": 114601575522,
+    "head_sha": "8a07d98aae4497367cb1e1a8d7024e66f8565f30",
+    "artifact_id": 11718378603,
+    "artifact_digest": "sha256:b17afd2552005af0ce12269960ecd64d054b2ccf12e5decb9e420192a190f586",
     "artifact_files": [
       "upstream-recursive-inventory.json",
       "current-first-unread/window-manifest.json"
     ],
     "evidence_status": "exact-source-materialization-reviewed-descendant-validation-required",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
-    "note": "Exact-head b629be6b source authority succeeded and materialized orders 12,205-12,268; these exact blobs were formally reviewed into descendant shards; reading alone does not reduce unknown."
+    "note": "Exact-head 8a07d98a source authority succeeded and materialized orders 12,397-12,460; orders 12,397-12,403 were formally reviewed into a descendant shard; reading alone does not reduce unknown."
   },
   "closure_rules": {
     "executable_runner": "github-actions",
@@ -41,7 +41,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live baseline accepted; closure open. Read-through 12,396; unread_minimum is 3,729; unknown remains 15,845; omitted remains 0; first unread order 12,397 is Telegram/codegen::codegen/style/parsed_file.h.",
+  "note": "Live baseline accepted; closure open. Read-through 12,403; unread_minimum is 3,722; unknown remains 15,845; omitted remains 0; first unread order 12,404 is Telegram/lib_base::CMakeLists.txt.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -73,9 +73,9 @@
     "development_only_non_applicable": 206,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 12396,
-    "first_unread_order": 12397,
-    "first_unread_path": "Telegram/codegen::codegen/style/parsed_file.h",
+    "read_through": 12403,
+    "first_unread_order": 12404,
+    "first_unread_path": "Telegram/lib_base::CMakeLists.txt",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }
