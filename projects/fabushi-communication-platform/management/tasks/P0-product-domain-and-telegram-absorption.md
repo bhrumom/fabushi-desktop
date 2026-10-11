@@ -1,4 +1,15 @@
-Live TDRP Revision 9 upstream authority (2026-10-11): telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 (root tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6). Root non-directory=6,653; recursive non-directory=16,125; deterministic read-through=9,964; first unread=9,965 Telegram/ThirdParty/libcbor::src/cbor/tags.h@a7365df10208c949b303c7fb8afc9710a7ade78f; unread=6,161; unknown=15,845; omitted=0. libcbor core source reading now covers its examples, fuzz harness and implementation through tags.c; responsibilities remain mapped to existing WebAuthn/Account Auth security and Build/Quality/Release owners, with bounded helper-output hardening awaiting exact-head CI and packaged signer-helper evidence still open.
+Live TDRP Revision 9 upstream authority (2026-10-11): telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 (root tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6). Root non-directory=6,653; recursive non-directory=16,125; deterministic read-through=10,028; first unread=10,029 Telegram/ThirdParty/libfido2::.github/workflows/macos_builds.yml@5d4bc4def3bbea615f089b3a153d117563e65be4; unread=6,097; unknown=15,845; omitted=0. libcbor is fully read through its component tail; libfido2 review has begun through cross-platform build, static-analysis, fuzz and security-CI authority. Existing WebAuthn/security and Build/Quality/Release owners remain canonical; packaged sand-webauthn-signer evidence is still open.
+
+### Revision 9 deterministic read-through — libcbor tail + libfido2 start 9,965–10,028
+
+Exact-head `f936a5e…` source range resolution and attestation succeeded in run `38118212864` / job `114407396444`, artifact `11693652953` (digest `sha256:e9307971683ac2f1920de0aed9d9cd9f9be0a4dbfd0f2d31910459cd80878970`). Revision 9 validation then failed solely because `inventory/index.json.note` did not use the strict validator-required `unread_minimum is … / unknown remains … / omitted remains …` narrative. This descendant restores that contract; the validator is not weakened.
+
+Orders 9,965–10,005 close the libcbor component with adversarial tests for malformed/incomplete/memory/syntax separation, exact streaming required bytes, SIZE_MAX arithmetic/reallocation overflow, nesting limits, UTF-8 rejection, allocation-failure cleanup and reference-count stability. Orders 10,006–10,028 begin `Yubico/libfido2@b974e7c…` and establish cross-platform Debug/Release regression, scan-build, ShellCheck, CodeQL, ASan/MSan/OSS-Fuzz/CIFuzz and pinned build-dependency provenance. All map existing-owner-first to canonical WebAuthn/Account Auth security and Build/Quality/Release; no second FIDO/CBOR runtime is introduced.
+
+At `f936a5e…`, Focused Electron chat E2E, renderer/platform-worker, all three updater jobs and all three pressure-profiler jobs succeeded; the independent Coordinator contract also passed with bounded WebAuthn helper-output hardening present. The same-head source-authority job is not final-green because of the narrative contract failure, so fresh descendant exact-head evidence remains required.
+
+Accounting is **10,028/16,125 read; 6,097 unread; 15,845 unknown; 0 omitted**. Next is 10,029 `Telegram/ThirdParty/libfido2::.github/workflows/macos_builds.yml@5d4bc4def3bbea615f089b3a153d117563e65be4`.
+
 
 ### Revision 9 deterministic read-through — libcbor core 9,901–9,964
 
