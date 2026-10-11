@@ -41,7 +41,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Baseline identity accepted; source/product/release closure open. Exact read-through 9,444; unread 6,681; unknown 15,845; omitted 0; acceptance.accepted and baseline_ready remain false.",
+  "note": "Live baseline identity is accepted for telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 / tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6, matching upstream.lock upstream.accepted=true. This does not imply source/product/release closure: exact read-through is 9,444; unread_minimum is 6,681; unknown remains 15,845; omitted remains 0; acceptance.accepted and baseline_ready remain false until their gates close.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
