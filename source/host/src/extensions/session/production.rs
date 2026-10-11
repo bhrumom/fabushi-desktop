@@ -93,7 +93,8 @@ use super::session_mutations::set_agent_avatar_bytes as mutate_agent_avatar_byte
 use super::production_agent_store::{ProductionAgentStore, ProductionWorkerBlobStore};
 use super::native_messaging::{
     FabushiNativeMessagingClient, FabushiRemoteHumanAttachment, FabushiRemoteHumanCall,
-    FabushiRemoteHumanCallEvent, FabushiRemoteHumanMessage, fabushi_identity_text,
+    FabushiRemoteHumanCallEvent, FabushiRemoteHumanCallMediaSession, FabushiRemoteHumanMessage,
+    fabushi_identity_text,
 };
 
 pub const PRODUCTION_BLOB_BUSY_TIMEOUT_MS: u64 = 5_000;
@@ -609,6 +610,65 @@ impl ProductionSessionWorkers {
             "userId": identity.user_id,
             "deviceId": identity.device_id,
         }))
+    }
+
+    fn shipping_call_media_client(
+        &self,
+    ) -> Result<(&FabushiNativeMessagingClient, String), String> {
+        let local_human_id = self.local_human_id()?.to_string();
+        let client = self
+            .shipping_native_messaging()?
+            .ok_or_else(|| "shipping Human call media transport requires native messaging".to_string())?;
+        let identity = client.identity()?;
+        if identity.user_id != local_human_id {
+            return Err("Fabushi call credential identity does not match active Human identity".into());
+        }
+        Ok((client, identity.device_id))
+    }
+
+    pub fn list_call_media_sessions(
+        &self,
+        call_id: &str,
+    ) -> Result<Vec<FabushiRemoteHumanCallMediaSession>, String> {
+        let local = self.authorized_call_session(call_id)?;
+        let (client, device_id) = self.shipping_call_media_client()?;
+        let media_sessions = client.list_human_call_media_sessions(call_id)?;
+        for media_session in &media_sessions {
+            if media_session.call_id != local.id
+                || media_session.device_id != device_id
+                || media_session.generation > local.generation
+            {
+                return Err("Fabushi call media recovery escaped the canonical CallSession/device fence".into());
+            }
+        }
+        Ok(media_sessions)
+    }
+
+    pub fn create_call_media_session(
+        &self,
+        call_id: &str,
+        client_session_id: &str,
+        generation: u64,
+        purpose: &str,
+    ) -> Result<FabushiRemoteHumanCallMediaSession, String> {
+        let local = self.authorized_call_session(call_id)?;
+        if generation != local.generation {
+            return Err("createCallMediaSession generation is stale".into());
+        }
+        let (client, device_id) = self.shipping_call_media_client()?;
+        let media_session = client.create_human_call_media_session(
+            call_id,
+            client_session_id,
+            generation,
+            purpose,
+        )?;
+        if media_session.call_id != local.id
+            || media_session.device_id != device_id
+            || media_session.generation != local.generation
+        {
+            return Err("Fabushi call media allocation escaped the canonical CallSession/device fence".into());
+        }
+        Ok(media_session)
     }
 
     pub fn call_ice_servers(&self) -> Result<serde_json::Value, String> {
