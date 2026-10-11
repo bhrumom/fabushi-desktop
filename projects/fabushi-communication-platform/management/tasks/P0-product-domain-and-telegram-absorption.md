@@ -1,4 +1,13 @@
-Live TDRP Revision 9 upstream authority (2026-10-11): telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 (root tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6). Root non-directory=6,653; recursive non-directory=16,125; deterministic read-through=9,344; first unread=9,345 Telegram/ThirdParty/kcoreaddons::src/lib/io/kurlmimedata.h@15bd05e4bc36d6c5b377029c695bb54b876f2332; unread=6,781; unknown=15,845; omitted=0. Orders 9,309–9,344 exact-read pinned kcoreaddons production source for build/plugin metadata, cache/recovery, filesystem watch/topology, process and resource/portal responsibilities; existing Fabushi owners remain canonical.
+Live TDRP Revision 9 upstream authority (2026-10-11): telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 (root tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6). Root non-directory=6,653; recursive non-directory=16,125; deterministic read-through=9,360; first unread=9,361 Telegram/ThirdParty/kcoreaddons::src/lib/kcoreaddons.h@77b482d1b75330c1e38908a7d9c974fced309dd7; unread=6,765; unknown=15,845; omitted=0. Orders 9,345–9,360 exact-read portal transfer, async/composite job lifecycle and About/SPDX/component identity responsibilities into existing Fabushi owners.
+
+### Revision 9 deterministic read-through — portal/job/provenance 9,345–9,360
+
+Orders 9,345–9,360 exact-read the XDG file-transfer/KIO-fuse interfaces, KJob/KCompositeJob/tracker/UI-delegate lifecycle, and KAboutData/core version source. Applicable product semantics include explicit portal Start/Add/Retrieve/Stop/closed lifecycle; bounded resource ownership; exactly-once task terminal signals; kill/suspend/resume capabilities; first-error propagation; explicit subtask ownership; progress/speed observability; and typed SPDX/component provenance distinct from Fabushi product identity.
+
+Existing-owner-first maps these to canonical Resource/attachment + platform portal, Task/Coordinator + Task UI, and product identity/NOTICE owners. No KDE Job framework, KDE UI delegate, KDE product identity or DBus runtime is introduced as a second owner. Rows remain mapped-open until implementation/evidence obligations close.
+
+Accounting: **9,360/16,125 read; 6,765 unread; 15,845 unknown; 0 omitted**. Next 9,361 `Telegram/ThirdParty/kcoreaddons::src/lib/kcoreaddons.h@77b482d1b75330c1e38908a7d9c974fced309dd7`.
+
 
 ### Revision 9 deterministic read-through — kcoreaddons production source 9,309–9,344
 
