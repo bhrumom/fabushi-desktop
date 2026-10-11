@@ -13478,11 +13478,11 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Accepted prefix 12,140/16,125; orders 12,077-12,140 formally dispositioned from exact b3bc2679 artifact; unread 3,985; unknown 15,845; omitted 0. Shortcuts/inhibit/input capture/location/monitoring/notifications/open-uri/media capture/printing/proxy/realtime/remote-desktop/screencast/screenshot/secrets/settings/USB/resource validation/platform composition/app identity map existing-owner-first; reading alone does not reduce unknown.",
-    "source_authority_evidence": "Exact-head b3bc2679cef933dee5db9ec8be572cd50179b6e4 run 38179152559/job 114587866905 completed fail-closed source validation and artifact 11716538101 (sha256:eb555c8cb106b60cbab085205a3b98b0e8c260e6d62b54c5d7747ae0f213f5d8); Rust desktop runtime 38179152559 and Desktop Chat Parity 38179152473 completed success; descendant same-head validation required.",
-    "current_source_read_through": 12140,
-    "first_unread_order": 12141,
-    "first_unread_path": "Telegram/ThirdParty/xdg-desktop-portal::src/xdp-app-info-snap-private.h"
+    "source_read_reconciliation": "Accepted prefix 12,204/16,125; orders 12,141-12,204 were exact-blob materialized by source-authority artifact 11717516388 and formally reviewed on 3ac5ad7bdc61a82066eb85cbaaf253aacfb4ec6b; unread 3,921; unknown 15,845; omitted 0. App/process identity, sandbox/application instance, activation/startup context, background monitor, invocation/cancellation, Documents portal registration/path mapping, D-Bus metadata, permission-store bridge, backend discovery, request/session lifecycle, sealed FD/resource, restore token/transient permission, USB policy and portal test harness responsibilities were mapped existing-owner-first; reading alone does not reduce unknown.",
+    "source_authority_evidence": "Exact-head 08365df580a07dc7f2eecc3a73b6310389bec152 source-authority run 38180456540/job 114591744895 materialized artifact 11717516388 (sha256:da1ea8fd259ddcd8c5924091e0f4af297fb98917fae9af2005aba7d66f43f5ec), which was formally reviewed through order 12,204 on 3ac5ad7bdc61a82066eb85cbaaf253aacfb4ec6b. All runtime/chat acceptance after this accounting descendant requires fresh same-head validation.",
+    "current_source_read_through": 12204,
+    "first_unread_order": 12205,
+    "first_unread_path": "Telegram/ThirdParty/xdg-desktop-portal::tests/test-xdp-utils.c"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 206,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 12140,
-    "first_unread_order": 12141,
-    "first_unread_path": "Telegram/ThirdParty/xdg-desktop-portal::src/xdp-app-info-snap-private.h",
+    "read_through": 12204,
+    "first_unread_order": 12205,
+    "first_unread_path": "Telegram/ThirdParty/xdg-desktop-portal::tests/test-xdp-utils.c",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
