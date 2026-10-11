@@ -266,9 +266,9 @@
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
     "unknown_minimum": 15845,
-    "unread_minimum": 5393,
+    "unread_minimum": 5329,
     "omitted_known": 0,
-    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 10,732; unknown=15,845, unread=5,393, omitted=0."
+    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 10,796; unknown=15,845, unread=5,329, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -282,7 +282,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Source/product/release closure open. Exact read-through 10,732/16,125; first unread 10,733 Telegram/ThirdParty/nimf::modules/engines/nimf-m17n/nimf-m17n-ii.c@e5f3f30f651ede091734630c0107f31a20f4ac5d; unread 5,393; unknown 15,845; omitted 0. Locale/method catalogue maps to existing canonical owners; no Nimf runtime."
+    "note": "Source/product/release closure open. Exact read-through 10,796/16,125; first unread 10,797 Telegram/ThirdParty/nimf::modules/services/preedit-window/Makefile.am@6428b240ad4c9d3d8c5bb295c5a56823a45fab71; unread 5,329; unknown 15,845; omitted 0. m17n/Rime/compose/candidate/NIM responsibilities map to existing canonical owners; no Nimf or second IME runtime."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",
@@ -633,9 +633,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 10732,
-    "first_unread_order": 10733,
-    "first_unread_path": "Telegram/ThirdParty/nimf::modules/engines/nimf-m17n/nimf-m17n-ii.c",
+    "read_through": 10796,
+    "first_unread_order": 10797,
+    "first_unread_path": "Telegram/ThirdParty/nimf::modules/services/preedit-window/Makefile.am",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
@@ -736,5 +736,5 @@
     ],
     "note": "Valid exact-head evidence for 46dfaf only; main reconciliation/accounting descendants require fresh Actions."
   },
-  "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 10,732; unknown=15,845, unread=5,393, omitted=0."
+  "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 10,796; unknown=15,845, unread=5,329, omitted=0."
 }
