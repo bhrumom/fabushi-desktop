@@ -368,7 +368,7 @@ export function HumanCallControls({
             stream.removeTrack(replacement);
             replacement.stop();
             if (sender != null) await sender.replaceTrack(null).catch(() => undefined);
-            if (addedSender != null && pcRef.current === pc) pc.removeTrack(addedSender);
+            if (addedSender != null && pc != null && pcRef.current === pc) pc.removeTrack(addedSender);
             throw projectionError;
           }
           bindCameraTrackLifecycleRef.current(stream, replacement);
