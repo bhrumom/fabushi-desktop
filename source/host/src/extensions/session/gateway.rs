@@ -501,6 +501,30 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
         "getCallIceServers" => session
             .call_ice_servers()
             .map_err(SessionGatewayError::internal),
+        "listCallMediaSessions" => required_string(args, "callId").and_then(|call_id| {
+            session
+                .list_call_media_sessions(call_id)
+                .and_then(|sessions| serde_json::to_value(sessions).map_err(|error| error.to_string()))
+                .map_err(SessionGatewayError::internal)
+        }),
+        "createCallMediaSession" => required_string(args, "callId").and_then(|call_id| {
+            required_string(args, "clientSessionId").and_then(|client_session_id| {
+                required_u64(args, "generation").and_then(|generation| {
+                    required_string(args, "purpose").and_then(|purpose| {
+                        session
+                            .create_call_media_session(
+                                call_id,
+                                client_session_id,
+                                generation,
+                                purpose,
+                            )
+                            .and_then(|media_session| serde_json::to_value(media_session).map_err(|error| error.to_string()))
+                            .map_err(SessionGatewayError::internal)
+                    })
+                })
+            })
+        }),
+
         "syncHumanCalls" => session
             .sync_human_calls()
             .and_then(|calls| serde_json::to_value(calls).map_err(|error| error.to_string()))
