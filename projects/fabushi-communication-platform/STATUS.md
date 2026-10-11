@@ -1,3 +1,17 @@
+Live Revision 9 authority (2026-10-12): telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 (root tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6). Root non-directory=6,653; recursive non-directory=16,125; deterministic read-through=11,500; first unread=11,501 Telegram/ThirdParty/range-v3::test_package/example.cpp@bee0b2ab825f5733e9954514c07445b944ca5259; unread=4,625; unknown=15,845; omitted=0. Orders 11,437-11,500 were validated and materialized on exact-head 2e8c169214a72abb1a3f16d52f2a811e8f991b2e by Rust desktop runtime 38156139933 / source-authority job 114519461684 / artifact 11708199027 (sha256:cd9fcd8e65b428f25271dbf5957647e88e58084e3acb8c89847b0051d9f7b77f); exact repository/commit/path/Git-blob identity and byte length were verified before upload. Applicable behavior remains mapped existing-owner-first to Build/Quality/Dependency-Provenance/License and native runtime/lifecycle boundaries; no range-v3 runtime, C++ compatibility sidecar, second container abstraction or package-manager sidecar is introduced.
+<!-- TDRP_CURRENT_SUMMARY read-through=11500 unread=4625 unknown=15845 omitted=0 first-unread=11501 path=Telegram/ThirdParty/range-v3::test_package/example.cpp -->
+
+
+### Revision 9 deterministic read-through — range-v3 view/package regressions 11,437–11,500
+
+Exact source-window evidence: `2e8c169214a72abb1a3f16d52f2a811e8f991b2e`, Rust desktop runtime `38156139933` (completed/success), source-authority job `114519461684` (completed/success), artifact `11708199027`, digest `sha256:cd9fcd8e65b428f25271dbf5957647e88e58084e3acb8c89847b0051d9f7b77f`. The current-head helper materialized all 64 entries and verified repository/commit/path/Git-blob identity plus declared byte length.
+
+Orders 11,437–11,498 cover lazy view/adaptor regressions across type erasure, caching, cartesian/chunk/common/concat/const/conversion/counted/cycle, drop/take/slice/stride/split/zip, generator/scan/join/group/set views, span/subrange and related iterator/category, borrowed/dangling, finite/infinite, invalidation and move-only ownership behavior. Orders 11,499–11,500 are Conan/CMake package-consumption smoke wiring; they compile/link/run an example and copy runtime libraries, but contain no new mutable acquisition path.
+
+No Search, Conversation, Message, Agent, Resource, Plugin, Marketplace, Call/media or other shipping product-domain owner is justified. Existing-owner-first remains Build / Quality / Dependency-Provenance / License plus native Rust/TypeScript runtime/lifecycle and standard-library boundaries. All 64 rows remain `mapped-open`, `unknown_closed=false`, `omitted=false`.
+
+Accounting: **11,500/16,125 read; 4,625 unread; 15,845 unknown; 0 omitted**. Next: 11,501 `Telegram/ThirdParty/range-v3::test_package/example.cpp@bee0b2ab825f5733e9954514c07445b944ca5259`.
+
 # FBCP Native Communication Absorption — Status
 
 Date: 2026-10-11  

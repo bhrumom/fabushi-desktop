@@ -266,9 +266,9 @@
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
     "unknown_minimum": 15845,
-    "unread_minimum": 4689,
+    "unread_minimum": 4625,
     "omitted_known": 0,
-    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 11,436; unknown=15,845, unread=4,689, omitted=0."
+    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 11,500; unknown=15,845, unread=4,625, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -282,7 +282,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Source/product/release closure open. Exact read-through 11,436/16,125; first unread 11,437 Telegram/ThirdParty/range-v3::test/view/any_view.cpp@c69c43b9957c2c89d05436910845fcb19d931f8f; unread 4,689; unknown 15,845; omitted 0. range-v3 algorithm/test-support/experimental/functional/iterator/numeric/range/utility/view regression responsibilities remain mapped existing-owner-first to Build/Quality/Dependency-Provenance/License and native runtime/lifecycle boundaries."
+    "note": "Source/product/release closure open. Exact read-through 11,500/16,125; first unread 11,501 Telegram/ThirdParty/range-v3::test_package/example.cpp@bee0b2ab825f5733e9954514c07445b944ca5259; unread 4,625; unknown 15,845; omitted 0. range-v3 view/package regression responsibilities remain mapped existing-owner-first to Build/Quality/Dependency-Provenance/License and native runtime/lifecycle boundaries; no shipping range-v3 runtime or package-manager sidecar is introduced."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",
@@ -301,13 +301,13 @@
   "recursive_inventory_evidence": {
     "status": "exact-head-source-window-attested-descendant-accounting-pending",
     "runner": "github-actions",
-    "run_id": 38154729489,
+    "run_id": 38156139933,
     "run_attempt": 1,
-    "job_id": 114515308597,
-    "validation_head_sha": "d95fea5e0d948bec73a043ae31cc2b3584c86775",
-    "artifact_id": 11708216622,
-    "artifact_name": "tdrp-revision9-authority-d95fea5e0d948bec73a043ae31cc2b3584c86775",
-    "artifact_digest": "sha256:310c3dec866bd7d6589b6a17cb41d7d1118b65968dc0462d48bc538194403315",
+    "job_id": 114519461684,
+    "validation_head_sha": "2e8c169214a72abb1a3f16d52f2a811e8f991b2e",
+    "artifact_id": 11708199027,
+    "artifact_name": "tdrp-revision9-authority-2e8c169214a72abb1a3f16d52f2a811e8f991b2e",
+    "artifact_digest": "sha256:cd9fcd8e65b428f25271dbf5957647e88e58084e3acb8c89847b0051d9f7b77f",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "recursive_non_directory_entries": 16125,
     "source_closure_ready": false
@@ -634,9 +634,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 11436,
-    "first_unread_order": 11437,
-    "first_unread_path": "Telegram/ThirdParty/range-v3::test/view/any_view.cpp",
+    "read_through": 11500,
+    "first_unread_order": 11501,
+    "first_unread_path": "Telegram/ThirdParty/range-v3::test_package/example.cpp",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
@@ -737,5 +737,5 @@
     ],
     "note": "Valid exact-head evidence for 46dfaf only; main reconciliation/accounting descendants require fresh Actions."
   },
-  "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 11,372; unknown=15,845, unread=4,753, omitted=0; first unread=11,373 Telegram/ThirdParty/range-v3::test/algorithm/starts_with.cpp@b8e9bbe5b0df44fcf4fb1bceac5d6f3845c292b9."
+  "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 11,500; unknown=15,845, unread=4,625, omitted=0; first unread=11,501 Telegram/ThirdParty/range-v3::test_package/example.cpp@bee0b2ab825f5733e9954514c07445b944ca5259."
 }
