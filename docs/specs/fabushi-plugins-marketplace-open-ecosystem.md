@@ -5,7 +5,7 @@ Owner: Fabushi canonical Plugins/MCP/Marketplace product domain
 Last updated: 2026-10-11  
 Canonical repo: bhrumom/fabushi-desktop  
 Related: docs/specs/grok-bot-018-runtime-product-parity-recovery.md; docs/specs/offline-first-installable-mini-app-platform.md (OMA-001); projects/fabushi-communication-platform/SOURCE_OF_TRUTH.md  
-Authority snapshot: canonical main **67d9892ec19abcbe86e270ae746bba3c808de785**; PR #42 head **65338263987558dad9948090fe77318a8964ba46** was inspected as metadata only. Refresh live HEAD and shipping owners before implementation.
+Authority snapshot refreshed 2026-10-11: canonical Desktop main **d575b4f77b6895eea4ecaced96e5c512964bf3ed**; Marketplace PR #49 exact head **72abccaa377fa026e4ebec113d76a1ad31ceabbf** is unmerged and diverged from current main, so its old Actions are observation-only. Backend main **b55320f655584b999c08ca01ebff182fd04328d9** and Platform Core main **3a125c4d3164db7119b8022f16062a502d54d28a** were also re-read. See `docs/specs/fabushi-plugins-marketplace-owner-inventory.md` for the current source-to-owner inventory.
 
 ## 1. 背景与问题
 
@@ -229,7 +229,7 @@ catalog-only
 
 ## 12. 与历史源兼容、渐进迁移及技术选型
 
-**后端技术选型结论：Open VSX 是 marketplace registry 实现的第一开源 benchmark，但不是默认 Fabushi 通用插件运行时，也不能未经适配就承担全部 kind。** 先对 Open VSX server schema、API、license/security 和 Fabushi typed manifest 做真实 PoC 评估；可复用安全/发布/目录的独立概念或合适组件。若 VSIX-only 假设无法支撑 Skills/MCP/Web miniapps，则以 Open VSX 成熟协议/流程为参考，在既有 Fabushi backend Plugins 域实现最小自有 typed registry；不能为了“用了开源项目”而制造脆弱 VSIX 包装/双后端。
+**后端技术选型结论（2026-10-11 source audit 后定稿）：选择方案 B，并允许方案 C 的窄范围组件复用。** Open VSX 继续作为 marketplace registry 的第一开源 benchmark，但不部署成第二套 Fabushi 产品权威或通用插件运行时。当前 `bhrumom/fabushi-backend` 已有 `ai-backend/src/miniapp_marketplace*.js` 的严格 manifest、发行 artifact/digest、搜索、publisher draft/submit/review/yank、account install projection 与 MCP 路由，因此 canonical typed Registry 必须优先扩展这个 existing owner，统一 `mcp-connector` / `skill` / `web-miniapp`；Open VSX 的 namespace、发布、安全扫描、撤销等成熟做法可在逐项 license/provenance/security/API-fit 核查后选择性吸收。只有 ADR 用 current source 证明 existing owner 无法承担某项责任时，才能引入额外最小服务组件；禁止为“用了开源项目”制造 VSIX 包装或双后端。
 
 **迁移路径**：
 1. 保持现有 Desktop mcp.catalog/install/list、有效 Team/Private/OAuth/tool toggle 功能不回退；给 Cursor-compatible 数据明确 legacy source 标记，不自动授予 Fabushi publisher verified。
