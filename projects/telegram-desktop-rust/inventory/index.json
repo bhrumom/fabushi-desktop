@@ -14,27 +14,24 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 7301,
+    "unread_minimum": 7237,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through deterministic order 8,824; unread 7,301; unknown 15,845; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition through deterministic order 8,888; unread 7,237; unknown 15,845; omitted 0."
   },
   "latest_recursive_evidence": {
-    "run_id": 38105710749,
+    "run_id": 38106112583,
     "run_attempt": 1,
-    "job_id": 114370739825,
-    "head_sha": "9f6ea014ffa7a33bc21f547a6ad79a4c802c83bd",
-    "artifact_id": 11689521875,
-    "artifact_digest": "sha256:70664b45fadb9af72b43dc45c02602161ce27ef49d4a7032fddc7731ce6ab22b",
+    "job_id": 114371937159,
+    "head_sha": "18413ebb9cabc4220c66983fce9081aa7206e4f1",
+    "artifact_id": 11689542414,
+    "artifact_digest": "sha256:aaf8418564eddaa695d7241438505fc0efb028f58e15fcc7a8c603ddc3d9a0ea",
     "artifact_files": [
       "upstream-recursive-inventory.json",
-      "current-first-unread/window-manifest.json",
-      "current-first-unread/08749-gh-hunzip-overflow.aff.hz",
-      "current-first-unread/08766-gh1044.aff",
-      "current-first-unread/08812-gh646.aff"
+      "current-first-unread/window-manifest.json"
     ],
-    "evidence_status": "historical-diagnostic-after-descendant-accounting-and-production-commit",
+    "evidence_status": "diagnostic-raw-identity-only-source-authority-job-failed-descendant-exact-head-required",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
-    "note": "9f6ea014 source authority validated Revision 9 accounting and materialized exact raw identities 8,749–8,812. This descendant records responsibility decomposition through 8,824 plus gh1058 production wiring; fresh exact-head Actions are mandatory."
+    "note": "18413ebb GitHub Actions materialized exact identities for orders 8,825–8,888. Source-authority job 114371937159 failed, so the artifact is raw identity evidence only; this descendant accounting requires fresh exact-head Actions."
   },
   "closure_rules": {
     "executable_runner": "github-actions",
@@ -44,7 +41,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live authority exact through deterministic order 8,824; first unread 8,825 Telegram/ThirdParty/hunspell::tests/hu.aff; unread_minimum is 7,301; unknown remains 15,845; omitted remains 0.",
+  "note": "Live authority exact through deterministic order 8,888; first unread 8,889 Telegram/ThirdParty/hunspell::tests/limit-multiple-compounding.dic; unread_minimum is 7,237; unknown remains 15,845; omitted remains 0.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -62,10 +59,10 @@
       6541,
       6627
     ],
-    "current_source_read_through": 8824,
-    "first_unread_order": 8825,
-    "first_unread_path": "Telegram/ThirdParty/hunspell::tests/hu.aff",
-    "current_head_source_authority_evidence": "Orders 8,749–8,812 were exact raw-byte materialized by GitHub Actions run 38105710749 job 114370739825 artifact 11689521875 at head 9f6ea014ffa7a33bc21f547a6ad79a4c802c83bd (artifact digest sha256:70664b45fadb9af72b43dc45c02602161ce27ef49d4a7032fddc7731ce6ab22b); binary/non-UTF entries 8,749 and 8,766 were independently checked against both Git blob SHA and manifest SHA-256. Orders 8,813–8,824 were exact-read from pinned hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b. Responsibilities include malformed hzip/affix fail-closed safety, command/text framing, dynamic dictionary ownership, Unicode/casing/morphology, self-suggestion rejection, oversized dictionary count rejection, alias/homonym morphology, Unicode digit tokenization, bounded n-gram work, UTF-8 affix conditions and explicit personal-dictionary path independence. All remain unknown_closed=false and omitted=false; source reading closes no unknown."
+    "current_source_read_through": 8888,
+    "first_unread_order": 8889,
+    "first_unread_path": "Telegram/ThirdParty/hunspell::tests/limit-multiple-compounding.dic",
+    "current_head_source_authority_evidence": "Orders 8,825–8,888 were exact-read from pinned hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b and their recursive identities were materialized by GitHub Actions run 38106112583 job 114371937159 artifact 11689542414 at head 18413ebb9cabc4220c66983fce9081aa7206e4f1 (artifact digest sha256:aaf8418564eddaa695d7241438505fc0efb028f58e15fcc7a8c603ddc3d9a0ea). That source-authority job failed and is diagnostic only; all rows remain unknown_closed=false and omitted=false; fresh descendant exact-head Actions are mandatory."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -74,9 +71,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 8824,
-    "first_unread_order": 8825,
-    "first_unread_path": "Telegram/ThirdParty/hunspell::tests/hu.aff",
+    "read_through": 8888,
+    "first_unread_order": 8889,
+    "first_unread_path": "Telegram/ThirdParty/hunspell::tests/limit-multiple-compounding.dic",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }
