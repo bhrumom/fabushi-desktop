@@ -58,10 +58,10 @@
       6541,
       6627
     ],
-    "current_source_read_through": 10092,
-    "first_unread_order": 10093,
-    "first_unread_path": "Telegram/ThirdParty/libfido2::man/es384_pk_new.3",
-    "current_head_source_authority_evidence": "53166126816c059a99298b28d4b3d8c2ca204910 run 38119139308/job 114410128913 attested exact recursive identities and materialized orders 10,029-10,092 in artifact 11693708963 (sha256:29a6feb40f3cbaa28f932d822bab4242821378bba701bdfbba1fb18f26a35542). The range covers libfido2 ceremony/device-management, fuzz/fault-injection, coverage and API/man contracts; all rows remain mapped-open pending shipping evidence."
+    "current_source_read_through": 10156,
+    "first_unread_order": 10157,
+    "first_unread_path": "Telegram/ThirdParty/libfido2::regress/es384.c",
+    "current_head_source_authority_evidence": "Predecessor exact-head b8a52c954b9ea63e9f64b31d68fc537e71e1f2bf run 38120045447/job 114412753321 artifact 11695420570 (sha256:f08d296699a1041550c1fd1421f78b47c04f53f5063eab901369157f37275ab5) materialized exact recursive identities for orders 10,093-10,156. Descendant production/source-accounting changes require fresh exact-head authority validation."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
