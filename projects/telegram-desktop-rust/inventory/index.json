@@ -68,7 +68,7 @@
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "deterministic_prefix_closed": 57,
-    "development_only_non_applicable": 96,
+    "development_only_non_applicable": 95,
     "unknown_closed": 280,
     "omitted": 0,
     "read_through": 11692,

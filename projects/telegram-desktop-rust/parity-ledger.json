@@ -3151,7 +3151,7 @@
         "typed Story actions",
         "comments/reaction projection"
       ],
-      "platform_delta": "Qt fa\u00e7ade becomes typed React capability contract backed by existing Rust Story owner.",
+      "platform_delta": "Qt façade becomes typed React capability contract backed by existing Rust Story owner.",
       "existing_owner": "Canonical Story owner + ProductShell capability surface + existing domain action owners",
       "fabushi_target_paths": [
         "native/mahayana-messaging/src/story.rs",
@@ -3399,14 +3399,14 @@
         "first async result mutates a replaced Story",
         "comments/reactions use second store"
       ],
-      "ui_disposition": "Delegation semantics retained; Qt controller fa\u00e7ade itself is not ported.",
+      "ui_disposition": "Delegation semantics retained; Qt controller façade itself is not ported.",
       "non_ui_responsibilities": [
         "Single action path",
         "pause reason continuity",
         "lifetime fencing",
         "comments/reaction authoritative projection"
       ],
-      "platform_delta": "Use typed hooks/controllers in existing ProductShell surface rather than C++ fa\u00e7ade.",
+      "platform_delta": "Use typed hooks/controllers in existing ProductShell surface rather than C++ façade.",
       "existing_owner": "Canonical Story owner + Resource playback + ProductShell action composition",
       "fabushi_target_paths": [
         "native/mahayana-messaging/src/story.rs",
@@ -13488,7 +13488,7 @@
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "deterministic_prefix_closed": 57,
-    "development_only_non_applicable": 96,
+    "development_only_non_applicable": 95,
     "unknown_closed": 280,
     "omitted": 0,
     "read_through": 11692,

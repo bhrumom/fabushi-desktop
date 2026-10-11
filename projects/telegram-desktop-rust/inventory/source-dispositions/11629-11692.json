@@ -1426,16 +1426,16 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
+      "disposition": "applicable-human-call-audio-feedback-production-gap",
       "unknown_closed": false,
       "omitted": false,
-      "upstream_owner": "tgcalls iOS audio-session/audio-device implementation",
+      "upstream_owner": "tgcalls call audio tone playback state",
       "source_symbols": [
         "CallAudioTone"
       ],
-      "responsibility": "This file is iOS-specific AVAudioSession/AudioUnit/voice-processing or call-tone implementation and is not shipped by Fabushi Desktop. Its interruption, route-change, lock, retry, start/stop and teardown semantics are recorded individually without importing an iOS runtime.",
-      "fabushi_canonical_owner": "Platform boundary evidence only",
-      "fabushi_target": "No Desktop iOS shipping owner; portable audio lifecycle maps to existing CallSession/platform audio contracts."
+      "responsibility": "Platform-neutral call-tone sample ownership, sample rate, loop count and playback offset are user-visible call feedback semantics despite the file living under the iOS source directory. Current Desktop Human Call has no verified canonical tone playback composition, so this remains mapped-open rather than platform N/A.",
+      "fabushi_canonical_owner": "CallSession / Resource / call audio feedback",
+      "fabushi_target": "Existing CallSession and Resource/audio owners; shipping call-tone playback and acceptance evidence open."
     },
     {
       "recursive_order": 11679,
