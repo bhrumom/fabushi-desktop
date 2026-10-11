@@ -1,0 +1,1944 @@
+{
+  "format_version": 2,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+    "tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6"
+  },
+  "range": {
+    "first_order": 10925,
+    "last_order": 10988,
+    "entries": 64
+  },
+  "range_evidence": {
+    "head_sha": "8b7f722d3df5f301f816ef51344d6eb1fe1fb841",
+    "workflow_run": 38137121929,
+    "job_id": 114463165742,
+    "artifact_id": 11701397304,
+    "artifact_digest": "sha256:b5d5766cfa0495a6d2e42ab2978af2cc92c71049b2c2770ce7e80711814e9a8b",
+    "note": "Exact-head Actions materialized all 64 source identities for orders 10,925-10,988. Independent verification recomputed Git blob SHA, SHA-256 and byte length for all 64 artifact files with 64/64 matches and 0 mismatches."
+  },
+  "rows": [
+    {
+      "recursive_order": 10925,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/action/remove.hpp",
+      "source_blob_sha": "096a94250d112afae97d733d73e9049a9aa917a1",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/action/remove.hpp",
+        "object": "096a94250d112afae97d733d73e9049a9aa917a1",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2334
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic mutating action layer",
+      "source_symbols": [
+        "actions::remove",
+        "action_closure piping",
+        "container/range constraints"
+      ],
+      "responsibility": "Generic mutating action semantics over bounded ranges/containers, including erase/reorder/slice/split/stride/take/transform/unique behavior and explicit preconditions. Preserve applicable quality/provenance constraints without importing range-v3 as a Fabushi runtime.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10926,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/action/remove_if.hpp",
+      "source_blob_sha": "f4ee33d5edd9ccba995c95b0154b2b1f508a9915",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/action/remove_if.hpp",
+        "object": "f4ee33d5edd9ccba995c95b0154b2b1f508a9915",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2184
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic mutating action layer",
+      "source_symbols": [
+        "actions::remove_if",
+        "action_closure piping",
+        "container/range constraints"
+      ],
+      "responsibility": "Generic mutating action semantics over bounded ranges/containers, including erase/reorder/slice/split/stride/take/transform/unique behavior and explicit preconditions. Preserve applicable quality/provenance constraints without importing range-v3 as a Fabushi runtime.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10927,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/action/reverse.hpp",
+      "source_blob_sha": "fa8bd8e6da0ca721cd9cdd0df285e683101db921",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/action/reverse.hpp",
+        "object": "fa8bd8e6da0ca721cd9cdd0df285e683101db921",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1448
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic mutating action layer",
+      "source_symbols": [
+        "actions::reverse",
+        "action_closure piping",
+        "container/range constraints"
+      ],
+      "responsibility": "Generic mutating action semantics over bounded ranges/containers, including erase/reorder/slice/split/stride/take/transform/unique behavior and explicit preconditions. Preserve applicable quality/provenance constraints without importing range-v3 as a Fabushi runtime.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10928,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/action/shuffle.hpp",
+      "source_blob_sha": "59d95f124f6c343de662f2ad888b2491823797f8",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/action/shuffle.hpp",
+        "object": "59d95f124f6c343de662f2ad888b2491823797f8",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2612
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic mutating action layer",
+      "source_symbols": [
+        "actions::shuffle",
+        "action_closure piping",
+        "container/range constraints"
+      ],
+      "responsibility": "Generic mutating action semantics over bounded ranges/containers, including erase/reorder/slice/split/stride/take/transform/unique behavior and explicit preconditions. Preserve applicable quality/provenance constraints without importing range-v3 as a Fabushi runtime.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10929,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/action/slice.hpp",
+      "source_blob_sha": "cb02305c3a6c85ab2e3f4b38877c771a50b59cac",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/action/slice.hpp",
+        "object": "cb02305c3a6c85ab2e3f4b38877c771a50b59cac",
+        "mode": "100644",
+        "type": "blob",
+        "size": 6105
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic mutating action layer",
+      "source_symbols": [
+        "actions::slice",
+        "action_closure piping",
+        "container/range constraints"
+      ],
+      "responsibility": "Generic mutating action semantics over bounded ranges/containers, including erase/reorder/slice/split/stride/take/transform/unique behavior and explicit preconditions. Preserve applicable quality/provenance constraints without importing range-v3 as a Fabushi runtime.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10930,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/action/sort.hpp",
+      "source_blob_sha": "06c17f80b9e7bcdc58854b840f5e1d94971b7be2",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/action/sort.hpp",
+        "object": "06c17f80b9e7bcdc58854b840f5e1d94971b7be2",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1883
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic mutating action layer",
+      "source_symbols": [
+        "actions::sort",
+        "action_closure piping",
+        "container/range constraints"
+      ],
+      "responsibility": "Generic mutating action semantics over bounded ranges/containers, including erase/reorder/slice/split/stride/take/transform/unique behavior and explicit preconditions. Preserve applicable quality/provenance constraints without importing range-v3 as a Fabushi runtime.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10931,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/action/split.hpp",
+      "source_blob_sha": "591e467079dd2658075e88286936888704f7cbc9",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/action/split.hpp",
+        "object": "591e467079dd2658075e88286936888704f7cbc9",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3516
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic mutating action layer",
+      "source_symbols": [
+        "actions::split",
+        "action_closure piping",
+        "container/range constraints"
+      ],
+      "responsibility": "Generic mutating action semantics over bounded ranges/containers, including erase/reorder/slice/split/stride/take/transform/unique behavior and explicit preconditions. Preserve applicable quality/provenance constraints without importing range-v3 as a Fabushi runtime.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10932,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/action/split_when.hpp",
+      "source_blob_sha": "c61cdd4b974e37c7a182ca53509544dbbe4d7660",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/action/split_when.hpp",
+        "object": "c61cdd4b974e37c7a182ca53509544dbbe4d7660",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3162
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic mutating action layer",
+      "source_symbols": [
+        "actions::split_when",
+        "action_closure piping",
+        "container/range constraints"
+      ],
+      "responsibility": "Generic mutating action semantics over bounded ranges/containers, including erase/reorder/slice/split/stride/take/transform/unique behavior and explicit preconditions. Preserve applicable quality/provenance constraints without importing range-v3 as a Fabushi runtime.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10933,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/action/stable_sort.hpp",
+      "source_blob_sha": "c7231b8da9f1b08aef18f1fb22907799bc51e6b9",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/action/stable_sort.hpp",
+        "object": "c7231b8da9f1b08aef18f1fb22907799bc51e6b9",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1949
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic mutating action layer",
+      "source_symbols": [
+        "actions::stable_sort",
+        "action_closure piping",
+        "container/range constraints"
+      ],
+      "responsibility": "Generic mutating action semantics over bounded ranges/containers, including erase/reorder/slice/split/stride/take/transform/unique behavior and explicit preconditions. Preserve applicable quality/provenance constraints without importing range-v3 as a Fabushi runtime.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10934,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/action/stride.hpp",
+      "source_blob_sha": "77f0aa57424b6fde31ed3cb3b71c3ea383f21f7c",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/action/stride.hpp",
+        "object": "77f0aa57424b6fde31ed3cb3b71c3ea383f21f7c",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2449
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic mutating action layer",
+      "source_symbols": [
+        "actions::stride",
+        "action_closure piping",
+        "container/range constraints"
+      ],
+      "responsibility": "Generic mutating action semantics over bounded ranges/containers, including erase/reorder/slice/split/stride/take/transform/unique behavior and explicit preconditions. Preserve applicable quality/provenance constraints without importing range-v3 as a Fabushi runtime.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10935,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/action/take.hpp",
+      "source_blob_sha": "769818e666e0e7a2bea500e82038e58078c452af",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/action/take.hpp",
+        "object": "769818e666e0e7a2bea500e82038e58078c452af",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1803
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic mutating action layer",
+      "source_symbols": [
+        "actions::take",
+        "action_closure piping",
+        "container/range constraints"
+      ],
+      "responsibility": "Generic mutating action semantics over bounded ranges/containers, including erase/reorder/slice/split/stride/take/transform/unique behavior and explicit preconditions. Preserve applicable quality/provenance constraints without importing range-v3 as a Fabushi runtime.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10936,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/action/take_while.hpp",
+      "source_blob_sha": "0045a8e89783c259f80b03afc92564bde2a9730a",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/action/take_while.hpp",
+        "object": "0045a8e89783c259f80b03afc92564bde2a9730a",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1889
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic mutating action layer",
+      "source_symbols": [
+        "actions::take_while",
+        "action_closure piping",
+        "container/range constraints"
+      ],
+      "responsibility": "Generic mutating action semantics over bounded ranges/containers, including erase/reorder/slice/split/stride/take/transform/unique behavior and explicit preconditions. Preserve applicable quality/provenance constraints without importing range-v3 as a Fabushi runtime.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10937,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/action/transform.hpp",
+      "source_blob_sha": "7ef9ea524141e3b33a4ba12962bc56bac76be1f9",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/action/transform.hpp",
+        "object": "7ef9ea524141e3b33a4ba12962bc56bac76be1f9",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1985
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic mutating action layer",
+      "source_symbols": [
+        "actions::transform",
+        "action_closure piping",
+        "container/range constraints"
+      ],
+      "responsibility": "Generic mutating action semantics over bounded ranges/containers, including erase/reorder/slice/split/stride/take/transform/unique behavior and explicit preconditions. Preserve applicable quality/provenance constraints without importing range-v3 as a Fabushi runtime.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10938,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/action/unique.hpp",
+      "source_blob_sha": "878253d95f261280cb3b9c49889731887efc137c",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/action/unique.hpp",
+        "object": "878253d95f261280cb3b9c49889731887efc137c",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2101
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic mutating action layer",
+      "source_symbols": [
+        "actions::unique",
+        "action_closure piping",
+        "container/range constraints"
+      ],
+      "responsibility": "Generic mutating action semantics over bounded ranges/containers, including erase/reorder/slice/split/stride/take/transform/unique behavior and explicit preconditions. Preserve applicable quality/provenance constraints without importing range-v3 as a Fabushi runtime.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10939,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/action/unstable_remove_if.hpp",
+      "source_blob_sha": "41098e6f287d3fc81eae117fa5883dd37bd5d99c",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/action/unstable_remove_if.hpp",
+        "object": "41098e6f287d3fc81eae117fa5883dd37bd5d99c",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2483
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic mutating action layer",
+      "source_symbols": [
+        "actions::unstable_remove_if",
+        "action_closure piping",
+        "container/range constraints"
+      ],
+      "responsibility": "Generic mutating action semantics over bounded ranges/containers, including erase/reorder/slice/split/stride/take/transform/unique behavior and explicit preconditions. Preserve applicable quality/provenance constraints without importing range-v3 as a Fabushi runtime.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10940,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/algorithm.hpp",
+      "source_blob_sha": "ec2403d8cf367eb554fe73dcbd9ea30217ec8960",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/algorithm.hpp",
+        "object": "ec2403d8cf367eb554fe73dcbd9ea30217ec8960",
+        "mode": "100644",
+        "type": "blob",
+        "size": 4310
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 aggregate algorithm header",
+      "source_symbols": [
+        "range/v3/algorithm.hpp",
+        "algorithm include surface"
+      ],
+      "responsibility": "Generic algorithm aggregation/header-surface responsibility. Dependency/build compatibility evidence only; it does not create a Fabushi runtime or product owner.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10941,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/algorithm/adjacent_find.hpp",
+      "source_blob_sha": "1024fef0ef77b127ec5282e48530b01fb13cac23",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/algorithm/adjacent_find.hpp",
+        "object": "1024fef0ef77b127ec5282e48530b01fb13cac23",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2507
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 algorithm detail layer",
+      "source_symbols": [
+        "adjacent_find",
+        "bounded iterator/range algorithms",
+        "buffer-aware helper"
+      ],
+      "responsibility": "Generic bounded helper semantics for n-limited search/merge/sort/partition and explicit buffer/capacity contracts. Preserve boundary behavior as quality evidence without importing a second algorithm/runtime owner.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10942,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/algorithm/adjacent_remove_if.hpp",
+      "source_blob_sha": "73ab02dbf4ead3dcde73948aa2025e8543cba802",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/algorithm/adjacent_remove_if.hpp",
+        "object": "73ab02dbf4ead3dcde73948aa2025e8543cba802",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2993
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 algorithm detail layer",
+      "source_symbols": [
+        "adjacent_remove_if",
+        "bounded iterator/range algorithms",
+        "buffer-aware helper"
+      ],
+      "responsibility": "Generic bounded helper semantics for n-limited search/merge/sort/partition and explicit buffer/capacity contracts. Preserve boundary behavior as quality evidence without importing a second algorithm/runtime owner.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10943,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/algorithm/all_of.hpp",
+      "source_blob_sha": "a71fbfc967fe1bb65c9b171e854a17f1d9fb79ac",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/algorithm/all_of.hpp",
+        "object": "a71fbfc967fe1bb65c9b171e854a17f1d9fb79ac",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2000
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 algorithm detail layer",
+      "source_symbols": [
+        "all_of",
+        "bounded iterator/range algorithms",
+        "buffer-aware helper"
+      ],
+      "responsibility": "Generic bounded helper semantics for n-limited search/merge/sort/partition and explicit buffer/capacity contracts. Preserve boundary behavior as quality evidence without importing a second algorithm/runtime owner.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10944,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/algorithm/any_of.hpp",
+      "source_blob_sha": "d5592676317ba08696f4c1dbeebdfec6b62d9a9b",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/algorithm/any_of.hpp",
+        "object": "d5592676317ba08696f4c1dbeebdfec6b62d9a9b",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2039
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 algorithm detail layer",
+      "source_symbols": [
+        "any_of",
+        "bounded iterator/range algorithms",
+        "buffer-aware helper"
+      ],
+      "responsibility": "Generic bounded helper semantics for n-limited search/merge/sort/partition and explicit buffer/capacity contracts. Preserve boundary behavior as quality evidence without importing a second algorithm/runtime owner.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10945,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/algorithm/aux_/equal_range_n.hpp",
+      "source_blob_sha": "248be16d331d6764542df5b057680dad0e44c365",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/algorithm/aux_/equal_range_n.hpp",
+        "object": "248be16d331d6764542df5b057680dad0e44c365",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3378
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 algorithm detail layer",
+      "source_symbols": [
+        "equal_range_n",
+        "bounded iterator/range algorithms",
+        "buffer-aware helper"
+      ],
+      "responsibility": "Generic bounded helper semantics for n-limited search/merge/sort/partition and explicit buffer/capacity contracts. Preserve boundary behavior as quality evidence without importing a second algorithm/runtime owner.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10946,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/algorithm/aux_/lower_bound_n.hpp",
+      "source_blob_sha": "e220112313874a20e729b6c841139c2ac0d21774",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/algorithm/aux_/lower_bound_n.hpp",
+        "object": "e220112313874a20e729b6c841139c2ac0d21774",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2579
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 algorithm detail layer",
+      "source_symbols": [
+        "lower_bound_n",
+        "bounded iterator/range algorithms",
+        "buffer-aware helper"
+      ],
+      "responsibility": "Generic bounded helper semantics for n-limited search/merge/sort/partition and explicit buffer/capacity contracts. Preserve boundary behavior as quality evidence without importing a second algorithm/runtime owner.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10947,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/algorithm/aux_/merge_n.hpp",
+      "source_blob_sha": "776313860634228d3516f2a0321a2bd8242261fa",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/algorithm/aux_/merge_n.hpp",
+        "object": "776313860634228d3516f2a0321a2bd8242261fa",
+        "mode": "100644",
+        "type": "blob",
+        "size": 4113
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 algorithm detail layer",
+      "source_symbols": [
+        "merge_n",
+        "bounded iterator/range algorithms",
+        "buffer-aware helper"
+      ],
+      "responsibility": "Generic bounded helper semantics for n-limited search/merge/sort/partition and explicit buffer/capacity contracts. Preserve boundary behavior as quality evidence without importing a second algorithm/runtime owner.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10948,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/algorithm/aux_/merge_n_with_buffer.hpp",
+      "source_blob_sha": "d36f2a121a348877ebb882ef309e752afd6a7638",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/algorithm/aux_/merge_n_with_buffer.hpp",
+        "object": "d36f2a121a348877ebb882ef309e752afd6a7638",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2509
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 algorithm detail layer",
+      "source_symbols": [
+        "merge_n_with_buffer",
+        "bounded iterator/range algorithms",
+        "buffer-aware helper"
+      ],
+      "responsibility": "Generic bounded helper semantics for n-limited search/merge/sort/partition and explicit buffer/capacity contracts. Preserve boundary behavior as quality evidence without importing a second algorithm/runtime owner.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10949,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/algorithm/aux_/partition_point_n.hpp",
+      "source_blob_sha": "5dcdf46db5303a1dd27db6f402029cd84fa99e96",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/algorithm/aux_/partition_point_n.hpp",
+        "object": "5dcdf46db5303a1dd27db6f402029cd84fa99e96",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2009
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 algorithm detail layer",
+      "source_symbols": [
+        "partition_point_n",
+        "bounded iterator/range algorithms",
+        "buffer-aware helper"
+      ],
+      "responsibility": "Generic bounded helper semantics for n-limited search/merge/sort/partition and explicit buffer/capacity contracts. Preserve boundary behavior as quality evidence without importing a second algorithm/runtime owner.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10950,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/algorithm/aux_/sort_n_with_buffer.hpp",
+      "source_blob_sha": "34679ba5a8551794e5140869d730b80a76cc11a9",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/algorithm/aux_/sort_n_with_buffer.hpp",
+        "object": "34679ba5a8551794e5140869d730b80a76cc11a9",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2519
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 algorithm detail layer",
+      "source_symbols": [
+        "sort_n_with_buffer",
+        "bounded iterator/range algorithms",
+        "buffer-aware helper"
+      ],
+      "responsibility": "Generic bounded helper semantics for n-limited search/merge/sort/partition and explicit buffer/capacity contracts. Preserve boundary behavior as quality evidence without importing a second algorithm/runtime owner.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10951,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/algorithm/aux_/upper_bound_n.hpp",
+      "source_blob_sha": "94b52594684cf56cfb2d4bd4ec8cf3f154220ecb",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/algorithm/aux_/upper_bound_n.hpp",
+        "object": "94b52594684cf56cfb2d4bd4ec8cf3f154220ecb",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2798
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 algorithm detail layer",
+      "source_symbols": [
+        "upper_bound_n",
+        "bounded iterator/range algorithms",
+        "buffer-aware helper"
+      ],
+      "responsibility": "Generic bounded helper semantics for n-limited search/merge/sort/partition and explicit buffer/capacity contracts. Preserve boundary behavior as quality evidence without importing a second algorithm/runtime owner.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10952,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/algorithm/binary_search.hpp",
+      "source_blob_sha": "8200698eacb28b77f152ade338f5dbce30f9880d",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/algorithm/binary_search.hpp",
+        "object": "8200698eacb28b77f152ade338f5dbce30f9880d",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2700
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm layer",
+      "source_symbols": [
+        "binary_search",
+        "iterator/range overloads",
+        "projection/predicate contracts"
+      ],
+      "responsibility": "Generic range algorithm semantics and edge conditions, including finite-range search, size-aware rejection, non-empty min/max preconditions, bounded copy/count/generate, ordering/heap behavior and adaptive inplace-merge buffer fallback. No shipping range-v3 consumer is established.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10953,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/algorithm/contains.hpp",
+      "source_blob_sha": "8cb4cb96d493413fb2a86fd624ad0c6786ec5405",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/algorithm/contains.hpp",
+        "object": "8cb4cb96d493413fb2a86fd624ad0c6786ec5405",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1883
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm layer",
+      "source_symbols": [
+        "contains",
+        "iterator/range overloads",
+        "projection/predicate contracts"
+      ],
+      "responsibility": "Generic range algorithm semantics and edge conditions, including finite-range search, size-aware rejection, non-empty min/max preconditions, bounded copy/count/generate, ordering/heap behavior and adaptive inplace-merge buffer fallback. No shipping range-v3 consumer is established.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10954,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/algorithm/copy.hpp",
+      "source_blob_sha": "96c872b004988b126f96ee82c5511c0248bcb8ee",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/algorithm/copy.hpp",
+        "object": "96c872b004988b126f96ee82c5511c0248bcb8ee",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2504
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm layer",
+      "source_symbols": [
+        "copy",
+        "iterator/range overloads",
+        "projection/predicate contracts"
+      ],
+      "responsibility": "Generic range algorithm semantics and edge conditions, including finite-range search, size-aware rejection, non-empty min/max preconditions, bounded copy/count/generate, ordering/heap behavior and adaptive inplace-merge buffer fallback. No shipping range-v3 consumer is established.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10955,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/algorithm/copy_backward.hpp",
+      "source_blob_sha": "3e1dc55a6026ce19f57b6f76453b88ebed87098c",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/algorithm/copy_backward.hpp",
+        "object": "3e1dc55a6026ce19f57b6f76453b88ebed87098c",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2274
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm layer",
+      "source_symbols": [
+        "copy_backward",
+        "iterator/range overloads",
+        "projection/predicate contracts"
+      ],
+      "responsibility": "Generic range algorithm semantics and edge conditions, including finite-range search, size-aware rejection, non-empty min/max preconditions, bounded copy/count/generate, ordering/heap behavior and adaptive inplace-merge buffer fallback. No shipping range-v3 consumer is established.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10956,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/algorithm/copy_if.hpp",
+      "source_blob_sha": "661be146bba7472b5ed7512267455e6f80515acd",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/algorithm/copy_if.hpp",
+        "object": "661be146bba7472b5ed7512267455e6f80515acd",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2736
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm layer",
+      "source_symbols": [
+        "copy_if",
+        "iterator/range overloads",
+        "projection/predicate contracts"
+      ],
+      "responsibility": "Generic range algorithm semantics and edge conditions, including finite-range search, size-aware rejection, non-empty min/max preconditions, bounded copy/count/generate, ordering/heap behavior and adaptive inplace-merge buffer fallback. No shipping range-v3 consumer is established.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10957,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/algorithm/copy_n.hpp",
+      "source_blob_sha": "04c5399f5436faa913a0aa64a708475a04a4e47a",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/algorithm/copy_n.hpp",
+        "object": "04c5399f5436faa913a0aa64a708475a04a4e47a",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1910
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm layer",
+      "source_symbols": [
+        "copy_n",
+        "iterator/range overloads",
+        "projection/predicate contracts"
+      ],
+      "responsibility": "Generic range algorithm semantics and edge conditions, including finite-range search, size-aware rejection, non-empty min/max preconditions, bounded copy/count/generate, ordering/heap behavior and adaptive inplace-merge buffer fallback. No shipping range-v3 consumer is established.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10958,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/algorithm/count.hpp",
+      "source_blob_sha": "5ddc38614e433d03dad6a2c8bf320478b04d355a",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/algorithm/count.hpp",
+        "object": "5ddc38614e433d03dad6a2c8bf320478b04d355a",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2103
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm layer",
+      "source_symbols": [
+        "count",
+        "iterator/range overloads",
+        "projection/predicate contracts"
+      ],
+      "responsibility": "Generic range algorithm semantics and edge conditions, including finite-range search, size-aware rejection, non-empty min/max preconditions, bounded copy/count/generate, ordering/heap behavior and adaptive inplace-merge buffer fallback. No shipping range-v3 consumer is established.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10959,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/algorithm/count_if.hpp",
+      "source_blob_sha": "078bfcdb55618a0c39ccf6435b31da8212866a1d",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/algorithm/count_if.hpp",
+        "object": "078bfcdb55618a0c39ccf6435b31da8212866a1d",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2099
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm layer",
+      "source_symbols": [
+        "count_if",
+        "iterator/range overloads",
+        "projection/predicate contracts"
+      ],
+      "responsibility": "Generic range algorithm semantics and edge conditions, including finite-range search, size-aware rejection, non-empty min/max preconditions, bounded copy/count/generate, ordering/heap behavior and adaptive inplace-merge buffer fallback. No shipping range-v3 consumer is established.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10960,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/algorithm/ends_with.hpp",
+      "source_blob_sha": "8672073b945f176b4d76b0b09fbfbf652aa6c9b1",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/algorithm/ends_with.hpp",
+        "object": "8672073b945f176b4d76b0b09fbfbf652aa6c9b1",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3613
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm layer",
+      "source_symbols": [
+        "ends_with",
+        "iterator/range overloads",
+        "projection/predicate contracts"
+      ],
+      "responsibility": "Generic range algorithm semantics and edge conditions, including finite-range search, size-aware rejection, non-empty min/max preconditions, bounded copy/count/generate, ordering/heap behavior and adaptive inplace-merge buffer fallback. No shipping range-v3 consumer is established.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10961,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/algorithm/equal.hpp",
+      "source_blob_sha": "b33da7bd9bd053d1ad6536c6a28b96440362a0a2",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/algorithm/equal.hpp",
+        "object": "b33da7bd9bd053d1ad6536c6a28b96440362a0a2",
+        "mode": "100644",
+        "type": "blob",
+        "size": 6738
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm layer",
+      "source_symbols": [
+        "equal",
+        "iterator/range overloads",
+        "projection/predicate contracts"
+      ],
+      "responsibility": "Generic range algorithm semantics and edge conditions, including finite-range search, size-aware rejection, non-empty min/max preconditions, bounded copy/count/generate, ordering/heap behavior and adaptive inplace-merge buffer fallback. No shipping range-v3 consumer is established.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10962,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/algorithm/equal_range.hpp",
+      "source_blob_sha": "38575b7432fefbcd920befdba0f639e172ddc735",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/algorithm/equal_range.hpp",
+        "object": "38575b7432fefbcd920befdba0f639e172ddc735",
+        "mode": "100644",
+        "type": "blob",
+        "size": 4755
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm layer",
+      "source_symbols": [
+        "equal_range",
+        "iterator/range overloads",
+        "projection/predicate contracts"
+      ],
+      "responsibility": "Generic range algorithm semantics and edge conditions, including finite-range search, size-aware rejection, non-empty min/max preconditions, bounded copy/count/generate, ordering/heap behavior and adaptive inplace-merge buffer fallback. No shipping range-v3 consumer is established.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10963,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/algorithm/fill.hpp",
+      "source_blob_sha": "8e37bf0272bac5797ba02a8dccae5ed007f658cb",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/algorithm/fill.hpp",
+        "object": "8e37bf0272bac5797ba02a8dccae5ed007f658cb",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1636
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm layer",
+      "source_symbols": [
+        "fill",
+        "iterator/range overloads",
+        "projection/predicate contracts"
+      ],
+      "responsibility": "Generic range algorithm semantics and edge conditions, including finite-range search, size-aware rejection, non-empty min/max preconditions, bounded copy/count/generate, ordering/heap behavior and adaptive inplace-merge buffer fallback. No shipping range-v3 consumer is established.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10964,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/algorithm/fill_n.hpp",
+      "source_blob_sha": "abf11113a68a9a04d3069c51a24795901cfa1e0d",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/algorithm/fill_n.hpp",
+        "object": "abf11113a68a9a04d3069c51a24795901cfa1e0d",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1484
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm layer",
+      "source_symbols": [
+        "fill_n",
+        "iterator/range overloads",
+        "projection/predicate contracts"
+      ],
+      "responsibility": "Generic range algorithm semantics and edge conditions, including finite-range search, size-aware rejection, non-empty min/max preconditions, bounded copy/count/generate, ordering/heap behavior and adaptive inplace-merge buffer fallback. No shipping range-v3 consumer is established.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10965,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/algorithm/find.hpp",
+      "source_blob_sha": "716119a835704a658656419918464bd85583241c",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/algorithm/find.hpp",
+        "object": "716119a835704a658656419918464bd85583241c",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2486
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm layer",
+      "source_symbols": [
+        "find",
+        "iterator/range overloads",
+        "projection/predicate contracts"
+      ],
+      "responsibility": "Generic range algorithm semantics and edge conditions, including finite-range search, size-aware rejection, non-empty min/max preconditions, bounded copy/count/generate, ordering/heap behavior and adaptive inplace-merge buffer fallback. No shipping range-v3 consumer is established.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10966,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/algorithm/find_end.hpp",
+      "source_blob_sha": "d4db049b667ebd90eaa1aa635da1fd345a29f15f",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/algorithm/find_end.hpp",
+        "object": "d4db049b667ebd90eaa1aa635da1fd345a29f15f",
+        "mode": "100644",
+        "type": "blob",
+        "size": 8632
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm layer",
+      "source_symbols": [
+        "find_end",
+        "iterator/range overloads",
+        "projection/predicate contracts"
+      ],
+      "responsibility": "Generic range algorithm semantics and edge conditions, including finite-range search, size-aware rejection, non-empty min/max preconditions, bounded copy/count/generate, ordering/heap behavior and adaptive inplace-merge buffer fallback. No shipping range-v3 consumer is established.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10967,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/algorithm/find_first_of.hpp",
+      "source_blob_sha": "b036e9fd58b3b4518885435b15072b147fa973dc",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/algorithm/find_first_of.hpp",
+        "object": "b036e9fd58b3b4518885435b15072b147fa973dc",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3739
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm layer",
+      "source_symbols": [
+        "find_first_of",
+        "iterator/range overloads",
+        "projection/predicate contracts"
+      ],
+      "responsibility": "Generic range algorithm semantics and edge conditions, including finite-range search, size-aware rejection, non-empty min/max preconditions, bounded copy/count/generate, ordering/heap behavior and adaptive inplace-merge buffer fallback. No shipping range-v3 consumer is established.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10968,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/algorithm/find_if.hpp",
+      "source_blob_sha": "63da3018eb82864b2fc72434399ef86b455772f9",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/algorithm/find_if.hpp",
+        "object": "63da3018eb82864b2fc72434399ef86b455772f9",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2548
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm layer",
+      "source_symbols": [
+        "find_if",
+        "iterator/range overloads",
+        "projection/predicate contracts"
+      ],
+      "responsibility": "Generic range algorithm semantics and edge conditions, including finite-range search, size-aware rejection, non-empty min/max preconditions, bounded copy/count/generate, ordering/heap behavior and adaptive inplace-merge buffer fallback. No shipping range-v3 consumer is established.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10969,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/algorithm/find_if_not.hpp",
+      "source_blob_sha": "6c4d6a5ff0d243806d4c79024862e613042def2d",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/algorithm/find_if_not.hpp",
+        "object": "6c4d6a5ff0d243806d4c79024862e613042def2d",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2602
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm layer",
+      "source_symbols": [
+        "find_if_not",
+        "iterator/range overloads",
+        "projection/predicate contracts"
+      ],
+      "responsibility": "Generic range algorithm semantics and edge conditions, including finite-range search, size-aware rejection, non-empty min/max preconditions, bounded copy/count/generate, ordering/heap behavior and adaptive inplace-merge buffer fallback. No shipping range-v3 consumer is established.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10970,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/algorithm/fold.hpp",
+      "source_blob_sha": "087b26f938da057d03c567c0af3d45b1d6505bb6",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/algorithm/fold.hpp",
+        "object": "087b26f938da057d03c567c0af3d45b1d6505bb6",
+        "mode": "100644",
+        "type": "blob",
+        "size": 503
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm layer",
+      "source_symbols": [
+        "fold",
+        "iterator/range overloads",
+        "projection/predicate contracts"
+      ],
+      "responsibility": "Generic range algorithm semantics and edge conditions, including finite-range search, size-aware rejection, non-empty min/max preconditions, bounded copy/count/generate, ordering/heap behavior and adaptive inplace-merge buffer fallback. No shipping range-v3 consumer is established.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10971,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/algorithm/fold_left.hpp",
+      "source_blob_sha": "8e60c376e2d278e39ea34436e62d6ca2b340f497",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/algorithm/fold_left.hpp",
+        "object": "8e60c376e2d278e39ea34436e62d6ca2b340f497",
+        "mode": "100644",
+        "type": "blob",
+        "size": 4315
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm layer",
+      "source_symbols": [
+        "fold_left",
+        "iterator/range overloads",
+        "projection/predicate contracts"
+      ],
+      "responsibility": "Generic range algorithm semantics and edge conditions, including finite-range search, size-aware rejection, non-empty min/max preconditions, bounded copy/count/generate, ordering/heap behavior and adaptive inplace-merge buffer fallback. No shipping range-v3 consumer is established.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10972,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/algorithm/fold_right.hpp",
+      "source_blob_sha": "ed8415c9a57f75142f74776fff58ad6ad9b21071",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/algorithm/fold_right.hpp",
+        "object": "ed8415c9a57f75142f74776fff58ad6ad9b21071",
+        "mode": "100644",
+        "type": "blob",
+        "size": 4070
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm layer",
+      "source_symbols": [
+        "fold_right",
+        "iterator/range overloads",
+        "projection/predicate contracts"
+      ],
+      "responsibility": "Generic range algorithm semantics and edge conditions, including finite-range search, size-aware rejection, non-empty min/max preconditions, bounded copy/count/generate, ordering/heap behavior and adaptive inplace-merge buffer fallback. No shipping range-v3 consumer is established.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10973,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/algorithm/for_each.hpp",
+      "source_blob_sha": "00ffe88932d3df16f0aac1c6e18ff13d87afac02",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/algorithm/for_each.hpp",
+        "object": "00ffe88932d3df16f0aac1c6e18ff13d87afac02",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2403
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm layer",
+      "source_symbols": [
+        "for_each",
+        "iterator/range overloads",
+        "projection/predicate contracts"
+      ],
+      "responsibility": "Generic range algorithm semantics and edge conditions, including finite-range search, size-aware rejection, non-empty min/max preconditions, bounded copy/count/generate, ordering/heap behavior and adaptive inplace-merge buffer fallback. No shipping range-v3 consumer is established.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10974,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/algorithm/for_each_n.hpp",
+      "source_blob_sha": "a6c258a902acf40946f66f26e1fc2ec0b531d5d3",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/algorithm/for_each_n.hpp",
+        "object": "a6c258a902acf40946f66f26e1fc2ec0b531d5d3",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2330
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm layer",
+      "source_symbols": [
+        "for_each_n",
+        "iterator/range overloads",
+        "projection/predicate contracts"
+      ],
+      "responsibility": "Generic range algorithm semantics and edge conditions, including finite-range search, size-aware rejection, non-empty min/max preconditions, bounded copy/count/generate, ordering/heap behavior and adaptive inplace-merge buffer fallback. No shipping range-v3 consumer is established.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10975,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/algorithm/generate.hpp",
+      "source_blob_sha": "d871e0e43b155b61165c24dbfa1ee0f138930902",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/algorithm/generate.hpp",
+        "object": "d871e0e43b155b61165c24dbfa1ee0f138930902",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2166
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm layer",
+      "source_symbols": [
+        "generate",
+        "iterator/range overloads",
+        "projection/predicate contracts"
+      ],
+      "responsibility": "Generic range algorithm semantics and edge conditions, including finite-range search, size-aware rejection, non-empty min/max preconditions, bounded copy/count/generate, ordering/heap behavior and adaptive inplace-merge buffer fallback. No shipping range-v3 consumer is established.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10976,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/algorithm/generate_n.hpp",
+      "source_blob_sha": "d0fbfbc2a4e3a73d6f387e2c8e0c16b1f5549bd8",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/algorithm/generate_n.hpp",
+        "object": "d0fbfbc2a4e3a73d6f387e2c8e0c16b1f5549bd8",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1860
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm layer",
+      "source_symbols": [
+        "generate_n",
+        "iterator/range overloads",
+        "projection/predicate contracts"
+      ],
+      "responsibility": "Generic range algorithm semantics and edge conditions, including finite-range search, size-aware rejection, non-empty min/max preconditions, bounded copy/count/generate, ordering/heap behavior and adaptive inplace-merge buffer fallback. No shipping range-v3 consumer is established.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10977,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/algorithm/heap_algorithm.hpp",
+      "source_blob_sha": "5e130ef74bd48508bad0dc9337ac52047a7f7261",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/algorithm/heap_algorithm.hpp",
+        "object": "5e130ef74bd48508bad0dc9337ac52047a7f7261",
+        "mode": "100644",
+        "type": "blob",
+        "size": 15674
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm layer",
+      "source_symbols": [
+        "heap_algorithm",
+        "iterator/range overloads",
+        "projection/predicate contracts"
+      ],
+      "responsibility": "Generic range algorithm semantics and edge conditions, including finite-range search, size-aware rejection, non-empty min/max preconditions, bounded copy/count/generate, ordering/heap behavior and adaptive inplace-merge buffer fallback. No shipping range-v3 consumer is established.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10978,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/algorithm/inplace_merge.hpp",
+      "source_blob_sha": "2c4e8e4ad7dd14d3e2b3427d7b2b02dfaf181091",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/algorithm/inplace_merge.hpp",
+        "object": "2c4e8e4ad7dd14d3e2b3427d7b2b02dfaf181091",
+        "mode": "100644",
+        "type": "blob",
+        "size": 12588
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm layer",
+      "source_symbols": [
+        "inplace_merge",
+        "iterator/range overloads",
+        "projection/predicate contracts"
+      ],
+      "responsibility": "Generic range algorithm semantics and edge conditions, including finite-range search, size-aware rejection, non-empty min/max preconditions, bounded copy/count/generate, ordering/heap behavior and adaptive inplace-merge buffer fallback. No shipping range-v3 consumer is established.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10979,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/algorithm/is_partitioned.hpp",
+      "source_blob_sha": "d41a747a0952f6a3f65fec50b21f04fe4e19cfc8",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/algorithm/is_partitioned.hpp",
+        "object": "d41a747a0952f6a3f65fec50b21f04fe4e19cfc8",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2555
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm layer",
+      "source_symbols": [
+        "is_partitioned",
+        "iterator/range overloads",
+        "projection/predicate contracts"
+      ],
+      "responsibility": "Generic range algorithm semantics and edge conditions, including finite-range search, size-aware rejection, non-empty min/max preconditions, bounded copy/count/generate, ordering/heap behavior and adaptive inplace-merge buffer fallback. No shipping range-v3 consumer is established.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10980,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/algorithm/is_sorted.hpp",
+      "source_blob_sha": "1dfe7734a03b3a10c29837ce3338116ac9451bac",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/algorithm/is_sorted.hpp",
+        "object": "1dfe7734a03b3a10c29837ce3338116ac9451bac",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2521
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm layer",
+      "source_symbols": [
+        "is_sorted",
+        "iterator/range overloads",
+        "projection/predicate contracts"
+      ],
+      "responsibility": "Generic range algorithm semantics and edge conditions, including finite-range search, size-aware rejection, non-empty min/max preconditions, bounded copy/count/generate, ordering/heap behavior and adaptive inplace-merge buffer fallback. No shipping range-v3 consumer is established.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10981,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/algorithm/is_sorted_until.hpp",
+      "source_blob_sha": "2f65b3f7f5896ecaad7e6937f4de49b997006f42",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/algorithm/is_sorted_until.hpp",
+        "object": "2f65b3f7f5896ecaad7e6937f4de49b997006f42",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2923
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm layer",
+      "source_symbols": [
+        "is_sorted_until",
+        "iterator/range overloads",
+        "projection/predicate contracts"
+      ],
+      "responsibility": "Generic range algorithm semantics and edge conditions, including finite-range search, size-aware rejection, non-empty min/max preconditions, bounded copy/count/generate, ordering/heap behavior and adaptive inplace-merge buffer fallback. No shipping range-v3 consumer is established.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10982,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/algorithm/lexicographical_compare.hpp",
+      "source_blob_sha": "382faf6f7210c90e243339b838741ba8ee127bc3",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/algorithm/lexicographical_compare.hpp",
+        "object": "382faf6f7210c90e243339b838741ba8ee127bc3",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3806
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm layer",
+      "source_symbols": [
+        "lexicographical_compare",
+        "iterator/range overloads",
+        "projection/predicate contracts"
+      ],
+      "responsibility": "Generic range algorithm semantics and edge conditions, including finite-range search, size-aware rejection, non-empty min/max preconditions, bounded copy/count/generate, ordering/heap behavior and adaptive inplace-merge buffer fallback. No shipping range-v3 consumer is established.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10983,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/algorithm/lower_bound.hpp",
+      "source_blob_sha": "685dfef692b6ca001859c63003a751aec7980bb0",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/algorithm/lower_bound.hpp",
+        "object": "685dfef692b6ca001859c63003a751aec7980bb0",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2719
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm layer",
+      "source_symbols": [
+        "lower_bound",
+        "iterator/range overloads",
+        "projection/predicate contracts"
+      ],
+      "responsibility": "Generic range algorithm semantics and edge conditions, including finite-range search, size-aware rejection, non-empty min/max preconditions, bounded copy/count/generate, ordering/heap behavior and adaptive inplace-merge buffer fallback. No shipping range-v3 consumer is established.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10984,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/algorithm/max.hpp",
+      "source_blob_sha": "c444553366daf4070dd4329cad5cb0e1b0206f92",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/algorithm/max.hpp",
+        "object": "c444553366daf4070dd4329cad5cb0e1b0206f92",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2850
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm layer",
+      "source_symbols": [
+        "max",
+        "iterator/range overloads",
+        "projection/predicate contracts"
+      ],
+      "responsibility": "Generic range algorithm semantics and edge conditions, including finite-range search, size-aware rejection, non-empty min/max preconditions, bounded copy/count/generate, ordering/heap behavior and adaptive inplace-merge buffer fallback. No shipping range-v3 consumer is established.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10985,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/algorithm/max_element.hpp",
+      "source_blob_sha": "c308069e1776acde5ff1894f99ab53047cac8c2b",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/algorithm/max_element.hpp",
+        "object": "c308069e1776acde5ff1894f99ab53047cac8c2b",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2290
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm layer",
+      "source_symbols": [
+        "max_element",
+        "iterator/range overloads",
+        "projection/predicate contracts"
+      ],
+      "responsibility": "Generic range algorithm semantics and edge conditions, including finite-range search, size-aware rejection, non-empty min/max preconditions, bounded copy/count/generate, ordering/heap behavior and adaptive inplace-merge buffer fallback. No shipping range-v3 consumer is established.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10986,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/algorithm/merge.hpp",
+      "source_blob_sha": "d232cd55783f22ce13c38329c38b9eb12cbe0b7a",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/algorithm/merge.hpp",
+        "object": "d232cd55783f22ce13c38329c38b9eb12cbe0b7a",
+        "mode": "100644",
+        "type": "blob",
+        "size": 4705
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm layer",
+      "source_symbols": [
+        "merge",
+        "iterator/range overloads",
+        "projection/predicate contracts"
+      ],
+      "responsibility": "Generic range algorithm semantics and edge conditions, including finite-range search, size-aware rejection, non-empty min/max preconditions, bounded copy/count/generate, ordering/heap behavior and adaptive inplace-merge buffer fallback. No shipping range-v3 consumer is established.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10987,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/algorithm/min.hpp",
+      "source_blob_sha": "ece37250b918aacb6a4766315729c47995b60136",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/algorithm/min.hpp",
+        "object": "ece37250b918aacb6a4766315729c47995b60136",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2850
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm layer",
+      "source_symbols": [
+        "min",
+        "iterator/range overloads",
+        "projection/predicate contracts"
+      ],
+      "responsibility": "Generic range algorithm semantics and edge conditions, including finite-range search, size-aware rejection, non-empty min/max preconditions, bounded copy/count/generate, ordering/heap behavior and adaptive inplace-merge buffer fallback. No shipping range-v3 consumer is established.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    },
+    {
+      "recursive_order": 10988,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/algorithm/min_element.hpp",
+      "source_blob_sha": "4a7d4b9f75d9bff49c8dfdefb99ffbdd38aad260",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/algorithm/min_element.hpp",
+        "object": "4a7d4b9f75d9bff49c8dfdefb99ffbdd38aad260",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2293
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 generic algorithm layer",
+      "source_symbols": [
+        "min_element",
+        "iterator/range overloads",
+        "projection/predicate contracts"
+      ],
+      "responsibility": "Generic range algorithm semantics and edge conditions, including finite-range search, size-aware rejection, non-empty min/max preconditions, bounded copy/count/generate, ordering/heap behavior and adaptive inplace-merge buffer fallback. No shipping range-v3 consumer is established.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "scripts/validate-tdrp-revision9-authority.mjs; .github/workflows/rust-desktop-runtime.yml; current dependency/license authority"
+    }
+  ]
+}
