@@ -14,24 +14,24 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 3665,
+    "unread_minimum": 3601,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through deterministic order 12,460; unread 3,665; unknown 15,845; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition through deterministic order 12,524; unread 3,601; unknown 15,845; omitted 0."
   },
   "latest_recursive_evidence": {
-    "run_id": 38183734477,
+    "run_id": 38185198807,
     "run_attempt": 1,
-    "job_id": 114601575522,
-    "head_sha": "8a07d98aae4497367cb1e1a8d7024e66f8565f30",
-    "artifact_id": 11718378603,
-    "artifact_digest": "sha256:b17afd2552005af0ce12269960ecd64d054b2ccf12e5decb9e420192a190f586",
+    "job_id": 114606095405,
+    "head_sha": "f65ae73978aebfe7c73abd4a33fdaad9e5e96578",
+    "artifact_id": 11719123359,
+    "artifact_digest": "sha256:c3b8b3968b84a5404ad05b7ffc1c54c079f1021b0022e604ebb8ecad084fdf67",
     "artifact_files": [
       "upstream-recursive-inventory.json",
       "current-first-unread/window-manifest.json"
     ],
     "evidence_status": "exact-source-materialization-reviewed-descendant-validation-required",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
-    "note": "Exact-head 8a07d98a source authority succeeded and materialized orders 12,397-12,460; the complete 64-entry window is now formally reviewed into descendant shards; reading alone does not reduce unknown."
+    "note": "Exact-head f65ae739 source authority succeeded and materialized orders 12,461-12,524; the complete 64-entry window is now formally reviewed into a descendant shard; reading alone does not reduce unknown."
   },
   "closure_rules": {
     "executable_runner": "github-actions",
@@ -41,7 +41,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live baseline accepted; closure open. Read-through 12,460; unread_minimum is 3,665; unknown remains 15,845; omitted remains 0; first unread order 12,461 is Telegram/lib_base::base/match_method.h.",
+  "note": "Live baseline accepted; closure open. Read-through 12,524; unread_minimum is 3,601; unknown remains 15,845; omitted remains 0; first unread order 12,525 is Telegram/lib_base::base/platform/linux/base_screen_reader_state_linux.cpp.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -59,12 +59,12 @@
       6541,
       6627
     ],
-    "current_source_read_through": 12460,
-    "first_unread_order": 12461,
-    "first_unread_path": "Telegram/lib_base::base/match_method.h",
-    "current_head_source_authority_evidence": "Current accounting is 12,460/16,125 on the descendant branch. Fresh same-head Source authority is required; 9bbd996a job 114603875851 is failure/predecessor evidence and must not be reused as green.",
-    "source_read_reconciliation": "Accepted prefix 12,460/16,125; orders 12,397-12,460 exact-read from accepted-upstream materialization and pinned component blobs; unread 3,665; unknown 15,845; omitted 0; reading alone closes no unknown.",
-    "source_authority_evidence": "Exact-head 8a07d98a source-authority run 38183734477/job 114601575522 succeeded with artifact 11718378603 (sha256:b17afd2552005af0ce12269960ecd64d054b2ccf12e5decb9e420192a190f586), materializing 12,397-12,460. The 9bbd996a descendant artifact 11718219868 was produced but its authority job failed because this rebaseline field still reported 12,396; the descendant must obtain fresh same-head validation."
+    "current_source_read_through": 12524,
+    "first_unread_order": 12525,
+    "first_unread_path": "Telegram/lib_base::base/platform/linux/base_screen_reader_state_linux.cpp",
+    "current_head_source_authority_evidence": "Current accounting is 12,524/16,125 on the descendant branch. Fresh same-head Source authority is required; f65ae739 exact-source materialization is predecessor evidence after this accounting commit.",
+    "source_read_reconciliation": "Accepted prefix 12,524/16,125; orders 12,461-12,524 exact-read from f65ae739 source-authority artifact 11719123359; unread 3,601; unknown 15,845; omitted 0; reading alone closes no unknown.",
+    "source_authority_evidence": "Exact-head f65ae739 Rust desktop runtime 38185198807 / source-authority job 114606095405 succeeded with artifact 11719123359 (sha256:c3b8b3968b84a5404ad05b7ffc1c54c079f1021b0022e604ebb8ecad084fdf67), materializing 12,461-12,524. The accounting descendant must obtain fresh same-head validation."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -73,9 +73,9 @@
     "development_only_non_applicable": 206,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 12460,
-    "first_unread_order": 12461,
-    "first_unread_path": "Telegram/lib_base::base/match_method.h",
+    "read_through": 12524,
+    "first_unread_order": 12525,
+    "first_unread_path": "Telegram/lib_base::base/platform/linux/base_screen_reader_state_linux.cpp",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }
