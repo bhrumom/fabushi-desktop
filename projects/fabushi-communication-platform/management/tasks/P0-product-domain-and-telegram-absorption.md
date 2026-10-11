@@ -1,4 +1,15 @@
-Live TDRP Revision 9 upstream authority (2026-10-11): telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 (root tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6). Root non-directory=6,653; recursive non-directory=16,125; deterministic read-through=9,836; first unread=9,837 Telegram/ThirdParty/libcbor::.gitmodules@b1f6f9c259a83355bd23576a06702fd1d8541d44; unread=6,289; unknown=15,845; omitted=0. KImageFormats source reading is complete through order 9,828; libcbor is shipping-reachable through lib_fido2/WebAuthn and is now under deterministic responsibility review.
+Live TDRP Revision 9 upstream authority (2026-10-11): telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 (root tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6). Root non-directory=6,653; recursive non-directory=16,125; deterministic read-through=9,900; first unread=9,901 Telegram/ThirdParty/libcbor::examples/create_items.c@a6e67a9870ef366248263bffff467a002e38bfa7; unread=6,225; unknown=15,845; omitted=0. KImageFormats is fully read; libcbor/WebAuthn source review continues against existing Coordinator WebAuthn and canonical Account/Auth security owners, with packaged signer-helper evidence still open.
+
+### Revision 9 deterministic read-through — libcbor build/docs/examples 9,837–9,900
+
+Exact-head source-authority run `38116111367`, job `114401252125`, at `9e9d83a7944a02d269fbb0820cbc2e67a465bedc` succeeded and artifact `11693503533` (digest `sha256:30e45c473073318b0f159d391d6b27f5a5bb206a32e5fe9b481e4cab377a7e7c`) materialized exact identities for orders 9,837–9,900. The six Windows CMake screenshots were visually inspected as build documentation only.
+
+The range establishes RFC 8949 parsing/serialization, reference ownership, streaming/incremental decode, bounded parser-stack and allocation/overflow/fuzz hardening responsibilities. Current exact-head audit corrects the earlier owner-absence note: Fabushi already ships a source-neutral Coordinator WebAuthn provider/signing lifecycle; Account/Auth passkeys remain a distinct canonical product lifecycle. These rows therefore stay mapped to existing authentication/security plus Build/Quality/Release owners. No libcbor, FIDO or Telegram runtime is introduced.
+
+A shipping gap remains open: the Coordinator resolves an external `sand-webauthn-signer`, while the inspected desktop build/staging path does not yet prove that helper is produced and co-staged at the packaged lookup path. No row is marked verified from source reading alone.
+
+Accounting is **9,900/16,125 read; 6,225 unread; 15,845 unknown; 0 omitted**. Next is 9,901 `Telegram/ThirdParty/libcbor::examples/create_items.c@a6e67a9870ef366248263bffff467a002e38bfa7`.
+
 
 ### Revision 9 deterministic read-through — KImageFormats tail and libcbor/WebAuthn entry 9,773–9,836
 
