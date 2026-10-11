@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 7140,
+    "unread_minimum": 7076,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through deterministic order 8,985; unread 7,140; unknown 15,845; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition through deterministic order 9,049; unread 7,076; unknown 15,845; omitted 0."
   },
   "latest_recursive_evidence": {
     "run_id": 38106112583,
@@ -41,7 +41,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live authority exact through deterministic order 8,985; first unread 8,986 Telegram/ThirdParty/hunspell::tests/pfxdot.aff; unread_minimum is 7,140; unknown remains 15,845; omitted remains 0.",
+  "note": "Live authority exact through deterministic order 9,049; first unread 9,050 Telegram/ThirdParty/hunspell::tests/utf8_bom.aff; unread_minimum is 7,076; unknown remains 15,845; omitted remains 0.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -59,10 +59,10 @@
       6541,
       6627
     ],
-    "current_source_read_through": 8985,
-    "first_unread_order": 8986,
-    "first_unread_path": "Telegram/ThirdParty/hunspell::tests/pfxdot.aff",
-    "current_head_source_authority_evidence": "Orders 8,953–8,985 were exact-read from pinned hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b. Exact-head GitHub Actions run 38107313762 job 114375483242 artifact 11689378924 at 65338263987558dad9948090fe77318a8964ba46 materialized the accepted recursive inventory including first-unread order 8,986 Telegram/ThirdParty/hunspell::tests/pfxdot.aff@e1cdc6186d1785b1572d350c32fee2b0ad6a4187; that source-authority job failed only because live unread accounting lagged the newly added shard, so it is diagnostic identity evidence and fresh descendant exact-head Actions remain mandatory. All newly read rows remain mapped-open/unknown_closed=false/omitted=false."
+    "current_source_read_through": 9049,
+    "first_unread_order": 9050,
+    "first_unread_path": "Telegram/ThirdParty/hunspell::tests/utf8_bom.aff",
+    "current_head_source_authority_evidence": "Orders 8,986–9,049 were exact-read from pinned hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b using accepted recursive identities materialized by GitHub Actions run 38107313762 job 114375483242 artifact 11689378924. The next exact identity is order 9,050 Telegram/ThirdParty/hunspell::tests/utf8_bom.aff@f56998b9f3465bd83bee84a07a7503042f58ae1c. Direct GitHub blob/file reads established affix wildcard, phonetic/ph-field, REP, RTL, simplified-triple, slash tokenization, suggestion quality, bounded-work and UTF-8 responsibilities. Fresh descendant exact-head Actions remain mandatory; all rows remain mapped-open/unknown_closed=false/omitted=false."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -71,9 +71,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 8985,
-    "first_unread_order": 8986,
-    "first_unread_path": "Telegram/ThirdParty/hunspell::tests/pfxdot.aff",
+    "read_through": 9049,
+    "first_unread_order": 9050,
+    "first_unread_path": "Telegram/ThirdParty/hunspell::tests/utf8_bom.aff",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }
