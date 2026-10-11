@@ -14,24 +14,24 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 6225,
+    "unread_minimum": 6161,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through deterministic order 9,900; unread 6,225; unknown 15,845; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition through deterministic order 9,964; unread 6,161; unknown 15,845; omitted 0."
   },
   "latest_recursive_evidence": {
-    "run_id": 38116111367,
+    "run_id": 38117917553,
     "run_attempt": 1,
-    "job_id": 114401252125,
-    "head_sha": "9e9d83a7944a02d269fbb0820cbc2e67a465bedc",
-    "artifact_id": 11693503533,
-    "artifact_digest": "sha256:30e45c473073318b0f159d391d6b27f5a5bb206a32e5fe9b481e4cab377a7e7c",
+    "job_id": 114406468676,
+    "head_sha": "2bc832466e640f7a8bb11c569450bd1d5cb89045",
+    "artifact_id": 11694536942,
+    "artifact_digest": "sha256:e1d914906cc18e4a1debb277afba53553e9e3f6c755f69fdef7b8988bd586187",
     "artifact_files": [
       "upstream-recursive-inventory.json",
       "current-first-unread/window-manifest.json"
     ],
     "evidence_status": "exact-head-source-authority-success",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
-    "note": "9e9d83a7 GitHub Actions validated Revision 9 authority and materialized exact identities for orders 9,837–9,900; this evidence supports source reading/accounting only, not product/release acceptance."
+    "note": "2bc83246 GitHub Actions validated Revision 9 authority and materialized exact identities for orders 9,901–9,964; this supports source reading/accounting only, not product/release acceptance."
   },
   "closure_rules": {
     "executable_runner": "github-actions",
@@ -41,7 +41,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live baseline identity is accepted for telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 / tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6, matching upstream.lock upstream.accepted=true. This does not imply source/product/release closure: exact read-through is 9,900; unread_minimum is 6,225; unknown remains 15,845; omitted remains 0; acceptance.accepted and baseline_ready remain false until their gates close.",
+  "note": "Live baseline identity is accepted for telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 / tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6. Source/product/release closure remains open: exact read-through 9,964; unread 6,161; unknown 15,845; omitted 0; acceptance.accepted and baseline_ready remain false until their gates close.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -59,10 +59,10 @@
       6541,
       6627
     ],
-    "current_source_read_through": 9900,
-    "first_unread_order": 9901,
-    "first_unread_path": "Telegram/ThirdParty/libcbor::examples/create_items.c",
-    "current_head_source_authority_evidence": "Run 38116111367 / job 114401252125 succeeded at exact head 9e9d83a7 and artifact 11693503533 attested orders 9,837–9,900. Existing-owner audit resolves libcbor/WebAuthn to current Coordinator WebAuthn + Account/Auth security boundaries; packaging proof for the signer helper remains open."
+    "current_source_read_through": 9964,
+    "first_unread_order": 9965,
+    "first_unread_path": "Telegram/ThirdParty/libcbor::src/cbor/tags.h",
+    "current_head_source_authority_evidence": "Run 38117917553 / job 114406468676 succeeded at exact head 2bc83246 and artifact 11694536942 attested orders 9,901–9,964. Core libcbor semantics map to existing WebAuthn/Account Auth security owners; bounded helper-output production hardening is staged for fresh exact-head CI."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -71,9 +71,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 9900,
-    "first_unread_order": 9901,
-    "first_unread_path": "Telegram/ThirdParty/libcbor::examples/create_items.c",
+    "read_through": 9964,
+    "first_unread_order": 9965,
+    "first_unread_path": "Telegram/ThirdParty/libcbor::src/cbor/tags.h",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }
