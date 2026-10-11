@@ -14,24 +14,24 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 4369,
+    "unread_minimum": 4305,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through deterministic order 11,756; unread 4,369; unknown 15,845; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition through deterministic order 11,820; unread 4,305; unknown 15,845; omitted 0."
   },
   "latest_recursive_evidence": {
-    "run_id": 38170930654,
+    "run_id": 38174934167,
     "run_attempt": 1,
-    "job_id": 114563229488,
-    "head_sha": "072c76d9b70041f6d9ebff4ca1ca5e977b160d8d",
-    "artifact_id": 11714083420,
-    "artifact_digest": "sha256:2a20ec87ef17d88a815faeceef8ebb7f8d463959f25a4dae9fb2b5bc0acf1b84",
+    "job_id": 114575281813,
+    "head_sha": "2937161a99e1324032bb492c8af03619fc16e2a7",
+    "artifact_id": 11715945600,
+    "artifact_digest": "sha256:39d60f209321a97b6566d2d19c04c12b801669ebd877e2d58f3fa48502c0fd74",
     "artifact_files": [
       "upstream-recursive-inventory.json",
       "current-first-unread/window-manifest.json"
     ],
     "evidence_status": "predecessor-exact-source-materialization-current-descendant-validation-pending",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
-    "note": "Accepted source accounting remains 11,756/16,125. 5cdf70e5 and runs 38172769183/38172769196 plus job 114568748017/artifact 11715061100 are predecessor evidence only. Exact-head f1a065f8 run 38173749265 failed fail-closed validation on parity-ledger drift; diagnostic artifact 11714733439 is not acceptance evidence. Exact-head 8e4caba run 38174574599 passed binding/inventory/range attestation but failed the unchanged fail-closed validator on inventory narrative wording; diagnostic artifact 11715297534 is not acceptance evidence. Descendant exact-head Actions required."
+    "note": "Exact-head 2937161a source authority completed success and materialized 11,757-11,820; Desktop Chat Parity also succeeded. This accounting descendant must obtain fresh exact-head validation before acceptance."
   },
   "closure_rules": {
     "executable_runner": "github-actions",
@@ -41,7 +41,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live baseline accepted; closure open. Read-through 11,756; unread_minimum is 4,369; unknown remains 15,845; omitted remains 0.",
+  "note": "Live baseline accepted; closure open. Read-through 11,820; unread_minimum is 4,305; unknown remains 15,845; omitted remains 0.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -59,21 +59,21 @@
       6541,
       6627
     ],
-    "current_source_read_through": 11756,
-    "first_unread_order": 11757,
-    "first_unread_path": "Telegram/ThirdParty/tgcalls::tgcalls/v2/SignalingTranslator.h",
-    "current_head_source_authority_evidence": "8e4caba run 38174574599 failed unchanged fail-closed validation on inventory narrative wording after exact-head binding, recursive inventory, build-time acquisition scan and range attestation; diagnostic artifact 11715297534 only. Descendant exact-head validation required."
+    "current_source_read_through": 11820,
+    "first_unread_order": 11821,
+    "first_unread_path": "Telegram/ThirdParty/xdg-desktop-portal::.github/workflows/main.yml",
+    "current_head_source_authority_evidence": "Exact-head 2937161a99e1324032bb492c8af03619fc16e2a7 run 38174934167 / source-authority job 114575281813 completed success and materialized orders 11,757-11,820 into artifact 11715945600 (sha256:39d60f209321a97b6566d2d19c04c12b801669ebd877e2d58f3fa48502c0fd74); Desktop Chat Parity run 38174934180 completed success. This accounting commit is a descendant and requires fresh same-head Actions; predecessor greens are not reused."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "deterministic_prefix_closed": 57,
-    "development_only_non_applicable": 97,
+    "development_only_non_applicable": 101,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 11756,
-    "first_unread_order": 11757,
-    "first_unread_path": "Telegram/ThirdParty/tgcalls::tgcalls/v2/SignalingTranslator.h",
+    "read_through": 11820,
+    "first_unread_order": 11821,
+    "first_unread_path": "Telegram/ThirdParty/xdg-desktop-portal::.github/workflows/main.yml",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }

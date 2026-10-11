@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 4369,
+    "unread": 4305,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,22 +13478,22 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Accepted prefix 11,756/16,125; orders 11,693-11,756 were materialized from predecessor exact-source evidence and dispositioned on the branch; unread 4,369; unknown 15,845; omitted 0. Exact-head f1a065f8 exposed only parity-ledger summary drift and is diagnostic, so descendant exact-head validation is required.",
-    "source_authority_evidence": "5cdf70e5 and runs 38172769183/38172769196 plus job 114568748017/artifact 11715061100 are predecessor evidence only. Exact-head f1a065f831b562854481d24448e6833c610921ec run 38173749265/job 114571635155 bound the live upstream and passed recursive inventory/range attestation, then failed unchanged fail-closed validation on this ledger drift; artifact 11714733439 (sha256:b10ce7c5b8d74f40eea97c1b929bc4b650933aa8d7dbada84c14dd084f8fc7ae) is diagnostic only.",
-    "current_source_read_through": 11756,
-    "first_unread_order": 11757,
-    "first_unread_path": "Telegram/ThirdParty/tgcalls::tgcalls/v2/SignalingTranslator.h"
+    "source_read_reconciliation": "Accepted prefix 11,820/16,125; orders 11,757-11,820 were exact-blob materialized from 2937161a source-authority evidence and formally dispositioned; unread 4,305; unknown 15,845; omitted 0. No unknown was reduced merely for reading; Group/SFU and call-core responsibilities remain mapped-open.",
+    "source_authority_evidence": "Exact-head 2937161a99e1324032bb492c8af03619fc16e2a7 run 38174934167/job 114575281813 completed fail-closed Revision 9 validation and materialized artifact 11715945600 (sha256:39d60f209321a97b6566d2d19c04c12b801669ebd877e2d58f3fa48502c0fd74); Desktop Chat Parity run 38174934180 succeeded. This accounting descendant requires fresh same-head Actions.",
+    "current_source_read_through": 11820,
+    "first_unread_order": 11821,
+    "first_unread_path": "Telegram/ThirdParty/xdg-desktop-portal::.github/workflows/main.yml"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "deterministic_prefix_closed": 57,
-    "development_only_non_applicable": 97,
+    "development_only_non_applicable": 101,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 11756,
-    "first_unread_order": 11757,
-    "first_unread_path": "Telegram/ThirdParty/tgcalls::tgcalls/v2/SignalingTranslator.h",
+    "read_through": 11820,
+    "first_unread_order": 11821,
+    "first_unread_path": "Telegram/ThirdParty/xdg-desktop-portal::.github/workflows/main.yml",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
