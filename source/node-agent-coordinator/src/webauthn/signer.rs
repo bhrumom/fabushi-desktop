@@ -7,7 +7,7 @@ use std::sync::{
     mpsc::{self, RecvTimeoutError},
 };
 use std::thread;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
@@ -21,6 +21,44 @@ use crate::webauthn::{
 pub const SIGNER_EVENT_PREFIX: &str = "[signer-event] ";
 const MAX_SIGNER_STDOUT_BYTES: usize = 1024 * 1024;
 const MAX_SIGNER_EVENT_STREAM_BYTES: usize = 256 * 1024;
+const MIN_WEBAUTHN_CEREMONY_TIMEOUT_MS: u64 = 300_000;
+const MAX_WEBAUTHN_CEREMONY_TIMEOUT_MS: u64 = 600_000;
+const DEFAULT_WEBAUTHN_CEREMONY_TIMEOUT_MS: u64 = 300_000;
+const MAX_WEBAUTHN_OPTIONS_JSON_BYTES: usize = 256 * 1024;
+
+fn timeout_hint_ms(value: &Value) -> Option<u64> {
+    value
+        .get("timeout")
+        .and_then(Value::as_u64)
+        .or_else(|| {
+            value
+                .get("publicKey")
+                .and_then(|public_key| public_key.get("timeout"))
+                .and_then(Value::as_u64)
+        })
+}
+
+fn ceremony_timeout(ceremony: &WebAuthnCeremony) -> Duration {
+    let timeout_hint = timeout_hint_ms(&ceremony.payload).or_else(|| {
+        let options_json = ceremony.payload.get("optionsJson")?.as_str()?;
+        if options_json.len() > MAX_WEBAUTHN_OPTIONS_JSON_BYTES {
+            return None;
+        }
+        let options = serde_json::from_str::<Value>(options_json).ok()?;
+        timeout_hint_ms(&options)
+    });
+    // WebAuthn Level 3 recommends a client range of 5-10 minutes and a
+    // 5-minute default. The RP value is a hint, so clamp rather than trusting
+    // an unbounded or too-short remote timeout.
+    Duration::from_millis(
+        timeout_hint
+            .unwrap_or(DEFAULT_WEBAUTHN_CEREMONY_TIMEOUT_MS)
+            .clamp(
+                MIN_WEBAUTHN_CEREMONY_TIMEOUT_MS,
+                MAX_WEBAUTHN_CEREMONY_TIMEOUT_MS,
+            ),
+    )
+}
 
 #[derive(Debug)]
 enum BoundedReadError {
@@ -234,6 +272,29 @@ impl SpawnedWebAuthnSigner {
         ceremony: &WebAuthnCeremony,
         approved: Option<&ApprovedWebAuthnConsent>,
         cancellation: &WebAuthnSignCancellation,
+        on_status: Status,
+        on_pin_request: Pin,
+    ) -> WebAuthnSignerResult
+    where
+        Status: FnMut(&str),
+        Pin: FnMut(WebAuthnPinRequest, &str) -> Option<String>,
+    {
+        self.sign_interactive_with_timeout(
+            ceremony,
+            approved,
+            cancellation,
+            ceremony_timeout(ceremony),
+            on_status,
+            on_pin_request,
+        )
+    }
+
+    fn sign_interactive_with_timeout<Status, Pin>(
+        &self,
+        ceremony: &WebAuthnCeremony,
+        approved: Option<&ApprovedWebAuthnConsent>,
+        cancellation: &WebAuthnSignCancellation,
+        timeout: Duration,
         mut on_status: Status,
         mut on_pin_request: Pin,
     ) -> WebAuthnSignerResult
@@ -241,6 +302,8 @@ impl SpawnedWebAuthnSigner {
         Status: FnMut(&str),
         Pin: FnMut(WebAuthnPinRequest, &str) -> Option<String>,
     {
+        let started_at = Instant::now();
+
         #[derive(Debug)]
         enum ProcessEvent {
             Stdout(Vec<u8>),
@@ -469,6 +532,20 @@ impl SpawnedWebAuthnSigner {
                 );
             }
 
+            if started_at.elapsed() >= timeout {
+                let _ = writeln!(stdin, "{}", json!({ "kind": "cancel" }));
+                let _ = stdin.flush();
+                let _ = child.kill();
+                let _ = child.wait();
+                drop(stdin);
+                let _ = stdout_thread.join();
+                let _ = stderr_thread.join();
+                return Self::failure(
+                    "cancelled_or_timeout",
+                    "the security key request timed out",
+                );
+            }
+
             match child.try_wait() {
                 Ok(Some(status)) => break status,
                 Ok(None) => {}
@@ -552,6 +629,110 @@ mod tests {
         fn read(&mut self, _buf: &mut [u8]) -> std::io::Result<usize> {
             Err(Error::new(ErrorKind::Other, "synthetic read failure"))
         }
+    }
+
+    #[test]
+    fn ceremony_timeout_uses_webauthn_default_and_clamps_remote_hint() {
+        let make = |options_json: &str| WebAuthnCeremony {
+            kind: "get".into(),
+            origin: "https://example.test".into(),
+            payload: json!({ "optionsJson": options_json }),
+        };
+
+        assert_eq!(
+            ceremony_timeout(&make(r#"{"challenge":"abc"}"#)),
+            Duration::from_millis(DEFAULT_WEBAUTHN_CEREMONY_TIMEOUT_MS),
+        );
+        assert_eq!(
+            ceremony_timeout(&make(r#"{"challenge":"abc","timeout":10}"#)),
+            Duration::from_millis(MIN_WEBAUTHN_CEREMONY_TIMEOUT_MS),
+        );
+        assert_eq!(
+            ceremony_timeout(&make(r#"{"challenge":"abc","timeout":450000}"#)),
+            Duration::from_millis(450_000),
+        );
+        assert_eq!(
+            ceremony_timeout(&make(r#"{"challenge":"abc","timeout":900000}"#)),
+            Duration::from_millis(MAX_WEBAUTHN_CEREMONY_TIMEOUT_MS),
+        );
+        assert_eq!(
+            ceremony_timeout(&make("{not-json}")),
+            Duration::from_millis(DEFAULT_WEBAUTHN_CEREMONY_TIMEOUT_MS),
+        );
+    }
+
+    #[test]
+    fn ceremony_timeout_accepts_nested_public_key_and_flat_future_shape() {
+        let nested = WebAuthnCeremony {
+            kind: "create".into(),
+            origin: "https://example.test".into(),
+            payload: json!({
+                "optionsJson": "{\"publicKey\":{\"timeout\":420000}}"
+            }),
+        };
+        assert_eq!(
+            ceremony_timeout(&nested),
+            Duration::from_millis(420_000),
+        );
+
+        let flat = WebAuthnCeremony {
+            kind: "get".into(),
+            origin: "https://example.test".into(),
+            payload: json!({ "timeout": 480000 }),
+        };
+        assert_eq!(
+            ceremony_timeout(&flat),
+            Duration::from_millis(480_000),
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn interactive_signer_kills_a_stuck_helper_at_the_deadline() {
+        use std::fs;
+        use std::os::unix::fs::PermissionsExt;
+
+        let helper = std::env::temp_dir().join(format!(
+            "fabushi-webauthn-timeout-{}",
+            uuid::Uuid::new_v4()
+        ));
+        fs::write(&helper, "#!/bin/sh\nexec sleep 5\n")
+            .expect("write synthetic helper");
+        let mut permissions = fs::metadata(&helper)
+            .expect("stat synthetic helper")
+            .permissions();
+        permissions.set_mode(0o700);
+        fs::set_permissions(&helper, permissions).expect("make synthetic helper executable");
+
+        let signer = SpawnedWebAuthnSigner {
+            binary_path: helper.clone(),
+        };
+        let ceremony = WebAuthnCeremony {
+            kind: "get".into(),
+            origin: "https://example.test".into(),
+            payload: json!({ "optionsJson": "{\"challenge\":\"abc\"}" }),
+        };
+        let cancellation = WebAuthnSignCancellation::default();
+        let result = signer.sign_interactive_with_timeout(
+            &ceremony,
+            None,
+            &cancellation,
+            Duration::from_millis(50),
+            |_| {},
+            |_, _| None,
+        );
+        let _ = fs::remove_file(helper);
+
+        assert!(matches!(
+            result,
+            WebAuthnSignerResult::Failed {
+                error: WebAuthnSignerError {
+                    code: Some(ref code),
+                    ref message,
+                    ..
+                }
+            } if code == "cancelled_or_timeout" && message.contains("timed out")
+        ));
     }
 
     #[test]

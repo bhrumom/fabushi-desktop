@@ -14,23 +14,23 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 5969,
+    "unread_minimum": 5905,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through deterministic order 10,156; unread 5,969; unknown 15,845; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition through deterministic order 10,220; unread 5,905; unknown 15,845; omitted 0."
   },
   "latest_recursive_evidence": {
-    "run_id": 38118212864,
+    "run_id": 38123961987,
     "run_attempt": 1,
-    "job_id": 114407396444,
-    "head_sha": "f936a5e200349d31bff3a64e9659187fb7680947",
-    "artifact_id": 11693652953,
-    "artifact_digest": "sha256:e9307971683ac2f1920de0aed9d9cd9f9be0a4dbfd0f2d31910459cd80878970",
+    "job_id": 114424363470,
+    "head_sha": "8cd23e6ec07d69b186be674947ac45ce38f3453a",
+    "artifact_id": 11695949458,
+    "artifact_digest": "sha256:fa16db976f759301292bf23dd454bed9f6e70ad386c772333bfbb93c0b329291",
     "artifact_files": [
       "upstream-recursive-inventory.json"
     ],
-    "evidence_status": "exact-head-range-attested-validator-narrative-failed",
+    "evidence_status": "exact-head-range-attested-validator-success",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
-    "note": "f936a5e exact-head range attestation and inventory generation succeeded; Revision 9 validation later failed solely because inventory narrative wording omitted the validator-required unread_minimum phrase. Orders 9,965–10,028 were then read directly from their exact upstream identities; this descendant fixes the narrative without weakening the validator."
+    "note": "8cd23e6 exact-head source-authority completed successfully through recursive inventory validation, source-range attestation, Revision 9 validation and 64-blob review-window materialization. Orders 10,157-10,220 were exact-read from that artifact; descendant source-accounting and WebAuthn timeout hardening require fresh exact-head Actions."
   },
   "closure_rules": {
     "executable_runner": "github-actions",
@@ -40,7 +40,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live baseline identity is accepted for telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 / tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6, matching upstream.lock upstream.accepted=true. This does not imply source/product/release closure: exact read-through is 10,156; unread_minimum is 5,969; unknown remains 15,845; omitted remains 0; acceptance.accepted and baseline_ready remain false until their gates close.",
+  "note": "Live baseline identity is accepted for telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 / tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6, matching upstream.lock upstream.accepted=true. This does not imply source/product/release closure: exact read-through is 10,220; unread_minimum is 5,905; unknown remains 15,845; omitted remains 0; acceptance.accepted and baseline_ready remain false until their gates close.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -58,10 +58,10 @@
       6541,
       6627
     ],
-    "current_source_read_through": 10156,
-    "first_unread_order": 10157,
-    "first_unread_path": "Telegram/ThirdParty/libfido2::regress/es384.c",
-    "current_head_source_authority_evidence": "Predecessor exact-head b8a52c954b9ea63e9f64b31d68fc537e71e1f2bf run 38120045447/job 114412753321 artifact 11695420570 (sha256:f08d296699a1041550c1fd1421f78b47c04f53f5063eab901369157f37275ab5) materialized exact recursive identities for orders 10,093-10,156. Descendant production/source-accounting changes require fresh exact-head authority validation."
+    "current_source_read_through": 10220,
+    "first_unread_order": 10221,
+    "first_unread_path": "Telegram/ThirdParty/libfido2::src/reset.c",
+    "current_head_source_authority_evidence": "Exact-head 8cd23e6ec07d69b186be674947ac45ce38f3453a run 38123961987/job 114424363470 artifact 11695949458 (sha256:fa16db976f759301292bf23dd454bed9f6e70ad386c772333bfbb93c0b329291) materialized exact recursive identities for orders 10,157-10,220 after successful Revision 9 validation. Descendant production/source-accounting changes require fresh exact-head authority validation."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -70,9 +70,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 10156,
-    "first_unread_order": 10157,
-    "first_unread_path": "Telegram/ThirdParty/libfido2::regress/es384.c",
+    "read_through": 10220,
+    "first_unread_order": 10221,
+    "first_unread_path": "Telegram/ThirdParty/libfido2::src/reset.c",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }

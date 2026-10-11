@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 5969,
+    "unread": 5905,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 10156,
-    "first_unread_order": 10157,
-    "first_unread_path": "Telegram/ThirdParty/libfido2::regress/es384.c",
+    "read_through": 10220,
+    "first_unread_order": 10221,
+    "first_unread_path": "Telegram/ThirdParty/libfido2::src/reset.c",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
