@@ -214,6 +214,23 @@ Acceptance status: **not complete; requirements only updated by this revision**
 
 “研究来源”仅表示不运行上游 Telegram 产品/网络，不表示可以研究完不实现，也不表示可以选择性吸收。该含义替代 Revision 4 的 research-only completion 和“decide whether Fabushi needs that responsibility”。本路线 source-informed，不是 clean-room。
 
+
+### TDRP-INPUT-SPELL-01 — Native spelling suggestion projection
+
+Orders 8,730–8,737 continue the pinned Hunspell regression authority with FORBIDDENWORD acceptance/rejection oracles and FORCEUCASE compound/suggestion behavior. Their full morphology, forbidden-root inheritance, compound rejection and capitalization semantics remain `mapped-open`; enabling Chromium spellcheck alone does not close them.
+
+For the applicable desktop interaction responsibility that is already provided by the shipping platform spellchecker, the existing process-lifetime WebContents context-menu owner in `source/electron-main/media/avatar-images.ts` must project Electron's native `misspelledWord` and ordered `dictionarySuggestions` into the same canonical context menu used for link/image/edit commands. The projection must:
+
+- activate only for an editable context with a non-empty misspelled word;
+- treat Electron/Chromium as the sole spelling-candidate source; Fabushi must not generate, rank or persist a second dictionary truth;
+- trim invalid/empty candidates, preserve platform order, remove duplicates and cap the visible candidate set at five;
+- invoke `WebContents.replaceMisspelling(candidate)` for the selected native suggestion;
+- remain additive to the existing canonical Composer/TipTap `spellcheck=true` surface and must not create a Telegram/Hunspell runtime, provider, sidecar or second editor owner;
+- fail closed when no valid native suggestion is available: no fabricated correction may be shown.
+
+Required verification is a compiled Electron-main contract test for filtering/order/deduplication/capping and replacement dispatch, plus existing renderer/E2E regression on the canonical Composer. This responsibility may be marked implemented only when it is wired into the production `web-contents-created -> context-menu` path; it does **not** mark FORBIDDENWORD, FORCEUCASE, FULLSTRIP, German compound morphology, or any other Hunspell semantic row verified.
+
+
 ## 1. 版本与全量 inventory
 
 ### TDRP-SRC-01 — Exact baseline
