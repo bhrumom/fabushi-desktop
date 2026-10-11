@@ -266,9 +266,9 @@
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
     "unknown_minimum": 15845,
-    "unread_minimum": 5265,
+    "unread_minimum": 5201,
     "omitted_known": 0,
-    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 10,860; unknown=15,845, unread=5,265, omitted=0."
+    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 10,924; unknown=15,845, unread=5,201, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -282,7 +282,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Source/product/release closure open. Exact read-through 10,796/16,125; first unread 10,797 Telegram/ThirdParty/nimf::modules/services/preedit-window/Makefile.am@6428b240ad4c9d3d8c5bb295c5a56823a45fab71; unread 5,329; unknown 15,845; omitted 0. m17n/Rime/compose/candidate/NIM responsibilities map to existing canonical owners; no Nimf or second IME runtime."
+    "note": "Source/product/release closure open. Exact read-through 10,924/16,125; first unread 10,925 Telegram/ThirdParty/range-v3::include/range/v3/action/remove.hpp@096a94250d112afae97d733d73e9049a9aa917a1; unread 5,201; unknown 15,845; omitted 0. range-v3 build/docs/examples/concepts/actions map to existing Build/Quality/Dependency-Provenance/License owners; mutable GoogleTest/GoogleBenchmark acquisition remains fail-closed and is not imported."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",
@@ -301,13 +301,13 @@
   "recursive_inventory_evidence": {
     "status": "exact-head-source-window-attested-descendant-accounting-pending",
     "runner": "github-actions",
-    "run_id": 38131353751,
+    "run_id": 38135519400,
     "run_attempt": 1,
-    "job_id": 114446164953,
-    "validation_head_sha": "d42df92cfa70306d8d2d8a8a118306955040cdf6",
-    "artifact_id": 11699176950,
-    "artifact_name": "tdrp-revision9-authority-d42df92cfa70306d8d2d8a8a118306955040cdf6",
-    "artifact_digest": "sha256:80a523134f825e95d62539200283f449cffc708a472374450776fc52ff04dbe1",
+    "job_id": 114458511752,
+    "validation_head_sha": "5b103b8b96c312e0be16c66cfaa5c0fda8e44463",
+    "artifact_id": 11700608450,
+    "artifact_name": "tdrp-revision9-authority-5b103b8b96c312e0be16c66cfaa5c0fda8e44463",
+    "artifact_digest": "sha256:11cb9a9adbfa53c7d367e2db4af0d443f5dd01a94eec628f376b89ad69e23215",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "recursive_non_directory_entries": 16125,
     "source_closure_ready": false
@@ -633,9 +633,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 10860,
-    "first_unread_order": 10861,
-    "first_unread_path": "Telegram/ThirdParty/range-v3::cmake/gtest.cmake",
+    "read_through": 10924,
+    "first_unread_order": 10925,
+    "first_unread_path": "Telegram/ThirdParty/range-v3::include/range/v3/action/remove.hpp",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
@@ -736,5 +736,5 @@
     ],
     "note": "Valid exact-head evidence for 46dfaf only; main reconciliation/accounting descendants require fresh Actions."
   },
-  "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 10,796; unknown=15,845, unread=5,329, omitted=0."
+  "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 10,924; unknown=15,845, unread=5,201, omitted=0."
 }
