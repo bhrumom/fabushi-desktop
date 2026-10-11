@@ -96,7 +96,7 @@ test("call diagnostics sample WebRTC stats with generation and teardown fencing"
   assert.ok(source.includes('statNumber(record, "packetsLost")'));
   assert.ok(source.includes('statNumber(record, "jitter")'));
   assert.ok(source.includes('aria-label="Call diagnostics"'));
-  assert.ok(source.includes("startDiagnostics(pc, nextCall.generation)"));
+  assert.ok(source.includes("startDiagnostics(publishPc, nextCall.generation)"));
   assert.ok(source.includes("stopDiagnostics();"));
 });
 
