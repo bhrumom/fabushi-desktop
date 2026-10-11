@@ -14,23 +14,23 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 5649,
+    "unread_minimum": 5585,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through deterministic order 10,476; unread 5,649; unknown 15,845; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition through deterministic order 10,540; unread 5,585; unknown 15,845; omitted 0."
   },
   "latest_recursive_evidence": {
-    "run_id": 38128655830,
+    "run_id": 38128873892,
     "run_attempt": 1,
-    "job_id": 114438220656,
-    "head_sha": "362099f6a830c1de3a493d4e718f1fe850bec4a1",
-    "artifact_id": 11698361416,
-    "artifact_digest": "sha256:bac2f13bc1492b139d1670a2c106151be410618636049e852999cb7fb4f248ee",
+    "job_id": 114438921053,
+    "head_sha": "84250c295a108a9b5f108b6c474cbeff71dc1097",
+    "artifact_id": 11698811298,
+    "artifact_digest": "sha256:278638d19fd8a347cf20681953a9589ec06413033ff72e7cf9e3b4c6b5e1c209",
     "artifact_files": [
       "upstream-recursive-inventory.json"
     ],
     "evidence_status": "exact-head-range-attested-validator-success",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
-    "note": "362099f exact-head source-authority validated and materialized orders 10,413-10,476. This descendant accounting commit requires fresh exact-head Actions."
+    "note": "84250c2 exact-head source-authority validated and materialized orders 10,477-10,540. This descendant accounting commit requires fresh exact-head Actions."
   },
   "closure_rules": {
     "executable_runner": "github-actions",
@@ -40,7 +40,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live baseline identity remains accepted for telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 / tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6. This does not imply source/product/release closure: exact read-through is 10,476; unread_minimum is 5,649; unknown remains 15,845; omitted remains 0; acceptance.accepted and baseline_ready remain false until their gates close.",
+  "note": "Live baseline identity remains accepted; source/product/release closure remains open. Exact read-through is 10,540; unread_minimum 5,585; unknown 15,845; omitted 0; acceptance.accepted and baseline_ready remain false.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -58,10 +58,10 @@
       6541,
       6627
     ],
-    "current_source_read_through": 10476,
-    "first_unread_order": 10477,
-    "first_unread_path": "Telegram/ThirdParty/nimf::BUILD.md",
-    "current_head_source_authority_evidence": "Exact-head 362099f6a830c1de3a493d4e718f1fe850bec4a1 run 38128655830/job 114438220656 artifact 11698361416 (sha256:bac2f13bc1492b139d1670a2c106151be410618636049e852999cb7fb4f248ee) validated Revision 9 and materialized orders 10,413-10,476. Descendant accounting changes require fresh exact-head validation."
+    "current_source_read_through": 10540,
+    "first_unread_order": 10541,
+    "first_unread_path": "Telegram/ThirdParty/nimf::docs/html/executables.html",
+    "current_head_source_authority_evidence": "Exact-head 84250c295a108a9b5f108b6c474cbeff71dc1097 run 38128873892/job 114438921053 artifact 11698811298 (sha256:278638d19fd8a347cf20681953a9589ec06413033ff72e7cf9e3b4c6b5e1c209) validated Revision 9 and materialized orders 10,477-10,540; descendant accounting requires fresh exact-head validation."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -70,9 +70,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 10476,
-    "first_unread_order": 10477,
-    "first_unread_path": "Telegram/ThirdParty/nimf::BUILD.md",
+    "read_through": 10540,
+    "first_unread_order": 10541,
+    "first_unread_path": "Telegram/ThirdParty/nimf::docs/html/executables.html",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }

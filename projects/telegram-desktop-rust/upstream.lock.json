@@ -266,9 +266,9 @@
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
     "unknown_minimum": 15845,
-    "unread_minimum": 5649,
+    "unread_minimum": 5585,
     "omitted_known": 0,
-    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 10,476; unknown=15,845, unread=5,649, omitted=0."
+    "note": "Accepted upstream tree unchanged; exact read-through 10,540; unknown=15,845, unread=5,585, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -282,7 +282,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Source/product/release closure open. Exact read-through 10,476/16,125; first unread 10,477 Telegram/ThirdParty/nimf::BUILD.md@fbea94fb3836ea4d04faf23734f741891731393b; unread 5,649; unknown 15,845; omitted 0. Orders 10,413-10,470 finish LZ4 fuzz/program/test quality and file-lifecycle authority; 10,471-10,476 begin Nimf support/release metadata. Existing Fabushi owners remain canonical and no LZ4/Nimf runtime is inferred from source metadata alone."
+    "note": "Source/product/release closure open. Exact read-through 10,540/16,125; first unread 10,541 Telegram/ThirdParty/nimf::docs/html/executables.html@c627d62e1c8e6bf766845a9e7b5116330cb04d12; unread 5,585; unknown 15,845; omitted 0. Nimf input-context/preedit/candidate lifecycle maps to the existing Composer/platform-input owner; no Nimf runtime is introduced."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",
@@ -301,13 +301,13 @@
   "recursive_inventory_evidence": {
     "status": "exact-head-source-window-attested-descendant-accounting-pending",
     "runner": "github-actions",
-    "run_id": 38128655830,
+    "run_id": 38128873892,
     "run_attempt": 1,
-    "job_id": 114438220656,
-    "validation_head_sha": "362099f6a830c1de3a493d4e718f1fe850bec4a1",
-    "artifact_id": 11698361416,
-    "artifact_name": "tdrp-revision9-authority-362099f6a830c1de3a493d4e718f1fe850bec4a1",
-    "artifact_digest": "sha256:bac2f13bc1492b139d1670a2c106151be410618636049e852999cb7fb4f248ee",
+    "job_id": 114438921053,
+    "validation_head_sha": "84250c295a108a9b5f108b6c474cbeff71dc1097",
+    "artifact_id": 11698811298,
+    "artifact_name": "tdrp-revision9-authority-84250c295a108a9b5f108b6c474cbeff71dc1097",
+    "artifact_digest": "sha256:278638d19fd8a347cf20681953a9589ec06413033ff72e7cf9e3b4c6b5e1c209",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "recursive_non_directory_entries": 16125,
     "source_closure_ready": false
@@ -633,9 +633,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 10476,
-    "first_unread_order": 10477,
-    "first_unread_path": "Telegram/ThirdParty/nimf::BUILD.md",
+    "read_through": 10540,
+    "first_unread_order": 10541,
+    "first_unread_path": "Telegram/ThirdParty/nimf::docs/html/executables.html",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {

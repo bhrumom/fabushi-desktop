@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 5649,
+    "unread": 5585,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13479,10 +13479,10 @@
     "ahead_by": 4,
     "changed_paths": 10,
     "source_read_reconciliation": "Accepted prefix 10,156/16,125; predecessor exact-head source artifact materialized libfido2 API/compat/regression authority; unread 5,969; unknown 15,845; omitted 0.",
-    "source_authority_evidence": "Orders 10,413-10,476 exact-read from 362099f6a830c1de3a493d4e718f1fe850bec4a1 run 38128655830/job 114438220656 artifact 11698361416 (sha256:bac2f13bc1492b139d1670a2c106151be410618636049e852999cb7fb4f248ee). This closes pinned LZ4 deterministic reading and begins Nimf metadata while leaving responsibility closure mapped-open; descendant exact-head evidence remains required.",
-    "current_source_read_through": 10476,
-    "first_unread_order": 10477,
-    "first_unread_path": "Telegram/ThirdParty/nimf::BUILD.md"
+    "source_authority_evidence": "Orders 10,477-10,540 exact-read from 84250c295a108a9b5f108b6c474cbeff71dc1097 run 38128873892/job 114438921053 artifact 11698811298 (sha256:278638d19fd8a347cf20681953a9589ec06413033ff72e7cf9e3b4c6b5e1c209); applicable Nimf IME lifecycle maps to existing PromptRichTextEditor/platform-input with no second runtime. Descendant exact-head evidence remains required.",
+    "current_source_read_through": 10540,
+    "first_unread_order": 10541,
+    "first_unread_path": "Telegram/ThirdParty/nimf::docs/html/executables.html"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 10476,
-    "first_unread_order": 10477,
-    "first_unread_path": "Telegram/ThirdParty/nimf::BUILD.md",
+    "read_through": 10540,
+    "first_unread_order": 10541,
+    "first_unread_path": "Telegram/ThirdParty/nimf::docs/html/executables.html",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
