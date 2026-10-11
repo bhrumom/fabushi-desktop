@@ -266,9 +266,9 @@
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
     "unknown_minimum": 15845,
-    "unread_minimum": 7076,
+    "unread_minimum": 7049,
     "omitted_known": 0,
-    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 9,049; unknown=15,845, unread=7,076, omitted=0."
+    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 9,076; unknown=15,845, unread=7,049, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -282,7 +282,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Source/product/release closure open. Deterministic exact read-through 9,049/16,125; first unread 9,050 Telegram/ThirdParty/hunspell::tests/utf8_bom.aff; unread 7,076; unknown 15,845; omitted 0. Descendant exact-head Actions are required after this accounting change. Source reading does not close unknown."
+    "note": "Source/product/release closure open. Deterministic exact read-through 9,076/16,125; first unread 9,077 Telegram/ThirdParty/kcoreaddons::.git-blame-ignore-revs; unread 7,049; unknown 15,845; omitted 0. Hunspell direct-gitlink source reading is complete, but its mapped product responsibilities remain open. Descendant exact-head Actions are required."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",
@@ -633,9 +633,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 9049,
-    "first_unread_order": 9050,
-    "first_unread_path": "Telegram/ThirdParty/hunspell::tests/utf8_bom.aff",
+    "read_through": 9076,
+    "first_unread_order": 9077,
+    "first_unread_path": "Telegram/ThirdParty/kcoreaddons::.git-blame-ignore-revs",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
