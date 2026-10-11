@@ -1,5 +1,15 @@
-Live Revision 9 authority (2026-10-12): telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 (tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6). Recursive non-directory=16,125; read-through=12,268; first unread=12,269 Telegram/ThirdParty/xxHash::cli/xxhsum.c@b94708e360ecc1a58cf423c768ae560b84d406ee; unread=3,857; unknown=15,845; omitted=0. Exact-head b629be6b4163b4a515c7e066ffecdb50f76520ae Source authority 38182309860/114597318610 succeeded and materialized artifact 11718288179 (sha256:de3d40be75a890311e975b5c0e68b2005a957ca586a804cc09068872c4e105b4); orders 12,205-12,268 were formally reviewed from that artifact. This accounting descendant requires fresh same-head runtime/chat validation.
-<!-- TDRP_CURRENT_SUMMARY read-through=12268 unread=3857 unknown=15845 omitted=0 first-unread=12269 path=Telegram/ThirdParty/xxHash::cli/xxhsum.c -->
+Live Revision 9 authority (2026-10-12): telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 (tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6). Recursive non-directory=16,125; read-through=12,332; first unread=12,333 Telegram/ThirdParty/zxcvbn::README.md@2833487b523bf1d00b1887b4ebb27ba0f83c0361; unread=3,793; unknown=15,845; omitted=0. Exact-head 30bcdce730c064f445b646c6711e3dbb5a46ba13 Source authority 38182994111/114599380681 succeeded and materialized artifact 11718770450 (sha256:5205457cebcaa8ea0e260b51c73b25345bbab0717cb5dc0c674b5f6c8d763c52); orders 12,269-12,332 were formally reviewed from that materialization plus exact pinned blobs. This accounting descendant requires fresh same-head runtime/chat validation.
+<!-- TDRP_CURRENT_SUMMARY read-through=12332 unread=3793 unknown=15845 omitted=0 first-unread=12333 path=Telegram/ThirdParty/zxcvbn::README.md -->
+
+### Revision 9 deterministic read-through — xxHash core/quality + zxcvbn provenance 12,269–12,332
+
+Exact source evidence: `30bcdce730c064f445b646c6711e3dbb5a46ba13` / Rust desktop runtime `38182994111` / source-authority `114599380681` / artifact `11718770450` (sha256:`5205457cebcaa8ea0e260b51c73b25345bbab0717cb5dc0c674b5f6c8d763c52`). The 4.59 MB generated sanity-vector header was inspected from the artifact rather than treating Contents metadata as a read.
+
+12,269–12,329 complete the pinned xxHash subtree: xxhsum parsing/check mode and canonical conversions; algorithm/spec/fuzz authority; pkg-config; benchmark/collision/thread/Unicode/Windows-path portability; generated sanity vectors and generator; alias/multi-include/compiler/PowerPC gates; x86 CPU dispatch; and the linked xxHash implementation/header. These preserve stable cross-platform non-cryptographic hash behavior and dependency Quality/Build/License provenance. Upstream CLI/test executables remain evidence surfaces, not Fabushi product roots, and xxHash is not treated as cryptography.
+
+12,330–12,332 begin pinned `zxcvbn-c@ab51000506afc1a450557a3608646bc04ba951fa` with repository ignore/build/license inputs. They map to existing Identity/account security plus dependency Build/License owners; no second password/account store is introduced.
+
+All 64 rows remain mapped-open with `unknown_closed=false` and `omitted=false`; reading does not close production responsibilities. Accounting: **12,332/16,125 read; 3,793 unread; 15,845 unknown; 0 omitted**. Next: 12,333 `Telegram/ThirdParty/zxcvbn::README.md@2833487b523bf1d00b1887b4ebb27ba0f83c0361`.
 
 ### Revision 9 deterministic read-through — portal contract tests + xxHash provenance/build/CLI 12,205–12,268
 

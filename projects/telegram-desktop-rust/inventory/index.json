@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 3857,
+    "unread_minimum": 3793,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through deterministic order 12,268; unread 3,857; unknown 15,845; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition through deterministic order 12,332; unread 3,793; unknown 15,845; omitted 0."
   },
   "latest_recursive_evidence": {
     "run_id": 38182309860,
@@ -41,7 +41,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live baseline accepted; closure open. Read-through 12,268; unread_minimum is 3,857; unknown remains 15,845; omitted remains 0; first unread order 12,269 is Telegram/ThirdParty/xxHash::cli/xxhsum.c.",
+  "note": "Live baseline accepted; closure open. Read-through 12,332; unread_minimum is 3,793; unknown remains 15,845; omitted remains 0; first unread order 12,333 is Telegram/ThirdParty/zxcvbn::README.md.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -59,12 +59,12 @@
       6541,
       6627
     ],
-    "current_source_read_through": 12268,
-    "first_unread_order": 12269,
-    "first_unread_path": "Telegram/ThirdParty/xxHash::cli/xxhsum.c",
-    "current_head_source_authority_evidence": "Exact-head b629be6b run 38182309860/job 114597318610 succeeded with artifact 11718288179; the accounting descendant requires fresh same-head runtime/chat validation.",
-    "source_read_reconciliation": "Accepted prefix 12,268/16,125; orders 12,205-12,268 formally dispositioned from exact b629be6b artifact; unread 3,857; unknown 15,845; omitted 0.",
-    "source_authority_evidence": "Exact-head b629be6b run 38182309860/job 114597318610 succeeded with artifact 11718288179 (sha256:de3d40be75a890311e975b5c0e68b2005a957ca586a804cc09068872c4e105b4); descendant same-head validation required."
+    "current_source_read_through": 12332,
+    "first_unread_order": 12333,
+    "first_unread_path": "Telegram/ThirdParty/zxcvbn::README.md",
+    "current_head_source_authority_evidence": "Exact-head 30bcdce run 38182994111/job 114599380681 succeeded with artifact 11718770450; accounting descendant requires fresh same-head runtime/chat validation.",
+    "source_read_reconciliation": "Accepted prefix 12,332/16,125; orders 12,269-12,332 exact-read from current-head materialization/direct pinned blobs; unread 3,793; unknown 15,845; omitted 0.",
+    "source_authority_evidence": "Exact-head 30bcdce source-authority artifact 11718770450 (sha256:5205457cebcaa8ea0e260b51c73b25345bbab0717cb5dc0c674b5f6c8d763c52) materialized orders 12,269-12,332; descendant validation required."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -73,9 +73,9 @@
     "development_only_non_applicable": 206,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 12268,
-    "first_unread_order": 12269,
-    "first_unread_path": "Telegram/ThirdParty/xxHash::cli/xxhsum.c",
+    "read_through": 12332,
+    "first_unread_order": 12333,
+    "first_unread_path": "Telegram/ThirdParty/zxcvbn::README.md",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }

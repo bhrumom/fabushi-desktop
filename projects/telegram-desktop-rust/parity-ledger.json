@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 3857,
+    "unread": 3793,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,11 +13478,11 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Accepted prefix 12,268/16,125; orders 12,205-12,229 cover xdg portal utility/contract tests for identity/path, account/background/camera/clipboard/Documents/FUSE/launcher/email/file chooser/shortcuts/inhibit/input/location/notifications/OpenURI/permissions/print/registry/remote desktop/screenshot/settings/trash/USB/wallpaper; 12,230-12,268 cover pinned xxHash provenance, CI/build/install, portability, benchmark/sanity/output and CLI documentation. Unread 3,857; unknown 15,845; omitted 0; reading alone closes no unknown.",
-    "source_authority_evidence": "Exact-head b629be6b4163b4a515c7e066ffecdb50f76520ae source-authority run 38182309860/job 114597318610 materialized artifact 11718288179 (sha256:de3d40be75a890311e975b5c0e68b2005a957ca586a804cc09068872c4e105b4), formally reviewed through order 12,268. Descendant same-head runtime/chat validation required.",
-    "current_source_read_through": 12268,
-    "first_unread_order": 12269,
-    "first_unread_path": "Telegram/ThirdParty/xxHash::cli/xxhsum.c"
+    "source_read_reconciliation": "Accepted prefix 12,332/16,125; 12,269-12,329 complete xxHash CLI/spec/fuzz/packaging/benchmark/collision/sanity/Unicode/Windows/core library and CPU-dispatch responsibility reading; 12,330-12,332 begin zxcvbn repository/build/license provenance. Unread 3,793; unknown 15,845; omitted 0; reading alone closes no unknown.",
+    "source_authority_evidence": "Exact-head 30bcdce source-authority run 38182994111/job 114599380681 artifact 11718770450 (sha256:5205457cebcaa8ea0e260b51c73b25345bbab0717cb5dc0c674b5f6c8d763c52). Descendant same-head runtime/chat validation required.",
+    "current_source_read_through": 12332,
+    "first_unread_order": 12333,
+    "first_unread_path": "Telegram/ThirdParty/zxcvbn::README.md"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 206,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 12268,
-    "first_unread_order": 12269,
-    "first_unread_path": "Telegram/ThirdParty/xxHash::cli/xxhsum.c",
+    "read_through": 12332,
+    "first_unread_order": 12333,
+    "first_unread_path": "Telegram/ThirdParty/zxcvbn::README.md",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
