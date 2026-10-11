@@ -266,9 +266,9 @@
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
     "unknown_minimum": 15845,
-    "unread_minimum": 4241,
+    "unread_minimum": 4177,
     "omitted_known": 0,
-    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 11,884; unknown=15,845, unread=4,241, omitted=0."
+    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 11,948; unknown=15,845, unread=4,177, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -282,7 +282,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Closure open. Read-through 11,756/16,125; first unread 11,757 SignalingTranslator.h@8136fc59ff35176f06e25539ede24e64f8af7dfe; call-tone implemented but current-head/package acceptance pending; group/SFU remains open because shipping service is one-to-one."
+    "note": "Closure open. Read-through 11,948/16,125; first unread 11,949 doc/meson.build@d6eea320ebe6b48a28ca29ca1a8d0e1281c71433; call-tone packaged audible/restart acceptance and real Group/SFU production/service closure remain open."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",
@@ -301,17 +301,17 @@
   "recursive_inventory_evidence": {
     "status": "predecessor-exact-source-window-current-descendant-validation-pending",
     "runner": "github-actions",
-    "run_id": 38170930654,
+    "run_id": 38177055369,
     "run_attempt": 1,
-    "job_id": 114563229488,
-    "validation_head_sha": "072c76d9b70041f6d9ebff4ca1ca5e977b160d8d",
-    "artifact_id": 11714083420,
-    "artifact_name": "tdrp-revision9-authority-072c76d9b70041f6d9ebff4ca1ca5e977b160d8d",
-    "artifact_digest": "sha256:2a20ec87ef17d88a815faeceef8ebb7f8d463959f25a4dae9fb2b5bc0acf1b84",
+    "job_id": 114581547204,
+    "validation_head_sha": "fcaac137e11cd7154846705d3f89f6c2c2fde461",
+    "artifact_id": 11716043831,
+    "artifact_name": "tdrp-revision9-authority-fcaac137e11cd7154846705d3f89f6c2c2fde461",
+    "artifact_digest": "sha256:a488fe03c8775bfd63cbd5c7ad6e1337ff98df5f619958d2a0bd9db5409bec84",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "recursive_non_directory_entries": 16125,
     "source_closure_ready": false,
-    "note": "Orders 11,693-11,756 remain predecessor source materialization. Exact-head f1a065f831b562854481d24448e6833c610921ec run 38173749265 bound the live upstream and passed inventory/range attestation but failed the unchanged fail-closed validator on parity-ledger source-dispositions drift; artifact 11714733439 (sha256:b10ce7c5b8d74f40eea97c1b929bc4b650933aa8d7dbada84c14dd084f8fc7ae) is diagnostic only. Descendant exact-head success is required."
+    "note": "Orders 11,885-11,948 were exact-blob materialized on fcaac137. The formal accounting descendant requires fresh exact-head Actions; predecessor green is not current acceptance evidence."
   },
   "build_time_acquisition_inventory": {
     "path": "projects/telegram-desktop-rust/inventory/build-time-acquisitions.json",
@@ -632,12 +632,12 @@
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "deterministic_prefix_closed": 57,
-    "development_only_non_applicable": 102,
+    "development_only_non_applicable": 142,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 11884,
-    "first_unread_order": 11885,
-    "first_unread_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.portal.Screenshot.xml",
+    "read_through": 11948,
+    "first_unread_order": 11949,
+    "first_unread_path": "Telegram/ThirdParty/xdg-desktop-portal::doc/meson.build",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {

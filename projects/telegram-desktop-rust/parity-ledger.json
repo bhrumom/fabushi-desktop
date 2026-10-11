@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 4241,
+    "unread": 4177,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,22 +13478,22 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Accepted prefix 11,884/16,125; orders 11,821-11,884 were exact-blob materialized from a72ea7a source-authority evidence and formally dispositioned; unread 4,241; unknown 15,845; omitted 0. Portal capability schemas are mapped to existing Linux/Permissions/Resource/Computer owners; reading alone does not reduce unknown.",
-    "source_authority_evidence": "Exact-head a72ea7a76c70e73877dda5eb555cbc4c1c4845f5 run 38175960216/job 114578287012 completed fail-closed Revision 9 validation and materialized artifact 11715613245 (sha256:78ed351d966df9b61085313432e02702bf2f41edd4d28138b680afe6aa52df27). This accounting descendant requires fresh same-head Actions.",
-    "current_source_read_through": 11884,
-    "first_unread_order": 11885,
-    "first_unread_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.portal.Screenshot.xml"
+    "source_read_reconciliation": "Accepted prefix 11,948/16,125; orders 11,885-11,948 were exact-blob materialized from fcaac137 source-authority evidence and formally dispositioned; unread 4,177; unknown 15,845; omitted 0. Portal capability schemas and security/architecture documentation map to existing Linux/Permissions/Resource/Settings/credential owners; reading alone does not reduce unknown.",
+    "source_authority_evidence": "Exact-head fcaac137e11cd7154846705d3f89f6c2c2fde461 run 38177055369/job 114581547204 completed fail-closed Revision 9 validation and materialized artifact 11716043831 (sha256:a488fe03c8775bfd63cbd5c7ad6e1337ff98df5f619958d2a0bd9db5409bec84); Desktop Chat Parity run 38177055311 completed success. This accounting descendant requires fresh same-head Actions.",
+    "current_source_read_through": 11948,
+    "first_unread_order": 11949,
+    "first_unread_path": "Telegram/ThirdParty/xdg-desktop-portal::doc/meson.build"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "deterministic_prefix_closed": 57,
-    "development_only_non_applicable": 102,
+    "development_only_non_applicable": 142,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 11884,
-    "first_unread_order": 11885,
-    "first_unread_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.portal.Screenshot.xml",
+    "read_through": 11948,
+    "first_unread_order": 11949,
+    "first_unread_path": "Telegram/ThirdParty/xdg-desktop-portal::doc/meson.build",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
