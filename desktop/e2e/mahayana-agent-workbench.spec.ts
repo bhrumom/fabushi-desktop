@@ -428,7 +428,7 @@ async function ensureE2eAuthBackend(): Promise<string> {
         const isSelfHosted = body.includes(Buffer.from('自建 Bot', 'utf8'));
         const text = isSelfHosted
           ? '收到：自建 Bot 请规划步骤'
-          : '收到：请分析这个任务\\n\\n\\`\\`\\`typescript\\nconst answer: number = 42;\\n\\`\\`\\`';
+          : '收到：请分析这个任务\n\n```typescript\nconst answer: number = 42;\n```';
         const providerRequest = JSON.parse(body.toString('utf8')) as { input?: unknown };
         const isToolContinuation = Array.isArray(providerRequest.input)
           && providerRequest.input.some((item) => item != null
@@ -500,7 +500,7 @@ async function ensureE2eAuthBackend(): Promise<string> {
         const isSelfHosted = body.includes(Buffer.from('自建 Bot', 'utf8'));
         const text = isSelfHosted
           ? '收到：自建 Bot 请规划步骤'
-          : '收到：请分析这个任务\\n\\n\\`\\`\\`typescript\\nconst answer: number = 42;\\n\\`\\`\\`';
+          : '收到：请分析这个任务\n\n```typescript\nconst answer: number = 42;\n```';
         response.setHeader('content-type', 'application/connect+proto');
         response.statusCode = 200;
         response.end(Buffer.concat([
