@@ -14,24 +14,23 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 6161,
+    "unread_minimum": 6097,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through deterministic order 9,964; unread 6,161; unknown 15,845; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition through deterministic order 10,028; unread 6,097; unknown 15,845; omitted 0."
   },
   "latest_recursive_evidence": {
-    "run_id": 38117917553,
+    "run_id": 38118212864,
     "run_attempt": 1,
-    "job_id": 114406468676,
-    "head_sha": "2bc832466e640f7a8bb11c569450bd1d5cb89045",
-    "artifact_id": 11694536942,
-    "artifact_digest": "sha256:e1d914906cc18e4a1debb277afba53553e9e3f6c755f69fdef7b8988bd586187",
+    "job_id": 114407396444,
+    "head_sha": "f936a5e200349d31bff3a64e9659187fb7680947",
+    "artifact_id": 11693652953,
+    "artifact_digest": "sha256:e9307971683ac2f1920de0aed9d9cd9f9be0a4dbfd0f2d31910459cd80878970",
     "artifact_files": [
-      "upstream-recursive-inventory.json",
-      "current-first-unread/window-manifest.json"
+      "upstream-recursive-inventory.json"
     ],
-    "evidence_status": "exact-head-source-authority-success",
+    "evidence_status": "exact-head-range-attested-validator-narrative-failed",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
-    "note": "2bc83246 GitHub Actions validated Revision 9 authority and materialized exact identities for orders 9,901–9,964; this supports source reading/accounting only, not product/release acceptance."
+    "note": "f936a5e exact-head range attestation and inventory generation succeeded; Revision 9 validation later failed solely because inventory narrative wording omitted the validator-required unread_minimum phrase. Orders 9,965–10,028 were then read directly from their exact upstream identities; this descendant fixes the narrative without weakening the validator."
   },
   "closure_rules": {
     "executable_runner": "github-actions",
@@ -41,7 +40,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live baseline identity is accepted for telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 / tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6, matching upstream.lock upstream.accepted=true. This does not imply source/product/release closure: exact read-through is 9,964; unread_minimum is 6,161; unknown remains 15,845; omitted remains 0; acceptance.accepted and baseline_ready remain false until their gates close.",
+  "note": "Live baseline identity is accepted for telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 / tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6, matching upstream.lock upstream.accepted=true. This does not imply source/product/release closure: exact read-through is 10,028; unread_minimum is 6,097; unknown remains 15,845; omitted remains 0; acceptance.accepted and baseline_ready remain false until their gates close.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -59,10 +58,10 @@
       6541,
       6627
     ],
-    "current_source_read_through": 9964,
-    "first_unread_order": 9965,
-    "first_unread_path": "Telegram/ThirdParty/libcbor::src/cbor/tags.h",
-    "current_head_source_authority_evidence": "Run 38117917553 / job 114406468676 succeeded at exact head 2bc83246 and artifact 11694536942 attested orders 9,901–9,964. Core libcbor semantics map to existing WebAuthn/Account Auth security owners; bounded helper-output production hardening is staged for fresh exact-head CI."
+    "current_source_read_through": 10028,
+    "first_unread_order": 10029,
+    "first_unread_path": "Telegram/ThirdParty/libfido2::.github/workflows/macos_builds.yml",
+    "current_head_source_authority_evidence": "f936a5e run 38118212864/job 114407396444 attested exact recursive identities but failed strict narrative wording before review-window materialization. The wording is corrected in this descendant; libcbor tests 9,965–10,005 and libfido2 build/security authority 10,006–10,028 were read at exact upstream identities."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -71,9 +70,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 9964,
-    "first_unread_order": 9965,
-    "first_unread_path": "Telegram/ThirdParty/libcbor::src/cbor/tags.h",
+    "read_through": 10028,
+    "first_unread_order": 10029,
+    "first_unread_path": "Telegram/ThirdParty/libfido2::.github/workflows/macos_builds.yml",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }
