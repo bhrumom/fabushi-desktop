@@ -5,6 +5,7 @@ import { detectHooksSchema, transformClaudeHooksToConfig, type CursorHooksConfig
 import { validateHooksConfig } from "../hooks/validators/hooksConfig.js";
 import { PluginComponentDiscovery, type PluginComponentDescriptor, type PluginFileFetcher } from "./component-discovery.js";
 import { DefaultPluginCacheManager } from "./cursor-marketplace.js";
+import { loadWithSingleCacheHitRecovery } from "./cache-hit-recovery.js";
 import { isPathSafe, parsePluginManifest, PLUGIN_MANIFEST_PATHS, type PluginManifest, type PluginVariableSchema } from "./manifest-parser.js";
 import { resolvePluginMcpConfigPaths, resolvePluginMcpConfigWithManifestLookup, type McpParserOptions, type ResolvedMcpConfig } from "./mcp-parser.js";
 import { expandPluginVariables } from "./plugin-variables.js";
@@ -120,11 +121,27 @@ export async function loadFromMarketplaceSource(options: MarketplaceLoadOptions)
     try {
       const slug = entry.marketplace?.name; if (!slug) { const error = new Error(`Plugin ${entry.name} has no marketplace metadata — cannot determine cache path`); failures.push({ pluginName: entry.name, pluginId: entry.pluginId, marketplaceName: undefined, errorMessage: error.message, errorType: "manifest" }); onCursorError?.(entry, error); continue; }
       const cacheKey = `${slug}/${entry.pluginId}`; let record = versionsByKey.get(cacheKey); if (!record) { record = { slug, pluginId: entry.pluginId, versions: [] }; versionsByKey.set(cacheKey, record); } record.versions.push(entry.version);
-      const cacheArgs = { marketplaceSlug: slug, pluginId: entry.pluginId, version: entry.version }; let installPath: string;
-      if (await cacheManager.isCached(cacheArgs)) { installPath = cacheManager.getCacheDir(cacheArgs); pluginLogger.log("info", `loadFromMarketplaceSource: Found cached plugin: ${entry.pluginId} at ${installPath}`, { marketplaceSlug: slug, pluginId: entry.pluginId, gitRef: entry.version, marketplaceId: entry.marketplace?.id }); }
-      else { const targetDir = cacheManager.getCacheDir(cacheArgs); pluginLogger.log("info", `loadFromMarketplaceSource: Plugin missing from cache, installing: ${entry.pluginId} at ${targetDir}`, { marketplaceSlug: slug, pluginId: entry.pluginId, gitRef: entry.version, marketplaceId: entry.marketplace?.id }); await mkdir(targetDir, { recursive: true }); try { await client.installPlugin(entry, targetDir); await cacheManager.markCacheComplete(cacheArgs); } catch (error) { try { await rm(targetDir, { recursive: true, force: true }); } catch {} throw error; } installPath = targetDir; }
+      const cacheArgs = { marketplaceSlug: slug, pluginId: entry.pluginId, version: entry.version }, installPath = cacheManager.getCacheDir(cacheArgs), cacheHit = await cacheManager.isCached(cacheArgs);
+      const installIntoCache = async (): Promise<void> => {
+        pluginLogger.log("info", `loadFromMarketplaceSource: Installing plugin ${entry.pluginId} at ${installPath}`, { marketplaceSlug: slug, pluginId: entry.pluginId, gitRef: entry.version, marketplaceId: entry.marketplace?.id, reason: cacheHit ? "cache-hit-recovery" : "cache-miss" });
+        await mkdir(installPath, { recursive: true });
+        try { await client.installPlugin(entry, installPath); await cacheManager.markCacheComplete(cacheArgs); }
+        catch (error) { try { await rm(installPath, { recursive: true, force: true }); } catch {} throw error; }
+      };
+      if (cacheHit) pluginLogger.log("info", `loadFromMarketplaceSource: Found cached plugin: ${entry.pluginId} at ${installPath}`, { marketplaceSlug: slug, pluginId: entry.pluginId, gitRef: entry.version, marketplaceId: entry.marketplace?.id });
+      else await installIntoCache();
       const marketplaceName = entry.marketplace?.name, sourceType = marketplaceName !== undefined && marketplaceName !== "cursor-public" && marketplaceName.length > 0 ? "cursor-third-party" : "cursor-first-party", sourceInfo: MarketplacePluginSourceInfo = { name: entry.name, version: entry.version, pluginDbId: entry.pluginDbId, configuredVariables: entry.configuredVariables, marketplace: marketplaceName, marketplaceDbId: entry.marketplaceDbId, isTeamRequired: entry.isTeamRequired };
-      plugins.push(await loadCursorPluginFromPath(installPath, sourceType, sourceInfo, { log: pluginLogger })); try { await cacheManager.pruneOldVersions({ marketplaceSlug: slug, pluginId: entry.pluginId, keepVersions: [entry.version] }); } catch {}
+      const loadedPlugin = await loadWithSingleCacheHitRecovery({
+        wasCacheHit: cacheHit,
+        load: () => loadCursorPluginFromPath(installPath, sourceType, sourceInfo, { log: pluginLogger }),
+        invalidate: () => cacheManager.removeVersion(cacheArgs),
+        reinstall: installIntoCache,
+        onRecoveryAttempt: (error) => {
+          pluginLogger.log("warn", `loadFromMarketplaceSource: Cached plugin ${entry.pluginId} failed to load; invalidating and reinstalling once`, { marketplaceSlug: slug, pluginId: entry.pluginId, gitRef: entry.version, marketplaceId: entry.marketplace?.id, error: error instanceof Error ? error.message : String(error) });
+          pluginLogger.increment("marketplace.cache_hit_load_recovery_attempt", 1, { marketplace_slug: slug });
+        },
+      });
+      plugins.push(loadedPlugin); try { await cacheManager.pruneOldVersions({ marketplaceSlug: slug, pluginId: entry.pluginId, keepVersions: [entry.version] }); } catch {}
     } catch (error) {
       pluginLogger.captureException(error, { error_type: "load_plugin_from_marketplace" }); const normalized = error instanceof Error ? error : new Error(String(error)), marketplaceName = entry.marketplace?.name, sourceType = marketplaceName !== undefined && marketplaceName !== "cursor-public" && marketplaceName.length > 0 ? "cursor-third-party" : "cursor-first-party";
       failures.push({ pluginName: entry.name, pluginId: entry.pluginId, marketplaceName, errorMessage: normalized.message, errorType: classifyLoadError(normalized) }); plugins.push({ identifier: { source: sourceType, sourceInfo: { name: entry.name, version: entry.version, pluginDbId: entry.pluginDbId, marketplace: marketplaceName, marketplaceDbId: entry.marketplaceDbId, isTeamRequired: entry.isTeamRequired } }, installPath: "", loadError: normalized.message || "Plugin load failed", skills: [], rules: [], agents: [], commands: [], capabilities: [] }); onCursorError?.(entry, normalized);
