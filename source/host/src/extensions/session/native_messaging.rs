@@ -240,6 +240,77 @@ struct CallIceEnvelope {
     error: Option<String>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct FabushiRemoteHumanCallMediaSession {
+    pub media_session_id: String,
+    pub call_id: String,
+    pub user_id: Value,
+    pub device_id: String,
+    pub generation: u64,
+    pub purpose: String,
+    pub status: String,
+    pub mutation_state: Option<String>,
+    #[serde(default)]
+    pub cleanup_required: bool,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct CreateCallMediaSessionRequest<'a> {
+    client_session_id: &'a str,
+    generation: u64,
+    purpose: &'a str,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CallMediaSessionEnvelope {
+    success: bool,
+    media_session: Option<FabushiRemoteHumanCallMediaSession>,
+    #[serde(default)]
+    media_sessions: Vec<FabushiRemoteHumanCallMediaSession>,
+    error: Option<String>,
+}
+
+
+fn validate_human_call_media_session(
+    media_session: &FabushiRemoteHumanCallMediaSession,
+    expected_call_id: &str,
+    expected_generation_and_purpose: Option<(u64, &str)>,
+) -> Result<(), String> {
+    let media_session_id = required_trimmed(&media_session.media_session_id, "media session id")?;
+    if media_session_id.len() > 128
+        || !media_session_id
+            .chars()
+            .all(|character| character.is_ascii_alphanumeric() || matches!(character, '.' | '_' | ':' | '-'))
+    {
+        return Err("Fabushi Human call media session id is invalid".into());
+    }
+    if media_session.call_id != expected_call_id {
+        return Err("Fabushi Human call media backend returned a mismatched call id".into());
+    }
+    if !matches!(media_session.purpose.as_str(), "publish" | "subscribe")
+        || !matches!(media_session.status.as_str(), "pending" | "ready" | "uncertain" | "failed" | "closed")
+    {
+        return Err("Fabushi Human call media backend returned an invalid session state".into());
+    }
+    if let Some((generation, purpose)) = expected_generation_and_purpose {
+        if media_session.generation != generation || media_session.purpose != purpose {
+            return Err("Fabushi Human call media backend returned a mismatched session generation or purpose".into());
+        }
+    }
+    if media_session.cleanup_required
+        && (media_session.mutation_state.as_deref() != Some("retired")
+            || media_session.status == "closed")
+    {
+        return Err("Fabushi Human call media backend returned an invalid cleanup projection".into());
+    }
+    Ok(())
+}
+
 fn valid_call_ice_urls(value: &Value) -> bool {
     let valid = |url: &str| {
         let trimmed = url.trim();
@@ -626,6 +697,115 @@ impl FabushiNativeMessagingClient {
             ));
         }
         Ok(envelope.data.map(|data| data.messages).unwrap_or_default())
+    }
+
+    pub fn list_human_call_media_sessions(
+        &self,
+        call_id: &str,
+    ) -> Result<Vec<FabushiRemoteHumanCallMediaSession>, String> {
+        let call_id = required_trimmed(call_id, "call id")?;
+        let encoded_call_id: String =
+            url::form_urlencoded::byte_serialize(call_id.as_bytes()).collect();
+        let credentials = read_credentials(&self.credential_path)?;
+        let response = self
+            .client
+            .get(self.endpoint(&format!(
+                "/api/social/calls/{encoded_call_id}/media/sessions"
+            ))?)
+            .bearer_auth(required_trimmed(&credentials.access_token, "accessToken")?)
+            .header(
+                "x-fabushi-device-id",
+                required_trimmed(&credentials.device_id, "deviceId")?,
+            )
+            .header("accept", "application/json")
+            .send()
+            .map_err(|error| format!("Fabushi Human call media recovery failed: {error}"))?;
+        let status = response.status();
+        let body = response
+            .text()
+            .map_err(|error| format!("Fabushi Human call media recovery response could not be read: {error}"))?;
+        let envelope: CallMediaSessionEnvelope = serde_json::from_str(&body).map_err(|error| {
+            format!(
+                "Fabushi Human call media recovery response was invalid JSON (HTTP {}): {error}",
+                status.as_u16()
+            )
+        })?;
+        if !status.is_success() || !envelope.success {
+            return Err(format!(
+                "Fabushi Human call media recovery was rejected (HTTP {}): {}",
+                status.as_u16(),
+                envelope.error.unwrap_or_else(|| "unknown backend error".into())
+            ));
+        }
+        if envelope.media_session.is_some() {
+            return Err("Fabushi Human call media recovery returned an unexpected singular session".into());
+        }
+        for media_session in &envelope.media_sessions {
+            validate_human_call_media_session(media_session, call_id, None)?;
+        }
+        Ok(envelope.media_sessions)
+    }
+
+    pub fn create_human_call_media_session(
+        &self,
+        call_id: &str,
+        client_session_id: &str,
+        generation: u64,
+        purpose: &str,
+    ) -> Result<FabushiRemoteHumanCallMediaSession, String> {
+        let call_id = required_trimmed(call_id, "call id")?;
+        let client_session_id = required_trimmed(client_session_id, "media client session id")?;
+        let purpose = required_trimmed(purpose, "media session purpose")?;
+        if !matches!(purpose, "publish" | "subscribe") {
+            return Err("Fabushi Human call media session purpose is invalid".into());
+        }
+        let encoded_call_id: String =
+            url::form_urlencoded::byte_serialize(call_id.as_bytes()).collect();
+        let credentials = read_credentials(&self.credential_path)?;
+        let response = self
+            .client
+            .post(self.endpoint(&format!(
+                "/api/social/calls/{encoded_call_id}/media/sessions"
+            ))?)
+            .bearer_auth(required_trimmed(&credentials.access_token, "accessToken")?)
+            .header(
+                "x-fabushi-device-id",
+                required_trimmed(&credentials.device_id, "deviceId")?,
+            )
+            .header("accept", "application/json")
+            .json(&CreateCallMediaSessionRequest {
+                client_session_id,
+                generation,
+                purpose,
+            })
+            .send()
+            .map_err(|error| format!("Fabushi Human call media session allocation failed: {error}"))?;
+        let status = response.status();
+        let body = response
+            .text()
+            .map_err(|error| format!("Fabushi Human call media session response could not be read: {error}"))?;
+        let envelope: CallMediaSessionEnvelope = serde_json::from_str(&body).map_err(|error| {
+            format!(
+                "Fabushi Human call media session response was invalid JSON (HTTP {}): {error}",
+                status.as_u16()
+            )
+        })?;
+        if !status.is_success() || !envelope.success {
+            return Err(format!(
+                "Fabushi Human call media session allocation was rejected (HTTP {}): {}",
+                status.as_u16(),
+                envelope.error.unwrap_or_else(|| "unknown backend error".into())
+            ));
+        }
+        let media_session = envelope
+            .media_session
+            .ok_or_else(|| "Fabushi Human call media session response omitted the session.".to_string())?;
+        validate_human_call_media_session(
+            &media_session,
+            call_id,
+            Some((generation, purpose)),
+        )?;
+        Ok(media_session)
     }
 
     pub fn get_human_call_ice_servers(
