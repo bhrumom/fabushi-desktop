@@ -266,9 +266,9 @@
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
     "unknown_minimum": 15845,
-    "unread_minimum": 4305,
+    "unread_minimum": 4241,
     "omitted_known": 0,
-    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 11,820; unknown=15,845, unread=4,305, omitted=0."
+    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 11,884; unknown=15,845, unread=4,241, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -632,12 +632,12 @@
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "deterministic_prefix_closed": 57,
-    "development_only_non_applicable": 101,
+    "development_only_non_applicable": 102,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 11820,
-    "first_unread_order": 11821,
-    "first_unread_path": "Telegram/ThirdParty/xdg-desktop-portal::.github/workflows/main.yml",
+    "read_through": 11884,
+    "first_unread_order": 11885,
+    "first_unread_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.portal.Screenshot.xml",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {

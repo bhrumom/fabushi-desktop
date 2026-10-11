@@ -14,24 +14,24 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 4305,
+    "unread_minimum": 4241,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through deterministic order 11,820; unread 4,305; unknown 15,845; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition through deterministic order 11,884; unread 4,241; unknown 15,845; omitted 0."
   },
   "latest_recursive_evidence": {
-    "run_id": 38174934167,
+    "run_id": 38175960216,
     "run_attempt": 1,
-    "job_id": 114575281813,
-    "head_sha": "2937161a99e1324032bb492c8af03619fc16e2a7",
-    "artifact_id": 11715945600,
-    "artifact_digest": "sha256:39d60f209321a97b6566d2d19c04c12b801669ebd877e2d58f3fa48502c0fd74",
+    "job_id": 114578287012,
+    "head_sha": "a72ea7a76c70e73877dda5eb555cbc4c1c4845f5",
+    "artifact_id": 11715613245,
+    "artifact_digest": "sha256:78ed351d966df9b61085313432e02702bf2f41edd4d28138b680afe6aa52df27",
     "artifact_files": [
       "upstream-recursive-inventory.json",
       "current-first-unread/window-manifest.json"
     ],
     "evidence_status": "predecessor-exact-source-materialization-current-descendant-validation-pending",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
-    "note": "Exact-head 2937161a source authority completed success and materialized 11,757-11,820; Desktop Chat Parity also succeeded. This accounting descendant must obtain fresh exact-head validation before acceptance."
+    "note": "Exact-head a72ea7a source authority completed success and materialized 11,821-11,884. Landing this formal read/disposition accounting creates a descendant that requires fresh exact-head validation."
   },
   "closure_rules": {
     "executable_runner": "github-actions",
@@ -41,7 +41,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live baseline accepted; closure open. Read-through 11,820; unread_minimum is 4,305; unknown remains 15,845; omitted remains 0.",
+  "note": "Live baseline accepted; closure open. Read-through 11,884; unread_minimum is 4,241; unknown remains 15,845; omitted remains 0.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -59,21 +59,21 @@
       6541,
       6627
     ],
-    "current_source_read_through": 11820,
-    "first_unread_order": 11821,
-    "first_unread_path": "Telegram/ThirdParty/xdg-desktop-portal::.github/workflows/main.yml",
-    "current_head_source_authority_evidence": "Exact-head 2937161a99e1324032bb492c8af03619fc16e2a7 run 38174934167 / source-authority job 114575281813 completed success and materialized orders 11,757-11,820 into artifact 11715945600 (sha256:39d60f209321a97b6566d2d19c04c12b801669ebd877e2d58f3fa48502c0fd74); Desktop Chat Parity run 38174934180 completed success. This accounting commit is a descendant and requires fresh same-head Actions; predecessor greens are not reused."
+    "current_source_read_through": 11884,
+    "first_unread_order": 11885,
+    "first_unread_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.portal.Screenshot.xml",
+    "current_head_source_authority_evidence": "Exact-head a72ea7a76c70e73877dda5eb555cbc4c1c4845f5 run 38175960216 / source-authority job 114578287012 completed success and materialized orders 11,821-11,884 into artifact 11715613245 (sha256:78ed351d966df9b61085313432e02702bf2f41edd4d28138b680afe6aa52df27). The accounting descendant must obtain fresh same-head required Actions; no a72 runtime/E2E result is reused after the descendant commit."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "deterministic_prefix_closed": 57,
-    "development_only_non_applicable": 101,
+    "development_only_non_applicable": 102,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 11820,
-    "first_unread_order": 11821,
-    "first_unread_path": "Telegram/ThirdParty/xdg-desktop-portal::.github/workflows/main.yml",
+    "read_through": 11884,
+    "first_unread_order": 11885,
+    "first_unread_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.portal.Screenshot.xml",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }
