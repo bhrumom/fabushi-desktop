@@ -1,49 +1,29 @@
 import { Fragment, type ReactNode } from "react";
-// PrismJS remains a source-neutral renderer dependency. The upstream package
-// does not bundle TypeScript declarations, so this file deliberately keeps the
-// tiny runtime surface typed locally instead of adding a second type package.
-// @ts-expect-error PrismJS 1.30.0 does not ship TypeScript declarations.
+// PrismJS remains a source-neutral renderer dependency. The repository's
+// existing type dependency graph covers its module imports; this file keeps the
+// tiny runtime surface narrowed locally so renderer code does not depend on
+// Prism-specific token implementation details.
 import Prism from "prismjs";
 // Keep grammar imports static so Vite packages them into the offline renderer.
-// @ts-expect-error PrismJS components do not ship TypeScript declarations.
 import "prismjs/components/prism-bash.js";
-// @ts-expect-error PrismJS components do not ship TypeScript declarations.
 import "prismjs/components/prism-c.js";
-// @ts-expect-error PrismJS components do not ship TypeScript declarations.
 import "prismjs/components/prism-cpp.js";
-// @ts-expect-error PrismJS components do not ship TypeScript declarations.
 import "prismjs/components/prism-csharp.js";
-// @ts-expect-error PrismJS components do not ship TypeScript declarations.
 import "prismjs/components/prism-diff.js";
-// @ts-expect-error PrismJS components do not ship TypeScript declarations.
 import "prismjs/components/prism-docker.js";
-// @ts-expect-error PrismJS components do not ship TypeScript declarations.
 import "prismjs/components/prism-go.js";
-// @ts-expect-error PrismJS components do not ship TypeScript declarations.
 import "prismjs/components/prism-java.js";
-// @ts-expect-error PrismJS components do not ship TypeScript declarations.
 import "prismjs/components/prism-json.js";
-// @ts-expect-error PrismJS components do not ship TypeScript declarations.
 import "prismjs/components/prism-kotlin.js";
-// @ts-expect-error PrismJS components do not ship TypeScript declarations.
 import "prismjs/components/prism-markdown.js";
-// @ts-expect-error PrismJS components do not ship TypeScript declarations.
 import "prismjs/components/prism-powershell.js";
-// @ts-expect-error PrismJS components do not ship TypeScript declarations.
 import "prismjs/components/prism-python.js";
-// @ts-expect-error PrismJS components do not ship TypeScript declarations.
 import "prismjs/components/prism-rust.js";
-// @ts-expect-error PrismJS components do not ship TypeScript declarations.
 import "prismjs/components/prism-sql.js";
-// @ts-expect-error PrismJS components do not ship TypeScript declarations.
 import "prismjs/components/prism-swift.js";
-// @ts-expect-error PrismJS components do not ship TypeScript declarations.
 import "prismjs/components/prism-typescript.js";
-// @ts-expect-error PrismJS components do not ship TypeScript declarations.
 import "prismjs/components/prism-jsx.js";
-// @ts-expect-error PrismJS components do not ship TypeScript declarations.
 import "prismjs/components/prism-tsx.js";
-// @ts-expect-error PrismJS components do not ship TypeScript declarations.
 import "prismjs/components/prism-yaml.js";
 
 const MAX_HIGHLIGHT_UTF8_BYTES = 512 * 1024;
