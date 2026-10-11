@@ -37,7 +37,7 @@ use crate::extensions::attachments::video_playback_rendition::with_video_playbac
 use crate::extensions::forever_box::ForeverBoxService;
 use crate::host_paths::{get_sand_root_dir, reanchor_sand_path};
 use crate::media_mime::{
-    VIDEO_BYTE_LIMIT, attachment_byte_limit_for_name, audio_mime_from_path,
+    ATTACHMENT_BYTE_LIMIT, VIDEO_BYTE_LIMIT, attachment_byte_limit_for_name, audio_mime_from_path,
     extension_from_image_mime, servable_image_mime_from_path, video_mime_from_path,
 };
 use crate::storage::folder_id::is_safe_folder_id;
@@ -316,6 +316,26 @@ fn image_size(bytes: &[u8], mime: &str) -> Option<ImageSize> {
     read_encoded_image_size(&data_url)
 }
 
+fn read_attachment_image_file_bounded(path: &Path) -> Option<Vec<u8>> {
+    let file = fs::File::open(path).ok()?;
+    let metadata = file.metadata().ok()?;
+    if !metadata.is_file()
+        || metadata.len() == 0
+        || metadata.len() > ATTACHMENT_BYTE_LIMIT
+    {
+        return None;
+    }
+    let capacity = usize::try_from(metadata.len()).ok()?;
+    let mut data = Vec::with_capacity(capacity);
+    let mut bounded = file.take(ATTACHMENT_BYTE_LIMIT.saturating_add(1));
+    bounded.read_to_end(&mut data).ok()?;
+    let bytes = u64::try_from(data.len()).ok()?;
+    if bytes == 0 || bytes > ATTACHMENT_BYTE_LIMIT || bytes != metadata.len() {
+        return None;
+    }
+    Some(data)
+}
+
 pub fn read_host_attachment_image_with_root(
     sand_root: &Path,
     file_path: &Path,
@@ -328,7 +348,7 @@ pub fn read_host_attachment_image_with_root(
         return None;
     }
     let mime = servable_image_mime_from_path(&resolved)?;
-    let data = fs::read(&resolved).ok()?;
+    let data = read_attachment_image_file_bounded(&resolved)?;
     let size = image_size(&data, mime);
     Some(HostAttachmentImage {
         data_url: format!("data:{mime};base64,{}", STANDARD.encode(data)),
@@ -1769,6 +1789,28 @@ impl AttachmentsService {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn host_image_preview_rejects_empty_and_oversized_files_before_decode() {
+        let root = std::env::temp_dir().join(format!(
+            "fabushi-host-image-preview-cap-{}-{}",
+            std::process::id(),
+            now_ms()
+        ));
+        fs::create_dir_all(&root).unwrap();
+        let empty = root.join("empty.png");
+        fs::write(&empty, []).unwrap();
+        assert!(read_host_attachment_image_with_root(&root, &empty).is_none());
+
+        let oversized = root.join("oversized.png");
+        let oversized_file = fs::File::create(&oversized).unwrap();
+        oversized_file
+            .set_len(ATTACHMENT_BYTE_LIMIT.saturating_add(1))
+            .unwrap();
+        assert!(read_host_attachment_image_with_root(&root, &oversized).is_none());
+
+        fs::remove_dir_all(&root).unwrap();
+    }
 
     #[test]
     fn html_metadata_parser_preserves_frozen_precedence_and_limits() {
