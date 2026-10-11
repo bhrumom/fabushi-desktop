@@ -55,6 +55,38 @@ This decision can be revisited only with an ADR that proves the existing owner c
 | FPM-OWN-019 Release/packaging evidence | each platform release workflow | signed packaged Desktop / iOS distribution / Android artifact | release provenance + exact SHA | Actions/release contracts | all | partial | add Extension Registry/OMA E2Es and bind final artifacts to same exact source | E2E-01..08 and release artifacts/digests | old HEAD success cannot prove new HEAD |
 | FPM-OWN-020 Security incident/revocation | Registry governance + Host policy | signed trust/revocation feed -> Host quarantine | registry trust epoch + Host local effective state | versioned signed metadata | all | missing/partial | trust epoch, revoke/quarantine, offline stale policy semantics, audit/appeal | revoked plugin cannot activate/call; replay old grant rejected | future production slice |
 
+## Skills owner audit — current production semantics
+
+The 2026-10-11 source audit resolves FPM-OWN-006 more precisely:
+
+- **Host lifecycle owner:** `source/host/src/extensions/mcp/plugin_skills.rs` owns installed plugin-skill projection, sync coalescing, cache updates, auth-block projection and stale plugin pruning. Electron's `source/electron-main/mcp/host-plugin-skills-loader.ts` is an SDK/materialization edge and explicitly does not own the lifecycle.
+- **Durable local projection:** `plugin_skills_cache.rs` stores the current user, plugin skill records and auth-block state. Skill identity currently derives from the legacy marketplace plugin DB ID plus a stable slug, while cache change identity includes `plugin_version`.
+- **Publisher facts:** the loader projects legacy `publisher.ownerUserId` and `marketplace.teamId` into `publisher_user_id` / `marketplace_team_id`. These are migration facts, not future Fabushi publisher verification.
+- **Team publish owner:** `skill_publish.rs::SandSkillPublishService` packages a local workflow skill into the existing plugin shape, publishes through the current marketplace client, and only removes the local library copy after sync confirms the same `plugin_id + commit_sha` is installed.
+- **Resync:** a published skill can be resubmitted only after reading the installed plugin manifest name; the implementation intentionally refuses to guess a manifest name because that could publish a duplicate.
+- **Unpublish recovery:** unpublish restores the installed skill back into the local workflow library before remote unpublish and then performs best-effort plugin-skills sync.
+- **Ownership fence:** resync/unpublish require `publisher_user_id == current_user_id` and a team marketplace ID. A user cannot mutate a skill merely because it is installed.
+- **Managed Skills:** `managed_setup/managed_skills_service.rs` and cache remain a separate policy-fed projection into the same runtime skill semantics; disabled/unsafe managed entries are filtered before materialization.
+- **Enable/disable and Agent execution:** remain in existing Host/Codex skill configuration/injection owners. Marketplace trust must not elevate Skill text above those runtime/tool permission boundaries.
+
+### Canonical migration rule for `kind=skill`
+
+The unified Registry may assign a Fabushi stable Extension ID and version to a Skill release, but it **must not** replace Host skill identity or installed-state truth in one step. Migration must retain an explicit mapping containing at least:
+
+```text
+canonicalExtensionId
+legacyPluginId
+legacyPluginVersion / commitSha
+skillRelativePath
+legacyWorkflowId / projected PluginSkillRecord.id
+publisherUserId?        # migration fact only
+marketplaceTeamId?      # migration/team source fact
+```
+
+Until a canonical Fabushi Skill release has been published and installed through the new Registry, existing Cursor-compatible team/private Skills continue to resolve through the Host loader/cache. The adapter must deduplicate by stable source mapping so the same Skill does not appear twice.
+
+Publishing a Skill into the Fabushi public Registry must be a **separate promotion step** from existing team publish. It must use canonical Publisher Namespace / Release Governance and review; a legacy team owner or `publisher_user_id` must never be silently upgraded to Fabushi verified publisher status.
+
 ## Immediate implementation order derived from the inventory
 
 1. Finish Backend unified read contract and exact-HEAD CI.
