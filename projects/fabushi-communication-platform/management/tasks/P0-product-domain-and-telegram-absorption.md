@@ -1,4 +1,4 @@
-Live TDRP Revision 9 upstream authority (2026-10-10): telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 (root tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6). Root non-directory=6,653; recursive non-directory=16,125; read-through=7,241; first unread=7,242 Telegram/ThirdParty/cmark-gfm::.editorconfig@12032e647502de7a91f241f75fcd7666be375875; unread=8,884; unknown=15,845; omitted=0. Orders 7,155-7,241 exact-read pinned google/cld3: UTF-8/interchange/script normalization, bounded ngram/script feature extraction, embedded neural language inference, probability/reliability output, multilingual/invalid-input tests, generated model parameters and build/license inputs. Telegram shipping consumers use Platform::Language::Recognize for translation/AI-compose flows. Fabushi currently has no shipping classifier/translation implementation, so the capability remains mapped-open and unknown is unchanged. Fresh descendant exact-head GitHub Actions evidence is required.
+Live TDRP Revision 9 upstream authority (2026-10-11): telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 (root tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6). Root non-directory=6,653; recursive non-directory=16,125; deterministic read-through=9,140; first unread=9,141 Telegram/ThirdParty/kcoreaddons::autotests/kfileutilstest.cpp@0f65e9d86e4d71e50249b38d5c17546cd94fa2b0; unread=6,985; unknown=15,845; omitted=0. Hunspell direct-gitlink source reading is complete through 9,076. Orders 9,077–9,140 begin pinned KDE/kcoreaddons with build/dependency, plugin metadata/schema, legal provenance, plugin lifecycle, OS metadata, autosave/recovery/locking, composite job, migration and directory-watch responsibilities. All remain mapped-open unless separately closed by canonical shipping implementation/replacement/compliance plus exact-head evidence; source reading closes no unknown.
 
 Live Revision 9 authority (2026-10-10): telegramdesktop/tdesktop@65e23ba7137ea4129b6bc1b2616104a1f59495ef (root tree 6b616494f3465324e749a04dcd1c9d508657a998). Root non-directory=6,653; recursive non-directory=16,125; read-through=5,836; first unread=5,837 Telegram/SourceFiles/test/test_wallet_intercept.cpp@7a0885063d4f393de43cd05f368e6671dfd40b7d; unread=10,289; unknown=15,846; omitted=0. The b0d1fe5e→65e23ba7 delta is ten commits / 25 modified paths; all 18 changed blobs inside the prior prefix were explicitly re-read and reconciled before retaining prefix credit. Orders 5,831-5,836 were then read/decomposed on the same live authority. Fresh descendant exact-head GitHub Actions evidence is required; b0400d+b0d1fe5 runs are predecessor-only.
 
@@ -6,7 +6,7 @@ Live Revision 9 authority (2026-10-10): telegramdesktop/tdesktop@65e23ba7137ea41
 
 Status: active / not accepted  
 Project: FBCP-001 Revision 7 / TDRP-001 Revision 9  
-Updated: 2026-10-07  
+Updated: 2026-10-11  
 Execution: all executable verification only GitHub Actions
 
 ## Goal
