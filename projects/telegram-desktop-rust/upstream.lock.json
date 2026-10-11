@@ -266,9 +266,9 @@
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
     "unknown_minimum": 15845,
-    "unread_minimum": 3722,
+    "unread_minimum": 3665,
     "omitted_known": 0,
-    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 12,403; unknown=15,845, unread=3,722, omitted=0."
+    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 12,460; unknown=15,845, unread=3,665, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -738,5 +738,5 @@
     ],
     "note": "Valid exact-head evidence for 46dfaf only; main reconciliation/accounting descendants require fresh Actions."
   },
-  "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 12,403; unknown=15,845, unread=3,722, omitted=0; first unread=12,404 Telegram/lib_base::CMakeLists.txt@35f68dd3673427fe276a59dc9a756763b0927de8."
+  "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 12,460; unknown=15,845, unread=3,665, omitted=0; first unread=12,461 Telegram/lib_base::base/match_method.h@31a85ab3465bec439be6e70f7c2c3c109acfae7d."
 }
