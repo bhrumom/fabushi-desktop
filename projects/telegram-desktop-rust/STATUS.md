@@ -1,5 +1,14 @@
-Live Revision 9 authority (2026-10-11): telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 (root tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6). Root non-directory=6,653; recursive non-directory=16,125; deterministic read-through=9,201; first unread=9,202 Telegram/ThirdParty/kcoreaddons::poqm/af/kcoreaddons5_qt.po@cfda626078de334eeecd25fa310e8fffd4b513cd; unread=6,924; unknown=15,845; omitted=0. Orders 9,198–9,201 exact-read optional file-watch/process dependency discovery, documentation preprocessor provenance and component platform/release metadata. Optional KDE-era dependencies remain evidence inputs only; existing Fabushi build/platform/packaging owners stay canonical.
-<!-- TDRP_CURRENT_SUMMARY read-through=9201 unread=6924 unknown=15845 omitted=0 first-unread=9202 path=Telegram/ThirdParty/kcoreaddons::poqm/af/kcoreaddons5_qt.po -->
+Live Revision 9 authority (2026-10-11): telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 (root tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6). Root non-directory=6,653; recursive non-directory=16,125; deterministic read-through=9,308; first unread=9,309 Telegram/ThirdParty/kcoreaddons::src/CMakeLists.txt@1c15425347a9ffc4e12bbd63797616337c78fe33; unread=6,817; unknown=15,845; omitted=0. Orders 9,202–9,308 exact-read all 107 pinned kcoreaddons Qt PO localization catalogs. Locale/context/plural/UTF-8/placeholder behavior maps to the existing Fabushi localization + Resource/product-copy owner; KDE/gettext runtime and third-party copy remain non-shipping source authority.
+<!-- TDRP_CURRENT_SUMMARY read-through=9308 unread=6817 unknown=15845 omitted=0 first-unread=9309 path=Telegram/ThirdParty/kcoreaddons::src/CMakeLists.txt -->
+
+### Revision 9 deterministic read-through — kcoreaddons localization resources 9,202–9,308
+
+All 107 `poqm/*/kcoreaddons5_qt.po` blobs from pinned `KDE/kcoreaddons@fd84da51b554eac25e35b1e3f373edaab3029b15` were read by exact blob identity. The common live catalog shape is 133 msgids / 132 contexts / 6 plural entries, but English is intentionally a six-entry plural shim and the four Serbian variants are sparse 117-msgid catalogs. Canonical localization therefore must preserve locale/context/plural/UTF-8/placeholder semantics while supporting missing-category and missing-entry fallback; fuzzy/obsolete translation history is evidence only and must not become shipping copy.
+
+Existing-owner audit finds the shipping owner in `frontend/src/recovered/features/settings/overlay/localization.ts`, consumed by the real Settings panels. This descendant keeps that single owner and strengthens the live accessibility-count projection with locale-safe `Intl.PluralRules` category selection, category-to-`other` fallback and invalid-locale/non-finite-count fail-safe behavior. No KDE/gettext runtime, second localization store or KDE product wording is introduced. The broader rows remain `mapped-open` / `unknown_closed=false` pending complete production evidence.
+
+Accounting is **9,308/16,125 read; 6,817 unread; 15,845 unknown; 0 omitted**. Next is 9,309 `Telegram/ThirdParty/kcoreaddons::src/CMakeLists.txt@1c15425347a9ffc4e12bbd63797616337c78fe33`. Fresh descendant exact-head GitHub Actions are mandatory.
+
 
 ### Revision 9 deterministic read-through — kcoreaddons build/plugin/recovery window 9,077–9,140
 

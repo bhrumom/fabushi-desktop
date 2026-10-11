@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 6924,
+    "unread_minimum": 6817,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through deterministic order 9,201; unread 6,924; unknown 15,845; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition through deterministic order 9,308; unread 6,817; unknown 15,845; omitted 0."
   },
   "latest_recursive_evidence": {
     "run_id": 38106112583,
@@ -41,7 +41,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live baseline identity is accepted for telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 / tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6, matching upstream.lock upstream.accepted=true. This does not imply source/product/release closure: exact read-through is 9,201; unread_minimum is 6,924; unknown remains 15,845; omitted remains 0; acceptance.accepted and baseline_ready remain false until their gates close.",
+  "note": "Live baseline identity is accepted for telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 / tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6, matching upstream.lock upstream.accepted=true. This does not imply source/product/release closure: exact read-through is 9,308; unread_minimum is 6,817; unknown remains 15,845; omitted remains 0; acceptance.accepted and baseline_ready remain false until their gates close.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -59,10 +59,10 @@
       6541,
       6627
     ],
-    "current_source_read_through": 9201,
-    "first_unread_order": 9202,
-    "first_unread_path": "Telegram/ThirdParty/kcoreaddons::poqm/af/kcoreaddons5_qt.po",
-    "current_head_source_authority_evidence": "Orders 9,169–9,201 exact-read kcoreaddons plugin metadata/process/shell contracts, text/render injection safety, URL resource transfer, OS principal and plugin-version fixtures, plus optional build/platform dependency provenance. Existing-owner-first mapping remains within canonical Plugins/MCP/Marketplace, Transcript/external-link, Resource, Host/Runner, platform/Computer, persistence/cache, build/packaging and release owners. Concrete increments include normalized plugin release-license metadata and focused Transcript malicious-URL regressions; broader responsibilities remain mapped-open and fresh descendant exact-head Actions are mandatory."
+    "current_source_read_through": 9308,
+    "first_unread_order": 9309,
+    "first_unread_path": "Telegram/ThirdParty/kcoreaddons::src/CMakeLists.txt",
+    "current_head_source_authority_evidence": "Orders 9,202–9,308 exact-read all 107 pinned kcoreaddons Qt PO catalogs. Catalog audit preserves locale/context/plural/UTF-8/placeholder semantics, proves English is an intentionally sparse plural shim and Serbian variants are sparse catalogs requiring fallback, and excludes fuzzy/obsolete history from shipping truth. Existing-owner-first stays with canonical Settings/localization + Resource/product-copy; the live Settings accessibility-count projection gains source-neutral Intl plural-category fallback. No KDE/gettext runtime or third-party copy is adopted. Fresh descendant exact-head Actions are mandatory."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -71,9 +71,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 9201,
-    "first_unread_order": 9202,
-    "first_unread_path": "Telegram/ThirdParty/kcoreaddons::poqm/af/kcoreaddons5_qt.po",
+    "read_through": 9308,
+    "first_unread_order": 9309,
+    "first_unread_path": "Telegram/ThirdParty/kcoreaddons::src/CMakeLists.txt",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }

@@ -266,9 +266,9 @@
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
     "unknown_minimum": 15845,
-    "unread_minimum": 6924,
+    "unread_minimum": 6817,
     "omitted_known": 0,
-    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 9,201; unknown=15,845, unread=6,924, omitted=0."
+    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 9,308; unknown=15,845, unread=6,817, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -282,7 +282,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Source/product/release closure open. Exact read-through 9,201/16,125; first unread 9,202 Telegram/ThirdParty/kcoreaddons::poqm/af/kcoreaddons5_qt.po; unread 6,924; unknown 15,845; omitted 0. Current boundary includes optional FAM/procstat dependency discovery, documentation-preprocessor provenance and component platform/release metadata; no optional KDE-era dependency is adopted by implication."
+    "note": "Source/product/release closure open. Exact read-through 9,308/16,125; first unread 9,309 Telegram/ThirdParty/kcoreaddons::src/CMakeLists.txt; unread 6,817; unknown 15,845; omitted 0. Current boundary completes all 107 pinned kcoreaddons Qt PO catalogs; locale/context/plural/UTF-8/placeholder behavior maps to the existing Fabushi localization owner, with sparse locale fallback required and KDE/gettext runtime/copy remaining non-shipping source authority."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",

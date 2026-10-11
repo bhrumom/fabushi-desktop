@@ -10,6 +10,10 @@ import {
   saveInstruction,
 } from "./settings/overlay/model.ts";
 import {
+  formatAccessibilityPreferenceCount,
+  formatLocalizedCount,
+} from "./settings/overlay/localization.ts";
+import {
   DEFAULT_ROUTER_PROVIDER,
   ROUTER_PROVIDER_PERSISTENCE_KEY,
   isRouterProviderId,
@@ -215,4 +219,24 @@ test("sidebar projection excludes pinned agents, preserves section order and omi
     ariaExpanded: false,
     dataSectionId: AGENTS_SECTION_ID,
   });
+});
+
+
+test("settings localization preserves plural categories and sparse-locale fallback", () => {
+  const arabicForms = {
+    zero: "zero",
+    one: "one",
+    two: "two",
+    few: "few",
+    many: "many",
+    other: "other",
+  } as const;
+  assert.equal(formatLocalizedCount("ar", 0, arabicForms), "zero");
+  assert.equal(formatLocalizedCount("ar", 2, arabicForms), "two");
+  assert.equal(formatLocalizedCount("ar", 7, arabicForms), "few");
+  assert.equal(formatLocalizedCount("ar", 15, arabicForms), "many");
+  assert.equal(formatLocalizedCount("sr-Latn", 2, { one: "one", other: "fallback-other" }), "fallback-other");
+  assert.equal(formatLocalizedCount("not_a_locale", Number.NaN, { one: "one", other: "count={count}" }), "count=0");
+  assert.equal(formatAccessibilityPreferenceCount("en-US", 1), "1 accessibility preference active");
+  assert.equal(formatAccessibilityPreferenceCount("en-US", 2), "2 accessibility preferences active");
 });
