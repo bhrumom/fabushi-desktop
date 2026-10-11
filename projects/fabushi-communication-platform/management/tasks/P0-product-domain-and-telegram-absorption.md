@@ -1,4 +1,13 @@
-Live TDRP Revision 9 upstream authority (2026-10-11): telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 (root tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6). Root non-directory=6,653; recursive non-directory=16,125; deterministic read-through=9,308; first unread=9,309 Telegram/ThirdParty/kcoreaddons::src/CMakeLists.txt@1c15425347a9ffc4e12bbd63797616337c78fe33; unread=6,817; unknown=15,845; omitted=0. Orders 9,202–9,308 exact-read all 107 pinned kcoreaddons Qt PO localization catalogs. Locale/context/plural/UTF-8/placeholder behavior maps to the existing Fabushi localization + Resource/product-copy owner; KDE/gettext runtime and third-party copy remain non-shipping source authority.
+Live TDRP Revision 9 upstream authority (2026-10-11): telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 (root tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6). Root non-directory=6,653; recursive non-directory=16,125; deterministic read-through=9,344; first unread=9,345 Telegram/ThirdParty/kcoreaddons::src/lib/io/kurlmimedata.h@15bd05e4bc36d6c5b377029c695bb54b876f2332; unread=6,781; unknown=15,845; omitted=0. Orders 9,309–9,344 exact-read pinned kcoreaddons production source for build/plugin metadata, cache/recovery, filesystem watch/topology, process and resource/portal responsibilities; existing Fabushi owners remain canonical.
+
+### Revision 9 deterministic read-through — kcoreaddons production source 9,309–9,344
+
+Orders 9,309–9,344 exact-read the first 36 blobs of pinned `KDE/kcoreaddons/src`. The window covers build and localization extraction, strict desktop-metadata → typed JSON conversion, shared derived-cache versioning/eviction/corruption recovery and process-safe locking, stale autosave/backup ownership, create/delete/recreate/move-aware filesystem watching, filesystem/network-mount classification, collision-safe file naming, typed diagnostics, child-process argv/shell/environment/timeout semantics, and URL/attachment transfer through local/portal boundaries.
+
+Existing-owner-first mapping keeps Fabushi build/packaging, Plugins/MCP/Marketplace, Persistence/Recovery, Resource/platform, Settings, Host/Runner/Computer and attachment owners canonical. The recently added Marketplace cache-hit recovery closes only a narrow corrupted-derived-cache behavior and is not used to overclaim the broader shared-cache rows. No KDE/Qt runtime, second cache truth, second process owner, second Settings owner or second attachment owner is introduced. All rows remain `mapped-open` / `unknown_closed=false` until their production/evidence obligations close.
+
+Accounting is **9,344/16,125 read; 6,781 unread; 15,845 unknown; 0 omitted**. Next is 9,345 `Telegram/ThirdParty/kcoreaddons::src/lib/io/kurlmimedata.h@15bd05e4bc36d6c5b377029c695bb54b876f2332`. Fresh descendant exact-head GitHub Actions are mandatory.
+
 
 ### Revision 9 deterministic read-through — kcoreaddons localization resources 9,202–9,308
 

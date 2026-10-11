@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 6817,
+    "unread": 6781,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,11 +13478,11 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Accepted prefix 9,308/16,125; kcoreaddons build/plugin/recovery/autotest/platform window through 9,201 plus all 107 poqm localization catalogs 9,202–9,308 exact-read and responsibility-decomposed; unread 6,817; unknown 15,845; omitted 0.",
-    "source_authority_evidence": "Exact pinned GitHub blob reads establish 9,202–9,308. English is a small plural shim and Serbian variants are sparse catalogs, so canonical localization must support locale-aware plural selection and missing-entry fallback without importing KDE/gettext runtime. Next exact source is order 9,309 Telegram/ThirdParty/kcoreaddons::src/CMakeLists.txt@1c15425347a9ffc4e12bbd63797616337c78fe33. Fresh descendant exact-head Actions required; source reading closes no unknown.",
-    "current_source_read_through": 9308,
-    "first_unread_order": 9309,
-    "first_unread_path": "Telegram/ThirdParty/kcoreaddons::src/CMakeLists.txt"
+    "source_read_reconciliation": "Accepted prefix 9,344/16,125; exact-read/decomposed kcoreaddons production source through URL/portal transfer implementation; unread 6,781; unknown 15,845; omitted 0.",
+    "source_authority_evidence": "Orders 9,309–9,344 exact pinned Git blob reads. Next exact source is order 9,345 Telegram/ThirdParty/kcoreaddons::src/lib/io/kurlmimedata.h@15bd05e4bc36d6c5b377029c695bb54b876f2332. Fresh descendant exact-head Actions required; source reading closes no unknown.",
+    "current_source_read_through": 9344,
+    "first_unread_order": 9345,
+    "first_unread_path": "Telegram/ThirdParty/kcoreaddons::src/lib/io/kurlmimedata.h"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 9308,
-    "first_unread_order": 9309,
-    "first_unread_path": "Telegram/ThirdParty/kcoreaddons::src/CMakeLists.txt",
+    "read_through": 9344,
+    "first_unread_order": 9345,
+    "first_unread_path": "Telegram/ThirdParty/kcoreaddons::src/lib/io/kurlmimedata.h",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
