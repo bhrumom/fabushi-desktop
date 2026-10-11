@@ -266,9 +266,9 @@
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
     "unknown_minimum": 15845,
-    "unread_minimum": 4561,
+    "unread_minimum": 4497,
     "omitted_known": 0,
-    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 11,564; unknown=15,845, unread=4,561, omitted=0."
+    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 11,628; unknown=15,845, unread=4,497, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -282,7 +282,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Source/product/release closure open. Exact read-through 11,564/16,125; first unread 11,565 Telegram/ThirdParty/tgcalls::tgcalls/TurnCustomizerImpl.h@6029f481555de3b0453fa2012da910ce5515a65c; unread 4,561; unknown 15,845; omitted 0. Orders 11,501-11,564 are formally read/decomposed and remain mapped-open existing-owner-first across Build/Quality/Dependency-Provenance/License and canonical CallSession/Conversation/Permissions/Resource/WebRTC/media/network owners; no tgcalls C++ runtime, Docker chain, Swift package, TelegramCallRuntime, or second call store is introduced."
+    "note": "Source/product/release closure open. Exact read-through 11,628/16,125; first unread 11,629 Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/RTCCodecSpecificInfoH265+Private.h@a22d3594f557f7b75ff67f9427bb461b0c9ba5ce; unread 4,497; unknown 15,845; omitted 0. Orders 11,565-11,628 are exact-blob read/decomposed existing-owner-first across CallSession/Conversation/Permissions/Computer/Resource/WebRTC/media/network/platform adapters. Group streaming/SFU-equivalent service responsibility remains open; no tgcalls C++ runtime, TelegramCallRuntime, FFI/sidecar or second call store is introduced."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",
@@ -301,13 +301,13 @@
   "recursive_inventory_evidence": {
     "status": "exact-head-source-window-attested-descendant-accounting-pending",
     "runner": "github-actions",
-    "run_id": 38156139933,
+    "run_id": 38167547405,
     "run_attempt": 1,
-    "job_id": 114519461684,
-    "validation_head_sha": "2e8c169214a72abb1a3f16d52f2a811e8f991b2e",
-    "artifact_id": 11708199027,
-    "artifact_name": "tdrp-revision9-authority-2e8c169214a72abb1a3f16d52f2a811e8f991b2e",
-    "artifact_digest": "sha256:cd9fcd8e65b428f25271dbf5957647e88e58084e3acb8c89847b0051d9f7b77f",
+    "job_id": 114553216026,
+    "validation_head_sha": "0347515e75b76c2e093e8777c0155f98280620bc",
+    "artifact_id": 11711859551,
+    "artifact_name": "tdrp-revision9-authority-0347515e75b76c2e093e8777c0155f98280620bc",
+    "artifact_digest": "sha256:3b80f4844114053ef649c8a8a63a4d24397f8ea38a27d8fbbc84a7a4971cb6d2",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "recursive_non_directory_entries": 16125,
     "source_closure_ready": false
@@ -631,12 +631,12 @@
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "deterministic_prefix_closed": 57,
-    "development_only_non_applicable": 70,
+    "development_only_non_applicable": 81,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 11564,
-    "first_unread_order": 11565,
-    "first_unread_path": "Telegram/ThirdParty/tgcalls::tgcalls/TurnCustomizerImpl.h",
+    "read_through": 11628,
+    "first_unread_order": 11629,
+    "first_unread_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/RTCCodecSpecificInfoH265+Private.h",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {

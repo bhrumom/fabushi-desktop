@@ -52,6 +52,18 @@ test("screen sharing uses canonical selection UI and fences stale or vanished so
   assert.ok(source.includes("screenStreamRef.current !== capture"));
 });
 
+test("screen capture pause and active lifecycle stay fenced to the selected capture", () => {
+  assert.ok(source.includes("const [screenCapturePaused, setScreenCapturePaused] = useState(false);"));
+  assert.ok(source.includes("track.onmute = () => projectCaptureActivity(true);"));
+  assert.ok(source.includes("track.onunmute = () => projectCaptureActivity(false);"));
+  assert.ok(source.includes("screenStreamRef.current !== capture"));
+  assert.ok(source.includes("screenSharePaused: paused"));
+  assert.ok(source.includes("screenShareActive: !paused"));
+  assert.ok(source.includes("screenSharePaused: false, screenShareActive: false"));
+  assert.ok(source.includes("Screen sharing paused"));
+  assert.equal((source.match(/setScreenCapturePaused\(false\)/g) ?? []).length >= 5, true);
+});
+
 test("call diagnostics sample WebRTC stats with generation and teardown fencing", () => {
   assert.ok(source.includes("pc.getStats()"));
   assert.ok(source.includes("projectCallDiagnostics"));

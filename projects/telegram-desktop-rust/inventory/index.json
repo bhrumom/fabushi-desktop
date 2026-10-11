@@ -14,23 +14,24 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 4561,
+    "unread_minimum": 4497,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through deterministic order 11,564; unread 4,561; unknown 15,845; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition through deterministic order 11,628; unread 4,497; unknown 15,845; omitted 0."
   },
   "latest_recursive_evidence": {
-    "run_id": 38157144305,
+    "run_id": 38167547405,
     "run_attempt": 1,
-    "job_id": 114522352942,
-    "head_sha": "03a01ab3c231c2a2b6a53f719340bc04124939bb",
-    "artifact_id": 11708539924,
-    "artifact_digest": "sha256:6285b1529ca14b916d3721a485902565ea391302db65b9a96805d7809e275528",
+    "job_id": 114553216026,
+    "head_sha": "0347515e75b76c2e093e8777c0155f98280620bc",
+    "artifact_id": 11711859551,
+    "artifact_digest": "sha256:3b80f4844114053ef649c8a8a63a4d24397f8ea38a27d8fbbc84a7a4971cb6d2",
     "artifact_files": [
-      "upstream-recursive-inventory.json"
+      "upstream-recursive-inventory.json",
+      "current-first-unread/window-manifest.json"
     ],
     "evidence_status": "exact-head-range-attested-validator-success",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
-    "note": "Exact-head 03a01ab3c231c2a2b6a53f719340bc04124939bb Rust desktop runtime 38157144305 and Desktop Chat Parity CI 38157144285 completed/success; source-authority job 114522352942 artifact 11708539924 (sha256:6285b1529ca14b916d3721a485902565ea391302db65b9a96805d7809e275528) materialized orders 11,501-11,564 with exact repository/commit/path/Git-blob/byte-length verification; Playwright artifact 11709111216 (sha256:b2ba7ce127aa594df068522eb6335ad933a6c7999566ed32007ad32cfdf1274a)."
+    "note": "Exact-head 0347515e Rust desktop runtime 38167547405 and Desktop Chat Parity CI 38167547407 completed/success; source-authority job 114553216026 artifact 11711859551 (sha256:3b80f4844114053ef649c8a8a63a4d24397f8ea38a27d8fbbc84a7a4971cb6d2) materialized orders 11,565-11,628 with exact repository/commit/path/Git-blob/byte-length verification."
   },
   "closure_rules": {
     "executable_runner": "github-actions",
@@ -40,7 +41,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live baseline identity remains accepted; source/product/release closure remains open. Exact read-through is 11,564; unread_minimum is 4,561; unknown remains 15,845; omitted remains 0; acceptance.accepted and baseline_ready remain false.",
+  "note": "Live baseline identity remains accepted; source/product/release closure remains open. Exact read-through is 11,628; unread_minimum is 4,497; unknown remains 15,845; omitted remains 0; acceptance.accepted and baseline_ready remain false.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -58,21 +59,21 @@
       6541,
       6627
     ],
-    "current_source_read_through": 11564,
-    "first_unread_order": 11565,
-    "first_unread_path": "Telegram/ThirdParty/tgcalls::tgcalls/TurnCustomizerImpl.h",
-    "current_head_source_authority_evidence": "Exact-head 03a01ab3c231c2a2b6a53f719340bc04124939bb Rust desktop runtime 38157144305 and Desktop Chat Parity CI 38157144285 completed/success; source-authority job 114522352942 artifact 11708539924 (sha256:6285b1529ca14b916d3721a485902565ea391302db65b9a96805d7809e275528) materialized orders 11,501-11,564 with exact repository/commit/path/Git-blob/byte-length verification; Playwright artifact 11709111216 (sha256:b2ba7ce127aa594df068522eb6335ad933a6c7999566ed32007ad32cfdf1274a)."
+    "current_source_read_through": 11628,
+    "first_unread_order": 11629,
+    "first_unread_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/RTCCodecSpecificInfoH265+Private.h",
+    "current_head_source_authority_evidence": "Parent exact-head source-window evidence 0347515e75b76c2e093e8777c0155f98280620bc / run 38167547405 / job 114553216026 / artifact 11711859551 (sha256:3b80f4844114053ef649c8a8a63a4d24397f8ea38a27d8fbbc84a7a4971cb6d2) materialized orders 11,565-11,628; descendant accounting commit requires fresh exact-head validation."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "deterministic_prefix_closed": 57,
-    "development_only_non_applicable": 70,
+    "development_only_non_applicable": 81,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 11564,
-    "first_unread_order": 11565,
-    "first_unread_path": "Telegram/ThirdParty/tgcalls::tgcalls/TurnCustomizerImpl.h",
+    "read_through": 11628,
+    "first_unread_order": 11629,
+    "first_unread_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/RTCCodecSpecificInfoH265+Private.h",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }

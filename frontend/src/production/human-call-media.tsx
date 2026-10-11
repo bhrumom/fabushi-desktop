@@ -217,6 +217,7 @@ export function HumanCallControls({
   const [muted, setMuted] = useState(false);
   const [cameraEnabled, setCameraEnabled] = useState(false);
   const [screenSharing, setScreenSharing] = useState(false);
+  const [screenCapturePaused, setScreenCapturePaused] = useState(false);
   const [displaySources, setDisplaySources] = useState<readonly CallDisplaySource[]>([]);
   const [displayPickerOpen, setDisplayPickerOpen] = useState(false);
   const [diagnostics, setDiagnostics] = useState<CallDiagnostics | null>(null);
@@ -391,6 +392,8 @@ export function HumanCallControls({
     localStreamRef.current = null;
     stopStream(screenStreamRef.current);
     screenStreamRef.current = null;
+    setScreenSharing(false);
+    setScreenCapturePaused(false);
   }, [closePeer, transition]);
 
   const configurePeer = useCallback(async (nextCall: HumanCall, nextLease: CallLease, local: MediaStream) => {
@@ -537,6 +540,8 @@ export function HumanCallControls({
     localStreamRef.current = null;
     stopStream(screenStreamRef.current);
     screenStreamRef.current = null;
+    setScreenSharing(false);
+    setScreenCapturePaused(false);
     setStatus("idle");
     publish(null, null);
   }, [closePeer, publish, transition]);
@@ -553,6 +558,7 @@ export function HumanCallControls({
     screenStreamRef.current = null;
     setStatus("idle");
     setScreenSharing(false);
+    setScreenCapturePaused(false);
     setCameraEnabled(false);
     publish(null, null);
   }, [closePeer, publish, transition]);
@@ -668,13 +674,14 @@ export function HumanCallControls({
       const camera = localStreamRef.current?.getVideoTracks()[0] ?? null;
       if (sender != null) await sender.replaceTrack(camera);
       try {
-        await updateMediaState(current, { screenShare: false, displaySourceId: null });
+        await updateMediaState(current, { screenShare: false, displaySourceId: null, screenSharePaused: false, screenShareActive: false });
       } catch (error) {
         if (sender != null && screenTrack != null) await sender.replaceTrack(screenTrack).catch(() => undefined);
         throw error;
       }
       screenStreamRef.current = null;
       setScreenSharing(false);
+      setScreenCapturePaused(false);
       stopStream(capture);
     } finally {
       commandLease.release();
@@ -708,7 +715,7 @@ export function HumanCallControls({
       const addedSender = sender == null ? pc.addTrack(track, capture) : null;
       if (sender != null) await sender.replaceTrack(track);
       try {
-        await updateMediaState(current, { screenShare: true, displaySourceId: source.id });
+        await updateMediaState(current, { screenShare: true, displaySourceId: source.id, screenSharePaused: false, screenShareActive: true });
       } catch (error) {
         if (sender != null) await sender.replaceTrack(previousTrack).catch(() => undefined);
         if (addedSender != null && pcRef.current === pc) pc.removeTrack(addedSender);
@@ -717,8 +724,23 @@ export function HumanCallControls({
       }
       screenStreamRef.current = capture;
       setScreenSharing(true);
+      setScreenCapturePaused(false);
       closeDisplayPicker();
       stopStream(previousCapture);
+      const projectCaptureActivity = (paused: boolean) => {
+        if (disposedRef.current || screenStreamRef.current !== capture) return;
+        setScreenCapturePaused(paused);
+        const active = callRef.current;
+        if (active == null) return;
+        void updateMediaState(active, {
+          screenShare: true,
+          displaySourceId: source.id,
+          screenSharePaused: paused,
+          screenShareActive: !paused,
+        }).catch((activityError) => setError(mediaFailure(activityError)));
+      };
+      track.onmute = () => projectCaptureActivity(true);
+      track.onunmute = () => projectCaptureActivity(false);
       track.onended = () => {
         if (disposedRef.current || screenStreamRef.current !== capture) return;
         const endedLease = callCommandFence.acquire("video-media");
@@ -727,11 +749,12 @@ export function HumanCallControls({
           try {
             screenStreamRef.current = null;
             setScreenSharing(false);
+            setScreenCapturePaused(false);
             const camera = localStreamRef.current?.getVideoTracks()[0] ?? null;
             const currentSender = pcRef.current?.getSenders().find((candidate) => candidate.track?.kind === "video");
             if (currentSender != null) await currentSender.replaceTrack(camera);
             const active = callRef.current;
-            if (active != null) await updateMediaState(active, { screenShare: false, displaySourceId: null });
+            if (active != null) await updateMediaState(active, { screenShare: false, displaySourceId: null, screenSharePaused: false, screenShareActive: false });
           } catch (endedError) {
             setError(mediaFailure(endedError));
           } finally {
@@ -804,6 +827,7 @@ export function HumanCallControls({
       <SandButton aria-pressed={muted} onClick={() => void toggleMute().catch((toggleError) => setError(mediaFailure(toggleError)))} pending={mutePending} size="sm" variant="secondary">{muted ? "Unmute" : "Mute"}</SandButton>
       <SandButton aria-pressed={cameraEnabled} onClick={() => void toggleCamera().catch((toggleError) => setError(mediaFailure(toggleError)))} pending={cameraPending} size="sm" variant="secondary">{cameraEnabled ? "Camera off" : "Camera on"}</SandButton>
       <SandButton aria-pressed={screenSharing} onClick={() => void toggleScreen().catch((toggleError) => setError(mediaFailure(toggleError)))} pending={screenPending} size="sm" variant="secondary">{screenSharing ? "Stop sharing" : "Share screen"}</SandButton>
+      {screenSharing && screenCapturePaused ? <span role="status">Screen sharing paused</span> : null}
       {screenSharing ? <SandButton aria-label="Choose another display source" onClick={() => void openDisplayPicker().catch((pickerError) => setError(mediaFailure(pickerError)))} pending={screenPending} size="sm" variant="secondary">Change screen</SandButton> : null}
       <SandButton aria-label="End call" onClick={() => void hangup()} sentiment="danger" size="sm">End</SandButton>
       {diagnostics == null ? null : <details aria-label="Call diagnostics">

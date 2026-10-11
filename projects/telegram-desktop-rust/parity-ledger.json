@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 4561,
+    "unread": 4497,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -3151,7 +3151,7 @@
         "typed Story actions",
         "comments/reaction projection"
       ],
-      "platform_delta": "Qt façade becomes typed React capability contract backed by existing Rust Story owner.",
+      "platform_delta": "Qt fa\u00e7ade becomes typed React capability contract backed by existing Rust Story owner.",
       "existing_owner": "Canonical Story owner + ProductShell capability surface + existing domain action owners",
       "fabushi_target_paths": [
         "native/mahayana-messaging/src/story.rs",
@@ -3399,14 +3399,14 @@
         "first async result mutates a replaced Story",
         "comments/reactions use second store"
       ],
-      "ui_disposition": "Delegation semantics retained; Qt controller façade itself is not ported.",
+      "ui_disposition": "Delegation semantics retained; Qt controller fa\u00e7ade itself is not ported.",
       "non_ui_responsibilities": [
         "Single action path",
         "pause reason continuity",
         "lifetime fencing",
         "comments/reaction authoritative projection"
       ],
-      "platform_delta": "Use typed hooks/controllers in existing ProductShell surface rather than C++ façade.",
+      "platform_delta": "Use typed hooks/controllers in existing ProductShell surface rather than C++ fa\u00e7ade.",
       "existing_owner": "Canonical Story owner + Resource playback + ProductShell action composition",
       "fabushi_target_paths": [
         "native/mahayana-messaging/src/story.rs",
@@ -13478,22 +13478,22 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Accepted prefix 11,564/16,125; predecessor exact-head Actions materialized orders 11,501-11,564 spanning the range-v3 package/version tail and pinned tgcalls with exact repository/commit/path/Git-blob and byte-length verification; unread 4,561; unknown 15,845; omitted 0. Current descendant requires fresh exact-head validation.",
-    "source_authority_evidence": "Exact-head 2e8c169214a72abb1a3f16d52f2a811e8f991b2e run 38156139933/job 114519461684 artifact 11708199027 (sha256:cd9fcd8e65b428f25271dbf5957647e88e58084e3acb8c89847b0051d9f7b77f) validated Revision 9 and materialized orders 11,437-11,500; descendant accounting commit requires fresh exact-head validation.",
-    "current_source_read_through": 11564,
-    "first_unread_order": 11565,
-    "first_unread_path": "Telegram/ThirdParty/tgcalls::tgcalls/TurnCustomizerImpl.h"
+    "source_read_reconciliation": "Accepted prefix 11,628/16,125; parent exact-head Actions materialized orders 11,565-11,628 spanning tgcalls TURN/capture/group streaming/network/platform adapters with exact repository/commit/path/Git-blob and byte-length verification; unread 4,497; unknown 15,845; omitted 0. Descendant requires fresh exact-head validation.",
+    "source_authority_evidence": "Exact-head 0347515e75b76c2e093e8777c0155f98280620bc run 38167547405/job 114553216026 artifact 11711859551 (sha256:3b80f4844114053ef649c8a8a63a4d24397f8ea38a27d8fbbc84a7a4971cb6d2) validated Revision 9 and materialized orders 11,565-11,628; descendant accounting commit requires fresh exact-head validation.",
+    "current_source_read_through": 11628,
+    "first_unread_order": 11629,
+    "first_unread_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/RTCCodecSpecificInfoH265+Private.h"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "deterministic_prefix_closed": 57,
-    "development_only_non_applicable": 70,
+    "development_only_non_applicable": 81,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 11564,
-    "first_unread_order": 11565,
-    "first_unread_path": "Telegram/ThirdParty/tgcalls::tgcalls/TurnCustomizerImpl.h",
+    "read_through": 11628,
+    "first_unread_order": 11629,
+    "first_unread_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/RTCCodecSpecificInfoH265+Private.h",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
