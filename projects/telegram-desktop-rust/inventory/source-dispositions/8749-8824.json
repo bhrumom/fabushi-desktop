@@ -2494,7 +2494,7 @@
         "mount": "Telegram/ThirdParty/hunspell",
         "path": "tests/gh646.test",
         "object": "70b73f4086a05bffc166e150a6beb3b0cf780cc2",
-        "mode": "100644",
+        "mode": "100755",
         "type": "blob",
         "size": 344
       },
@@ -2836,7 +2836,7 @@
         "mount": "Telegram/ThirdParty/hunspell",
         "path": "tests/gh910.test",
         "object": "2f80b5a3204ae50c080fe223095bded97787fd07",
-        "mode": "100644",
+        "mode": "100755",
         "type": "blob",
         "size": 536
       },
