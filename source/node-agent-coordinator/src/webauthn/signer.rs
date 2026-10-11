@@ -95,6 +95,22 @@ pub fn parse_signer_event_line(line: &str) -> Option<SignerEvent> {
     serde_json::from_str(body).ok()
 }
 
+fn parse_signer_event_bytes(line: &[u8]) -> Result<Option<SignerEvent>, &'static str> {
+    let line = match std::str::from_utf8(line) {
+        Ok(line) => line.trim(),
+        Err(_) if line.starts_with(SIGNER_EVENT_PREFIX.as_bytes()) => {
+            return Err("security key helper event is not valid UTF-8");
+        }
+        Err(_) => return Ok(None),
+    };
+    if !line.starts_with(SIGNER_EVENT_PREFIX) {
+        return Ok(None);
+    }
+    parse_signer_event_line(line)
+        .map(Some)
+        .ok_or("security key helper emitted a malformed signer event")
+}
+
 pub fn signer_binary_name() -> &'static str {
     if cfg!(target_os = "windows") {
         "sand-webauthn-signer.exe"
@@ -278,9 +294,18 @@ impl SpawnedWebAuthnSigner {
                     });
                     break;
                 }
-                let line = String::from_utf8_lossy(&line);
-                if let Some(event) = parse_signer_event_line(line.trim()) {
-                    let _ = stderr_tx.send(ProcessEvent::Signer(event));
+                match parse_signer_event_bytes(&line) {
+                    Ok(Some(event)) => {
+                        let _ = stderr_tx.send(ProcessEvent::Signer(event));
+                    }
+                    Ok(None) => {}
+                    Err(message) => {
+                        let _ = stderr_tx.send(ProcessEvent::Failure {
+                            code: "helper_event_invalid",
+                            message: message.into(),
+                        });
+                        break;
+                    }
                 }
             }
         });
@@ -473,6 +498,55 @@ mod tests {
         fn read(&mut self, _buf: &mut [u8]) -> std::io::Result<usize> {
             Err(Error::new(ErrorKind::Other, "synthetic read failure"))
         }
+    }
+
+    #[test]
+    fn signer_event_bytes_accept_valid_protocol_event() {
+        let event = parse_signer_event_bytes(
+            br#"[signer-event] {"kind":"pin-invalid","retries":2}
+"#,
+        )
+        .expect("valid signer event should parse");
+        assert_eq!(
+            event,
+            Some(SignerEvent::PinInvalid { retries: Some(2) })
+        );
+    }
+
+    #[test]
+    fn signer_event_bytes_ignore_unstructured_diagnostics() {
+        assert_eq!(
+            parse_signer_event_bytes(b"diagnostic output that is not protocol\n")
+                .expect("ordinary diagnostics should be ignored"),
+            None
+        );
+    }
+
+    #[test]
+    fn signer_event_bytes_reject_malformed_prefixed_json() {
+        assert_eq!(
+            parse_signer_event_bytes(b"[signer-event] {not-json}\n"),
+            Err("security key helper emitted a malformed signer event")
+        );
+    }
+
+    #[test]
+    fn signer_event_bytes_reject_non_utf8_prefixed_protocol_frame() {
+        let mut line = SIGNER_EVENT_PREFIX.as_bytes().to_vec();
+        line.extend_from_slice(&[0xff, b'\n']);
+        assert_eq!(
+            parse_signer_event_bytes(&line),
+            Err("security key helper event is not valid UTF-8")
+        );
+    }
+
+    #[test]
+    fn signer_event_bytes_ignore_non_utf8_unstructured_diagnostics() {
+        assert_eq!(
+            parse_signer_event_bytes(&[0xff, b'\n'])
+                .expect("non-protocol diagnostics are not signer events"),
+            None
+        );
     }
 
     #[test]
