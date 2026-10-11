@@ -1751,6 +1751,21 @@
         ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "source/packages/cursor-plugins/loader.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "c8551057e264e1f43cd951e287b62dced10c3573",
+      "rationale": "Fabushi intentionally extends the frozen Grok marketplace loader with source-neutral, bounded recovery for a corrupted completed cache hit: invalidate derived cache state, reinstall exactly once, then propagate a second load failure. The canonical loader remains the sole Plugins/Marketplace shipping owner; this is a behavioral adaptation rather than byte-identical reference-copy parity.",
+      "behavioralEvidence": [
+        "source/packages/cursor-plugins/loader.ts",
+        "source/packages/cursor-plugins/cache-hit-recovery.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/recovered-owner-utilities.contract.test.ts",
+        "scripts/check-grok-architecture.mjs"
+      ]
     }
   ]
 }
