@@ -24,7 +24,7 @@
         "mount": "Telegram/ThirdParty/hunspell",
         "path": "tests/ofz5627151457255424.test",
         "object": "0af8cd974e4f5a395b1b830f8f35f2da42609781",
-        "mode": "100644",
+        "mode": "100755",
         "type": "blob",
         "size": 361
       },
