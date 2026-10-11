@@ -7,11 +7,6 @@
     "commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6"
   },
-  "deterministic_recursive_window": {
-    "first_order": 11501,
-    "last_order": 11564,
-    "entries": 64
-  },
   "exact_head_evidence": {
     "head_sha": "03a01ab3c231c2a2b6a53f719340bc04124939bb",
     "rust_desktop_runtime_run": 38157144305,
@@ -1822,5 +1817,10 @@
       "fabushi_canonical_owner": "CallSession / TURN-ICE service / network policy",
       "fabushi_target": "Existing bridge/service TURN credential and CallSession ICE owners."
     }
-  ]
+  ],
+  "range": {
+    "first_order": 11501,
+    "last_order": 11564,
+    "entries": 64
+  }
 }
