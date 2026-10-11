@@ -21,7 +21,8 @@
     "recursive_child_unique_repositories_recorded": 9,
     "recursive_child_unique_external_nested_scans_pending": 0,
     "recursive_child_unique_external_nested_scans_complete": 3,
-    "evidence_status": "current-source-classification-reconciled; exact-head resolver artifact pending"
+    "evidence_status": "current-source-classification-reconciled; exact-head resolver artifact pending",
+    "recursive_source_acquisition_findings_recorded": 1
   },
   "immutable_commit_pin_occurrences": [],
   "candidate_disposition_groups": [
@@ -4608,5 +4609,48 @@
       "artifact_member": "build-time-github-clone-ref-resolutions.json"
     },
     "rebaseline_status": "Accepted 6fed91ff modifies no workflow/acquisition source path; source/ref bindings are unchanged and fresh descendant GitHub Actions resolver evidence is required."
-  }
+  },
+  "recursive_source_acquisition_findings": [
+    {
+      "id": "range-v3-install-libcxx-11226",
+      "recursive_order": 11226,
+      "source_path": "Telegram/ThirdParty/range-v3::install_libcxx.sh",
+      "repository": "ericniebler/range-v3",
+      "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+      "source_blob_sha": "dcbf38c1c3b06c3b6baf9e81b43d29d91376b51b",
+      "source_lines": [
+        51,
+        52,
+        53,
+        58,
+        60,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69
+      ],
+      "acquisition_kind": "mutable-tip-of-trunk-clone-and-unverified-version-download",
+      "mutable_clone_repositories": [
+        "llvm-mirror/llvm",
+        "llvm-mirror/libcxx",
+        "llvm-mirror/libcxxabi"
+      ],
+      "download_roots": [
+        "https://releases.llvm.org/${VERSION}",
+        "https://github.com/llvm/llvm-project/releases/download/llvmorg-${VERSION}"
+      ],
+      "disposition": "shipping-fail-closed-not-imported",
+      "canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "rationale": "TRUNK_VERSION path shallow-clones repository tips with no commit pin; version path downloads archives with curl -LO and no in-script integrity verification. This recursive source acquisition is provenance evidence only and must not enter Fabushi shipping dependency resolution.",
+      "evidence": {
+        "head_sha": "af7183eb431ee41730ba0631f2306c186478890d",
+        "workflow_run": 38151143307,
+        "job_id": 114504686124,
+        "artifact_id": 11706761066,
+        "artifact_digest": "sha256:09b595119048168b7fb4f857d8ce3e642e25c46163de2ff93a2eea6a778c9d32"
+      }
+    }
+  ]
 }

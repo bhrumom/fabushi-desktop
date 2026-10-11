@@ -11,15 +11,21 @@ Complete: false
 | Existing-owner-first absorption | specified | new owners require ADR |
 | Native Fabushi network | in progress | canonical Rust messaging service and real Host HTTP API transport exist; broader service/release closure remains open |
 | Exact existing-owner inventory | in progress | canonical owners are audited continuously; full 16,125-entry absorption is not closed |
-| Telegram capability graph | in progress | deterministic source review is 11,180/16,125; unread/unknown remain open |
+| Telegram capability graph | in progress | deterministic source review is 11,244/16,125; unread/unknown remain open |
 | Capability → owner mapping | in progress | reviewed responsibilities map existing-owner-first; full source→shipping evidence graph remains open |
 | Conversation/message model evolution | in progress | native/mahayana-messaging has canonical Conversation/protocol/service evolution; mapped-open product closure remains |
 | Native messaging infrastructure | in progress | canonical messaging service plus source/host real API transport are implemented; broader server/platform/release evidence remains |
 | Human messaging in existing workspace | in progress | existing Composer/submission/Host path carries human send including silent/scheduled semantics; full regression/release closure remains |
 | Human + Agent unified flow | in progress | canonical ConversationWorkspace/Composer infrastructure is shared; complete Hybrid creation/policy/regression evidence remains open |
-| Full feature absorption | in progress | source/product mapping is active; unread=4,945 and unknown=15,845 prevent closure |
+| Full feature absorption | in progress | source/product mapping is active; unread=4,881 and unknown=15,845 prevent closure |
 | Packaged acceptance | blocked | no artifact |
 | Release | blocked | ACs incomplete |
+
+## 2026-10-11 range-v3 views/build provenance/action source accounting
+
+Exact-head `af7183eb431ee41730ba0631f2306c186478890d` Rust desktop runtime `38151143307` completed/success; Host Runner, prompt attachment projection, Human Computer takeover and ConversationActor/CapabilityBroker contracts all executed successfully. Source-authority job `114504686124` materialized and exact-blob verified orders 11,181–11,244, artifact `11706761066` (`sha256:09b595119048168b7fb4f857d8ce3e642e25c46163de2ff93a2eea6a778c9d32`). Current deterministic accounting is **11,244/16,125 read; 4,881 unread; 15,845 unknown; 0 omitted**; first unread is 11,245 `Telegram/ThirdParty/range-v3::test/action/slice.cpp@ff01398e6d72622e3c105dcf3bc9a23380f8c7bc`.
+
+The window remains generic range-v3 view/compiler-compatibility/benchmark/action responsibility. `install_libcxx.sh` additionally exposes mutable tip-of-trunk LLVM/libc++/libc++abi clones and unverified `curl -LO` downloads; this is recorded under existing Build / Quality / Dependency-Provenance / License authority and shipping remains fail-closed. Product/release acceptance remains open.
 
 ## 2026-10-11 range-v3 utility/view source accounting
 

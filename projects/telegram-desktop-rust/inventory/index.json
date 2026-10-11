@@ -14,23 +14,23 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 4945,
+    "unread_minimum": 4881,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through deterministic order 11,180; unread 4,945; unknown 15,845; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition through deterministic order 11,244; unread 4,881; unknown 15,845; omitted 0."
   },
   "latest_recursive_evidence": {
-    "run_id": 38143537190,
+    "run_id": 38151143307,
     "run_attempt": 1,
-    "job_id": 114482083927,
-    "head_sha": "e2f2ca67fad222cf5631b858a13719a7cbad29b3",
-    "artifact_id": 11704176427,
-    "artifact_digest": "sha256:aacf80e5efad0eda199b16cd5aa8d3112f69aca2d36d4ed77dc3324b134390d1",
+    "job_id": 114504686124,
+    "head_sha": "af7183eb431ee41730ba0631f2306c186478890d",
+    "artifact_id": 11706761066,
+    "artifact_digest": "sha256:09b595119048168b7fb4f857d8ce3e642e25c46163de2ff93a2eea6a778c9d32",
     "artifact_files": [
       "upstream-recursive-inventory.json"
     ],
     "evidence_status": "exact-head-range-attested-validator-success",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
-    "note": "e2f2ca67 exact-head source-authority validated Revision 9 and materialized orders 11,117-11,180 with exact Git blob verification; descendant accounting commit remains source/product/release closure open."
+    "note": "af7183eb exact-head source-authority validated Revision 9 and materialized orders 11,181-11,244 with exact Git blob verification; descendant accounting commit remains source/product/release closure open."
   },
   "closure_rules": {
     "executable_runner": "github-actions",
@@ -40,7 +40,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live baseline identity remains accepted; source/product/release closure remains open. Exact read-through is 11,180; unread_minimum is 4,945; unknown remains 15,845; omitted remains 0; acceptance.accepted and baseline_ready remain false.",
+  "note": "Live baseline identity remains accepted; source/product/release closure remains open. Exact read-through is 11,244; unread_minimum is 4,881; unknown remains 15,845; omitted remains 0; acceptance.accepted and baseline_ready remain false.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -58,10 +58,10 @@
       6541,
       6627
     ],
-    "current_source_read_through": 11180,
-    "first_unread_order": 11181,
-    "first_unread_path": "Telegram/ThirdParty/range-v3::include/range/v3/view/interface.hpp",
-    "current_head_source_authority_evidence": "Exact-head e2f2ca67fad222cf5631b858a13719a7cbad29b3 run 38143537190/job 114482083927 artifact 11704176427 (sha256:aacf80e5efad0eda199b16cd5aa8d3112f69aca2d36d4ed77dc3324b134390d1) validated Revision 9 and materialized orders 11,117-11,180 with exact Git blob verification; descendant accounting commit remains source/product/release closure open."
+    "current_source_read_through": 11244,
+    "first_unread_order": 11245,
+    "first_unread_path": "Telegram/ThirdParty/range-v3::test/action/slice.cpp",
+    "current_head_source_authority_evidence": "Exact-head af7183eb431ee41730ba0631f2306c186478890d run 38151143307/job 114504686124 artifact 11706761066 (sha256:09b595119048168b7fb4f857d8ce3e642e25c46163de2ff93a2eea6a778c9d32) validated Revision 9 and materialized orders 11,181-11,244 with exact Git blob verification; descendant accounting commit remains source/product/release closure open."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -70,9 +70,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 11180,
-    "first_unread_order": 11181,
-    "first_unread_path": "Telegram/ThirdParty/range-v3::include/range/v3/view/interface.hpp",
+    "read_through": 11244,
+    "first_unread_order": 11245,
+    "first_unread_path": "Telegram/ThirdParty/range-v3::test/action/slice.cpp",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }
