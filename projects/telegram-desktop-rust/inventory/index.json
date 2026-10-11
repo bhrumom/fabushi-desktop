@@ -31,7 +31,7 @@
     ],
     "evidence_status": "predecessor-exact-source-materialization-current-descendant-validation-pending",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
-    "note": "Parent exact source materialization covers 11,693-11,756; ca885458 and this accounting descendant require fresh exact-head Actions."
+    "note": "Accepted source accounting remains 11,756/16,125. 5cdf70e5 and runs 38172769183/38172769196 plus job 114568748017/artifact 11715061100 are predecessor evidence only. Exact-head f1a065f8 run 38173749265 passed binding/inventory/range attestation but failed the fail-closed validator on parity-ledger drift; diagnostic artifact 11714733439 is not acceptance evidence. Descendant exact-head Actions required."
   },
   "closure_rules": {
     "executable_runner": "github-actions",
@@ -62,7 +62,7 @@
     "current_source_read_through": 11756,
     "first_unread_order": 11757,
     "first_unread_path": "Telegram/ThirdParty/tgcalls::tgcalls/v2/SignalingTranslator.h",
-    "current_head_source_authority_evidence": "Parent 072c76d9 artifact 11714083420 covers 11,693-11,756; descendant exact-head Actions required."
+    "current_head_source_authority_evidence": "f1a065f8 run 38173749265 failed fail-closed validation on parity-ledger source-dispositions drift after binding/inventory/range attestation; diagnostic artifact 11714733439 only. Descendant exact-head validation required."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",

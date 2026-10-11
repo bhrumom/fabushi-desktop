@@ -310,7 +310,8 @@
     "artifact_digest": "sha256:2a20ec87ef17d88a815faeceef8ebb7f8d463959f25a4dae9fb2b5bc0acf1b84",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "recursive_non_directory_entries": 16125,
-    "source_closure_ready": false
+    "source_closure_ready": false,
+    "note": "Orders 11,693-11,756 remain predecessor source materialization. Exact-head f1a065f831b562854481d24448e6833c610921ec run 38173749265 bound the live upstream and passed inventory/range attestation but failed the unchanged fail-closed validator on parity-ledger source-dispositions drift; artifact 11714733439 (sha256:b10ce7c5b8d74f40eea97c1b929bc4b650933aa8d7dbada84c14dd084f8fc7ae) is diagnostic only. Descendant exact-head success is required."
   },
   "build_time_acquisition_inventory": {
     "path": "projects/telegram-desktop-rust/inventory/build-time-acquisitions.json",
@@ -631,7 +632,7 @@
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "deterministic_prefix_closed": 57,
-    "development_only_non_applicable": 95,
+    "development_only_non_applicable": 97,
     "unknown_closed": 280,
     "omitted": 0,
     "read_through": 11756,

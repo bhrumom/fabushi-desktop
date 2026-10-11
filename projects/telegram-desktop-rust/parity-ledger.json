@@ -13478,22 +13478,22 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Accepted prefix 11,692/16,125; parent exact-head source-authority materialized orders 11,629-11,692 spanning Darwin codecs, camera/render adapters and individually dispositioned iOS audio implementation with exact repository/commit/path/Git-blob and byte-length verification; unread 4,433; unknown 15,845; omitted 0. Descendant requires fresh exact-head validation.",
-    "source_authority_evidence": "Exact-head 9e19096129b9e5d9c87ff91e9a0645544929d155 run 38169448756/job 114558772727 artifact 11713142724 (sha256:e9667b498b5ab9ce45e0e73e81c6c8665866f7a739ef745f477aa175fa59720f) validated Revision 9 and materialized orders 11,629-11,692; descendant accounting commit requires fresh exact-head validation.",
-    "current_source_read_through": 11692,
-    "first_unread_order": 11693,
-    "first_unread_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/macOS/TGRTCMTLI420Renderer.h"
+    "source_read_reconciliation": "Accepted prefix 11,756/16,125; orders 11,693-11,756 were materialized from predecessor exact-source evidence and dispositioned on the branch; unread 4,369; unknown 15,845; omitted 0. Exact-head f1a065f8 exposed only parity-ledger summary drift and is diagnostic, so descendant exact-head validation is required.",
+    "source_authority_evidence": "5cdf70e5 and runs 38172769183/38172769196 plus job 114568748017/artifact 11715061100 are predecessor evidence only. Exact-head f1a065f831b562854481d24448e6833c610921ec run 38173749265/job 114571635155 bound the live upstream and passed recursive inventory/range attestation, then failed unchanged fail-closed validation on this ledger drift; artifact 11714733439 (sha256:b10ce7c5b8d74f40eea97c1b929bc4b650933aa8d7dbada84c14dd084f8fc7ae) is diagnostic only.",
+    "current_source_read_through": 11756,
+    "first_unread_order": 11757,
+    "first_unread_path": "Telegram/ThirdParty/tgcalls::tgcalls/v2/SignalingTranslator.h"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "deterministic_prefix_closed": 57,
-    "development_only_non_applicable": 95,
+    "development_only_non_applicable": 97,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 11692,
-    "first_unread_order": 11693,
-    "first_unread_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/macOS/TGRTCMTLI420Renderer.h",
+    "read_through": 11756,
+    "first_unread_order": 11757,
+    "first_unread_path": "Telegram/ThirdParty/tgcalls::tgcalls/v2/SignalingTranslator.h",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
