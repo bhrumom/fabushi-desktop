@@ -266,9 +266,9 @@
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
     "unknown_minimum": 15845,
-    "unread_minimum": 5713,
+    "unread_minimum": 5649,
     "omitted_known": 0,
-    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 10,412; unknown=15,845, unread=5,713, omitted=0."
+    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 10,476; unknown=15,845, unread=5,649, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -282,7 +282,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Source/product/release closure open. Exact read-through 10,412/16,125; first unread 10,413 Telegram/ThirdParty/lz4::ossfuzz/compress_fuzzer.c@edc8aad9a929dc7d384de191a812e83b632f22d8; unread 5,713; unknown 15,845; omitted 0. Orders 10,349-10,412 cover LZ4 manual/build/package, block/frame/file/HC/xxHash runtime contracts and first OSS-Fuzz authority. Existing Fabushi Resource/Storage/Build/Quality/Packaging/Updater/License owners remain canonical; shipping Host already uses flate2/tar for archive handling but has no LZ4/Zstd dependency. No LZ4-specific production gap is proven; consumer reachability remains open."
+    "note": "Source/product/release closure open. Exact read-through 10,476/16,125; first unread 10,477 Telegram/ThirdParty/nimf::BUILD.md@fbea94fb3836ea4d04faf23734f741891731393b; unread 5,649; unknown 15,845; omitted 0. Orders 10,413-10,470 finish LZ4 fuzz/program/test quality and file-lifecycle authority; 10,471-10,476 begin Nimf support/release metadata. Existing Fabushi owners remain canonical and no LZ4/Nimf runtime is inferred from source metadata alone."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",
@@ -301,13 +301,13 @@
   "recursive_inventory_evidence": {
     "status": "exact-head-source-window-attested-descendant-accounting-pending",
     "runner": "github-actions",
-    "run_id": 38127755807,
+    "run_id": 38128655830,
     "run_attempt": 1,
-    "job_id": 114435611847,
-    "validation_head_sha": "99e027714e9ee707e544073c6e9240fa0c77c289",
-    "artifact_id": 11697459714,
-    "artifact_name": "tdrp-revision9-authority-99e027714e9ee707e544073c6e9240fa0c77c289",
-    "artifact_digest": "sha256:c53bc4284dd3e358aa891df11d89083625fa56c2092d4f4b8ab1a509513a4953",
+    "job_id": 114438220656,
+    "validation_head_sha": "362099f6a830c1de3a493d4e718f1fe850bec4a1",
+    "artifact_id": 11698361416,
+    "artifact_name": "tdrp-revision9-authority-362099f6a830c1de3a493d4e718f1fe850bec4a1",
+    "artifact_digest": "sha256:bac2f13bc1492b139d1670a2c106151be410618636049e852999cb7fb4f248ee",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "recursive_non_directory_entries": 16125,
     "source_closure_ready": false
@@ -633,9 +633,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 10412,
-    "first_unread_order": 10413,
-    "first_unread_path": "Telegram/ThirdParty/lz4::ossfuzz/compress_fuzzer.c",
+    "read_through": 10476,
+    "first_unread_order": 10477,
+    "first_unread_path": "Telegram/ThirdParty/nimf::BUILD.md",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {

@@ -1,0 +1,1883 @@
+{
+  "format_version": 1,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+    "tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6"
+  },
+  "range": {
+    "first_order": 10413,
+    "last_order": 10476,
+    "entries": 64
+  },
+  "range_evidence": {
+    "identity_source": {
+      "head_sha": "362099f6a830c1de3a493d4e718f1fe850bec4a1",
+      "workflow_run": 38128655830,
+      "job_id": 114438220656,
+      "artifact_id": 11698361416,
+      "artifact_digest": "sha256:bac2f13bc1492b139d1670a2c106151be410618636049e852999cb7fb4f248ee",
+      "note": "exact-head Revision 9 validation and source-window materialization succeeded; direct review closes the remaining pinned LZ4 fuzz/program/test blobs and reads the first six Nimf repository/release/support metadata blobs. All rows remain mapped-open."
+    }
+  },
+  "rows": [
+    {
+      "recursive_order": 10413,
+      "source_path": "Telegram/ThirdParty/lz4::ossfuzz/compress_fuzzer.c",
+      "source_blob_sha": "edc8aad9a929dc7d384de191a812e83b632f22d8",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "ossfuzz/compress_fuzzer.c",
+        "object": "edc8aad9a929dc7d384de191a812e83b632f22d8",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2024,
+        "sha256": "f1ae2f302b1ad5a6aa160c792f9d1c0ce2c291b28a16bf2429de0fce3971857d"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 adversarial fuzz/round-trip quality",
+      "source_symbols": [
+        "source:ossfuzz/compress_fuzzer.c"
+      ],
+      "responsibility": "Exercises compression with undersized destination capacities; any successful compression must safely round-trip without corruption.",
+      "fabushi_canonical_owner": "Canonical Quality/Security + Resource/Storage",
+      "fabushi_target": "Existing Fabushi archive/resource paths already enforce compressed/uncompressed byte budgets, checked offsets, bounded decode and hash/size verification; preserve these fuzz-derived invariants without adding LZ4 runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10414,
+      "source_path": "Telegram/ThirdParty/lz4::ossfuzz/compress_hc_fuzzer.c",
+      "source_blob_sha": "7d8e45ab123d3b509539e7acab508d5b8a2a433d",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "ossfuzz/compress_hc_fuzzer.c",
+        "object": "7d8e45ab123d3b509539e7acab508d5b8a2a433d",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2311,
+        "sha256": "444b476026723697c8bc0be68a44ab434e281dd025a6a65d39c70981b422e6f3"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 adversarial fuzz/round-trip quality",
+      "source_symbols": [
+        "source:ossfuzz/compress_hc_fuzzer.c"
+      ],
+      "responsibility": "Exercises HC compression levels and undersized destinations, state allocation/cleanup, and exact safe-decompression round trips.",
+      "fabushi_canonical_owner": "Canonical Quality/Security + Resource/Storage",
+      "fabushi_target": "Existing Fabushi archive/resource paths already enforce compressed/uncompressed byte budgets, checked offsets, bounded decode and hash/size verification; preserve these fuzz-derived invariants without adding LZ4 runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10415,
+      "source_path": "Telegram/ThirdParty/lz4::ossfuzz/decompress_frame_fuzzer.c",
+      "source_blob_sha": "0fcbb1696f5c73840926a3da16b98ae1fc454c75",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "ossfuzz/decompress_frame_fuzzer.c",
+        "object": "0fcbb1696f5c73840926a3da16b98ae1fc454c75",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2480,
+        "sha256": "baf0dab7bfae0c7440f0488048dd45c846f809c11dcc0a9a781941f18df033b2"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 adversarial fuzz/round-trip quality",
+      "source_symbols": [
+        "source:ossfuzz/decompress_frame_fuzzer.c"
+      ],
+      "responsibility": "Feeds arbitrary framed bytes, destination budgets and optional dictionaries through reusable decompression contexts to prove crash-free fail-closed decoding.",
+      "fabushi_canonical_owner": "Canonical Quality/Security + Resource/Storage",
+      "fabushi_target": "Existing Fabushi archive/resource paths already enforce compressed/uncompressed byte budgets, checked offsets, bounded decode and hash/size verification; preserve these fuzz-derived invariants without adding LZ4 runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10416,
+      "source_path": "Telegram/ThirdParty/lz4::ossfuzz/decompress_fuzzer.c",
+      "source_blob_sha": "490b3fd6ecf009129f9ecbdc01184eb1fdfd82eb",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "ossfuzz/decompress_fuzzer.c",
+        "object": "490b3fd6ecf009129f9ecbdc01184eb1fdfd82eb",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3562,
+        "sha256": "5e45bfdf6c5b8a1eed3bd49686cf2bd8c8c17599490759ed1cd21b952ab0362e"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 adversarial fuzz/round-trip quality",
+      "source_symbols": [
+        "source:ossfuzz/decompress_fuzzer.c"
+      ],
+      "responsibility": "Exercises compression with undersized destination capacities; any successful compression must safely round-trip without corruption.",
+      "fabushi_canonical_owner": "Canonical Quality/Security + Resource/Storage",
+      "fabushi_target": "Existing Fabushi archive/resource paths already enforce compressed/uncompressed byte budgets, checked offsets, bounded decode and hash/size verification; preserve these fuzz-derived invariants without adding LZ4 runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10417,
+      "source_path": "Telegram/ThirdParty/lz4::ossfuzz/fuzz.h",
+      "source_blob_sha": "eefac63be91c84957169a52ec25f723266a82d7d",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "ossfuzz/fuzz.h",
+        "object": "eefac63be91c84957169a52ec25f723266a82d7d",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1704,
+        "sha256": "0a004654a5e1ed8a40663f14136b9b36eb546567e8fa87a0dd50e4269d4bbf46"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 adversarial fuzz/round-trip quality",
+      "source_symbols": [
+        "source:ossfuzz/fuzz.h"
+      ],
+      "responsibility": "Defines always-on fuzz assertions, deterministic seeds/preferences, frame decompression helpers and fuzz-only build controls.",
+      "fabushi_canonical_owner": "Canonical Quality/Security + Resource/Storage",
+      "fabushi_target": "Existing Fabushi archive/resource paths already enforce compressed/uncompressed byte budgets, checked offsets, bounded decode and hash/size verification; preserve these fuzz-derived invariants without adding LZ4 runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10418,
+      "source_path": "Telegram/ThirdParty/lz4::ossfuzz/fuzz_data_producer.c",
+      "source_blob_sha": "670fbf50b5b321b72ed491a954213d4adc54e5d0",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "ossfuzz/fuzz_data_producer.c",
+        "object": "670fbf50b5b321b72ed491a954213d4adc54e5d0",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2546,
+        "sha256": "a12393758430ea5c2d1ec51118d9fc74e0c55444072a83adc00feb6037c888e0"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 adversarial fuzz/round-trip quality",
+      "source_symbols": [
+        "source:ossfuzz/fuzz_data_producer.c"
+      ],
+      "responsibility": "Derives deterministic fuzz parameters for block mode/size/checksum/compression level/autoflush from bounded input bytes.",
+      "fabushi_canonical_owner": "Canonical Quality/Security + Resource/Storage",
+      "fabushi_target": "Existing Fabushi archive/resource paths already enforce compressed/uncompressed byte budgets, checked offsets, bounded decode and hash/size verification; preserve these fuzz-derived invariants without adding LZ4 runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10419,
+      "source_path": "Telegram/ThirdParty/lz4::ossfuzz/fuzz_data_producer.h",
+      "source_blob_sha": "b96dcbac43f7ad826cac4b13592a613889f27170",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "ossfuzz/fuzz_data_producer.h",
+        "object": "b96dcbac43f7ad826cac4b13592a613889f27170",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1334,
+        "sha256": "4e30f91d4d61f7da92b285ba33dd1c6fc40fd9058fe95652b38808f45a38bda1"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 adversarial fuzz/round-trip quality",
+      "source_symbols": [
+        "source:ossfuzz/fuzz_data_producer.h"
+      ],
+      "responsibility": "Derives deterministic fuzz parameters for block mode/size/checksum/compression level/autoflush from bounded input bytes.",
+      "fabushi_canonical_owner": "Canonical Quality/Security + Resource/Storage",
+      "fabushi_target": "Existing Fabushi archive/resource paths already enforce compressed/uncompressed byte budgets, checked offsets, bounded decode and hash/size verification; preserve these fuzz-derived invariants without adding LZ4 runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10420,
+      "source_path": "Telegram/ThirdParty/lz4::ossfuzz/fuzz_helpers.h",
+      "source_blob_sha": "efd9acfea24d8a515f0ca30aa027088dda670956",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "ossfuzz/fuzz_helpers.h",
+        "object": "efd9acfea24d8a515f0ca30aa027088dda670956",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2731,
+        "sha256": "f4d07483e2adbc2690f0aaec7c9a30b114f42c4f40038841869d08cebe8ae16c"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 adversarial fuzz/round-trip quality",
+      "source_symbols": [
+        "source:ossfuzz/fuzz_helpers.h"
+      ],
+      "responsibility": "Defines always-on fuzz assertions, deterministic seeds/preferences, frame decompression helpers and fuzz-only build controls.",
+      "fabushi_canonical_owner": "Canonical Quality/Security + Resource/Storage",
+      "fabushi_target": "Existing Fabushi archive/resource paths already enforce compressed/uncompressed byte budgets, checked offsets, bounded decode and hash/size verification; preserve these fuzz-derived invariants without adding LZ4 runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10421,
+      "source_path": "Telegram/ThirdParty/lz4::ossfuzz/lz4_helpers.c",
+      "source_blob_sha": "94716304576b6c47e1ca72e6748a171b725ca0c7",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "ossfuzz/lz4_helpers.c",
+        "object": "94716304576b6c47e1ca72e6748a171b725ca0c7",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1750,
+        "sha256": "69b9957ae889774e3084f8b96e0d486ecb4816f2561a13dc42ebabf6e32faa58"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 adversarial fuzz/round-trip quality",
+      "source_symbols": [
+        "source:ossfuzz/lz4_helpers.c"
+      ],
+      "responsibility": "Defines always-on fuzz assertions, deterministic seeds/preferences, frame decompression helpers and fuzz-only build controls.",
+      "fabushi_canonical_owner": "Canonical Quality/Security + Resource/Storage",
+      "fabushi_target": "Existing Fabushi archive/resource paths already enforce compressed/uncompressed byte budgets, checked offsets, bounded decode and hash/size verification; preserve these fuzz-derived invariants without adding LZ4 runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10422,
+      "source_path": "Telegram/ThirdParty/lz4::ossfuzz/lz4_helpers.h",
+      "source_blob_sha": "c99fb0159de684b5e6dd2d4446ade1d35545b839",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "ossfuzz/lz4_helpers.h",
+        "object": "c99fb0159de684b5e6dd2d4446ade1d35545b839",
+        "mode": "100644",
+        "type": "blob",
+        "size": 339,
+        "sha256": "a858177044de8a5921951ab4aa8fddae6130b1d257d637ba1ea012c541029734"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 adversarial fuzz/round-trip quality",
+      "source_symbols": [
+        "source:ossfuzz/lz4_helpers.h"
+      ],
+      "responsibility": "Defines always-on fuzz assertions, deterministic seeds/preferences, frame decompression helpers and fuzz-only build controls.",
+      "fabushi_canonical_owner": "Canonical Quality/Security + Resource/Storage",
+      "fabushi_target": "Existing Fabushi archive/resource paths already enforce compressed/uncompressed byte budgets, checked offsets, bounded decode and hash/size verification; preserve these fuzz-derived invariants without adding LZ4 runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10423,
+      "source_path": "Telegram/ThirdParty/lz4::ossfuzz/ossfuzz.sh",
+      "source_blob_sha": "9782286086aef214584f17777076f8c21d4ed546",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "ossfuzz/ossfuzz.sh",
+        "object": "9782286086aef214584f17777076f8c21d4ed546",
+        "mode": "100755",
+        "type": "blob",
+        "size": 514,
+        "sha256": "31138e44b71510cc1a942e128facd1911cf9c20c6a3c610316e9d830700fb13a"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 adversarial fuzz/round-trip quality",
+      "source_symbols": [
+        "source:ossfuzz/ossfuzz.sh"
+      ],
+      "responsibility": "Builds OSS-Fuzz targets from explicit repository/branch provenance; fuzz-only flags stay outside production.",
+      "fabushi_canonical_owner": "Canonical Quality/Security + Resource/Storage",
+      "fabushi_target": "Existing Fabushi archive/resource paths already enforce compressed/uncompressed byte budgets, checked offsets, bounded decode and hash/size verification; preserve these fuzz-derived invariants without adding LZ4 runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10424,
+      "source_path": "Telegram/ThirdParty/lz4::ossfuzz/round_trip_frame_fuzzer.c",
+      "source_blob_sha": "149542de5a147dd079492d3f3f64f0e71649efe2",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "ossfuzz/round_trip_frame_fuzzer.c",
+        "object": "149542de5a147dd079492d3f3f64f0e71649efe2",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1383,
+        "sha256": "3a07589f1deeabea74b1a4728b8528c45b3a1c7a27a783f503dbca5a35247071"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 adversarial fuzz/round-trip quality",
+      "source_symbols": [
+        "source:ossfuzz/round_trip_frame_fuzzer.c"
+      ],
+      "responsibility": "Fuzzes block/frame/HC compression-decompression round trips across random preferences, partial capacities and dictionary modes.",
+      "fabushi_canonical_owner": "Canonical Quality/Security + Resource/Storage",
+      "fabushi_target": "Existing Fabushi archive/resource paths already enforce compressed/uncompressed byte budgets, checked offsets, bounded decode and hash/size verification; preserve these fuzz-derived invariants without adding LZ4 runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10425,
+      "source_path": "Telegram/ThirdParty/lz4::ossfuzz/round_trip_frame_uncompressed_fuzzer.c",
+      "source_blob_sha": "76a99d22916e55aead3c872db4641f14d104a4b3",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "ossfuzz/round_trip_frame_uncompressed_fuzzer.c",
+        "object": "76a99d22916e55aead3c872db4641f14d104a4b3",
+        "mode": "100644",
+        "type": "blob",
+        "size": 5134,
+        "sha256": "a87dde93037a39eabc89950c31730b3d4d26f5a349cfb36491dc4265c7149804"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 adversarial fuzz/round-trip quality",
+      "source_symbols": [
+        "source:ossfuzz/round_trip_frame_uncompressed_fuzzer.c"
+      ],
+      "responsibility": "Fuzzes block/frame/HC compression-decompression round trips across random preferences, partial capacities and dictionary modes.",
+      "fabushi_canonical_owner": "Canonical Quality/Security + Resource/Storage",
+      "fabushi_target": "Existing Fabushi archive/resource paths already enforce compressed/uncompressed byte budgets, checked offsets, bounded decode and hash/size verification; preserve these fuzz-derived invariants without adding LZ4 runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10426,
+      "source_path": "Telegram/ThirdParty/lz4::ossfuzz/round_trip_fuzzer.c",
+      "source_blob_sha": "62362013bea1e115bb7b701ece3d81028a983c33",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "ossfuzz/round_trip_fuzzer.c",
+        "object": "62362013bea1e115bb7b701ece3d81028a983c33",
+        "mode": "100644",
+        "type": "blob",
+        "size": 5066,
+        "sha256": "0c87880bd1301c4fc1255c34f9aca341479e22f0e5440c877b0db52aa9e04e0a"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 adversarial fuzz/round-trip quality",
+      "source_symbols": [
+        "source:ossfuzz/round_trip_fuzzer.c"
+      ],
+      "responsibility": "Fuzzes block/frame/HC compression-decompression round trips across random preferences, partial capacities and dictionary modes.",
+      "fabushi_canonical_owner": "Canonical Quality/Security + Resource/Storage",
+      "fabushi_target": "Existing Fabushi archive/resource paths already enforce compressed/uncompressed byte budgets, checked offsets, bounded decode and hash/size verification; preserve these fuzz-derived invariants without adding LZ4 runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10427,
+      "source_path": "Telegram/ThirdParty/lz4::ossfuzz/round_trip_hc_fuzzer.c",
+      "source_blob_sha": "7d03ee2d87dee6cf7887c8d858f7260adb43f898",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "ossfuzz/round_trip_hc_fuzzer.c",
+        "object": "7d03ee2d87dee6cf7887c8d858f7260adb43f898",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1317,
+        "sha256": "bc8aa628675f0366939fb583319c5fcc48e164439b03f4eef770ffab42086273"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 adversarial fuzz/round-trip quality",
+      "source_symbols": [
+        "source:ossfuzz/round_trip_hc_fuzzer.c"
+      ],
+      "responsibility": "Fuzzes block/frame/HC compression-decompression round trips across random preferences, partial capacities and dictionary modes.",
+      "fabushi_canonical_owner": "Canonical Quality/Security + Resource/Storage",
+      "fabushi_target": "Existing Fabushi archive/resource paths already enforce compressed/uncompressed byte budgets, checked offsets, bounded decode and hash/size verification; preserve these fuzz-derived invariants without adding LZ4 runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10428,
+      "source_path": "Telegram/ThirdParty/lz4::ossfuzz/round_trip_stream_fuzzer.c",
+      "source_blob_sha": "abfcd2dbc03a8a58978efa4cd82014b3070657f3",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "ossfuzz/round_trip_stream_fuzzer.c",
+        "object": "abfcd2dbc03a8a58978efa4cd82014b3070657f3",
+        "mode": "100644",
+        "type": "blob",
+        "size": 9966,
+        "sha256": "16f4773cee11b62a998f3d383be4a55780a910dcb5cc7299d8b2f87b444d13f1"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 adversarial fuzz/round-trip quality",
+      "source_symbols": [
+        "source:ossfuzz/round_trip_stream_fuzzer.c"
+      ],
+      "responsibility": "Fuzzes streaming prefix/external-dictionary/reset/load/save state transitions, variable chunking, bounded output cursors and exact round-trip restoration.",
+      "fabushi_canonical_owner": "Canonical Quality/Security + Resource/Storage",
+      "fabushi_target": "Existing Fabushi archive/resource paths already enforce compressed/uncompressed byte budgets, checked offsets, bounded decode and hash/size verification; preserve these fuzz-derived invariants without adding LZ4 runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10429,
+      "source_path": "Telegram/ThirdParty/lz4::ossfuzz/standaloneengine.c",
+      "source_blob_sha": "6afeffd9d87cdb52da7565e5fe68505653a3a873",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "ossfuzz/standaloneengine.c",
+        "object": "6afeffd9d87cdb52da7565e5fe68505653a3a873",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1804,
+        "sha256": "45a219de4aa04f76b2a7103fa82c10581131a7e5b486eedc8f65142cbe12fc40"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 adversarial fuzz/round-trip quality",
+      "source_symbols": [
+        "source:ossfuzz/standaloneengine.c"
+      ],
+      "responsibility": "Provides a standalone corpus runner with bounded file reads/allocation and deterministic invocation of fuzz targets.",
+      "fabushi_canonical_owner": "Canonical Quality/Security + Resource/Storage",
+      "fabushi_target": "Existing Fabushi archive/resource paths already enforce compressed/uncompressed byte budgets, checked offsets, bounded decode and hash/size verification; preserve these fuzz-derived invariants without adding LZ4 runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10430,
+      "source_path": "Telegram/ThirdParty/lz4::ossfuzz/travisoss.sh",
+      "source_blob_sha": "eae9a80e51a0623e96a317dd93c5cfdd4feb6119",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "ossfuzz/travisoss.sh",
+        "object": "eae9a80e51a0623e96a317dd93c5cfdd4feb6119",
+        "mode": "100755",
+        "type": "blob",
+        "size": 820,
+        "sha256": "bb5c86548ba064366499e334b2a845ee2074179876a10374e7492c9f4cb0e06d"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 adversarial fuzz/round-trip quality",
+      "source_symbols": [
+        "source:ossfuzz/travisoss.sh"
+      ],
+      "responsibility": "Builds OSS-Fuzz targets from explicit repository/branch provenance; fuzz-only flags stay outside production.",
+      "fabushi_canonical_owner": "Canonical Quality/Security + Resource/Storage",
+      "fabushi_target": "Existing Fabushi archive/resource paths already enforce compressed/uncompressed byte budgets, checked offsets, bounded decode and hash/size verification; preserve these fuzz-derived invariants without adding LZ4 runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10431,
+      "source_path": "Telegram/ThirdParty/lz4::programs/.gitignore",
+      "source_blob_sha": "9ffadd9ce7576a307ecd00c3b67d37c4ff03e38a",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "programs/.gitignore",
+        "object": "9ffadd9ce7576a307ecd00c3b67d37c4ff03e38a",
+        "mode": "100644",
+        "type": "blob",
+        "size": 178,
+        "sha256": "a1ebdc9f1a6b1a68e372c151ea07ef1d5e21ae87d1ec6dc4592cec39121a1077"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 GPL CLI/benchmark/tooling",
+      "source_symbols": [
+        "source:programs/.gitignore"
+      ],
+      "responsibility": "Excludes generated CLI/test binaries from source state.",
+      "fabushi_canonical_owner": "Canonical Build/Quality + Resource/Storage/CLI semantics",
+      "fabushi_target": "Absorb only source-neutral file-safety, lifecycle, platform and UX/error semantics into existing Fabushi owners; GPL tool code is not copied and no lz4 CLI ships.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10432,
+      "source_path": "Telegram/ThirdParty/lz4::programs/COPYING",
+      "source_blob_sha": "d159169d1050894d3ea3b98e1c965c4058208fe1",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "programs/COPYING",
+        "object": "d159169d1050894d3ea3b98e1c965c4058208fe1",
+        "mode": "100644",
+        "type": "blob",
+        "size": 18092,
+        "sha256": "8177f97513213526df2cf6184d8ff986c675afb514d4e68a404010521b880643"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 GPL CLI/benchmark/tooling",
+      "source_symbols": [
+        "source:programs/COPYING"
+      ],
+      "responsibility": "Carries GPLv2 licensing for the programs subtree; implementation cannot be copied into proprietary/shipping Fabushi owners without license review.",
+      "fabushi_canonical_owner": "Canonical License/Compliance",
+      "fabushi_target": "Absorb only source-neutral file-safety, lifecycle, platform and UX/error semantics into existing Fabushi owners; GPL tool code is not copied and no lz4 CLI ships.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10433,
+      "source_path": "Telegram/ThirdParty/lz4::programs/Makefile",
+      "source_blob_sha": "ace0d0374f78c19144cff85e8da29441f0b0674e",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "programs/Makefile",
+        "object": "ace0d0374f78c19144cff85e8da29441f0b0674e",
+        "mode": "100644",
+        "type": "blob",
+        "size": 6484,
+        "sha256": "db557481974fe733694a273c45ab83aa60a56491e7049b1cd91a29b79d3750e0"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 GPL CLI/benchmark/tooling",
+      "source_symbols": [
+        "source:programs/Makefile"
+      ],
+      "responsibility": "Builds/installs the CLI and aliases across supported platforms with version-derived metadata and explicit dynamic/static library boundaries.",
+      "fabushi_canonical_owner": "Canonical Build/Quality + Resource/Storage/CLI semantics",
+      "fabushi_target": "Absorb only source-neutral file-safety, lifecycle, platform and UX/error semantics into existing Fabushi owners; GPL tool code is not copied and no lz4 CLI ships.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10434,
+      "source_path": "Telegram/ThirdParty/lz4::programs/README.md",
+      "source_blob_sha": "c1995afeafe41657f38fba7657a5fc6c08efb8b5",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "programs/README.md",
+        "object": "c1995afeafe41657f38fba7657a5fc6c08efb8b5",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3541,
+        "sha256": "b5726862c990305b9313c4f0afc96b7174af90dc9bdf720c50893ead9a79ff9d"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 GPL CLI/benchmark/tooling",
+      "source_symbols": [
+        "source:programs/README.md"
+      ],
+      "responsibility": "Defines user-visible CLI semantics for stdin/stdout, overwrite/preserve/remove, test-only mode, dictionaries, sparse files, block/checksum/content-size and multiple-file behavior.",
+      "fabushi_canonical_owner": "Canonical Build/Quality + Resource/Storage/CLI semantics",
+      "fabushi_target": "Absorb only source-neutral file-safety, lifecycle, platform and UX/error semantics into existing Fabushi owners; GPL tool code is not copied and no lz4 CLI ships.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10435,
+      "source_path": "Telegram/ThirdParty/lz4::programs/bench.c",
+      "source_blob_sha": "4d35ef92ac0b63ce9db2dbd0c4be0f6821557dfd",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "programs/bench.c",
+        "object": "4d35ef92ac0b63ce9db2dbd0c4be0f6821557dfd",
+        "mode": "100644",
+        "type": "blob",
+        "size": 32704,
+        "sha256": "53fd38d320fe3e325179c2b54273feb5f617c96372b45ec606c0b02b32964785"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 GPL CLI/benchmark/tooling",
+      "source_symbols": [
+        "source:programs/bench.c"
+      ],
+      "responsibility": "Benchmarks block/frame/dictionary compression and decompression under explicit memory/block/checksum settings with stream init/reset/cleanup.",
+      "fabushi_canonical_owner": "Canonical Build/Quality + Resource/Storage/CLI semantics",
+      "fabushi_target": "Absorb only source-neutral file-safety, lifecycle, platform and UX/error semantics into existing Fabushi owners; GPL tool code is not copied and no lz4 CLI ships.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10436,
+      "source_path": "Telegram/ThirdParty/lz4::programs/bench.h",
+      "source_blob_sha": "1d81a991d1cb46cb04e778b3c5167226badef3db",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "programs/bench.h",
+        "object": "1d81a991d1cb46cb04e778b3c5167226badef3db",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2857,
+        "sha256": "2ff152b06793b2010e1b3ed8cde8b13ff8720efd98acbdeab43595b730e07404"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 GPL CLI/benchmark/tooling",
+      "source_symbols": [
+        "source:programs/bench.h"
+      ],
+      "responsibility": "Benchmarks block/frame/dictionary compression and decompression under explicit memory/block/checksum settings with stream init/reset/cleanup.",
+      "fabushi_canonical_owner": "Canonical Build/Quality + Resource/Storage/CLI semantics",
+      "fabushi_target": "Absorb only source-neutral file-safety, lifecycle, platform and UX/error semantics into existing Fabushi owners; GPL tool code is not copied and no lz4 CLI ships.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10437,
+      "source_path": "Telegram/ThirdParty/lz4::programs/datagen.c",
+      "source_blob_sha": "f44864024240f01ff5414e444e266c74c3b612eb",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "programs/datagen.c",
+        "object": "f44864024240f01ff5414e444e266c74c3b612eb",
+        "mode": "100644",
+        "type": "blob",
+        "size": 5938,
+        "sha256": "402be357313f7cb1e61c1c02dfd5326f788180bedc7b16fb01ba7eff3f3874da"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 GPL CLI/benchmark/tooling",
+      "source_symbols": [
+        "source:programs/datagen.c"
+      ],
+      "responsibility": "Generates deterministic compressible/sparse test data with bounded dictionary/block buffers.",
+      "fabushi_canonical_owner": "Canonical Build/Quality + Resource/Storage/CLI semantics",
+      "fabushi_target": "Absorb only source-neutral file-safety, lifecycle, platform and UX/error semantics into existing Fabushi owners; GPL tool code is not copied and no lz4 CLI ships.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10438,
+      "source_path": "Telegram/ThirdParty/lz4::programs/datagen.h",
+      "source_blob_sha": "c20c9c7df3cc4b7308d222ca8ef1c0b67362d644",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "programs/datagen.h",
+        "object": "c20c9c7df3cc4b7308d222ca8ef1c0b67362d644",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1687,
+        "sha256": "fd05d6b36d402e9de9a71ac639f354d50d88277dfa3beee80df14dcc4268b4e2"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 GPL CLI/benchmark/tooling",
+      "source_symbols": [
+        "source:programs/datagen.h"
+      ],
+      "responsibility": "Generates deterministic compressible/sparse test data with bounded dictionary/block buffers.",
+      "fabushi_canonical_owner": "Canonical Build/Quality + Resource/Storage/CLI semantics",
+      "fabushi_target": "Absorb only source-neutral file-safety, lifecycle, platform and UX/error semantics into existing Fabushi owners; GPL tool code is not copied and no lz4 CLI ships.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10439,
+      "source_path": "Telegram/ThirdParty/lz4::programs/lz4-exe.rc.in",
+      "source_blob_sha": "bcf4d7d22f5af646b8d62269b0d8cd76afe5f91f",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "programs/lz4-exe.rc.in",
+        "object": "bcf4d7d22f5af646b8d62269b0d8cd76afe5f91f",
+        "mode": "100644",
+        "type": "blob",
+        "size": 850,
+        "sha256": "685d449242bf97f2e89be11631755bf7ca4e3da325f2cc20b4ae5e797de92290"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 GPL CLI/benchmark/tooling",
+      "source_symbols": [
+        "source:programs/lz4-exe.rc.in"
+      ],
+      "responsibility": "Carries Windows executable version/product metadata.",
+      "fabushi_canonical_owner": "Canonical Build/Quality + Resource/Storage/CLI semantics",
+      "fabushi_target": "Absorb only source-neutral file-safety, lifecycle, platform and UX/error semantics into existing Fabushi owners; GPL tool code is not copied and no lz4 CLI ships.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10440,
+      "source_path": "Telegram/ThirdParty/lz4::programs/lz4.1",
+      "source_blob_sha": "7cb98d639df71b08b00a45f7aab17f5f60c82df0",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "programs/lz4.1",
+        "object": "7cb98d639df71b08b00a45f7aab17f5f60c82df0",
+        "mode": "100644",
+        "type": "blob",
+        "size": 9262,
+        "sha256": "fe2f1418e45f8044d53d67022d205c79bee8e6f72958fb40633b6167289dd909"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 GPL CLI/benchmark/tooling",
+      "source_symbols": [
+        "source:programs/lz4.1"
+      ],
+      "responsibility": "Defines user-visible CLI semantics for stdin/stdout, overwrite/preserve/remove, test-only mode, dictionaries, sparse files, block/checksum/content-size and multiple-file behavior.",
+      "fabushi_canonical_owner": "Canonical Build/Quality + Resource/Storage/CLI semantics",
+      "fabushi_target": "Absorb only source-neutral file-safety, lifecycle, platform and UX/error semantics into existing Fabushi owners; GPL tool code is not copied and no lz4 CLI ships.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10441,
+      "source_path": "Telegram/ThirdParty/lz4::programs/lz4.1.md",
+      "source_blob_sha": "06c06cf0fa42f431174afbe1ca383be17efd1b4e",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "programs/lz4.1.md",
+        "object": "06c06cf0fa42f431174afbe1ca383be17efd1b4e",
+        "mode": "100644",
+        "type": "blob",
+        "size": 8425,
+        "sha256": "efb089f46f7c065b6deeff28be5582da06a44ed6aa897d7f803827dd91cbe011"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 GPL CLI/benchmark/tooling",
+      "source_symbols": [
+        "source:programs/lz4.1.md"
+      ],
+      "responsibility": "Defines user-visible CLI semantics for stdin/stdout, overwrite/preserve/remove, test-only mode, dictionaries, sparse files, block/checksum/content-size and multiple-file behavior.",
+      "fabushi_canonical_owner": "Canonical Build/Quality + Resource/Storage/CLI semantics",
+      "fabushi_target": "Absorb only source-neutral file-safety, lifecycle, platform and UX/error semantics into existing Fabushi owners; GPL tool code is not copied and no lz4 CLI ships.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10442,
+      "source_path": "Telegram/ThirdParty/lz4::programs/lz4cli.c",
+      "source_blob_sha": "8c3f9fd93492abb53b2cae9c5547968ff3e8d3f2",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "programs/lz4cli.c",
+        "object": "8c3f9fd93492abb53b2cae9c5547968ff3e8d3f2",
+        "mode": "100644",
+        "type": "blob",
+        "size": 35034,
+        "sha256": "bb440fe18a438ecf21fc0c732f2eafbc6e42a3b9b29c35315b41c9fc218e3767"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 GPL CLI/benchmark/tooling",
+      "source_symbols": [
+        "source:programs/lz4cli.c"
+      ],
+      "responsibility": "Owns command parsing, mode selection, input/output naming, dictionary/benchmark/test/list switches, overwrite/remove policy and deterministic exit/error behavior.",
+      "fabushi_canonical_owner": "Canonical Build/Quality + Resource/Storage/CLI semantics",
+      "fabushi_target": "Absorb only source-neutral file-safety, lifecycle, platform and UX/error semantics into existing Fabushi owners; GPL tool code is not copied and no lz4 CLI ships.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10443,
+      "source_path": "Telegram/ThirdParty/lz4::programs/lz4io.c",
+      "source_blob_sha": "8b70b916887b960f6d9347a0ee87a767e2084229",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "programs/lz4io.c",
+        "object": "8b70b916887b960f6d9347a0ee87a767e2084229",
+        "mode": "100644",
+        "type": "blob",
+        "size": 67443,
+        "sha256": "1a24441da3806f4b7972661069bc1a724ee51b9f478594913ce2b6f513afeae8"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 GPL CLI/benchmark/tooling",
+      "source_symbols": [
+        "source:programs/lz4io.c"
+      ],
+      "responsibility": "Owns file/stdin/stdout compression I/O, sparse writes, overwrite confirmation, frame/legacy/skippable decoding, dictionaries, concatenation, content/checksum metadata and cleanup/error propagation.",
+      "fabushi_canonical_owner": "Canonical Build/Quality + Resource/Storage/CLI semantics",
+      "fabushi_target": "Absorb only source-neutral file-safety, lifecycle, platform and UX/error semantics into existing Fabushi owners; GPL tool code is not copied and no lz4 CLI ships.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10444,
+      "source_path": "Telegram/ThirdParty/lz4::programs/lz4io.h",
+      "source_blob_sha": "0cfb1d20c1c2f2af1af5bf90497a2fc52f04b8c8",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "programs/lz4io.h",
+        "object": "0cfb1d20c1c2f2af1af5bf90497a2fc52f04b8c8",
+        "mode": "100644",
+        "type": "blob",
+        "size": 5024,
+        "sha256": "d0ff4d04be36ff4e4dd8bf7304b10f22804d347b460ff591c031a22f29540a9a"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 GPL CLI/benchmark/tooling",
+      "source_symbols": [
+        "source:programs/lz4io.h"
+      ],
+      "responsibility": "Owns file/stdin/stdout compression I/O, sparse writes, overwrite confirmation, frame/legacy/skippable decoding, dictionaries, concatenation, content/checksum metadata and cleanup/error propagation.",
+      "fabushi_canonical_owner": "Canonical Build/Quality + Resource/Storage/CLI semantics",
+      "fabushi_target": "Absorb only source-neutral file-safety, lifecycle, platform and UX/error semantics into existing Fabushi owners; GPL tool code is not copied and no lz4 CLI ships.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10445,
+      "source_path": "Telegram/ThirdParty/lz4::programs/platform.h",
+      "source_blob_sha": "43a171bf91c8a0b5ee8aad1c1d0f49621660fedb",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "programs/platform.h",
+        "object": "43a171bf91c8a0b5ee8aad1c1d0f49621660fedb",
+        "mode": "100644",
+        "type": "blob",
+        "size": 6849,
+        "sha256": "7c5c664c7ea9a7ee4b024daabe0d8f311bc5000d26b6d3ad1d6012c06592e4c6"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 GPL CLI/benchmark/tooling",
+      "source_symbols": [
+        "source:programs/platform.h"
+      ],
+      "responsibility": "Provides cross-platform file size/time/console/binary-mode/symlink/system utility abstractions used by CLI/tests.",
+      "fabushi_canonical_owner": "Canonical Build/Quality + Resource/Storage/CLI semantics",
+      "fabushi_target": "Absorb only source-neutral file-safety, lifecycle, platform and UX/error semantics into existing Fabushi owners; GPL tool code is not copied and no lz4 CLI ships.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10446,
+      "source_path": "Telegram/ThirdParty/lz4::programs/util.h",
+      "source_blob_sha": "3192ddcb207a6e986509cf6ea39ea2c0ce00a5c1",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "programs/util.h",
+        "object": "3192ddcb207a6e986509cf6ea39ea2c0ce00a5c1",
+        "mode": "100644",
+        "type": "blob",
+        "size": 22766,
+        "sha256": "5b3e1ca58febcb30f0fa1870cc42fa61bd155aa6cb1ab5a93b5be541a9ca3668"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 GPL CLI/benchmark/tooling",
+      "source_symbols": [
+        "source:programs/util.h"
+      ],
+      "responsibility": "Provides cross-platform file size/time/console/binary-mode/symlink/system utility abstractions used by CLI/tests.",
+      "fabushi_canonical_owner": "Canonical Build/Quality + Resource/Storage/CLI semantics",
+      "fabushi_target": "Absorb only source-neutral file-safety, lifecycle, platform and UX/error semantics into existing Fabushi owners; GPL tool code is not copied and no lz4 CLI ships.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10447,
+      "source_path": "Telegram/ThirdParty/lz4::tests/.gitignore",
+      "source_blob_sha": "c7d8f19b8c6edfd352abc2d3c7ed3ec13cbe3a7e",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "tests/.gitignore",
+        "object": "c7d8f19b8c6edfd352abc2d3c7ed3ec13cbe3a7e",
+        "mode": "100644",
+        "type": "blob",
+        "size": 273,
+        "sha256": "f70674980743ec645f1273ed06bb025571573573242e33b1bc381d677496708a"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 regression/ABI/compatibility quality",
+      "source_symbols": [
+        "source:tests/.gitignore"
+      ],
+      "responsibility": "Defines generated-test artifact exclusions.",
+      "fabushi_canonical_owner": "Canonical Quality + Build/Packaging + Resource/Storage",
+      "fabushi_target": "Map applicable invariants to current Fabushi quality/package/resource owners; tests are authority, not evidence that an LZ4 runtime should be shipped.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10448,
+      "source_path": "Telegram/ThirdParty/lz4::tests/COPYING",
+      "source_blob_sha": "d159169d1050894d3ea3b98e1c965c4058208fe1",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "tests/COPYING",
+        "object": "d159169d1050894d3ea3b98e1c965c4058208fe1",
+        "mode": "100644",
+        "type": "blob",
+        "size": 18092,
+        "sha256": "8177f97513213526df2cf6184d8ff986c675afb514d4e68a404010521b880643"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 regression/ABI/compatibility quality",
+      "source_symbols": [
+        "source:tests/COPYING"
+      ],
+      "responsibility": "Carries GPLv2 licensing for the tests subtree.",
+      "fabushi_canonical_owner": "Canonical License/Compliance",
+      "fabushi_target": "Map applicable invariants to current Fabushi quality/package/resource owners; tests are authority, not evidence that an LZ4 runtime should be shipped.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10449,
+      "source_path": "Telegram/ThirdParty/lz4::tests/Makefile",
+      "source_blob_sha": "93a5581c285d4e93a3461ee62637e20b3326a74a",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "tests/Makefile",
+        "object": "93a5581c285d4e93a3461ee62637e20b3326a74a",
+        "mode": "100644",
+        "type": "blob",
+        "size": 25486,
+        "sha256": "876caaa7f622b953aebb4be145be3a47b6db2cbdd1ff0150accafdba499bc3dc"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 regression/ABI/compatibility quality",
+      "source_symbols": [
+        "source:tests/Makefile"
+      ],
+      "responsibility": "Defines broad regression gates for CLI/frame/fuzzer/ABI/freestanding/custom allocator/memory usage/install/sparse/content-size/concatenation/multiple-file/skippable-frame and malformed-tail behavior.",
+      "fabushi_canonical_owner": "Canonical Quality + Build/Packaging + Resource/Storage",
+      "fabushi_target": "Map applicable invariants to current Fabushi quality/package/resource owners; tests are authority, not evidence that an LZ4 runtime should be shipped.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10450,
+      "source_path": "Telegram/ThirdParty/lz4::tests/README.md",
+      "source_blob_sha": "65437de7c871af933849694471674ce5ed93d737",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "tests/README.md",
+        "object": "65437de7c871af933849694471674ce5ed93d737",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3503,
+        "sha256": "5d54eb643e35a35c813034a5898643e527a371d72c699e68e46f74ce47cce1c1"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 regression/ABI/compatibility quality",
+      "source_symbols": [
+        "source:tests/README.md"
+      ],
+      "responsibility": "Documents integrity, fuzz, cross-version interoperability and performance-regression test responsibilities.",
+      "fabushi_canonical_owner": "Canonical Quality + Build/Packaging + Resource/Storage",
+      "fabushi_target": "Map applicable invariants to current Fabushi quality/package/resource owners; tests are authority, not evidence that an LZ4 runtime should be shipped.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10451,
+      "source_path": "Telegram/ThirdParty/lz4::tests/abiTest.c",
+      "source_blob_sha": "e46004af0cd4edb3bff9815b0a30ef4b862cc533",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "tests/abiTest.c",
+        "object": "e46004af0cd4edb3bff9815b0a30ef4b862cc533",
+        "mode": "100644",
+        "type": "blob",
+        "size": 6554,
+        "sha256": "bc5dcbbe88d4c1ce369f191b71231f15e7a59fe632731dd9cfa3967d5a7ce930"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 regression/ABI/compatibility quality",
+      "source_symbols": [
+        "source:tests/abiTest.c"
+      ],
+      "responsibility": "Checks public ABI layout/symbol/version stability and dynamic/static interoperability with exact compression round trips.",
+      "fabushi_canonical_owner": "Canonical Quality + Build/Packaging + Resource/Storage",
+      "fabushi_target": "Map applicable invariants to current Fabushi quality/package/resource owners; tests are authority, not evidence that an LZ4 runtime should be shipped.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10452,
+      "source_path": "Telegram/ThirdParty/lz4::tests/checkFrame.c",
+      "source_blob_sha": "946805ff4853a8c613831dfa5139c359da4e9bed",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "tests/checkFrame.c",
+        "object": "946805ff4853a8c613831dfa5139c359da4e9bed",
+        "mode": "100644",
+        "type": "blob",
+        "size": 10711,
+        "sha256": "c2661471ffaf9b4b6b633fcbe3c1ef1831bfb5e8b33cc1b74eac656df1c38b35"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 regression/ABI/compatibility quality",
+      "source_symbols": [
+        "source:tests/checkFrame.c"
+      ],
+      "responsibility": "Checks incremental frame header/block-size parsing, partial input, concatenated frames, read errors and decompression context cleanup.",
+      "fabushi_canonical_owner": "Canonical Quality + Build/Packaging + Resource/Storage",
+      "fabushi_target": "Map applicable invariants to current Fabushi quality/package/resource owners; tests are authority, not evidence that an LZ4 runtime should be shipped.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10453,
+      "source_path": "Telegram/ThirdParty/lz4::tests/checkTag.c",
+      "source_blob_sha": "5e5a03409910048762d2902aac74eb75528e5819",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "tests/checkTag.c",
+        "object": "5e5a03409910048762d2902aac74eb75528e5819",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2549,
+        "sha256": "a49419f21d05aa45c7d82c7972064e1cd0d87ba6fe0a3417686337545d276445"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 regression/ABI/compatibility quality",
+      "source_symbols": [
+        "source:tests/checkTag.c"
+      ],
+      "responsibility": "Fails release/build validation when tag/library version or linked lib identity is inconsistent.",
+      "fabushi_canonical_owner": "Canonical Quality + Build/Packaging + Resource/Storage",
+      "fabushi_target": "Map applicable invariants to current Fabushi quality/package/resource owners; tests are authority, not evidence that an LZ4 runtime should be shipped.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10454,
+      "source_path": "Telegram/ThirdParty/lz4::tests/check_liblz4_version.sh",
+      "source_blob_sha": "930420435f289cd290856231d5f88f41f6c9088f",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "tests/check_liblz4_version.sh",
+        "object": "930420435f289cd290856231d5f88f41f6c9088f",
+        "mode": "100755",
+        "type": "blob",
+        "size": 123,
+        "sha256": "e47a787d307711a2e1dd39bc04aa3ceeab0dbe5ec390e4b56891543706b6d0fb"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 regression/ABI/compatibility quality",
+      "source_symbols": [
+        "source:tests/check_liblz4_version.sh"
+      ],
+      "responsibility": "Fails release/build validation when tag/library version or linked lib identity is inconsistent.",
+      "fabushi_canonical_owner": "Canonical Quality + Build/Packaging + Resource/Storage",
+      "fabushi_target": "Map applicable invariants to current Fabushi quality/package/resource owners; tests are authority, not evidence that an LZ4 runtime should be shipped.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10455,
+      "source_path": "Telegram/ThirdParty/lz4::tests/datagencli.c",
+      "source_blob_sha": "ccb27dfc6886bcfe8da27a407bebc7d736e78ec0",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "tests/datagencli.c",
+        "object": "ccb27dfc6886bcfe8da27a407bebc7d736e78ec0",
+        "mode": "100644",
+        "type": "blob",
+        "size": 5214,
+        "sha256": "2933c69b4cd4b2a10f3c5532ff0a1b151a6e3995b4aa7bf07dd516ad3fcfa52e"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 regression/ABI/compatibility quality",
+      "source_symbols": [
+        "source:tests/datagencli.c"
+      ],
+      "responsibility": "Provides deterministic compressibility/sparse-data generation for regression inputs.",
+      "fabushi_canonical_owner": "Canonical Quality + Build/Packaging + Resource/Storage",
+      "fabushi_target": "Map applicable invariants to current Fabushi quality/package/resource owners; tests are authority, not evidence that an LZ4 runtime should be shipped.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10456,
+      "source_path": "Telegram/ThirdParty/lz4::tests/decompress-partial-usingDict.c",
+      "source_blob_sha": "8b85106d791bad88d9d879650e72e59223cb1215",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "tests/decompress-partial-usingDict.c",
+        "object": "8b85106d791bad88d9d879650e72e59223cb1215",
+        "mode": "100644",
+        "type": "blob",
+        "size": 4161,
+        "sha256": "71a5c13989dd6a5d3bb25631c3de5fc45c2c0e813d4e9db36bf8b934632b6499"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 regression/ABI/compatibility quality",
+      "source_symbols": [
+        "source:tests/decompress-partial-usingDict.c"
+      ],
+      "responsibility": "Regresses partial safe decompression across oversized source lengths and no/prefix/external dictionary modes without corruption.",
+      "fabushi_canonical_owner": "Canonical Quality + Build/Packaging + Resource/Storage",
+      "fabushi_target": "Map applicable invariants to current Fabushi quality/package/resource owners; tests are authority, not evidence that an LZ4 runtime should be shipped.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10457,
+      "source_path": "Telegram/ThirdParty/lz4::tests/decompress-partial.c",
+      "source_blob_sha": "4e124b73cd4348324fb19cba7db16af36c8e5094",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "tests/decompress-partial.c",
+        "object": "4e124b73cd4348324fb19cba7db16af36c8e5094",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2114,
+        "sha256": "2de073beb5445193eaa7fcbb1b866833430cdc98d10b7bbdf40098134a07e937"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 regression/ABI/compatibility quality",
+      "source_symbols": [
+        "source:tests/decompress-partial.c"
+      ],
+      "responsibility": "Regresses partial safe decompression across oversized source lengths and no/prefix/external dictionary modes without corruption.",
+      "fabushi_canonical_owner": "Canonical Quality + Build/Packaging + Resource/Storage",
+      "fabushi_target": "Map applicable invariants to current Fabushi quality/package/resource owners; tests are authority, not evidence that an LZ4 runtime should be shipped.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10458,
+      "source_path": "Telegram/ThirdParty/lz4::tests/frametest.c",
+      "source_blob_sha": "330195513cf705eda23d2fc245bf5465e07406b9",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "tests/frametest.c",
+        "object": "330195513cf705eda23d2fc245bf5465e07406b9",
+        "mode": "100644",
+        "type": "blob",
+        "size": 61462,
+        "sha256": "bf5b6052be10586bac6993e8b4e81c94f06d5fabba2b037ef3e166b6bc4662e1"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 regression/ABI/compatibility quality",
+      "source_symbols": [
+        "source:tests/frametest.c"
+      ],
+      "responsibility": "Stress-tests frame bounds, contexts, checksums, dictionaries, custom allocators, malformed inputs, memory cleanup and randomized round trips.",
+      "fabushi_canonical_owner": "Canonical Quality + Build/Packaging + Resource/Storage",
+      "fabushi_target": "Map applicable invariants to current Fabushi quality/package/resource owners; tests are authority, not evidence that an LZ4 runtime should be shipped.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10459,
+      "source_path": "Telegram/ThirdParty/lz4::tests/freestanding.c",
+      "source_blob_sha": "ceff4c5aecc636cdd4c371c31ef05c0797602f56",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "tests/freestanding.c",
+        "object": "ceff4c5aecc636cdd4c371c31ef05c0797602f56",
+        "mode": "100644",
+        "type": "blob",
+        "size": 7592,
+        "sha256": "2b1f22a08a00a4a902b003cf2fca312dcf8569ab372b3540397057ba5ceb348f"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 regression/ABI/compatibility quality",
+      "source_symbols": [
+        "source:tests/freestanding.c"
+      ],
+      "responsibility": "Proves codec operation with caller-supplied memory primitives and no hosted runtime.",
+      "fabushi_canonical_owner": "Canonical Quality + Build/Packaging + Resource/Storage",
+      "fabushi_target": "Map applicable invariants to current Fabushi quality/package/resource owners; tests are authority, not evidence that an LZ4 runtime should be shipped.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10460,
+      "source_path": "Telegram/ThirdParty/lz4::tests/fullbench.c",
+      "source_blob_sha": "9c139961ca5cfaf54e273fe1c3e55e2b195c954e",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "tests/fullbench.c",
+        "object": "9c139961ca5cfaf54e273fe1c3e55e2b195c954e",
+        "mode": "100644",
+        "type": "blob",
+        "size": 33669,
+        "sha256": "54e0d1d51466ed1f1a27f5a0135020350328cf7fd9167223f992cac8fc9836ff"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 regression/ABI/compatibility quality",
+      "source_symbols": [
+        "source:tests/fullbench.c"
+      ],
+      "responsibility": "Exercises all major compression/decompression entry points and performance contracts.",
+      "fabushi_canonical_owner": "Canonical Quality + Build/Packaging + Resource/Storage",
+      "fabushi_target": "Map applicable invariants to current Fabushi quality/package/resource owners; tests are authority, not evidence that an LZ4 runtime should be shipped.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10461,
+      "source_path": "Telegram/ThirdParty/lz4::tests/fuzzer.c",
+      "source_blob_sha": "341a2b00bd263232840c16c1364906fe36a2fea9",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "tests/fuzzer.c",
+        "object": "341a2b00bd263232840c16c1364906fe36a2fea9",
+        "mode": "100644",
+        "type": "blob",
+        "size": 102370,
+        "sha256": "43ecff48ff51dca75f47627410fb9255fcc01d7916da59f077743bd357a6ca2e"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 regression/ABI/compatibility quality",
+      "source_symbols": [
+        "source:tests/fuzzer.c"
+      ],
+      "responsibility": "Runs large randomized/adversarial integrity coverage across block/HC/dictionary/stream APIs, invalid inputs and boundary arithmetic.",
+      "fabushi_canonical_owner": "Canonical Quality + Build/Packaging + Resource/Storage",
+      "fabushi_target": "Map applicable invariants to current Fabushi quality/package/resource owners; tests are authority, not evidence that an LZ4 runtime should be shipped.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10462,
+      "source_path": "Telegram/ThirdParty/lz4::tests/goldenSamples/skip.bin",
+      "source_blob_sha": "1a8b9d5de206b75cec4c2a8067a7a2344144e524",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "tests/goldenSamples/skip.bin",
+        "object": "1a8b9d5de206b75cec4c2a8067a7a2344144e524",
+        "mode": "100644",
+        "type": "blob",
+        "size": 38,
+        "sha256": "3fec2ac0604510a1327930b4450f2b48080d648a1d593d7b3b2072394275adc4"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 regression/ABI/compatibility quality",
+      "source_symbols": [
+        "source:tests/goldenSamples/skip.bin"
+      ],
+      "responsibility": "Provides a golden skippable-frame fixture for concatenation/skip semantics.",
+      "fabushi_canonical_owner": "Canonical Quality + Build/Packaging + Resource/Storage",
+      "fabushi_target": "Map applicable invariants to current Fabushi quality/package/resource owners; tests are authority, not evidence that an LZ4 runtime should be shipped.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10463,
+      "source_path": "Telegram/ThirdParty/lz4::tests/roundTripTest.c",
+      "source_blob_sha": "3e9d6eddc063128155d7f4b22911b454967cb69f",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "tests/roundTripTest.c",
+        "object": "3e9d6eddc063128155d7f4b22911b454967cb69f",
+        "mode": "100644",
+        "type": "blob",
+        "size": 7309,
+        "sha256": "8266d37dff64896b6d31684b74c17e8b0a9e03c2d439699011fe568cf0ba44e8"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 regression/ABI/compatibility quality",
+      "source_symbols": [
+        "source:tests/roundTripTest.c"
+      ],
+      "responsibility": "Checks file/stdin round trips and compressed-size/output-buffer contracts.",
+      "fabushi_canonical_owner": "Canonical Quality + Build/Packaging + Resource/Storage",
+      "fabushi_target": "Map applicable invariants to current Fabushi quality/package/resource owners; tests are authority, not evidence that an LZ4 runtime should be shipped.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10464,
+      "source_path": "Telegram/ThirdParty/lz4::tests/test-lz4-abi.py",
+      "source_blob_sha": "0c8fd0523eac46816480d7c517ea74f64e855a80",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "tests/test-lz4-abi.py",
+        "object": "0c8fd0523eac46816480d7c517ea74f64e855a80",
+        "mode": "100644",
+        "type": "blob",
+        "size": 6291,
+        "sha256": "209c73a250a08c972cecaf7799238d8b3fede6b18a2fa66e38221687ad7bf93a"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 regression/ABI/compatibility quality",
+      "source_symbols": [
+        "source:tests/test-lz4-abi.py"
+      ],
+      "responsibility": "Checks public ABI layout/symbol/version stability and dynamic/static interoperability with exact compression round trips.",
+      "fabushi_canonical_owner": "Canonical Quality + Build/Packaging + Resource/Storage",
+      "fabushi_target": "Map applicable invariants to current Fabushi quality/package/resource owners; tests are authority, not evidence that an LZ4 runtime should be shipped.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10465,
+      "source_path": "Telegram/ThirdParty/lz4::tests/test-lz4-list.py",
+      "source_blob_sha": "fe116823231cb0f6e5bba7b952af348ba32b167a",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "tests/test-lz4-list.py",
+        "object": "fe116823231cb0f6e5bba7b952af348ba32b167a",
+        "mode": "100644",
+        "type": "blob",
+        "size": 12661,
+        "sha256": "1f6f4ef04bff65f929c4879ba626942c81f7d159cb649a152849d321d748b191"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 regression/ABI/compatibility quality",
+      "source_symbols": [
+        "source:tests/test-lz4-list.py"
+      ],
+      "responsibility": "Validates list-mode metadata across frame types, block modes, checksums, content sizes, concatenation and stdin/file cases.",
+      "fabushi_canonical_owner": "Canonical Quality + Build/Packaging + Resource/Storage",
+      "fabushi_target": "Map applicable invariants to current Fabushi quality/package/resource owners; tests are authority, not evidence that an LZ4 runtime should be shipped.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10466,
+      "source_path": "Telegram/ThirdParty/lz4::tests/test-lz4-speed.py",
+      "source_blob_sha": "658939c2407f50b7347adbb4c217f6f3301ab2c9",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "tests/test-lz4-speed.py",
+        "object": "658939c2407f50b7347adbb4c217f6f3301ab2c9",
+        "mode": "100644",
+        "type": "blob",
+        "size": 16785,
+        "sha256": "5a39d26adbef528d32b7baa5214fb583bf2ea868e643b19b323c5694785072db"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 regression/ABI/compatibility quality",
+      "source_symbols": [
+        "source:tests/test-lz4-speed.py"
+      ],
+      "responsibility": "Tracks compression/decompression speed and ratio regressions with repeat-before-alert behavior and explicit environmental load constraints.",
+      "fabushi_canonical_owner": "Canonical Quality + Build/Packaging + Resource/Storage",
+      "fabushi_target": "Map applicable invariants to current Fabushi quality/package/resource owners; tests are authority, not evidence that an LZ4 runtime should be shipped.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10467,
+      "source_path": "Telegram/ThirdParty/lz4::tests/test-lz4-versions.py",
+      "source_blob_sha": "d7fd199e64425e26c6b6729eae845bbd226c1511",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "tests/test-lz4-versions.py",
+        "object": "d7fd199e64425e26c6b6729eae845bbd226c1511",
+        "mode": "100644",
+        "type": "blob",
+        "size": 5376,
+        "sha256": "e315556d3d2d3087efff4b028bc0712c06240463d07072f29f61715891d84155"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 regression/ABI/compatibility quality",
+      "source_symbols": [
+        "source:tests/test-lz4-versions.py"
+      ],
+      "responsibility": "Builds released versions and verifies cross-version compressed-stream interoperability and byte equality.",
+      "fabushi_canonical_owner": "Canonical Quality + Build/Packaging + Resource/Storage",
+      "fabushi_target": "Map applicable invariants to current Fabushi quality/package/resource owners; tests are authority, not evidence that an LZ4 runtime should be shipped.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10468,
+      "source_path": "Telegram/ThirdParty/lz4::tests/test_custom_block_sizes.sh",
+      "source_blob_sha": "2f6591f856344b0351bfe3ec4ede762c5d4d1d4e",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "tests/test_custom_block_sizes.sh",
+        "object": "2f6591f856344b0351bfe3ec4ede762c5d4d1d4e",
+        "mode": "100755",
+        "type": "blob",
+        "size": 1901,
+        "sha256": "8466f9a3cf99bf29085ad6cbf8f28b3cae90ed2bf7acc456e4cd5ecdc7f91130"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 regression/ABI/compatibility quality",
+      "source_symbols": [
+        "source:tests/test_custom_block_sizes.sh"
+      ],
+      "responsibility": "Validates custom block-size boundary bucketing and rejection/rounding behavior across concatenated frames.",
+      "fabushi_canonical_owner": "Canonical Quality + Build/Packaging + Resource/Storage",
+      "fabushi_target": "Map applicable invariants to current Fabushi quality/package/resource owners; tests are authority, not evidence that an LZ4 runtime should be shipped.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10469,
+      "source_path": "Telegram/ThirdParty/lz4::tests/test_install.sh",
+      "source_blob_sha": "ad0d4ebbd6b1f3a79526bb316c6fa508999eae56",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "tests/test_install.sh",
+        "object": "ad0d4ebbd6b1f3a79526bb316c6fa508999eae56",
+        "mode": "100755",
+        "type": "blob",
+        "size": 973,
+        "sha256": "772b9013a80289806af837968afda5055531a5456e9ecba056ba82ec67a222d1"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 regression/ABI/compatibility quality",
+      "source_symbols": [
+        "source:tests/test_install.sh"
+      ],
+      "responsibility": "Checks install/uninstall outputs on supported Unix platforms.",
+      "fabushi_canonical_owner": "Canonical Quality + Build/Packaging + Resource/Storage",
+      "fabushi_target": "Map applicable invariants to current Fabushi quality/package/resource owners; tests are authority, not evidence that an LZ4 runtime should be shipped.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10470,
+      "source_path": "Telegram/ThirdParty/lz4::tests/unicode_lint.sh",
+      "source_blob_sha": "cd65d2dd25d012cf7f98505c52e3cdf86f6987af",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": "tests/unicode_lint.sh",
+        "object": "cd65d2dd25d012cf7f98505c52e3cdf86f6987af",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1195,
+        "sha256": "db8249c743951146f1b76746344a86bf08eec17c307700244a2f17340981ba69"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 regression/ABI/compatibility quality",
+      "source_symbols": [
+        "source:tests/unicode_lint.sh"
+      ],
+      "responsibility": "Rejects non-ASCII source bytes in C/H sources as a source-integrity lint.",
+      "fabushi_canonical_owner": "Canonical Quality + Build/Packaging + Resource/Storage",
+      "fabushi_target": "Map applicable invariants to current Fabushi quality/package/resource owners; tests are authority, not evidence that an LZ4 runtime should be shipped.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10471,
+      "source_path": "Telegram/ThirdParty/nimf::.github/ISSUE_TEMPLATE/------.md",
+      "source_blob_sha": "8ee502b759fc5763b369b6be069b57e9aea71802",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": ".github/ISSUE_TEMPLATE/------.md",
+        "object": "8ee502b759fc5763b369b6be069b57e9aea71802",
+        "mode": "100644",
+        "type": "blob",
+        "size": 678,
+        "sha256": "828ffa31f2cb3403c8f5efb924736da94c710d9db6e5c63ba6a4f7fb60067115"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf repository/support/release metadata",
+      "source_symbols": [
+        "source:.github/ISSUE_TEMPLATE/------.md"
+      ],
+      "responsibility": "Defines structured bug/feature reporting fields including reproduction, expected behavior and environment/version context.",
+      "fabushi_canonical_owner": "Canonical Build/Release/Support/License",
+      "fabushi_target": "Map release/support/provenance lessons to existing Fabushi owners; no Nimf runtime/IME owner is inferred from metadata alone.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10472,
+      "source_path": "Telegram/ThirdParty/nimf::.github/ISSUE_TEMPLATE/-----.md",
+      "source_blob_sha": "40892d1268b0b5aa1d441ba504b732a5e7066f27",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": ".github/ISSUE_TEMPLATE/-----.md",
+        "object": "40892d1268b0b5aa1d441ba504b732a5e7066f27",
+        "mode": "100644",
+        "type": "blob",
+        "size": 181,
+        "sha256": "6fabfee32f6bca5fafff6a5e4ef55fe8dc825b44a94ed96ce57c6515008e444c"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf repository/support/release metadata",
+      "source_symbols": [
+        "source:.github/ISSUE_TEMPLATE/-----.md"
+      ],
+      "responsibility": "Defines structured bug/feature reporting fields including reproduction, expected behavior and environment/version context.",
+      "fabushi_canonical_owner": "Canonical Build/Release/Support/License",
+      "fabushi_target": "Map release/support/provenance lessons to existing Fabushi owners; no Nimf runtime/IME owner is inferred from metadata alone.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10473,
+      "source_path": "Telegram/ThirdParty/nimf::.github/ISSUE_TEMPLATE/bug-report-eng.md",
+      "source_blob_sha": "b346814ebca864826f2d7a8fb10924a072d47b17",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": ".github/ISSUE_TEMPLATE/bug-report-eng.md",
+        "object": "b346814ebca864826f2d7a8fb10924a072d47b17",
+        "mode": "100644",
+        "type": "blob",
+        "size": 623,
+        "sha256": "4878b96d4cc688e355795c526aab2a398ed6b7cbb2e68119319c702d5462cb8e"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf repository/support/release metadata",
+      "source_symbols": [
+        "source:.github/ISSUE_TEMPLATE/bug-report-eng.md"
+      ],
+      "responsibility": "Defines structured bug/feature reporting fields including reproduction, expected behavior and environment/version context.",
+      "fabushi_canonical_owner": "Canonical Build/Release/Support/License",
+      "fabushi_target": "Map release/support/provenance lessons to existing Fabushi owners; no Nimf runtime/IME owner is inferred from metadata alone.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10474,
+      "source_path": "Telegram/ThirdParty/nimf::.github/workflows/release.yml",
+      "source_blob_sha": "04492639a5b5d0fad3da836e0e320c8c59407f32",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": ".github/workflows/release.yml",
+        "object": "04492639a5b5d0fad3da836e0e320c8c59407f32",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1729,
+        "sha256": "bafce536dc1da83509ddc4d78971d4054a104ae9488fc2c38865d64704c45dc6"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf repository/support/release metadata",
+      "source_symbols": [
+        "source:.github/workflows/release.yml"
+      ],
+      "responsibility": "Builds a Debian package on version tags with explicit Ubuntu build dependencies, uploads the .deb artifact and publishes a GitHub release.",
+      "fabushi_canonical_owner": "Canonical Build/Release/Support/License",
+      "fabushi_target": "Map release/support/provenance lessons to existing Fabushi owners; no Nimf runtime/IME owner is inferred from metadata alone.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10475,
+      "source_path": "Telegram/ThirdParty/nimf::.gitignore",
+      "source_blob_sha": "c7d70a7fe608dacde757aaf6f62f7734016956cc",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": ".gitignore",
+        "object": "c7d70a7fe608dacde757aaf6f62f7734016956cc",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1177,
+        "sha256": "d5f3e8a870b5451d8a0b8d22e746f554e4552e564e38737b25f561a916cd55de"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf repository/support/release metadata",
+      "source_symbols": [
+        "source:.gitignore"
+      ],
+      "responsibility": "Defines generated Autotools/build/test/settings artifacts excluded from source state.",
+      "fabushi_canonical_owner": "Canonical Build/Release/Support/License",
+      "fabushi_target": "Map release/support/provenance lessons to existing Fabushi owners; no Nimf runtime/IME owner is inferred from metadata alone.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10476,
+      "source_path": "Telegram/ThirdParty/nimf::AUTHORS",
+      "source_blob_sha": "eafdfcc5c5f5ddf59bbb4b9fcda502cc4697b456",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "AUTHORS",
+        "object": "eafdfcc5c5f5ddf59bbb4b9fcda502cc4697b456",
+        "mode": "100644",
+        "type": "blob",
+        "size": 33,
+        "sha256": "7bc5bb411d605ce4547484c596464d5b7da2d1800e6cb0893c8cad309b191e40"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf repository/support/release metadata",
+      "source_symbols": [
+        "source:AUTHORS"
+      ],
+      "responsibility": "Carries upstream authorship attribution provenance.",
+      "fabushi_canonical_owner": "Canonical Build/Release/Support/License",
+      "fabushi_target": "Map release/support/provenance lessons to existing Fabushi owners; no Nimf runtime/IME owner is inferred from metadata alone.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    }
+  ]
+}
