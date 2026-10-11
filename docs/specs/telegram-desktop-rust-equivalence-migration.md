@@ -1,5 +1,17 @@
-Live Revision 9 authority (2026-10-11): telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 (root tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6). Root non-directory=6,653; recursive non-directory=16,125; deterministic read-through=11,116; first unread=11,117 Telegram/ThirdParty/range-v3::include/range/v3/utility/concepts.hpp@b8a1c91fc37b8dffa08b465722f8ec7baab46656; unread=5,009; unknown=15,845; omitted=0. Orders 11,053-11,116 were validated and materialized on exact-head d59eea1e646d01d53bc59aa41b422020239e9faa by Rust desktop runtime 38142444139 / source-authority job 114478888136 / artifact 11703104785 (sha256:f9eeaba39ea570cd44f22b38c635c0991983eea09a8e4f9e1fb298a91f612a5f); the current-source helper verifies exact Git blob identity before upload. Applicable behavior remains mapped existing-owner-first to Build/Quality/Dependency-Provenance/License; no range-v3 runtime or parallel product owner is introduced.
-<!-- TDRP_CURRENT_SUMMARY read-through=11116 unread=5009 unknown=15845 omitted=0 first-unread=11117 path=Telegram/ThirdParty/range-v3::include/range/v3/utility/concepts.hpp -->
+Live Revision 9 authority (2026-10-11): telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 (root tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6). Root non-directory=6,653; recursive non-directory=16,125; deterministic read-through=11,180; first unread=11,181 Telegram/ThirdParty/range-v3::include/range/v3/view/interface.hpp@aee727d5ee7d9133bf6e269c0af2143cd09a9c41; unread=4,945; unknown=15,845; omitted=0. Orders 11,117-11,180 were validated and materialized on exact-head e2f2ca67fad222cf5631b858a13719a7cbad29b3 by Rust desktop runtime 38143537190 / source-authority job 114482083927 / artifact 11704176427 (sha256:aacf80e5efad0eda199b16cd5aa8d3112f69aca2d36d4ed77dc3324b134390d1); the current-source helper verified exact Git blob identity before upload. Applicable behavior remains mapped existing-owner-first to Build/Quality/Dependency-Provenance/License and native language runtime/standard-library boundaries; no range-v3 runtime, second container layer or parallel product owner is introduced.
+<!-- TDRP_CURRENT_SUMMARY read-through=11180 unread=4945 unknown=15845 omitted=0 first-unread=11181 path=Telegram/ThirdParty/range-v3::include/range/v3/view/interface.hpp -->
+
+
+### Revision 9 deterministic read-through — range-v3 utility/view infrastructure 11,117–11,180
+
+Exact source-window evidence: `e2f2ca67fad222cf5631b858a13719a7cbad29b3`, Rust desktop runtime `38143537190`, source-authority job `114482083927`, artifact `11704176427`, digest `sha256:aacf80e5efad0eda199b16cd5aa8d3112f69aca2d36d4ed77dc3324b134390d1`. The exact-head helper materialized all 64 entries and verified each exact Git blob SHA before artifact upload.
+
+This window covers utility concept/copy/iterator/dangling/invoke/memory/move/optional/random/scope-exit/semiregular/swap/tagged tuple/variant boundaries plus lazy view/adaptor lifecycle and category constraints for all/any_view/cache/cartesian/chunk/common/concat/counted/cycle/drop/filter/generate/group_by/indices/indirect. These are generic C++ dependency/runtime semantics, not Fabushi Search/Conversation/Agent product ownership.
+
+Existing-owner-first keeps applicability at Build / Quality / Dependency-Provenance / License and native Rust/TypeScript runtime/standard-library owners. No range-v3 shipping runtime, second container abstraction or source-named product root is introduced. All 64 rows remain `mapped-open` pending applicable production/evidence closure.
+
+Accounting: **11,180/16,125 read; 4,945 unread; 15,845 unknown; 0 omitted**. Next: 11,181 `Telegram/ThirdParty/range-v3::include/range/v3/view/interface.hpp@aee727d5ee7d9133bf6e269c0af2143cd09a9c41`.
+
 
 
 

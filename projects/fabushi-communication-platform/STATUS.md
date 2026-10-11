@@ -11,15 +11,19 @@ Complete: false
 | Existing-owner-first absorption | specified | new owners require ADR |
 | Native Fabushi network | in progress | canonical Rust messaging service and real Host HTTP API transport exist; broader service/release closure remains open |
 | Exact existing-owner inventory | in progress | canonical owners are audited continuously; full 16,125-entry absorption is not closed |
-| Telegram capability graph | in progress | deterministic source review is 11,116/16,125; unread/unknown remain open |
+| Telegram capability graph | in progress | deterministic source review is 11,180/16,125; unread/unknown remain open |
 | Capability → owner mapping | in progress | reviewed responsibilities map existing-owner-first; full source→shipping evidence graph remains open |
 | Conversation/message model evolution | in progress | native/mahayana-messaging has canonical Conversation/protocol/service evolution; mapped-open product closure remains |
 | Native messaging infrastructure | in progress | canonical messaging service plus source/host real API transport are implemented; broader server/platform/release evidence remains |
 | Human messaging in existing workspace | in progress | existing Composer/submission/Host path carries human send including silent/scheduled semantics; full regression/release closure remains |
 | Human + Agent unified flow | in progress | canonical ConversationWorkspace/Composer infrastructure is shared; complete Hybrid creation/policy/regression evidence remains open |
-| Full feature absorption | in progress | source/product mapping is active; unread=5,009 and unknown=15,845 prevent closure |
+| Full feature absorption | in progress | source/product mapping is active; unread=4,945 and unknown=15,845 prevent closure |
 | Packaged acceptance | blocked | no artifact |
 | Release | blocked | ACs incomplete |
+
+## 2026-10-11 range-v3 utility/view source accounting
+
+Exact-head `e2f2ca67fad222cf5631b858a13719a7cbad29b3` Rust desktop runtime `38143537190` completed/success; source-authority job `114482083927` materialized and exact-blob verified orders 11,117–11,180, artifact `11704176427` (`sha256:aacf80e5efad0eda199b16cd5aa8d3112f69aca2d36d4ed77dc3324b134390d1`). Current deterministic accounting is **11,180/16,125 read; 4,945 unread; 15,845 unknown; 0 omitted**; first unread is 11,181 `Telegram/ThirdParty/range-v3::include/range/v3/view/interface.hpp@aee727d5ee7d9133bf6e269c0af2143cd09a9c41`. This is source accounting only; product/release acceptance remains open.
 
 ## Do not report
 
