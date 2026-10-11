@@ -453,7 +453,7 @@ export function HumanCallControls({
   const configurePeerRef = useRef<((nextCall: HumanCall, nextLease: CallLease, local: MediaStream) => Promise<RTCPeerConnection>) | null>(null);
   const callRef = useRef<HumanCall | null>(null);
   const leaseRef = useRef<CallLease | null>(null);
-  const appliedSignalSeqRef = useRef(0);
+  const sfuSyncInFlightRef = useRef(false);
   const recoveringRef = useRef(false);
   const disposedRef = useRef(false);
   const displayPickerGenerationRef = useRef(0);
@@ -651,23 +651,22 @@ export function HumanCallControls({
   }, [bridge, invalidateCameraCapture]);
   bindCameraTrackLifecycleRef.current = bindCameraTrackLifecycle;
 
-  const sendSignal = useCallback(async (nextCall: HumanCall, kind: CallSignal["kind"], payload: Record<string, unknown>) => {
-    const owner = await readLease(nextCall.id, true);
-    const fallbackSeq = Math.max(1, nextCall.signalSeq + 1);
-    const signal = await client.call("sendCallSignal", {
-      callId: nextCall.id,
-      generation: nextCall.generation,
-      seq: fallbackSeq,
-      senderDeviceId: owner.deviceId,
-      kind,
-      payload,
-    });
-    if (!isSignal(signal)) throw new Error("Host returned a malformed call signal.");
-    // shipping backend event.seq is authoritative. The request seq above exists
-    // only for the offline/local fallback store and is not treated as global.
-    appliedSignalSeqRef.current = Math.max(appliedSignalSeqRef.current, signal.seq);
-    return signal;
-  }, [client, readLease]);
+  const closeRemoteMediaSessions = useCallback(async (nextCall: HumanCall) => {
+    const value = await client.call("listCallMediaSessions", { callId: nextCall.id });
+    if (!Array.isArray(value)) throw new Error("Host returned malformed call media recovery state.");
+    for (const raw of value) {
+      if (!isCallMediaSession(raw) || raw.callId !== nextCall.id) {
+        throw new Error("Host returned a malformed recovered call media session.");
+      }
+      if (raw.status === "closed" || raw.generation > nextCall.generation) continue;
+      await client.call("closeCallMediaSession", {
+        callId: nextCall.id,
+        mediaSessionId: raw.mediaSessionId,
+        clientTeardownId: callMediaNonce("teardown"),
+        generation: raw.generation,
+      });
+    }
+  }, [client]);
 
   const ensureLocalMedia = useCallback(async (video: boolean) => {
     const permission = await bridge.callMedia.requestPermissions({ audio: true, video });
@@ -713,9 +712,14 @@ export function HumanCallControls({
 
   const closePeer = useCallback(() => {
     stopDiagnostics();
-    const pc = pcRef.current;
+    const publishPc = pcRef.current;
+    const subscribePc = subscribePcRef.current;
     pcRef.current = null;
-    if (pc != null) {
+    subscribePcRef.current = null;
+    sfuRuntimeRef.current = null;
+    sfuSyncInFlightRef.current = false;
+    for (const pc of [publishPc, subscribePc]) {
+      if (pc == null) continue;
       pc.onicecandidate = null;
       pc.ontrack = null;
       pc.onconnectionstatechange = null;
@@ -758,104 +762,196 @@ export function HumanCallControls({
     setCameraCapturePaused(false);
   }, [closePeer, invalidateCameraCapture, stopCallTone, transition]);
 
+  const syncSfuSubscriptions = useCallback(async (nextCall: HumanCall) => {
+    const runtime = sfuRuntimeRef.current;
+    const subscribePc = subscribePcRef.current;
+    const owner = leaseRef.current;
+    if (runtime == null || subscribePc == null || owner == null || runtime.generation !== nextCall.generation) return;
+    if (sfuSyncInFlightRef.current) return;
+    sfuSyncInFlightRef.current = true;
+    try {
+      const discovered = await client.call("discoverCallMediaPublications", { callId: nextCall.id });
+      if (!isRecord(discovered) || discovered.generation !== nextCall.generation || !Array.isArray(discovered.publications)) {
+        throw new Error("Host returned malformed SFU publication discovery.");
+      }
+      const pending = discovered.publications
+        .filter(isCallMediaPublication)
+        .filter((publication) => String(publication.memberUserId) !== owner.userId)
+        .filter((publication) => !runtime.subscribedPublicationIds.has(publication.publicationId));
+      if (pending.length === 0) return;
+
+      const clientOperationId = callMediaNonce("subscribe");
+      const response = await client.call("subscribeCallMedia", {
+        callId: nextCall.id,
+        mediaSessionId: runtime.subscribeSessionId,
+        clientOperationId,
+        generation: nextCall.generation,
+        subscriptions: pending.map((publication) => ({
+          clientSubscriptionId: callMediaNonce("sub"),
+          publicationId: publication.publicationId,
+        })),
+      });
+      if (!isRecord(response)) throw new Error("Host returned malformed SFU subscription state.");
+      const offer = requireSessionDescription(response.sessionDescription, "offer");
+      await subscribePc.setRemoteDescription(offer);
+      const answer = await subscribePc.createAnswer();
+      await subscribePc.setLocalDescription(answer);
+      await waitForIceGatheringComplete(subscribePc);
+      const localAnswer = subscribePc.localDescription;
+      if (localAnswer?.type !== "answer" || typeof localAnswer.sdp !== "string") {
+        throw new Error("SFU subscription answer was not available after ICE gathering.");
+      }
+      await client.call("answerCallMediaSubscription", {
+        callId: nextCall.id,
+        mediaSessionId: runtime.subscribeSessionId,
+        clientOperationId,
+        generation: nextCall.generation,
+        sessionDescription: { type: "answer", sdp: localAnswer.sdp },
+      });
+      const results = Array.isArray(response.results) ? response.results : [];
+      const successfulIds = new Set(
+        results
+          .filter((result): result is Record<string, unknown> => isRecord(result) && result.status === "ready" && typeof result.publicationId === "string")
+          .map((result) => String(result.publicationId)),
+      );
+      for (const publication of pending) {
+        if (successfulIds.has(publication.publicationId)) runtime.subscribedPublicationIds.add(publication.publicationId);
+      }
+    } finally {
+      sfuSyncInFlightRef.current = false;
+    }
+  }, [client]);
+
   const configurePeer = useCallback(async (nextCall: HumanCall, nextLease: CallLease, local: MediaStream) => {
     closePeer();
+    await closeRemoteMediaSessions(nextCall);
     const ice = await client.call("getCallIceServers");
     if (!isRecord(ice) || !Array.isArray(ice.iceServers)) throw new Error("Host returned malformed ICE credentials.");
-    const pc = new RTCPeerConnection({ iceServers: (ice as unknown as IceReply).iceServers });
-    pcRef.current = pc;
-    for (const track of local.getTracks()) pc.addTrack(track, local);
+    const iceServers = (ice as unknown as IceReply).iceServers;
+    const publishSessionValue = await client.call("createCallMediaSession", {
+      callId: nextCall.id,
+      clientSessionId: callMediaNonce("publish_session"),
+      generation: nextCall.generation,
+      purpose: "publish",
+    });
+    const subscribeSessionValue = await client.call("createCallMediaSession", {
+      callId: nextCall.id,
+      clientSessionId: callMediaNonce("subscribe_session"),
+      generation: nextCall.generation,
+      purpose: "subscribe",
+    });
+    if (!isCallMediaSession(publishSessionValue) || publishSessionValue.status !== "ready" || publishSessionValue.purpose !== "publish") {
+      throw new Error("Host returned a malformed SFU publish session.");
+    }
+    if (!isCallMediaSession(subscribeSessionValue) || subscribeSessionValue.status !== "ready" || subscribeSessionValue.purpose !== "subscribe") {
+      throw new Error("Host returned a malformed SFU subscribe session.");
+    }
+
+    const publishPc = new RTCPeerConnection({ iceServers });
+    const subscribePc = new RTCPeerConnection({ iceServers });
+    pcRef.current = publishPc;
+    subscribePcRef.current = subscribePc;
+    const runtime: SfuMediaRuntime = {
+      generation: nextCall.generation,
+      publishSessionId: publishSessionValue.mediaSessionId,
+      subscribeSessionId: subscribeSessionValue.mediaSessionId,
+      publishedMids: new Set<string>(),
+      subscribedPublicationIds: new Set<string>(),
+    };
+    sfuRuntimeRef.current = runtime;
+
+    for (const track of local.getTracks()) publishPc.addTrack(track, local);
     const remote = new MediaStream();
     remoteStreamRef.current = remote;
     if (remoteVideoRef.current != null) remoteVideoRef.current.srcObject = remote;
-    pc.ontrack = (event) => {
+    subscribePc.ontrack = (event) => {
       for (const track of event.streams[0]?.getTracks() ?? [event.track]) {
         if (!remote.getTracks().some((candidate) => candidate.id === track.id)) remote.addTrack(track);
       }
       if (remoteVideoRef.current != null) remoteVideoRef.current.srcObject = remote;
     };
-    pc.onicecandidate = (event) => {
-      if (event.candidate == null || disposedRef.current) return;
-      const current = callRef.current;
-      if (current == null) return;
-      void sendSignal(current, "candidate", event.candidate.toJSON() as unknown as Record<string, unknown>).catch((candidateError) => void failCall(mediaFailure(candidateError)));
+
+    const reconnect = () => {
+      if (recoveringRef.current || disposedRef.current) return;
+      recoveringRef.current = true;
+      void (async () => {
+        const current = callRef.current;
+        if (current == null) return;
+        try {
+          setStatus("reconnecting");
+          const reconnecting = await transition(current, "reconnect");
+          const resumed = await transition(reconnecting, "resume");
+          const owner = await readLease(resumed.id, false);
+          const stream = localStreamRef.current ?? await ensureLocalMedia(cameraEnabled);
+          const restartPeer = configurePeerRef.current;
+          if (restartPeer == null) throw new Error("Call media reconnect owner is unavailable.");
+          await restartPeer(resumed, owner, stream);
+        } catch (reconnectError) {
+          await failCall(mediaFailure(reconnectError));
+        } finally {
+          recoveringRef.current = false;
+        }
+      })();
     };
-    startDiagnostics(pc, nextCall.generation);
-    pc.onconnectionstatechange = () => {
-      if (pc.connectionState === "connected") {
+    publishPc.onconnectionstatechange = () => {
+      if (publishPc.connectionState === "connected") {
         setStatus("connected");
         const current = callRef.current;
         if (current?.state === "negotiating" || current?.state === "reconnecting") {
           void transition(current, "connected").catch((transitionError) => void failCall(mediaFailure(transitionError)));
         }
-      }
-      if ((pc.connectionState === "failed" || pc.connectionState === "disconnected") && !recoveringRef.current) {
-        recoveringRef.current = true;
-        void (async () => {
-          const current = callRef.current;
-          if (current == null) return;
-          try {
-            setStatus("reconnecting");
-            const reconnecting = await transition(current, "reconnect");
-            appliedSignalSeqRef.current = 0;
-            const resumed = await transition(reconnecting, "resume");
-            const owner = await readLease(resumed.id, false);
-            const stream = localStreamRef.current ?? await ensureLocalMedia(cameraEnabled);
-            const restartPeer = configurePeerRef.current;
-            if (restartPeer == null) throw new Error("Call media reconnect owner is unavailable.");
-            await restartPeer(resumed, owner, stream);
-            if (owner.role === "creator") {
-              const offer = await pcRef.current!.createOffer({ iceRestart: true });
-              await pcRef.current!.setLocalDescription(offer);
-              await sendSignal(resumed, "offer", { type: offer.type, sdp: offer.sdp ?? "" });
-            }
-          } catch (reconnectError) {
-            await failCall(mediaFailure(reconnectError));
-          } finally {
-            recoveringRef.current = false;
-          }
-        })();
+      } else if (publishPc.connectionState === "failed" || publishPc.connectionState === "disconnected") {
+        reconnect();
       }
     };
-    setStatus(nextCall.state === "reconnecting" ? "reconnecting" : "negotiating");
-    if (nextLease.role === "creator") {
-      const offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
-      await sendSignal(nextCall, "offer", { type: offer.type, sdp: offer.sdp ?? "" });
-    }
-    return pc;
-  }, [cameraEnabled, client, closePeer, ensureLocalMedia, failCall, readLease, sendSignal, startDiagnostics, transition]);
-  configurePeerRef.current = configurePeer;
+    subscribePc.onconnectionstatechange = () => {
+      if (subscribePc.connectionState === "failed" || subscribePc.connectionState === "disconnected") reconnect();
+    };
 
-  const consumeSignals = useCallback(async (nextCall: HumanCall) => {
-    const pc = pcRef.current;
-    const owner = leaseRef.current;
-    if (pc == null || owner == null) return;
-    const value = await client.call("listCallSignals", {
-      callId: nextCall.id,
-      generation: nextCall.generation,
-      afterSeq: appliedSignalSeqRef.current,
-      limit: 100,
-    });
-    if (!Array.isArray(value)) throw new Error("Host returned malformed call signaling.");
-    for (const raw of value) {
-      if (!isSignal(raw) || raw.generation !== nextCall.generation) continue;
-      appliedSignalSeqRef.current = Math.max(appliedSignalSeqRef.current, raw.seq);
-      if (raw.senderDeviceId === owner.deviceId) continue;
-      if (raw.kind === "offer") {
-        const sdp = typeof raw.payload.sdp === "string" ? raw.payload.sdp : "";
-        await pc.setRemoteDescription({ type: "offer", sdp });
-        const answer = await pc.createAnswer();
-        await pc.setLocalDescription(answer);
-        await sendSignal(nextCall, "answer", { type: answer.type, sdp: answer.sdp ?? "" });
-      } else if (raw.kind === "answer") {
-        const sdp = typeof raw.payload.sdp === "string" ? raw.payload.sdp : "";
-        if (pc.signalingState === "have-local-offer") await pc.setRemoteDescription({ type: "answer", sdp });
-      } else if (raw.kind === "candidate") {
-        await pc.addIceCandidate(raw.payload as unknown as RTCIceCandidateInit).catch(() => undefined);
-      }
+    startDiagnostics(publishPc, nextCall.generation);
+    setStatus(nextCall.state === "reconnecting" ? "reconnecting" : "negotiating");
+
+    const offer = await publishPc.createOffer();
+    await publishPc.setLocalDescription(offer);
+    await waitForIceGatheringComplete(publishPc);
+    const localOffer = publishPc.localDescription;
+    if (localOffer?.type !== "offer" || typeof localOffer.sdp !== "string") {
+      throw new Error("SFU publication offer was not available after ICE gathering.");
     }
-  }, [client, sendSignal]);
+    const publications = publishPc.getTransceivers().flatMap((transceiver, index) => {
+      const track = transceiver.sender.track;
+      const mid = transceiver.mid;
+      if (track == null || mid == null) return [];
+      return [{
+        clientPublicationId: callMediaNonce("pub"),
+        trackName: `fabushi_${track.kind}_${mid || index}`,
+        mid,
+        mediaKind: track.kind,
+      }];
+    });
+    if (publications.length === 0) throw new Error("No local media tracks were available for SFU publication.");
+    const publishOperationId = callMediaNonce("publish");
+    const published = await client.call("publishCallMedia", {
+      callId: nextCall.id,
+      mediaSessionId: runtime.publishSessionId,
+      clientOperationId: publishOperationId,
+      generation: nextCall.generation,
+      sessionDescription: { type: "offer", sdp: localOffer.sdp },
+      publications,
+    });
+    if (!isRecord(published)) throw new Error("Host returned malformed SFU publication state.");
+    await publishPc.setRemoteDescription(requireSessionDescription(published.sessionDescription, "answer"));
+    await client.call("acknowledgeCallMediaPublication", {
+      callId: nextCall.id,
+      mediaSessionId: runtime.publishSessionId,
+      clientOperationId: publishOperationId,
+      generation: nextCall.generation,
+    });
+    for (const publication of publications) runtime.publishedMids.add(publication.mid);
+    await syncSfuSubscriptions(nextCall);
+    return publishPc;
+  }, [cameraEnabled, client, closePeer, closeRemoteMediaSessions, ensureLocalMedia, failCall, readLease, startDiagnostics, syncSfuSubscriptions, transition]);
+  configurePeerRef.current = configurePeer;
 
   const start = useCallback(async (video: boolean) => {
     setError(null);
@@ -886,11 +982,10 @@ export function HumanCallControls({
       await updateMediaState(accepted, { audio: true, video, screenShare: false });
       publish(accepted, nextLease);
       await configurePeer(accepted, nextLease, stream);
-      await consumeSignals(accepted);
     } catch (acceptError) {
       await failCall(mediaFailure(acceptError));
     }
-  }, [configurePeer, consumeSignals, ensureLocalMedia, failCall, publish, readLease, transition, updateMediaState]);
+  }, [configurePeer, ensureLocalMedia, failCall, publish, readLease, transition, updateMediaState]);
 
   const decline = useCallback(async () => {
     stopCallTone(false, true);
@@ -1168,7 +1263,6 @@ export function HumanCallControls({
 
   useEffect(() => {
     disposedRef.current = false;
-    appliedSignalSeqRef.current = 0;
     void refresh().catch((refreshError) => setError(mediaFailure(refreshError)));
     const timer = window.setInterval(() => {
       void (async () => {
@@ -1180,7 +1274,7 @@ export function HumanCallControls({
           const stream = localStreamRef.current;
           if (stream != null) await configurePeer(next, nextLease, stream);
         }
-        await consumeSignals(next);
+        await syncSfuSubscriptions(next);
       })().catch((pollError) => setError(mediaFailure(pollError)));
     }, 1000);
     return () => {
@@ -1197,7 +1291,7 @@ export function HumanCallControls({
       screenStreamRef.current = null;
       publish(null, null);
     };
-  }, [closePeer, configurePeer, consumeSignals, conversation.id, invalidateCameraCapture, publish, readLease, refresh, stopCallTone]);
+  }, [closePeer, configurePeer, conversation.id, invalidateCameraCapture, publish, readLease, refresh, stopCallTone, syncSfuSubscriptions]);
 
   const incoming = call != null && lease?.role === "peer" && (call.state === "invited" || call.state === "ringing");
   const active = call != null && call.state !== "ended" && call.state !== "failed";
