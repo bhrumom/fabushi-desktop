@@ -171,3 +171,15 @@ test("SFU session gateway stays privileged and renderer-safe", () => {
   assert.equal(source.includes("providerSessionId"), false);
   assert.equal(source.includes("FABUSHI_HOST_ACCESS_CREDENTIAL_FILE"), false);
 });
+
+
+test("SFU partial track results are identity-complete before runtime settlement", () => {
+  assert.ok(source.includes("const expectedSubscriptions = new Map("));
+  assert.ok(source.includes("seenSubscriptionIds.size !== subscriptionIntents.length"));
+  assert.ok(source.includes("Some remote media could not be subscribed"));
+  assert.ok(source.includes("const expectedPublications = new Map("));
+  assert.ok(source.includes("seenPublicationIds.size !== publications.length || readyPublicationIds.size === 0"));
+  assert.ok(source.includes("readyPublicationIds.has(publication.clientPublicationId)"));
+  assert.ok(source.includes("Some local media could not be published"));
+  assert.equal(source.includes("for (const publication of publications) runtime.publishedMids.add(publication.mid);"), false);
+});
