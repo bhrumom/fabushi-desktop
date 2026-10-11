@@ -153,6 +153,16 @@ The Desktop, iOS and Android repositories retain independent native implementati
 
 **Scope gate:** This feature is a separately tracked extension. PR #20's existing Grok-equivalent acceptance gates **are not blocked** by unfinished OMA-001, and OMA-001 may not weaken, bypass, or masquerade as those gates. An implementation must not delete or structurally preclude the approved extension during cleanup.
 
+## 2C. Marketplace architecture refinement — FPM-001
+
+The 2026-10-11 requirement calls for mature, open-source-informed Plugins / Marketplace design comparable to VS Code, without inventing a second market or extension runtime. **Canonical additional spec:** `docs/specs/fabushi-plugins-marketplace-open-ecosystem.md` (FPM-001).
+
+**FPM-001 refines the existing approved Plugins/MCP product owner and CONN-001–CONN-007 behavior, rather than introducing another exceptional subsystem.** VS Code supplies battle-tested extension discovery/management UX and version/compatibility practices; Eclipse Open VSX (EPL-2.0) is the principal open-source registry/publisher/catalog reference. The proprietary Microsoft Visual Studio Marketplace backend, VSIX/Node extension-host privileges and a generic downloaded mobile-native plugin executor are **not** Fabushi implementation targets. Theia informs the separation of extension host and product shell.
+
+Fabushi's **single Plugins / Marketplace entry** must be an existing-shell first-level route per FBCP-001, supporting MCP Connectors, Skills and OMA-001 online/offline Web Mini Apps with kind-specific runtimes, independent public/team/private-local-author trust domains, versioned releases, compatibility metadata, verified publishers, permission review, moderation, reproducible installation and rollback. The current recovered dialog and Cursor-compatible marketplace contracts remain compatibility sources until verified migration; they are **not** evidence that these production capabilities already exist, and they must not become an unapproved second source of truth.
+
+FPM-001 is a separately tracked product-quality/marketplace architecture extension and **does not retroactively block PR #20 Grok parity, FBCP/TDRP migrations, or OMA release gates** beyond the requirements explicitly owned by their existing Specs. It does not relax any earlier acceptance rule. Implementation must use existing owners, security/provenance checks, source-precise migrations and exact-head GitHub Actions evidence.
+
 ## 3. Non-goals / out of scope
 
 - Keeping the current Fabushi desktop architecture merely because it already exists.
