@@ -167,6 +167,66 @@ impl SpawnedWebAuthnSigner {
 }
 
 
+fn parse_helper_result(
+    exit_success: bool,
+    exit_code: Option<i32>,
+    output: &[u8],
+) -> WebAuthnSignerResult {
+    if output.is_empty() {
+        return SpawnedWebAuthnSigner::failure(
+            "helper_no_result",
+            format!("the security key helper exited with code {exit_code:?} and no result"),
+        );
+    }
+
+    let value = match serde_json::from_slice::<Value>(output) {
+        Ok(value) => value,
+        Err(error) => {
+            return SpawnedWebAuthnSigner::failure(
+                "helper_no_result",
+                format!("unreadable security key helper result: {error}"),
+            );
+        }
+    };
+
+    if value.get("ok").and_then(Value::as_bool) == Some(true) {
+        if !exit_success {
+            return SpawnedWebAuthnSigner::failure(
+                "helper_failed",
+                format!(
+                    "the security key helper reported success but exited with code {exit_code:?}"
+                ),
+            );
+        }
+        let Some(credential_json) = value
+            .get("credentialJson")
+            .filter(|value| value.is_object())
+            .cloned()
+        else {
+            return SpawnedWebAuthnSigner::failure(
+                "helper_result_invalid",
+                "the security key helper reported success without an object credentialJson",
+            );
+        };
+        return WebAuthnSignerResult::Success { credential_json };
+    }
+
+    let error = value
+        .get("error")
+        .cloned()
+        .and_then(|value| serde_json::from_value::<WebAuthnSignerError>(value).ok())
+        .unwrap_or_else(|| WebAuthnSignerError {
+            name: "NotAllowedError".into(),
+            code: Some("helper_failed".into()),
+            message: if exit_success {
+                "the security key helper reported a failure".into()
+            } else {
+                format!("the security key helper exited with code {exit_code:?}")
+            },
+        });
+    WebAuthnSignerResult::Failed { error }
+}
+
 impl SpawnedWebAuthnSigner {
     pub fn sign_interactive<Status, Pin>(
         &self,
@@ -430,43 +490,7 @@ impl SpawnedWebAuthnSigner {
             }
         }
 
-        let output = stdout_bytes.unwrap_or_default();
-        if output.is_empty() {
-            return Self::failure(
-                "helper_no_result",
-                format!(
-                    "the security key helper exited with code {:?} and no result",
-                    exit_status.code()
-                ),
-            );
-        }
-        let value = match serde_json::from_slice::<Value>(&output) {
-            Ok(value) => value,
-            Err(error) => {
-                return Self::failure(
-                    "helper_no_result",
-                    format!("unreadable security key helper result: {error}"),
-                );
-            }
-        };
-        if value.get("ok").and_then(Value::as_bool) == Some(true) {
-            return WebAuthnSignerResult::Success {
-                credential_json: value
-                    .get("credentialJson")
-                    .cloned()
-                    .unwrap_or(Value::Null),
-            };
-        }
-        let error = value
-            .get("error")
-            .cloned()
-            .and_then(|value| serde_json::from_value::<WebAuthnSignerError>(value).ok())
-            .unwrap_or_else(|| WebAuthnSignerError {
-                name: "NotAllowedError".into(),
-                code: Some("helper_failed".into()),
-                message: "the security key helper reported a failure".into(),
-            });
-        WebAuthnSignerResult::Failed { error }
+        parse_helper_result(exit_status.success(), exit_status.code(), stdout_bytes.as_deref().unwrap_or_default())
     }
 }
 
@@ -546,6 +570,75 @@ mod tests {
             parse_signer_event_bytes(&[0xff, b'\n'])
                 .expect("non-protocol diagnostics are not signer events"),
             None
+        );
+    }
+
+    #[test]
+    fn helper_result_accepts_success_only_with_object_credential() {
+        let result = parse_helper_result(
+            true,
+            Some(0),
+            br#"{"ok":true,"credentialJson":{"id":"credential-1"}}"#,
+        );
+        assert_eq!(
+            result,
+            WebAuthnSignerResult::Success {
+                credential_json: json!({"id":"credential-1"}),
+            }
+        );
+    }
+
+    #[test]
+    fn helper_result_rejects_missing_or_non_object_credential() {
+        for output in [
+            br#"{"ok":true}"#.as_slice(),
+            br#"{"ok":true,"credentialJson":null}"#.as_slice(),
+            br#"{"ok":true,"credentialJson":"not-an-object"}"#.as_slice(),
+        ] {
+            assert!(matches!(
+                parse_helper_result(true, Some(0), output),
+                WebAuthnSignerResult::Failed {
+                    error: WebAuthnSignerError {
+                        code: Some(ref code),
+                        ..
+                    }
+                } if code == "helper_result_invalid"
+            ));
+        }
+    }
+
+    #[test]
+    fn helper_result_rejects_success_from_nonzero_exit() {
+        assert!(matches!(
+            parse_helper_result(
+                false,
+                Some(7),
+                br#"{"ok":true,"credentialJson":{"id":"credential-1"}}"#,
+            ),
+            WebAuthnSignerResult::Failed {
+                error: WebAuthnSignerError {
+                    code: Some(ref code),
+                    ..
+                }
+            } if code == "helper_failed"
+        ));
+    }
+
+    #[test]
+    fn helper_result_preserves_structured_failure() {
+        assert_eq!(
+            parse_helper_result(
+                false,
+                Some(9),
+                br#"{"ok":false,"error":{"name":"NotAllowedError","code":"pin_blocked","message":"locked"}}"#,
+            ),
+            WebAuthnSignerResult::Failed {
+                error: WebAuthnSignerError {
+                    name: "NotAllowedError".into(),
+                    code: Some("pin_blocked".into()),
+                    message: "locked".into(),
+                },
+            }
         );
     }
 
