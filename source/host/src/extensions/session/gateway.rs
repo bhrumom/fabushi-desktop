@@ -524,6 +524,125 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
                 })
             })
         }),
+        "discoverCallMediaPublications" => required_string(args, "callId").and_then(|call_id| {
+            session
+                .discover_call_media_publications(call_id)
+                .map_err(SessionGatewayError::internal)
+        }),
+        "publishCallMedia" => required_string(args, "callId").and_then(|call_id| {
+            required_string(args, "mediaSessionId").and_then(|media_session_id| {
+                required_string(args, "clientOperationId").and_then(|client_operation_id| {
+                    required_u64(args, "generation").and_then(|generation| {
+                        let session_description = args.get("sessionDescription")
+                            .ok_or_else(|| SessionGatewayError::bad("missing sessionDescription"))?;
+                        let publications = args.get("publications")
+                            .ok_or_else(|| SessionGatewayError::bad("missing publications"))?;
+                        session
+                            .publish_call_media(
+                                call_id,
+                                media_session_id,
+                                client_operation_id,
+                                generation,
+                                session_description,
+                                publications,
+                            )
+                            .map_err(SessionGatewayError::internal)
+                    })
+                })
+            })
+        }),
+        "acknowledgeCallMediaPublication" => required_string(args, "callId").and_then(|call_id| {
+            required_string(args, "mediaSessionId").and_then(|media_session_id| {
+                required_string(args, "clientOperationId").and_then(|client_operation_id| {
+                    required_u64(args, "generation").and_then(|generation| {
+                        session
+                            .acknowledge_call_media_publication(
+                                call_id,
+                                media_session_id,
+                                client_operation_id,
+                                generation,
+                            )
+                            .map_err(SessionGatewayError::internal)
+                    })
+                })
+            })
+        }),
+        "subscribeCallMedia" => required_string(args, "callId").and_then(|call_id| {
+            required_string(args, "mediaSessionId").and_then(|media_session_id| {
+                required_string(args, "clientOperationId").and_then(|client_operation_id| {
+                    required_u64(args, "generation").and_then(|generation| {
+                        let subscriptions = args.get("subscriptions")
+                            .ok_or_else(|| SessionGatewayError::bad("missing subscriptions"))?;
+                        session
+                            .subscribe_call_media(
+                                call_id,
+                                media_session_id,
+                                client_operation_id,
+                                generation,
+                                subscriptions,
+                            )
+                            .map_err(SessionGatewayError::internal)
+                    })
+                })
+            })
+        }),
+        "answerCallMediaSubscription" => required_string(args, "callId").and_then(|call_id| {
+            required_string(args, "mediaSessionId").and_then(|media_session_id| {
+                required_string(args, "clientOperationId").and_then(|client_operation_id| {
+                    required_u64(args, "generation").and_then(|generation| {
+                        let session_description = args.get("sessionDescription")
+                            .ok_or_else(|| SessionGatewayError::bad("missing sessionDescription"))?;
+                        session
+                            .answer_call_media_subscription(
+                                call_id,
+                                media_session_id,
+                                client_operation_id,
+                                generation,
+                                session_description,
+                            )
+                            .map_err(SessionGatewayError::internal)
+                    })
+                })
+            })
+        }),
+        "updateCallMediaSubscriptionLayer" => required_string(args, "callId").and_then(|call_id| {
+            required_string(args, "mediaSessionId").and_then(|media_session_id| {
+                required_string(args, "subscriptionId").and_then(|subscription_id| {
+                    required_string(args, "clientMutationId").and_then(|client_mutation_id| {
+                        required_u64(args, "generation").and_then(|generation| {
+                            let simulcast = args.get("simulcast")
+                                .ok_or_else(|| SessionGatewayError::bad("missing simulcast"))?;
+                            session
+                                .update_call_media_subscription_layer(
+                                    call_id,
+                                    media_session_id,
+                                    subscription_id,
+                                    client_mutation_id,
+                                    generation,
+                                    simulcast,
+                                )
+                                .map_err(SessionGatewayError::internal)
+                        })
+                    })
+                })
+            })
+        }),
+        "closeCallMediaSession" => required_string(args, "callId").and_then(|call_id| {
+            required_string(args, "mediaSessionId").and_then(|media_session_id| {
+                required_string(args, "clientTeardownId").and_then(|client_teardown_id| {
+                    required_u64(args, "generation").and_then(|generation| {
+                        session
+                            .close_call_media_session(
+                                call_id,
+                                media_session_id,
+                                client_teardown_id,
+                                generation,
+                            )
+                            .map_err(SessionGatewayError::internal)
+                    })
+                })
+            })
+        }),
 
         "syncHumanCalls" => session
             .sync_human_calls()
