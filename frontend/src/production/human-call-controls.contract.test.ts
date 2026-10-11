@@ -99,3 +99,25 @@ test("call diagnostics sample WebRTC stats with generation and teardown fencing"
   assert.ok(source.includes("startDiagnostics(pc, nextCall.generation)"));
   assert.ok(source.includes("stopDiagnostics();"));
 });
+
+
+test("call-tone feedback owns sample data, rate, finite loops, offset, lifecycle, retry, and failure projection", () => {
+  assert.ok(source.includes("CALL_TONE_SAMPLE_RATE = 48_000"));
+  assert.ok(source.includes("CALL_TONE_LOOP_COUNT = 60"));
+  assert.ok(source.includes("CALL_TONE_INITIAL_OFFSET_SAMPLES = 0"));
+  assert.ok(source.includes("samples: Int16Array"));
+  assert.ok(source.includes("loopCount: number"));
+  assert.ok(source.includes("offsetSamples: number"));
+  assert.ok(source.includes("advanceCallToneOffset"));
+  assert.ok(source.includes("new AudioContext({ sampleRate: CALL_TONE_SAMPLE_RATE })"));
+  assert.ok(source.includes("source.start(0, initialOffset)"));
+  assert.ok(source.includes("source.stop(this.context.currentTime"));
+  assert.ok(source.includes("callToneFailedKeyRef.current === key"));
+  assert.ok(source.includes("stopCallTone(false, true);"));
+  assert.ok(source.includes("void player.dispose();"));
+  assert.ok(source.includes("Call audio feedback is unavailable. You can still answer or end the call."));
+  assert.ok(source.includes('aria-label="Enable call sound"'));
+  assert.ok(source.includes("data-call-tone-sample-rate={CALL_TONE_SAMPLE_RATE}"));
+  assert.ok(source.includes("data-call-tone-loop-count={CALL_TONE_LOOP_COUNT}"));
+  assert.ok(source.includes("data-call-tone-offset-samples={CALL_TONE_INITIAL_OFFSET_SAMPLES}"));
+});

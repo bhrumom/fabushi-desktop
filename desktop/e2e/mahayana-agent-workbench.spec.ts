@@ -1500,6 +1500,11 @@ test('Human call surface exposes the shipping WebRTC and Electron media bridge',
     await expect(page.getByRole('group', { name: 'Human call controls' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Start voice call' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Start video call' })).toBeVisible();
+    const callSurface = page.getByRole('group', { name: 'Human call controls' });
+    await expect(callSurface).toHaveAttribute('data-call-tone-state', 'idle');
+    await expect(callSurface).toHaveAttribute('data-call-tone-sample-rate', '48000');
+    await expect(callSurface).toHaveAttribute('data-call-tone-loop-count', '60');
+    await expect(callSurface).toHaveAttribute('data-call-tone-offset-samples', '0');
     const capability = await page.evaluate(async () => {
       const candidate = window as unknown as {
         desktop: {
@@ -1511,8 +1516,21 @@ test('Human call surface exposes the shipping WebRTC and Electron media bridge',
           };
         };
       };
+      const audioContext = new AudioContext({ sampleRate: 48_000 });
+      const toneBuffer = audioContext.createBuffer(1, 48_000, 48_000);
+      const toneSource = audioContext.createBufferSource();
+      toneSource.buffer = toneBuffer;
+      toneSource.connect(audioContext.destination);
+      const webAudio = {
+        contextSampleRate: audioContext.sampleRate,
+        bufferSampleRate: toneBuffer.sampleRate,
+        hasBufferSource: typeof audioContext.createBufferSource === 'function',
+      };
+      toneSource.disconnect();
+      await audioContext.close();
       return {
         hasPeerConnection: typeof RTCPeerConnection === 'function',
+        webAudio,
         hasPeerConnectionStats: typeof RTCPeerConnection.prototype.getStats === 'function',
         hasGetUserMedia: typeof navigator.mediaDevices?.getUserMedia === 'function',
         permissionProbe: await candidate.desktop.callMedia.requestPermissions({ audio: false, video: false }),
@@ -1526,6 +1544,9 @@ test('Human call surface exposes the shipping WebRTC and Electron media bridge',
     expect(capability.hasPeerConnection).toBe(true);
     expect(capability.hasPeerConnectionStats).toBe(true);
     expect(capability.hasGetUserMedia).toBe(true);
+    expect(capability.webAudio.bufferSampleRate).toBe(48_000);
+    expect(capability.webAudio.hasBufferSource).toBe(true);
+    expect(capability.webAudio.contextSampleRate).toBeGreaterThan(0);
     expect(capability.hasDisplaySourceBridge).toBe(true);
     expect(Array.isArray(capability.displaySources)).toBe(true);
     for (const source of capability.displaySources as Array<{ id?: unknown; name?: unknown }>) {

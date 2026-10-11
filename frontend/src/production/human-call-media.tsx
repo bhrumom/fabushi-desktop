@@ -66,6 +66,141 @@ interface CallStatsBaseline {
   readonly receivedBytes: number;
 }
 
+type CallToneKind = "incoming" | "outgoing";
+type CallTonePlaybackState = "idle" | CallToneKind | "failed";
+
+export const CALL_TONE_SAMPLE_RATE = 48_000;
+export const CALL_TONE_LOOP_COUNT = 60;
+export const CALL_TONE_INITIAL_OFFSET_SAMPLES = 0;
+const CALL_TONE_PERIOD_SECONDS = 4;
+
+interface CallToneResource {
+  readonly samples: Int16Array;
+  readonly sampleRate: number;
+  loopCount: number;
+  offsetSamples: number;
+}
+
+export function createCallToneResource(kind: CallToneKind): CallToneResource {
+  const sampleRate = CALL_TONE_SAMPLE_RATE;
+  const sampleCount = sampleRate * CALL_TONE_PERIOD_SECONDS;
+  const samples = new Int16Array(sampleCount);
+  const primaryFrequency = kind === "incoming" ? 660 : 440;
+  const secondaryFrequency = kind === "incoming" ? 880 : 523.25;
+  const active = (seconds: number) => kind === "incoming"
+    ? (seconds < 0.34 || (seconds >= 0.5 && seconds < 0.84))
+    : seconds < 0.72;
+  for (let index = 0; index < sampleCount; index += 1) {
+    const seconds = index / sampleRate;
+    if (!active(seconds)) continue;
+    const phase = seconds * Math.PI * 2;
+    const envelope = Math.min(1, seconds * 30) * Math.min(1, Math.max(0, 0.9 - seconds) * 30);
+    const mixed = (Math.sin(phase * primaryFrequency) + (0.35 * Math.sin(phase * secondaryFrequency))) / 1.35;
+    samples[index] = Math.round(Math.max(-1, Math.min(1, mixed * envelope * 0.12)) * 0x7fff);
+  }
+  return {
+    samples,
+    sampleRate,
+    loopCount: CALL_TONE_LOOP_COUNT,
+    offsetSamples: CALL_TONE_INITIAL_OFFSET_SAMPLES,
+  };
+}
+
+function advanceCallToneOffset(resource: CallToneResource, elapsedSeconds: number): void {
+  if (resource.samples.length === 0 || resource.loopCount <= 0) {
+    resource.offsetSamples = 0;
+    resource.loopCount = 0;
+    return;
+  }
+  const elapsedSamples = Math.max(0, Math.floor(elapsedSeconds * resource.sampleRate));
+  const totalSamples = resource.offsetSamples + elapsedSamples;
+  const completedLoops = Math.floor(totalSamples / resource.samples.length);
+  if (completedLoops >= resource.loopCount) {
+    resource.offsetSamples = 0;
+    resource.loopCount = 0;
+    return;
+  }
+  resource.loopCount -= completedLoops;
+  resource.offsetSamples = totalSamples % resource.samples.length;
+}
+
+class HumanCallTonePlayer {
+  private context: AudioContext | null = null;
+  private source: AudioBufferSourceNode | null = null;
+  private resource: CallToneResource | null = null;
+  private startedAtContextTime = 0;
+
+  async start(kind: CallToneKind): Promise<CallToneResource> {
+    this.stop(false);
+    const reusable = this.context?.state === "closed" ? null : this.context;
+    this.context = reusable ?? new AudioContext({ sampleRate: CALL_TONE_SAMPLE_RATE });
+    if (this.context.state === "suspended") await this.context.resume();
+    if (this.context.state !== "running") {
+      throw new Error("Desktop audio playback is blocked until the app receives an audio gesture.");
+    }
+
+    const resource = createCallToneResource(kind);
+    const buffer = this.context.createBuffer(1, resource.samples.length, resource.sampleRate);
+    const channel = new Float32Array(resource.samples.length);
+    for (let index = 0; index < resource.samples.length; index += 1) {
+      channel[index] = resource.samples[index] / 0x8000;
+    }
+    buffer.copyToChannel(channel, 0);
+
+    const source = this.context.createBufferSource();
+    source.buffer = buffer;
+    source.loop = resource.loopCount > 1;
+    source.loopStart = 0;
+    source.loopEnd = buffer.duration;
+    source.connect(this.context.destination);
+
+    const initialOffset = resource.offsetSamples / resource.sampleRate;
+    const remainingSamples = (resource.samples.length - resource.offsetSamples)
+      + (Math.max(0, resource.loopCount - 1) * resource.samples.length);
+    source.onended = () => {
+      if (this.source !== source) return;
+      this.source = null;
+      this.resource = null;
+      resource.offsetSamples = 0;
+      resource.loopCount = 0;
+    };
+    source.start(0, initialOffset);
+    source.stop(this.context.currentTime + (remainingSamples / resource.sampleRate));
+    this.startedAtContextTime = this.context.currentTime;
+    this.resource = resource;
+    this.source = source;
+    return resource;
+  }
+
+  stop(preserveOffset: boolean): void {
+    const source = this.source;
+    const resource = this.resource;
+    const context = this.context;
+    this.source = null;
+    this.resource = null;
+    if (source != null) {
+      source.onended = null;
+      try { source.stop(); } catch { /* already stopped */ }
+      source.disconnect();
+    }
+    if (resource != null) {
+      if (preserveOffset && context != null) {
+        advanceCallToneOffset(resource, Math.max(0, context.currentTime - this.startedAtContextTime));
+      } else {
+        resource.offsetSamples = 0;
+        resource.loopCount = 0;
+      }
+    }
+  }
+
+  async dispose(): Promise<void> {
+    this.stop(false);
+    const context = this.context;
+    this.context = null;
+    if (context != null && context.state !== "closed") await context.close().catch(() => undefined);
+  }
+}
+
 function statNumber(record: Record<string, unknown> | undefined, key: string): number | null {
   const value = record?.[key];
   return typeof value === "number" && Number.isFinite(value) ? value : null;
@@ -225,6 +360,7 @@ export function HumanCallControls({
   const [mutePending, setMutePending] = useState(false);
   const [cameraPending, setCameraPending] = useState(false);
   const [screenPending, setScreenPending] = useState(false);
+  const [callToneState, setCallToneState] = useState<CallTonePlaybackState>("idle");
   const [callCommandFence] = useState(() => createInFlightCommandFence());
   const localStreamRef = useRef<MediaStream | null>(null);
   const remoteStreamRef = useRef<MediaStream | null>(null);
@@ -245,6 +381,9 @@ export function HumanCallControls({
   const diagnosticsBaselineRef = useRef<CallStatsBaseline | null>(null);
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
+  const callTonePlayerRef = useRef<HumanCallTonePlayer | null>(null);
+  const callToneKeyRef = useRef<string | null>(null);
+  const callToneFailedKeyRef = useRef<string | null>(null);
 
   const publish = useCallback((next: HumanCall | null, nextLease?: CallLease | null) => {
     callRef.current = next;
@@ -254,6 +393,43 @@ export function HumanCallControls({
       setLease(nextLease);
     }
   }, []);
+
+  const stopCallTone = useCallback((preserveOffset = false, resetFailure = false) => {
+    callToneKeyRef.current = null;
+    callTonePlayerRef.current?.stop(preserveOffset);
+    if (resetFailure) callToneFailedKeyRef.current = null;
+    setCallToneState("idle");
+  }, []);
+
+  const startCallToneFor = useCallback(async (nextCall: HumanCall | null, nextLease: CallLease | null, force = false) => {
+    const ringing = nextCall != null
+      && nextLease != null
+      && (nextLease.isOwner || nextLease.claimAvailable)
+      && (nextCall.state === "invited" || nextCall.state === "ringing");
+    if (!ringing) {
+      stopCallTone(false, true);
+      return;
+    }
+    const kind: CallToneKind = nextLease.role === "peer" ? "incoming" : "outgoing";
+    const key = `${nextCall.id}:${nextCall.generation}:${kind}`;
+    if (callToneKeyRef.current === key) return;
+    if (!force && callToneFailedKeyRef.current === key) return;
+    stopCallTone(false, false);
+    if (force) callToneFailedKeyRef.current = null;
+    callToneKeyRef.current = key;
+    const player = callTonePlayerRef.current ?? new HumanCallTonePlayer();
+    callTonePlayerRef.current = player;
+    try {
+      await player.start(kind);
+      if (callToneKeyRef.current === key) setCallToneState(kind);
+    } catch (toneError) {
+      if (callToneKeyRef.current !== key) return;
+      callToneKeyRef.current = null;
+      callToneFailedKeyRef.current = key;
+      setCallToneState("failed");
+      setError(`Call audio feedback is unavailable. You can still answer or end the call. ${mediaFailure(toneError)}`);
+    }
+  }, [stopCallTone]);
 
   const readLease = useCallback(async (callId: string, allowClaim: boolean) => {
     const next = requireLocalCallLease(await client.call("getCallTransportLease", { callId }), allowClaim);
@@ -484,6 +660,7 @@ export function HumanCallControls({
   const failCall = useCallback(async (reason: string) => {
     setError(reason);
     setStatus("failed");
+    stopCallTone(false, true);
     const current = callRef.current;
     if (current != null && current.state !== "ended" && current.state !== "failed") {
       await transition(current, "fail", reason).catch(() => undefined);
@@ -498,7 +675,7 @@ export function HumanCallControls({
     setScreenCapturePaused(false);
     setCameraEnabled(false);
     setCameraCapturePaused(false);
-  }, [closePeer, invalidateCameraCapture, transition]);
+  }, [closePeer, invalidateCameraCapture, stopCallTone, transition]);
 
   const configurePeer = useCallback(async (nextCall: HumanCall, nextLease: CallLease, local: MediaStream) => {
     closePeer();
@@ -635,6 +812,7 @@ export function HumanCallControls({
   }, [configurePeer, consumeSignals, ensureLocalMedia, failCall, publish, readLease, transition, updateMediaState]);
 
   const decline = useCallback(async () => {
+    stopCallTone(false, true);
     const current = callRef.current;
     if (current != null && current.state !== "ended" && current.state !== "failed") {
       await transition(current, "decline", "declined").catch(() => undefined);
@@ -651,9 +829,10 @@ export function HumanCallControls({
     setCameraCapturePaused(false);
     setStatus("idle");
     publish(null, null);
-  }, [closePeer, invalidateCameraCapture, publish, transition]);
+  }, [closePeer, invalidateCameraCapture, publish, stopCallTone, transition]);
 
   const hangup = useCallback(async () => {
+    stopCallTone(false, true);
     const current = callRef.current;
     if (current != null && current.state !== "ended" && current.state !== "failed") {
       await transition(current, "hangup", "user-ended").catch(() => undefined);
@@ -670,7 +849,7 @@ export function HumanCallControls({
     setCameraCapturePaused(false);
     setCameraEnabled(false);
     publish(null, null);
-  }, [closePeer, invalidateCameraCapture, publish, transition]);
+  }, [closePeer, invalidateCameraCapture, publish, stopCallTone, transition]);
 
   const toggleMute = useCallback(async () => {
     const commandLease = callCommandFence.acquire("toggle-mute");
@@ -895,6 +1074,18 @@ export function HumanCallControls({
   }, [callCommandFence]);
 
   useEffect(() => {
+    void startCallToneFor(call, lease);
+  }, [call, lease, startCallToneFor]);
+
+  useEffect(() => () => {
+    callToneKeyRef.current = null;
+    callToneFailedKeyRef.current = null;
+    const player = callTonePlayerRef.current;
+    callTonePlayerRef.current = null;
+    if (player != null) void player.dispose();
+  }, []);
+
+  useEffect(() => {
     disposedRef.current = false;
     appliedSignalSeqRef.current = 0;
     void refresh().catch((refreshError) => setError(mediaFailure(refreshError)));
@@ -916,6 +1107,7 @@ export function HumanCallControls({
       displayPickerGenerationRef.current += 1;
       setDisplayPickerOpen(false);
       window.clearInterval(timer);
+      stopCallTone(false, true);
       closePeer();
       invalidateCameraCapture();
       stopStream(localStreamRef.current);
@@ -924,24 +1116,26 @@ export function HumanCallControls({
       screenStreamRef.current = null;
       publish(null, null);
     };
-  }, [closePeer, configurePeer, consumeSignals, conversation.id, invalidateCameraCapture, publish, readLease, refresh]);
+  }, [closePeer, configurePeer, consumeSignals, conversation.id, invalidateCameraCapture, publish, readLease, refresh, stopCallTone]);
 
   const incoming = call != null && lease?.role === "peer" && (call.state === "invited" || call.state === "ringing");
   const active = call != null && call.state !== "ended" && call.state !== "failed";
 
-  return <div className="sand-human-call" role="group" aria-label="Human call controls">
+  return <div className="sand-human-call" role="group" aria-label="Human call controls" data-call-tone-state={callToneState} data-call-tone-sample-rate={CALL_TONE_SAMPLE_RATE} data-call-tone-loop-count={CALL_TONE_LOOP_COUNT} data-call-tone-offset-samples={CALL_TONE_INITIAL_OFFSET_SAMPLES}>
     {!active ? <>
       <SandButton aria-label="Start voice call" onClick={() => void start(false)} size="sm" variant="secondary">Voice</SandButton>
       <SandButton aria-label="Start video call" onClick={() => void start(true)} size="sm" variant="secondary">Video</SandButton>
     </> : null}
     {incoming ? <>
       <span role="status">Incoming call</span>
+      {callToneState === "failed" ? <SandButton aria-label="Enable call sound" onClick={() => { setError(null); void startCallToneFor(call, lease, true); }} size="sm" variant="secondary">Enable sound</SandButton> : null}
       <SandButton aria-label="Accept voice call" onClick={() => void accept(false)} size="sm">Accept</SandButton>
       <SandButton aria-label="Accept video call" onClick={() => void accept(true)} size="sm">Accept video</SandButton>
       <SandButton aria-label="Decline call" onClick={() => void decline()} sentiment="danger" size="sm" variant="secondary">Decline</SandButton>
     </> : null}
     {active && !incoming ? <>
       <span role="status">{status === "idle" ? call.state : status}</span>
+      {callToneState === "failed" && (call.state === "invited" || call.state === "ringing") ? <SandButton aria-label="Enable call sound" onClick={() => { setError(null); void startCallToneFor(call, lease, true); }} size="sm" variant="secondary">Enable sound</SandButton> : null}
       <SandButton aria-pressed={muted} onClick={() => void toggleMute().catch((toggleError) => setError(mediaFailure(toggleError)))} pending={mutePending} size="sm" variant="secondary">{muted ? "Unmute" : "Mute"}</SandButton>
       {cameraEnabled && cameraCapturePaused ? <span role="status">Camera paused</span> : null}
       <SandButton aria-pressed={cameraEnabled} onClick={() => void toggleCamera().catch((toggleError) => setError(mediaFailure(toggleError)))} pending={cameraPending} size="sm" variant="secondary">{cameraEnabled ? "Camera off" : "Camera on"}</SandButton>
