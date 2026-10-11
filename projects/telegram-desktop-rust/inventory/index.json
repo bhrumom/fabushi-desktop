@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 7524,
+    "unread_minimum": 7460,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through deterministic order 8,601; unread 7,524; unknown 15,845; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition through deterministic order 8,665; unread 7,460; unknown 15,845; omitted 0."
   },
   "latest_recursive_evidence": {
     "run_id": 38096221101,
@@ -47,7 +47,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live authority exact through deterministic order 8,601; first unread 8,602 Telegram/ThirdParty/hunspell::tests/checkcompoundrep2.good; unread_minimum is 7,524; unknown remains 15,845; omitted remains 0.",
+  "note": "Live authority exact through deterministic order 8,665; first unread 8,666 Telegram/ThirdParty/hunspell::tests/compoundrule3.dic; unread_minimum is 7,460; unknown remains 15,845; omitted remains 0.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -65,10 +65,10 @@
       6541,
       6627
     ],
-    "current_source_read_through": 8601,
-    "first_unread_order": 8602,
-    "first_unread_path": "Telegram/ThirdParty/hunspell::tests/checkcompoundrep2.good",
-    "current_head_source_authority_evidence": "Orders 8,494–8,601 were exact-read from pinned hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b. This revalidates Dutch IJ and ABI/regression membership, then covers affix compression, AF/AM morphology aliases, all-caps/homonym/UTF-8/Arabic normalization, legacy/UTF replacement suggestions, recursive/default/disabled breaks, compound-case/duplicate-component rules, CHECKCOMPOUNDPATTERN boundary/sandhi behavior, and CHECKCOMPOUNDREP including the incorrect-position regression. Reading closes no unknown; descendant exact-head GitHub Actions remain required."
+    "current_source_read_through": 8665,
+    "first_unread_order": 8666,
+    "first_unread_path": "Telegram/ThirdParty/hunspell::tests/compoundrule3.dic",
+    "current_head_source_authority_evidence": "Orders 8,602–8,665 were exact-read from pinned hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b, covering the CHECKCOMPOUNDREP fix oracle, triple-letter compound rejection, German ß/SS casing, circumfix pairing and morphology, punctuation WORDCHARS tokenization, complex-prefix/Unicode behavior, bounded compound recursion overflow regression, compound affix permit/forbid semantics, COMPOUNDMIN/flag behavior, COMPOUNDFORBIDFLAG precedence and initial COMPOUNDRULE sequence/repetition/optionality grammar. The predecessor 8,494–8,601 shard is also corrected to the validator-required rows array. Reading closes no unknown; descendant exact-head GitHub Actions remain required."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -77,9 +77,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 8601,
-    "first_unread_order": 8602,
-    "first_unread_path": "Telegram/ThirdParty/hunspell::tests/checkcompoundrep2.good",
+    "read_through": 8665,
+    "first_unread_order": 8666,
+    "first_unread_path": "Telegram/ThirdParty/hunspell::tests/compoundrule3.dic",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }

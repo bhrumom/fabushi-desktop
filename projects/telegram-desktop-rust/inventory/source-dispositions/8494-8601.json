@@ -12,7 +12,7 @@
     "last_order": 8601,
     "entries": 108
   },
-  "entries": [
+  "rows": [
     {
       "recursive_order": 8494,
       "source_path": "Telegram/ThirdParty/hunspell::tests/IJ.aff",
