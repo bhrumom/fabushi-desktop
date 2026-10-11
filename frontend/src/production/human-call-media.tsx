@@ -781,17 +781,43 @@ export function HumanCallControls({
       if (pending.length === 0) return;
 
       const clientOperationId = callMediaNonce("subscribe");
+      const subscriptionIntents = pending.map((publication) => ({
+        clientSubscriptionId: callMediaNonce("sub"),
+        publicationId: publication.publicationId,
+      }));
       const response = await client.call("subscribeCallMedia", {
         callId: nextCall.id,
         mediaSessionId: runtime.subscribeSessionId,
         clientOperationId,
         generation: nextCall.generation,
-        subscriptions: pending.map((publication) => ({
-          clientSubscriptionId: callMediaNonce("sub"),
-          publicationId: publication.publicationId,
-        })),
+        subscriptions: subscriptionIntents,
       });
       if (!isRecord(response)) throw new Error("Host returned malformed SFU subscription state.");
+      const expectedSubscriptions = new Map(
+        subscriptionIntents.map((intent) => [intent.clientSubscriptionId, intent.publicationId] as const),
+      );
+      const successfulIds = new Set<string>();
+      const seenSubscriptionIds = new Set<string>();
+      let failedSubscriptions = 0;
+      if (!Array.isArray(response.results)) throw new Error("Host returned incomplete SFU subscription results.");
+      for (const raw of response.results) {
+        if (!isRecord(raw) || typeof raw.clientSubscriptionId !== "string" || typeof raw.publicationId !== "string"
+          || (raw.status !== "ready" && raw.status !== "failed")) {
+          throw new Error("Host returned malformed SFU subscription result.");
+        }
+        const expectedPublicationId = expectedSubscriptions.get(raw.clientSubscriptionId);
+        if (expectedPublicationId == null || expectedPublicationId !== raw.publicationId || seenSubscriptionIds.has(raw.clientSubscriptionId)) {
+          throw new Error("Host returned mismatched SFU subscription result identity.");
+        }
+        seenSubscriptionIds.add(raw.clientSubscriptionId);
+        if (raw.status === "ready") {
+          if (typeof raw.subscriptionId !== "string") throw new Error("Host returned SFU subscription without durable identity.");
+          successfulIds.add(raw.publicationId);
+        } else {
+          failedSubscriptions += 1;
+        }
+      }
+      if (seenSubscriptionIds.size !== subscriptionIntents.length) throw new Error("Host returned incomplete SFU subscription results.");
       const offer = requireSessionDescription(response.sessionDescription, "offer");
       await subscribePc.setRemoteDescription(offer);
       const answer = await subscribePc.createAnswer();
@@ -808,14 +834,11 @@ export function HumanCallControls({
         generation: nextCall.generation,
         sessionDescription: { type: "answer", sdp: localAnswer.sdp },
       });
-      const results = Array.isArray(response.results) ? response.results : [];
-      const successfulIds = new Set(
-        results
-          .filter((result): result is Record<string, unknown> => isRecord(result) && result.status === "ready" && typeof result.publicationId === "string")
-          .map((result) => String(result.publicationId)),
-      );
       for (const publication of pending) {
         if (successfulIds.has(publication.publicationId)) runtime.subscribedPublicationIds.add(publication.publicationId);
+      }
+      if (failedSubscriptions > 0) {
+        setError(`Some remote media could not be subscribed (${failedSubscriptions}/${subscriptionIntents.length}); the remaining tracks stay connected.`);
       }
     } finally {
       sfuSyncInFlightRef.current = false;
@@ -940,6 +963,35 @@ export function HumanCallControls({
       publications,
     });
     if (!isRecord(published)) throw new Error("Host returned malformed SFU publication state.");
+    const expectedPublications = new Map(
+      publications.map((publication) => [publication.clientPublicationId, publication] as const),
+    );
+    const readyPublicationIds = new Set<string>();
+    const seenPublicationIds = new Set<string>();
+    let failedPublications = 0;
+    if (!Array.isArray(published.results)) throw new Error("Host returned incomplete SFU publication results.");
+    for (const raw of published.results) {
+      if (!isRecord(raw) || typeof raw.clientPublicationId !== "string"
+        || (raw.status !== "ready" && raw.status !== "failed")) {
+        throw new Error("Host returned malformed SFU publication result.");
+      }
+      const expected = expectedPublications.get(raw.clientPublicationId);
+      if (expected == null || seenPublicationIds.has(raw.clientPublicationId)) {
+        throw new Error("Host returned mismatched SFU publication result identity.");
+      }
+      seenPublicationIds.add(raw.clientPublicationId);
+      if (raw.status === "ready") {
+        if (typeof raw.publicationId !== "string" || raw.mid !== expected.mid) {
+          throw new Error("Host returned SFU publication with mismatched durable identity.");
+        }
+        readyPublicationIds.add(raw.clientPublicationId);
+      } else {
+        failedPublications += 1;
+      }
+    }
+    if (seenPublicationIds.size !== publications.length || readyPublicationIds.size === 0) {
+      throw new Error("Host returned incomplete SFU publication results.");
+    }
     await publishPc.setRemoteDescription(requireSessionDescription(published.sessionDescription, "answer"));
     await client.call("acknowledgeCallMediaPublication", {
       callId: nextCall.id,
@@ -947,7 +999,12 @@ export function HumanCallControls({
       clientOperationId: publishOperationId,
       generation: nextCall.generation,
     });
-    for (const publication of publications) runtime.publishedMids.add(publication.mid);
+    for (const publication of publications) {
+      if (readyPublicationIds.has(publication.clientPublicationId)) runtime.publishedMids.add(publication.mid);
+    }
+    if (failedPublications > 0) {
+      setError(`Some local media could not be published (${failedPublications}/${publications.length}); the remaining tracks stay connected.`);
+    }
     await syncSfuSubscriptions(nextCall);
     return publishPc;
   }, [cameraEnabled, client, closePeer, closeRemoteMediaSessions, ensureLocalMedia, failCall, readLease, startDiagnostics, syncSfuSubscriptions, transition]);
