@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 6481,
+    "unread_minimum": 6417,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through deterministic order 9,644; unread 6,481; unknown 15,845; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition through deterministic order 9,708; unread 6,417; unknown 15,845; omitted 0."
   },
   "latest_recursive_evidence": {
     "run_id": 38106112583,
@@ -41,7 +41,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live baseline identity is accepted for telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 / tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6, matching upstream.lock upstream.accepted=true. This does not imply source/product/release closure: exact read-through is 9,644; unread_minimum is 6,481; unknown remains 15,845; omitted remains 0; acceptance.accepted and baseline_ready remain false until their gates close.",
+  "note": "Live baseline identity is accepted for telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 / tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6, matching upstream.lock upstream.accepted=true. This does not imply source/product/release closure: exact read-through is 9,708; unread_minimum is 6,417; unknown remains 15,845; omitted remains 0; acceptance.accepted and baseline_ready remain false until their gates close.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -59,10 +59,10 @@
       6541,
       6627
     ],
-    "current_source_read_through": 9644,
-    "first_unread_order": 9645,
-    "first_unread_path": "Telegram/ThirdParty/kimageformats::autotests/read/rgb/rgb-gimp-2.8.10-aggressive-rle.rgb",
-    "current_head_source_authority_evidence": "Orders 9,581–9,644 exact-read from current-head Actions artifact 11692219924: PSD/PSB/PDD/TIFF fixtures cover version 1/2, 1/8/16/32-bit, 1–57 channels and Bitmap/Grayscale/Indexed/RGB/CMYK/Multichannel/Duotone/Lab; QOI covers RGB/RGBA and 1×1 through 256×256; Sun Raster and Kodak RAW references are included; SGI RGB coverage begins. All remain mapped-open pending pinned shipping reachability."
+    "current_source_read_through": 9708,
+    "first_unread_order": 9709,
+    "first_unread_path": "Telegram/ThirdParty/kimageformats::autotests/read/xcf/fruktpilot_icc.xcf",
+    "current_head_source_authority_evidence": "Orders 9,645–9,708 exact-read from current-head Actions artifact 11692612830: SGI RGB covers RLE/aggressive-RLE/verbatim; TGA covers 24/32-bit RGB/RGBA, RLE/raw and upper/lower-left origin; XCF covers v0/v11/v12, RGB/gray/alpha references, U8/U16/U32 integer plus half/float precision and ICC variants. All remain mapped-open pending pinned shipping reachability."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -71,9 +71,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 9644,
-    "first_unread_order": 9645,
-    "first_unread_path": "Telegram/ThirdParty/kimageformats::autotests/read/rgb/rgb-gimp-2.8.10-aggressive-rle.rgb",
+    "read_through": 9708,
+    "first_unread_order": 9709,
+    "first_unread_path": "Telegram/ThirdParty/kimageformats::autotests/read/xcf/fruktpilot_icc.xcf",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }
