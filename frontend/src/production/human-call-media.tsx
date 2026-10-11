@@ -216,6 +216,7 @@ export function HumanCallControls({
   const [error, setError] = useState<string | null>(null);
   const [muted, setMuted] = useState(false);
   const [cameraEnabled, setCameraEnabled] = useState(false);
+  const [cameraCapturePaused, setCameraCapturePaused] = useState(false);
   const [screenSharing, setScreenSharing] = useState(false);
   const [screenCapturePaused, setScreenCapturePaused] = useState(false);
   const [displaySources, setDisplaySources] = useState<readonly CallDisplaySource[]>([]);
@@ -297,6 +298,33 @@ export function HumanCallControls({
     if (isCall(updated)) publish(updated);
   }, [client, publish, screenSharing]);
 
+  const bindCameraTrackLifecycle = useCallback((stream: MediaStream, track: MediaStreamTrack) => {
+    const isOwned = () => !disposedRef.current && localStreamRef.current === stream && stream.getVideoTracks().includes(track);
+    const projectActivity = (paused: boolean) => {
+      if (!isOwned()) return;
+      setCameraCapturePaused(paused);
+      const active = callRef.current;
+      if (active == null || active.state === "ended" || active.state === "failed") return;
+      void updateMediaState(active, {
+        video: track.enabled,
+        videoPaused: paused,
+        videoActive: track.enabled && !paused && track.readyState === "live",
+      }).catch((activityError) => setError(mediaFailure(activityError)));
+    };
+    track.onmute = () => projectActivity(true);
+    track.onunmute = () => projectActivity(false);
+    track.onended = () => {
+      if (!isOwned()) return;
+      stream.removeTrack(track);
+      setCameraEnabled(false);
+      setCameraCapturePaused(false);
+      const active = callRef.current;
+      if (active == null || active.state === "ended" || active.state === "failed") return;
+      void updateMediaState(active, { video: false, videoPaused: false, videoActive: false })
+        .catch((endedError) => setError(mediaFailure(endedError)));
+    };
+  }, [updateMediaState]);
+
   const sendSignal = useCallback(async (nextCall: HumanCall, kind: CallSignal["kind"], payload: Record<string, unknown>) => {
     const owner = await readLease(nextCall.id, true);
     const fallbackSeq = Math.max(1, nextCall.signalSeq + 1);
@@ -324,10 +352,13 @@ export function HumanCallControls({
     stopStream(localStreamRef.current);
     localStreamRef.current = stream;
     setMuted(false);
-    setCameraEnabled(video && stream.getVideoTracks().length > 0);
+    const cameraTrack = stream.getVideoTracks()[0] ?? null;
+    setCameraEnabled(video && cameraTrack != null);
+    setCameraCapturePaused(cameraTrack?.muted === true);
+    if (cameraTrack != null) bindCameraTrackLifecycle(stream, cameraTrack);
     if (localVideoRef.current != null) localVideoRef.current.srcObject = stream;
     return stream;
-  }, [bridge.callMedia]);
+  }, [bindCameraTrackLifecycle, bridge.callMedia]);
 
   const stopDiagnostics = useCallback(() => {
     diagnosticsGenerationRef.current += 1;
@@ -394,6 +425,7 @@ export function HumanCallControls({
     screenStreamRef.current = null;
     setScreenSharing(false);
     setScreenCapturePaused(false);
+    setCameraCapturePaused(false);
   }, [closePeer, transition]);
 
   const configurePeer = useCallback(async (nextCall: HumanCall, nextLease: CallLease, local: MediaStream) => {
@@ -542,6 +574,7 @@ export function HumanCallControls({
     screenStreamRef.current = null;
     setScreenSharing(false);
     setScreenCapturePaused(false);
+    setCameraCapturePaused(false);
     setStatus("idle");
     publish(null, null);
   }, [closePeer, publish, transition]);
@@ -559,6 +592,7 @@ export function HumanCallControls({
     setStatus("idle");
     setScreenSharing(false);
     setScreenCapturePaused(false);
+    setCameraCapturePaused(false);
     setCameraEnabled(false);
     publish(null, null);
   }, [closePeer, publish, transition]);
@@ -601,8 +635,9 @@ export function HumanCallControls({
         const nextEnabled = !cameraEnabled;
         existing.enabled = nextEnabled;
         setCameraEnabled(nextEnabled);
+        setCameraCapturePaused(existing.muted);
         try {
-          await updateMediaState(current, { video: nextEnabled });
+          await updateMediaState(current, { video: nextEnabled, videoPaused: existing.muted, videoActive: nextEnabled && !existing.muted && existing.readyState === "live" });
         } catch (error) {
           existing.enabled = previousEnabled;
           setCameraEnabled(cameraEnabled);
@@ -619,17 +654,20 @@ export function HumanCallControls({
         throw new Error("Camera did not provide a video track.");
       }
       stream.addTrack(track);
+      bindCameraTrackLifecycle(stream, track);
+      setCameraCapturePaused(track.muted);
       const pc = pcRef.current;
       const addedSender = pc?.addTrack(track, stream) ?? null;
       setCameraEnabled(true);
       if (localVideoRef.current != null) localVideoRef.current.srcObject = stream;
       try {
-        await updateMediaState(current, { video: true });
+        await updateMediaState(current, { video: true, videoPaused: track.muted, videoActive: !track.muted && track.readyState === "live" });
       } catch (error) {
         stream.removeTrack(track);
         track.stop();
         if (addedSender != null && pcRef.current === pc) pc?.removeTrack(addedSender);
         setCameraEnabled(false);
+        setCameraCapturePaused(false);
         if (localVideoRef.current != null) localVideoRef.current.srcObject = stream;
         throw error;
       }
@@ -637,7 +675,7 @@ export function HumanCallControls({
       commandLease.release();
       setCameraPending(false);
     }
-  }, [bridge.callMedia, callCommandFence, cameraEnabled, updateMediaState]);
+  }, [bindCameraTrackLifecycle, bridge.callMedia, callCommandFence, cameraEnabled, updateMediaState]);
 
   const closeDisplayPicker = useCallback(() => {
     displayPickerGenerationRef.current += 1;
@@ -825,6 +863,7 @@ export function HumanCallControls({
     {active && !incoming ? <>
       <span role="status">{status === "idle" ? call.state : status}</span>
       <SandButton aria-pressed={muted} onClick={() => void toggleMute().catch((toggleError) => setError(mediaFailure(toggleError)))} pending={mutePending} size="sm" variant="secondary">{muted ? "Unmute" : "Mute"}</SandButton>
+      {cameraEnabled && cameraCapturePaused ? <span role="status">Camera paused</span> : null}
       <SandButton aria-pressed={cameraEnabled} onClick={() => void toggleCamera().catch((toggleError) => setError(mediaFailure(toggleError)))} pending={cameraPending} size="sm" variant="secondary">{cameraEnabled ? "Camera off" : "Camera on"}</SandButton>
       <SandButton aria-pressed={screenSharing} onClick={() => void toggleScreen().catch((toggleError) => setError(mediaFailure(toggleError)))} pending={screenPending} size="sm" variant="secondary">{screenSharing ? "Stop sharing" : "Share screen"}</SandButton>
       {screenSharing && screenCapturePaused ? <span role="status">Screen sharing paused</span> : null}

@@ -14,24 +14,24 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 4497,
+    "unread_minimum": 4433,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through deterministic order 11,628; unread 4,497; unknown 15,845; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition through deterministic order 11,692; unread 4,433; unknown 15,845; omitted 0."
   },
   "latest_recursive_evidence": {
-    "run_id": 38167547405,
+    "run_id": 38169448756,
     "run_attempt": 1,
-    "job_id": 114553216026,
-    "head_sha": "0347515e75b76c2e093e8777c0155f98280620bc",
-    "artifact_id": 11711859551,
-    "artifact_digest": "sha256:3b80f4844114053ef649c8a8a63a4d24397f8ea38a27d8fbbc84a7a4971cb6d2",
+    "job_id": 114558772727,
+    "head_sha": "9e19096129b9e5d9c87ff91e9a0645544929d155",
+    "artifact_id": 11713142724,
+    "artifact_digest": "sha256:e9667b498b5ab9ce45e0e73e81c6c8665866f7a739ef745f477aa175fa59720f",
     "artifact_files": [
       "upstream-recursive-inventory.json",
       "current-first-unread/window-manifest.json"
     ],
     "evidence_status": "exact-head-range-attested-validator-success",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
-    "note": "Exact-head 0347515e Rust desktop runtime 38167547405 and Desktop Chat Parity CI 38167547407 completed/success; source-authority job 114553216026 artifact 11711859551 (sha256:3b80f4844114053ef649c8a8a63a4d24397f8ea38a27d8fbbc84a7a4971cb6d2) materialized orders 11,565-11,628 with exact repository/commit/path/Git-blob/byte-length verification."
+    "note": "Exact-head 9e190961 Rust desktop runtime 38169448756 and Desktop Chat Parity 38169449053 completed/success; Source authority succeeded; job 114558772727 artifact 11713142724 (sha256:e9667b498b5ab9ce45e0e73e81c6c8665866f7a739ef745f477aa175fa59720f) materialized orders 11,629-11,692 with exact repository/commit/path/Git-blob/byte-length verification. Full parent-head runtime/E2E terminal status is tracked separately and must not be inferred from source materialization alone."
   },
   "closure_rules": {
     "executable_runner": "github-actions",
@@ -41,7 +41,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live baseline identity remains accepted; source/product/release closure remains open. Exact read-through is 11,628; unread_minimum is 4,497; unknown remains 15,845; omitted remains 0; acceptance.accepted and baseline_ready remain false.",
+  "note": "Live baseline identity remains accepted; source/product/release closure remains open. Exact read-through is 11,692; unread_minimum is 4,433; unknown remains 15,845; omitted remains 0; acceptance.accepted and baseline_ready remain false.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -59,21 +59,21 @@
       6541,
       6627
     ],
-    "current_source_read_through": 11628,
-    "first_unread_order": 11629,
-    "first_unread_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/RTCCodecSpecificInfoH265+Private.h",
-    "current_head_source_authority_evidence": "Parent exact-head source-window evidence 0347515e75b76c2e093e8777c0155f98280620bc / run 38167547405 / job 114553216026 / artifact 11711859551 (sha256:3b80f4844114053ef649c8a8a63a4d24397f8ea38a27d8fbbc84a7a4971cb6d2) materialized orders 11,565-11,628; descendant accounting commit requires fresh exact-head validation."
+    "current_source_read_through": 11692,
+    "first_unread_order": 11693,
+    "first_unread_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/macOS/TGRTCMTLI420Renderer.h",
+    "current_head_source_authority_evidence": "Parent exact-head source-window evidence 9e19096129b9e5d9c87ff91e9a0645544929d155 / run 38169448756 / job 114558772727 / artifact 11713142724 (sha256:e9667b498b5ab9ce45e0e73e81c6c8665866f7a739ef745f477aa175fa59720f) validated Revision 9 and materialized orders 11,629-11,692; this descendant accounting change requires fresh exact-head validation."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "deterministic_prefix_closed": 57,
-    "development_only_non_applicable": 81,
+    "development_only_non_applicable": 96,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 11628,
-    "first_unread_order": 11629,
-    "first_unread_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/RTCCodecSpecificInfoH265+Private.h",
+    "read_through": 11692,
+    "first_unread_order": 11693,
+    "first_unread_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/macOS/TGRTCMTLI420Renderer.h",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }

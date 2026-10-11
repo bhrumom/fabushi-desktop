@@ -52,6 +52,18 @@ test("screen sharing uses canonical selection UI and fences stale or vanished so
   assert.ok(source.includes("screenStreamRef.current !== capture"));
 });
 
+test("camera capture lifecycle maps pause, active, and fatal end into the canonical media owner", () => {
+  assert.ok(source.includes("const [cameraCapturePaused, setCameraCapturePaused] = useState(false);"));
+  assert.ok(source.includes("const bindCameraTrackLifecycle = useCallback"));
+  assert.ok(source.includes("localStreamRef.current === stream"));
+  assert.ok(source.includes("track.onmute = () => projectActivity(true);"));
+  assert.ok(source.includes("track.onunmute = () => projectActivity(false);"));
+  assert.ok(source.includes("track.onended = () =>"));
+  assert.ok(source.includes("videoActive: track.enabled && !paused && track.readyState === \"live\""));
+  assert.ok(source.includes("video: false, videoPaused: false, videoActive: false"));
+  assert.ok(source.includes("Camera paused"));
+});
+
 test("screen capture pause and active lifecycle stay fenced to the selected capture", () => {
   assert.ok(source.includes("const [screenCapturePaused, setScreenCapturePaused] = useState(false);"));
   assert.ok(source.includes("track.onmute = () => projectCaptureActivity(true);"));

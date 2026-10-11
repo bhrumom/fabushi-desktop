@@ -266,9 +266,9 @@
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
     "unknown_minimum": 15845,
-    "unread_minimum": 4497,
+    "unread_minimum": 4433,
     "omitted_known": 0,
-    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 11,628; unknown=15,845, unread=4,497, omitted=0."
+    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 11,692; unknown=15,845, unread=4,433, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -282,7 +282,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Source/product/release closure open. Exact read-through 11,628/16,125; first unread 11,629 Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/RTCCodecSpecificInfoH265+Private.h@a22d3594f557f7b75ff67f9427bb461b0c9ba5ce; unread 4,497; unknown 15,845; omitted 0. Orders 11,565-11,628 are exact-blob read/decomposed existing-owner-first across CallSession/Conversation/Permissions/Computer/Resource/WebRTC/media/network/platform adapters. Group streaming/SFU-equivalent service responsibility remains open; no tgcalls C++ runtime, TelegramCallRuntime, FFI/sidecar or second call store is introduced."
+    "note": "Source/product/release closure open. Exact read-through 11,692/16,125; first unread 11,693 Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/macOS/TGRTCMTLI420Renderer.h@ceb4c410a5a890583f649ca87aaf4b6affef6ced; unread 4,433; unknown 15,845; omitted 0. Orders 11,629-11,692 are exact-blob read/decomposed existing-owner-first across CallSession/Permissions/Resource/WebRTC/platform adapters. Camera pause/active/fatal projection extends the canonical owner; group codec/SFU composition remains open; iOS-only audio files are individually non-shipping for Desktop. No tgcalls C++/ObjC runtime, FFI/sidecar, TelegramCallRuntime or second call/resource store is introduced."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",
@@ -301,13 +301,13 @@
   "recursive_inventory_evidence": {
     "status": "exact-head-source-window-attested-descendant-accounting-pending",
     "runner": "github-actions",
-    "run_id": 38167547405,
+    "run_id": 38169448756,
     "run_attempt": 1,
-    "job_id": 114553216026,
-    "validation_head_sha": "0347515e75b76c2e093e8777c0155f98280620bc",
-    "artifact_id": 11711859551,
-    "artifact_name": "tdrp-revision9-authority-0347515e75b76c2e093e8777c0155f98280620bc",
-    "artifact_digest": "sha256:3b80f4844114053ef649c8a8a63a4d24397f8ea38a27d8fbbc84a7a4971cb6d2",
+    "job_id": 114558772727,
+    "validation_head_sha": "9e19096129b9e5d9c87ff91e9a0645544929d155",
+    "artifact_id": 11713142724,
+    "artifact_name": "tdrp-revision9-authority-9e19096129b9e5d9c87ff91e9a0645544929d155",
+    "artifact_digest": "sha256:e9667b498b5ab9ce45e0e73e81c6c8665866f7a739ef745f477aa175fa59720f",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "recursive_non_directory_entries": 16125,
     "source_closure_ready": false
@@ -631,12 +631,12 @@
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "deterministic_prefix_closed": 57,
-    "development_only_non_applicable": 81,
+    "development_only_non_applicable": 96,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 11628,
-    "first_unread_order": 11629,
-    "first_unread_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/RTCCodecSpecificInfoH265+Private.h",
+    "read_through": 11692,
+    "first_unread_order": 11693,
+    "first_unread_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/macOS/TGRTCMTLI420Renderer.h",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
