@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 6745,
+    "unread_minimum": 6725,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through deterministic order 9,380; unread 6,745; unknown 15,845; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition through deterministic order 9,400; unread 6,725; unknown 15,845; omitted 0."
   },
   "latest_recursive_evidence": {
     "run_id": 38106112583,
@@ -41,7 +41,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Baseline identity accepted; source/product/release closure open. Exact read-through 9,380; unread 6,745; unknown 15,845; omitted 0; acceptance.accepted and baseline_ready remain false.",
+  "note": "Baseline identity accepted; source/product/release closure open. Exact read-through 9,400; unread 6,725; unknown 15,845; omitted 0; acceptance.accepted and baseline_ready remain false.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -59,10 +59,10 @@
       6541,
       6627
     ],
-    "current_source_read_through": 9380,
-    "first_unread_order": 9381,
-    "first_unread_path": "Telegram/ThirdParty/kcoreaddons::src/lib/plugin/kstaticpluginhelpers.cpp",
-    "current_head_source_authority_evidence": "Orders 9,361–9,380 exact-read component runtime-version provenance, full license corpus/install metadata and plugin desktop-metadata/factory/loader/typed metadata source. Existing Fabushi manifest parser and Rust core-plugins owners already provide bounded strict schemas, path/plugin-id validation, duplicate fencing and lifecycle/store ownership; KDE/Qt runtime remains non-shipping authority."
+    "current_source_read_through": 9400,
+    "first_unread_order": 9401,
+    "first_unread_path": "Telegram/ThirdParty/kcoreaddons::src/lib/text/ktexttohtml_p.h",
+    "current_head_source_authority_evidence": "Orders 9,381–9,400 exact-read static plugin discovery, non-cryptographic randomness, fuzzy ranking, localized JSON, shell-aware macro expansion, Unicode string utilities and bounded safe text-to-HTML/linkification. Security boundaries are explicit: KRandom is non-crypto authority only; command expansion stays behind Host/Runner approval/quoting; rendered links remain under Transcript/Resource safe-link policy."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -71,9 +71,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 9380,
-    "first_unread_order": 9381,
-    "first_unread_path": "Telegram/ThirdParty/kcoreaddons::src/lib/plugin/kstaticpluginhelpers.cpp",
+    "read_through": 9400,
+    "first_unread_order": 9401,
+    "first_unread_path": "Telegram/ThirdParty/kcoreaddons::src/lib/text/ktexttohtml_p.h",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }

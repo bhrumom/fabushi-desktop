@@ -1,5 +1,14 @@
-Live Revision 9 authority (2026-10-11): telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 (root tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6). Root non-directory=6,653; recursive non-directory=16,125; deterministic read-through=9,380; first unread=9,381 Telegram/ThirdParty/kcoreaddons::src/lib/plugin/kstaticpluginhelpers.cpp@1bf196d1b85d1969f0fd70a10e5023b4a4a5522c; unread=6,745; unknown=15,845; omitted=0. Orders 9,361–9,380 exact-read license/provenance and plugin metadata/factory/loader responsibilities into existing Fabushi Plugins/MCP/Marketplace and NOTICE owners.
-<!-- TDRP_CURRENT_SUMMARY read-through=9380 unread=6745 unknown=15845 omitted=0 first-unread=9381 path=Telegram/ThirdParty/kcoreaddons::src/lib/plugin/kstaticpluginhelpers.cpp -->
+Live Revision 9 authority (2026-10-11): telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 (root tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6). Root non-directory=6,653; recursive non-directory=16,125; deterministic read-through=9,400; first unread=9,401 Telegram/ThirdParty/kcoreaddons::src/lib/text/ktexttohtml_p.h@93bbb72f1eeb0adc8c2ec57ebc6ab5c3309d197d; unread=6,725; unknown=15,845; omitted=0. Orders 9,381–9,400 exact-read plugin discovery/randomness/fuzzy/localized-JSON/macro/text-rendering source with security boundaries mapped to existing Fabushi owners.
+<!-- TDRP_CURRENT_SUMMARY read-through=9400 unread=6725 unknown=15845 omitted=0 first-unread=9401 path=Telegram/ThirdParty/kcoreaddons::src/lib/text/ktexttohtml_p.h -->
+
+### Revision 9 deterministic read-through — plugin/text/security utility source 9,381–9,400
+
+Orders 9,381–9,400 exact-read static-plugin helpers, random/shuffle APIs, fuzzy matching/ranking, localized JSON lookup, macro expansion and platform shell quoting, string utilities, and bounded plain-text → HTML/linkification. The security disposition is explicit: upstream KRandom itself says it is not suitable for serious randomness, so it is never authority for Fabushi tokens/nonces/identity; macro expansion remains behind canonical Host/Runner argument, quoting, approval and sandbox boundaries; text rendering must validate/bound links and escape entities under Transcript/Resource safe-link policy.
+
+Existing-owner-first maps fuzzy scoring to canonical Search, localized JSON to Localization, shell-aware expansion to Host/Runner/Computer, and linkification/text projection to Transcript/Resource. Static Qt plugin registration remains non-shipping implementation detail. Rows remain mapped-open / unknown_closed=false until production and same-head evidence close them.
+
+Accounting: **9,400/16,125 read; 6,725 unread; 15,845 unknown; 0 omitted**. Next 9,401 `Telegram/ThirdParty/kcoreaddons::src/lib/text/ktexttohtml_p.h@93bbb72f1eeb0adc8c2ec57ebc6ab5c3309d197d`.
+
 
 ### Revision 9 deterministic read-through — licenses and plugin lifecycle 9,361–9,380
 
