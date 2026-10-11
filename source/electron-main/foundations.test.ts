@@ -40,6 +40,7 @@ import { normalizeSandCallMediaPreferences, normalizeSandUiPreferences, resolveS
 import { createDesktopCallMediaPort } from "./call-media.js";
 import { normalizeCommitStagedAttachmentsEdgeRequest, normalizeStageAttachmentEdgeRequest } from "./attachments/attachment-edge-wire.js";
 import { createAttachmentEdgePort, type AttachmentEdgeDeps } from "./attachments/attachments.js";
+import { readDesktopImageAttachment } from "./attachments/attachment-manager.js";
 import { readDesktopAccessibilityState, setDesktopAccessibilitySupportEnabled } from "./accessibility-support.js";
 import { readDesktopPlatformInputState } from "./platform-input.js";
 import { buildImageContextMenuTemplate, nativeSpellcheckSuggestions, type ImageContextMenuParams } from "./media/avatar-images.js";
@@ -86,6 +87,39 @@ test("native spellcheck suggestions stay platform-owned, bounded, and dispatch t
   assert.equal(template[5]?.type, "separator");
   template[1]?.click?.();
   assert.deepEqual(replacements, ["tech"]);
+});
+
+test("desktop image preview fast path enforces the canonical byte cap before decode", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "fabushi-image-preview-cap-"));
+  const file = join(dir, "preview.png");
+  let decodeCalls = 0;
+  const deps = {
+    nativeImage: {
+      createFromBuffer() {
+        decodeCalls += 1;
+        return { isEmpty: () => false, getSize: () => ({ width: 1, height: 1 }) };
+      },
+    },
+    readPortableDimensions: () => null,
+    servableImageMimeFromPath: () => "image/png",
+    previewByteCap: 4,
+    reanchorPath: (value: string) => value,
+  };
+  try {
+    writeFileSync(file, Buffer.from("12345", "utf8"));
+    assert.equal(await readDesktopImageAttachment(file, deps), null);
+    assert.equal(decodeCalls, 0);
+
+    writeFileSync(file, Buffer.from("1234", "utf8"));
+    assert.deepEqual(await readDesktopImageAttachment(file, deps), {
+      dataUrl: "data:image/png;base64,MTIzNA==",
+      width: 1,
+      height: 1,
+    });
+    assert.equal(decodeCalls, 1);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test("main edge accepts the shipping preload attachment wire contract", () => {

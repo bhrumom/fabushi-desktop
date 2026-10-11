@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { open } from "node:fs/promises";
 import { join } from "node:path";
 
 import { getSandRootDir, reanchorSandPath } from "../../shared/node/sand-data-root.js";
@@ -17,6 +17,7 @@ export interface AttachmentManagerDeps {
   readonly readPortableDimensions: (buffer: Buffer) => ImageSize | null;
   readonly servableImageMimeFromPath: (path: string) => string | null;
   readonly readFile?: (path: string) => Promise<Buffer>;
+  readonly previewByteCap?: number;
   readonly reanchorPath?: (path: string) => string;
 }
 
@@ -37,12 +38,36 @@ export function readDesktopImageSize(buffer: Buffer, deps: Pick<AttachmentManage
   } catch { return null; }
 }
 
+async function readDesktopPreviewFileBounded(filePath: string, maxBytes: number): Promise<Buffer | null> {
+  if (!Number.isSafeInteger(maxBytes) || maxBytes <= 0) return null;
+  const handle = await open(filePath, "r");
+  try {
+    const before = await handle.stat();
+    if (!before.isFile() || !Number.isSafeInteger(before.size) || before.size <= 0 || before.size > maxBytes) return null;
+    const data = Buffer.allocUnsafe(before.size);
+    let offset = 0;
+    while (offset < data.length) {
+      const { bytesRead } = await handle.read(data, offset, data.length - offset, offset);
+      if (bytesRead <= 0) return null;
+      offset += bytesRead;
+    }
+    const after = await handle.stat();
+    return after.size === before.size ? data : null;
+  } finally {
+    await handle.close();
+  }
+}
+
 export async function readDesktopImageAttachment(filePath: string, deps: AttachmentManagerDeps): Promise<DesktopImageAttachment | null> {
   const resolved = (deps.reanchorPath ?? reanchorSandPath)(filePath);
   const mime = deps.servableImageMimeFromPath(resolved);
-  if (mime == null) return null;
+  const previewByteCap = deps.previewByteCap ?? ATTACHMENT_PREVIEW_BYTE_CAP;
+  if (mime == null || !Number.isSafeInteger(previewByteCap) || previewByteCap <= 0) return null;
   try {
-    const data = await (deps.readFile ?? readFile)(resolved);
+    const data = deps.readFile == null
+      ? await readDesktopPreviewFileBounded(resolved, previewByteCap)
+      : await deps.readFile(resolved);
+    if (data == null || data.byteLength === 0 || data.byteLength > previewByteCap) return null;
     const size = readDesktopImageSize(data, deps);
     return { dataUrl: `data:${mime};base64,${data.toString("base64")}`, width: size?.width ?? null, height: size?.height ?? null };
   } catch { return null; }
