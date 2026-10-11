@@ -1,5 +1,7 @@
 Live Revision 9 authority (2026-10-12): telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 (tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6). Recursive non-directory=16,125; read-through=12,268; first unread=12,269 Telegram/ThirdParty/xxHash::cli/xxhsum.c@b94708e360ecc1a58cf423c768ae560b84d406ee; unread=3,857; unknown=15,845; omitted=0. Exact-head b629be6b4163b4a515c7e066ffecdb50f76520ae Source authority 38182309860/114597318610 succeeded and materialized artifact 11718288179 (sha256:de3d40be75a890311e975b5c0e68b2005a957ca586a804cc09068872c4e105b4); orders 12,205-12,268 were formally reviewed from that artifact. This accounting descendant requires fresh same-head runtime/chat validation.
-<!-- TDRP_CURRENT_SUMMARY read-through=12268 unread=3857 unknown=15845 omitted=0 first-unread=12269 path=Telegram/ThirdParty/xxHash::cli/xxhsum.c -->\n\n### Revision 9 deterministic read-through — portal contract tests + xxHash provenance/build/CLI 12,205–12,268
+<!-- TDRP_CURRENT_SUMMARY read-through=12268 unread=3857 unknown=15845 omitted=0 first-unread=12269 path=Telegram/ThirdParty/xxHash::cli/xxhsum.c -->
+
+### Revision 9 deterministic read-through — portal contract tests + xxHash provenance/build/CLI 12,205–12,268
 
 Exact source evidence: `b629be6b4163b4a515c7e066ffecdb50f76520ae` / Rust desktop runtime `38182309860` / source-authority `114597318610` / artifact `11718288179` (`sha256:de3d40be75a890311e975b5c0e68b2005a957ca586a804cc09068872c4e105b4`). The source-authority validator and exact current-first-unread materialization completed successfully before this window was dispositioned; this descendant must obtain fresh same-head runtime/chat evidence.
 

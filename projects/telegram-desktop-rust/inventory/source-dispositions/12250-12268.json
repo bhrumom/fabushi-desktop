@@ -64,7 +64,7 @@
         "scope": "direct-gitlink",
         "mount": "Telegram/ThirdParty/xxHash",
         "path": "build/update_version.sh",
-        "mode": "100644",
+        "mode": "100755",
         "type": "blob",
         "object": "7f5f2f157f4133a7c5914b1ae10c014d2d35a40b",
         "size": 2026

@@ -738,5 +738,5 @@
     ],
     "note": "Valid exact-head evidence for 46dfaf only; main reconciliation/accounting descendants require fresh Actions."
   },
-  "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 11,500; unknown=15,845, unread=4,625, omitted=0; first unread=11,501 Telegram/ThirdParty/range-v3::test_package/example.cpp@bee0b2ab825f5733e9954514c07445b944ca5259."
+  "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 12,268; unknown=15,845, unread=3,857, omitted=0; first unread=12,269 Telegram/ThirdParty/xxHash::cli/xxhsum.c@b94708e360ecc1a58cf423c768ae560b84d406ee."
 }
