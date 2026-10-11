@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 3722,
+    "unread": 3665,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,11 +13478,11 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Accepted prefix 12,403/16,125; 12,397-12,403 complete the pinned desktop-app/codegen style parser/processor/SVG renderer/typed schema contracts. These remain mapped to Fabushi canonical Design System, Resource/artifact and Build/codegen Quality owners rather than importing Telegram visual output. Unread 3,722; unknown 15,845; omitted 0; reading alone closes no unknown.",
+    "source_read_reconciliation": "Accepted prefix 12,460/16,125; 12,397-12,403 complete codegen style parser/schema authority and 12,404-12,460 enter pinned lib_base build/runtime primitives: build/platform composition, assertion/atomic/byte safety, energy state, delayed/concurrent timers, crash diagnostics, CRC/file locking, typed collections/flags, global shortcuts, event-loop/input activity and cache lifecycle. All map to existing Fabushi canonical owners; no lib_base parallel product runtime is introduced. Unread 3,665; unknown 15,845; omitted 0; reading alone closes no unknown.",
     "source_authority_evidence": "Exact-head 8a07d98a source-authority run 38183734477/job 114601575522 artifact 11718378603 (sha256:b17afd2552005af0ce12269960ecd64d054b2ccf12e5decb9e420192a190f586). Descendant same-head runtime/chat validation required.",
-    "current_source_read_through": 12403,
-    "first_unread_order": 12404,
-    "first_unread_path": "Telegram/lib_base::CMakeLists.txt"
+    "current_source_read_through": 12460,
+    "first_unread_order": 12461,
+    "first_unread_path": "Telegram/lib_base::base/match_method.h"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 206,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 12403,
-    "first_unread_order": 12404,
-    "first_unread_path": "Telegram/lib_base::CMakeLists.txt",
+    "read_through": 12460,
+    "first_unread_order": 12461,
+    "first_unread_path": "Telegram/lib_base::base/match_method.h",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
