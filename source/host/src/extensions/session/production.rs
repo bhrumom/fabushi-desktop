@@ -671,6 +671,143 @@ impl ProductionSessionWorkers {
         Ok(media_session)
     }
 
+    fn current_call_media_client(
+        &self,
+        call_id: &str,
+        generation: u64,
+    ) -> Result<&FabushiNativeMessagingClient, String> {
+        let local = self.authorized_call_session(call_id)?;
+        if local.generation != generation {
+            return Err("Human call media generation is stale".into());
+        }
+        self.shipping_call_media_client().map(|(client, _)| client)
+    }
+
+    pub fn discover_call_media_publications(
+        &self,
+        call_id: &str,
+    ) -> Result<serde_json::Value, String> {
+        let local = self.authorized_call_session(call_id)?;
+        let (client, _) = self.shipping_call_media_client()?;
+        let response = client.discover_human_call_media_publications(call_id)?;
+        if response.get("generation").and_then(serde_json::Value::as_u64) != Some(local.generation) {
+            return Err("Fabushi call publication discovery returned a stale generation".into());
+        }
+        Ok(response)
+    }
+
+    pub fn publish_call_media(
+        &self,
+        call_id: &str,
+        media_session_id: &str,
+        client_operation_id: &str,
+        generation: u64,
+        session_description: &serde_json::Value,
+        publications: &serde_json::Value,
+    ) -> Result<serde_json::Value, String> {
+        let client = self.current_call_media_client(call_id, generation)?;
+        client.publish_human_call_media(
+            call_id,
+            media_session_id,
+            client_operation_id,
+            generation,
+            session_description,
+            publications,
+        )
+    }
+
+    pub fn acknowledge_call_media_publication(
+        &self,
+        call_id: &str,
+        media_session_id: &str,
+        client_operation_id: &str,
+        generation: u64,
+    ) -> Result<serde_json::Value, String> {
+        let client = self.current_call_media_client(call_id, generation)?;
+        client.acknowledge_human_call_media_publication(
+            call_id,
+            media_session_id,
+            client_operation_id,
+            generation,
+        )
+    }
+
+    pub fn subscribe_call_media(
+        &self,
+        call_id: &str,
+        media_session_id: &str,
+        client_operation_id: &str,
+        generation: u64,
+        subscriptions: &serde_json::Value,
+    ) -> Result<serde_json::Value, String> {
+        let client = self.current_call_media_client(call_id, generation)?;
+        client.subscribe_human_call_media(
+            call_id,
+            media_session_id,
+            client_operation_id,
+            generation,
+            subscriptions,
+        )
+    }
+
+    pub fn answer_call_media_subscription(
+        &self,
+        call_id: &str,
+        media_session_id: &str,
+        client_operation_id: &str,
+        generation: u64,
+        session_description: &serde_json::Value,
+    ) -> Result<serde_json::Value, String> {
+        let client = self.current_call_media_client(call_id, generation)?;
+        client.answer_human_call_media_subscription(
+            call_id,
+            media_session_id,
+            client_operation_id,
+            generation,
+            session_description,
+        )
+    }
+
+    pub fn update_call_media_subscription_layer(
+        &self,
+        call_id: &str,
+        media_session_id: &str,
+        subscription_id: &str,
+        client_mutation_id: &str,
+        generation: u64,
+        simulcast: &serde_json::Value,
+    ) -> Result<serde_json::Value, String> {
+        let client = self.current_call_media_client(call_id, generation)?;
+        client.update_human_call_media_subscription_layer(
+            call_id,
+            media_session_id,
+            subscription_id,
+            client_mutation_id,
+            generation,
+            simulcast,
+        )
+    }
+
+    pub fn close_call_media_session(
+        &self,
+        call_id: &str,
+        media_session_id: &str,
+        client_teardown_id: &str,
+        generation: u64,
+    ) -> Result<serde_json::Value, String> {
+        let local = self.authorized_call_session(call_id)?;
+        if generation > local.generation {
+            return Err("closeCallMediaSession generation is ahead of canonical CallSession".into());
+        }
+        let (client, _) = self.shipping_call_media_client()?;
+        client.close_human_call_media_session(
+            call_id,
+            media_session_id,
+            client_teardown_id,
+            generation,
+        )
+    }
+
     pub fn call_ice_servers(&self) -> Result<serde_json::Value, String> {
         let local_human_id = self.local_human_id()?.to_string();
         let client = self
