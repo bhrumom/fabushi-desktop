@@ -14,23 +14,23 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 4625,
+    "unread_minimum": 4561,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through deterministic order 11,500; unread 4,625; unknown 15,845; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition through deterministic order 11,564; unread 4,561; unknown 15,845; omitted 0."
   },
   "latest_recursive_evidence": {
-    "run_id": 38156139933,
+    "run_id": 38157144305,
     "run_attempt": 1,
-    "job_id": 114519461684,
-    "head_sha": "2e8c169214a72abb1a3f16d52f2a811e8f991b2e",
-    "artifact_id": 11708199027,
-    "artifact_digest": "sha256:cd9fcd8e65b428f25271dbf5957647e88e58084e3acb8c89847b0051d9f7b77f",
+    "job_id": 114522352942,
+    "head_sha": "03a01ab3c231c2a2b6a53f719340bc04124939bb",
+    "artifact_id": 11708539924,
+    "artifact_digest": "sha256:6285b1529ca14b916d3721a485902565ea391302db65b9a96805d7809e275528",
     "artifact_files": [
       "upstream-recursive-inventory.json"
     ],
     "evidence_status": "exact-head-range-attested-validator-success",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
-    "note": "2e8c1692 exact-head source-authority validated Revision 9 and materialized orders 11,437-11,500 with exact repository/commit/path/Git-blob and byte-length verification; descendant accounting commit remains source/product/release closure open."
+    "note": "Exact-head 03a01ab3c231c2a2b6a53f719340bc04124939bb Rust desktop runtime 38157144305 and Desktop Chat Parity CI 38157144285 completed/success; source-authority job 114522352942 artifact 11708539924 (sha256:6285b1529ca14b916d3721a485902565ea391302db65b9a96805d7809e275528) materialized orders 11,501-11,564 with exact repository/commit/path/Git-blob/byte-length verification; Playwright artifact 11709111216 (sha256:b2ba7ce127aa594df068522eb6335ad933a6c7999566ed32007ad32cfdf1274a)."
   },
   "closure_rules": {
     "executable_runner": "github-actions",
@@ -40,7 +40,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live baseline identity remains accepted; source/product/release closure remains open. Exact read-through is 11,500; unread_minimum is 4,625; unknown remains 15,845; omitted remains 0; acceptance.accepted and baseline_ready remain false.",
+  "note": "Live baseline identity remains accepted; source/product/release closure remains open. Exact read-through is 11,564; unread_minimum is 4,561; unknown remains 15,845; omitted remains 0; acceptance.accepted and baseline_ready remain false.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -58,10 +58,10 @@
       6541,
       6627
     ],
-    "current_source_read_through": 11500,
-    "first_unread_order": 11501,
-    "first_unread_path": "Telegram/ThirdParty/range-v3::test_package/example.cpp",
-    "current_head_source_authority_evidence": "Exact-head 2e8c169214a72abb1a3f16d52f2a811e8f991b2e run 38156139933/job 114519461684 artifact 11708199027 (sha256:cd9fcd8e65b428f25271dbf5957647e88e58084e3acb8c89847b0051d9f7b77f) validated Revision 9 and materialized orders 11,437-11,500 with exact repository/commit/path/Git-blob and byte-length verification; descendant accounting commit remains source/product/release closure open."
+    "current_source_read_through": 11564,
+    "first_unread_order": 11565,
+    "first_unread_path": "Telegram/ThirdParty/tgcalls::tgcalls/TurnCustomizerImpl.h",
+    "current_head_source_authority_evidence": "Exact-head 03a01ab3c231c2a2b6a53f719340bc04124939bb Rust desktop runtime 38157144305 and Desktop Chat Parity CI 38157144285 completed/success; source-authority job 114522352942 artifact 11708539924 (sha256:6285b1529ca14b916d3721a485902565ea391302db65b9a96805d7809e275528) materialized orders 11,501-11,564 with exact repository/commit/path/Git-blob/byte-length verification; Playwright artifact 11709111216 (sha256:b2ba7ce127aa594df068522eb6335ad933a6c7999566ed32007ad32cfdf1274a)."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -70,9 +70,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 11500,
-    "first_unread_order": 11501,
-    "first_unread_path": "Telegram/ThirdParty/range-v3::test_package/example.cpp",
+    "read_through": 11564,
+    "first_unread_order": 11565,
+    "first_unread_path": "Telegram/ThirdParty/tgcalls::tgcalls/TurnCustomizerImpl.h",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }
