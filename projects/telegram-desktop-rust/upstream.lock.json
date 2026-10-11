@@ -266,9 +266,9 @@
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
     "unknown_minimum": 15845,
-    "unread_minimum": 5073,
+    "unread_minimum": 5009,
     "omitted_known": 0,
-    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 11,052; unknown=15,845, unread=5,073, omitted=0."
+    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 11,116; unknown=15,845, unread=5,009, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -301,13 +301,13 @@
   "recursive_inventory_evidence": {
     "status": "exact-head-source-window-attested-descendant-accounting-pending",
     "runner": "github-actions",
-    "run_id": 38141647544,
+    "run_id": 38142444139,
     "run_attempt": 1,
-    "job_id": 114476566497,
-    "validation_head_sha": "a790336594b1eea34816c20d051c695514484929",
-    "artifact_id": 11702534129,
-    "artifact_name": "tdrp-revision9-authority-a790336594b1eea34816c20d051c695514484929",
-    "artifact_digest": "sha256:f5c8b708bc668829d02ad166e73c27913ae880acf342fbd57e5cd75712274edf",
+    "job_id": 114478888136,
+    "validation_head_sha": "d59eea1e646d01d53bc59aa41b422020239e9faa",
+    "artifact_id": 11703104785,
+    "artifact_name": "tdrp-revision9-authority-d59eea1e646d01d53bc59aa41b422020239e9faa",
+    "artifact_digest": "sha256:f9eeaba39ea570cd44f22b38c635c0991983eea09a8e4f9e1fb298a91f612a5f",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "recursive_non_directory_entries": 16125,
     "source_closure_ready": false
@@ -633,9 +633,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 11052,
-    "first_unread_order": 11053,
-    "first_unread_path": "Telegram/ThirdParty/range-v3::include/range/v3/functional/bind.hpp",
+    "read_through": 11116,
+    "first_unread_order": 11117,
+    "first_unread_path": "Telegram/ThirdParty/range-v3::include/range/v3/utility/concepts.hpp",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
@@ -736,5 +736,5 @@
     ],
     "note": "Valid exact-head evidence for 46dfaf only; main reconciliation/accounting descendants require fresh Actions."
   },
-  "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 11,052; unknown=15,845, unread=5,073, omitted=0; first unread=11,053 Telegram/ThirdParty/range-v3::include/range/v3/functional/bind.hpp@b5b20a88347a5546965c9edc17dee397bbac8d00."
+  "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 11,116; unknown=15,845, unread=5,009, omitted=0; first unread=11,117 Telegram/ThirdParty/range-v3::include/range/v3/utility/concepts.hpp@b8a1c91fc37b8dffa08b465722f8ec7baab46656."
 }

@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 5073,
+    "unread": 5009,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,11 +13478,11 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Accepted prefix 11,052/16,125; exact-head Actions validated and materialized orders 10,989-11,052 from pinned range-v3 with exact Git blob verification; unread 5,073; unknown 15,845; omitted 0.",
-    "source_authority_evidence": "Exact-head a790336594b1eea34816c20d051c695514484929 run 38141647544/job 114476566497 artifact 11702534129 (sha256:f5c8b708bc668829d02ad166e73c27913ae880acf342fbd57e5cd75712274edf) validated Revision 9 and materialized orders 10,989-11,052; descendant accounting commit requires fresh exact-head validation.",
-    "current_source_read_through": 11052,
-    "first_unread_order": 11053,
-    "first_unread_path": "Telegram/ThirdParty/range-v3::include/range/v3/functional/bind.hpp"
+    "source_read_reconciliation": "Accepted prefix 11,116/16,125; exact-head Actions validated and materialized orders 11,053-11,116 from pinned range-v3 with exact Git blob verification; unread 5,009; unknown 15,845; omitted 0.",
+    "source_authority_evidence": "Exact-head d59eea1e646d01d53bc59aa41b422020239e9faa run 38142444139/job 114478888136 artifact 11703104785 (sha256:f9eeaba39ea570cd44f22b38c635c0991983eea09a8e4f9e1fb298a91f612a5f) validated Revision 9 and materialized orders 11,053-11,116; descendant accounting commit requires fresh exact-head validation.",
+    "current_source_read_through": 11116,
+    "first_unread_order": 11117,
+    "first_unread_path": "Telegram/ThirdParty/range-v3::include/range/v3/utility/concepts.hpp"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 11052,
-    "first_unread_order": 11053,
-    "first_unread_path": "Telegram/ThirdParty/range-v3::include/range/v3/functional/bind.hpp",
+    "read_through": 11116,
+    "first_unread_order": 11117,
+    "first_unread_path": "Telegram/ThirdParty/range-v3::include/range/v3/utility/concepts.hpp",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
