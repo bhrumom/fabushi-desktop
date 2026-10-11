@@ -681,6 +681,7 @@ async function openMahayanaConversation(page: Page): Promise<void> {
   // while that transition owns the busy state, so acceptance must wait for
   // the same actionable contract a user sees instead of racing visibility.
   await expect(prompt).toHaveAttribute('contenteditable', 'true', { timeout: 15_000 });
+  await expect(prompt).toHaveAttribute('spellcheck', 'true');
 }
 
 async function createSelfHostedBotAcceptanceChannel(page: Page): Promise<{ conversationId: string; peerTestId: string }> {
@@ -840,6 +841,7 @@ test('Human reply, attachment, reaction, and search stay on the shipping convers
 
     const prompt = page.getByRole('textbox', { name: 'Prompt' });
     await expect(prompt).toHaveAttribute('contenteditable', 'true', { timeout: 15_000 });
+    await expect(prompt).toHaveAttribute('spellcheck', 'true');
 
     // Chromium remains the live preedit/focus/lifecycle owner. The native
     // bridge may enrich that state only with OS-observed input-source truth;

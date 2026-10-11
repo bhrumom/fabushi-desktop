@@ -768,7 +768,10 @@ export function PromptRichTextEditor({ prompt, richText, scopeKey = "", clearGen
       attributes: {
         class: "sand-prompt-field",
         dir: "auto",
-        spellcheck: "false",
+        // Delegate spelling feedback to Chromium/Electron's platform-backed
+        // spellchecker. This extends the canonical text-input owner without
+        // introducing a Hunspell/Telegram runtime or a second dictionary truth.
+        spellcheck: "true",
         "aria-label": "Prompt",
         "aria-multiline": "true",
         role: "textbox"
