@@ -32,6 +32,29 @@
       "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
     },
     {
+      "referencePath": "frontend/src/production/coordinator-client.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "00293171f5e17a195de5de248d68f6fd3f75fe14",
+      "behavioralEvidence": [
+        "frontend/src/production/coordinator-client.ts",
+        "source/shared/rpc/coordinator.ts",
+        "frontend/src/production/StoryCapabilitySurface.tsx",
+        "source/host/src/extensions/session/gateway.rs",
+        "native/mahayana-messaging/src/story.rs",
+        "native/mahayana-messaging/src/engine.rs",
+        "native/mahayana-messaging/src/service.rs",
+        "source/host/src/extensions/session/production.rs"
+      ],
+      "testEvidence": [
+        "frontend/src/production/story-capability-surface.contract.test.ts",
+        "native/mahayana-messaging/tests/story_service_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Preserves the frozen Coordinator transport, pending-call settlement, event fanout and failure behavior while adding only typed Story projection/command helpers. Story replies are fail-closed parsed at the existing renderer RPC boundary, and the helpers route through the existing Coordinator/Host gateway to the canonical Rust Story service; the client does not own Story state or create a second transport. Story stealth status and activation are typed through the same closed Coordinator path; authoritative entitlement, cooldown and anonymity state remain in the canonical messaging service, and neither Host nor renderer owns a parallel Story state machine."
+    },
+    {
       "referencePath": "frontend/src/production/evidence.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
@@ -110,29 +133,6 @@
         "source/electron-preload/preload-boundaries.test.ts"
       ],
       "rationale": "Preserves the frozen Grok 0.18 React renderer structure while adapting shipping Fabushi contracts only: browser-login status application is monotonic so a late logging-in acknowledgement cannot overwrite a newer logged-in observation; the root exposes stable Agent-shell markers used by product parity acceptance; empty sidebar-section records fall back to Grok visible-Agent ordering; and complete-roster reconciliation settles an unselected account on the first visible Agent. These adaptations also publish the live sidebar width to the shell so the recovered WindowChrome drag carrier does not overlap Fabushi Agent header controls; the sidebar header remains the local drag surface and its controls are explicit no-drag regions. They keep authentication real through cursorAccount.login/getStatus and keep roster/selection state on the production Coordinator path rather than introducing a parallel renderer. It also preserves optimistic user-message text and committed attachment metadata while correlated authoritative message/attachment echoes settle, so the live transcript does not drop attachment chips between send acceptance and durable echo. Authoritative transcript baselines, updates, and appends are reconciled by message id and client nonce while unioning committed attachment metadata, so transport ordering or a late durable snapshot cannot erase a user's attachment chip after send acceptance. Initial openAgentTail completion is also reconciled with entries that arrived while the initial page request was in flight, preventing a stale first-page response from erasing an optimistic or newly echoed attachment-bearing turn. Transcript feed snapshots also retain only unresolved pending-* user turns that have not yet been correlated by id/clientNonce, so a late empty or stale authoritative baseline cannot erase the optimistic turn between submit acceptance and its durable echo; ordinary non-pending rows remain fully baseline-authoritative. The shipping renderer now also owns the recovered Grok sidebar multi-selection composition: modifier/range selection, clear, and bulk move-to-existing/new-section callbacks are wired to renderer state and the account-scoped sidebarSectionsStore, so the byte-identical sidebar selection UI is reachable without a legacy shell. Phase 1 additionally absorbs Human conversations into this same renderer owner: the existing sidebar/workspace/composer/transcript are reused, Human sends keep the recovered optimistic/reconnect queue, canonical attachment commit path and reply controller, and explicit Human-to-Agent handoff still crosses the established Coordinator-to-Host-to-Runner boundary. No parallel Human shell or message runtime is introduced. Phase 1 reconnect convergence now refreshes an already-open Human transcript from the same Host-owned canonical Session/Transcript immediately after native history sync, while baseline reconciliation preserves unresolved optimistic rows; the Host shipping-client contract separately proves bounded multi-page multi-device gap recovery without a renderer-side message truth. Human older-history loading now reuses the existing transcript pagination controller against a Host gateway that pages the same canonical Human Session SQLite owner; initial Human open syncs native transport then projects only the latest bounded tail, while scroll pagination retains the existing cursor, viewport-anchor, request-fencing, and deduplication ownership. Phase 1 roster recovery further separates local Agent roster readiness from shipping Human convergence: listAgents publishes the canonical loaded/empty Agent state before a potentially slow remote Human sync, while Human sync remains account/transport/attempt fenced, keeps its durable local fallback, and refreshes the active Human transcript after convergence. This prevents Human network latency from holding the canonical Agent shell in an indefinite loading state without weakening either synchronization path. Phase 1 Human reactions now reuse the recovered reaction pills/action surface while mutation and settlement remain Host-owned: the renderer calls the existing Coordinator client, receives the canonical updated Human transcript row, and never creates a reaction store. Human Find-in-chat likewise reuses the recovered find controller and canonical transcript pagination owner: full durable Human search is provided by the Host search gateway, while navigation to an older hit reveals bounded history through the existing pagination controller and virtual transcript handle instead of replacing the timeline with a parallel search result model. Phase 1 additionally routes canonical UI language/accessibility preferences through this existing boundary and applies them to the shipping renderer without creating a parallel settings owner. Restored Human selections are also retried through the same canonical openAgent path once the asynchronous Human roster establishes the conversation type; same-selection reopen remains allowed only while no transcript page is loaded, closing the restart race where a Human id could be briefly addressed through the Agent tail method without introducing alternate state. A successful Host-settled Human send now upserts the authoritative row by canonical id/client nonce, so a concurrent initial-page or roster reconciliation cannot silently erase the accepted backend result from the visible transcript. Human remote-search settlement now promotes the first authoritative match through the existing find controller step path only when no current match exists, so the recovered ordinal/navigation contract and bounded older-page reveal converge without a renderer-side search truth. THEME-I18N-A11Y further keeps this canonical owner while making locale changes immediately visible in the mounted Settings shell, providing locale-sensitive formatting/announcement evidence, and fencing real composition input so CJK/RTL mixed-direction editing cannot submit or be externally overwritten mid-composition. Stop response also settles the renderer running projection only after the canonical Host interrupt call confirms `interrupted: true`, so CHAT-011's packaged acceptance can hide the stop control and accept a subsequent turn without moving operation ownership into the renderer. The shipping renderer removes the obsolete iOS menu entry and keeps account labels consistent with Fabushi branding. The same canonical renderer now exposes Human-message Forward through the recovered ConversationTranscript and a source-neutral ForwardMessageDialog, while execution remains on the existing Coordinator/Host Human Conversation owner; the renderer keeps only dialog, query and settlement projection state and does not become a second Message or Search truth. The same unique ProductShell now mounts the source-neutral StoryCapabilitySurface on the existing ProductionCoordinatorClient, reusing canonical Agent profile navigation and the Coordinator-to-Host Story service rather than creating a Telegram-specific Story runtime or renderer store. Story media now reuses the ProductShell canonical attachment media resolver for local Resource paths with one retry and generation-fenced stale completion, while remoteUrl remains a source projection fallback; no Story-specific loader/cache is introduced. ComposeStash is now composed through this same shipping owner: ProductionRenderer scopes stash exchange by the active account/conversation/topic/child workspace, calls the existing ComposerDraftStateStore exchange path, and passes only capability/state callbacks into the canonical ConversationComposer. The stash remains transient rather than a second persisted draft owner; exchange preserves rich text, reply and prepared attachments, restore revalidates attachment limits, and disabled/voice-busy fences stay enforced by the canonical Composer. Saved-draft send now reuses the shipping submission queue and Host transport, preserves the live draft, keeps the stash on transport failure, and removes it only after successful settlement if the exact stashed content still matches. Current TDRP Human messaging extends the same canonical owner with silent/scheduled delivery semantics while preserving the existing Composer submission queue, durable Host send owner, reply/attachment behavior, and draft/stash fencing; the target blob hash is rebound to this intentional exact-head semantic adaptation. The schedule picker now formats both default and minimum datetime-local values in local wall-clock time, avoiding a UTC/local mismatch without changing transport ownership. The Human-send settlement path now treats sendHumanMessage as the authoritative completion for the submitted turn and moves the unrelated Human roster refresh onto an account-generation-fenced best-effort continuation, so an accepted send can clear only the matching draft before a slow or failed listHumanConversations refresh without turning roster availability into message-settlement truth. The canonical conversation column now explicitly flex-fills the available ProductShell block so transcript/find/composer remain separate flow owners instead of collapsing the composer over transient controls. Window drag ownership is delegated from the transparent cover to visible sidebar/chat titlebars: the compatibility cover no longer receives pointer events, visible titlebar backgrounds remain draggable, and interactive descendants remain no-drag. Find-in-chat stays a non-drag flex-flow control above the composer. This closes real Electron hit-testing without disabling composer/input ownership or weakening E2E. The shipping ProductShell now also keeps pending Button presentation distinct from authoritative command execution: create-agent and Human-to-Agent handoff acquire source-neutral keyed in-flight leases before invoking Coordinator effects, refuse pointer/keyboard/programmatic/connected-handler duplicates, project aria-busy/disabled only while the exact command is pending, and release the lease in success/failure settlement. Current TDRP platform-input closure intentionally extends this existing owner only: the single Electron main RPC/preload/Composer path reports native OS input-source truth when observable, leaves unavailable language/width/scriptVariant/candidate fields typed unknown, preserves Chromium as preedit/focus/lifecycle owner, and fences async native samples by conversation scope, composition generation, and latest request. No browser-locale inference or second input runtime is introduced. The canonical Prompt contenteditable now also delegates spelling feedback to Chromium/Electron's platform-backed spellchecker (`spellcheck=true`) for both Human and Agent conversations; this intentionally reuses the existing text-input owner and mature platform dictionary path instead of introducing a Hunspell/Telegram runtime or second dictionary truth, while Hunspell-specific morphology/compound/forbidden-word responsibilities remain mapped-open until independently implemented and evidenced."
-    },
-    {
-      "referencePath": "frontend/src/production/coordinator-client.ts",
-      "expectedBaseParityMode": "reference-copy",
-      "parityMode": "typescript-port",
-      "targetBlobSha": "00293171f5e17a195de5de248d68f6fd3f75fe14",
-      "behavioralEvidence": [
-        "frontend/src/production/coordinator-client.ts",
-        "source/shared/rpc/coordinator.ts",
-        "frontend/src/production/StoryCapabilitySurface.tsx",
-        "source/host/src/extensions/session/gateway.rs",
-        "native/mahayana-messaging/src/story.rs",
-        "native/mahayana-messaging/src/engine.rs",
-        "native/mahayana-messaging/src/service.rs",
-        "source/host/src/extensions/session/production.rs"
-      ],
-      "testEvidence": [
-        "frontend/src/production/story-capability-surface.contract.test.ts",
-        "native/mahayana-messaging/tests/story_service_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity-ci.yml"
-      ],
-      "rationale": "Preserves the frozen Coordinator transport, pending-call settlement, event fanout and failure behavior while adding only typed Story projection/command helpers. Story replies are fail-closed parsed at the existing renderer RPC boundary, and the helpers route through the existing Coordinator/Host gateway to the canonical Rust Story service; the client does not own Story state or create a second transport. Story stealth status and activation are typed through the same closed Coordinator path; authoritative entitlement, cooldown and anonymity state remain in the canonical messaging service, and neither Host nor renderer owns a parallel Story state machine."
     },
     {
       "referencePath": "frontend/src/recovered/contracts/surface-notice.ts",
@@ -273,6 +273,27 @@
       "rationale": "Keeps the recovered TranscriptCard protocol as the single message-card projection contract while adding one source-neutral, fail-closed rich-action field for open-url, authorize-url and copy-text. Unknown or malformed action payloads reject projection; the action parser is shared with the canonical URL/action helper instead of creating a Telegram/IV protocol owner."
     },
     {
+      "referencePath": "frontend/src/recovered/features/conversation/cards/transcript-card/reaction-picker.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "495a432f83f2e62b9c2996dee825bea570f79fe2",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/conversation/cards/transcript-card/reaction-picker.tsx",
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/message-actions.tsx",
+        "frontend/src/recovered/features/conversation/workspace/view.css",
+        "frontend/src/recovered/features/window-chrome/view.css",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/reaction-system.contract.test.ts",
+        "desktop/e2e/mahayana-agent-workbench.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves the recovered reaction controller/transport and canonical Transcript action ownership while adapting the quick-reaction surface to the existing SandPopover floating primitive. The portal mounts the visible picker above the native drag carrier and sticky composer only while open, keeps Escape/outside-press dismissal and focus return in the canonical floating lifecycle, and unmounts on close so ordinary window drag/composer hit testing resumes. Successful controller settlement closes the same surface without introducing a second reaction store, transport or menu owner. This is a focused TypeScript presentation/lifecycle adaptation required by real Electron pointer hit testing, not a test bypass."
+    },
+    {
       "referencePath": "frontend/src/recovered/features/conversation/cards/transcript-card/resolver.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
@@ -339,21 +360,6 @@
       "rationale": "Keeps the recovered WidgetTranscriptCard leaf and its existing pending/stale interaction owner while making rich options source-neutral capability actions. Pointer and keyboard activation share one path; open-url delegates only through the canonical URL provider, copy-text uses local clipboard capability, authorize-url remains on the existing typed widget settlement path, and measured label elision only affects tooltip disclosure."
     },
     {
-      "referencePath": "frontend/src/recovered/features/conversation/workspace/draft-state.ts",
-      "expectedBaseParityMode": "reference-copy",
-      "parityMode": "typescript-port",
-      "targetBlobSha": "65487e13af9eee02339423a19d91163211e9032b",
-      "behavioralEvidence": [
-        "frontend/src/recovered/features/conversation/workspace/draft-state.ts"
-      ],
-      "testEvidence": [
-        "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts",
-        ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity-ci.yml"
-      ],
-      "rationale": "Preserves the frozen Grok 0.18 account-scoped composer draft store while adapting a shipping race exposed by real desktop attachment staging: a late persistence restore must not overwrite a draft mutation that occurred while the read was in flight. A monotonic mutation revision fences both pre-read and post-read restore settlement without changing account generation semantics, persistence format, or normal draft equality rules. The explicit .ts model import makes this recovered module executable under the Node 24 strip-types contract-test runner while remaining valid under the desktop Bundler TypeScript configuration. The current shipping adaptation also adds a keyed transient ComposeStash per canonical draft scope. exchangeDraft performs an atomic current-draft/stash swap, clones rich-text/reply/prepared-attachment state, revalidates restored attachments through the caller-provided current-limit predicate before commit, and never serializes stash into the durable persistence envelope. removeStash and clearScope retire transient state explicitly, while account restore, reset, and dispose clear stale stashes so no draft crosses account or lifecycle boundaries. A compare-and-remove stash primitive fences asynchronous send completion so an older accepted send cannot delete a newer stash created by a subsequent exchange."
-    },
-    {
       "referencePath": "frontend/src/recovered/features/conversation/workspace/composer.tsx",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
@@ -378,22 +384,78 @@
       "rationale": "Preserves the frozen Grok composer as the single shipping Composer while adapting only the source-neutral ComposeStash affordance. The existing canonical Composer renders the stash exchange action with the existing IconButton primitive, exposes Ctrl/Cmd+Shift+Y through the same keyboard owner, and disables exchange whenever the composer is disabled or voice capture/transcription is busy. ProductionRenderer supplies the scoped exchange callback and ComposerDraftStateStore owns the keyed transient stash/atomic swap, so this module does not become a second draft owner. Focused recovered-conversation infrastructure tests cover atomic exchange, prepared-attachment/rich-text/reply preservation, restore revalidation, child-scope cleanup, persistence exclusion, and lifecycle clearing. The same canonical Composer now exposes saved-draft actions through the existing SandMenu primitives: Send saved draft submits the captured stash through the existing ComposerSubmissionQueue and Coordinator/Host send route without displacing the live draft, while Remove saved draft clears only the matching transient slot and retains attachment files referenced by an already queued stash send. Current TDRP Human messaging extends the same canonical owner with silent/scheduled delivery semantics while preserving the existing Composer submission queue, durable Host send owner, reply/attachment behavior, and draft/stash fencing; the target blob hash is rebound to this intentional exact-head semantic adaptation. This descendant also removes the remaining raw HTML Send-message button and projects the send action through the existing canonical SandIconButton without changing Composer submission ownership; the semantic-adaptation blob lock is intentionally rebound to that source-neutral canonical send control. Current TDRP platform-input closure intentionally extends this existing owner only: the single Electron main RPC/preload/Composer path reports native OS input-source truth when observable, leaves unavailable language/width/scriptVariant/candidate fields typed unknown, preserves Chromium as preedit/focus/lifecycle owner, and fences async native samples by conversation scope, composition generation, and latest request. No browser-locale inference or second input runtime is introduced."
     },
     {
-      "referencePath": "frontend/src/recovered/features/conversation/workspace/submission.ts",
+      "referencePath": "frontend/src/recovered/features/conversation/workspace/desktop.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "b819c2ecc1236b8d7892a1d5f3c0351230409996",
+      "targetBlobSha": "be72d2df7bbd98261e730bc4e782d5d2f6245e35",
       "behavioralEvidence": [
-        "frontend/src/recovered/features/conversation/workspace/submission.ts",
+        "frontend/src/recovered/features/conversation/workspace/desktop.ts",
         "frontend/src/production/ProductionRenderer.tsx",
+        "frontend/src/recovered/contracts/desktop-bridge.ts",
+        "source/electron-preload/preload.ts",
+        "source/electron-main/main-edge.ts",
+        "source/electron-main/attachments/attachments.ts",
+        "source/host/src/extensions/attachments/attachments_service.rs"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        "source/host/tests/attachments_service_contract.rs",
+        "desktop/e2e/mahayana-agent-workbench.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "The recovered composer staging helper remains structurally derived from the frozen Grok workspace module, but shipping Human conversations now pass an explicit typed human-conversation ownership scope when committing staged attachments. That scope is carried through the existing DesktopBridge, preload and Electron main attachment edge into the Host Human message outbox, so Human attachment durability no longer depends on an active Agent while staging validation, fail-closed owner checks, full-batch retry preservation and the canonical Session message-resource upload path remain intact. This is a semantic TypeScript port rather than a byte-identical reference copy, and it introduces no parallel composer or attachment runtime."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/conversation/workspace/draft-state.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "65487e13af9eee02339423a19d91163211e9032b",
+      "behavioralEvidence": [
         "frontend/src/recovered/features/conversation/workspace/draft-state.ts"
       ],
       "testEvidence": [
         "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts",
         ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity-ci.yml",
-        "frontend/src/production/human-silent-scheduled-message.contract.test.ts"
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "rationale": "Preserves the frozen Grok ComposerSubmission payload and queue semantics while adding one renderer-local draftOrigin discriminator needed by ComposeStash settlement. draftOrigin is consumed only by ProductionRenderer failure/success cleanup so a failed saved-draft send keeps the transient stash and an ordinary composer failure still recovers its draft; the existing submission execute callback destructures only the canonical transport fields, so draftOrigin is never forwarded to the Coordinator or Host payload and cannot become transport truth. This is a semantic TypeScript port rather than a frozen-reference edit, and the existing queue/focused composer tests plus exact-head architecture gate remain authoritative. Current TDRP Human messaging extends the same canonical owner with silent/scheduled delivery semantics while preserving the existing Composer submission queue, durable Host send owner, reply/attachment behavior, and draft/stash fencing; the target blob hash is rebound to this intentional exact-head semantic adaptation."
+      "rationale": "Preserves the frozen Grok 0.18 account-scoped composer draft store while adapting a shipping race exposed by real desktop attachment staging: a late persistence restore must not overwrite a draft mutation that occurred while the read was in flight. A monotonic mutation revision fences both pre-read and post-read restore settlement without changing account generation semantics, persistence format, or normal draft equality rules. The explicit .ts model import makes this recovered module executable under the Node 24 strip-types contract-test runner while remaining valid under the desktop Bundler TypeScript configuration. The current shipping adaptation also adds a keyed transient ComposeStash per canonical draft scope. exchangeDraft performs an atomic current-draft/stash swap, clones rich-text/reply/prepared-attachment state, revalidates restored attachments through the caller-provided current-limit predicate before commit, and never serializes stash into the durable persistence envelope. removeStash and clearScope retire transient state explicitly, while account restore, reset, and dispose clear stale stashes so no draft crosses account or lifecycle boundaries. A compare-and-remove stash primitive fences asynchronous send completion so an older accepted send cannot delete a newer stash created by a subsequent exchange."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/conversation/workspace/find-in-chat-controller.ts",
+      "expectedBaseParityMode": "unlocked-semantic",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "1ee521109a7de57da49800a133ea169115e7bae2",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/conversation/workspace/find-in-chat-controller.ts",
+        "frontend/src/recovered/features/conversation/workspace/tool-call-label.ts",
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Preserves the recovered Find-in-Chat controller, hidden-detail search corpus, disclosure identity, query generations and production navigation ownership while making its only runtime TypeScript value import explicit for the repository's Node 24 --experimental-strip-types contract runner. The .ts extension changes no renderer or bundler behavior; it prevents Node ESM resolution from failing before the existing hidden-search and reveal contracts can execute. No search store, index, route, disclosure owner or product behavior is added or weakened."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/conversation/workspace/find-in-chat.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "3977152b1220f7f3f6d4b528001c7c71445db284",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/conversation/workspace/find-in-chat.tsx",
+        "frontend/src/recovered/features/conversation/workspace/find-highlight-runtime.ts",
+        "frontend/src/recovered/features/conversation/workspace/find-in-chat-controller.ts",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Preserves the recovered Find-in-Chat UI, controller and production composition while bounding CSS Highlight refresh work to the live transcript surface. Navigation schedules at most one refresh frame, superseding work is cancelled, transcript-container replacement invalidates the prior frame, callbacks read the latest controller snapshot and container ref, and StrictMode-safe unmount disposal prevents a delayed callback from re-registering global Highlight ranges that retain detached DOM. This is derived view work only: canonical query, match identity, pagination and navigation truth remain owned by createFindInChatController and ProductionRenderer."
     },
     {
       "referencePath": "frontend/src/recovered/features/conversation/workspace/math.tsx",
@@ -434,6 +496,24 @@
       "rationale": "Preserves the recovered canonical MediaViewer and its existing async resource fencing while tightening replacement lifecycle ownership: changing the current media identity now first releases any active pointer capture from the canonical viewer root, then retires the prior pointer/drag owner at the same boundary that resets media/loading/transform state. Unmount performs the same bounded release, and pointerdown ignores canonical interactive descendants such as navigation/close/filmstrip buttons so zoomed media pan cannot steal those controls. Implicit browser `lostpointercapture` also clears the matching pointer owner. Late pointermove/pointerup events from the replaced resource therefore fail the existing pointer-id guard and cannot pan the new media. No second media/resource store or Telegram/IV interaction owner is introduced. Missing resource resolution is also delegated to a shared React-free bounded helper used by thumbnail, full viewer and attachment-card paths: a null or transient failure receives at most one retry, while a second null settles missing and a second exception fails. This preserves the accepted bounded-recovery rule without an unbounded render/retry loop. Transcript attachment cards also bind derived image/video resolution to a near-viewport budget owned by the existing card element: leaving the bounded margin cancels stale settlement and releases only React-derived media state, re-entry reconstructs from canonical attachment metadata through the same resolver, IntersectionObserver absence preserves eager compatibility, and audio plus the explicitly opened MediaViewer remain outside this unload policy. Visibility subscriptions with the same margin now share one observer and release it after the final subscriber; the open viewer filmstrip resolves only the active or horizontally near-visible thumbnail, so a large attachment set no longer creates one observer or media-resolution task per item. The canonical viewer now also keeps a dedicated Control-wheel remainder and consumes normalized wheel deltas in deterministic 120-unit steps, matching the accepted stepped zoom responsibility while preserving the existing Fabushi ordinary-wheel continuous zoom path. Media replacement resets the remainder with transform state, so partial wheel intent cannot settle into a replacement resource. The media-view window-chrome adaptation now also reuses the canonical SandIconButton close control and its semantic focus/color tokens instead of retaining a raw source-specific close button; the existing modal lifecycle, pointer fencing, bounded media recovery and single Conversation owner remain unchanged. The same visibility lifecycle now computes a synchronous first-frame geometry/rootMargin result when a newly mounted image/video card binds its live DOM element, so an attachment appended into the already-visible transcript can resolve immediately before the shared IntersectionObserver produces its first asynchronous entry. The shared observer remains the sole owner of subsequent visibility changes; offscreen settlement is still retired, re-entry can resolve again, unsupported observer environments remain eager-compatible, and audio plus an explicitly opened MediaViewer remain outside the unload budget. The canonical gallery focus lifecycle now also keys the opener by exact attachment source and, after the modal unmount commits, restores focus to the currently mounted preview button rather than a stale pre-render DOM node. Message reaction/action surfaces remain owned by the existing transcript action anchor; their open-state stacking is raised above the fixed native drag carrier so a visible canonical control cannot be intercepted by window-drag hit testing. These changes preserve the existing modal, transcript, attachment and reaction owners and add no parallel viewer or action state. The same canonical MediaViewer is now intentionally adapted for accepted media-view responsibilities 5161-5177: Chromium native video controls are reachable without a parallel Telegram renderer/player; video input is excluded from image pan/zoom/gallery shortcut ownership; source replacement and unmount pause the outgoing element; browser fullscreen consumes Escape; user volume/mute preferences and a hashed per-source resumable position are restored/persisted with bounded one-second timeupdate writes and fail-soft storage. These changes remain inside the existing MediaViewer/Chromium ownership boundary and do not claim closure of still-open PiP geometry, speed/quality, TTL/security, recognition or system-media responsibilities."
     },
     {
+      "referencePath": "frontend/src/recovered/features/conversation/workspace/model.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "eb9b4499278ac4b7c3f52ad6c872a6c9f2c2c2a7",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/conversation/workspace/model.ts",
+        "frontend/src/recovered/features/conversation/workspace/submission.ts",
+        "frontend/src/production/ProductionRenderer.tsx",
+        "source/host/src/extensions/session/production.rs"
+      ],
+      "testEvidence": [
+        "frontend/src/production/human-silent-scheduled-message.contract.test.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves the frozen Grok transcript model while explicitly adapting TranscriptDelivery with a scheduled state required by canonical Fabushi Human direct-message transport. The new state represents a server-persisted message that is visible to the sender but fenced from the recipient until the single durable D1 scheduler activates it; it does not introduce a second transcript/message owner or alter ordinary sent/pending/queued/failed semantics."
+    },
+    {
       "referencePath": "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
@@ -454,6 +534,24 @@
         "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts"
       ],
       "rationale": "The frozen TipTap composer is preserved semantically, with only Fabushi ownership boundaries around local persistence and voice input. Agent switches fence queued transactions from the previous scope. Browser beforeinput releases the fence before ordinary edits; committed DOM input also performs a one-shot canonical-state rescue when ProseMirror has already reconciled the DOM without emitting an accepted onUpdate, preventing visible prompt text from diverging from the persisted Agent-scoped draft. Programmatic voice/dictation insertion explicitly releases the same fence before insertText. The focused Electron parity E2E reads the real client-persistence slice and guards this ownership boundary. THEME-I18N-A11Y further keeps this canonical owner while making locale changes immediately visible in the mounted Settings shell, providing locale-sensitive formatting/announcement evidence, and fencing real composition input so CJK/RTL mixed-direction editing cannot submit or be externally overwritten mid-composition. Accepted-send and external draft-clear settlement now preserve editor focus only when the editor already owns focus; if the user has moved focus to a transcript Media preview, reaction action, or other canonical control before the asynchronous clear settles, the composer clears without stealing focus. This keeps keyboard-submit focus continuity while making transcript focus ownership user-driven and closes the shipping Human media/reaction focus lifecycle without weakening E2E assertions. Scope switches during an active native IME composition now retain a dedicated old-scope composition fence through trailing beforeinput/input delivery; compositionend forces canonical external-content reconciliation before that fence is released, so a stale composition cannot mutate the newly selected conversation/Agent draft. Focused unit/contract tests cover native/ref composition Enter/Escape suppression and the cross-scope settlement fence. This exact-head descendant additionally projects Chromium-delivered IME focus/composition start-update-end lifecycle, a monotonic composition generation, and truthful preedit presence through the same canonical editor status contract. Method, language, width, script variant, and candidate state remain explicitly unknown until a source-neutral native platform adapter reports them; no browser locale or source-shaped runtime is used. The required Focused Electron Human conversation E2E exercises this shipping Composer lifecycle before continuing reply/attachment/reaction/search/restart regression. Current TDRP platform-input closure intentionally extends this existing owner only: the single Electron main RPC/preload/Composer path reports native OS input-source truth when observable, leaves unavailable language/width/scriptVariant/candidate fields typed unknown, preserves Chromium as preedit/focus/lifecycle owner, and fences async native samples by conversation scope, composition generation, and latest request. No browser-locale inference or second input runtime is introduced."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/conversation/workspace/submission.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "b819c2ecc1236b8d7892a1d5f3c0351230409996",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/conversation/workspace/submission.ts",
+        "frontend/src/production/ProductionRenderer.tsx",
+        "frontend/src/recovered/features/conversation/workspace/draft-state.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "frontend/src/production/human-silent-scheduled-message.contract.test.ts"
+      ],
+      "rationale": "Preserves the frozen Grok ComposerSubmission payload and queue semantics while adding one renderer-local draftOrigin discriminator needed by ComposeStash settlement. draftOrigin is consumed only by ProductionRenderer failure/success cleanup so a failed saved-draft send keeps the transient stash and an ordinary composer failure still recovers its draft; the existing submission execute callback destructures only the canonical transport fields, so draftOrigin is never forwarded to the Coordinator or Host payload and cannot become transport truth. This is a semantic TypeScript port rather than a frozen-reference edit, and the existing queue/focused composer tests plus exact-head architecture gate remain authoritative. Current TDRP Human messaging extends the same canonical owner with silent/scheduled delivery semantics while preserving the existing Composer submission queue, durable Host send owner, reply/attachment behavior, and draft/stash fencing; the target blob hash is rebound to this intentional exact-head semantic adaptation."
     },
     {
       "referencePath": "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
@@ -483,42 +581,6 @@
         "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts"
       ],
       "rationale": "Preserves the frozen Grok ConversationTranscript as the single shipping transcript owner while adding one source-neutral message-action seam: an optional onForward callback. MessageActionAnchor exposes Forward only for settled ordinary messages when the shipping Conversation owner supplies that callback, including attachment-bearing messages, while preserving read-only gating, reply/thread/reaction actions, transcript identity, rendering and lifecycle. ProductionRenderer supplies this callback only for canonical Human conversations and execution crosses the existing Coordinator/Host message owner; no Telegram/ShareBox transcript, route, Message store, or renderer-side forward truth is introduced. The same canonical transcript owner now also routes HTTP(S) assistant Markdown links and persisted user rich-text links through the existing UrlCardProvider external-open boundary: default browser navigation is prevented, provider absence fails closed to non-clickable content, and unsupported schemes remain rejected by the existing URL normalizer instead of acquiring a second renderer navigation path. Link activation also consults the browser's canonical non-empty text selection before dispatch, so selecting transcript content cannot accidentally open a URL; this keeps selection/action arbitration in the existing ConversationTranscript instead of introducing an IV-specific pointer owner. Assistant code and table overflow now remain inside that same transcript owner: the canonical message identity plus structural block identity captures the previous horizontal offset, restores and clamps it only across compatible content revisions, and resets it on identity mismatch, while the pure contract helper keeps derived scroll geometry out of canonical message state. Assistant rich-content React identity is now reconciled through a second pure derived helper: equal owner/path/kind/shape plus exact content, or monotonic text/list/table/code growth while either committed or incoming content is streaming, retains committed keys; owner changes, shortening, non-prefix rewrites and structural changes increment a projection generation and remount the whole assistant projection. The committed baseline advances only in layout effect, so an abandoned concurrent render cannot become canonical projection truth. The canonical transcript/find-in-chat composition now exposes collapsed thinking and tool-call rows by stable entry identity, indexes the same ordered text rendered by their expanded presentation (including only visible ToolResultCard fields), expands the existing disclosure sets during navigation, and uses the existing view-commit subscription to reapply highlights after mount; no second search index, disclosure store or article route is introduced. The canonical transcript root now also fences pointer activation against content replacement: primary pointerdown captures the live transcript action target (`a[href]` or `button`) plus transcript entries generation, entries replacement and pointer cancel/leave retire that intent, and a later pointer click is stopped during capture unless both generation and action-target identity still match. The captured intent also records pointer id/start coordinates and is retired once movement exceeds the bounded transcript drag threshold, so a press that becomes a drag cannot later settle as an action click. Keyboard activation remains available, while non-empty text selection and the existing typed URL owner continue to arbitrate downstream dispatch; this bounded slice covers transcript links, attachment/media buttons, disclosure toggles and other button actions but does not claim MediaViewer-portal drag settlement or non-button custom gestures. Transcript rich-text and explicit assistant Markdown links now consume the source-neutral external-link projection, attach exact copy payload/label data to the live anchor, and route both open and context-copy through existing owners. HTTP(S) and explicit `mailto:` are supported; rejected relative/file/script targets stay non-actionable. The ordinary ConversationTranscript message menu consumes the same inline-copy projection used by TranscriptCard, preserving one message-action semantic instead of adding a second menu. The same anchors consume the typed disclosure tooltip from the canonical projection, using the visible rich-text or Markdown label only as comparison input and never as open authority. Assistant code copy now delegates to a capability-minimal source-neutral helper that accepts only the immutable code string and clipboard writer; session/window/controller capabilities are structurally absent and denied clipboard access fails closed. This is the web replacement for the accepted sanitized code-copy context. The same canonical root now retires pending pointer action intent when focus leaves the transcript chain, the application window blurs, or the document becomes hidden, and treats PointerEvent cancellation as the touch-cancel equivalent. Pointer-originated transcript link/button clicks are also stopped while the browser exposes a non-empty selection, while keyboard activation remains independent; this closes the accepted focus/cancel/selection arbitration semantics without adding a source-specific interaction owner. The same RetainedHorizontalScrollRegion now adapts the accepted horizontal-scroll lifecycle into the existing transcript owner: touch-like pointer intent remains pending below the drag threshold, vertical intent is released to native scrolling, horizontal intent alone acquires pointer capture, and pointer up/cancel/implicit capture loss/content revision all retire ownership. Code/table regions use pan-y touch arbitration so this does not create a competing vertical scroll owner. Browser wheel input now uses the same retained overflow owner with a source-neutral gesture axis lock: the first non-zero delta selects horizontal or vertical, the lock is renewed across the browser wheel burst and expires after the platform idle window, line/page delta modes normalize before projection, vertical gestures remain native, horizontal gestures alone mutate/clamp scrollLeft, and Control-wheel clears the lock for the existing zoom owner. This is the Web platform replacement for Qt ScrollBegin/ScrollEnd direction locking, not a second scroll owner. The accepted formatted-date visibility timer has no dynamic Web work to schedule in the current canonical transcript: ordinary message timestamps are absolute local strings, timeline cards use a fixed hour/minute DateTimeFormat, and retired permission leaves only carry timestamp metadata. A contract forbids these owners from silently adding RelativeTimeFormat or a repeating interval; any future relative-time capability must introduce an explicit visibility-bounded lifecycle instead of background polling. The same canonical transcript owner now tracks whether the user remains within the bounded latest-message threshold through transcript-follow-state.ts; appended entries force-scroll only while pinned and otherwise preserve the user's scroll position. CONTRACT-TDRP-IV-ARTICLE-FOLLOW-LATEST-LIFECYCLE-001 and the shipping Human attachment regression bind this follow-latest state to the existing transcript owner without creating a second scroll or message truth. Human delivery state dispatching is now treated by the same canonical transcript as pending/busy and non-actionable until the Host replaces the local nonce identity with its authoritative server message identity. Reply/reaction/thread actions therefore cannot capture a pre-settlement local id; no second reply store, message owner or transport path is introduced. The transcript now consumes the shared transcript-delivery-state helper for both busy rendering and ordinary-message action eligibility, keeping dispatching non-actionable until authoritative settlement while retaining the existing Transcript as the sole UI owner."
-    },
-    {
-      "referencePath": "frontend/src/recovered/features/conversation/workspace/find-in-chat-controller.ts",
-      "expectedBaseParityMode": "unlocked-semantic",
-      "parityMode": "typescript-port",
-      "targetBlobSha": "1ee521109a7de57da49800a133ea169115e7bae2",
-      "behavioralEvidence": [
-        "frontend/src/recovered/features/conversation/workspace/find-in-chat-controller.ts",
-        "frontend/src/recovered/features/conversation/workspace/tool-call-label.ts",
-        "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
-        "frontend/src/production/ProductionRenderer.tsx"
-      ],
-      "testEvidence": [
-        "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts",
-        ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity-ci.yml"
-      ],
-      "rationale": "Preserves the recovered Find-in-Chat controller, hidden-detail search corpus, disclosure identity, query generations and production navigation ownership while making its only runtime TypeScript value import explicit for the repository's Node 24 --experimental-strip-types contract runner. The .ts extension changes no renderer or bundler behavior; it prevents Node ESM resolution from failing before the existing hidden-search and reveal contracts can execute. No search store, index, route, disclosure owner or product behavior is added or weakened."
-    },
-    {
-      "referencePath": "frontend/src/recovered/features/conversation/workspace/find-in-chat.tsx",
-      "expectedBaseParityMode": "reference-copy",
-      "parityMode": "typescript-port",
-      "targetBlobSha": "3977152b1220f7f3f6d4b528001c7c71445db284",
-      "behavioralEvidence": [
-        "frontend/src/recovered/features/conversation/workspace/find-in-chat.tsx",
-        "frontend/src/recovered/features/conversation/workspace/find-highlight-runtime.ts",
-        "frontend/src/recovered/features/conversation/workspace/find-in-chat-controller.ts",
-        "frontend/src/production/ProductionRenderer.tsx"
-      ],
-      "testEvidence": [
-        "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts",
-        ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/desktop-chat-parity-ci.yml"
-      ],
-      "rationale": "Preserves the recovered Find-in-Chat UI, controller and production composition while bounding CSS Highlight refresh work to the live transcript surface. Navigation schedules at most one refresh frame, superseding work is cancelled, transcript-container replacement invalidates the prior frame, callbacks read the latest controller snapshot and container ref, and StrictMode-safe unmount disposal prevents a delayed callback from re-registering global Highlight ranges that retain detached DOM. This is derived view work only: canonical query, match identity, pagination and navigation truth remain owned by createFindInChatController and ProductionRenderer."
     },
     {
       "referencePath": "frontend/src/recovered/features/org-chart/workspace/graph.tsx",
@@ -668,6 +730,26 @@
       "rationale": "Preserves the frozen Settings modal structure, focus trap, keyboard dismissal, and section ownership while adapting visible labels and accessible names to the canonical Fabushi UI locale. Section identity and routing remain unchanged; only localized presentation is added through the existing Settings owner."
     },
     {
+      "referencePath": "frontend/src/recovered/features/window-chrome/notification-host.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "6cfdc9e36c0e16545d59462f8e4de1dc30142acf",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/window-chrome/notification-host.tsx",
+        "frontend/src/recovered/contracts/desktop-bridge.ts",
+        "source/electron-preload/preload.ts",
+        "source/electron-main/accessibility-support.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/contracts/desktop-bridge.contract.test.ts",
+        "source/electron-preload/preload-boundaries.test.ts",
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Keeps the recovered root-shell notification host as the unique Banner/notification composition while adapting a source-neutral screen-reader status consumer. The host reads and subscribes to the trusted desktop accessibility bridge, projects one dismissible role=status information tray when screenReader is true, clears stale dismissal when the OS signal turns off, and leaves highContrast as an independent UI preference. No second notification or accessibility owner is introduced."
+    },
+    {
       "referencePath": "frontend/src/recovered/runtime/coordinator-source.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
@@ -692,6 +774,70 @@
         "native/mahayana-messaging/tests/story_service_contract.rs"
       ],
       "rationale": "Preserves the frozen Grok 0.18 Coordinator renderer source except for the explicit Fabushi user-interrupt extension required by the shipping Agent product: interruptAgent is admitted through the closed method table, its {agentId, interrupted} reply is fail-closed validated, and telemetry remains owned by the existing send domain. The production renderer exposes the corresponding Stop response control, while signed packaged acceptance verifies cancellation settles and a fresh post-cancel turn completes; no parallel transport, owner, or legacy shell is introduced. The same closed Coordinator renderer method table also admits listStories/viewStory/reactStory/deleteStory, which remain typed at the shared RPC boundary and terminate in the canonical Host Story service; no alternate transport or Story owner is introduced. Story stealth status and activation are typed through the same closed Coordinator path; authoritative entitlement, cooldown and anonymity state remain in the canonical messaging service, and neither Host nor renderer owns a parallel Story state machine."
+    },
+    {
+      "referencePath": "frontend/src/recovered/ui/overlay-primitives.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "b485292a13ffccb5ca5a2df518cb854e77a8b2a0",
+      "behavioralEvidence": [
+        "frontend/src/recovered/ui/overlay-primitives.tsx",
+        "frontend/src/recovered/ui/overlay-dismissal.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/ui/overlay-dismissal.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves the frozen Grok modal/focus/Escape behavior while adapting the canonical OverlayDialog to the TDRP Revision 9 wallet outside-click invariant. Only the visually topmost modal owns an eligible background pointer press; it consumes the event before a microtask-deferred close, and teardown can cancel the scheduled close. This prevents one pointer press from dismissing a lower Transaction layer after closing the current information box. The adaptation remains inside the existing source-neutral OverlayDialog owner, keeps owned floating-child and focus-trap contracts, introduces no Telegram/Wallet dialog component, and is covered by executable backdrop-consumption, topmost-arbitration and deferred-cancellation contract tests in the required Rust desktop runtime gate."
+    },
+    {
+      "referencePath": "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "c5e06263b2f2cceb7f09991f5ffe8b9e7d4b98e7",
+      "behavioralEvidence": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx"
+      ],
+      "testEvidence": [
+        "scripts/check-grok-architecture.mjs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts"
+      ],
+      "rationale": "Preserves the frozen Grok floating/menu primitive structure while adapting the source-neutral canonical ContextMenu contract required by TDRP Revision 9: one live point-owned menu, empty-content refusal, right-click and Shift+F10 activation only when actions exist, explicit aria-haspopup/aria-expanded projection, and deterministic close/teardown through the existing FloatingContext dismissal lifecycle. This is an intentional semantic port, not a second Telegram-named menu owner. The same canonical floating owner now also accepts optional Tooltip auto-dismiss, outside-press/Escape dismissal and focus-return policy required by TDRP 6055/6067-6068, without creating a second tooltip lifecycle. Its ref composition is intentionally hardened to preserve both React callback refs and object refs when the canonical trigger is cloned, preventing the shipping ContextMenu wrapper from optional-calling an object ref as a function; the focused conversation-infra contract locks both ref forms without weakening the architecture gate."
+    },
+    {
+      "referencePath": "frontend/src/recovered/ui/sand-form-primitives.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "140b887c6428a7fe407e656960c933932f92f525",
+      "behavioralEvidence": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/ui/sand-tabs-state.ts",
+        "projects/telegram-desktop-rust/dossiers/ui-controls-rating-tabs-swipe-6042-6052-complete-read.md"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/ui/sand-tabs-state.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml",
+        "scripts/check-grok-architecture.mjs"
+      ],
+      "rationale": "Preserves the frozen Grok form/Tabs primitive structure while intentionally extending the existing source-neutral canonical SandTabs owner for TDRP Revision 9 responsibilities read from accepted Telegram ui/controls SubTabs/SubsectionSlider blobs. The adaptation adds optional overflow visibility, stable context-menu intent, pinned/locked reorder boundaries, pointer-capture cancellation, edge scrolling and keyboard reorder with Started/Applied/Cancelled intent while retaining the same ARIA tablist/tab ownership and keeping persisted ordering/domain truth outside the primitive. Pure navigation/reorder contract tests are required in the Rust desktop runtime gate; no Telegram-derived Tabs component or parallel runtime is introduced."
+    },
+    {
+      "referencePath": "frontend/src/recovered/ui/sand-kit-primitives.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "2f79dadc9af133f921e3b1be90968c7e8338123d",
+      "behavioralEvidence": [
+        "frontend/src/recovered/ui/sand-kit-primitives.tsx",
+        "frontend/src/recovered/ui/button-state.ts"
+      ],
+      "testEvidence": [
+        "scripts/check-grok-architecture.mjs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        "frontend/src/recovered/ui/button-state.contract.test.ts",
+        "frontend/src/recovered/ui/in-flight-command.contract.test.ts"
+      ],
+      "rationale": "Preserves the frozen Grok Button/IconButton primitive structure while adapting the canonical source-neutral pending/two-line semantics required by TDRP Revision 9: pending maps to aria-busy plus temporary disabled presentation without mutating permanent applicability, selected styling includes expanded controls, and an optional title/subtitle projection remains inside the same Button owner. Authoritative duplicate-effect refusal remains outside the primitive in the owning command fence."
     },
     {
       "referencePath": "source/electron-main/account/cursor-auth-wiring.ts",
@@ -816,6 +962,21 @@
         ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "rationale": "Keeps the frozen Grok attachment manager semantics while sourcing data-root and path reanchoring from the shared Node boundary rather than legacy Host TypeScript. This is a dependency-direction adaptation only; attachment lifecycle and path semantics remain owned by Electron Main."
+    },
+    {
+      "referencePath": "source/electron-main/attachments/attachments.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "9fb1ed46b2ae623e7fa781d6d3ab47f465f4a332",
+      "behavioralEvidence": [
+        "source/electron-main/attachments/attachments.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves the frozen Grok attachment staging contract while adapting the shipping Electron main-process owner to use the explicit node:crypto randomUUID authority instead of an implicit global crypto binding. The attachment edge still validates names and byte limits, creates the staging directory, writes bytes to the production staging root, emits structured edge failures, and preserves commit/discard lifecycle semantics. The focused filesystem contract exercises the default Node UUID path, exact staged bytes, and cleanup; required exact-head Electron and Rust workflows provide integration evidence. This is a production-runtime compatibility adaptation, not a second attachment owner."
     },
     {
       "referencePath": "source/electron-main/coordinator/coordinator-executors.ts",
@@ -959,6 +1120,25 @@
       "rationale": "Preserves the frozen Grok production composition while applying two explicit Fabushi product adaptations without moving ownership: the existing Host lifecycle/Plugin Skills SDK-edge surface remains in the single Electron MCP owner, and renderer-scoped BrowserWindow delivery is narrowed at the shipping composition boundary to the trusted main WebContents. The frozen source/electron-main/window-broadcast.ts helper remains byte-identical to Grok for truly global fanout; MCP OAuth completion and dev-control renderer events no longer use that all-window helper in production. Coordinator, Host, Runner, MCP manager, and MainEdge ownership remain unchanged."
     },
     {
+      "referencePath": "source/electron-main/main.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "3db7773a260689c143bde82b495cd38a053bb923",
+      "behavioralEvidence": [
+        "source/electron-main/main.ts",
+        "source/electron-main/accessibility-support.ts",
+        "source/electron-main/main-edge.ts",
+        "source/shared/rpc/main.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        "source/electron-preload/preload-boundaries.test.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves the frozen Grok Electron lifecycle while adapting one source-neutral OS accessibility responsibility: startup snapshots app.accessibilitySupportEnabled, accessibility-support-changed updates the single main-process state owner, and the existing MainEdge event path broadcasts only the typed screenReader boolean. Window, Coordinator, Host, Runner, settings and high-contrast ownership remain unchanged. The initial accessibility snapshot is intentionally read only inside app.whenReady(), because Electron requires accessibilitySupportEnabled to be accessed after ready; the change-event listener remains registered before readiness so no post-registration OS transition is lost."
+    },
+    {
       "referencePath": "source/electron-main/mcp/desktop-mcp-manager.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
@@ -1014,6 +1194,25 @@
         "source/host/tests/mcp_discovery_production_wiring_contract.rs"
       ],
       "rationale": "Preserves the frozen Grok MCP runtime lifecycle while adding only the approved dependency forwarding needed by Fabushi Box MCP parity: loadBoxMcpServers, listBoxMcpServers, listBoxMcpToolsRaw, and executeBoxMcpToolRaw are passed into the single SandMcpManager created by the existing runtime. No second manager, transport, or lifecycle owner is introduced. The approved row-62 MCP discovery failure extension now forwards the frozen success/failure/stale/elapsed settlement through a dedicated reportMcpDiscoveryFailed Coordinator main-data request to the unique HostStructuredLogTelemetry owner; generic MCP diagnostics remain separate."
+    },
+    {
+      "referencePath": "source/electron-main/media/avatar-images.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "c65110a1204600afb4798da8f1825c77e034a940",
+      "behavioralEvidence": [
+        "source/electron-main/media/avatar-images.ts",
+        "source/electron-main/adapters/avatar-images.ts",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "docs/specs/telegram-desktop-rust-equivalence-migration.md"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        "desktop/e2e/mahayana-agent-workbench.spec.ts",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Extends the existing process-lifetime Electron WebContents context-menu owner with source-neutral native spelling suggestion projection for the canonical Fabushi Composer. Candidate generation and ordering remain owned by Chromium/Electron's platform-backed spellchecker; Fabushi only trims invalid entries, deduplicates while preserving platform order, caps the visible list at five, and dispatches the chosen candidate through WebContents.replaceMisspelling. The existing link/image/edit context menu, Composer/TipTap owner, Coordinator/Host/Runner boundaries, and dictionary truth remain unchanged. No Telegram/Hunspell runtime, provider, sidecar, second editor, or second dictionary owner is introduced, and this adaptation does not claim Hunspell-specific morphology, compound, FORCEUCASE, FORBIDDENWORD, or FULLSTRIP semantics are verified."
     },
     {
       "referencePath": "source/electron-main/media/media-protocol.ts",
@@ -1106,6 +1305,71 @@
         ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "source/electron-main/update/sand-update-service.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "2ec6c4672f471267602dd3efd4976c33b394c133",
+      "behavioralEvidence": [
+        "source/electron-main/update/update-feed.ts",
+        "source/electron-main/update/update-download.ts",
+        "source/electron-main/update/sand-update-service.ts",
+        "projects/telegram-desktop-rust/dossiers/platform-mac-windows-5411-5475-complete-read.md"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Hardens the existing canonical live updater rather than introducing a Telegram-derived updater owner. Windows/iupdate offers now fail closed without a canonical 64-hex SHA-256 digest; download staging exclusively creates mode-0600 package files instead of following or overwriting a pre-existing destination; the single update service creates mode-0700 staging directories and removes them if permission hardening fails. Existing Authenticode verification, safe-relaunch gating, parent identity handoff and apply-marker recovery remain in the same shipping owner. macOS authenticated apply and post-install installed-artifact identity remain explicitly open."
+    },
+    {
+      "referencePath": "source/electron-main/update/update-download.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "2f49c59ab0a4b277349d3b6e74967e386de3b379",
+      "behavioralEvidence": [
+        "source/electron-main/update/update-feed.ts",
+        "source/electron-main/update/update-download.ts",
+        "source/electron-main/update/sand-update-service.ts",
+        "projects/telegram-desktop-rust/dossiers/platform-mac-windows-5411-5475-complete-read.md"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Hardens the existing canonical live updater rather than introducing a Telegram-derived updater owner. Windows/iupdate offers now fail closed without a canonical 64-hex SHA-256 digest; download staging exclusively creates mode-0600 package files instead of following or overwriting a pre-existing destination; the single update service creates mode-0700 staging directories and removes them if permission hardening fails. Existing Authenticode verification, safe-relaunch gating, parent identity handoff and apply-marker recovery remain in the same shipping owner. macOS authenticated apply and post-install installed-artifact identity remain explicitly open."
+    },
+    {
+      "referencePath": "source/electron-main/update/update-feed.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "0c86dfb9bbe158f79a5585b16ed2f77b5af8f1f9",
+      "behavioralEvidence": [
+        "source/electron-main/update/update-feed.ts",
+        "source/electron-main/update/update-download.ts",
+        "source/electron-main/update/sand-update-service.ts",
+        "projects/telegram-desktop-rust/dossiers/platform-mac-windows-5411-5475-complete-read.md"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Hardens the existing canonical live updater rather than introducing a Telegram-derived updater owner. Windows/iupdate offers now fail closed without a canonical 64-hex SHA-256 digest; download staging exclusively creates mode-0600 package files instead of following or overwriting a pre-existing destination; the single update service creates mode-0700 staging directories and removes them if permission hardening fails. Existing Authenticode verification, safe-relaunch gating, parent identity handoff and apply-marker recovery remain in the same shipping owner. macOS authenticated apply and post-install installed-artifact identity remain explicitly open."
+    },
+    {
+      "referencePath": "source/electron-main/update/win32-installer.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "8d92c9fe41b04a82fe05c4f7c794e35fb4ebd5ee",
+      "behavioralEvidence": [
+        "source/electron-main/update/win32-installer.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves the frozen Grok Windows installer handoff owner while adapting it for the accepted Telegram updater responsibility: bind the parent PID to its creation-time identity, wait up to WINDOWS_PARENT_EXIT_GRACE_MS=5000 for clean exit, re-read creation time after timeout, force-terminate only when the identity is unchanged, then hand off the already verified NSIS installer with the existing --updated /S / --force-run arguments. The generated PowerShell keeps native single Windows path separators and PowerShell single-quote escaping. No parallel updater/runtime owner is introduced, and the focused cross-platform updater contract plus Electron foundations contract cover the adaptation."
     },
     {
       "referencePath": "source/electron-preload/preload.ts",
@@ -1487,251 +1751,6 @@
         ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
-    },
-    {
-      "referencePath": "source/electron-main/update/win32-installer.ts",
-      "expectedBaseParityMode": "reference-copy",
-      "parityMode": "typescript-port",
-      "targetBlobSha": "8d92c9fe41b04a82fe05c4f7c794e35fb4ebd5ee",
-      "behavioralEvidence": [
-        "source/electron-main/update/win32-installer.ts"
-      ],
-      "testEvidence": [
-        "source/electron-main/foundations.test.ts",
-        ".github/workflows/rust-desktop-runtime.yml"
-      ],
-      "rationale": "Preserves the frozen Grok Windows installer handoff owner while adapting it for the accepted Telegram updater responsibility: bind the parent PID to its creation-time identity, wait up to WINDOWS_PARENT_EXIT_GRACE_MS=5000 for clean exit, re-read creation time after timeout, force-terminate only when the identity is unchanged, then hand off the already verified NSIS installer with the existing --updated /S / --force-run arguments. The generated PowerShell keeps native single Windows path separators and PowerShell single-quote escaping. No parallel updater/runtime owner is introduced, and the focused cross-platform updater contract plus Electron foundations contract cover the adaptation."
-    },
-    {
-      "referencePath": "frontend/src/recovered/features/conversation/workspace/model.ts",
-      "expectedBaseParityMode": "reference-copy",
-      "parityMode": "typescript-port",
-      "targetBlobSha": "eb9b4499278ac4b7c3f52ad6c872a6c9f2c2c2a7",
-      "behavioralEvidence": [
-        "frontend/src/recovered/features/conversation/workspace/model.ts",
-        "frontend/src/recovered/features/conversation/workspace/submission.ts",
-        "frontend/src/production/ProductionRenderer.tsx",
-        "source/host/src/extensions/session/production.rs"
-      ],
-      "testEvidence": [
-        "frontend/src/production/human-silent-scheduled-message.contract.test.ts",
-        ".github/workflows/desktop-chat-parity-ci.yml",
-        ".github/workflows/rust-desktop-runtime.yml"
-      ],
-      "rationale": "Preserves the frozen Grok transcript model while explicitly adapting TranscriptDelivery with a scheduled state required by canonical Fabushi Human direct-message transport. The new state represents a server-persisted message that is visible to the sender but fenced from the recipient until the single durable D1 scheduler activates it; it does not introduce a second transcript/message owner or alter ordinary sent/pending/queued/failed semantics."
-    },
-    {
-      "referencePath": "source/electron-main/attachments/attachments.ts",
-      "expectedBaseParityMode": "reference-copy",
-      "parityMode": "typescript-port",
-      "targetBlobSha": "9fb1ed46b2ae623e7fa781d6d3ab47f465f4a332",
-      "behavioralEvidence": [
-        "source/electron-main/attachments/attachments.ts"
-      ],
-      "testEvidence": [
-        "source/electron-main/foundations.test.ts",
-        ".github/workflows/desktop-chat-parity-ci.yml",
-        ".github/workflows/rust-desktop-runtime.yml"
-      ],
-      "rationale": "Preserves the frozen Grok attachment staging contract while adapting the shipping Electron main-process owner to use the explicit node:crypto randomUUID authority instead of an implicit global crypto binding. The attachment edge still validates names and byte limits, creates the staging directory, writes bytes to the production staging root, emits structured edge failures, and preserves commit/discard lifecycle semantics. The focused filesystem contract exercises the default Node UUID path, exact staged bytes, and cleanup; required exact-head Electron and Rust workflows provide integration evidence. This is a production-runtime compatibility adaptation, not a second attachment owner."
-    },
-    {
-      "referencePath": "frontend/src/recovered/features/conversation/workspace/desktop.ts",
-      "expectedBaseParityMode": "reference-copy",
-      "parityMode": "typescript-port",
-      "targetBlobSha": "be72d2df7bbd98261e730bc4e782d5d2f6245e35",
-      "behavioralEvidence": [
-        "frontend/src/recovered/features/conversation/workspace/desktop.ts",
-        "frontend/src/production/ProductionRenderer.tsx",
-        "frontend/src/recovered/contracts/desktop-bridge.ts",
-        "source/electron-preload/preload.ts",
-        "source/electron-main/main-edge.ts",
-        "source/electron-main/attachments/attachments.ts",
-        "source/host/src/extensions/attachments/attachments_service.rs"
-      ],
-      "testEvidence": [
-        "source/electron-main/foundations.test.ts",
-        "source/host/tests/attachments_service_contract.rs",
-        "desktop/e2e/mahayana-agent-workbench.spec.ts",
-        ".github/workflows/desktop-chat-parity-ci.yml",
-        ".github/workflows/rust-desktop-runtime.yml"
-      ],
-      "rationale": "The recovered composer staging helper remains structurally derived from the frozen Grok workspace module, but shipping Human conversations now pass an explicit typed human-conversation ownership scope when committing staged attachments. That scope is carried through the existing DesktopBridge, preload and Electron main attachment edge into the Host Human message outbox, so Human attachment durability no longer depends on an active Agent while staging validation, fail-closed owner checks, full-batch retry preservation and the canonical Session message-resource upload path remain intact. This is a semantic TypeScript port rather than a byte-identical reference copy, and it introduces no parallel composer or attachment runtime."
-    },
-    {
-      "referencePath": "frontend/src/recovered/features/conversation/cards/transcript-card/reaction-picker.tsx",
-      "expectedBaseParityMode": "reference-copy",
-      "parityMode": "typescript-port",
-      "targetBlobSha": "495a432f83f2e62b9c2996dee825bea570f79fe2",
-      "behavioralEvidence": [
-        "frontend/src/recovered/features/conversation/cards/transcript-card/reaction-picker.tsx",
-        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
-        "frontend/src/recovered/features/conversation/cards/transcript-card/message-actions.tsx",
-        "frontend/src/recovered/features/conversation/workspace/view.css",
-        "frontend/src/recovered/features/window-chrome/view.css",
-        "frontend/src/production/ProductionRenderer.tsx"
-      ],
-      "testEvidence": [
-        "frontend/src/recovered/features/reaction-system.contract.test.ts",
-        "desktop/e2e/mahayana-agent-workbench.spec.ts",
-        ".github/workflows/desktop-chat-parity-ci.yml",
-        ".github/workflows/rust-desktop-runtime.yml"
-      ],
-      "rationale": "Preserves the recovered reaction controller/transport and canonical Transcript action ownership while adapting the quick-reaction surface to the existing SandPopover floating primitive. The portal mounts the visible picker above the native drag carrier and sticky composer only while open, keeps Escape/outside-press dismissal and focus return in the canonical floating lifecycle, and unmounts on close so ordinary window drag/composer hit testing resumes. Successful controller settlement closes the same surface without introducing a second reaction store, transport or menu owner. This is a focused TypeScript presentation/lifecycle adaptation required by real Electron pointer hit testing, not a test bypass."
-    },
-    {
-      "referencePath": "source/electron-main/update/update-download.ts",
-      "expectedBaseParityMode": "reference-copy",
-      "parityMode": "typescript-port",
-      "targetBlobSha": "2f49c59ab0a4b277349d3b6e74967e386de3b379",
-      "behavioralEvidence": [
-        "source/electron-main/update/update-feed.ts",
-        "source/electron-main/update/update-download.ts",
-        "source/electron-main/update/sand-update-service.ts",
-        "projects/telegram-desktop-rust/dossiers/platform-mac-windows-5411-5475-complete-read.md"
-      ],
-      "testEvidence": [
-        "source/electron-main/foundations.test.ts",
-        ".github/workflows/rust-desktop-runtime.yml"
-      ],
-      "rationale": "Hardens the existing canonical live updater rather than introducing a Telegram-derived updater owner. Windows/iupdate offers now fail closed without a canonical 64-hex SHA-256 digest; download staging exclusively creates mode-0600 package files instead of following or overwriting a pre-existing destination; the single update service creates mode-0700 staging directories and removes them if permission hardening fails. Existing Authenticode verification, safe-relaunch gating, parent identity handoff and apply-marker recovery remain in the same shipping owner. macOS authenticated apply and post-install installed-artifact identity remain explicitly open."
-    },
-    {
-      "referencePath": "source/electron-main/update/update-feed.ts",
-      "expectedBaseParityMode": "reference-copy",
-      "parityMode": "typescript-port",
-      "targetBlobSha": "0c86dfb9bbe158f79a5585b16ed2f77b5af8f1f9",
-      "behavioralEvidence": [
-        "source/electron-main/update/update-feed.ts",
-        "source/electron-main/update/update-download.ts",
-        "source/electron-main/update/sand-update-service.ts",
-        "projects/telegram-desktop-rust/dossiers/platform-mac-windows-5411-5475-complete-read.md"
-      ],
-      "testEvidence": [
-        "source/electron-main/foundations.test.ts",
-        ".github/workflows/rust-desktop-runtime.yml"
-      ],
-      "rationale": "Hardens the existing canonical live updater rather than introducing a Telegram-derived updater owner. Windows/iupdate offers now fail closed without a canonical 64-hex SHA-256 digest; download staging exclusively creates mode-0600 package files instead of following or overwriting a pre-existing destination; the single update service creates mode-0700 staging directories and removes them if permission hardening fails. Existing Authenticode verification, safe-relaunch gating, parent identity handoff and apply-marker recovery remain in the same shipping owner. macOS authenticated apply and post-install installed-artifact identity remain explicitly open."
-    },
-    {
-      "referencePath": "source/electron-main/update/sand-update-service.ts",
-      "expectedBaseParityMode": "reference-copy",
-      "parityMode": "typescript-port",
-      "targetBlobSha": "2ec6c4672f471267602dd3efd4976c33b394c133",
-      "behavioralEvidence": [
-        "source/electron-main/update/update-feed.ts",
-        "source/electron-main/update/update-download.ts",
-        "source/electron-main/update/sand-update-service.ts",
-        "projects/telegram-desktop-rust/dossiers/platform-mac-windows-5411-5475-complete-read.md"
-      ],
-      "testEvidence": [
-        "source/electron-main/foundations.test.ts",
-        ".github/workflows/rust-desktop-runtime.yml"
-      ],
-      "rationale": "Hardens the existing canonical live updater rather than introducing a Telegram-derived updater owner. Windows/iupdate offers now fail closed without a canonical 64-hex SHA-256 digest; download staging exclusively creates mode-0600 package files instead of following or overwriting a pre-existing destination; the single update service creates mode-0700 staging directories and removes them if permission hardening fails. Existing Authenticode verification, safe-relaunch gating, parent identity handoff and apply-marker recovery remain in the same shipping owner. macOS authenticated apply and post-install installed-artifact identity remain explicitly open."
-    },
-    {
-      "referencePath": "frontend/src/recovered/ui/overlay-primitives.tsx",
-      "expectedBaseParityMode": "reference-copy",
-      "parityMode": "typescript-port",
-      "targetBlobSha": "b485292a13ffccb5ca5a2df518cb854e77a8b2a0",
-      "behavioralEvidence": [
-        "frontend/src/recovered/ui/overlay-primitives.tsx",
-        "frontend/src/recovered/ui/overlay-dismissal.ts"
-      ],
-      "testEvidence": [
-        "frontend/src/recovered/ui/overlay-dismissal.contract.test.ts",
-        ".github/workflows/rust-desktop-runtime.yml"
-      ],
-      "rationale": "Preserves the frozen Grok modal/focus/Escape behavior while adapting the canonical OverlayDialog to the TDRP Revision 9 wallet outside-click invariant. Only the visually topmost modal owns an eligible background pointer press; it consumes the event before a microtask-deferred close, and teardown can cancel the scheduled close. This prevents one pointer press from dismissing a lower Transaction layer after closing the current information box. The adaptation remains inside the existing source-neutral OverlayDialog owner, keeps owned floating-child and focus-trap contracts, introduces no Telegram/Wallet dialog component, and is covered by executable backdrop-consumption, topmost-arbitration and deferred-cancellation contract tests in the required Rust desktop runtime gate."
-    },
-    {
-      "referencePath": "frontend/src/recovered/ui/sand-floating-primitives.tsx",
-      "expectedBaseParityMode": "reference-copy",
-      "parityMode": "typescript-port",
-      "targetBlobSha": "c5e06263b2f2cceb7f09991f5ffe8b9e7d4b98e7",
-      "behavioralEvidence": [
-        "frontend/src/recovered/ui/sand-floating-primitives.tsx"
-      ],
-      "testEvidence": [
-        "scripts/check-grok-architecture.mjs",
-        ".github/workflows/rust-desktop-runtime.yml",
-        "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts"
-      ],
-      "rationale": "Preserves the frozen Grok floating/menu primitive structure while adapting the source-neutral canonical ContextMenu contract required by TDRP Revision 9: one live point-owned menu, empty-content refusal, right-click and Shift+F10 activation only when actions exist, explicit aria-haspopup/aria-expanded projection, and deterministic close/teardown through the existing FloatingContext dismissal lifecycle. This is an intentional semantic port, not a second Telegram-named menu owner. The same canonical floating owner now also accepts optional Tooltip auto-dismiss, outside-press/Escape dismissal and focus-return policy required by TDRP 6055/6067-6068, without creating a second tooltip lifecycle. Its ref composition is intentionally hardened to preserve both React callback refs and object refs when the canonical trigger is cloned, preventing the shipping ContextMenu wrapper from optional-calling an object ref as a function; the focused conversation-infra contract locks both ref forms without weakening the architecture gate."
-    },
-    {
-      "referencePath": "frontend/src/recovered/ui/sand-kit-primitives.tsx",
-      "expectedBaseParityMode": "reference-copy",
-      "parityMode": "typescript-port",
-      "targetBlobSha": "2f79dadc9af133f921e3b1be90968c7e8338123d",
-      "behavioralEvidence": [
-        "frontend/src/recovered/ui/sand-kit-primitives.tsx",
-        "frontend/src/recovered/ui/button-state.ts"
-      ],
-      "testEvidence": [
-        "scripts/check-grok-architecture.mjs",
-        ".github/workflows/rust-desktop-runtime.yml",
-        "frontend/src/recovered/ui/button-state.contract.test.ts",
-        "frontend/src/recovered/ui/in-flight-command.contract.test.ts"
-      ],
-      "rationale": "Preserves the frozen Grok Button/IconButton primitive structure while adapting the canonical source-neutral pending/two-line semantics required by TDRP Revision 9: pending maps to aria-busy plus temporary disabled presentation without mutating permanent applicability, selected styling includes expanded controls, and an optional title/subtitle projection remains inside the same Button owner. Authoritative duplicate-effect refusal remains outside the primitive in the owning command fence."
-    },
-    {
-      "referencePath": "frontend/src/recovered/ui/sand-form-primitives.tsx",
-      "expectedBaseParityMode": "reference-copy",
-      "parityMode": "typescript-port",
-      "targetBlobSha": "140b887c6428a7fe407e656960c933932f92f525",
-      "behavioralEvidence": [
-        "frontend/src/recovered/ui/sand-form-primitives.tsx",
-        "frontend/src/recovered/ui/sand-tabs-state.ts",
-        "projects/telegram-desktop-rust/dossiers/ui-controls-rating-tabs-swipe-6042-6052-complete-read.md"
-      ],
-      "testEvidence": [
-        "frontend/src/recovered/ui/sand-tabs-state.contract.test.ts",
-        ".github/workflows/rust-desktop-runtime.yml",
-        "scripts/check-grok-architecture.mjs"
-      ],
-      "rationale": "Preserves the frozen Grok form/Tabs primitive structure while intentionally extending the existing source-neutral canonical SandTabs owner for TDRP Revision 9 responsibilities read from accepted Telegram ui/controls SubTabs/SubsectionSlider blobs. The adaptation adds optional overflow visibility, stable context-menu intent, pinned/locked reorder boundaries, pointer-capture cancellation, edge scrolling and keyboard reorder with Started/Applied/Cancelled intent while retaining the same ARIA tablist/tab ownership and keeping persisted ordering/domain truth outside the primitive. Pure navigation/reorder contract tests are required in the Rust desktop runtime gate; no Telegram-derived Tabs component or parallel runtime is introduced."
-    },
-    {
-      "referencePath": "source/electron-main/main.ts",
-      "expectedBaseParityMode": "reference-copy",
-      "parityMode": "typescript-port",
-      "targetBlobSha": "3db7773a260689c143bde82b495cd38a053bb923",
-      "behavioralEvidence": [
-        "source/electron-main/main.ts",
-        "source/electron-main/accessibility-support.ts",
-        "source/electron-main/main-edge.ts",
-        "source/shared/rpc/main.ts"
-      ],
-      "testEvidence": [
-        "source/electron-main/foundations.test.ts",
-        "source/electron-preload/preload-boundaries.test.ts",
-        ".github/workflows/desktop-chat-parity-ci.yml",
-        ".github/workflows/rust-desktop-runtime.yml"
-      ],
-      "rationale": "Preserves the frozen Grok Electron lifecycle while adapting one source-neutral OS accessibility responsibility: startup snapshots app.accessibilitySupportEnabled, accessibility-support-changed updates the single main-process state owner, and the existing MainEdge event path broadcasts only the typed screenReader boolean. Window, Coordinator, Host, Runner, settings and high-contrast ownership remain unchanged. The initial accessibility snapshot is intentionally read only inside app.whenReady(), because Electron requires accessibilitySupportEnabled to be accessed after ready; the change-event listener remains registered before readiness so no post-registration OS transition is lost."
-    },
-    {
-      "referencePath": "frontend/src/recovered/features/window-chrome/notification-host.tsx",
-      "expectedBaseParityMode": "reference-copy",
-      "parityMode": "typescript-port",
-      "targetBlobSha": "6cfdc9e36c0e16545d59462f8e4de1dc30142acf",
-      "behavioralEvidence": [
-        "frontend/src/recovered/features/window-chrome/notification-host.tsx",
-        "frontend/src/recovered/contracts/desktop-bridge.ts",
-        "source/electron-preload/preload.ts",
-        "source/electron-main/accessibility-support.ts"
-      ],
-      "testEvidence": [
-        "frontend/src/recovered/contracts/desktop-bridge.contract.test.ts",
-        "source/electron-preload/preload-boundaries.test.ts",
-        "source/electron-main/foundations.test.ts",
-        ".github/workflows/desktop-chat-parity-ci.yml",
-        ".github/workflows/rust-desktop-runtime.yml"
-      ],
-      "rationale": "Keeps the recovered root-shell notification host as the unique Banner/notification composition while adapting a source-neutral screen-reader status consumer. The host reads and subscribes to the trusted desktop accessibility bridge, projects one dismissible role=status information tray when screenReader is true, clears stale dismissal when the OS signal turns off, and leaves highContrast as an independent UI preference. No second notification or accessibility owner is introduced."
     }
   ]
 }
