@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 3601,
+    "unread": 3537,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 206,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 12524,
-    "first_unread_order": 12525,
-    "first_unread_path": "Telegram/lib_base::base/platform/linux/base_screen_reader_state_linux.cpp",
+    "read_through": 12588,
+    "first_unread_order": 12589,
+    "first_unread_path": "Telegram/lib_base::base/platform/win/base_process_win.h",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
