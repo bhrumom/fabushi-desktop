@@ -1,5 +1,13 @@
-Live Revision 9 authority (2026-10-11): telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 (root tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6). Root non-directory=6,653; recursive non-directory=16,125; deterministic read-through=9,473; first unread=9,474 Telegram/ThirdParty/kimageformats::autotests/long-runs.pic@620a3bb8eb322d06e0468eb641c56bd72b6c6545; unread=6,652; unknown=15,845; omitted=0. Kcoreaddons direct-gitlink source is now exact-read through its component tail; next component is KDE/kimageformats@df82311a1081e576c4ac020204578bb8a81b21ec.
-<!-- TDRP_CURRENT_SUMMARY read-through=9473 unread=6652 unknown=15845 omitted=0 first-unread=9474 path=Telegram/ThirdParty/kimageformats::autotests/long-runs.pic -->
+Live Revision 9 authority (2026-10-11): telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 (root tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6). Root non-directory=6,653; recursive non-directory=16,125; deterministic read-through=9,517; first unread=9,518 Telegram/ThirdParty/kimageformats::autotests/read/eps/bw.eps@3af28d5d28351a749cbcaf0e30e3652a159d830a; unread=6,608; unknown=15,845; omitted=0. Kcoreaddons direct-gitlink source is now exact-read through its component tail; next component is KDE/kimageformats@df82311a1081e576c4ac020204578bb8a81b21ec.
+<!-- TDRP_CURRENT_SUMMARY read-through=9517 unread=6608 unknown=15845 omitted=0 first-unread=9518 path=Telegram/ThirdParty/kimageformats::autotests/read/eps/bw.eps -->
+
+### Revision 9 deterministic read-through — PIC/AVIF media acceptance 9,474–9,517
+
+Orders 9,474–9,517 exact-read the next pinned `KDE/kimageformats@df82311a1081e576c4ac020204578bb8a81b21ec` range. PIC fixtures and `pictest.cpp` establish raw/RLE compression, alpha/non-alpha output, deterministic encoded bytes, short/full-length Description metadata, long runs, input-format conversion, and pre-read text/size/image-format semantics. AVIF fixtures cover grayscale, grayscale-alpha, RGB/RGBA and the full auto-transform orientation matrix: unrotated/90/180/270 combined with horizontal or vertical mirroring all converge to the same canonical 480×160 reference orientation.
+
+Binary fixtures were read by exact base64/raw bytes; PNG dimensions and selected reference visuals were inspected. Existing-owner-first keeps the canonical attachment/media, Resource and Media/Quality owners. The current production branch also bounds the existing local-image preview fast path before decode using `ATTACHMENT_PREVIEW_BYTE_CAP`; the strict Grok semantic-adaptation evidence lock is rebound to those intentional target blobs rather than weakened.
+
+All 44 source rows remain `mapped-open`, `unknown_closed=false`, `omitted=false`; the bounded preview fix is narrower than full codec parity. Accounting is **9,517/16,125 read; 6,608 unread; 15,845 unknown; 0 omitted**. Next is 9,518 `Telegram/ThirdParty/kimageformats::autotests/read/eps/bw.eps@3af28d5d28351a749cbcaf0e30e3652a159d830a`. Fresh descendant exact-head GitHub Actions remain mandatory.
 
 ### Revision 9 deterministic read-through — kimageformats opening range 9,454–9,473
 

@@ -873,7 +873,7 @@
       "referencePath": "source/electron-main/adapters/attachment-gateway.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "cbd9411d15f6659eef5490790dedc6e948642dca",
+      "targetBlobSha": "2ab5eee5e8c94bdd7aa75a4e0e3c5561d76659d4",
       "behavioralEvidence": [
         "source/electron-main/adapters/attachment-gateway.ts",
         "source/shared/media/link-preview-image-bounds.ts",
@@ -884,7 +884,7 @@
         ".github/workflows/rust-desktop-runtime.yml",
         ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "rationale": "Preserves Grok attachment-gateway behavior while removing a forbidden Electron-main dependency on the legacy TypeScript Host attachment service. Link metadata now crosses the existing Coordinator main leg, and bounded preview-image handling lives in shared media code. This keeps Electron Main, Coordinator and Host as independent Grok-shaped processes while retaining the same attachment/link-preview contract."
+      "rationale": "Preserves Grok attachment-gateway behavior while removing a forbidden Electron-main dependency on the legacy TypeScript Host attachment service. Link metadata now crosses the existing Coordinator main leg, and bounded preview-image handling lives in shared media code. This keeps Electron Main, Coordinator and Host as independent Grok-shaped processes while retaining the same attachment/link-preview contract. The shipping gateway now also binds the canonical ATTACHMENT_PREVIEW_BYTE_CAP into the existing image resolver so local previews cannot bypass the same bounded-resource contract before decode."
     },
     {
       "referencePath": "source/electron-main/adapters/main-rpc.ts",
@@ -952,7 +952,7 @@
       "referencePath": "source/electron-main/attachments/attachment-manager.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "0d055b7d65c49911deb18ff08af2caa1639d93f7",
+      "targetBlobSha": "3d32f0d981474aac28eb987b5ed6d1dc987bd6ea",
       "behavioralEvidence": [
         "source/electron-main/attachments/attachment-manager.ts",
         "source/shared/node/sand-data-root.ts"
@@ -961,7 +961,7 @@
         "source/electron-main/foundations.test.ts",
         ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "rationale": "Keeps the frozen Grok attachment manager semantics while sourcing data-root and path reanchoring from the shared Node boundary rather than legacy Host TypeScript. This is a dependency-direction adaptation only; attachment lifecycle and path semantics remain owned by Electron Main."
+      "rationale": "Keeps the frozen Grok attachment manager semantics while sourcing data-root and path reanchoring from the shared Node boundary rather than legacy Host TypeScript. This is a dependency-direction adaptation only; attachment lifecycle and path semantics remain owned by Electron Main. The same owner now reads local preview files through an exact bounded file handle before decode, rejects non-files/zero/oversized content and size changes, and applies the canonical preview cap to injected reads as well; foundations.test.ts provides focused evidence without adding a second media runtime."
     },
     {
       "referencePath": "source/electron-main/attachments/attachments.ts",
