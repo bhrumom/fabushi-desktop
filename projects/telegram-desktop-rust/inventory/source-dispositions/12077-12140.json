@@ -1,0 +1,1800 @@
+{
+  "format_version": 2,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+    "tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6"
+  },
+  "exact_head_evidence": {
+    "head_sha": "b3bc2679cef933dee5db9ec8be572cd50179b6e4",
+    "rust_desktop_runtime_run": 38179152559,
+    "desktop_chat_parity_run": 38179152473,
+    "source_authority_job": 114587866905,
+    "source_authority_artifact": 11716538101,
+    "source_authority_digest": "sha256:eb555c8cb106b60cbab085205a3b98b0e8c260e6d62b54c5d7747ae0f213f5d8",
+    "evidence_status": "exact-source-materialization-and-parent-runtime-green-descendant-validation-required"
+  },
+  "accounting": {
+    "read_through": 12140,
+    "unread": 3985,
+    "unknown": 15845,
+    "omitted": 0
+  },
+  "range": {
+    "first_order": 12077,
+    "last_order": 12140,
+    "entries": 64
+  },
+  "rows": [
+    {
+      "recursive_order": 12077,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/gamemode.h",
+      "source_blob_sha": "6b9d205754d16548d90b7ac7289b5cb6b6a6fffa",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/gamemode.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "6b9d205754d16548d90b7ac7289b5cb6b6a6fffa",
+        "size": 939
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "game_mode_create"
+      ],
+      "disposition": "applicable-gamemode-api-mapped-open",
+      "upstream_owner": "GameMode portal API",
+      "responsibility": "Expose permission-gated pid/pidfd performance registration through the existing process/performance owner; header carries API/lifecycle ownership only, while identity validation, backend failure and active-state semantics remain canonical.",
+      "fabushi_canonical_owner": "Existing platform process/performance + Permissions owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12078,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/generate-method-info.py",
+      "source_blob_sha": "c71ac24132bc6a455834e46e1db99998777c0da3",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/generate-method-info.py",
+        "mode": "100644",
+        "type": "blob",
+        "object": "c71ac24132bc6a455834e46e1db99998777c0da3",
+        "size": 2062
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [],
+      "disposition": "applicable-dbus-method-metadata-generation-mapped-open",
+      "upstream_owner": "D-Bus method-info generator",
+      "responsibility": "Preserve deterministic XML-to-method metadata generation, implementation-required annotations and build-time schema provenance; generator failure must fail the build rather than change runtime policy silently.",
+      "fabushi_canonical_owner": "Existing Build/Quality + platform interface provenance owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12079,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/glib-backports.h",
+      "source_blob_sha": "cc44363a86368783183c3487ff323e36fde8e4f9",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/glib-backports.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "cc44363a86368783183c3487ff323e36fde8e4f9",
+        "size": 1809
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "_g_clear_fd_ignore_error",
+        "g_clear_fd"
+      ],
+      "disposition": "applicable-fd-resource-backport-mapped-open",
+      "upstream_owner": "GLib FD cleanup compatibility",
+      "responsibility": "Preserve scoped FD close/cleanup semantics and compatibility guards so cancellation/error paths cannot leak descriptors; this is a source-neutral platform resource utility.",
+      "fabushi_canonical_owner": "Existing Resource/platform lifecycle utility owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12080,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/global-shortcuts.c",
+      "source_blob_sha": "38664088ed615e5b8fba33eef78d0afeaa15dd3e",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/global-shortcuts.c",
+        "mode": "100644",
+        "type": "blob",
+        "object": "38664088ed615e5b8fba33eef78d0afeaa15dd3e",
+        "size": 25106
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "global_shortcuts_create"
+      ],
+      "disposition": "applicable-global-shortcuts-session-mapped-open",
+      "upstream_owner": "GlobalShortcuts portal",
+      "responsibility": "Preserve caller/app-scoped session create/bind/list, shortcut-id and option validation, Activated/Deactivated/ShortcutsChanged signal fencing, request completion/cancellation and closed-session rejection.",
+      "fabushi_canonical_owner": "Existing Computer/input + Permissions + platform session owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12081,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/global-shortcuts.h",
+      "source_blob_sha": "1591d1cf54731e56a7ab067658f8eb72c6652754",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/global-shortcuts.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "1591d1cf54731e56a7ab067658f8eb72c6652754",
+        "size": 1013
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "global_shortcuts_create"
+      ],
+      "disposition": "applicable-global-shortcuts-session-mapped-open",
+      "upstream_owner": "GlobalShortcuts portal",
+      "responsibility": "Preserve caller/app-scoped session create/bind/list, shortcut-id and option validation, Activated/Deactivated/ShortcutsChanged signal fencing, request completion/cancellation and closed-session rejection.",
+      "fabushi_canonical_owner": "Existing Computer/input + Permissions + platform session owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12082,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/inhibit.c",
+      "source_blob_sha": "19d477d362b630ea4111870e49fd05067cf1ff6e",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/inhibit.c",
+        "mode": "100644",
+        "type": "blob",
+        "object": "19d477d362b630ea4111870e49fd05067cf1ff6e",
+        "size": 17487
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "inhibit_create"
+      ],
+      "disposition": "applicable-inhibit-permission-lifecycle-mapped-open",
+      "upstream_owner": "Inhibit portal",
+      "responsibility": "Preserve logout/switch/suspend/idle inhibition flags intersected with stored permissions, bounded reason validation, worker-thread permission lookup, monitor-session state, query-end response and peer/session teardown.",
+      "fabushi_canonical_owner": "Existing platform lifecycle/power + Permissions owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12083,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/inhibit.h",
+      "source_blob_sha": "96048c06f74bd09169981e562853ffbc081bdf55",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/inhibit.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "96048c06f74bd09169981e562853ffbc081bdf55",
+        "size": 995
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "inhibit_create"
+      ],
+      "disposition": "applicable-inhibit-permission-lifecycle-mapped-open",
+      "upstream_owner": "Inhibit portal",
+      "responsibility": "Preserve logout/switch/suspend/idle inhibition flags intersected with stored permissions, bounded reason validation, worker-thread permission lookup, monitor-session state, query-end response and peer/session teardown.",
+      "fabushi_canonical_owner": "Existing platform lifecycle/power + Permissions owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12084,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/input-capture.c",
+      "source_blob_sha": "29a605bfcce3ac09ab62bc3f4ed8c325693414da",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/input-capture.c",
+        "mode": "100644",
+        "type": "blob",
+        "object": "29a605bfcce3ac09ab62bc3f4ed8c325693414da",
+        "size": 45195
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "input_capture_create"
+      ],
+      "disposition": "applicable-input-capture-state-machine-mapped-open",
+      "upstream_owner": "InputCapture portal",
+      "responsibility": "Preserve INIT→ENABLED→ACTIVE→DISABLED→CLOSED state guards, zones/barriers, EIS FD handoff, capability filtering, activation/deactivation signal fencing, release/disable and caller-bound teardown.",
+      "fabushi_canonical_owner": "Existing Computer/Human Computer takeover + Permissions + platform input owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12085,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/input-capture.h",
+      "source_blob_sha": "f2bae7b32420d7ab1ecb52f5895feb18d20b8dfe",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/input-capture.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "f2bae7b32420d7ab1ecb52f5895feb18d20b8dfe",
+        "size": 973
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "input_capture_create"
+      ],
+      "disposition": "applicable-input-capture-state-machine-mapped-open",
+      "upstream_owner": "InputCapture portal",
+      "responsibility": "Preserve INIT→ENABLED→ACTIVE→DISABLED→CLOSED state guards, zones/barriers, EIS FD handoff, capability filtering, activation/deactivation signal fencing, release/disable and caller-bound teardown.",
+      "fabushi_canonical_owner": "Existing Computer/Human Computer takeover + Permissions + platform input owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12086,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/location.c",
+      "source_blob_sha": "6eee02e2bc85705f53d47e57a69f2b7b8495e435",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/location.c",
+        "mode": "100644",
+        "type": "blob",
+        "object": "6eee02e2bc85705f53d47e57a69f2b7b8495e435",
+        "size": 25579
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "location_create"
+      ],
+      "disposition": "applicable-location-privacy-session-mapped-open",
+      "upstream_owner": "Location portal",
+      "responsibility": "Preserve caller-scoped GeoClue session lifecycle, distance/time/accuracy thresholds, permission/accuracy and last-use persistence, lockdown, asynchronous start/failure close, privacy-bounded LocationUpdated delivery and teardown.",
+      "fabushi_canonical_owner": "Existing Permissions/privacy + platform location owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12087,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/location.h",
+      "source_blob_sha": "74c8a109d9e3b4d5a662366b8e452ecdbf51006b",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/location.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "74c8a109d9e3b4d5a662366b8e452ecdbf51006b",
+        "size": 1058
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "location_create"
+      ],
+      "disposition": "applicable-location-privacy-session-mapped-open",
+      "upstream_owner": "Location portal",
+      "responsibility": "Preserve caller-scoped GeoClue session lifecycle, distance/time/accuracy thresholds, permission/accuracy and last-use persistence, lockdown, asynchronous start/failure close, privacy-bounded LocationUpdated delivery and teardown.",
+      "fabushi_canonical_owner": "Existing Permissions/privacy + platform location owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12088,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/memory-monitor.c",
+      "source_blob_sha": "48fc9d1e0c16f3709431ec1fe8cc475c13723ba1",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/memory-monitor.c",
+        "mode": "100644",
+        "type": "blob",
+        "object": "48fc9d1e0c16f3709431ec1fe8cc475c13723ba1",
+        "size": 3283
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "memory_monitor_create"
+      ],
+      "disposition": "applicable-memory-pressure-monitor-mapped-open",
+      "upstream_owner": "MemoryMonitor portal",
+      "responsibility": "Preserve host low-memory warning subscription and forwarding with monitor lifecycle/teardown so canonical resource-pressure policy can react without a second pressure store.",
+      "fabushi_canonical_owner": "Existing platform resource-pressure/lifecycle owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12089,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/memory-monitor.h",
+      "source_blob_sha": "3daba4cee096e987f46834514e381b69354f8903",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/memory-monitor.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "3daba4cee096e987f46834514e381b69354f8903",
+        "size": 943
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "memory_monitor_create"
+      ],
+      "disposition": "applicable-memory-pressure-monitor-mapped-open",
+      "upstream_owner": "MemoryMonitor portal",
+      "responsibility": "Preserve host low-memory warning subscription and forwarding with monitor lifecycle/teardown so canonical resource-pressure policy can react without a second pressure store.",
+      "fabushi_canonical_owner": "Existing platform resource-pressure/lifecycle owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12090,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/meson.build",
+      "source_blob_sha": "abf856fe14761193d47befca6ba23104fb92bc5b",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/meson.build",
+        "mode": "100644",
+        "type": "blob",
+        "object": "abf856fe14761193d47befca6ba23104fb92bc5b",
+        "size": 5283
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [],
+      "disposition": "applicable-portal-build-composition-mapped-open",
+      "upstream_owner": "xdg portal Meson composition",
+      "responsibility": "Preserve generated D-Bus sources, runtime source composition, service/validator installation and build dependency ordering as shipping Linux packaging/provenance behavior.",
+      "fabushi_canonical_owner": "Existing Build/Packaging + Linux platform owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12091,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/network-monitor.c",
+      "source_blob_sha": "796e16591d6c796d031a388e8389de61c42e8d83",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/network-monitor.c",
+        "mode": "100644",
+        "type": "blob",
+        "object": "796e16591d6c796d031a388e8389de61c42e8d83",
+        "size": 8246
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "network_monitor_create"
+      ],
+      "disposition": "applicable-network-monitor-mapped-open",
+      "upstream_owner": "NetworkMonitor portal",
+      "responsibility": "Preserve availability/metered/connectivity/status projection, asynchronous CanReach, change notifications, cancellation/failure and stale-monitor teardown as inputs to canonical networking/recovery policy.",
+      "fabushi_canonical_owner": "Existing networking/recovery + platform monitor owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12092,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/network-monitor.h",
+      "source_blob_sha": "eb496e4f6a4d99b3d1a64b2fa268a5194c8e8ab0",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/network-monitor.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "eb496e4f6a4d99b3d1a64b2fa268a5194c8e8ab0",
+        "size": 938
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "network_monitor_create"
+      ],
+      "disposition": "applicable-network-monitor-mapped-open",
+      "upstream_owner": "NetworkMonitor portal",
+      "responsibility": "Preserve availability/metered/connectivity/status projection, asynchronous CanReach, change notifications, cancellation/failure and stale-monitor teardown as inputs to canonical networking/recovery policy.",
+      "fabushi_canonical_owner": "Existing networking/recovery + platform monitor owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12093,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/notification.c",
+      "source_blob_sha": "0dc6db4f24a95b758f97c28f38cd036930e39f50",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/notification.c",
+        "mode": "100644",
+        "type": "blob",
+        "object": "0dc6db4f24a95b758f97c28f38cd036930e39f50",
+        "size": 39212
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "notification_create"
+      ],
+      "disposition": "applicable-notification-permission-resource-mapped-open",
+      "upstream_owner": "Notification portal",
+      "responsibility": "Preserve per-app notification permission, markup/button/category/priority parsing, icon/sound resource validation, active app/id tracking, Add/Remove/action callbacks, peer-death cleanup, locking and malformed-option fail-closed behavior.",
+      "fabushi_canonical_owner": "Existing Notifications + Resource + Permissions owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12094,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/notification.h",
+      "source_blob_sha": "ebd40fb7b0f1a11d6f3fd86e3079a8137fd98fb0",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/notification.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "ebd40fb7b0f1a11d6f3fd86e3079a8137fd98fb0",
+        "size": 1005
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "notification_create"
+      ],
+      "disposition": "applicable-notification-permission-resource-mapped-open",
+      "upstream_owner": "Notification portal",
+      "responsibility": "Preserve per-app notification permission, markup/button/category/priority parsing, icon/sound resource validation, active app/id tracking, Add/Remove/action callbacks, peer-death cleanup, locking and malformed-option fail-closed behavior.",
+      "fabushi_canonical_owner": "Existing Notifications + Resource + Permissions owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12095,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/open-uri.c",
+      "source_blob_sha": "b5447c2ef5d90b97e00d6b4f59667271fac645c5",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/open-uri.c",
+        "mode": "100644",
+        "type": "blob",
+        "object": "b5447c2ef5d90b97e00d6b4f59667271fac645c5",
+        "size": 41344
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "open_uri_create"
+      ],
+      "disposition": "applicable-open-uri-resource-policy-mapped-open",
+      "upstream_owner": "OpenURI portal",
+      "responsibility": "Preserve scheme/file/directory opening, writable/ask/activation options, FD and sandbox validation, lockdown, chooser/default-app policy, application-use history, async handoff, cancellation and resource cleanup.",
+      "fabushi_canonical_owner": "Existing Resource/files + Settings + Permissions + platform external-action owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12096,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/open-uri.h",
+      "source_blob_sha": "f711ebaf178933ef8fea95c6625de6f05fbd8b11",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/open-uri.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "f711ebaf178933ef8fea95c6625de6f05fbd8b11",
+        "size": 1071
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "open_uri_create"
+      ],
+      "disposition": "applicable-open-uri-resource-policy-mapped-open",
+      "upstream_owner": "OpenURI portal",
+      "responsibility": "Preserve scheme/file/directory opening, writable/ask/activation options, FD and sandbox validation, lockdown, chooser/default-app policy, application-use history, async handoff, cancellation and resource cleanup.",
+      "fabushi_canonical_owner": "Existing Resource/files + Settings + Permissions + platform external-action owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12097,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/org.freedesktop.GeoClue2.Client.xml",
+      "source_blob_sha": "c539170b326b0b9162307fcd5b5eb805cc7756e0",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/org.freedesktop.GeoClue2.Client.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "c539170b326b0b9162307fcd5b5eb805cc7756e0",
+        "size": 4294
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [],
+      "disposition": "applicable-location-interface-schema-mapped-open",
+      "upstream_owner": "GeoClue client interface schema",
+      "responsibility": "Preserve the location client property/method/signal contract used by the privacy session; schema/version mismatch must fail or degrade explicitly rather than bypass permission semantics.",
+      "fabushi_canonical_owner": "Existing Permissions/privacy + platform location interface owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12098,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/org.freedesktop.portal.Desktop.service.in",
+      "source_blob_sha": "2b31f3210d15618a56e6e547c0f9abc3d1df3ed3",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/org.freedesktop.portal.Desktop.service.in",
+        "mode": "100644",
+        "type": "blob",
+        "object": "2b31f3210d15618a56e6e547c0f9abc3d1df3ed3",
+        "size": 163
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [],
+      "disposition": "applicable-desktop-portal-activation-mapped-open",
+      "upstream_owner": "Desktop portal D-Bus activation",
+      "responsibility": "Preserve D-Bus activation identity/executable ownership and Linux service lifecycle as packaging/runtime composition, without introducing a Fabushi portal product root.",
+      "fabushi_canonical_owner": "Existing Linux platform packaging/lifecycle owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12099,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/pipewire.c",
+      "source_blob_sha": "39b05c71c9a68a621e92509f5f4264154c4f8c09",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/pipewire.c",
+        "mode": "100644",
+        "type": "blob",
+        "object": "39b05c71c9a68a621e92509f5f4264154c4f8c09",
+        "size": 10047
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "pipewire_remote_new_sync"
+      ],
+      "disposition": "applicable-pipewire-media-lifecycle-mapped-open",
+      "upstream_owner": "PipeWire remote helper",
+      "responsibility": "Preserve bounded roundtrip, registry global add/remove, core error/done handling, GLib event-source integration, sync creation and destroy semantics for screen/call capture without a parallel media owner.",
+      "fabushi_canonical_owner": "Existing call/screen-share media + Resource/platform capture owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12100,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/pipewire.h",
+      "source_blob_sha": "f8614493eb3320e8540152ae673a3be6a327498a",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/pipewire.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "f8614493eb3320e8540152ae673a3be6a327498a",
+        "size": 2666
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "pipewire_remote_new_sync"
+      ],
+      "disposition": "applicable-pipewire-media-lifecycle-mapped-open",
+      "upstream_owner": "PipeWire remote helper",
+      "responsibility": "Preserve bounded roundtrip, registry global add/remove, core error/done handling, GLib event-source integration, sync creation and destroy semantics for screen/call capture without a parallel media owner.",
+      "fabushi_canonical_owner": "Existing call/screen-share media + Resource/platform capture owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12101,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/power-profile-monitor.c",
+      "source_blob_sha": "d9e4b1289c5b558594e5b20cb7bdc7e414bfca19",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/power-profile-monitor.c",
+        "mode": "100644",
+        "type": "blob",
+        "object": "d9e4b1289c5b558594e5b20cb7bdc7e414bfca19",
+        "size": 3712
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "power_profile_monitor_create"
+      ],
+      "disposition": "applicable-power-profile-monitor-mapped-open",
+      "upstream_owner": "PowerProfileMonitor portal",
+      "responsibility": "Preserve host power-saver state projection and change notifications with monitor lifetime/failure handling as canonical platform lifecycle input.",
+      "fabushi_canonical_owner": "Existing platform power/performance lifecycle owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12102,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/power-profile-monitor.h",
+      "source_blob_sha": "b5178c967e0e050a27c41f00bef66041f9636c8c",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/power-profile-monitor.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "b5178c967e0e050a27c41f00bef66041f9636c8c",
+        "size": 942
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "power_profile_monitor_create"
+      ],
+      "disposition": "applicable-power-profile-monitor-mapped-open",
+      "upstream_owner": "PowerProfileMonitor portal",
+      "responsibility": "Preserve host power-saver state projection and change notifications with monitor lifetime/failure handling as canonical platform lifecycle input.",
+      "fabushi_canonical_owner": "Existing platform power/performance lifecycle owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12103,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/print.c",
+      "source_blob_sha": "e20ffad5fda64d2c1c2e0af2b1a9183f340d309f",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/print.c",
+        "mode": "100644",
+        "type": "blob",
+        "object": "e20ffad5fda64d2c1c2e0af2b1a9183f340d309f",
+        "size": 12368
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "print_create"
+      ],
+      "disposition": "applicable-print-resource-permission-mapped-open",
+      "upstream_owner": "Print portal",
+      "responsibility": "Preserve prepare/print request lifecycle, supported output-format validation, lockdown/permission checks, FD handoff, options/results, cancellation and backend failure semantics.",
+      "fabushi_canonical_owner": "Existing Resource + Permissions + platform external-action owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12104,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/print.h",
+      "source_blob_sha": "5f38842f847a8446b075a567bc4409c9fc0bd613",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/print.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "5f38842f847a8446b075a567bc4409c9fc0bd613",
+        "size": 1061
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "print_create"
+      ],
+      "disposition": "applicable-print-resource-permission-mapped-open",
+      "upstream_owner": "Print portal",
+      "responsibility": "Preserve prepare/print request lifecycle, supported output-format validation, lockdown/permission checks, FD handoff, options/results, cancellation and backend failure semantics.",
+      "fabushi_canonical_owner": "Existing Resource + Permissions + platform external-action owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12105,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/proxy-resolver.c",
+      "source_blob_sha": "f32fad37338a568992c9cf67aac8cc36a7075b48",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/proxy-resolver.c",
+        "mode": "100644",
+        "type": "blob",
+        "object": "f32fad37338a568992c9cf67aac8cc36a7075b48",
+        "size": 3501
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "proxy_resolver_create"
+      ],
+      "disposition": "applicable-proxy-resolution-mapped-open",
+      "upstream_owner": "ProxyResolver portal",
+      "responsibility": "Preserve URI proxy lookup through host resolver, typed results, resolver-change behavior and error propagation as canonical networking configuration.",
+      "fabushi_canonical_owner": "Existing networking + Settings/platform resolver owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12106,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/proxy-resolver.h",
+      "source_blob_sha": "f24874ff522c283c3201386ae48a421d74e13b26",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/proxy-resolver.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "f24874ff522c283c3201386ae48a421d74e13b26",
+        "size": 938
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "proxy_resolver_create"
+      ],
+      "disposition": "applicable-proxy-resolution-mapped-open",
+      "upstream_owner": "ProxyResolver portal",
+      "responsibility": "Preserve URI proxy lookup through host resolver, typed results, resolver-change behavior and error propagation as canonical networking configuration.",
+      "fabushi_canonical_owner": "Existing networking + Settings/platform resolver owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12107,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/realtime.c",
+      "source_blob_sha": "0da44d37e09113b894ebcdf887cde7ea414cb651",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/realtime.c",
+        "mode": "100644",
+        "type": "blob",
+        "object": "0da44d37e09113b894ebcdf887cde7ea414cb651",
+        "size": 11241
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "realtime_create"
+      ],
+      "disposition": "applicable-realtime-process-permission-mapped-open",
+      "upstream_owner": "Realtime portal",
+      "responsibility": "Preserve app/process pid/tid mapping, permission-gated realtime/high-priority requests, async scheduling, property limits, invalid-process rejection and backend failure semantics.",
+      "fabushi_canonical_owner": "Existing platform process/performance + Permissions owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12108,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/realtime.h",
+      "source_blob_sha": "09e1ea61fe9544d2c8c8481b1bf9b6d9ed6a9732",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/realtime.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "09e1ea61fe9544d2c8c8481b1bf9b6d9ed6a9732",
+        "size": 931
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "realtime_create"
+      ],
+      "disposition": "applicable-realtime-process-permission-mapped-open",
+      "upstream_owner": "Realtime portal",
+      "responsibility": "Preserve app/process pid/tid mapping, permission-gated realtime/high-priority requests, async scheduling, property limits, invalid-process rejection and backend failure semantics.",
+      "fabushi_canonical_owner": "Existing platform process/performance + Permissions owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12109,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/registry.c",
+      "source_blob_sha": "b04af06b70980d4597ae9e63b989684f0cac4697",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/registry.c",
+        "mode": "100644",
+        "type": "blob",
+        "object": "b04af06b70980d4597ae9e63b989684f0cac4697",
+        "size": 3515
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "registry_create"
+      ],
+      "disposition": "applicable-host-registry-lifecycle-mapped-open",
+      "upstream_owner": "Host Registry portal",
+      "responsibility": "Preserve host service Register/export lifecycle, caller identity and backend registration failure handling as thin platform service composition.",
+      "fabushi_canonical_owner": "Existing platform service registry/lifecycle owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12110,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/registry.h",
+      "source_blob_sha": "ea5d8c4dda6f1b385fdbe2b91469f34fc5ecfc8e",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/registry.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "ea5d8c4dda6f1b385fdbe2b91469f34fc5ecfc8e",
+        "size": 927
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "registry_create"
+      ],
+      "disposition": "applicable-host-registry-lifecycle-mapped-open",
+      "upstream_owner": "Host Registry portal",
+      "responsibility": "Preserve host service Register/export lifecycle, caller identity and backend registration failure handling as thin platform service composition.",
+      "fabushi_canonical_owner": "Existing platform service registry/lifecycle owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12111,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/remote-desktop.c",
+      "source_blob_sha": "5cfbd87f23c7eb375c9c4e8e57d614a0eb766dd7",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/remote-desktop.c",
+        "mode": "100644",
+        "type": "blob",
+        "object": "5cfbd87f23c7eb375c9c4e8e57d614a0eb766dd7",
+        "size": 61186
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "remote_desktop_create"
+      ],
+      "disposition": "applicable-remote-desktop-session-mapped-open",
+      "upstream_owner": "RemoteDesktop portal",
+      "responsibility": "Preserve caller-scoped session state, device/source selection, clipboard request/enabled state, restore/persist tokens, Start results, pointer/keyboard/touch/EIS injection guards, stream ownership, capability updates and closed-session teardown.",
+      "fabushi_canonical_owner": "Existing Computer/Human Computer takeover + Permissions + capture/Clipboard owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12112,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/remote-desktop.h",
+      "source_blob_sha": "247927064f8d779c2dbb999623ebdc26f49c5ef3",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/remote-desktop.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "247927064f8d779c2dbb999623ebdc26f49c5ef3",
+        "size": 1973
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "remote_desktop_create"
+      ],
+      "disposition": "applicable-remote-desktop-session-mapped-open",
+      "upstream_owner": "RemoteDesktop portal",
+      "responsibility": "Preserve caller-scoped session state, device/source selection, clipboard request/enabled state, restore/persist tokens, Start results, pointer/keyboard/touch/EIS injection guards, stream ownership, capability updates and closed-session teardown.",
+      "fabushi_canonical_owner": "Existing Computer/Human Computer takeover + Permissions + capture/Clipboard owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12113,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/rewrite-launchers.c",
+      "source_blob_sha": "4138852e579787a674344b40cc6dcbaae303f5fa",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/rewrite-launchers.c",
+        "mode": "100644",
+        "type": "blob",
+        "object": "4138852e579787a674344b40cc6dcbaae303f5fa",
+        "size": 10705
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [],
+      "disposition": "applicable-launcher-migration-mapped-open",
+      "upstream_owner": "Dynamic launcher migration",
+      "responsibility": "Preserve one-time legacy launcher-id migration/rewrite, validation and failure-safe persistence so upgrades do not orphan user launchers or create duplicate settings truth.",
+      "fabushi_canonical_owner": "Existing Settings + platform persistence/migration owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12114,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/screen-cast.c",
+      "source_blob_sha": "562d53af6fdb13b15884f6c6a785cd1e3e11ac6c",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/screen-cast.c",
+        "mode": "100644",
+        "type": "blob",
+        "object": "562d53af6fdb13b15884f6c6a785cd1e3e11ac6c",
+        "size": 40116
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "screen_cast_create"
+      ],
+      "disposition": "applicable-screen-cast-session-mapped-open",
+      "upstream_owner": "ScreenCast portal",
+      "responsibility": "Preserve caller-scoped capture session state, source/cursor selection, restore/persist-token validation, permission store, Start result streams, PipeWire node-scoped access, size metadata and teardown/revocation.",
+      "fabushi_canonical_owner": "Existing call/screen-share capture + Resource + Permissions owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12115,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/screen-cast.h",
+      "source_blob_sha": "097fa204119a587412addaa5f4ff14f6bca91d07",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/screen-cast.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "097fa204119a587412addaa5f4ff14f6bca91d07",
+        "size": 1639
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "screen_cast_create"
+      ],
+      "disposition": "applicable-screen-cast-session-mapped-open",
+      "upstream_owner": "ScreenCast portal",
+      "responsibility": "Preserve caller-scoped capture session state, source/cursor selection, restore/persist-token validation, permission store, Start result streams, PipeWire node-scoped access, size metadata and teardown/revocation.",
+      "fabushi_canonical_owner": "Existing call/screen-share capture + Resource + Permissions owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12116,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/screenshot.c",
+      "source_blob_sha": "40d092e211cd05d9e23b32ae07ca25a1dd240064",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/screenshot.c",
+        "mode": "100644",
+        "type": "blob",
+        "object": "40d092e211cd05d9e23b32ae07ca25a1dd240064",
+        "size": 18512
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "screenshot_create"
+      ],
+      "disposition": "applicable-screenshot-permission-mapped-open",
+      "upstream_owner": "Screenshot portal",
+      "responsibility": "Preserve user-mediated screenshot/PickColor request lifecycle, interactive/modal behavior, screenshot permission persistence, async backend failure/cancellation and URI/color result handoff.",
+      "fabushi_canonical_owner": "Existing Computer/screenshot + Resource + Permissions owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12117,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/screenshot.h",
+      "source_blob_sha": "0eed93419f7e657984854be7fb8b8ce9b3cf3b55",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/screenshot.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "0eed93419f7e657984854be7fb8b8ce9b3cf3b55",
+        "size": 1095
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "screenshot_create"
+      ],
+      "disposition": "applicable-screenshot-permission-mapped-open",
+      "upstream_owner": "Screenshot portal",
+      "responsibility": "Preserve user-mediated screenshot/PickColor request lifecycle, interactive/modal behavior, screenshot permission persistence, async backend failure/cancellation and URI/color result handoff.",
+      "fabushi_canonical_owner": "Existing Computer/screenshot + Resource + Permissions owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12118,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/sd-escape.c",
+      "source_blob_sha": "869a767486eabf6d33a4a3081602b768d5a7bfc7",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/sd-escape.c",
+        "mode": "100644",
+        "type": "blob",
+        "object": "869a767486eabf6d33a4a3081602b768d5a7bfc7",
+        "size": 10007
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "cunescape"
+      ],
+      "disposition": "applicable-platform-string-unescape-security-mapped-open",
+      "upstream_owner": "systemd-style string unescape helper",
+      "responsibility": "Preserve strict hex/octal/unicode escape parsing, prefix/NUL validation, malformed-input failure and bounded ownership as a platform security utility, not a product owner.",
+      "fabushi_canonical_owner": "Existing platform input-validation/security utility owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12119,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/sd-escape.h",
+      "source_blob_sha": "049f6b18999dd6eedd2c39326848191bef3b5094",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/sd-escape.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "049f6b18999dd6eedd2c39326848191bef3b5094",
+        "size": 664
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "cunescape"
+      ],
+      "disposition": "applicable-platform-string-unescape-security-mapped-open",
+      "upstream_owner": "systemd-style string unescape helper",
+      "responsibility": "Preserve strict hex/octal/unicode escape parsing, prefix/NUL validation, malformed-input failure and bounded ownership as a platform security utility, not a product owner.",
+      "fabushi_canonical_owner": "Existing platform input-validation/security utility owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12120,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/secret.c",
+      "source_blob_sha": "6f7f58ae614f1daaf57d586b1e4a2ff2c380ad1f",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/secret.c",
+        "mode": "100644",
+        "type": "blob",
+        "object": "6f7f58ae614f1daaf57d586b1e4a2ff2c380ad1f",
+        "size": 6901
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "secret_create"
+      ],
+      "disposition": "applicable-secret-retrieval-boundary-mapped-open",
+      "upstream_owner": "Secret portal",
+      "responsibility": "Preserve app-scoped opaque-secret retrieval through writable FD, async request/cancellation/error semantics and process trust boundary; secrets remain Host/credential-owned and never renderer-owned.",
+      "fabushi_canonical_owner": "Existing credential/secret + Permissions/Host owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12121,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/secret.h",
+      "source_blob_sha": "fd8e26caa0654a48e92d4ea1ae0c79c8585501d2",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/secret.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "fd8e26caa0654a48e92d4ea1ae0c79c8585501d2",
+        "size": 950
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "secret_create"
+      ],
+      "disposition": "applicable-secret-retrieval-boundary-mapped-open",
+      "upstream_owner": "Secret portal",
+      "responsibility": "Preserve app-scoped opaque-secret retrieval through writable FD, async request/cancellation/error semantics and process trust boundary; secrets remain Host/credential-owned and never renderer-owned.",
+      "fabushi_canonical_owner": "Existing credential/secret + Permissions/Host owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12122,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/settings.c",
+      "source_blob_sha": "98f93f4d1d218201a09e450da1ca31928d90070f",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/settings.c",
+        "mode": "100644",
+        "type": "blob",
+        "object": "98f93f4d1d218201a09e450da1ca31928d90070f",
+        "size": 10084
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "settings_create"
+      ],
+      "disposition": "applicable-host-settings-projection-mapped-open",
+      "upstream_owner": "Settings portal",
+      "responsibility": "Preserve backend settings merge/precedence, typed Read/ReadOne/ReadAll, invalid/missing fallback, versioned change notifications and read-only host projection into canonical Settings.",
+      "fabushi_canonical_owner": "Existing Settings + platform projection owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12123,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/settings.h",
+      "source_blob_sha": "898cd73b8405d209c37f58d9cccaeb1263510656",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/settings.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "898cd73b8405d209c37f58d9cccaeb1263510656",
+        "size": 998
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "settings_create"
+      ],
+      "disposition": "applicable-host-settings-projection-mapped-open",
+      "upstream_owner": "Settings portal",
+      "responsibility": "Preserve backend settings merge/precedence, typed Read/ReadOne/ReadAll, invalid/missing fallback, versioned change notifications and read-only host projection into canonical Settings.",
+      "fabushi_canonical_owner": "Existing Settings + platform projection owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12124,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/trash.c",
+      "source_blob_sha": "e8c9eca55670b626e299ec14c443aeb0a7befcff",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/trash.c",
+        "mode": "100644",
+        "type": "blob",
+        "object": "e8c9eca55670b626e299ec14c443aeb0a7befcff",
+        "size": 3932
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "trash_create"
+      ],
+      "disposition": "applicable-trash-resource-lifecycle-mapped-open",
+      "upstream_owner": "Trash portal",
+      "responsibility": "Preserve app-scoped writable-FD/path validation, trash operation result/failure and FD/resource cleanup through canonical file lifecycle.",
+      "fabushi_canonical_owner": "Existing Resource/files + Permissions owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12125,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/trash.h",
+      "source_blob_sha": "f7882240962fb3152f1f80cb458434815ec0da57",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/trash.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "f7882240962fb3152f1f80cb458434815ec0da57",
+        "size": 928
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "trash_create"
+      ],
+      "disposition": "applicable-trash-resource-lifecycle-mapped-open",
+      "upstream_owner": "Trash portal",
+      "responsibility": "Preserve app-scoped writable-FD/path validation, trash operation result/failure and FD/resource cleanup through canonical file lifecycle.",
+      "fabushi_canonical_owner": "Existing Resource/files + Permissions owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12126,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/usb.c",
+      "source_blob_sha": "efc2579d2ade17f4c30d4db48e59e5b82cea6592",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/usb.c",
+        "mode": "100644",
+        "type": "blob",
+        "object": "efc2579d2ade17f4c30d4db48e59e5b82cea6592",
+        "size": 51852
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "xdp_usb_create"
+      ],
+      "disposition": "applicable-usb-device-permission-mapped-open",
+      "upstream_owner": "USB portal",
+      "responsibility": "Preserve device enumeration/hotplug, app/sub-app rule filtering, caller/session identity, per-device permission, acquire/finish/release/once semantics, FD/claim ownership, revocation and peer-death cleanup.",
+      "fabushi_canonical_owner": "Existing Computer/device access + Permissions + Resource lifecycle owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12127,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/usb.h",
+      "source_blob_sha": "6363828958d50a9f32aca50f74f6e18a3d3631de",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/usb.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "6363828958d50a9f32aca50f74f6e18a3d3631de",
+        "size": 1040
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "xdp_usb_create"
+      ],
+      "disposition": "applicable-usb-device-permission-mapped-open",
+      "upstream_owner": "USB portal",
+      "responsibility": "Preserve device enumeration/hotplug, app/sub-app rule filtering, caller/session identity, per-device permission, acquire/finish/release/once semantics, FD/claim ownership, revocation and peer-death cleanup.",
+      "fabushi_canonical_owner": "Existing Computer/device access + Permissions + Resource lifecycle owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12128,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/validate-icon.c",
+      "source_blob_sha": "4440543c6a059c9d2a0fa12bf18ca8ad8827d28a",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/validate-icon.c",
+        "mode": "100644",
+        "type": "blob",
+        "object": "4440543c6a059c9d2a0fa12bf18ca8ad8827d28a",
+        "size": 10754
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [],
+      "disposition": "applicable-icon-resource-validation-mapped-open",
+      "upstream_owner": "Icon validator",
+      "responsibility": "Preserve isolated icon decoding/shape/size/content limits, sandboxed validation and fail-closed malformed-resource rejection before notification/launcher resources enter canonical Resource storage.",
+      "fabushi_canonical_owner": "Existing Resource + security validation owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12129,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/validate-sound.c",
+      "source_blob_sha": "db2b2e3fde393debb93986d2ab6b0549301f1735",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/validate-sound.c",
+        "mode": "100644",
+        "type": "blob",
+        "object": "db2b2e3fde393debb93986d2ab6b0549301f1735",
+        "size": 10518
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [],
+      "disposition": "applicable-sound-resource-validation-mapped-open",
+      "upstream_owner": "Sound validator",
+      "responsibility": "Preserve isolated sound decoding/format validation, sandboxed execution and fail-closed malformed-resource rejection before notification media becomes usable.",
+      "fabushi_canonical_owner": "Existing Resource/notification media + security validation owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12130,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/wallpaper.c",
+      "source_blob_sha": "18de77283b10191214dce5dfb0a3d43ddb9701db",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/wallpaper.c",
+        "mode": "100644",
+        "type": "blob",
+        "object": "18de77283b10191214dce5dfb0a3d43ddb9701db",
+        "size": 15943
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "wallpaper_create"
+      ],
+      "disposition": "applicable-wallpaper-resource-permission-mapped-open",
+      "upstream_owner": "Wallpaper portal",
+      "responsibility": "Preserve target-surface validation, URI/FD path handling, access prompt/permission, async apply/preview result, cancellation and resource teardown.",
+      "fabushi_canonical_owner": "Existing Resource + Permissions + platform personalization owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12131,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/wallpaper.h",
+      "source_blob_sha": "aa9ca1b884fb72ba4ce4b59d5eeffda934c06aed",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/wallpaper.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "aa9ca1b884fb72ba4ce4b59d5eeffda934c06aed",
+        "size": 1010
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "wallpaper_create"
+      ],
+      "disposition": "applicable-wallpaper-resource-permission-mapped-open",
+      "upstream_owner": "Wallpaper portal",
+      "responsibility": "Preserve target-surface validation, URI/FD path handling, access prompt/permission, async apply/preview result, cancellation and resource teardown.",
+      "fabushi_canonical_owner": "Existing Resource + Permissions + platform personalization owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12132,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/xdg-desktop-portal-rewrite-launchers.service.in",
+      "source_blob_sha": "c907df8a1f7c61a762424eda2ed192ea7233c2a6",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/xdg-desktop-portal-rewrite-launchers.service.in",
+        "mode": "100644",
+        "type": "blob",
+        "object": "c907df8a1f7c61a762424eda2ed192ea7233c2a6",
+        "size": 367
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [],
+      "disposition": "applicable-launcher-migration-service-mapped-open",
+      "upstream_owner": "Launcher migration service activation",
+      "responsibility": "Preserve upgrade-time service activation/ordering for launcher migration as Linux packaging lifecycle.",
+      "fabushi_canonical_owner": "Existing Linux platform packaging + Settings migration owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12133,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/xdg-desktop-portal.c",
+      "source_blob_sha": "addb06e2de5dd7de40c7d94f6b7cb745997824eb",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/xdg-desktop-portal.c",
+        "mode": "100644",
+        "type": "blob",
+        "object": "addb06e2de5dd7de40c7d94f6b7cb745997824eb",
+        "size": 19174
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [],
+      "disposition": "applicable-platform-broker-composition-mapped-open",
+      "upstream_owner": "Desktop portal process composition",
+      "responsibility": "Preserve authorization/request dispatch, method-needs-request policy, export/registration of mediated capabilities, caller peer-death cleanup, bus/name lifecycle and signal-driven process shutdown; Fabushi keeps only thin platform adapters and canonical owners.",
+      "fabushi_canonical_owner": "Existing platform capability broker/lifecycle + Permissions owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12134,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/xdg-desktop-portal.gresource.xml",
+      "source_blob_sha": "dfaf11bffe7f9f6179d89ace12a4604203be1e07",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/xdg-desktop-portal.gresource.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "dfaf11bffe7f9f6179d89ace12a4604203be1e07",
+        "size": 440
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [],
+      "disposition": "applicable-portal-runtime-resource-manifest-mapped-open",
+      "upstream_owner": "Portal runtime resource manifest",
+      "responsibility": "Preserve runtime interface/resource embedding provenance required by Linux capability adapters; missing resources are packaging failures, not reasons to bypass checks.",
+      "fabushi_canonical_owner": "Existing Build/Packaging + Linux platform owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12135,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/xdg-desktop-portal.service.in",
+      "source_blob_sha": "b279af5c09fac9347f8c7d5614de04f13a1ec227",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/xdg-desktop-portal.service.in",
+        "mode": "100644",
+        "type": "blob",
+        "object": "b279af5c09fac9347f8c7d5614de04f13a1ec227",
+        "size": 229
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [],
+      "disposition": "applicable-portal-service-activation-mapped-open",
+      "upstream_owner": "Desktop portal service activation",
+      "responsibility": "Preserve D-Bus/systemd activation identity and executable ownership for mediated Linux capabilities as packaging/lifecycle behavior.",
+      "fabushi_canonical_owner": "Existing Linux platform packaging/lifecycle owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12136,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/xdp-app-info-flatpak-private.h",
+      "source_blob_sha": "c86939a01b5ee43e66fea2dad1c1ea8a4f016c55",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/xdp-app-info-flatpak-private.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "c86939a01b5ee43e66fea2dad1c1ea8a4f016c55",
+        "size": 1411
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "xdp_app_info_flatpak_new",
+        "xdp_is_flatpak"
+      ],
+      "disposition": "applicable-flatpak-app-identity-api-mapped-open",
+      "upstream_owner": "Flatpak app identity API",
+      "responsibility": "Preserve typed sandbox app/process identity construction and validation API feeding canonical authorization; no second Identity store.",
+      "fabushi_canonical_owner": "Existing Identity/process provenance + Permissions platform adapter",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12137,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/xdp-app-info-flatpak.c",
+      "source_blob_sha": "6002ae2e614e25d0fb6cfbafc9aca26a423b0752",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/xdp-app-info-flatpak.c",
+        "mode": "100644",
+        "type": "blob",
+        "object": "6002ae2e614e25d0fb6cfbafc9aca26a423b0752",
+        "size": 26612
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [],
+      "disposition": "applicable-flatpak-app-identity-security-mapped-open",
+      "upstream_owner": "Flatpak app identity",
+      "responsibility": "Preserve app/sub-app validation, /proc/Flatpak metadata and pid/pidfd/instance mapping, path/command/autostart/dynamic-launcher rewriting, USB queries and sandbox trust checks; malformed/unowned identity must fail closed.",
+      "fabushi_canonical_owner": "Existing Identity/process provenance + Permissions/Settings platform adapter",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12138,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/xdp-app-info-host-private.h",
+      "source_blob_sha": "58c288303e262bff315b85435703664e4c88fbe7",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/xdp-app-info-host-private.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "58c288303e262bff315b85435703664e4c88fbe7",
+        "size": 1489
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "_xdp_app_info_host_parse_app_id_from_unit_name",
+        "xdp_app_info_host_new",
+        "xdp_app_info_host_new_registered"
+      ],
+      "disposition": "applicable-host-app-identity-api-mapped-open",
+      "upstream_owner": "Host app identity API",
+      "responsibility": "Preserve host process/app identity construction, registered pidfd binding and systemd-unit app-id parsing API for canonical authorization.",
+      "fabushi_canonical_owner": "Existing Identity/process provenance + Permissions platform adapter",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12139,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/xdp-app-info-host.c",
+      "source_blob_sha": "39005b2d815636feddd77074e42b6f4459b51a46",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/xdp-app-info-host.c",
+        "mode": "100644",
+        "type": "blob",
+        "object": "39005b2d815636feddd77074e42b6f4459b51a46",
+        "size": 7263
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [],
+      "disposition": "applicable-host-app-identity-security-mapped-open",
+      "upstream_owner": "Host app identity",
+      "responsibility": "Preserve PID/systemd-unit app-id resolution, pidfd registration/liveness, sub-app/autostart/dynamic-launcher/USB policy queries and failure-safe process provenance without renderer-owned trust.",
+      "fabushi_canonical_owner": "Existing Identity/process provenance + Permissions/Settings platform adapter",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    },
+    {
+      "recursive_order": 12140,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::src/xdp-app-info-private.h",
+      "source_blob_sha": "f89c8fe4b647cc5b82b92e7f15ccc1115f504637",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "src/xdp-app-info-private.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "f89c8fe4b647cc5b82b92e7f15ccc1115f504637",
+        "size": 1930
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [],
+      "disposition": "applicable-app-info-base-contract-mapped-open",
+      "upstream_owner": "AppInfo base contract",
+      "responsibility": "Preserve source-neutral app identity flags/virtual operations and authorization-facing base contract shared by host/sandbox adapters; lifecycle remains canonical and fail-closed on unknown provenance.",
+      "fabushi_canonical_owner": "Existing Identity/process provenance + Permissions platform adapter",
+      "fabushi_target": "Extend existing source-neutral canonical owners and the thinnest Linux adapter; no xdg/Telegram product store or renderer-owned privileged state."
+    }
+  ]
+}

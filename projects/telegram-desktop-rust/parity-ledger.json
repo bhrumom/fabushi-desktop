@@ -13478,11 +13478,11 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Accepted prefix 12,076/16,125; orders 12,013-12,076 formally dispositioned from exact 8eb26c artifact; unread 4,049; unknown 15,845; omitted 0. Permission store and portal account/background/camera/clipboard/launcher/email/file-chooser/process/GameMode responsibilities map existing-owner-first; reading alone does not reduce unknown.",
-    "source_authority_evidence": "Exact-head 8eb26c340281877d02650cfb8bfafb8805221618 run 38178536353/job 114586034817 completed fail-closed Revision 9 validation and artifact 11716347948; descendant same-head Actions required.",
-    "current_source_read_through": 12076,
-    "first_unread_order": 12077,
-    "first_unread_path": "Telegram/ThirdParty/xdg-desktop-portal::src/gamemode.h"
+    "source_read_reconciliation": "Accepted prefix 12,140/16,125; orders 12,077-12,140 formally dispositioned from exact b3bc2679 artifact; unread 3,985; unknown 15,845; omitted 0. Shortcuts/inhibit/input capture/location/monitoring/notifications/open-uri/media capture/printing/proxy/realtime/remote-desktop/screencast/screenshot/secrets/settings/USB/resource validation/platform composition/app identity map existing-owner-first; reading alone does not reduce unknown.",
+    "source_authority_evidence": "Exact-head b3bc2679cef933dee5db9ec8be572cd50179b6e4 run 38179152559/job 114587866905 completed fail-closed source validation and artifact 11716538101 (sha256:eb555c8cb106b60cbab085205a3b98b0e8c260e6d62b54c5d7747ae0f213f5d8); Rust desktop runtime 38179152559 and Desktop Chat Parity 38179152473 completed success; descendant same-head validation required.",
+    "current_source_read_through": 12140,
+    "first_unread_order": 12141,
+    "first_unread_path": "Telegram/ThirdParty/xdg-desktop-portal::src/xdp-app-info-snap-private.h"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 206,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 12076,
-    "first_unread_order": 12077,
-    "first_unread_path": "Telegram/ThirdParty/xdg-desktop-portal::src/gamemode.h",
+    "read_through": 12140,
+    "first_unread_order": 12141,
+    "first_unread_path": "Telegram/ThirdParty/xdg-desktop-portal::src/xdp-app-info-snap-private.h",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
