@@ -1,8 +1,8 @@
 import { Fragment, type ReactNode } from "react";
-// PrismJS remains a source-neutral renderer dependency. The repository's
-// existing type dependency graph covers its module imports; this file keeps the
-// tiny runtime surface narrowed locally so renderer code does not depend on
-// Prism-specific token implementation details.
+// PrismJS remains a source-neutral renderer dependency. The pinned upstream
+// package does not bundle TypeScript declarations, so this file deliberately
+// keeps its tiny runtime surface narrowed to PrismRuntime below.
+// @ts-expect-error prismjs@1.30.0 does not ship a declaration file.
 import Prism from "prismjs";
 // Keep grammar imports static so Vite packages them into the offline renderer.
 import "prismjs/components/prism-bash.js";
