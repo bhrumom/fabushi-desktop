@@ -14,30 +14,26 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 7460,
+    "unread_minimum": 7396,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through deterministic order 8,665; unread 7,460; unknown 15,845; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition through deterministic order 8,729; unread 7,396; unknown 15,845; omitted 0."
   },
   "latest_recursive_evidence": {
-    "run_id": 38096221101,
+    "run_id": 38097947894,
     "run_attempt": 1,
-    "job_id": 114342569445,
-    "head_sha": "a8e357341bcaa527e78b7ef7c8ca06d68831f6ce",
-    "artifact_id": 11686195087,
-    "artifact_digest": "sha256:5d777a472ca1c07d3ea5b0f31250925802bb1fc3ec508518e22d7c6dc1120aaa",
+    "job_id": 114347708634,
+    "head_sha": "b1ab6c8e3714657632fc4713361ecb1d92d92e16",
+    "artifact_id": 11686817472,
+    "artifact_digest": "sha256:46190185768fdb08a210beb0d90974837732312ca7ffa4c710f86ebb7d8dc75c",
     "artifact_files": [
       "upstream-recursive-inventory.json",
       "current-first-unread/window-manifest.json",
-      "current-first-unread/08366-Makefile.am",
-      "current-first-unread/08370-affixmgr.cxx",
-      "current-first-unread/08381-hunspell.cxx",
-      "current-first-unread/08412-textparser.cxx",
-      "current-first-unread/08427-hunspell.cxx",
-      "current-first-unread/08429-hzfuzzer.cxx"
+      "current-first-unread/08666-compoundrule3.dic",
+      "current-first-unread/08729-forbiddenword.aff"
     ],
     "evidence_status": "historical-diagnostic-after-descendant-accounting-commit",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
-    "note": "a8e357 source authority materialized exact 8,366–8,429 identities. This descendant records responsibility decomposition; fresh exact-head Actions are mandatory."
+    "note": "b1ab6c8e source authority materialized exact 8,666–8,729 identities. This descendant records responsibility decomposition; fresh exact-head Actions are mandatory."
   },
   "closure_rules": {
     "executable_runner": "github-actions",
@@ -47,7 +43,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live authority exact through deterministic order 8,665; first unread 8,666 Telegram/ThirdParty/hunspell::tests/compoundrule3.dic; unread_minimum is 7,460; unknown remains 15,845; omitted remains 0.",
+  "note": "Live authority exact through deterministic order 8,729; first unread 8,730 Telegram/ThirdParty/hunspell::tests/forbiddenword.dic; unread_minimum is 7,396; unknown remains 15,845; omitted remains 0.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -65,10 +61,10 @@
       6541,
       6627
     ],
-    "current_source_read_through": 8665,
-    "first_unread_order": 8666,
-    "first_unread_path": "Telegram/ThirdParty/hunspell::tests/compoundrule3.dic",
-    "current_head_source_authority_evidence": "Orders 8,602–8,665 were exact-read from pinned hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b, covering the CHECKCOMPOUNDREP fix oracle, triple-letter compound rejection, German ß/SS casing, circumfix pairing and morphology, punctuation WORDCHARS tokenization, complex-prefix/Unicode behavior, bounded compound recursion overflow regression, compound affix permit/forbid semantics, COMPOUNDMIN/flag behavior, COMPOUNDFORBIDFLAG precedence and initial COMPOUNDRULE sequence/repetition/optionality grammar. The predecessor 8,494–8,601 shard is also corrected to the validator-required rows array. Reading closes no unknown; descendant exact-head GitHub Actions remain required."
+    "current_source_read_through": 8729,
+    "first_unread_order": 8730,
+    "first_unread_path": "Telegram/ThirdParty/hunspell::tests/forbiddenword.dic",
+    "current_head_source_authority_evidence": "Orders 8,666–8,729 were exact-read from pinned hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b and bound by b1ab6c8e source-authority artifact 11686817472 (sha256:46190185768fdb08a210beb0d90974837732312ca7ffa4c710f86ebb7d8dc75c). They cover COMPOUNDRULE sequence/repetition/optionality across base/long/numeric flags, numeric percent/per-mille morphology, legacy and UTF affix conditions, continuation-prefix morphology, digit-word compounds, Turkish dotless-I casing, ISO-8859-15 ligature casing, flag-format parity, Swedish linking morphemes and the FORBIDDENWORD configuration entry. Every row remains mapped-open, unknown_closed=false and omitted=false; source reading closes no unknown. Fresh descendant exact-head GitHub Actions are mandatory."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -77,9 +73,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 8665,
-    "first_unread_order": 8666,
-    "first_unread_path": "Telegram/ThirdParty/hunspell::tests/compoundrule3.dic",
+    "read_through": 8729,
+    "first_unread_order": 8730,
+    "first_unread_path": "Telegram/ThirdParty/hunspell::tests/forbiddenword.dic",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }

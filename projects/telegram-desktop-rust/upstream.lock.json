@@ -266,9 +266,9 @@
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
     "unknown_minimum": 15845,
-    "unread_minimum": 7460,
+    "unread_minimum": 7396,
     "omitted_known": 0,
-    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 8,665; unknown=15,845, unread=7,460, omitted=0."
+    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 8,729; unknown=15,845, unread=7,396, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -282,7 +282,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Source/product/release closure open. Deterministic exact read-through 8,665/16,125; first unread 8,666 Telegram/ThirdParty/hunspell::tests/compoundrule3.dic; unread 7,460; unknown 15,845; omitted 0. Descendant exact-head Actions remain required after this authority fix/accounting change. Source reading does not close unknown. The source-neutral native platform-input adapter remains wired through the existing main-RPC/preload/Composer path; unsupported language/width/scriptVariant/candidate fields remain typed unknown pending exact-head evidence."
+    "note": "Source/product/release closure open. Deterministic exact read-through 8,729/16,125; first unread 8,730 Telegram/ThirdParty/hunspell::tests/forbiddenword.dic; unread 7,396; unknown 15,845; omitted 0. Descendant exact-head Actions are required after this accounting change. Source reading does not close unknown. The source-neutral native platform-input adapter remains wired through the existing main-RPC/preload/Composer path; unsupported language/width/scriptVariant/candidate fields remain typed unknown."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",
@@ -301,13 +301,13 @@
   "recursive_inventory_evidence": {
     "status": "historical-only-after-descendant-source-accounting-commit",
     "runner": "github-actions",
-    "run_id": 38096221101,
+    "run_id": 38097947894,
     "run_attempt": 1,
-    "job_id": 114342569445,
-    "validation_head_sha": "a8e357341bcaa527e78b7ef7c8ca06d68831f6ce",
-    "artifact_id": 11686195087,
-    "artifact_name": "tdrp-revision9-authority-a8e357341bcaa527e78b7ef7c8ca06d68831f6ce",
-    "artifact_digest": "sha256:5d777a472ca1c07d3ea5b0f31250925802bb1fc3ec508518e22d7c6dc1120aaa",
+    "job_id": 114347708634,
+    "validation_head_sha": "b1ab6c8e3714657632fc4713361ecb1d92d92e16",
+    "artifact_id": 11686817472,
+    "artifact_name": "tdrp-revision9-authority-b1ab6c8e3714657632fc4713361ecb1d92d92e16",
+    "artifact_digest": "sha256:46190185768fdb08a210beb0d90974837732312ca7ffa4c710f86ebb7d8dc75c",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "recursive_non_directory_entries": 16125,
     "source_closure_ready": false
@@ -633,9 +633,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 8665,
-    "first_unread_order": 8666,
-    "first_unread_path": "Telegram/ThirdParty/hunspell::tests/compoundrule3.dic",
+    "read_through": 8729,
+    "first_unread_order": 8730,
+    "first_unread_path": "Telegram/ThirdParty/hunspell::tests/forbiddenword.dic",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
