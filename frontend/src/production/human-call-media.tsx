@@ -45,6 +45,36 @@ interface IceReply {
   readonly iceServers: RTCIceServer[];
   readonly ttlSeconds: number;
 }
+interface CallMediaSession {
+  readonly mediaSessionId: string;
+  readonly callId: string;
+  readonly userId: string | number;
+  readonly deviceId: string;
+  readonly generation: number;
+  readonly purpose: "publish" | "subscribe";
+  readonly status: "pending" | "ready" | "uncertain" | "failed" | "closed";
+  readonly mutationState?: string | null;
+  readonly cleanupRequired?: boolean;
+}
+interface CallMediaPublication {
+  readonly publicationId: string;
+  readonly memberUserId: string | number;
+  readonly trackName: string;
+  readonly mediaKind: "audio" | "video";
+  readonly simulcastRids: readonly string[];
+}
+interface CallMediaSubscriptionResult {
+  readonly subscriptionId: string;
+  readonly publicationId: string;
+  readonly status: "ready" | "failed";
+}
+interface SfuMediaRuntime {
+  readonly generation: number;
+  readonly publishSessionId: string;
+  readonly subscribeSessionId: string;
+  readonly publishedMids: Set<string>;
+  readonly subscribedPublicationIds: Set<string>;
+}
 interface CallDisplaySource {
   readonly id: string;
   readonly name: string;
@@ -282,6 +312,55 @@ function isSignal(value: unknown): value is CallSignal {
     && isRecord(value.payload);
 }
 
+function isCallMediaSession(value: unknown): value is CallMediaSession {
+  return isRecord(value)
+    && typeof value.mediaSessionId === "string"
+    && typeof value.callId === "string"
+    && (typeof value.userId === "string" || typeof value.userId === "number")
+    && typeof value.deviceId === "string"
+    && typeof value.generation === "number"
+    && (value.purpose === "publish" || value.purpose === "subscribe")
+    && ["pending", "ready", "uncertain", "failed", "closed"].includes(String(value.status));
+}
+
+function isCallMediaPublication(value: unknown): value is CallMediaPublication {
+  return isRecord(value)
+    && typeof value.publicationId === "string"
+    && (typeof value.memberUserId === "string" || typeof value.memberUserId === "number")
+    && typeof value.trackName === "string"
+    && (value.mediaKind === "audio" || value.mediaKind === "video")
+    && Array.isArray(value.simulcastRids)
+    && value.simulcastRids.every((rid) => typeof rid === "string");
+}
+
+function callMediaNonce(prefix: string): string {
+  return `${prefix}_${crypto.randomUUID().replaceAll("-", "")}`;
+}
+
+async function waitForIceGatheringComplete(pc: RTCPeerConnection): Promise<void> {
+  if (pc.iceGatheringState === "complete") return;
+  await new Promise<void>((resolve, reject) => {
+    const timeout = window.setTimeout(() => {
+      pc.removeEventListener("icegatheringstatechange", changed);
+      reject(new Error("Call media ICE gathering timed out."));
+    }, 10_000);
+    const changed = () => {
+      if (pc.iceGatheringState !== "complete") return;
+      window.clearTimeout(timeout);
+      pc.removeEventListener("icegatheringstatechange", changed);
+      resolve();
+    };
+    pc.addEventListener("icegatheringstatechange", changed);
+  });
+}
+
+function requireSessionDescription(value: unknown, expectedType: "offer" | "answer"): RTCSessionDescriptionInit {
+  if (!isRecord(value) || value.type !== expectedType || typeof value.sdp !== "string" || value.sdp.length === 0) {
+    throw new Error(`Host returned a malformed SFU ${expectedType}.`);
+  }
+  return { type: expectedType, sdp: value.sdp };
+}
+
 export function selectActiveHumanCall(value: unknown, scopeId: string): HumanCall | null {
   if (!Array.isArray(value)) return null;
   const calls = value.filter(isCall).filter((call) => call.scopeId === scopeId && call.state !== "ended" && call.state !== "failed");
@@ -369,6 +448,8 @@ export function HumanCallControls({
   const cameraRecoveryInFlightRef = useRef(false);
   const bindCameraTrackLifecycleRef = useRef<(stream: MediaStream, track: MediaStreamTrack) => void>(() => {});
   const pcRef = useRef<RTCPeerConnection | null>(null);
+  const subscribePcRef = useRef<RTCPeerConnection | null>(null);
+  const sfuRuntimeRef = useRef<SfuMediaRuntime | null>(null);
   const configurePeerRef = useRef<((nextCall: HumanCall, nextLease: CallLease, local: MediaStream) => Promise<RTCPeerConnection>) | null>(null);
   const callRef = useRef<HumanCall | null>(null);
   const leaseRef = useRef<CallLease | null>(null);
