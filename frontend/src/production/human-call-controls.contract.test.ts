@@ -121,3 +121,32 @@ test("call-tone feedback owns sample data, rate, finite loops, offset, lifecycle
   assert.ok(source.includes("data-call-tone-loop-count={CALL_TONE_LOOP_COUNT}"));
   assert.ok(source.includes("data-call-tone-offset-samples={CALL_TONE_INITIAL_OFFSET_SAMPLES}"));
 });
+
+
+test("SFU session gateway stays privileged and renderer-safe", () => {
+  const nativeMessaging = fs.readFileSync(
+    new URL("../../../source/host/src/extensions/session/native_messaging.rs", import.meta.url),
+    "utf8"
+  );
+  const production = fs.readFileSync(
+    new URL("../../../source/host/src/extensions/session/production.rs", import.meta.url),
+    "utf8"
+  );
+  const gateway = fs.readFileSync(
+    new URL("../../../source/host/src/extensions/session/gateway.rs", import.meta.url),
+    "utf8"
+  );
+  assert.ok(nativeMessaging.includes("list_human_call_media_sessions"));
+  assert.ok(nativeMessaging.includes("create_human_call_media_session"));
+  assert.ok(nativeMessaging.includes("FABUSHI_HOST_ACCESS_CREDENTIAL_FILE_ENV"));
+  assert.ok(nativeMessaging.includes("/media/sessions"));
+  assert.ok(production.includes("list_call_media_sessions"));
+  assert.ok(production.includes("create_call_media_session"));
+  assert.ok(production.includes("canonical CallSession/device fence"));
+  assert.ok(gateway.includes('"listCallMediaSessions"'));
+  assert.ok(gateway.includes('"createCallMediaSession"'));
+  assert.equal(source.includes("FABUSHI_REALTIME_SFU_APP_SECRET"), false);
+  assert.equal(source.includes("provider_session_id"), false);
+  assert.equal(source.includes("providerSessionId"), false);
+  assert.equal(source.includes("FABUSHI_HOST_ACCESS_CREDENTIAL_FILE"), false);
+});
