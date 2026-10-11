@@ -1,0 +1,19 @@
+# libfido2 ceremony/device/fuzz/man — deterministic orders 10,029–10,092 complete read
+
+Authority: `Yubico/libfido2@b974e7cf2ee7392134cc12c08b76a068cf250dd8`, mounted at `Telegram/ThirdParty/libfido2`.
+
+Exact repository/commit/path/blob identities and exact blob materialization come from Fabushi exact-head `53166126816c059a99298b28d4b3d8c2ca204910`, Rust desktop runtime run `38119139308`, source-authority job `114410128913`, artifact `11693708963`, digest `sha256:29a6feb40f3cbaa28f932d822bab4242821378bba701bdfbba1fb18f26a35542`. All 64 entries were read from the materialized exact blobs.
+
+## Product/security responsibilities found
+
+The build and release files extend the prior libfido2 build-security tranche with macOS 14/15, OpenSSL 3 GCC/Clang/MinGW, ShellCheck, and Windows 2022/2025 x64/Win32/ARM64/ARM static/dynamic analysis matrices. Root CMake defines hardened platform capability gates for libcbor/OpenSSL/zlib, HID/HIDAPI, PCSC, Windows Hello and Linux NFC, plus fuzz/test/tools/man install composition. License/provenance remains BSD-2-Clause and security reporting remains a private security-governance responsibility.
+
+The examples are product-behavior authority, not disposable sample code. They cover assertion and credential ceremonies, local assertion/attestation verification, allow/exclude lists, resident credentials, UP/UV, hmac-secret, credProtect, enterprise attestation, largeBlob, timeout/cancel, U2F fallback, authenticator capability discovery, multi-device touch selection, PIN retries/set/change, destructive reset, biometric enrollment/template lifecycle, exact teardown, and secure blob/public-key serialization. These map first to the existing Coordinator WebAuthn/security owner plus canonical Settings/platform-device/secure-storage owners; they do not justify a Telegram/libfido2 runtime or a second credential store.
+
+A concrete current Fabushi gap was found while comparing those fail-closed semantics with `source/node-agent-coordinator/src/webauthn/signer.rs`: the spawned helper could previously return success after a non-zero process exit, and `ok:true` could succeed with missing/null/non-object `credentialJson`. Staging commit `6495e0ad637075c499d49ffd8d05c18f59987195` now rejects both cases and adds focused unit coverage. This is production implementation progress, but it is **not verified** until the final staged descendant is advanced to PR #42 and fresh exact-head GitHub Actions succeed.
+
+The fuzz tranche is a security-quality responsibility: dedicated assert/attestation/bio/credential/credential-management/HID/largeBlob/management/netlink/PCSC harnesses, AFL/libFuzzer, ASan/MSan/UBSan, deterministic allocation/crypto/CBOR/transport/compression fault injection, clock discontinuities, bounded packet/CBOR mutation, real FIDO2/U2F wire corpora, and Linux udev/PCSC transport failure models. The pinned upstream coverage artifact reports 93.51% regions, 95.71% functions and 92.16% lines; it is maturity evidence only and does not substitute for Fabushi exact-head tests. The HID snoop corpus harness is explicitly security-test-only and captured authenticator traffic must be treated as sensitive; production telemetry must never inherit that behavior.
+
+The man-page files enforce export/name/alias/prototype consistency and key-lifetime contracts for EdDSA/ES256 conversions. Fabushi should preserve explicit helper/API compatibility and vetted crypto ownership, not reimplement cryptography.
+
+All 64 rows remain `mapped-open`, `unknown_closed=false`, `omitted=false`. Reading and the signer fix do not prove the wider hardware-management, packaging/co-staging, sanitizer/fuzz or release responsibilities. Accounting after this tranche is **10,092/16,125 read; 6,033 unread; 15,845 unknown; 0 omitted**. The next exact source is order **10,093** `Telegram/ThirdParty/libfido2::man/es384_pk_new.3@e865913b780700f95fe8f16c406e5b83065cbdd1`.
