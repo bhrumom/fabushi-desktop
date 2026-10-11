@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 5521,
+    "unread": 5457,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,11 +13478,11 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Accepted prefix 10,604/16,125; exact-head source artifact materialized Nimf generated API/core input-context authority including binary documentation assets; unread 5,521; unknown 15,845; omitted 0.",
-    "source_authority_evidence": "Orders 10,541-10,604 exact-read from 68cce5088ab983b55eab41442c1cc66949bace6d run 38129652895/job 114441202439 artifact 11698951548 (sha256:675d1c7aef8ed69de9fdbb25ccb4a63589f152d36ece683f4d945301bd6fbd0b); applicable Nimf IME/API lifecycle maps to existing PromptRichTextEditor/input-composition-state/platform-input and lifecycle/security owners with no second runtime. Descendant exact-head evidence remains required.",
-    "current_source_read_through": 10604,
-    "first_unread_order": 10605,
-    "first_unread_path": "Telegram/ThirdParty/nimf::libnimf/nimf-message.c"
+    "source_read_reconciliation": "Accepted prefix 10,668/16,125; exact-head source artifact materialized Nimf typed message/server/service, GTK/Qt adapter, Anthy/Libhangul and first m17n language-asset authority; unread 5,457; unknown 15,845; omitted 0.",
+    "source_authority_evidence": "Orders 10,605-10,668 exact-read from 188e67c679f86628c00bbd7ec0a116e4d5a63fab run 38130075791/job 114442445077 artifact 11698588655 (sha256:13f309ef6dda0b2fe85de73e4a4da8a3c3c2058efdb4782c10a021eb67b2499e); applicable Nimf request settlement/input lifecycle maps to existing PromptRichTextEditor/input-composition-state/platform-input, Settings, Electron lifecycle/security, Build/Quality and Localization owners with no second input runtime. Descendant exact-head evidence remains required.",
+    "current_source_read_through": 10668,
+    "first_unread_order": 10669,
+    "first_unread_path": "Telegram/ThirdParty/nimf::modules/engines/nimf-m17n/icons/scalable/nimf-m17n-hi.svg"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 10604,
-    "first_unread_order": 10605,
-    "first_unread_path": "Telegram/ThirdParty/nimf::libnimf/nimf-message.c",
+    "read_through": 10668,
+    "first_unread_order": 10669,
+    "first_unread_path": "Telegram/ThirdParty/nimf::modules/engines/nimf-m17n/icons/scalable/nimf-m17n-hi.svg",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {

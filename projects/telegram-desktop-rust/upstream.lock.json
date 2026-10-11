@@ -266,9 +266,9 @@
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
     "unknown_minimum": 15845,
-    "unread_minimum": 5521,
+    "unread_minimum": 5457,
     "omitted_known": 0,
-    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 10,604; unknown=15,845, unread=5,521, omitted=0."
+    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 10,668; unknown=15,845, unread=5,457, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -282,7 +282,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Source/product/release closure open. Exact read-through 10,604/16,125; first unread 10,605 Telegram/ThirdParty/nimf::libnimf/nimf-message.c@7a8c463b4b925b8997f27b6a127fce08ccfb9971; unread 5,521; unknown 15,845; omitted 0. Nimf API/core input-context lifecycle maps to existing Composer/platform-input/lifecycle/security owners; no Nimf runtime is introduced."
+    "note": "Source/product/release closure open. Exact read-through 10,668/16,125; first unread 10,669 Telegram/ThirdParty/nimf::modules/engines/nimf-m17n/icons/scalable/nimf-m17n-hi.svg@ea2270ac3575895b456c1c808639d83bead23295; unread 5,457; unknown 15,845; omitted 0. Nimf server/client/engine input lifecycle maps to existing Composer/platform-input/Settings/lifecycle/localization owners; no Nimf runtime is introduced."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",
@@ -633,9 +633,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 10604,
-    "first_unread_order": 10605,
-    "first_unread_path": "Telegram/ThirdParty/nimf::libnimf/nimf-message.c",
+    "read_through": 10668,
+    "first_unread_order": 10669,
+    "first_unread_path": "Telegram/ThirdParty/nimf::modules/engines/nimf-m17n/icons/scalable/nimf-m17n-hi.svg",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
@@ -736,5 +736,5 @@
     ],
     "note": "Valid exact-head evidence for 46dfaf only; main reconciliation/accounting descendants require fresh Actions."
   },
-  "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 10,604; unknown=15,845, unread=5,521, omitted=0."
+  "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 10,668; unknown=15,845, unread=5,457, omitted=0."
 }
