@@ -557,7 +557,7 @@
       "referencePath": "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "362c9fd2961eed01dda1e30e30d676dc58421790",
+      "targetBlobSha": "1d2c740288a7d09765537a1082b4b8781c6ca64e",
       "behavioralEvidence": [
         "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
         "frontend/src/recovered/features/conversation/workspace/transcript-follow-state.ts",
