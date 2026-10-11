@@ -4,7 +4,7 @@ use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
-use reqwest::blocking::Client;
+use reqwest::{Method, blocking::Client};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use url::Url;
@@ -307,6 +307,30 @@ fn validate_human_call_media_session(
             || media_session.status == "closed")
     {
         return Err("Fabushi Human call media backend returned an invalid cleanup projection".into());
+    }
+    Ok(())
+}
+
+fn reject_privileged_call_media_fields(value: &Value) -> Result<(), String> {
+    match value {
+        Value::Object(object) => {
+            for (key, nested) in object {
+                if matches!(
+                    key.as_str(),
+                    "providerSessionId" | "provider_session_id" | "appSecret" | "app_secret"
+                        | "authorization" | "Authorization"
+                ) {
+                    return Err("Fabushi call media response leaked a privileged provider field".into());
+                }
+                reject_privileged_call_media_fields(nested)?;
+            }
+        }
+        Value::Array(values) => {
+            for nested in values {
+                reject_privileged_call_media_fields(nested)?;
+            }
+        }
+        _ => {}
     }
     Ok(())
 }
@@ -806,6 +830,224 @@ impl FabushiNativeMessagingClient {
             Some((generation, purpose)),
         )?;
         Ok(media_session)
+    }
+
+    fn call_media_json(
+        &self,
+        method: Method,
+        path: &str,
+        body: Option<Value>,
+        action: &str,
+    ) -> Result<Value, String> {
+        let credentials = read_credentials(&self.credential_path)?;
+        let mut request = self
+            .client
+            .request(method, self.endpoint(path)?)
+            .bearer_auth(required_trimmed(&credentials.access_token, "accessToken")?)
+            .header(
+                "x-fabushi-device-id",
+                required_trimmed(&credentials.device_id, "deviceId")?,
+            )
+            .header("accept", "application/json");
+        if let Some(body) = body {
+            request = request.json(&body);
+        }
+        let response = request
+            .send()
+            .map_err(|error| format!("Fabushi Human call media {action} failed: {error}"))?;
+        let status = response.status();
+        let body = response
+            .text()
+            .map_err(|error| format!("Fabushi Human call media {action} response could not be read: {error}"))?;
+        let payload: Value = serde_json::from_str(&body).map_err(|error| {
+            format!(
+                "Fabushi Human call media {action} response was invalid JSON (HTTP {}): {error}",
+                status.as_u16()
+            )
+        })?;
+        reject_privileged_call_media_fields(&payload)?;
+        let success = payload.get("success").and_then(Value::as_bool) == Some(true);
+        if !status.is_success() || !success {
+            let error = payload
+                .get("error")
+                .and_then(Value::as_str)
+                .unwrap_or("unknown backend error");
+            return Err(format!(
+                "Fabushi Human call media {action} was rejected (HTTP {}): {error}",
+                status.as_u16()
+            ));
+        }
+        Ok(payload)
+    }
+
+    pub fn discover_human_call_media_publications(
+        &self,
+        call_id: &str,
+    ) -> Result<Value, String> {
+        let call_id = required_trimmed(call_id, "call id")?;
+        let encoded_call_id: String =
+            url::form_urlencoded::byte_serialize(call_id.as_bytes()).collect();
+        self.call_media_json(
+            Method::GET,
+            &format!("/api/social/calls/{encoded_call_id}/media/publications"),
+            None,
+            "publication discovery",
+        )
+    }
+
+    pub fn publish_human_call_media(
+        &self,
+        call_id: &str,
+        media_session_id: &str,
+        client_operation_id: &str,
+        generation: u64,
+        session_description: &Value,
+        publications: &Value,
+    ) -> Result<Value, String> {
+        let call_id = required_trimmed(call_id, "call id")?;
+        let media_session_id = required_trimmed(media_session_id, "media session id")?;
+        let client_operation_id = required_trimmed(client_operation_id, "media operation id")?;
+        let call: String = url::form_urlencoded::byte_serialize(call_id.as_bytes()).collect();
+        let session: String =
+            url::form_urlencoded::byte_serialize(media_session_id.as_bytes()).collect();
+        self.call_media_json(
+            Method::POST,
+            &format!("/api/social/calls/{call}/media/sessions/{session}/publications"),
+            Some(serde_json::json!({
+                "clientOperationId": client_operation_id,
+                "generation": generation,
+                "sessionDescription": session_description,
+                "publications": publications,
+            })),
+            "publication",
+        )
+    }
+
+    pub fn acknowledge_human_call_media_publication(
+        &self,
+        call_id: &str,
+        media_session_id: &str,
+        client_operation_id: &str,
+        generation: u64,
+    ) -> Result<Value, String> {
+        let call: String =
+            url::form_urlencoded::byte_serialize(required_trimmed(call_id, "call id")?.as_bytes()).collect();
+        let session: String = url::form_urlencoded::byte_serialize(
+            required_trimmed(media_session_id, "media session id")?.as_bytes(),
+        ).collect();
+        let operation: String = url::form_urlencoded::byte_serialize(
+            required_trimmed(client_operation_id, "media operation id")?.as_bytes(),
+        ).collect();
+        self.call_media_json(
+            Method::POST,
+            &format!("/api/social/calls/{call}/media/sessions/{session}/operations/{operation}/applied"),
+            Some(serde_json::json!({ "generation": generation })),
+            "publication acknowledgement",
+        )
+    }
+
+    pub fn subscribe_human_call_media(
+        &self,
+        call_id: &str,
+        media_session_id: &str,
+        client_operation_id: &str,
+        generation: u64,
+        subscriptions: &Value,
+    ) -> Result<Value, String> {
+        let call: String =
+            url::form_urlencoded::byte_serialize(required_trimmed(call_id, "call id")?.as_bytes()).collect();
+        let session: String = url::form_urlencoded::byte_serialize(
+            required_trimmed(media_session_id, "media session id")?.as_bytes(),
+        ).collect();
+        self.call_media_json(
+            Method::POST,
+            &format!("/api/social/calls/{call}/media/sessions/{session}/subscriptions"),
+            Some(serde_json::json!({
+                "clientOperationId": required_trimmed(client_operation_id, "media operation id")?,
+                "generation": generation,
+                "subscriptions": subscriptions,
+            })),
+            "subscription",
+        )
+    }
+
+    pub fn answer_human_call_media_subscription(
+        &self,
+        call_id: &str,
+        media_session_id: &str,
+        client_operation_id: &str,
+        generation: u64,
+        session_description: &Value,
+    ) -> Result<Value, String> {
+        let call: String =
+            url::form_urlencoded::byte_serialize(required_trimmed(call_id, "call id")?.as_bytes()).collect();
+        let session: String = url::form_urlencoded::byte_serialize(
+            required_trimmed(media_session_id, "media session id")?.as_bytes(),
+        ).collect();
+        let operation: String = url::form_urlencoded::byte_serialize(
+            required_trimmed(client_operation_id, "media operation id")?.as_bytes(),
+        ).collect();
+        self.call_media_json(
+            Method::POST,
+            &format!("/api/social/calls/{call}/media/sessions/{session}/operations/{operation}/answer"),
+            Some(serde_json::json!({
+                "generation": generation,
+                "sessionDescription": session_description,
+            })),
+            "subscription answer",
+        )
+    }
+
+    pub fn update_human_call_media_subscription_layer(
+        &self,
+        call_id: &str,
+        media_session_id: &str,
+        subscription_id: &str,
+        client_mutation_id: &str,
+        generation: u64,
+        simulcast: &Value,
+    ) -> Result<Value, String> {
+        let call: String =
+            url::form_urlencoded::byte_serialize(required_trimmed(call_id, "call id")?.as_bytes()).collect();
+        let session: String = url::form_urlencoded::byte_serialize(
+            required_trimmed(media_session_id, "media session id")?.as_bytes(),
+        ).collect();
+        let subscription: String = url::form_urlencoded::byte_serialize(
+            required_trimmed(subscription_id, "media subscription id")?.as_bytes(),
+        ).collect();
+        self.call_media_json(
+            Method::POST,
+            &format!("/api/social/calls/{call}/media/sessions/{session}/subscriptions/{subscription}/layer"),
+            Some(serde_json::json!({
+                "clientMutationId": required_trimmed(client_mutation_id, "media layer mutation id")?,
+                "generation": generation,
+                "simulcast": simulcast,
+            })),
+            "subscription layer update",
+        )
+    }
+
+    pub fn close_human_call_media_session(
+        &self,
+        call_id: &str,
+        media_session_id: &str,
+        client_teardown_id: &str,
+        generation: u64,
+    ) -> Result<Value, String> {
+        let call: String =
+            url::form_urlencoded::byte_serialize(required_trimmed(call_id, "call id")?.as_bytes()).collect();
+        let session: String = url::form_urlencoded::byte_serialize(
+            required_trimmed(media_session_id, "media session id")?.as_bytes(),
+        ).collect();
+        self.call_media_json(
+            Method::POST,
+            &format!("/api/social/calls/{call}/media/sessions/{session}/close"),
+            Some(serde_json::json!({
+                "clientTeardownId": required_trimmed(client_teardown_id, "media teardown id")?,
+                "generation": generation,
+            })),
+            "session teardown",
+        )
     }
 
     pub fn get_human_call_ice_servers(
