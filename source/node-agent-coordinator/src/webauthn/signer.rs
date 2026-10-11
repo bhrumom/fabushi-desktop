@@ -18,6 +18,28 @@ use crate::webauthn::{
 };
 
 pub const SIGNER_EVENT_PREFIX: &str = "[signer-event] ";
+const MAX_SIGNER_STDOUT_BYTES: usize = 1024 * 1024;
+const MAX_SIGNER_EVENT_STREAM_BYTES: usize = 256 * 1024;
+
+#[derive(Debug)]
+enum BoundedReadError {
+    Io(std::io::Error),
+    LimitExceeded,
+}
+
+fn read_bounded(mut reader: impl Read, limit: usize) -> Result<Vec<u8>, BoundedReadError> {
+    let mut bytes = Vec::new();
+    let limit_with_sentinel = limit.saturating_add(1);
+    reader
+        .by_ref()
+        .take(limit_with_sentinel as u64)
+        .read_to_end(&mut bytes)
+        .map_err(BoundedReadError::Io)?;
+    if bytes.len() > limit {
+        return Err(BoundedReadError::LimitExceeded);
+    }
+    Ok(bytes)
+}
 
 #[derive(Debug, Clone, Default)]
 pub struct WebAuthnSignCancellation {
@@ -146,6 +168,10 @@ impl SpawnedWebAuthnSigner {
         enum ProcessEvent {
             Stdout(Vec<u8>),
             Signer(SignerEvent),
+            Failure {
+                code: &'static str,
+                message: String,
+            },
         }
 
         let mut child = match Command::new(&self.binary_path)
@@ -205,13 +231,54 @@ impl SpawnedWebAuthnSigner {
         let (events_tx, events_rx) = mpsc::channel::<ProcessEvent>();
         let stdout_tx = events_tx.clone();
         let stdout_thread = thread::spawn(move || {
-            let mut bytes = Vec::new();
-            let _ = BufReader::new(stdout).read_to_end(&mut bytes);
-            let _ = stdout_tx.send(ProcessEvent::Stdout(bytes));
+            let event = match read_bounded(stdout, MAX_SIGNER_STDOUT_BYTES) {
+                Ok(bytes) => ProcessEvent::Stdout(bytes),
+                Err(BoundedReadError::LimitExceeded) => ProcessEvent::Failure {
+                    code: "helper_output_too_large",
+                    message: format!(
+                        "security key helper stdout exceeded {MAX_SIGNER_STDOUT_BYTES} bytes"
+                    ),
+                },
+                Err(BoundedReadError::Io(error)) => ProcessEvent::Failure {
+                    code: "helper_io_failed",
+                    message: format!("could not read security key helper stdout: {error}"),
+                },
+            };
+            let _ = stdout_tx.send(event);
         });
         let stderr_tx = events_tx.clone();
         let stderr_thread = thread::spawn(move || {
-            for line in BufReader::new(stderr).lines().map_while(Result::ok) {
+            let mut reader = BufReader::new(stderr)
+                .take((MAX_SIGNER_EVENT_STREAM_BYTES.saturating_add(1)) as u64);
+            let mut consumed = 0usize;
+            loop {
+                let mut line = Vec::new();
+                let read = match reader.read_until(b'\n', &mut line) {
+                    Ok(read) => read,
+                    Err(error) => {
+                        let _ = stderr_tx.send(ProcessEvent::Failure {
+                            code: "helper_io_failed",
+                            message: format!(
+                                "could not read security key helper event stream: {error}"
+                            ),
+                        });
+                        break;
+                    }
+                };
+                if read == 0 {
+                    break;
+                }
+                consumed = consumed.saturating_add(read);
+                if consumed > MAX_SIGNER_EVENT_STREAM_BYTES {
+                    let _ = stderr_tx.send(ProcessEvent::Failure {
+                        code: "helper_output_too_large",
+                        message: format!(
+                            "security key helper event stream exceeded {MAX_SIGNER_EVENT_STREAM_BYTES} bytes"
+                        ),
+                    });
+                    break;
+                }
+                let line = String::from_utf8_lossy(&line);
                 if let Some(event) = parse_signer_event_line(line.trim()) {
                     let _ = stderr_tx.send(ProcessEvent::Signer(event));
                 }
@@ -231,6 +298,7 @@ impl SpawnedWebAuthnSigner {
                     *stdout_bytes = Some(bytes);
                     Ok(())
                 }
+                ProcessEvent::Failure { code, message } => Err(Self::failure(code, message)),
                 ProcessEvent::Signer(event) => {
                     let request = match event {
                         SignerEvent::PinRequired => Some(WebAuthnPinRequest {
@@ -328,8 +396,12 @@ impl SpawnedWebAuthnSigner {
         let _ = stdout_thread.join();
         let _ = stderr_thread.join();
         while let Ok(event) = events_rx.try_recv() {
-            if let ProcessEvent::Stdout(bytes) = event {
-                stdout_bytes = Some(bytes);
+            match event {
+                ProcessEvent::Stdout(bytes) => stdout_bytes = Some(bytes),
+                ProcessEvent::Failure { code, message } => {
+                    return Self::failure(code, message);
+                }
+                ProcessEvent::Signer(_) => {}
             }
         }
 
@@ -379,88 +451,50 @@ impl WebAuthnSigner for SpawnedWebAuthnSigner {
         ceremony: &WebAuthnCeremony,
         approved: Option<&ApprovedWebAuthnConsent>,
     ) -> WebAuthnSignerResult {
-        let mut child = match Command::new(&self.binary_path)
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn()
-        {
-            Ok(child) => child,
-            Err(error) => {
-                return Self::failure(
-                    "helper_spawn_failed",
-                    format!("could not start the security key helper: {error}"),
-                );
-            }
-        };
+        let cancellation = WebAuthnSignCancellation::default();
+        self.sign_interactive(
+            ceremony,
+            approved,
+            &cancellation,
+            |_| {},
+            |_, _| None,
+        )
+    }
+}
 
-        let mut request = serde_json::to_value(ceremony).unwrap_or_else(|_| json!({}));
-        if let Some(window_handle) = approved.and_then(|value| value.window_handle) {
-            if let Some(object) = request.as_object_mut() {
-                object.insert("windowHandle".into(), Value::from(window_handle));
-            }
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::{Cursor, Error, ErrorKind};
+
+    struct FailingReader;
+
+    impl Read for FailingReader {
+        fn read(&mut self, _buf: &mut [u8]) -> std::io::Result<usize> {
+            Err(Error::new(ErrorKind::Other, "synthetic read failure"))
         }
+    }
 
-        let Some(stdin) = child.stdin.as_mut() else {
-            return Self::failure(
-                "helper_spawn_failed",
-                "security key helper stdin is unavailable",
-            );
-        };
-        if writeln!(stdin, "{}", request).is_err() {
-            return Self::failure(
-                "helper_io_failed",
-                "could not write the security key request",
-            );
-        }
-        drop(child.stdin.take());
+    #[test]
+    fn bounded_reader_accepts_exact_limit() {
+        let bytes = read_bounded(Cursor::new(vec![7_u8; 4]), 4)
+            .expect("exact limit should be accepted");
+        assert_eq!(bytes, vec![7_u8; 4]);
+    }
 
-        let output = match child.wait_with_output() {
-            Ok(output) => output,
-            Err(error) => {
-                return Self::failure(
-                    "helper_wait_failed",
-                    format!("security key helper wait failed: {error}"),
-                );
-            }
-        };
-        if output.stdout.is_empty() {
-            return Self::failure(
-                "helper_no_result",
-                format!(
-                    "the security key helper exited with code {:?} and no result",
-                    output.status.code()
-                ),
-            );
-        }
+    #[test]
+    fn bounded_reader_rejects_limit_plus_one() {
+        assert!(matches!(
+            read_bounded(Cursor::new(vec![7_u8; 5]), 4),
+            Err(BoundedReadError::LimitExceeded)
+        ));
+    }
 
-        let value = match serde_json::from_slice::<Value>(&output.stdout) {
-            Ok(value) => value,
-            Err(error) => {
-                return Self::failure(
-                    "helper_no_result",
-                    format!("unreadable security key helper result: {error}"),
-                );
-            }
-        };
-        if value.get("ok").and_then(Value::as_bool) == Some(true) {
-            return WebAuthnSignerResult::Success {
-                credential_json: value
-                    .get("credentialJson")
-                    .cloned()
-                    .unwrap_or(Value::Null),
-            };
-        }
-
-        let error = value
-            .get("error")
-            .cloned()
-            .and_then(|value| serde_json::from_value::<WebAuthnSignerError>(value).ok())
-            .unwrap_or_else(|| WebAuthnSignerError {
-                name: "NotAllowedError".into(),
-                code: Some("helper_failed".into()),
-                message: "the security key helper reported a failure".into(),
-            });
-        WebAuthnSignerResult::Failed { error }
+    #[test]
+    fn bounded_reader_preserves_io_failure() {
+        assert!(matches!(
+            read_bounded(FailingReader, 4),
+            Err(BoundedReadError::Io(_))
+        ));
     }
 }
