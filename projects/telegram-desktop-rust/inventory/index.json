@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 3722,
+    "unread_minimum": 3665,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through deterministic order 12,403; unread 3,722; unknown 15,845; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition through deterministic order 12,460; unread 3,665; unknown 15,845; omitted 0."
   },
   "latest_recursive_evidence": {
     "run_id": 38183734477,
@@ -31,7 +31,7 @@
     ],
     "evidence_status": "exact-source-materialization-reviewed-descendant-validation-required",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
-    "note": "Exact-head 8a07d98a source authority succeeded and materialized orders 12,397-12,460; orders 12,397-12,403 were formally reviewed into a descendant shard; reading alone does not reduce unknown."
+    "note": "Exact-head 8a07d98a source authority succeeded and materialized orders 12,397-12,460; the complete 64-entry window is now formally reviewed into descendant shards; reading alone does not reduce unknown."
   },
   "closure_rules": {
     "executable_runner": "github-actions",
@@ -41,7 +41,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live baseline accepted; closure open. Read-through 12,403; unread_minimum is 3,722; unknown remains 15,845; omitted remains 0; first unread order 12,404 is Telegram/lib_base::CMakeLists.txt.",
+  "note": "Live baseline accepted; closure open. Read-through 12,460; unread_minimum is 3,665; unknown remains 15,845; omitted remains 0; first unread order 12,461 is Telegram/lib_base::base/match_method.h.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -73,9 +73,9 @@
     "development_only_non_applicable": 206,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 12403,
-    "first_unread_order": 12404,
-    "first_unread_path": "Telegram/lib_base::CMakeLists.txt",
+    "read_through": 12460,
+    "first_unread_order": 12461,
+    "first_unread_path": "Telegram/lib_base::base/match_method.h",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }
