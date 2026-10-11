@@ -11,15 +11,21 @@ Complete: false
 | Existing-owner-first absorption | specified | new owners require ADR |
 | Native Fabushi network | in progress | canonical Rust messaging service and real Host HTTP API transport exist; broader service/release closure remains open |
 | Exact existing-owner inventory | in progress | canonical owners are audited continuously; full 16,125-entry absorption is not closed |
-| Telegram capability graph | in progress | deterministic source review is 11,308/16,125; unread/unknown remain open |
+| Telegram capability graph | in progress | deterministic source review is 11,372/16,125; unread/unknown remain open |
 | Capability → owner mapping | in progress | reviewed responsibilities map existing-owner-first; full source→shipping evidence graph remains open |
 | Conversation/message model evolution | in progress | native/mahayana-messaging has canonical Conversation/protocol/service evolution; mapped-open product closure remains |
 | Native messaging infrastructure | in progress | canonical messaging service plus source/host real API transport are implemented; broader server/platform/release evidence remains |
 | Human messaging in existing workspace | in progress | existing Composer/submission/Host path carries human send including silent/scheduled semantics; full regression/release closure remains |
 | Human + Agent unified flow | in progress | canonical ConversationWorkspace/Composer infrastructure is shared; complete Hybrid creation/policy/regression evidence remains open |
-| Full feature absorption | in progress | source/product mapping is active; unread=4,817 and unknown=15,845 prevent closure |
+| Full feature absorption | in progress | source/product mapping is active; unread=4,753 and unknown=15,845 prevent closure |
 | Packaged acceptance | blocked | no artifact |
 | Release | blocked | ACs incomplete |
+
+## 2026-10-11 range-v3 algorithm source accounting
+
+Exact-head `2ab515facff678df69eb53834f37ae1901cbe47d` Rust desktop runtime `38153128885` completed/success; rust-host `114510518036` executed Host Runner, prompt attachment projection, Human Computer takeover and ConversationActor/CapabilityBroker ownership successfully. Source-authority job `114510518094` materialized and exact-blob verified orders 11,309–11,372 in artifact `11707477754` (`sha256:2a7a3754612ea3d53070e19f4df3c562ed3341c1dc447d5142d20913b759cb63`). Current deterministic accounting is **11,372/16,125 read; 4,753 unread; 15,845 unknown; 0 omitted**; first unread is 11,373 `Telegram/ThirdParty/range-v3::test/algorithm/starts_with.cpp@b8e9bbe5b0df44fcf4fb1bceac5d6f3845c292b9`.
+
+The window is generic range-v3 algorithm regression/quality responsibility, including move ownership, partition/heap/mutation/search/set/sort contracts. The files named search/search_n remain generic dependency tests, not evidence for a parallel Fabushi Search owner. Existing-owner-first stays Build / Quality / Dependency-Provenance / License and native runtime/standard-library boundaries. Product/release acceptance remains open.
 
 ## 2026-10-11 range-v3 action/algorithm source accounting
 
