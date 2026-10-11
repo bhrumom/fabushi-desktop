@@ -1,4 +1,15 @@
-Live TDRP Revision 9 upstream authority (2026-10-11): telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 (root tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6). Root non-directory=6,653; recursive non-directory=16,125; deterministic read-through=9,400; first unread=9,401 Telegram/ThirdParty/kcoreaddons::src/lib/text/ktexttohtml_p.h@93bbb72f1eeb0adc8c2ec57ebc6ab5c3309d197d; unread=6,725; unknown=15,845; omitted=0. Orders 9,381–9,400 exact-read plugin discovery/randomness/fuzzy/localized-JSON/macro/text-rendering source with security boundaries mapped to existing Fabushi owners.
+Live TDRP Revision 9 upstream authority (2026-10-11): telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 (root tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6). Root non-directory=6,653; recursive non-directory=16,125; deterministic read-through=9,444; first unread=9,445 Telegram/ThirdParty/kimageformats::.git-blame-ignore-revs@b34bba3cd8fb4c6785690422f5c46762d60bb7dc; unread=6,681; unknown=15,845; omitted=0. Kcoreaddons direct-gitlink source is now exact-read through its component tail; next component is KDE/kimageformats@df82311a1081e576c4ac020204578bb8a81b21ec.
+
+### Revision 9 deterministic read-through — kcoreaddons component tail 9,401–9,444
+
+Orders 9,401–9,444 exact-read the remainder of pinned `KDE/kcoreaddons`: safe text/emoticon interface, legacy configuration migration, locale-aware byte/duration/date formatting, executable/open-file discovery, memory telemetry, `os-release`, cross-platform process enumeration, runtime-platform hints, sandbox host bridging, Unix/Windows shell parsing and quoting, signal integration, Unix/Windows user/group/SID semantics, and the final MIME corpus (57 types, 73 globs, 26 subclass relations, 9 magic rules, 3 aliases).
+
+Existing-owner-first maps these into canonical Localization, Settings/Persistence, Resource/platform, Host/Runner/Computer, Permissions, Transcript and attachment/MIME owners. Critical boundaries stay explicit: migrations never overwrite existing target state; open-files reports typed unsupported rather than fake success; memory distinguishes free from available; OS user/group data is platform permission context, not Fabushi account identity; sandbox/shell helpers cannot bypass approval; MIME and rendered-link inputs stay validation-bound. No KDE runtime or second platform/settings/identity truth is introduced.
+
+This also fixes an authority-accounting defect exposed by exact-head CI: `upstream.lock.source_disposition_evidence` had remained at 9,201 while master/index/ledger had advanced. The lock summary is now advanced from the same source prefix instead of weakening the validator.
+
+Accounting: **9,444/16,125 read; 6,681 unread; 15,845 unknown; 0 omitted**. Kcoreaddons source reading is complete; next 9,445 is `Telegram/ThirdParty/kimageformats::.git-blame-ignore-revs@b34bba3cd8fb4c6785690422f5c46762d60bb7dc` in pinned `KDE/kimageformats@df82311a1081e576c4ac020204578bb8a81b21ec`.
+
 
 ### Revision 9 deterministic read-through — plugin/text/security utility source 9,381–9,400
 
