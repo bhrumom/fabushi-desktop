@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 5585,
+    "unread": 5521,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,11 +13478,11 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Accepted prefix 10,156/16,125; predecessor exact-head source artifact materialized libfido2 API/compat/regression authority; unread 5,969; unknown 15,845; omitted 0.",
-    "source_authority_evidence": "Orders 10,477-10,540 exact-read from 84250c295a108a9b5f108b6c474cbeff71dc1097 run 38128873892/job 114438921053 artifact 11698811298 (sha256:278638d19fd8a347cf20681953a9589ec06413033ff72e7cf9e3b4c6b5e1c209); applicable Nimf IME lifecycle maps to existing PromptRichTextEditor/platform-input with no second runtime. Descendant exact-head evidence remains required.",
-    "current_source_read_through": 10540,
-    "first_unread_order": 10541,
-    "first_unread_path": "Telegram/ThirdParty/nimf::docs/html/executables.html"
+    "source_read_reconciliation": "Accepted prefix 10,604/16,125; exact-head source artifact materialized Nimf generated API/core input-context authority including binary documentation assets; unread 5,521; unknown 15,845; omitted 0.",
+    "source_authority_evidence": "Orders 10,541-10,604 exact-read from 68cce5088ab983b55eab41442c1cc66949bace6d run 38129652895/job 114441202439 artifact 11698951548 (sha256:675d1c7aef8ed69de9fdbb25ccb4a63589f152d36ece683f4d945301bd6fbd0b); applicable Nimf IME/API lifecycle maps to existing PromptRichTextEditor/input-composition-state/platform-input and lifecycle/security owners with no second runtime. Descendant exact-head evidence remains required.",
+    "current_source_read_through": 10604,
+    "first_unread_order": 10605,
+    "first_unread_path": "Telegram/ThirdParty/nimf::libnimf/nimf-message.c"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 10540,
-    "first_unread_order": 10541,
-    "first_unread_path": "Telegram/ThirdParty/nimf::docs/html/executables.html",
+    "read_through": 10604,
+    "first_unread_order": 10605,
+    "first_unread_path": "Telegram/ThirdParty/nimf::libnimf/nimf-message.c",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
