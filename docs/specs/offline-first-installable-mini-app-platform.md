@@ -395,3 +395,123 @@ A Desktop-only release may be designated **Desktop preview**, Android-only **And
 | AC-01 through AC-10 — release acceptance | **blocked** | Depends on subsequent implementation, platform policy review, verification, signed builds and release gates. |
 
 **Handoff rule:** Before implementing, reread exact current main/PR HEAD, check for conflicts with current FBCP/TDRP/iOS/Android task owners, update this spec if necessary, and record each requirement's implementation + exact-head acceptance evidence. “Spec merged” is not “feature implemented.”
+
+## 18. AI-assisted mobile creation, preview and private installation — OMA-AI (2026-10-11)
+
+**Status:** approved target architecture / **implementation and acceptance pending**. This section is a **normative extension** to OMA-001 ``1–17, not a new product or a change to the existing Grok/FBCP acceptance scope. It answers the additional product requirement: **a user may ask Fabushi AI on a phone to make a mini app, inspect/preview it, explicitly install it into Fabushi, and run it offline**, without needing a laptop or an App Store submission for each mini app. The App Store eligibility of the host's resulting dynamic-code behavior **remains a release gate**, not an assumption.
+
+### 18.1 Scope: two kinds of "offline"
+
+- **Offline execution (baseline requirement):** the Agent may generate a project using a cloud model *while online*. After the project is verified and installed as a complete local Web package, **launch/use/edit saved local data works without network**. This is the primary cross-device experience.
+- **Offline AI generation (separate optional feature):** the **AI itself** creates or revises HTML/CSS/JavaScript without Internet only when an appropriate **on-device code-generation-capable model is installed, available, permitted and sufficiently capable** on that exact device. iOS may feature-probe Apple's on-device Foundation Models where eligible; Android may feature-probe suitable ML Kit GenAI / AICore Prompt API support. The host may additionally support a separately reviewed local inference adapter, but must respect model size, thermal, RAM, battery, language, storage and sandbox limits. Unsupported devices explicitly show "离线 AI 生成不可用" while still running already installed local mini apps.
+- Never describe cloud AI creation as fully offline; never imply that **all** iOS/Android devices have a usable on-device coding model. Downloading a large model or sending local files to a cloud AI requires distinct explicit user consent.
+- **Code format:** generate standalone or multi-file HTML + CSS + JavaScript and local assets by default. Generated Wasm is **not required**; a phone Rust/C/C++ toolchain, a native downloaded compiler or just-in-time OS-native execution is **not** authorized. An optional precompiled Wasm artifact is permitted only when covered by the same package integrity, Web sandbox and platform distribution-policy gates of ``8–9.
+
+### 18.2 Existing-owner-first architecture (binding)
+
+```text
+Fabushi Chat / Agent creation intent on iOS or Android
+     │ user: "做一个可以离线使用的记账小程序"
+     ▼
+existing Agent / Coordinator / Host / Runner creation and artifact flow
+     ├── Cloud inference (online; disclose/consent for sent data)
+     └── Supported device-local model (truly offline; capability gated)
+     │
+     ▼
+Account-scoped LOCAL SOURCE DRAFT (inert data, versioned)
+   index.html + style.css + app.js + assets/* + source digest
+     │ static policy checks and complete-resource validation
+     ▼
+DISPOSABLE UNTRUSTED WEBVIEW PREVIEW (no native privileges)
+     │ user feedback → model edits draft → fresh preview/digest
+     ▼
+USER REVIEWS SOURCE / PERMISSIONS / SIZE AND CLICKS INSTALL
+     │ explicit approval bound to exact draft digest
+     ▼
+existing Plugins / MCP / Marketplace package-install owner
+     │ host-created private-local-author signature
+     │ same .fabapp archive rules / verifier / account journal
+     ▼
+"My Mini Apps" → PRIVATE INSTALLED WEB APP
+     │ separate app origin and durable data; atomic versions
+     └── cold launch and use fully offline
+```
+
+**No second owner:** Agent/Runner creates draft source as an artifact, *not privileged application code*. The existing Plugins Marketplace owns the installed-app list and install/update/uninstall UX. Its native Host package-install subdomain owns verified bytes, signature validation, durable journal and version pointer; the iOS/Android native Web surface runs the resulting app. The existing permission system owns any permitted optional grants. Agent, WebView, MCP bridge and remote model **never own installation authority or signing keys**. This builds on the current `frontend/packages/mcp-app-sdk`, `frontend/src/recovered/features/plugins/overlay/*`, Desktop Host/Coordinator, iOS `MarketplaceModel` / `MiniAppWebMcpSurface` and Android native Web owner, with each platform implementing in its existing repository. Do not introduce `MobileMiniAppCore`, a separate builder daemon or a shared runtime repository.
+
+**Created locally is not "published".** The user's private app is shown under **Plugins → My Mini Apps → Created locally**; it is not in the public Marketplace catalog, cannot inherit a publisher reputation, and is not reachable by other accounts without a separate, moderated publication/sharing flow.
+
+### 18.3 Stable AI requirements
+
+| ID | Normative behavior |
+| --- | --- |
+| **OMA-AI-01** | User asks the existing mobile Fabushi Agent to create or modify an offline mini app by natural language; source files, assets, app name and a versioned draft are produced within Fabushi. User can see, edit and export source. |
+| **OMA-AI-02** | Source output is **untrusted inert data**, not Agent/Host-executable code. All drafts pass schema/path, CSP, import/URL, size and content-policy validation before isolated preview or installation. |
+| **OMA-AI-03** | A preview is ephemeral and uses a separate isolated origin/session/profile without OS/native/MCP/admin permissions, external network access or another installed mini app's storage; failure/cancel/timeout destroys the instance. |
+| **OMA-AI-04** | The user explicitly approves installation of the **exact draft digest** after reviewing source, requested permissions, data scope and size. No auto-install, background publish, automatic permission escalation or model-granted consent. |
+| **OMA-AI-05** | The canonical `.fabapp` verifier, content-addressed immutable store, account isolation, native loader, update journal, rollback and uninstall apply equally to AI-generated packages. No unsigned or bypass install path. |
+| **OMA-AI-06** | **Cloud-assisted creation and offline AI creation are separately detected and disclosed**. A ready compatible on-device model may create while offline; model missing/incompatible → explicit unsupported state with preservation of draft and installed apps. |
+| **OMA-AI-07** | AI revisions produce a new draft digest; upgrading an installed app requires a new valid signed package, user-visible changes and explicit activation. Last-good allowed install and user data survive failed AI edits. |
+| **OMA-AI-08** | AI prompt/source permission boundaries block accidental sensitive-data upload, prompt-injection tool escalation, Host/shell/Computer/MCP access, cross-app reads, network egress and silent payment actions. Cloud prompts that include user files require separate informed consent. |
+| **OMA-AI-09** | Code output uses Web standards first; Wasm only if verified and approved. Neither iOS local runtime nor Android loads generated machine code, arbitrary native binaries, DEX, downloadable runtime engines or compilers as a shortcut. |
+| **OMA-AI-10** | iOS App Review ``2.5.2/4.7 and Android/Google Play policy **independently assess executing AI-generated private Web code**. If a release channel forbids that behavior, disable *installation* in that channel and offer only a policy-compliant editor/source export or preview **if independently permitted**. Never declare store eligibility from technical proof alone. |
+
+### 18.4 New trust class, explicit exception to `8.1 catalog verification
+
+``8.1–8.2 assume a **catalog-authorized publisher key**. Private AI-generated projects require a **strictly separate local-author trust domain**, not a relaxed verifier:
+
+- Manifest v1 now recognizes an optional strict-schema discriminant `packageClass` with enum values `catalog` and `local-generated`. Absence means `catalog` for backward compatibility. The rest of the canonical `.fabapp` envelope, JCS/Ed25519 signature, asset hashes, paths/zip limits, compatibility, MIME and policy checks remain mandatory.
+- `catalog` continues to require **trusted catalog publisher-to-app-ID key binding** and relevant moderation/distribution gates, as `8.1 states.
+- `local-generated` can be constructed **only inside a trusted Fabushi creation transaction** for the authenticated user's current project, with **native-host allocated reserved private app ID**, active account binding, exact project/draft digest, explicit user approval ID and device/installation-local signing key held in secure native storage. The native Host installer signs **after** source is validated. The model and generated Web content cannot call the signer, register keys or propose their own privileged signature.
+- The verifier dispatches to a **disjoint** trust-root path based on validated class, not by trying all keys. A local-author key **only** authorizes its own reserved private namespace and currently authorized account/installation. It is **not trusted for downloaded/imported third-party archives, a public marketplace publisher, a different account, or a forged \`local-generated\` bundle**. Raw signing keys are never exposed to JavaScript or exported.
+- For `local-generated`, local source approval and a genuine Host-allocated draft ID are mandatory and must survive durable journal validation. If the consent is absent, expired, for another digest, or replayed in another account, **reject**. A local preview is **not** installation and is never automatically signed.
+- A local-generated app uses the same denied-by-default isolated Web surface as third-party packages. Host signatures show verified provenance/integrity, **not that AI code is safe, user-consented, store-authorized or eligible for extra privileges**.
+- Publishing to other users, syncing across devices or submitting to Marketplace is a separate audited process: publisher enrollment, review/moderation/age and rights checks, explicit sharing consent, new publisher signature, fresh catalog authorization, and no transfer of local device signing keys. Do not silently sync private code/project content.
+- An explicit “import external unsigned app” request may not be routed to the local-author signer to launder untrusted downloaded code. Such imports remain prohibited by default and require a separate reviewed policy.
+
+The `8.3 Host boundary gains a privileged **native-UI-only** intent:
+
+```ts
+type AiMiniAppDraft = {
+  projectId: string; accountScope: string; generationMode: "cloud" | "device-local";
+  generationId: string; draftDigest: string; fileDigests: Record<string, string>;
+  previousInstalledDigest?: string; requestedCapabilities: string[];
+};
+type LocalInstallIntent = {
+  kind: "installLocalGenerated"; projectId: string;
+  approvedDraftDigest: string; userApprovalId: string;
+};
+```
+
+These are **logical contract semantics**, not an exposed JavaScript or IPC bypass. The Host authorizer binds intent to the active account, user gesture, approved source version, package verifier and atomic install journal. Error types distinguish `model_unavailable`, `draft_invalid`, `preview_blocked`, `source_changed`, `consent_required`, `unsupported_platform_policy`, `insufficient_storage` and `verification_failed`; no raw OS file paths or secrets are returned. Store sources and AI draft sources can share a verifier but never a trust-root shortcut.
+
+### 18.5 Security, privacy, lifecycle and UX
+
+1. **Creation projects are private**, versioned and bounded. An Agent's edit tool can write only its current draft/source files through existing artifact ownership, never another mini app's saved database, Fabushi tokens or native filesystem. Generated source is inspectable and editable before installation. Model output is parsed as data and cannot invent an effective grant, tool action or app-store signature.
+2. The preview has **a different origin and profile** from the eventual installed app; no read/write access to the installed app's user data, clipboard or MCP by default. A preview run is **product runtime**, not a developer build/test; its zero-privilege validation is a security boundary, not a claim of formal test success. Use disposable scope, CSP, blocked requests, bounded memory/time and process teardown; untrusted JS and Wasm are never run in Host/Coordinator/Runner native contexts.
+3. Prompt-based repair is allowed, but **every** revision gets new validation, exact digest and preview. After installation an update must follow the existing atomic package activation + data-migration journal. Model interruptions, low disk, Web process crash or failed edits leave the last-good installed app usable.
+4. Distinguish **"AI created online, app runs offline"**, **"AI created fully offline, app runs offline"** and **"local model not available"** in the UX. Store versions and sources can remain accessible offline. Local AI model download is opt-in and cannot be required to run installed apps.
+5. Sending private files, note data or chat content to a remote coding model requires explicit understandable consent; privacy protection extends to generation logs/provenance. Retain non-sensitive model/provider/version, generation mode, package/draft digests and error classes; do not record raw personal prompts, secrets, file contents or user app data in analytics.
+6. App Store `4.7.2` prohibits exposing native platform APIs to offered mini-app software without prior Apple permission; `4.7.3` requires explicit per-app consent before sharing data/permissions. The local-author trust class **does not exempt AI-generated software from `2.5.2 or `4.7`**. Distribution approval must be separately documented.
+
+### 18.6 Plan, GitHub Actions verification and acceptance gates
+
+**Plan:** First implement a constrained HTML/CSS/JS **online-AI → on-phone preview/install → offline-use** flow in existing Agent and Plugins owners; this is the least resource-intensive baseline. In parallel, build the local-author signing/installer verifier path, native Web-origin isolation, draft/consent transaction and real mobile acceptance. After these gates pass, add optional on-device model support where the model and device meet measured quality/thermal/memory budgets; do not make it a dependency of ordinary offline apps. Independent iOS/Android implementations own native adapters. iOS policy blockage must not halt Android/Desktop, shared contract/golden vectors, or documentation and security work.
+
+**T-AI-GENERATE:** With exact-HEAD GitHub Actions evidence, exercise an actual Agent request to generate a multi-file calculator and offline notes mini app with all assets; inspect generated source, exercise safe preview, consent and in-app local signing; restart host and **cold launch in airplane mode** on the target mobile platform. Then request a revision, reject partial/malicious output, perform a user-approved update, verify data preservation and rollback. This covers OMA-AI-01/02/03/04/05/07.
+
+**T-AI-TRUST:** Reject a package with a forged local-author signature, leaked/replayed consent, edited post-approval bytes, imported untrusted source pretending to be locally generated, wrong account, swapped origin or duplicate code identity. Reject attempts to use native Host, shell, high-privilege MCP, Computer, file reads, remote fetch/WebSocket and cross-app storage. Source provenance is attributable but privacy-redacted. This covers OMA-AI-04/05/08/09.
+
+**T-AI-MODEL:** Run cloud-generation+offline-execution separately from true no-network model+generation+execution on an actually eligible device with model already downloaded. Cover unavailable model, model download-needed, unsupported locale/device, thermal/resource limits and safe fallback. **An offline-installed app is NOT proof of offline AI generation.** This covers OMA-AI-06.
+
+**T-AI-POLICY:** Record the current Apple/Google rules at submission time, app moderation/age/index/privacy requirements where applicable, downloaded/local-created script policy, allowed scripting/preview/origin scheme behavior and any Apple prior permission needed. Absent review/signing/device proof = `blocked`; no policy-deemed pass from unit tests. This covers OMA-AI-10.
+
+| Acceptance ID | Required evidence |
+| --- | --- |
+| **AC-11 AI-to-install** | An actual existing Fabushi mobile Agent creates editable source, the app displays a sandboxed preview, the user explicitly approves the exact draft, the regular signed/verified local-author package path installs it under My Mini Apps, and the app launches offline after restart. No second owner. |
+| **AC-12 Fully offline generation (only if claimed)** | A real eligible phone generates source with **no network or cloud inference**, previews, explicitly installs and launches the result with airplane mode enabled. Missing local model must fail honestly without disabling already installed mini apps. |
+| **AC-13 Security and policy** | Local-author and catalog trust are disjoint; no privilege/publisher/consent laundering; offline/resource/cross-app/Host boundaries survive malicious source and model prompt-injection tests; iOS/Android distribution acceptance and privacy/age requirements are documented separately. |
+
+**Compliance at documentation submission (2026-10-11):** OMA-AI-01 through OMA-AI-10, T-AI-GENERATE/TRUST/MODEL/POLICY and AC-11–AC-13 are **blocked for production acceptance**, because this commit does not implement or run the feature. They supplement—not replace—`17 and AC-01–AC-10. Only the design/specification and owner-resolution record is completed.
+
+**Supporting references:** Apple App Review Guidelines ``2.5.2, 4.7–4.7.5, 5.1 — `https://developer.apple.com/app-store/review/guidelines/`; Apple's on-device Foundation Models availability — `https://developer.apple.com/documentation/foundationmodels/systemlanguagemodel`; Android ML Kit on-device GenAI — `https://developers.google.com/ml-kit/genai/prompt/android/get-started`; Android WebViewAssetLoader — `https://developer.android.com/reference/androidx/webkit/WebViewAssetLoader`.
