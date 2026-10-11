@@ -702,7 +702,7 @@
         "scope": "direct-gitlink",
         "mount": "Telegram/ThirdParty/xdg-desktop-portal",
         "path": "doc/fix-rst-dbus.py",
-        "mode": "100644",
+        "mode": "100755",
         "type": "blob",
         "object": "cc7153d20436041ecb4ca61920736665f7f2283e",
         "size": 1994
