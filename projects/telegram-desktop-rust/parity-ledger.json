@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 6672,
+    "unread": 6652,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,11 +13478,11 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Accepted prefix 9,453/16,125; kcoreaddons direct-gitlink is now actually read through all 377 non-directory entries, including its final test/demo tail; unread 6,672; unknown 15,845; omitted 0.",
-    "source_authority_evidence": "Orders 9,445–9,453 exact pinned Git blob reads correct the CI-detected boundary defect after the MIME corpus and close the remaining kcoreaddons tests/*. Next exact source is 9,454 Telegram/ThirdParty/kimageformats::.git-blame-ignore-revs@b34bba3cd8fb4c6785690422f5c46762d60bb7dc. Existing owners remain canonical; source reading closes no unknown.",
-    "current_source_read_through": 9453,
-    "first_unread_order": 9454,
-    "first_unread_path": "Telegram/ThirdParty/kimageformats::.git-blame-ignore-revs"
+    "source_read_reconciliation": "Accepted prefix 9,473/16,125; kimageformats opening build/license/test/ANI range is exact-read; unread 6,652; unknown 15,845; omitted 0.",
+    "source_authority_evidence": "Orders 9,454–9,473 exact pinned text/raw-byte reads cover kimageformats build/license topology and ANI animation contract. Next exact source is 9,474 Telegram/ThirdParty/kimageformats::autotests/long-runs.pic@620a3bb8eb322d06e0468eb641c56bd72b6c6545. Existing owners remain canonical; source reading closes no unknown.",
+    "current_source_read_through": 9473,
+    "first_unread_order": 9474,
+    "first_unread_path": "Telegram/ThirdParty/kimageformats::autotests/long-runs.pic"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 9453,
-    "first_unread_order": 9454,
-    "first_unread_path": "Telegram/ThirdParty/kimageformats::.git-blame-ignore-revs",
+    "read_through": 9473,
+    "first_unread_order": 9474,
+    "first_unread_path": "Telegram/ThirdParty/kimageformats::autotests/long-runs.pic",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {

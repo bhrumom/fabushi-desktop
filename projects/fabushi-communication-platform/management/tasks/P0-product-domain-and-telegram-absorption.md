@@ -1,4 +1,12 @@
-Live TDRP Revision 9 upstream authority (2026-10-11): telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 (root tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6). Root non-directory=6,653; recursive non-directory=16,125; deterministic read-through=9,453; first unread=9,454 Telegram/ThirdParty/kimageformats::.git-blame-ignore-revs@b34bba3cd8fb4c6785690422f5c46762d60bb7dc; unread=6,672; unknown=15,845; omitted=0. Kcoreaddons direct-gitlink source is now exact-read through its component tail; next component is KDE/kimageformats@df82311a1081e576c4ac020204578bb8a81b21ec.
+Live TDRP Revision 9 upstream authority (2026-10-11): telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 (root tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6). Root non-directory=6,653; recursive non-directory=16,125; deterministic read-through=9,473; first unread=9,474 Telegram/ThirdParty/kimageformats::autotests/long-runs.pic@620a3bb8eb322d06e0468eb641c56bd72b6c6545; unread=6,652; unknown=15,845; omitted=0. Kcoreaddons direct-gitlink source is now exact-read through its component tail; next component is KDE/kimageformats@df82311a1081e576c4ac020204578bb8a81b21ec.
+
+### Revision 9 deterministic read-through — kimageformats opening range 9,454–9,473
+
+Orders 9,454–9,473 exact-read the opening range of pinned `KDE/kimageformats@df82311a1081e576c4ac020204578bb8a81b21ec`: repository/build policy, optional codec dependency gates, exact license corpus, declared read-only/read-write image capabilities, format acceptance topology, the ANI binary fixture plus all three frame PNGs, its decoder contract, and the bounded fuzzy image comparator. Binary fixtures were read by exact base64/raw bytes and the PNG frames were visually inspected rather than inferred from filenames.
+
+The ANI contract preserves 32×32 dimensions, Title/Author metadata, four-frame custom sequencing, 166/333 ms delays, end-of-stream behavior and jump/reset semantics. Existing-owner-first keeps attachment/media, Resource, Build/Packaging and Release/NOTICE owners canonical. The current branch separately fixes the shipping local-image fast path so the canonical preview-byte cap is enforced before file decode; that narrow production fix does not mark this broader codec range verified.
+
+All 20 rows remain `mapped-open`, `unknown_closed=false`, `omitted=false`. Accounting is **9,473/16,125 read; 6,652 unread; 15,845 unknown; 0 omitted**. Next is 9,474 `Telegram/ThirdParty/kimageformats::autotests/long-runs.pic@620a3bb8eb322d06e0468eb641c56bd72b6c6545`. Fresh descendant exact-head GitHub Actions are mandatory.
 
 ### Revision 9 deterministic read-through — kcoreaddons test/demo tail 9,445–9,453
 
