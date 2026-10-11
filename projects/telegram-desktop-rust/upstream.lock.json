@@ -282,7 +282,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Source/product/release closure open. Exact read-through 10,092/16,125; first unread 10,093 Telegram/ThirdParty/libfido2::man/es384_pk_new.3; unread 6,033; unknown 15,845; omitted 0. The libfido2 ceremony/device/fuzz/man tranche maps to existing WebAuthn/security, Settings/platform-device and Build/Quality/Release owners. The staged signer now fails closed on nonzero-helper success and missing/non-object credentialJson, but packaged sand-webauthn-signer provenance/co-staging and broader hardware/security-management evidence remain open."
+    "note": "Source/product/release closure open. Exact read-through 10,156/16,125; first unread 10,157 Telegram/ThirdParty/libfido2::regress/es384.c; unread 5,969; unknown 15,845; omitted 0. The libfido2 API/compat/regression tranche maps to existing WebAuthn/security, Host bridge, Settings/platform-device, Secrets and Build/Quality/Release owners. This descendant zeroizes PIN and serialized helper PIN buffers with pinned zeroize 1.9.0, but packaged sand-webauthn-signer producer/co-staging/provenance and broader hardware/security-management evidence remain open."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",
@@ -633,9 +633,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 10092,
-    "first_unread_order": 10093,
-    "first_unread_path": "Telegram/ThirdParty/libfido2::man/es384_pk_new.3",
+    "read_through": 10156,
+    "first_unread_order": 10157,
+    "first_unread_path": "Telegram/ThirdParty/libfido2::regress/es384.c",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {

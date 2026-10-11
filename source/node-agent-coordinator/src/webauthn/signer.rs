@@ -11,6 +11,7 @@ use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
+use zeroize::Zeroizing;
 
 use crate::webauthn::{
     ApprovedWebAuthnConsent, WebAuthnCeremony, WebAuthnSigner, WebAuthnSignerError,
@@ -408,18 +409,47 @@ impl SpawnedWebAuthnSigner {
                         .and_then(|value| value.prompt_id.as_deref())
                         .and_then(|prompt_id| on_pin_request(request, prompt_id))
                         .filter(|pin| !pin.is_empty());
-                    let reply = match pin {
-                        Some(pin) => json!({ "kind": "pin", "pin": pin }),
-                        None => json!({ "kind": "cancel" }),
-                    };
-                    writeln!(stdin, "{reply}")
-                        .and_then(|_| stdin.flush())
-                        .map_err(|error| {
-                            Self::failure(
-                                "helper_io_failed",
-                                format!("could not answer security key helper: {error}"),
-                            )
-                        })
+                    match pin {
+                        Some(pin) => {
+                            #[derive(Serialize)]
+                            struct PinReply<'a> {
+                                kind: &'static str,
+                                pin: &'a str,
+                            }
+
+                            let pin = Zeroizing::new(pin);
+                            let reply = serde_json::to_vec(&PinReply {
+                                kind: "pin",
+                                pin: pin.as_str(),
+                            })
+                            .map(Zeroizing::new)
+                            .map_err(|error| {
+                                Self::failure(
+                                    "helper_io_failed",
+                                    format!("could not serialize security key PIN reply: {error}"),
+                                )
+                            })?;
+                            stdin
+                                .write_all(reply.as_slice())
+                                .and_then(|_| stdin.write_all(b"\n"))
+                                .and_then(|_| stdin.flush())
+                                .map_err(|error| {
+                                    Self::failure(
+                                        "helper_io_failed",
+                                        format!("could not answer security key helper: {error}"),
+                                    )
+                                })
+                        }
+                        None => stdin
+                            .write_all(b"{\"kind\":\"cancel\"}\n")
+                            .and_then(|_| stdin.flush())
+                            .map_err(|error| {
+                                Self::failure(
+                                    "helper_io_failed",
+                                    format!("could not answer security key helper: {error}"),
+                                )
+                            }),
+                    }
                 }
             }
         };

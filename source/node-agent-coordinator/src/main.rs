@@ -656,7 +656,10 @@ fn ensure_webauthn_runtime_started(state: &Arc<CoordinatorState>) {
             }
             control_command(&state, "requestWebAuthnPin", args)
                 .ok()
-                .and_then(|value| value.get("pin").and_then(Value::as_str).map(str::to_string))
+                .and_then(|mut value| match value.get_mut("pin").map(Value::take) {
+                    Some(Value::String(pin)) => Some(pin),
+                    _ => None,
+                })
                 .filter(|pin| !pin.is_empty())
         }),
         finish_consent: Arc::new(move || {

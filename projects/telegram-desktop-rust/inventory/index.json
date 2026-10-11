@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 6033,
+    "unread_minimum": 5969,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through deterministic order 10,092; unread 6,033; unknown 15,845; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition through deterministic order 10,156; unread 5,969; unknown 15,845; omitted 0."
   },
   "latest_recursive_evidence": {
     "run_id": 38118212864,
@@ -40,7 +40,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live baseline identity is accepted for telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 / tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6, matching upstream.lock upstream.accepted=true. This does not imply source/product/release closure: exact read-through is 10,092; unread_minimum is 6,033; unknown remains 15,845; omitted remains 0; acceptance.accepted and baseline_ready remain false until their gates close.",
+  "note": "Live baseline identity is accepted for telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 / tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6, matching upstream.lock upstream.accepted=true. This does not imply source/product/release closure: exact read-through is 10,156; unread_minimum is 5,969; unknown remains 15,845; omitted remains 0; acceptance.accepted and baseline_ready remain false until their gates close.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -70,9 +70,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 10092,
-    "first_unread_order": 10093,
-    "first_unread_path": "Telegram/ThirdParty/libfido2::man/es384_pk_new.3",
+    "read_through": 10156,
+    "first_unread_order": 10157,
+    "first_unread_path": "Telegram/ThirdParty/libfido2::regress/es384.c",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }

@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 6033,
+    "unread": 5969,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,11 +13478,11 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Accepted prefix 10,092/16,125; current exact-head source artifact materialized libfido2 ceremony/device/fuzz/man authority; unread 6,033; unknown 15,845; omitted 0.",
-    "source_authority_evidence": "Orders 10,029-10,092 exact-read from 53166126816c059a99298b28d4b3d8c2ca204910 run 38119139308/job 114410128913 artifact 11693708963 (sha256:29a6feb40f3cbaa28f932d822bab4242821378bba701bdfbba1fb18f26a35542). Applicable responsibilities include cross-platform build/security matrices; credential/assertion verification; PIN/UV, resident credential, largeBlob, biometric, device-selection and reset lifecycle; adversarial fuzz/fault injection; and API/key-lifetime conformance. Existing owners remain canonical and rows stay mapped-open pending production/release evidence.",
-    "current_source_read_through": 10092,
-    "first_unread_order": 10093,
-    "first_unread_path": "Telegram/ThirdParty/libfido2::man/es384_pk_new.3"
+    "source_read_reconciliation": "Accepted prefix 10,156/16,125; predecessor exact-head source artifact materialized libfido2 API/compat/regression authority; unread 5,969; unknown 15,845; omitted 0.",
+    "source_authority_evidence": "Orders 10,093-10,156 exact-read from b8a52c954b9ea63e9f64b31d68fc537e71e1f2bf run 38120045447/job 114412753321 artifact 11695420570 (sha256:f08d296699a1041550c1fd1421f78b47c04f53f5063eab901369157f37275ab5). Responsibilities include strict assertion/credential verification, device timeout/cancel/PIN/PUAT/biometric/largeBlob lifecycle, secret-memory hygiene/constant-time comparison and adversarial regression behavior. Existing owners remain canonical; PIN zeroization is implemented in this descendant while packaged helper/hardware release closure remains open.",
+    "current_source_read_through": 10156,
+    "first_unread_order": 10157,
+    "first_unread_path": "Telegram/ThirdParty/libfido2::regress/es384.c"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 10092,
-    "first_unread_order": 10093,
-    "first_unread_path": "Telegram/ThirdParty/libfido2::man/es384_pk_new.3",
+    "read_through": 10156,
+    "first_unread_order": 10157,
+    "first_unread_path": "Telegram/ThirdParty/libfido2::regress/es384.c",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
