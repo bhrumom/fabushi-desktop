@@ -223,7 +223,7 @@ For the applicable desktop interaction responsibility that is already provided b
 
 - activate only for an editable context with a non-empty misspelled word;
 - treat Electron/Chromium as the sole spelling-candidate source; Fabushi must not generate, rank or persist a second dictionary truth;
-- trim invalid/empty candidates, preserve platform order, remove duplicates and cap the visible candidate set at five;
+- trim invalid/empty candidates, reject a candidate that is exactly the normalized misspelled word itself, preserve platform order, remove duplicates and cap the visible candidate set at five;
 - invoke `WebContents.replaceMisspelling(candidate)` for the selected native suggestion;
 - remain additive to the existing canonical Composer/TipTap `spellcheck=true` surface and must not create a Telegram/Hunspell runtime, provider, sidecar or second editor owner;
 - fail closed when no valid native suggestion is available: no fabricated correction may be shown.
