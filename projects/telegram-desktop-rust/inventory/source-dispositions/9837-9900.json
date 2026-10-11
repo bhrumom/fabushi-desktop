@@ -1,0 +1,1809 @@
+{
+  "format_version": 1,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+    "tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6"
+  },
+  "range": {
+    "first_order": 9837,
+    "last_order": 9900,
+    "entries": 64
+  },
+  "rows": [
+    {
+      "recursive_order": 9837,
+      "source_path": "Telegram/ThirdParty/libcbor::.gitmodules",
+      "source_blob_sha": "b1f6f9c259a83355bd23576a06702fd1d8541d44",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": ".gitmodules",
+        "object": "b1f6f9c259a83355bd23576a06702fd1d8541d44",
+        "mode": "100644",
+        "type": "blob",
+        "size": 99
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor nested-source declaration",
+      "source_symbols": [
+        "source:.gitmodules"
+      ],
+      "responsibility": "Declares the documentation-theme nested gitlink; recursive source provenance must preserve exact identity while runtime behavior remains with existing authentication owners.",
+      "fabushi_canonical_owner": "Canonical Build/Quality/Release provenance for the existing WebAuthn security boundary",
+      "fabushi_target": "Preserve recursive dependency provenance and license/build evidence only; no documentation-theme runtime owner.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9838,
+      "source_path": "Telegram/ThirdParty/libcbor::.readthedocs.yaml",
+      "source_blob_sha": "f2514ffae11312e5097b5567e1341383e1c6d422",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": ".readthedocs.yaml",
+        "object": "f2514ffae11312e5097b5567e1341383e1c6d422",
+        "mode": "100644",
+        "type": "blob",
+        "size": 527
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor documentation/quality tooling",
+      "source_symbols": [
+        "source:.readthedocs.yaml"
+      ],
+      "responsibility": "Documentation, formatting, coverage or contributor tooling records maintainability/verification expectations; no separate product runtime is created.",
+      "fabushi_canonical_owner": "Canonical Build/Quality/Release provenance for the existing WebAuthn security boundary",
+      "fabushi_target": "Map to canonical Build/Quality/Release evidence; security semantics remain with existing WebAuthn/Account Auth boundaries.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9839,
+      "source_path": "Telegram/ThirdParty/libcbor::Bazel.md",
+      "source_blob_sha": "9fa2081f58fc1b4b47b811a46f11f17191e4849d",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "Bazel.md",
+        "object": "9fa2081f58fc1b4b47b811a46f11f17191e4849d",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2946
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor build/dependency composition",
+      "source_symbols": [
+        "source:Bazel.md"
+      ],
+      "responsibility": "Build/configuration input defines version/options, portability and CMake/Bazel composition for the shipping-reachable CBOR dependency.",
+      "fabushi_canonical_owner": "Canonical Build/Quality/Release provenance for the existing WebAuthn security boundary",
+      "fabushi_target": "Keep source-neutral build/provenance constraints and exact dependency evidence; no libcbor runtime owner in Fabushi.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9840,
+      "source_path": "Telegram/ThirdParty/libcbor::CHANGELOG.md",
+      "source_blob_sha": "3c331f9266ab8cdc792767b53d86c8b3b1f131c6",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "CHANGELOG.md",
+        "object": "3c331f9266ab8cdc792767b53d86c8b3b1f131c6",
+        "mode": "100644",
+        "type": "blob",
+        "size": 12545
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor security/change history",
+      "source_symbols": [
+        "source:CHANGELOG.md"
+      ],
+      "responsibility": "Records overflow-safe decode sizing, allocator-failure cleanup, bounded parser stack, exact incremental required-byte semantics, reference-count correctness, UTF-8 behavior, fuzzing and memory-corruption fixes.",
+      "fabushi_canonical_owner": "Fabushi Node Agent Coordinator WebAuthn provider/signing boundary + canonical Account/Auth Passkeys + Build/Quality/Release",
+      "fabushi_target": "Extend existing source-neutral authentication/security owners with bounded fail-closed CBOR/CTAP2 semantics and packaged-helper evidence; do not introduce a libcbor/Telegram runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9841,
+      "source_path": "Telegram/ThirdParty/libcbor::CMakeLists.txt",
+      "source_blob_sha": "16b9f0875d33755e1c05265657920f864ccdbbd1",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "CMakeLists.txt",
+        "object": "16b9f0875d33755e1c05265657920f864ccdbbd1",
+        "mode": "100644",
+        "type": "blob",
+        "size": 7768
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor build/dependency composition",
+      "source_symbols": [
+        "source:CMakeLists.txt"
+      ],
+      "responsibility": "Build/configuration input defines version/options, portability and CMake/Bazel composition for the shipping-reachable CBOR dependency.",
+      "fabushi_canonical_owner": "Canonical Build/Quality/Release provenance for the existing WebAuthn security boundary",
+      "fabushi_target": "Keep source-neutral build/provenance constraints and exact dependency evidence; no libcbor runtime owner in Fabushi.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9842,
+      "source_path": "Telegram/ThirdParty/libcbor::CMakeModules/FindCJSON.cmake",
+      "source_blob_sha": "e0629057def7dd272d95863d1b84b47cff9edfe6",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "CMakeModules/FindCJSON.cmake",
+        "object": "e0629057def7dd272d95863d1b84b47cff9edfe6",
+        "mode": "100644",
+        "type": "blob",
+        "size": 223
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor build/dependency composition",
+      "source_symbols": [
+        "source:CMakeModules/FindCJSON.cmake"
+      ],
+      "responsibility": "Build/configuration input defines version/options, portability and CMake/Bazel composition for the shipping-reachable CBOR dependency.",
+      "fabushi_canonical_owner": "Canonical Build/Quality/Release provenance for the existing WebAuthn security boundary",
+      "fabushi_target": "Keep source-neutral build/provenance constraints and exact dependency evidence; no libcbor runtime owner in Fabushi.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9843,
+      "source_path": "Telegram/ThirdParty/libcbor::CMakeModules/FindCMocka.cmake",
+      "source_blob_sha": "29e57ae87f1bef0c5e4c137feed0b51227a0f633",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "CMakeModules/FindCMocka.cmake",
+        "object": "29e57ae87f1bef0c5e4c137feed0b51227a0f633",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1784
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor build/dependency composition",
+      "source_symbols": [
+        "source:CMakeModules/FindCMocka.cmake"
+      ],
+      "responsibility": "Build/configuration input defines version/options, portability and CMake/Bazel composition for the shipping-reachable CBOR dependency.",
+      "fabushi_canonical_owner": "Canonical Build/Quality/Release provenance for the existing WebAuthn security boundary",
+      "fabushi_target": "Keep source-neutral build/provenance constraints and exact dependency evidence; no libcbor runtime owner in Fabushi.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9844,
+      "source_path": "Telegram/ThirdParty/libcbor::CMakeModules/JoinPaths.cmake",
+      "source_blob_sha": "c68d91b84dbc7238d8202cd55c6022e8c94fac3d",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "CMakeModules/JoinPaths.cmake",
+        "object": "c68d91b84dbc7238d8202cd55c6022e8c94fac3d",
+        "mode": "100644",
+        "type": "blob",
+        "size": 817
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor build/dependency composition",
+      "source_symbols": [
+        "source:CMakeModules/JoinPaths.cmake"
+      ],
+      "responsibility": "Build/configuration input defines version/options, portability and CMake/Bazel composition for the shipping-reachable CBOR dependency.",
+      "fabushi_canonical_owner": "Canonical Build/Quality/Release provenance for the existing WebAuthn security boundary",
+      "fabushi_target": "Keep source-neutral build/provenance constraints and exact dependency evidence; no libcbor runtime owner in Fabushi.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9845,
+      "source_path": "Telegram/ThirdParty/libcbor::CMakeModules/LibFindMacros.cmake",
+      "source_blob_sha": "baea8c2be928ea7157891fcadc5ba871392a4dd5",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "CMakeModules/LibFindMacros.cmake",
+        "object": "baea8c2be928ea7157891fcadc5ba871392a4dd5",
+        "mode": "100644",
+        "type": "blob",
+        "size": 5395
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor build/dependency composition",
+      "source_symbols": [
+        "source:CMakeModules/LibFindMacros.cmake"
+      ],
+      "responsibility": "Build/configuration input defines version/options, portability and CMake/Bazel composition for the shipping-reachable CBOR dependency.",
+      "fabushi_canonical_owner": "Canonical Build/Quality/Release provenance for the existing WebAuthn security boundary",
+      "fabushi_target": "Keep source-neutral build/provenance constraints and exact dependency evidence; no libcbor runtime owner in Fabushi.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9846,
+      "source_path": "Telegram/ThirdParty/libcbor::CONTRIBUTING.md",
+      "source_blob_sha": "9bd42a06b6dced09c9abc8713944361498dd7ea4",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "CONTRIBUTING.md",
+        "object": "9bd42a06b6dced09c9abc8713944361498dd7ea4",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1979
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor documentation/quality tooling",
+      "source_symbols": [
+        "source:CONTRIBUTING.md"
+      ],
+      "responsibility": "Documentation, formatting, coverage or contributor tooling records maintainability/verification expectations; no separate product runtime is created.",
+      "fabushi_canonical_owner": "Canonical Build/Quality/Release provenance for the existing WebAuthn security boundary",
+      "fabushi_target": "Map to canonical Build/Quality/Release evidence; security semantics remain with existing WebAuthn/Account Auth boundaries.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9847,
+      "source_path": "Telegram/ThirdParty/libcbor::Doxyfile",
+      "source_blob_sha": "67df45cfbb943e2da58520fc8c41e9dfee0f7b3e",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "Doxyfile",
+        "object": "67df45cfbb943e2da58520fc8c41e9dfee0f7b3e",
+        "mode": "100644",
+        "type": "blob",
+        "size": 119890
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor documentation/quality tooling",
+      "source_symbols": [
+        "source:Doxyfile"
+      ],
+      "responsibility": "Documentation, formatting, coverage or contributor tooling records maintainability/verification expectations; no separate product runtime is created.",
+      "fabushi_canonical_owner": "Canonical Build/Quality/Release provenance for the existing WebAuthn security boundary",
+      "fabushi_target": "Map to canonical Build/Quality/Release evidence; security semantics remain with existing WebAuthn/Account Auth boundaries.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9848,
+      "source_path": "Telegram/ThirdParty/libcbor::LICENSE.md",
+      "source_blob_sha": "49e9b5390364c71a2619d8059b7e1511b8df1e84",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "LICENSE.md",
+        "object": "49e9b5390364c71a2619d8059b7e1511b8df1e84",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1075
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor license authority",
+      "source_symbols": [
+        "source:LICENSE.md"
+      ],
+      "responsibility": "MIT license provenance for the shipping-reachable CBOR dependency must remain in canonical release/NOTICE accounting.",
+      "fabushi_canonical_owner": "Canonical License/NOTICE + Build/Release provenance",
+      "fabushi_target": "Record exact license provenance; no vendored runtime is introduced by this row.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9849,
+      "source_path": "Telegram/ThirdParty/libcbor::README.md",
+      "source_blob_sha": "ea54bed9437bab93599979995d4632d98dcd3c73",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "README.md",
+        "object": "ea54bed9437bab93599979995d4632d98dcd3c73",
+        "mode": "100644",
+        "type": "blob",
+        "size": 4132
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor public capability contract",
+      "source_symbols": [
+        "source:README.md"
+      ],
+      "responsibility": "Defines RFC 8949 CBOR parsing/generation, streaming/incremental processing, UTF-8, memory ownership and no-global-state behavior informing the shipping WebAuthn/CTAP2 boundary.",
+      "fabushi_canonical_owner": "Fabushi Node Agent Coordinator WebAuthn provider/signing boundary + canonical Account/Auth Passkeys + Build/Quality/Release",
+      "fabushi_target": "Extend existing source-neutral authentication/security owners with bounded fail-closed CBOR/CTAP2 semantics and packaged-helper evidence; do not introduce a libcbor/Telegram runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9850,
+      "source_path": "Telegram/ThirdParty/libcbor::clang-format.sh",
+      "source_blob_sha": "311ed4225bc887196ca6297a6e8f169007b6bf44",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "clang-format.sh",
+        "object": "311ed4225bc887196ca6297a6e8f169007b6bf44",
+        "mode": "100755",
+        "type": "blob",
+        "size": 253
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor documentation/quality tooling",
+      "source_symbols": [
+        "source:clang-format.sh"
+      ],
+      "responsibility": "Documentation, formatting, coverage or contributor tooling records maintainability/verification expectations; no separate product runtime is created.",
+      "fabushi_canonical_owner": "Canonical Build/Quality/Release provenance for the existing WebAuthn security boundary",
+      "fabushi_target": "Map to canonical Build/Quality/Release evidence; security semantics remain with existing WebAuthn/Account Auth boundaries.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9851,
+      "source_path": "Telegram/ThirdParty/libcbor::codecov.yml",
+      "source_blob_sha": "ede10554c3f546adc88547617b5d763c43b312f2",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "codecov.yml",
+        "object": "ede10554c3f546adc88547617b5d763c43b312f2",
+        "mode": "100644",
+        "type": "blob",
+        "size": 183
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor documentation/quality tooling",
+      "source_symbols": [
+        "source:codecov.yml"
+      ],
+      "responsibility": "Documentation, formatting, coverage or contributor tooling records maintainability/verification expectations; no separate product runtime is created.",
+      "fabushi_canonical_owner": "Canonical Build/Quality/Release provenance for the existing WebAuthn security boundary",
+      "fabushi_target": "Map to canonical Build/Quality/Release evidence; security semantics remain with existing WebAuthn/Account Auth boundaries.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9852,
+      "source_path": "Telegram/ThirdParty/libcbor::doc/Makefile",
+      "source_blob_sha": "97a6bdc99543f0da28a59a373bb6be143e13071f",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "doc/Makefile",
+        "object": "97a6bdc99543f0da28a59a373bb6be143e13071f",
+        "mode": "100644",
+        "type": "blob",
+        "size": 6851
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor documentation/quality tooling",
+      "source_symbols": [
+        "source:doc/Makefile"
+      ],
+      "responsibility": "Documentation, formatting, coverage or contributor tooling records maintainability/verification expectations; no separate product runtime is created.",
+      "fabushi_canonical_owner": "Canonical Build/Quality/Release provenance for the existing WebAuthn security boundary",
+      "fabushi_target": "Map to canonical Build/Quality/Release evidence; security semantics remain with existing WebAuthn/Account Auth boundaries.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9853,
+      "source_path": "Telegram/ThirdParty/libcbor::doc/doxy_frontpage.md",
+      "source_blob_sha": "30980c4872d434319d8a620b1d488ab188dcb16a",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "doc/doxy_frontpage.md",
+        "object": "30980c4872d434319d8a620b1d488ab188dcb16a",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1065
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor documentation/quality tooling",
+      "source_symbols": [
+        "source:doc/doxy_frontpage.md"
+      ],
+      "responsibility": "Documentation, formatting, coverage or contributor tooling records maintainability/verification expectations; no separate product runtime is created.",
+      "fabushi_canonical_owner": "Canonical Build/Quality/Release provenance for the existing WebAuthn security boundary",
+      "fabushi_target": "Map to canonical Build/Quality/Release evidence; security semantics remain with existing WebAuthn/Account Auth boundaries.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9854,
+      "source_path": "Telegram/ThirdParty/libcbor::doc/make.bat",
+      "source_blob_sha": "b3647968e8a53555cb23d43fdfe9c76c59eb6c9d",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "doc/make.bat",
+        "object": "b3647968e8a53555cb23d43fdfe9c76c59eb6c9d",
+        "mode": "100644",
+        "type": "blob",
+        "size": 6712
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor documentation/quality tooling",
+      "source_symbols": [
+        "source:doc/make.bat"
+      ],
+      "responsibility": "Documentation, formatting, coverage or contributor tooling records maintainability/verification expectations; no separate product runtime is created.",
+      "fabushi_canonical_owner": "Canonical Build/Quality/Release provenance for the existing WebAuthn security boundary",
+      "fabushi_target": "Map to canonical Build/Quality/Release evidence; security semantics remain with existing WebAuthn/Account Auth boundaries.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9855,
+      "source_path": "Telegram/ThirdParty/libcbor::doc/source/api.rst",
+      "source_blob_sha": "75b0541cb94eee37e7dc2dc2f372fbce96e68827",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "doc/source/api.rst",
+        "object": "75b0541cb94eee37e7dc2dc2f372fbce96e68827",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2075
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor documentation/quality tooling",
+      "source_symbols": [
+        "source:doc/source/api.rst"
+      ],
+      "responsibility": "Documentation, formatting, coverage or contributor tooling records maintainability/verification expectations; no separate product runtime is created.",
+      "fabushi_canonical_owner": "Canonical Build/Quality/Release provenance for the existing WebAuthn security boundary",
+      "fabushi_target": "Map to canonical Build/Quality/Release evidence; security semantics remain with existing WebAuthn/Account Auth boundaries.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9856,
+      "source_path": "Telegram/ThirdParty/libcbor::doc/source/api/decoding.rst",
+      "source_blob_sha": "e3a41f467a1554e4310f63592299adff8ea01f79",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "doc/source/api/decoding.rst",
+        "object": "e3a41f467a1554e4310f63592299adff8ea01f79",
+        "mode": "100644",
+        "type": "blob",
+        "size": 4695
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor API/behavior documentation",
+      "source_symbols": [
+        "source:doc/source/api/decoding.rst"
+      ],
+      "responsibility": "Defines decode/encode, ownership, item types, incremental streaming, builder-stack, conformance and test semantics; applicable auth-path behavior must remain bounded and fail closed.",
+      "fabushi_canonical_owner": "Fabushi Node Agent Coordinator WebAuthn provider/signing boundary + canonical Account/Auth Passkeys + Build/Quality/Release",
+      "fabushi_target": "Extend existing source-neutral authentication/security owners with bounded fail-closed CBOR/CTAP2 semantics and packaged-helper evidence; do not introduce a libcbor/Telegram runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9857,
+      "source_path": "Telegram/ThirdParty/libcbor::doc/source/api/encoding.rst",
+      "source_blob_sha": "40b47a0cd3db98b1741bcd869362898510e928ee",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "doc/source/api/encoding.rst",
+        "object": "40b47a0cd3db98b1741bcd869362898510e928ee",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1033
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor API/behavior documentation",
+      "source_symbols": [
+        "source:doc/source/api/encoding.rst"
+      ],
+      "responsibility": "Defines decode/encode, ownership, item types, incremental streaming, builder-stack, conformance and test semantics; applicable auth-path behavior must remain bounded and fail closed.",
+      "fabushi_canonical_owner": "Fabushi Node Agent Coordinator WebAuthn provider/signing boundary + canonical Account/Auth Passkeys + Build/Quality/Release",
+      "fabushi_target": "Extend existing source-neutral authentication/security owners with bounded fail-closed CBOR/CTAP2 semantics and packaged-helper evidence; do not introduce a libcbor/Telegram runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9858,
+      "source_path": "Telegram/ThirdParty/libcbor::doc/source/api/item_reference_counting.rst",
+      "source_blob_sha": "70075cb67e5b85fe23a525c2e73639bf3f95d2f6",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "doc/source/api/item_reference_counting.rst",
+        "object": "70075cb67e5b85fe23a525c2e73639bf3f95d2f6",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1693
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor API/behavior documentation",
+      "source_symbols": [
+        "source:doc/source/api/item_reference_counting.rst"
+      ],
+      "responsibility": "Defines decode/encode, ownership, item types, incremental streaming, builder-stack, conformance and test semantics; applicable auth-path behavior must remain bounded and fail closed.",
+      "fabushi_canonical_owner": "Fabushi Node Agent Coordinator WebAuthn provider/signing boundary + canonical Account/Auth Passkeys + Build/Quality/Release",
+      "fabushi_target": "Extend existing source-neutral authentication/security owners with bounded fail-closed CBOR/CTAP2 semantics and packaged-helper evidence; do not introduce a libcbor/Telegram runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9859,
+      "source_path": "Telegram/ThirdParty/libcbor::doc/source/api/item_types.rst",
+      "source_blob_sha": "1051b97ded7b31253f00b6699f2da6123542ef2f",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "doc/source/api/item_types.rst",
+        "object": "1051b97ded7b31253f00b6699f2da6123542ef2f",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1356
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor API/behavior documentation",
+      "source_symbols": [
+        "source:doc/source/api/item_types.rst"
+      ],
+      "responsibility": "Defines decode/encode, ownership, item types, incremental streaming, builder-stack, conformance and test semantics; applicable auth-path behavior must remain bounded and fail closed.",
+      "fabushi_canonical_owner": "Fabushi Node Agent Coordinator WebAuthn provider/signing boundary + canonical Account/Auth Passkeys + Build/Quality/Release",
+      "fabushi_target": "Extend existing source-neutral authentication/security owners with bounded fail-closed CBOR/CTAP2 semantics and packaged-helper evidence; do not introduce a libcbor/Telegram runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9860,
+      "source_path": "Telegram/ThirdParty/libcbor::doc/source/api/streaming_decoding.rst",
+      "source_blob_sha": "d7cea38712a05b72c26e8fd2262e72fd9eba25f4",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "doc/source/api/streaming_decoding.rst",
+        "object": "d7cea38712a05b72c26e8fd2262e72fd9eba25f4",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1171
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor API/behavior documentation",
+      "source_symbols": [
+        "source:doc/source/api/streaming_decoding.rst"
+      ],
+      "responsibility": "Defines decode/encode, ownership, item types, incremental streaming, builder-stack, conformance and test semantics; applicable auth-path behavior must remain bounded and fail closed.",
+      "fabushi_canonical_owner": "Fabushi Node Agent Coordinator WebAuthn provider/signing boundary + canonical Account/Auth Passkeys + Build/Quality/Release",
+      "fabushi_target": "Extend existing source-neutral authentication/security owners with bounded fail-closed CBOR/CTAP2 semantics and packaged-helper evidence; do not introduce a libcbor/Telegram runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9861,
+      "source_path": "Telegram/ThirdParty/libcbor::doc/source/api/streaming_encoding.rst",
+      "source_blob_sha": "25100da9b5e06762b5b983445c046f8dc43bebed",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "doc/source/api/streaming_encoding.rst",
+        "object": "25100da9b5e06762b5b983445c046f8dc43bebed",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1916
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor API/behavior documentation",
+      "source_symbols": [
+        "source:doc/source/api/streaming_encoding.rst"
+      ],
+      "responsibility": "Defines decode/encode, ownership, item types, incremental streaming, builder-stack, conformance and test semantics; applicable auth-path behavior must remain bounded and fail closed.",
+      "fabushi_canonical_owner": "Fabushi Node Agent Coordinator WebAuthn provider/signing boundary + canonical Account/Auth Passkeys + Build/Quality/Release",
+      "fabushi_target": "Extend existing source-neutral authentication/security owners with bounded fail-closed CBOR/CTAP2 semantics and packaged-helper evidence; do not introduce a libcbor/Telegram runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9862,
+      "source_path": "Telegram/ThirdParty/libcbor::doc/source/api/type_0_1.rst",
+      "source_blob_sha": "4fc851dd1ed16284a2eda86073ea46fb8076807e",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "doc/source/api/type_0_1.rst",
+        "object": "4fc851dd1ed16284a2eda86073ea46fb8076807e",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3434
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor API/behavior documentation",
+      "source_symbols": [
+        "source:doc/source/api/type_0_1.rst"
+      ],
+      "responsibility": "Defines decode/encode, ownership, item types, incremental streaming, builder-stack, conformance and test semantics; applicable auth-path behavior must remain bounded and fail closed.",
+      "fabushi_canonical_owner": "Fabushi Node Agent Coordinator WebAuthn provider/signing boundary + canonical Account/Auth Passkeys + Build/Quality/Release",
+      "fabushi_target": "Extend existing source-neutral authentication/security owners with bounded fail-closed CBOR/CTAP2 semantics and packaged-helper evidence; do not introduce a libcbor/Telegram runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9863,
+      "source_path": "Telegram/ThirdParty/libcbor::doc/source/api/type_2.rst",
+      "source_blob_sha": "ff9369a90d67cc69117a5db7250978efe837a209",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "doc/source/api/type_2.rst",
+        "object": "ff9369a90d67cc69117a5db7250978efe837a209",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2299
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor API/behavior documentation",
+      "source_symbols": [
+        "source:doc/source/api/type_2.rst"
+      ],
+      "responsibility": "Defines decode/encode, ownership, item types, incremental streaming, builder-stack, conformance and test semantics; applicable auth-path behavior must remain bounded and fail closed.",
+      "fabushi_canonical_owner": "Fabushi Node Agent Coordinator WebAuthn provider/signing boundary + canonical Account/Auth Passkeys + Build/Quality/Release",
+      "fabushi_target": "Extend existing source-neutral authentication/security owners with bounded fail-closed CBOR/CTAP2 semantics and packaged-helper evidence; do not introduce a libcbor/Telegram runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9864,
+      "source_path": "Telegram/ThirdParty/libcbor::doc/source/api/type_3.rst",
+      "source_blob_sha": "be06fc176566533ccfab199f26094859dc3c6e27",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "doc/source/api/type_3.rst",
+        "object": "be06fc176566533ccfab199f26094859dc3c6e27",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1728
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor API/behavior documentation",
+      "source_symbols": [
+        "source:doc/source/api/type_3.rst"
+      ],
+      "responsibility": "Defines decode/encode, ownership, item types, incremental streaming, builder-stack, conformance and test semantics; applicable auth-path behavior must remain bounded and fail closed.",
+      "fabushi_canonical_owner": "Fabushi Node Agent Coordinator WebAuthn provider/signing boundary + canonical Account/Auth Passkeys + Build/Quality/Release",
+      "fabushi_target": "Extend existing source-neutral authentication/security owners with bounded fail-closed CBOR/CTAP2 semantics and packaged-helper evidence; do not introduce a libcbor/Telegram runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9865,
+      "source_path": "Telegram/ThirdParty/libcbor::doc/source/api/type_4.rst",
+      "source_blob_sha": "a76202f4a0fdfa5a77b15e42740a5e7ed25e8f63",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "doc/source/api/type_4.rst",
+        "object": "a76202f4a0fdfa5a77b15e42740a5e7ed25e8f63",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2308
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor API/behavior documentation",
+      "source_symbols": [
+        "source:doc/source/api/type_4.rst"
+      ],
+      "responsibility": "Defines decode/encode, ownership, item types, incremental streaming, builder-stack, conformance and test semantics; applicable auth-path behavior must remain bounded and fail closed.",
+      "fabushi_canonical_owner": "Fabushi Node Agent Coordinator WebAuthn provider/signing boundary + canonical Account/Auth Passkeys + Build/Quality/Release",
+      "fabushi_target": "Extend existing source-neutral authentication/security owners with bounded fail-closed CBOR/CTAP2 semantics and packaged-helper evidence; do not introduce a libcbor/Telegram runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9866,
+      "source_path": "Telegram/ThirdParty/libcbor::doc/source/api/type_5.rst",
+      "source_blob_sha": "7f7be273aba93af98e9d54c591994fc89d51f768",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "doc/source/api/type_5.rst",
+        "object": "7f7be273aba93af98e9d54c591994fc89d51f768",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2270
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor API/behavior documentation",
+      "source_symbols": [
+        "source:doc/source/api/type_5.rst"
+      ],
+      "responsibility": "Defines decode/encode, ownership, item types, incremental streaming, builder-stack, conformance and test semantics; applicable auth-path behavior must remain bounded and fail closed.",
+      "fabushi_canonical_owner": "Fabushi Node Agent Coordinator WebAuthn provider/signing boundary + canonical Account/Auth Passkeys + Build/Quality/Release",
+      "fabushi_target": "Extend existing source-neutral authentication/security owners with bounded fail-closed CBOR/CTAP2 semantics and packaged-helper evidence; do not introduce a libcbor/Telegram runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9867,
+      "source_path": "Telegram/ThirdParty/libcbor::doc/source/api/type_6.rst",
+      "source_blob_sha": "e98457ceae2a18ae4e9830ae1b5e3533e85aadce",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "doc/source/api/type_6.rst",
+        "object": "e98457ceae2a18ae4e9830ae1b5e3533e85aadce",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1049
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor API/behavior documentation",
+      "source_symbols": [
+        "source:doc/source/api/type_6.rst"
+      ],
+      "responsibility": "Defines decode/encode, ownership, item types, incremental streaming, builder-stack, conformance and test semantics; applicable auth-path behavior must remain bounded and fail closed.",
+      "fabushi_canonical_owner": "Fabushi Node Agent Coordinator WebAuthn provider/signing boundary + canonical Account/Auth Passkeys + Build/Quality/Release",
+      "fabushi_target": "Extend existing source-neutral authentication/security owners with bounded fail-closed CBOR/CTAP2 semantics and packaged-helper evidence; do not introduce a libcbor/Telegram runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9868,
+      "source_path": "Telegram/ThirdParty/libcbor::doc/source/api/type_7.rst",
+      "source_blob_sha": "b105402a08b2fbc3f39939631856b33b237f2360",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "doc/source/api/type_7.rst",
+        "object": "b105402a08b2fbc3f39939631856b33b237f2360",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2418
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor API/behavior documentation",
+      "source_symbols": [
+        "source:doc/source/api/type_7.rst"
+      ],
+      "responsibility": "Defines decode/encode, ownership, item types, incremental streaming, builder-stack, conformance and test semantics; applicable auth-path behavior must remain bounded and fail closed.",
+      "fabushi_canonical_owner": "Fabushi Node Agent Coordinator WebAuthn provider/signing boundary + canonical Account/Auth Passkeys + Build/Quality/Release",
+      "fabushi_target": "Extend existing source-neutral authentication/security owners with bounded fail-closed CBOR/CTAP2 semantics and packaged-helper evidence; do not introduce a libcbor/Telegram runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9869,
+      "source_path": "Telegram/ThirdParty/libcbor::doc/source/changelog.rst",
+      "source_blob_sha": "89e7008afab23b1a33acbb0af5573d8a164cf015",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "doc/source/changelog.rst",
+        "object": "89e7008afab23b1a33acbb0af5573d8a164cf015",
+        "mode": "100644",
+        "type": "blob",
+        "size": 58
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor documentation/quality tooling",
+      "source_symbols": [
+        "source:doc/source/changelog.rst"
+      ],
+      "responsibility": "Documentation, formatting, coverage or contributor tooling records maintainability/verification expectations; no separate product runtime is created.",
+      "fabushi_canonical_owner": "Canonical Build/Quality/Release provenance for the existing WebAuthn security boundary",
+      "fabushi_target": "Map to canonical Build/Quality/Release evidence; security semantics remain with existing WebAuthn/Account Auth boundaries.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9870,
+      "source_path": "Telegram/ThirdParty/libcbor::doc/source/conf.py",
+      "source_blob_sha": "0eee7103bb5ae022da54c56d551740cf69ed6eb2",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "doc/source/conf.py",
+        "object": "0eee7103bb5ae022da54c56d551740cf69ed6eb2",
+        "mode": "100644",
+        "type": "blob",
+        "size": 8948
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor documentation/quality tooling",
+      "source_symbols": [
+        "source:doc/source/conf.py"
+      ],
+      "responsibility": "Documentation, formatting, coverage or contributor tooling records maintainability/verification expectations; no separate product runtime is created.",
+      "fabushi_canonical_owner": "Canonical Build/Quality/Release provenance for the existing WebAuthn security boundary",
+      "fabushi_target": "Map to canonical Build/Quality/Release evidence; security semantics remain with existing WebAuthn/Account Auth boundaries.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9871,
+      "source_path": "Telegram/ThirdParty/libcbor::doc/source/development.rst",
+      "source_blob_sha": "0b0ac21007ed6db67afc26f5048dd3dad8409f30",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "doc/source/development.rst",
+        "object": "0b0ac21007ed6db67afc26f5048dd3dad8409f30",
+        "mode": "100644",
+        "type": "blob",
+        "size": 4351
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor documentation/quality tooling",
+      "source_symbols": [
+        "source:doc/source/development.rst"
+      ],
+      "responsibility": "Documentation, formatting, coverage or contributor tooling records maintainability/verification expectations; no separate product runtime is created.",
+      "fabushi_canonical_owner": "Canonical Build/Quality/Release provenance for the existing WebAuthn security boundary",
+      "fabushi_target": "Map to canonical Build/Quality/Release evidence; security semantics remain with existing WebAuthn/Account Auth boundaries.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9872,
+      "source_path": "Telegram/ThirdParty/libcbor::doc/source/getting_started.rst",
+      "source_blob_sha": "98c5a3956337fefe0ce5e94a8cc95b6c2e7edc68",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "doc/source/getting_started.rst",
+        "object": "98c5a3956337fefe0ce5e94a8cc95b6c2e7edc68",
+        "mode": "100644",
+        "type": "blob",
+        "size": 9053
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor documentation/quality tooling",
+      "source_symbols": [
+        "source:doc/source/getting_started.rst"
+      ],
+      "responsibility": "Documentation, formatting, coverage or contributor tooling records maintainability/verification expectations; no separate product runtime is created.",
+      "fabushi_canonical_owner": "Canonical Build/Quality/Release provenance for the existing WebAuthn security boundary",
+      "fabushi_target": "Map to canonical Build/Quality/Release evidence; security semantics remain with existing WebAuthn/Account Auth boundaries.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9873,
+      "source_path": "Telegram/ThirdParty/libcbor::doc/source/img/win_1.png",
+      "source_blob_sha": "1bc34e5f8de5785db04bb47707e2d46a1cad7081",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "doc/source/img/win_1.png",
+        "object": "1bc34e5f8de5785db04bb47707e2d46a1cad7081",
+        "mode": "100644",
+        "type": "blob",
+        "size": 29291
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor Windows build documentation",
+      "source_symbols": [
+        "source:doc/source/img/win_1.png"
+      ],
+      "responsibility": "Windows CMake/Visual Studio screenshot is build documentation only, not Fabushi product UI.",
+      "fabushi_canonical_owner": "Canonical Build/Quality/Release provenance for the existing WebAuthn security boundary",
+      "fabushi_target": "Keep as source/build evidence only; do not port upstream screenshots or create a UI owner.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9874,
+      "source_path": "Telegram/ThirdParty/libcbor::doc/source/img/win_2.png",
+      "source_blob_sha": "f6af59949df60bc76dae9e7b2202fc7c887d4308",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "doc/source/img/win_2.png",
+        "object": "f6af59949df60bc76dae9e7b2202fc7c887d4308",
+        "mode": "100644",
+        "type": "blob",
+        "size": 20179
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor Windows build documentation",
+      "source_symbols": [
+        "source:doc/source/img/win_2.png"
+      ],
+      "responsibility": "Windows CMake/Visual Studio screenshot is build documentation only, not Fabushi product UI.",
+      "fabushi_canonical_owner": "Canonical Build/Quality/Release provenance for the existing WebAuthn security boundary",
+      "fabushi_target": "Keep as source/build evidence only; do not port upstream screenshots or create a UI owner.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9875,
+      "source_path": "Telegram/ThirdParty/libcbor::doc/source/img/win_3.png",
+      "source_blob_sha": "68ba112cbae0349138392ac0c51d12bd51ab8731",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "doc/source/img/win_3.png",
+        "object": "68ba112cbae0349138392ac0c51d12bd51ab8731",
+        "mode": "100644",
+        "type": "blob",
+        "size": 47224
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor Windows build documentation",
+      "source_symbols": [
+        "source:doc/source/img/win_3.png"
+      ],
+      "responsibility": "Windows CMake/Visual Studio screenshot is build documentation only, not Fabushi product UI.",
+      "fabushi_canonical_owner": "Canonical Build/Quality/Release provenance for the existing WebAuthn security boundary",
+      "fabushi_target": "Keep as source/build evidence only; do not port upstream screenshots or create a UI owner.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9876,
+      "source_path": "Telegram/ThirdParty/libcbor::doc/source/img/win_4.png",
+      "source_blob_sha": "b274be7d530b1b3c38c28941c9d401eabe4c32e9",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "doc/source/img/win_4.png",
+        "object": "b274be7d530b1b3c38c28941c9d401eabe4c32e9",
+        "mode": "100644",
+        "type": "blob",
+        "size": 11272
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor Windows build documentation",
+      "source_symbols": [
+        "source:doc/source/img/win_4.png"
+      ],
+      "responsibility": "Windows CMake/Visual Studio screenshot is build documentation only, not Fabushi product UI.",
+      "fabushi_canonical_owner": "Canonical Build/Quality/Release provenance for the existing WebAuthn security boundary",
+      "fabushi_target": "Keep as source/build evidence only; do not port upstream screenshots or create a UI owner.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9877,
+      "source_path": "Telegram/ThirdParty/libcbor::doc/source/img/win_5.png",
+      "source_blob_sha": "dffeb882f744ca792ce0b5ece730598c37dc3f05",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "doc/source/img/win_5.png",
+        "object": "dffeb882f744ca792ce0b5ece730598c37dc3f05",
+        "mode": "100644",
+        "type": "blob",
+        "size": 29490
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor Windows build documentation",
+      "source_symbols": [
+        "source:doc/source/img/win_5.png"
+      ],
+      "responsibility": "Windows CMake/Visual Studio screenshot is build documentation only, not Fabushi product UI.",
+      "fabushi_canonical_owner": "Canonical Build/Quality/Release provenance for the existing WebAuthn security boundary",
+      "fabushi_target": "Keep as source/build evidence only; do not port upstream screenshots or create a UI owner.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9878,
+      "source_path": "Telegram/ThirdParty/libcbor::doc/source/img/win_6.png",
+      "source_blob_sha": "850e3e2f6cc8e442229b7bdecc3eec1bfa0e79ae",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "doc/source/img/win_6.png",
+        "object": "850e3e2f6cc8e442229b7bdecc3eec1bfa0e79ae",
+        "mode": "100644",
+        "type": "blob",
+        "size": 25195
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor Windows build documentation",
+      "source_symbols": [
+        "source:doc/source/img/win_6.png"
+      ],
+      "responsibility": "Windows CMake/Visual Studio screenshot is build documentation only, not Fabushi product UI.",
+      "fabushi_canonical_owner": "Canonical Build/Quality/Release provenance for the existing WebAuthn security boundary",
+      "fabushi_target": "Keep as source/build evidence only; do not port upstream screenshots or create a UI owner.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9879,
+      "source_path": "Telegram/ThirdParty/libcbor::doc/source/index.rst",
+      "source_blob_sha": "d3d62cf75c41de1b358e74ab56858c6ef70702b9",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "doc/source/index.rst",
+        "object": "d3d62cf75c41de1b358e74ab56858c6ef70702b9",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1009
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor documentation/quality tooling",
+      "source_symbols": [
+        "source:doc/source/index.rst"
+      ],
+      "responsibility": "Documentation, formatting, coverage or contributor tooling records maintainability/verification expectations; no separate product runtime is created.",
+      "fabushi_canonical_owner": "Canonical Build/Quality/Release provenance for the existing WebAuthn security boundary",
+      "fabushi_target": "Map to canonical Build/Quality/Release evidence; security semantics remain with existing WebAuthn/Account Auth boundaries.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9880,
+      "source_path": "Telegram/ThirdParty/libcbor::doc/source/internal.rst",
+      "source_blob_sha": "e30cb11dffa1001c431c057afc3d9c391c062a74",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "doc/source/internal.rst",
+        "object": "e30cb11dffa1001c431c057afc3d9c391c062a74",
+        "mode": "100644",
+        "type": "blob",
+        "size": 5820
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor API/behavior documentation",
+      "source_symbols": [
+        "source:doc/source/internal.rst"
+      ],
+      "responsibility": "Defines decode/encode, ownership, item types, incremental streaming, builder-stack, conformance and test semantics; applicable auth-path behavior must remain bounded and fail closed.",
+      "fabushi_canonical_owner": "Fabushi Node Agent Coordinator WebAuthn provider/signing boundary + canonical Account/Auth Passkeys + Build/Quality/Release",
+      "fabushi_target": "Extend existing source-neutral authentication/security owners with bounded fail-closed CBOR/CTAP2 semantics and packaged-helper evidence; do not introduce a libcbor/Telegram runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9881,
+      "source_path": "Telegram/ThirdParty/libcbor::doc/source/requirements.txt",
+      "source_blob_sha": "502d79cc62e6d20d09051523c4d63b64bb2a5e6e",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "doc/source/requirements.txt",
+        "object": "502d79cc62e6d20d09051523c4d63b64bb2a5e6e",
+        "mode": "100644",
+        "type": "blob",
+        "size": 625
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor documentation/quality tooling",
+      "source_symbols": [
+        "source:doc/source/requirements.txt"
+      ],
+      "responsibility": "Documentation, formatting, coverage or contributor tooling records maintainability/verification expectations; no separate product runtime is created.",
+      "fabushi_canonical_owner": "Canonical Build/Quality/Release provenance for the existing WebAuthn security boundary",
+      "fabushi_target": "Map to canonical Build/Quality/Release evidence; security semantics remain with existing WebAuthn/Account Auth boundaries.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9882,
+      "source_path": "Telegram/ThirdParty/libcbor::doc/source/standard_conformance.rst",
+      "source_blob_sha": "62965f0c4493b8f36c715cd693a87c5c240ec10c",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "doc/source/standard_conformance.rst",
+        "object": "62965f0c4493b8f36c715cd693a87c5c240ec10c",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1251
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor API/behavior documentation",
+      "source_symbols": [
+        "source:doc/source/standard_conformance.rst"
+      ],
+      "responsibility": "Defines decode/encode, ownership, item types, incremental streaming, builder-stack, conformance and test semantics; applicable auth-path behavior must remain bounded and fail closed.",
+      "fabushi_canonical_owner": "Fabushi Node Agent Coordinator WebAuthn provider/signing boundary + canonical Account/Auth Passkeys + Build/Quality/Release",
+      "fabushi_target": "Extend existing source-neutral authentication/security owners with bounded fail-closed CBOR/CTAP2 semantics and packaged-helper evidence; do not introduce a libcbor/Telegram runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9883,
+      "source_path": "Telegram/ThirdParty/libcbor::doc/source/tests.rst",
+      "source_blob_sha": "47357ba36cd6e55b97bd9ccc1534565727c328ad",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "doc/source/tests.rst",
+        "object": "47357ba36cd6e55b97bd9ccc1534565727c328ad",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1569
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor API/behavior documentation",
+      "source_symbols": [
+        "source:doc/source/tests.rst"
+      ],
+      "responsibility": "Defines decode/encode, ownership, item types, incremental streaming, builder-stack, conformance and test semantics; applicable auth-path behavior must remain bounded and fail closed.",
+      "fabushi_canonical_owner": "Fabushi Node Agent Coordinator WebAuthn provider/signing boundary + canonical Account/Auth Passkeys + Build/Quality/Release",
+      "fabushi_target": "Extend existing source-neutral authentication/security owners with bounded fail-closed CBOR/CTAP2 semantics and packaged-helper evidence; do not introduce a libcbor/Telegram runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9884,
+      "source_path": "Telegram/ThirdParty/libcbor::doc/source/using.rst",
+      "source_blob_sha": "ccb7372f23b6944c3a325daf2559484ef5576d46",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "doc/source/using.rst",
+        "object": "ccb7372f23b6944c3a325daf2559484ef5576d46",
+        "mode": "100644",
+        "type": "blob",
+        "size": 5411
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor API/behavior documentation",
+      "source_symbols": [
+        "source:doc/source/using.rst"
+      ],
+      "responsibility": "Defines decode/encode, ownership, item types, incremental streaming, builder-stack, conformance and test semantics; applicable auth-path behavior must remain bounded and fail closed.",
+      "fabushi_canonical_owner": "Fabushi Node Agent Coordinator WebAuthn provider/signing boundary + canonical Account/Auth Passkeys + Build/Quality/Release",
+      "fabushi_target": "Extend existing source-neutral authentication/security owners with bounded fail-closed CBOR/CTAP2 semantics and packaged-helper evidence; do not introduce a libcbor/Telegram runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9885,
+      "source_path": "Telegram/ThirdParty/libcbor::doxygen-theme",
+      "source_blob_sha": "46111c61a9f49b7a9886127e679d4317478fab1c",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "nested-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "doxygen-theme",
+        "object": "46111c61a9f49b7a9886127e679d4317478fab1c",
+        "mode": "160000",
+        "type": "commit",
+        "size": null
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor nested documentation gitlink",
+      "source_symbols": [
+        "source:doxygen-theme"
+      ],
+      "responsibility": "Pinned doxygen-theme gitlink is recursive source provenance with no production runtime responsibility.",
+      "fabushi_canonical_owner": "Canonical Build/Quality/Release provenance for the existing WebAuthn security boundary",
+      "fabushi_target": "Preserve exact nested gitlink identity in recursive inventory/evidence; no runtime owner.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9886,
+      "source_path": "Telegram/ThirdParty/libcbor::examples/CMakeLists.txt",
+      "source_blob_sha": "b1f2ec290e7a8f1e9563ca19007ddc42da421232",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "examples/CMakeLists.txt",
+        "object": "b1f2ec290e7a8f1e9563ca19007ddc42da421232",
+        "mode": "100644",
+        "type": "blob",
+        "size": 910
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor build/dependency composition",
+      "source_symbols": [
+        "source:examples/CMakeLists.txt"
+      ],
+      "responsibility": "Build/configuration input defines version/options, portability and CMake/Bazel composition for the shipping-reachable CBOR dependency.",
+      "fabushi_canonical_owner": "Canonical Build/Quality/Release provenance for the existing WebAuthn security boundary",
+      "fabushi_target": "Keep source-neutral build/provenance constraints and exact dependency evidence; no libcbor runtime owner in Fabushi.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9887,
+      "source_path": "Telegram/ThirdParty/libcbor::examples/bazel/README.md",
+      "source_blob_sha": "455e2d38d3e577886b4356c96b0c04b2e9d44e75",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "examples/bazel/README.md",
+        "object": "455e2d38d3e577886b4356c96b0c04b2e9d44e75",
+        "mode": "100644",
+        "type": "blob",
+        "size": 331
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor build/dependency composition",
+      "source_symbols": [
+        "source:examples/bazel/README.md"
+      ],
+      "responsibility": "Build/configuration input defines version/options, portability and CMake/Bazel composition for the shipping-reachable CBOR dependency.",
+      "fabushi_canonical_owner": "Canonical Build/Quality/Release provenance for the existing WebAuthn security boundary",
+      "fabushi_target": "Keep source-neutral build/provenance constraints and exact dependency evidence; no libcbor runtime owner in Fabushi.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9888,
+      "source_path": "Telegram/ThirdParty/libcbor::examples/bazel/WORKSPACE",
+      "source_blob_sha": "c7601f3035ffda6bfccf3a69410a44f84c5e5ba9",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "examples/bazel/WORKSPACE",
+        "object": "c7601f3035ffda6bfccf3a69410a44f84c5e5ba9",
+        "mode": "100644",
+        "type": "blob",
+        "size": 499
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor build/dependency composition",
+      "source_symbols": [
+        "source:examples/bazel/WORKSPACE"
+      ],
+      "responsibility": "Build/configuration input defines version/options, portability and CMake/Bazel composition for the shipping-reachable CBOR dependency.",
+      "fabushi_canonical_owner": "Canonical Build/Quality/Release provenance for the existing WebAuthn security boundary",
+      "fabushi_target": "Keep source-neutral build/provenance constraints and exact dependency evidence; no libcbor runtime owner in Fabushi.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9889,
+      "source_path": "Telegram/ThirdParty/libcbor::examples/bazel/src/BUILD",
+      "source_blob_sha": "d3acb578398a779d9d0b77a98b37c966e26d3e93",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "examples/bazel/src/BUILD",
+        "object": "d3acb578398a779d9d0b77a98b37c966e26d3e93",
+        "mode": "100644",
+        "type": "blob",
+        "size": 659
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor build/dependency composition",
+      "source_symbols": [
+        "source:examples/bazel/src/BUILD"
+      ],
+      "responsibility": "Build/configuration input defines version/options, portability and CMake/Bazel composition for the shipping-reachable CBOR dependency.",
+      "fabushi_canonical_owner": "Canonical Build/Quality/Release provenance for the existing WebAuthn security boundary",
+      "fabushi_target": "Keep source-neutral build/provenance constraints and exact dependency evidence; no libcbor runtime owner in Fabushi.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9890,
+      "source_path": "Telegram/ThirdParty/libcbor::examples/bazel/src/hello.cc",
+      "source_blob_sha": "5162d26e1b471048c4fa3fb900be99ab9f7dd459",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "examples/bazel/src/hello.cc",
+        "object": "5162d26e1b471048c4fa3fb900be99ab9f7dd459",
+        "mode": "100644",
+        "type": "blob",
+        "size": 166
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor Bazel hello example",
+      "source_symbols": [
+        "source:examples/bazel/src/hello.cc"
+      ],
+      "responsibility": "Build/example fixture verifies basic dependency linkage and test composition; it carries no independent Fabushi product responsibility.",
+      "fabushi_canonical_owner": "Canonical Build/Quality/Release provenance for the existing WebAuthn security boundary",
+      "fabushi_target": "Treat as build/quality reference only and retain canonical shipping owners.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9891,
+      "source_path": "Telegram/ThirdParty/libcbor::examples/bazel/src/hello.h",
+      "source_blob_sha": "3d50065cfdcf55c4f2b344ffec37022ad286d3ae",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "examples/bazel/src/hello.h",
+        "object": "3d50065cfdcf55c4f2b344ffec37022ad286d3ae",
+        "mode": "100644",
+        "type": "blob",
+        "size": 107
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor Bazel hello example",
+      "source_symbols": [
+        "source:examples/bazel/src/hello.h"
+      ],
+      "responsibility": "Build/example fixture verifies basic dependency linkage and test composition; it carries no independent Fabushi product responsibility.",
+      "fabushi_canonical_owner": "Canonical Build/Quality/Release provenance for the existing WebAuthn security boundary",
+      "fabushi_target": "Treat as build/quality reference only and retain canonical shipping owners.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9892,
+      "source_path": "Telegram/ThirdParty/libcbor::examples/bazel/src/hello_test.cc",
+      "source_blob_sha": "68d8633c87728ad09fac5979cb0c2a3ca36d6592",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "examples/bazel/src/hello_test.cc",
+        "object": "68d8633c87728ad09fac5979cb0c2a3ca36d6592",
+        "mode": "100644",
+        "type": "blob",
+        "size": 164
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor Bazel hello example",
+      "source_symbols": [
+        "source:examples/bazel/src/hello_test.cc"
+      ],
+      "responsibility": "Build/example fixture verifies basic dependency linkage and test composition; it carries no independent Fabushi product responsibility.",
+      "fabushi_canonical_owner": "Canonical Build/Quality/Release provenance for the existing WebAuthn security boundary",
+      "fabushi_target": "Treat as build/quality reference only and retain canonical shipping owners.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9893,
+      "source_path": "Telegram/ThirdParty/libcbor::examples/bazel/src/main.cc",
+      "source_blob_sha": "6c1e4f52a03a98056da841e08730724284e5e930",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "examples/bazel/src/main.cc",
+        "object": "6c1e4f52a03a98056da841e08730724284e5e930",
+        "mode": "100644",
+        "type": "blob",
+        "size": 99
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor Bazel hello example",
+      "source_symbols": [
+        "source:examples/bazel/src/main.cc"
+      ],
+      "responsibility": "Build/example fixture verifies basic dependency linkage and test composition; it carries no independent Fabushi product responsibility.",
+      "fabushi_canonical_owner": "Canonical Build/Quality/Release provenance for the existing WebAuthn security boundary",
+      "fabushi_target": "Treat as build/quality reference only and retain canonical shipping owners.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9894,
+      "source_path": "Telegram/ThirdParty/libcbor::examples/bazel/third_party/BUILD",
+      "source_blob_sha": "c4c443f1b56262082e3c5b83a44eb614c68b8027",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "examples/bazel/third_party/BUILD",
+        "object": "c4c443f1b56262082e3c5b83a44eb614c68b8027",
+        "mode": "100644",
+        "type": "blob",
+        "size": 33
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor build/dependency composition",
+      "source_symbols": [
+        "source:examples/bazel/third_party/BUILD"
+      ],
+      "responsibility": "Build/configuration input defines version/options, portability and CMake/Bazel composition for the shipping-reachable CBOR dependency.",
+      "fabushi_canonical_owner": "Canonical Build/Quality/Release provenance for the existing WebAuthn security boundary",
+      "fabushi_target": "Keep source-neutral build/provenance constraints and exact dependency evidence; no libcbor runtime owner in Fabushi.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9895,
+      "source_path": "Telegram/ThirdParty/libcbor::examples/bazel/third_party/libcbor.BUILD",
+      "source_blob_sha": "45f4975b4fc88935ca1b57eb6585871aa837187c",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "examples/bazel/third_party/libcbor.BUILD",
+        "object": "45f4975b4fc88935ca1b57eb6585871aa837187c",
+        "mode": "100644",
+        "type": "blob",
+        "size": 389
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor build/dependency composition",
+      "source_symbols": [
+        "source:examples/bazel/third_party/libcbor.BUILD"
+      ],
+      "responsibility": "Build/configuration input defines version/options, portability and CMake/Bazel composition for the shipping-reachable CBOR dependency.",
+      "fabushi_canonical_owner": "Canonical Build/Quality/Release provenance for the existing WebAuthn security boundary",
+      "fabushi_target": "Keep source-neutral build/provenance constraints and exact dependency evidence; no libcbor runtime owner in Fabushi.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9896,
+      "source_path": "Telegram/ThirdParty/libcbor::examples/bazel/third_party/libcbor/BUILD",
+      "source_blob_sha": "2ef8702fd308bd223a0ef1fd0d9d7ba20371ab9e",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "examples/bazel/third_party/libcbor/BUILD",
+        "object": "2ef8702fd308bd223a0ef1fd0d9d7ba20371ab9e",
+        "mode": "100644",
+        "type": "blob",
+        "size": 197
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor build/dependency composition",
+      "source_symbols": [
+        "source:examples/bazel/third_party/libcbor/BUILD"
+      ],
+      "responsibility": "Build/configuration input defines version/options, portability and CMake/Bazel composition for the shipping-reachable CBOR dependency.",
+      "fabushi_canonical_owner": "Canonical Build/Quality/Release provenance for the existing WebAuthn security boundary",
+      "fabushi_target": "Keep source-neutral build/provenance constraints and exact dependency evidence; no libcbor runtime owner in Fabushi.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9897,
+      "source_path": "Telegram/ThirdParty/libcbor::examples/bazel/third_party/libcbor/cbor/cbor_export.h",
+      "source_blob_sha": "8bf3dea85c8f3653a98f58231ed0f91c8991aed2",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "examples/bazel/third_party/libcbor/cbor/cbor_export.h",
+        "object": "8bf3dea85c8f3653a98f58231ed0f91c8991aed2",
+        "mode": "100644",
+        "type": "blob",
+        "size": 772
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor build/dependency composition",
+      "source_symbols": [
+        "source:examples/bazel/third_party/libcbor/cbor/cbor_export.h"
+      ],
+      "responsibility": "Build/configuration input defines version/options, portability and CMake/Bazel composition for the shipping-reachable CBOR dependency.",
+      "fabushi_canonical_owner": "Canonical Build/Quality/Release provenance for the existing WebAuthn security boundary",
+      "fabushi_target": "Keep source-neutral build/provenance constraints and exact dependency evidence; no libcbor runtime owner in Fabushi.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9898,
+      "source_path": "Telegram/ThirdParty/libcbor::examples/bazel/third_party/libcbor/cbor/configuration.h",
+      "source_blob_sha": "ddf6b9dc5f2b7781acaac93cc1f2e494a4ebce59",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "examples/bazel/third_party/libcbor/cbor/configuration.h",
+        "object": "ddf6b9dc5f2b7781acaac93cc1f2e494a4ebce59",
+        "mode": "100644",
+        "type": "blob",
+        "size": 354
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor build/dependency composition",
+      "source_symbols": [
+        "source:examples/bazel/third_party/libcbor/cbor/configuration.h"
+      ],
+      "responsibility": "Build/configuration input defines version/options, portability and CMake/Bazel composition for the shipping-reachable CBOR dependency.",
+      "fabushi_canonical_owner": "Canonical Build/Quality/Release provenance for the existing WebAuthn security boundary",
+      "fabushi_target": "Keep source-neutral build/provenance constraints and exact dependency evidence; no libcbor runtime owner in Fabushi.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9899,
+      "source_path": "Telegram/ThirdParty/libcbor::examples/cbor2cjson.c",
+      "source_blob_sha": "99ddc9ee09e1d6d028884efcbe877cb42b429c5b",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "examples/cbor2cjson.c",
+        "object": "99ddc9ee09e1d6d028884efcbe877cb42b429c5b",
+        "mode": "100644",
+        "type": "blob",
+        "size": 4043
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor conversion examples",
+      "source_symbols": [
+        "source:examples/cbor2cjson.c"
+      ],
+      "responsibility": "Reference examples exercise recursive CBOR traversal, builder/load errors and allocation cleanup; unchecked example allocations are not production patterns.",
+      "fabushi_canonical_owner": "Fabushi Node Agent Coordinator WebAuthn provider/signing boundary + canonical Account/Auth Passkeys + Build/Quality/Release",
+      "fabushi_target": "Use only as behavioral/security reference for existing auth boundaries; production code stays bounded/fail-closed and independently tested.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9900,
+      "source_path": "Telegram/ThirdParty/libcbor::examples/cjson2cbor.c",
+      "source_blob_sha": "b67439902442c8495ae5b3ff2eb65695b7d0d109",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": "examples/cjson2cbor.c",
+        "object": "b67439902442c8495ae5b3ff2eb65695b7d0d109",
+        "mode": "100644",
+        "type": "blob",
+        "size": 4364
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor conversion examples",
+      "source_symbols": [
+        "source:examples/cjson2cbor.c"
+      ],
+      "responsibility": "Reference examples exercise recursive CBOR traversal, builder/load errors and allocation cleanup; unchecked example allocations are not production patterns.",
+      "fabushi_canonical_owner": "Fabushi Node Agent Coordinator WebAuthn provider/signing boundary + canonical Account/Auth Passkeys + Build/Quality/Release",
+      "fabushi_target": "Use only as behavioral/security reference for existing auth boundaries; production code stays bounded/fail-closed and independently tested.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    }
+  ]
+}
