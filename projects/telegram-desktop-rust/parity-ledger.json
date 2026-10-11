@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 4625,
+    "unread": 4561,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,11 +13478,11 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Accepted prefix 11,500/16,125; exact-head Actions validated and materialized orders 11,437-11,500 from pinned range-v3 with exact repository/commit/path/Git-blob and byte-length verification; unread 4,625; unknown 15,845; omitted 0.",
+    "source_read_reconciliation": "Accepted prefix 11,564/16,125; predecessor exact-head Actions materialized orders 11,501-11,564 spanning the range-v3 package/version tail and pinned tgcalls with exact repository/commit/path/Git-blob and byte-length verification; unread 4,561; unknown 15,845; omitted 0. Current descendant requires fresh exact-head validation.",
     "source_authority_evidence": "Exact-head 2e8c169214a72abb1a3f16d52f2a811e8f991b2e run 38156139933/job 114519461684 artifact 11708199027 (sha256:cd9fcd8e65b428f25271dbf5957647e88e58084e3acb8c89847b0051d9f7b77f) validated Revision 9 and materialized orders 11,437-11,500; descendant accounting commit requires fresh exact-head validation.",
-    "current_source_read_through": 11500,
-    "first_unread_order": 11501,
-    "first_unread_path": "Telegram/ThirdParty/range-v3::test_package/example.cpp"
+    "current_source_read_through": 11564,
+    "first_unread_order": 11565,
+    "first_unread_path": "Telegram/ThirdParty/tgcalls::tgcalls/TurnCustomizerImpl.h"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 11500,
-    "first_unread_order": 11501,
-    "first_unread_path": "Telegram/ThirdParty/range-v3::test_package/example.cpp",
+    "read_through": 11564,
+    "first_unread_order": 11565,
+    "first_unread_path": "Telegram/ThirdParty/tgcalls::tgcalls/TurnCustomizerImpl.h",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
