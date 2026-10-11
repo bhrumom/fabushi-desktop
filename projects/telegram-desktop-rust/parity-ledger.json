@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 7632,
+    "unread": 7524,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13480,9 +13480,9 @@
     "changed_paths": 10,
     "source_read_reconciliation": "Accepted prefix 8,493/16,125; Hunspell tool/fuzzer/regression-fixture window 8,430–8,493 exact-read and responsibility-decomposed; unread 7,632; unknown 15,845; omitted 0. Next is tests/IJ.aff.",
     "source_authority_evidence": "Pinned Hunspell exact blobs 8,430–8,493 were directly read against hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b. The range covers bounded hzip/morph/parser/personal-dictionary fuzzing and dictionary transforms plus explicit regression fixtures for historical crash/Unicode/suggestion/compound failures. Source reading only; descendant exact-head Actions required.",
-    "current_source_read_through": 8493,
-    "first_unread_order": 8494,
-    "first_unread_path": "Telegram/ThirdParty/hunspell::tests/IJ.aff"
+    "current_source_read_through": 8601,
+    "first_unread_order": 8602,
+    "first_unread_path": "Telegram/ThirdParty/hunspell::tests/checkcompoundrep2.good"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 8493,
-    "first_unread_order": 8494,
-    "first_unread_path": "Telegram/ThirdParty/hunspell::tests/IJ.aff",
+    "read_through": 8601,
+    "first_unread_order": 8602,
+    "first_unread_path": "Telegram/ThirdParty/hunspell::tests/checkcompoundrep2.good",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
