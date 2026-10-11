@@ -53,3 +53,25 @@ test('latest replacement controls hidden/visible projection without parallel par
   expect(entries[0]?.kind).toBe('agent');
   if (entries[0]?.kind === 'agent') expect(entries[0].isHidden).not.toBe(true);
 });
+
+
+test('canonical fuzzy search preserves Unicode, RTL and separator semantics from mature source authority', () => {
+  const rows: readonly CommandPaletteAgent[] = [
+    { id: 'human:house', name: 'Häuser', isGroup: false, isHidden: false },
+    { id: 'human:urdu', name: 'اردو', isGroup: false, isHidden: false },
+    { id: 'human:file', name: 'the_file', isGroup: false, isHidden: false },
+    { id: 'human:short', name: 'Nam', isGroup: false, isHidden: false },
+  ];
+
+  const search = (query: string) => commandPaletteEntries({
+    agents: rows,
+    commands: [],
+    query,
+    tab: 'agents',
+  }).flatMap((entry) => entry.kind === 'agent' ? [entry.agent.id] : []);
+
+  expect(search('hau')).toEqual(['human:house']);
+  expect(search('ارو')).toEqual(['human:urdu']);
+  expect(search('tf')).toEqual(['human:file']);
+  expect(search('Name')).not.toContain('human:short');
+});

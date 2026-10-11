@@ -266,9 +266,9 @@
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
     "unknown_minimum": 15845,
-    "unread_minimum": 6985,
+    "unread_minimum": 6977,
     "omitted_known": 0,
-    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 9,140; unknown=15,845, unread=6,985, omitted=0."
+    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 9,148; unknown=15,845, unread=6,977, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -282,7 +282,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Source/product/release closure open. Deterministic exact read-through 9,140/16,125; first unread 9,141 Telegram/ThirdParty/kcoreaddons::autotests/kfileutilstest.cpp; unread 6,985; unknown 15,845; omitted 0. kcoreaddons plugin/build/recovery/platform responsibilities are mapped-open. Descendant exact-head Actions are required."
+    "note": "Source/product/release closure open. Deterministic exact read-through 9,148/16,125; first unread 9,149 Telegram/ThirdParty/kcoreaddons::autotests/klibexectest.cpp; unread 6,977; unknown 15,845; omitted 0. kcoreaddons file/resource formatting, Search fuzzy-matching and job-lifecycle responsibilities are mapped to canonical existing owners; only the Search owner gained a focused descendant contract in this slice. Descendant exact-head Actions are required."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",
@@ -633,9 +633,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 9140,
-    "first_unread_order": 9141,
-    "first_unread_path": "Telegram/ThirdParty/kcoreaddons::autotests/kfileutilstest.cpp",
+    "read_through": 9148,
+    "first_unread_order": 9149,
+    "first_unread_path": "Telegram/ThirdParty/kcoreaddons::autotests/klibexectest.cpp",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
