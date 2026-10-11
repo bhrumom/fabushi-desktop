@@ -38,3 +38,32 @@ test("camera and screen commands share video-media ownership with pending and ro
   assert.ok(source.includes("await sender.replaceTrack(screenTrack).catch(() => undefined);"));
   assert.ok(source.includes("stopStream(screenStreamRef.current);"));
 });
+
+test("screen sharing uses canonical selection UI and fences stale or vanished sources", () => {
+  assert.ok(source.includes('import { OverlayDialog } from "../recovered/ui/overlay-primitives";'));
+  assert.ok(source.includes('import { SandMenuItem } from "../recovered/ui/sand-menu-item";'));
+  assert.equal(source.includes("const source = sources[0]"), false);
+  assert.ok(source.includes("displayPickerGenerationRef.current"));
+  assert.ok(source.includes("generation !== displayPickerGenerationRef.current"));
+  assert.ok(source.includes("refreshed.find((candidate) => candidate.id === sourceId)"));
+  assert.ok(source.includes("That display source is no longer available. Choose another source."));
+  assert.ok(source.includes('label="Choose a display source"'));
+  assert.ok(source.includes('aria-label="Choose another display source"'));
+  assert.ok(source.includes("screenStreamRef.current !== capture"));
+});
+
+test("call diagnostics sample WebRTC stats with generation and teardown fencing", () => {
+  assert.ok(source.includes("pc.getStats()"));
+  assert.ok(source.includes("projectCallDiagnostics"));
+  assert.ok(source.includes("diagnosticsGenerationRef.current !== samplingGeneration"));
+  assert.ok(source.includes("callRef.current?.generation !== callGeneration"));
+  assert.ok(source.includes("window.setInterval"));
+  assert.ok(source.includes("window.clearInterval(diagnosticsTimerRef.current)"));
+  assert.ok(source.includes('record.type === "candidate-pair"'));
+  assert.ok(source.includes('statNumber(selectedPair, "currentRoundTripTime")'));
+  assert.ok(source.includes('statNumber(record, "packetsLost")'));
+  assert.ok(source.includes('statNumber(record, "jitter")'));
+  assert.ok(source.includes('aria-label="Call diagnostics"'));
+  assert.ok(source.includes("startDiagnostics(pc, nextCall.generation)"));
+  assert.ok(source.includes("stopDiagnostics();"));
+});

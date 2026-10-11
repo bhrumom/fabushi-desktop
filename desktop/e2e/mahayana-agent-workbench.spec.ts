@@ -1513,17 +1513,25 @@ test('Human call surface exposes the shipping WebRTC and Electron media bridge',
       };
       return {
         hasPeerConnection: typeof RTCPeerConnection === 'function',
+        hasPeerConnectionStats: typeof RTCPeerConnection.prototype.getStats === 'function',
         hasGetUserMedia: typeof navigator.mediaDevices?.getUserMedia === 'function',
         permissionProbe: await candidate.desktop.callMedia.requestPermissions({ audio: false, video: false }),
         hasDisplaySourceBridge: typeof candidate.desktop.callMedia.listDisplaySources === 'function',
+        displaySources: await candidate.desktop.callMedia.listDisplaySources(),
         preferencesRoundTrip: await candidate.desktop.callMedia
           .setPreferences({ microphoneId: 'call-mic-e2e', cameraId: 'call-camera-e2e' })
           .then(() => candidate.desktop.callMedia.getPreferences()),
       };
     });
     expect(capability.hasPeerConnection).toBe(true);
+    expect(capability.hasPeerConnectionStats).toBe(true);
     expect(capability.hasGetUserMedia).toBe(true);
     expect(capability.hasDisplaySourceBridge).toBe(true);
+    expect(Array.isArray(capability.displaySources)).toBe(true);
+    for (const source of capability.displaySources as Array<{ id?: unknown; name?: unknown }>) {
+      expect(typeof source.id).toBe('string');
+      expect(typeof source.name).toBe('string');
+    }
     expect(capability.permissionProbe).toEqual({ microphone: 'not-requested', camera: 'not-requested' });
     expect(capability.preferencesRoundTrip).toEqual({ microphoneId: 'call-mic-e2e', cameraId: 'call-camera-e2e' });
   } finally {

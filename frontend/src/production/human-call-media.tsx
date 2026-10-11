@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { DesktopBridge } from "../recovered/contracts/desktop-bridge";
 import { createInFlightCommandFence } from "../recovered/ui/in-flight-command";
+import { OverlayDialog } from "../recovered/ui/overlay-primitives";
 import { SandButton } from "../recovered/ui/sand-kit-primitives";
+import { SandMenuItem } from "../recovered/ui/sand-menu-item";
 import type { ProductionCoordinatorClient } from "./coordinator-client";
 import type { RendererAgent } from "./model";
 
@@ -42,6 +44,75 @@ interface CallSignal {
 interface IceReply {
   readonly iceServers: RTCIceServer[];
   readonly ttlSeconds: number;
+}
+interface CallDisplaySource {
+  readonly id: string;
+  readonly name: string;
+  readonly displayId?: string;
+}
+interface CallDiagnostics {
+  readonly codec: string | null;
+  readonly path: string | null;
+  readonly roundTripTimeMs: number | null;
+  readonly sendBitrateKbps: number | null;
+  readonly receiveBitrateKbps: number | null;
+  readonly packetLossPercent: number | null;
+  readonly jitterMs: number | null;
+  readonly sampledAtMs: number;
+}
+interface CallStatsBaseline {
+  readonly sampledAtMs: number;
+  readonly sentBytes: number;
+  readonly receivedBytes: number;
+}
+
+function statNumber(record: Record<string, unknown> | undefined, key: string): number | null {
+  const value = record?.[key];
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+export function projectCallDiagnostics(report: RTCStatsReport, previous: CallStatsBaseline | null, sampledAtMs: number): { diagnostics: CallDiagnostics; baseline: CallStatsBaseline } {
+  const records: Record<string, unknown>[] = [];
+  const byId = new Map<string, Record<string, unknown>>();
+  report.forEach((raw) => {
+    if (!isRecord(raw)) return;
+    records.push(raw);
+    if (typeof raw.id === "string") byId.set(raw.id, raw);
+  });
+  const inbound = records.filter((record) => record.type === "inbound-rtp" && record.isRemote !== true);
+  const outbound = records.filter((record) => record.type === "outbound-rtp" && record.isRemote !== true);
+  const selectedPair = records.find((record) => record.type === "candidate-pair" && record.state === "succeeded" && (record.nominated === true || record.selected === true))
+    ?? records.find((record) => record.type === "candidate-pair" && record.state === "succeeded");
+  const localCandidate = typeof selectedPair?.localCandidateId === "string" ? byId.get(selectedPair.localCandidateId) : undefined;
+  const remoteCandidate = typeof selectedPair?.remoteCandidateId === "string" ? byId.get(selectedPair.remoteCandidateId) : undefined;
+  const codecId = [...outbound, ...inbound].map((record) => record.codecId).find((value): value is string => typeof value === "string");
+  const codecRecord = codecId == null ? undefined : byId.get(codecId);
+  const sentBytes = outbound.reduce((total, record) => total + (statNumber(record, "bytesSent") ?? 0), 0);
+  const receivedBytes = inbound.reduce((total, record) => total + (statNumber(record, "bytesReceived") ?? 0), 0);
+  const packetsLost = inbound.reduce((total, record) => total + Math.max(0, statNumber(record, "packetsLost") ?? 0), 0);
+  const packetsReceived = inbound.reduce((total, record) => total + Math.max(0, statNumber(record, "packetsReceived") ?? 0), 0);
+  const jitterSeconds = inbound.reduce<number | null>((max, record) => {
+    const value = statNumber(record, "jitter");
+    return value == null ? max : Math.max(max ?? 0, value);
+  }, null);
+  const elapsedMs = previous == null ? 0 : Math.max(0, sampledAtMs - previous.sampledAtMs);
+  const bitrate = (bytes: number, prior: number): number | null => elapsedMs <= 0 ? null : Math.max(0, Math.round((((bytes - prior) * 8) / elapsedMs) * 10) / 10);
+  const localType = typeof localCandidate?.candidateType === "string" ? localCandidate.candidateType : null;
+  const remoteType = typeof remoteCandidate?.candidateType === "string" ? remoteCandidate.candidateType : null;
+  const protocol = typeof localCandidate?.protocol === "string" ? localCandidate.protocol : null;
+  return {
+    diagnostics: {
+      codec: typeof codecRecord?.mimeType === "string" ? codecRecord.mimeType : null,
+      path: localType == null && remoteType == null ? null : `${localType ?? "unknown"} -> ${remoteType ?? "unknown"}${protocol == null ? "" : ` (${protocol})`}`,
+      roundTripTimeMs: statNumber(selectedPair, "currentRoundTripTime") == null ? null : Math.round((statNumber(selectedPair, "currentRoundTripTime") ?? 0) * 1000),
+      sendBitrateKbps: previous == null ? null : bitrate(sentBytes, previous.sentBytes),
+      receiveBitrateKbps: previous == null ? null : bitrate(receivedBytes, previous.receivedBytes),
+      packetLossPercent: packetsLost + packetsReceived <= 0 ? null : Math.round((packetsLost / (packetsLost + packetsReceived)) * 10000) / 100,
+      jitterMs: jitterSeconds == null ? null : Math.round(jitterSeconds * 1000),
+      sampledAtMs,
+    },
+    baseline: { sampledAtMs, sentBytes, receivedBytes },
+  };
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -146,6 +217,9 @@ export function HumanCallControls({
   const [muted, setMuted] = useState(false);
   const [cameraEnabled, setCameraEnabled] = useState(false);
   const [screenSharing, setScreenSharing] = useState(false);
+  const [displaySources, setDisplaySources] = useState<readonly CallDisplaySource[]>([]);
+  const [displayPickerOpen, setDisplayPickerOpen] = useState(false);
+  const [diagnostics, setDiagnostics] = useState<CallDiagnostics | null>(null);
   const [mutePending, setMutePending] = useState(false);
   const [cameraPending, setCameraPending] = useState(false);
   const [screenPending, setScreenPending] = useState(false);
@@ -160,6 +234,10 @@ export function HumanCallControls({
   const appliedSignalSeqRef = useRef(0);
   const recoveringRef = useRef(false);
   const disposedRef = useRef(false);
+  const displayPickerGenerationRef = useRef(0);
+  const diagnosticsGenerationRef = useRef(0);
+  const diagnosticsTimerRef = useRef<number | null>(null);
+  const diagnosticsBaselineRef = useRef<CallStatsBaseline | null>(null);
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
 
@@ -250,7 +328,32 @@ export function HumanCallControls({
     return stream;
   }, [bridge.callMedia]);
 
+  const stopDiagnostics = useCallback(() => {
+    diagnosticsGenerationRef.current += 1;
+    if (diagnosticsTimerRef.current != null) window.clearInterval(diagnosticsTimerRef.current);
+    diagnosticsTimerRef.current = null;
+    diagnosticsBaselineRef.current = null;
+    setDiagnostics(null);
+  }, []);
+
+  const startDiagnostics = useCallback((pc: RTCPeerConnection, callGeneration: number) => {
+    stopDiagnostics();
+    const samplingGeneration = diagnosticsGenerationRef.current;
+    const sample = async () => {
+      const report = await pc.getStats();
+      if (disposedRef.current || diagnosticsGenerationRef.current !== samplingGeneration || pcRef.current !== pc || callRef.current?.generation !== callGeneration) return;
+      const projection = projectCallDiagnostics(report, diagnosticsBaselineRef.current, Date.now());
+      diagnosticsBaselineRef.current = projection.baseline;
+      setDiagnostics(projection.diagnostics);
+    };
+    void sample().catch((statsError) => console.warn("[human-call] diagnostics sample failed", statsError));
+    diagnosticsTimerRef.current = window.setInterval(() => {
+      void sample().catch((statsError) => console.warn("[human-call] diagnostics sample failed", statsError));
+    }, 2000);
+  }, [stopDiagnostics]);
+
   const closePeer = useCallback(() => {
+    stopDiagnostics();
     const pc = pcRef.current;
     pcRef.current = null;
     if (pc != null) {
@@ -262,7 +365,7 @@ export function HumanCallControls({
     stopStream(remoteStreamRef.current);
     remoteStreamRef.current = null;
     if (remoteVideoRef.current != null) remoteVideoRef.current.srcObject = null;
-  }, []);
+  }, [stopDiagnostics]);
 
   const transition = useCallback(async (nextCall: HumanCall, action: string, terminalReason?: string) => {
     const updated = await client.call("transitionCallSession", {
@@ -312,6 +415,7 @@ export function HumanCallControls({
       if (current == null) return;
       void sendSignal(current, "candidate", event.candidate.toJSON() as unknown as Record<string, unknown>).catch((candidateError) => void failCall(mediaFailure(candidateError)));
     };
+    startDiagnostics(pc, nextCall.generation);
     pc.onconnectionstatechange = () => {
       if (pc.connectionState === "connected") {
         setStatus("connected");
@@ -355,7 +459,7 @@ export function HumanCallControls({
       await sendSignal(nextCall, "offer", { type: offer.type, sdp: offer.sdp ?? "" });
     }
     return pc;
-  }, [cameraEnabled, client, closePeer, ensureLocalMedia, failCall, readLease, sendSignal, transition]);
+  }, [cameraEnabled, client, closePeer, ensureLocalMedia, failCall, readLease, sendSignal, startDiagnostics, transition]);
   configurePeerRef.current = configurePeer;
 
   const consumeSignals = useCallback(async (nextCall: HumanCall) => {
@@ -529,35 +633,69 @@ export function HumanCallControls({
     }
   }, [bridge.callMedia, callCommandFence, cameraEnabled, updateMediaState]);
 
-  const toggleScreen = useCallback(async () => {
+  const closeDisplayPicker = useCallback(() => {
+    displayPickerGenerationRef.current += 1;
+    setDisplayPickerOpen(false);
+    setDisplaySources([]);
+  }, []);
+
+  const openDisplayPicker = useCallback(async () => {
+    const generation = ++displayPickerGenerationRef.current;
+    setScreenPending(true);
+    setError(null);
+    try {
+      const sources = await bridge.callMedia.listDisplaySources();
+      if (disposedRef.current || generation !== displayPickerGenerationRef.current) return;
+      if (sources.length === 0) throw new Error("No display source is available.");
+      setDisplaySources(sources);
+      setDisplayPickerOpen(true);
+    } finally {
+      if (generation === displayPickerGenerationRef.current) setScreenPending(false);
+    }
+  }, [bridge.callMedia]);
+
+  const stopScreenShare = useCallback(async () => {
     const commandLease = callCommandFence.acquire("video-media");
     if (commandLease == null) return;
     setScreenPending(true);
     try {
       const current = callRef.current;
-      const stream = localStreamRef.current;
       const pc = pcRef.current;
-      if (current == null || stream == null || pc == null) return;
-      if (screenSharing) {
-        const capture = screenStreamRef.current;
-        const screenTrack = capture?.getVideoTracks()[0] ?? null;
-        const sender = pc.getSenders().find((candidate) => candidate.track?.kind === "video");
-        const camera = stream.getVideoTracks()[0] ?? null;
-        if (sender != null) await sender.replaceTrack(camera);
-        try {
-          await updateMediaState(current, { screenShare: false });
-        } catch (error) {
-          if (sender != null && screenTrack != null) await sender.replaceTrack(screenTrack).catch(() => undefined);
-          throw error;
-        }
-        screenStreamRef.current = null;
-        setScreenSharing(false);
-        stopStream(capture);
-        return;
+      if (current == null || pc == null) return;
+      const capture = screenStreamRef.current;
+      const screenTrack = capture?.getVideoTracks()[0] ?? null;
+      const sender = pc.getSenders().find((candidate) => candidate.track?.kind === "video");
+      const camera = localStreamRef.current?.getVideoTracks()[0] ?? null;
+      if (sender != null) await sender.replaceTrack(camera);
+      try {
+        await updateMediaState(current, { screenShare: false, displaySourceId: null });
+      } catch (error) {
+        if (sender != null && screenTrack != null) await sender.replaceTrack(screenTrack).catch(() => undefined);
+        throw error;
       }
-      const sources = await bridge.callMedia.listDisplaySources();
-      const source = sources[0];
-      if (source == null) throw new Error("No display source is available.");
+      screenStreamRef.current = null;
+      setScreenSharing(false);
+      stopStream(capture);
+    } finally {
+      commandLease.release();
+      setScreenPending(false);
+    }
+  }, [callCommandFence, updateMediaState]);
+
+  const selectDisplaySource = useCallback(async (sourceId: string) => {
+    const commandLease = callCommandFence.acquire("video-media");
+    if (commandLease == null) return;
+    setScreenPending(true);
+    try {
+      const current = callRef.current;
+      const pc = pcRef.current;
+      if (current == null || pc == null) return;
+      const refreshed = await bridge.callMedia.listDisplaySources();
+      const source = refreshed.find((candidate) => candidate.id === sourceId);
+      if (source == null) {
+        setDisplaySources(refreshed);
+        throw new Error("That display source is no longer available. Choose another source.");
+      }
       const capture = await navigator.mediaDevices.getUserMedia({ audio: false, video: desktopSourceConstraint(source.id) });
       const track = capture.getVideoTracks()[0];
       if (track == null) {
@@ -565,6 +703,7 @@ export function HumanCallControls({
         throw new Error("Display source did not provide a video track.");
       }
       const sender = pc.getSenders().find((candidate) => candidate.track?.kind === "video");
+      const previousCapture = screenStreamRef.current;
       const previousTrack = sender?.track ?? null;
       const addedSender = sender == null ? pc.addTrack(track, capture) : null;
       if (sender != null) await sender.replaceTrack(track);
@@ -578,8 +717,10 @@ export function HumanCallControls({
       }
       screenStreamRef.current = capture;
       setScreenSharing(true);
+      closeDisplayPicker();
+      stopStream(previousCapture);
       track.onended = () => {
-        if (disposedRef.current) return;
+        if (disposedRef.current || screenStreamRef.current !== capture) return;
         const endedLease = callCommandFence.acquire("video-media");
         if (endedLease == null) return;
         void (async () => {
@@ -590,7 +731,7 @@ export function HumanCallControls({
             const currentSender = pcRef.current?.getSenders().find((candidate) => candidate.track?.kind === "video");
             if (currentSender != null) await currentSender.replaceTrack(camera);
             const active = callRef.current;
-            if (active != null) await updateMediaState(active, { screenShare: false });
+            if (active != null) await updateMediaState(active, { screenShare: false, displaySourceId: null });
           } catch (endedError) {
             setError(mediaFailure(endedError));
           } finally {
@@ -602,7 +743,12 @@ export function HumanCallControls({
       commandLease.release();
       setScreenPending(false);
     }
-  }, [bridge.callMedia, callCommandFence, screenSharing, updateMediaState]);
+  }, [bridge.callMedia, callCommandFence, closeDisplayPicker, updateMediaState]);
+
+  const toggleScreen = useCallback(async () => {
+    if (screenSharing) await stopScreenShare();
+    else await openDisplayPicker();
+  }, [openDisplayPicker, screenSharing, stopScreenShare]);
 
   useEffect(() => () => {
     callCommandFence.dispose();
@@ -627,6 +773,8 @@ export function HumanCallControls({
     }, 1000);
     return () => {
       disposedRef.current = true;
+      displayPickerGenerationRef.current += 1;
+      setDisplayPickerOpen(false);
       window.clearInterval(timer);
       closePeer();
       stopStream(localStreamRef.current);
@@ -656,10 +804,30 @@ export function HumanCallControls({
       <SandButton aria-pressed={muted} onClick={() => void toggleMute().catch((toggleError) => setError(mediaFailure(toggleError)))} pending={mutePending} size="sm" variant="secondary">{muted ? "Unmute" : "Mute"}</SandButton>
       <SandButton aria-pressed={cameraEnabled} onClick={() => void toggleCamera().catch((toggleError) => setError(mediaFailure(toggleError)))} pending={cameraPending} size="sm" variant="secondary">{cameraEnabled ? "Camera off" : "Camera on"}</SandButton>
       <SandButton aria-pressed={screenSharing} onClick={() => void toggleScreen().catch((toggleError) => setError(mediaFailure(toggleError)))} pending={screenPending} size="sm" variant="secondary">{screenSharing ? "Stop sharing" : "Share screen"}</SandButton>
+      {screenSharing ? <SandButton aria-label="Choose another display source" onClick={() => void openDisplayPicker().catch((pickerError) => setError(mediaFailure(pickerError)))} pending={screenPending} size="sm" variant="secondary">Change screen</SandButton> : null}
       <SandButton aria-label="End call" onClick={() => void hangup()} sentiment="danger" size="sm">End</SandButton>
+      {diagnostics == null ? null : <details aria-label="Call diagnostics">
+        <summary>Diagnostics</summary>
+        <dl>
+          <dt>Codec</dt><dd>{diagnostics.codec ?? "Unknown"}</dd>
+          <dt>Path</dt><dd>{diagnostics.path ?? "Unknown"}</dd>
+          <dt>RTT</dt><dd>{diagnostics.roundTripTimeMs == null ? "Unknown" : `${diagnostics.roundTripTimeMs} ms`}</dd>
+          <dt>Send bitrate</dt><dd>{diagnostics.sendBitrateKbps == null ? "Sampling" : `${diagnostics.sendBitrateKbps} kbps`}</dd>
+          <dt>Receive bitrate</dt><dd>{diagnostics.receiveBitrateKbps == null ? "Sampling" : `${diagnostics.receiveBitrateKbps} kbps`}</dd>
+          <dt>Packet loss</dt><dd>{diagnostics.packetLossPercent == null ? "Unknown" : `${diagnostics.packetLossPercent}%`}</dd>
+          <dt>Jitter</dt><dd>{diagnostics.jitterMs == null ? "Unknown" : `${diagnostics.jitterMs} ms`}</dd>
+        </dl>
+      </details>}
     </> : null}
     <video aria-label="Local call preview" autoPlay muted playsInline ref={localVideoRef} hidden={!cameraEnabled && !screenSharing} />
     <video aria-label="Remote call video" autoPlay playsInline ref={remoteVideoRef} hidden={!active} />
     {error == null ? null : <span role="alert">{error}</span>}
+    <OverlayDialog label="Choose a display source" onClose={closeDisplayPicker} open={displayPickerOpen} panelStyle={{ width: "min(520px, calc(100vw - 32px))", padding: 16, background: "var(--fabushi-surface-elevated, Canvas)", border: "1px solid var(--fabushi-border-subtle, ButtonBorder)", borderRadius: 12 }}>
+      <h2>Choose what to share</h2>
+      <div aria-label="Display sources" role="menu">
+        {displaySources.map((source) => <SandMenuItem key={source.id} onSelect={() => void selectDisplaySource(source.id).catch((pickerError) => setError(mediaFailure(pickerError)))}>{source.name}</SandMenuItem>)}
+      </div>
+      <SandButton onClick={closeDisplayPicker} size="sm" variant="secondary">Cancel</SandButton>
+    </OverlayDialog>
   </div>;
 }
