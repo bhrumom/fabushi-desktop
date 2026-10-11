@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 7377,
+    "unread": 7301,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,11 +13478,11 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Accepted prefix 8,748/16,125; Hunspell FORBIDDENWORD/FORCEUCASE/FULLSTRIP/German-compounding window 8,730–8,748 exact-read and responsibility-decomposed; unread 7,377; unknown 15,845; omitted 0. Next is the non-UTF-8 tests/gh-hunzip-overflow.aff.hz raw-byte fixture.",
-    "source_authority_evidence": "Orders 8,730–8,748 were exact-read from pinned hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b using run 38104688586 job 114367624265 source-authority identity evidence and direct exact-blob reads. They cover FORBIDDENWORD inheritance/homonym exceptions, FORCEUCASE compound acceptance/suggestions, FULLSTRIP, and current/legacy German compounding including case boundaries, Fuge elements, dash composition, forbidden exceptions and circumfix positioning. All remain mapped-open, unknown_closed=false and omitted=false. Order 8,749 remains unread because the connector cannot decode its non-UTF-8 compressed bytes; no false read closure was recorded.",
-    "current_source_read_through": 8748,
-    "first_unread_order": 8749,
-    "first_unread_path": "Telegram/ThirdParty/hunspell::tests/gh-hunzip-overflow.aff.hz"
+    "source_read_reconciliation": "Accepted prefix 8,824/16,125; Hunspell regression window 8,749–8,824 exact-read and responsibility-decomposed; unread 7,301; unknown 15,845; omitted 0. Next is tests/hu.aff.",
+    "source_authority_evidence": "Orders 8,749–8,812 were raw-byte materialized by GitHub Actions run 38105710749 job 114370739825 artifact 11689521875 at 9f6ea014; binary/non-UTF blobs 8,749 and 8,766 matched both exact Git blob SHA and manifest SHA-256. Orders 8,813–8,824 were exact-read from the pinned Hunspell commit. gh1058 self-suggestion behavior is source-neutrally implemented in the existing shipping Electron context-menu owner at 7db73f0d, with fresh descendant Actions required. All source rows remain unknown_closed=false and omitted=false.",
+    "current_source_read_through": 8824,
+    "first_unread_order": 8825,
+    "first_unread_path": "Telegram/ThirdParty/hunspell::tests/hu.aff"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 8748,
-    "first_unread_order": 8749,
-    "first_unread_path": "Telegram/ThirdParty/hunspell::tests/gh-hunzip-overflow.aff.hz",
+    "read_through": 8824,
+    "first_unread_order": 8825,
+    "first_unread_path": "Telegram/ThirdParty/hunspell::tests/hu.aff",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {

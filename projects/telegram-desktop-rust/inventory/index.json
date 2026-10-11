@@ -14,26 +14,27 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 7377,
+    "unread_minimum": 7301,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through deterministic order 8,748; unread 7,377; unknown 15,845; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition through deterministic order 8,824; unread 7,301; unknown 15,845; omitted 0."
   },
   "latest_recursive_evidence": {
-    "run_id": 38097947894,
+    "run_id": 38105710749,
     "run_attempt": 1,
-    "job_id": 114347708634,
-    "head_sha": "b1ab6c8e3714657632fc4713361ecb1d92d92e16",
-    "artifact_id": 11686817472,
-    "artifact_digest": "sha256:46190185768fdb08a210beb0d90974837732312ca7ffa4c710f86ebb7d8dc75c",
+    "job_id": 114370739825,
+    "head_sha": "9f6ea014ffa7a33bc21f547a6ad79a4c802c83bd",
+    "artifact_id": 11689521875,
+    "artifact_digest": "sha256:70664b45fadb9af72b43dc45c02602161ce27ef49d4a7032fddc7731ce6ab22b",
     "artifact_files": [
       "upstream-recursive-inventory.json",
       "current-first-unread/window-manifest.json",
-      "current-first-unread/08666-compoundrule3.dic",
-      "current-first-unread/08729-forbiddenword.aff"
+      "current-first-unread/08749-gh-hunzip-overflow.aff.hz",
+      "current-first-unread/08766-gh1044.aff",
+      "current-first-unread/08812-gh646.aff"
     ],
-    "evidence_status": "historical-diagnostic-after-descendant-accounting-commit",
+    "evidence_status": "historical-diagnostic-after-descendant-accounting-and-production-commit",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
-    "note": "b1ab6c8e source authority materialized exact 8,666–8,729 identities. This descendant records responsibility decomposition; fresh exact-head Actions are mandatory."
+    "note": "9f6ea014 source authority validated Revision 9 accounting and materialized exact raw identities 8,749–8,812. This descendant records responsibility decomposition through 8,824 plus gh1058 production wiring; fresh exact-head Actions are mandatory."
   },
   "closure_rules": {
     "executable_runner": "github-actions",
@@ -43,7 +44,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live authority exact through deterministic order 8,748; first unread 8,749 Telegram/ThirdParty/hunspell::tests/gh-hunzip-overflow.aff.hz; unread_minimum is 7,377; unknown remains 15,845; omitted remains 0.",
+  "note": "Live authority exact through deterministic order 8,824; first unread 8,825 Telegram/ThirdParty/hunspell::tests/hu.aff; unread_minimum is 7,301; unknown remains 15,845; omitted remains 0.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -61,10 +62,10 @@
       6541,
       6627
     ],
-    "current_source_read_through": 8748,
-    "first_unread_order": 8749,
-    "first_unread_path": "Telegram/ThirdParty/hunspell::tests/gh-hunzip-overflow.aff.hz",
-    "current_head_source_authority_evidence": "Orders 8,730–8,748 were exact-read from pinned hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b using the 8,730–8,793 source-authority manifest from run 38104688586 job 114367624265, then responsibility-decomposed against the actual fixtures. They close the FORBIDDENWORD dictionary/oracles, FORCEUCASE compound/suggestion case behavior, FULLSTRIP whole-root stripping, and current/legacy German compounding semantics including Fuge elements, case-boundary rejection, dash composition, forbidden exceptions and circumfix positioning. All 19 rows remain mapped-open, unknown_closed=false and omitted=false; source reading closes no unknown. Order 8,749 is a non-UTF-8 compressed overflow fixture and remains explicitly unread until raw-byte evidence is available."
+    "current_source_read_through": 8824,
+    "first_unread_order": 8825,
+    "first_unread_path": "Telegram/ThirdParty/hunspell::tests/hu.aff",
+    "current_head_source_authority_evidence": "Orders 8,749–8,812 were exact raw-byte materialized by GitHub Actions run 38105710749 job 114370739825 artifact 11689521875 at head 9f6ea014ffa7a33bc21f547a6ad79a4c802c83bd (artifact digest sha256:70664b45fadb9af72b43dc45c02602161ce27ef49d4a7032fddc7731ce6ab22b); binary/non-UTF entries 8,749 and 8,766 were independently checked against both Git blob SHA and manifest SHA-256. Orders 8,813–8,824 were exact-read from pinned hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b. Responsibilities include malformed hzip/affix fail-closed safety, command/text framing, dynamic dictionary ownership, Unicode/casing/morphology, self-suggestion rejection, oversized dictionary count rejection, alias/homonym morphology, Unicode digit tokenization, bounded n-gram work, UTF-8 affix conditions and explicit personal-dictionary path independence. All remain unknown_closed=false and omitted=false; source reading closes no unknown."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -73,9 +74,9 @@
     "development_only_non_applicable": 70,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 8748,
-    "first_unread_order": 8749,
-    "first_unread_path": "Telegram/ThirdParty/hunspell::tests/gh-hunzip-overflow.aff.hz",
+    "read_through": 8824,
+    "first_unread_order": 8825,
+    "first_unread_path": "Telegram/ThirdParty/hunspell::tests/hu.aff",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }
