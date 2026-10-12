@@ -16,7 +16,7 @@ use crate::conversation::{
 };
 use crate::message::{
     ClientMessageId, DeliveryState, ForwardPrivacy, Message, MessageContent, MessageId,
-    PendingPresenceSend, PresenceSendTrigger, ReactionSummary,
+    PendingPresenceSend, PresenceSendTrigger, ReactionSummary, TextEntityKind,
 };
 use crate::miniapp::{
     MiniAppGrant, MiniAppManifest, MiniAppPermission, MiniAppRequest, MiniAppResponse,
@@ -1315,6 +1315,69 @@ fn message_content_uses_media(content: &MessageContent) -> bool {
     )
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum SharedMediaKind {
+    Photo,
+    Video,
+    PhotoVideo,
+    MusicFile,
+    File,
+    VoiceFile,
+    Link,
+    Gif,
+    RoundVoiceFile,
+    RoundFile,
+    Pinned,
+    Poll,
+}
+
+fn formatted_text_has_shared_link(text: &crate::message::FormattedText) -> bool {
+    text.entities.iter().any(|entity| {
+        matches!(
+            &entity.kind,
+            TextEntityKind::Url | TextEntityKind::TextUrl(_)
+        )
+    })
+}
+
+fn message_has_shared_link(message: &Message) -> bool {
+    match &message.content {
+        MessageContent::Text { text } => formatted_text_has_shared_link(text),
+        MessageContent::Photo { caption, .. }
+        | MessageContent::Video { caption, .. }
+        | MessageContent::Animation { caption, .. }
+        | MessageContent::Audio { caption, .. }
+        | MessageContent::Voice { caption, .. }
+        | MessageContent::Document { caption, .. } => formatted_text_has_shared_link(caption),
+        MessageContent::Poll { question, .. } => formatted_text_has_shared_link(question),
+        _ => false,
+    }
+}
+
+fn message_matches_shared_media_kind(message: &Message, kind: SharedMediaKind) -> bool {
+    match kind {
+        SharedMediaKind::Photo => matches!(message.content, MessageContent::Photo { .. }),
+        SharedMediaKind::Video => matches!(message.content, MessageContent::Video { .. }),
+        SharedMediaKind::PhotoVideo => matches!(
+            message.content,
+            MessageContent::Photo { .. } | MessageContent::Video { .. }
+        ),
+        SharedMediaKind::MusicFile => matches!(message.content, MessageContent::Audio { .. }),
+        SharedMediaKind::File => matches!(message.content, MessageContent::Document { .. }),
+        SharedMediaKind::VoiceFile => matches!(message.content, MessageContent::Voice { .. }),
+        SharedMediaKind::Link => message_has_shared_link(message),
+        SharedMediaKind::Gif => matches!(message.content, MessageContent::Animation { .. }),
+        SharedMediaKind::RoundVoiceFile => matches!(
+            message.content,
+            MessageContent::Voice { .. } | MessageContent::VideoNote { .. }
+        ),
+        SharedMediaKind::RoundFile => matches!(message.content, MessageContent::VideoNote { .. }),
+        SharedMediaKind::Pinned => message.pinned,
+        SharedMediaKind::Poll => matches!(message.content, MessageContent::Poll { .. }),
+    }
+}
+
 fn wallet_account_id(actor_id: &ActorId) -> WalletAccountId {
     WalletAccountId(format!("wallet:{}", actor_id.0))
 }
@@ -1372,17 +1435,50 @@ impl MessagingEngine {
         &self.state
     }
 
-    /// Derive one shared-media projection directly from canonical Message state.
-    ///
-    /// No media/message identity is persisted here: the projection is rebuilt on
-    /// demand so message deletion and child destruction cannot leave a second
-    /// storage truth behind. Typed child scopes require an already-materialized
-    /// account-scoped child state. SavedSublist results additionally require the
-    /// exact authoritative membership snapshot for each message.
+    /// Derive the upload-backed shared-media projection directly from canonical
+    /// Message state. Stickers are intentionally excluded: the accepted upstream
+    /// shared-media producer excludes sticker documents from its media index.
     pub fn shared_media_message_ids(
         &self,
         destination: &ConversationDestination,
         actor_id: &ActorId,
+    ) -> Result<Vec<MessageId>, EngineError> {
+        self.shared_media_message_ids_matching(destination, actor_id, |message| {
+            matches!(
+                message.content,
+                MessageContent::Photo { .. }
+                    | MessageContent::Video { .. }
+                    | MessageContent::Animation { .. }
+                    | MessageContent::Audio { .. }
+                    | MessageContent::Voice { .. }
+                    | MessageContent::VideoNote { .. }
+                    | MessageContent::Document { .. }
+            )
+        })
+    }
+
+    /// Source-neutral equivalent of tdesktop's typed SharedMedia index.
+    ///
+    /// The projection is rebuilt from canonical Message state rather than stored
+    /// separately, so edit/delete/child-destroy invalidation cannot diverge from
+    /// the message owner. Chat-photo service media and TTL-media exclusion remain
+    /// outside this query until canonical Message exposes those typed semantics.
+    pub fn shared_media_message_ids_for_kind(
+        &self,
+        destination: &ConversationDestination,
+        actor_id: &ActorId,
+        kind: SharedMediaKind,
+    ) -> Result<Vec<MessageId>, EngineError> {
+        self.shared_media_message_ids_matching(destination, actor_id, |message| {
+            message_matches_shared_media_kind(message, kind)
+        })
+    }
+
+    fn shared_media_message_ids_matching(
+        &self,
+        destination: &ConversationDestination,
+        actor_id: &ActorId,
+        predicate: impl Fn(&Message) -> bool,
     ) -> Result<Vec<MessageId>, EngineError> {
         if !destination.is_valid() {
             return Err(EngineError::InvalidConversationChildDestination);
@@ -1405,7 +1501,7 @@ impl MessagingEngine {
             .get(conversation_id)
             .into_iter()
             .flat_map(|messages| messages.values())
-            .filter(|message| !message.deleted && message_content_uses_media(&message.content))
+            .filter(|message| !message.deleted && predicate(message))
             .filter(|message| match destination.child.as_ref() {
                 None => true,
                 Some(ConversationChildIdentity::Topic { root_message_id }) => message
@@ -1427,6 +1523,7 @@ impl MessagingEngine {
             .map(|message| message.id.clone())
             .collect())
     }
+
     pub fn recent_participant_suggestions(&self, actor_id: &ActorId) -> &[ActorId] {
         self.state
             .recent_participant_suggestions
@@ -5944,6 +6041,106 @@ mod recent_open_history_tests {
             engine.shared_media_message_ids(&unknown, &actor_id),
             Err(EngineError::InvalidConversationChildDestination),
             "renderer-visible parent messages must never invent SavedSublist membership"
+        );
+    }
+
+    #[test]
+    fn shared_media_kind_projection_matches_canonical_message_semantics() {
+        let actor_id = ActorId::new("human:shared-kind-owner");
+        let parent = ConversationId::new("conversation:shared-kind");
+        let root = ConversationDestination {
+            conversation_id: parent.clone(),
+            child: None,
+        };
+        let mut state = MessagingState::default();
+        state.actors.insert(
+            actor_id.clone(),
+            Actor::human(actor_id.0.clone(), "Shared Kind Owner"),
+        );
+
+        let mut photo = shared_media_test_message("message:kind-photo", &parent, None, 1, true);
+        photo.pinned = true;
+        let mut linked = shared_media_test_message("message:kind-link", &parent, None, 2, false);
+        linked.content = MessageContent::Text {
+            text: crate::message::FormattedText {
+                text: "Open Fabushi".into(),
+                entities: vec![crate::message::TextEntity {
+                    offset_utf16: 0,
+                    length_utf16: 4,
+                    kind: TextEntityKind::TextUrl("https://example.test".into()),
+                }],
+            },
+        };
+        let mut poll = shared_media_test_message("message:kind-poll", &parent, None, 3, false);
+        poll.content = MessageContent::Poll {
+            question: crate::message::FormattedText::plain("Choose"),
+            options: Vec::new(),
+            anonymous: true,
+            multiple_answers: false,
+            quiz: false,
+        };
+        let mut sticker = shared_media_test_message("message:kind-sticker", &parent, None, 4, false);
+        sticker.content = MessageContent::Sticker {
+            media: crate::message::MediaRef {
+                id: "media:sticker".into(),
+                file_name: None,
+                mime_type: Some("image/webp".into()),
+                size_bytes: Some(64),
+                width: Some(16),
+                height: Some(16),
+                duration_ms: None,
+                thumbnail_id: None,
+                local_path: None,
+                remote_url: None,
+                content_hash: None,
+            },
+            emoji: Some("🙂".into()),
+            set_id: None,
+        };
+
+        for message in [photo, linked, poll, sticker] {
+            state
+                .messages
+                .entry(parent.clone())
+                .or_default()
+                .insert(message.id.clone(), message);
+        }
+        let engine = MessagingEngine::from_state(state);
+
+        assert_eq!(
+            engine
+                .shared_media_message_ids_for_kind(&root, &actor_id, SharedMediaKind::Photo)
+                .unwrap(),
+            vec![MessageId::new("message:kind-photo")]
+        );
+        assert_eq!(
+            engine
+                .shared_media_message_ids_for_kind(&root, &actor_id, SharedMediaKind::PhotoVideo)
+                .unwrap(),
+            vec![MessageId::new("message:kind-photo")]
+        );
+        assert_eq!(
+            engine
+                .shared_media_message_ids_for_kind(&root, &actor_id, SharedMediaKind::Pinned)
+                .unwrap(),
+            vec![MessageId::new("message:kind-photo")]
+        );
+        assert_eq!(
+            engine
+                .shared_media_message_ids_for_kind(&root, &actor_id, SharedMediaKind::Link)
+                .unwrap(),
+            vec![MessageId::new("message:kind-link")]
+        );
+        assert_eq!(
+            engine
+                .shared_media_message_ids_for_kind(&root, &actor_id, SharedMediaKind::Poll)
+                .unwrap(),
+            vec![MessageId::new("message:kind-poll")]
+        );
+        assert_eq!(
+            engine.shared_media_message_ids(&root, &actor_id).unwrap(),
+            vec![MessageId::new("message:kind-photo")],
+            "sticker documents are not part of the accepted upstream shared-media index"
         );
     }
 
