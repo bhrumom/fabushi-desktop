@@ -266,9 +266,9 @@
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
     "unknown_minimum": 15845,
-    "unread_minimum": 3345,
+    "unread_minimum": 3281,
     "omitted_known": 0,
-    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 12,780; unknown=15,845, unread=3,345, omitted=0."
+    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 12,844; unknown=15,845, unread=3,281, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -282,7 +282,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Closure open. Read-through 12,780/16,125; first unread 12,781 Telegram/lib_spellcheck::spellcheck/platform/mac/spellcheck_mac.h@49d672c09ca5c6cec8d24db69ad6858279a5d6b3; unknown remains 15,845; call-tone packaged audible/restart acceptance and full real Group/SFU shipping composition remain open."
+    "note": "Closure open. Read-through 12,844/16,125; first unread 12,845 Telegram/lib_ui::cmake/generate_palette.cmake@e3f70430fc073eb1558340af9568755f150581d7; unknown remains 15,845; product/release closure remains open."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",
@@ -299,7 +299,7 @@
     "superseded_by_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941"
   },
   "recursive_inventory_evidence": {
-    "status": "predecessor-exact-source-window-current-descendant-validation-pending",
+    "status": "authoritative-predecessor-inventory-current-descendant-validation-pending",
     "runner": "github-actions",
     "run_id": 38187773453,
     "run_attempt": 1,
@@ -311,7 +311,7 @@
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "recursive_non_directory_entries": 16125,
     "source_closure_ready": false,
-    "note": "Orders 12,717-12,780 were exact-blob materialized on c1affdc7 and formally reviewed; the accounting descendant requires fresh exact-head Actions."
+    "note": "12,781-12,844 exact gitlink blobs matched the authoritative recursive inventory; current accounting descendant requires fresh exact-head Actions."
   },
   "build_time_acquisition_inventory": {
     "path": "projects/telegram-desktop-rust/inventory/build-time-acquisitions.json",
@@ -635,9 +635,9 @@
     "development_only_non_applicable": 206,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 12780,
-    "first_unread_order": 12781,
-    "first_unread_path": "Telegram/lib_spellcheck::spellcheck/platform/mac/spellcheck_mac.h",
+    "read_through": 12844,
+    "first_unread_order": 12845,
+    "first_unread_path": "Telegram/lib_ui::cmake/generate_palette.cmake",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
@@ -738,5 +738,5 @@
     ],
     "note": "Valid exact-head evidence for 46dfaf only; main reconciliation/accounting descendants require fresh Actions."
   },
-  "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 12,780; unknown=15,845, unread=3,345, omitted=0; first unread=12,781 Telegram/lib_spellcheck::spellcheck/platform/mac/spellcheck_mac.h@49d672c09ca5c6cec8d24db69ad6858279a5d6b3."
+  "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 12,844; unknown=15,845, unread=3,281, omitted=0; first unread=12,845 Telegram/lib_ui::cmake/generate_palette.cmake@e3f70430fc073eb1558340af9568755f150581d7."
 }
