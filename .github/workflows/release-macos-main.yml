@@ -69,7 +69,7 @@ jobs:
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "short=$short" >> "$GITHUB_OUTPUT"
-          echo "tag=fabushi-rc-v${version}-rc.${short}" >> "$GITHUB_OUTPUT"
+          echo "tag=v${version}-rc.${short}" >> "$GITHUB_OUTPUT"
           {
             echo "## macOS exact-source package"
             echo "- Source: \`$sha\`"
