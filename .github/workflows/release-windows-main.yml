@@ -319,11 +319,13 @@ jobs:
 
       - name: Write SHA256 provenance
         shell: pwsh
+        env:
+          SIGNER_THUMBPRINT: ${{ steps.signing.outputs.thumbprint }}
         run: |
           $files = Get-ChildItem desktop/release -File | Where-Object { $_.Extension -in ".exe", ".yml", ".blockmap" }
           $lines = foreach ($file in $files) { $h = Get-FileHash $file.FullName -Algorithm SHA256; "$($h.Hash.ToLower())  $($file.Name)" }
           $lines | Set-Content desktop/release/SHA256SUMS-windows.txt
-          @{source="${{ steps.source.outputs.sha }}";runId="${{ github.run_id }}";runAttempt="${{ github.run_attempt }}";platform="windows";artifacts=$lines} | ConvertTo-Json -Depth 4 | Set-Content desktop/release/provenance-windows.json
+          @{source="${{ steps.source.outputs.sha }}";runId="${{ github.run_id }}";runAttempt="${{ github.run_attempt }}";platform="windows";signerThumbprint=$env:SIGNER_THUMBPRINT;artifacts=$lines} | ConvertTo-Json -Depth 4 | Set-Content desktop/release/provenance-windows.json
 
       - name: Upload packaged acceptance evidence
         if: always()
