@@ -3707,7 +3707,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         return;
       }
       for (const attachment of result.attachments) stagedPaths.current.add(attachment.path);
-      const currentSnapshot = activeDraftSnapshotStore.get();
+      const currentSnapshot = composerDraftStore.snapshotsFor(stagingDraftScope).get();
       const currentBaseDraft = currentSnapshot.draft ?? currentSnapshot.recovery ?? EMPTY_DRAFT;
       composerDraftStore.setDraft(stagingDraftScope, { ...currentBaseDraft, attachments: [...currentBaseDraft.attachments, ...result.attachments] });
       setNotice(result.notice);
@@ -3725,7 +3725,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const submit = (options: { readonly silent?: boolean; readonly scheduledAtMs?: number } = {}) => {
     if (activeAgent == null || client == null || activeComposerDraftScope == null) return;
     if ((options.silent === true || options.scheduledAtMs != null) && !activeIsHuman) return;
-    const liveDraftSnapshot = activeDraftSnapshotStore.get();
+    const liveDraftSnapshot = composerDraftStore.snapshotsFor(activeComposerDraftScope).get();
     const liveBaseDraft = liveDraftSnapshot.draft ?? liveDraftSnapshot.recovery ?? EMPTY_DRAFT;
     const liveDraft = replyThreadController.applyReplyToDraft(liveBaseDraft);
     const clientNonce = makeClientNonce();
