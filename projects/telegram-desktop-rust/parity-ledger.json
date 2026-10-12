@@ -6,8 +6,8 @@
   "target_commit": "371b72f1cd20de03dc4dff9a15ed761054968093",
   "coverage": {
     "source_entries_total": 16125,
-    "unknown": 14904,
-    "unread": 1737,
+    "unknown": 14840,
+    "unread": 1673,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,22 +13478,22 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Accepted prefix 14,388/16,125; orders 14,325-14,388 exact-read as Doxygen generated search HTML/searchData indexes.",
-    "source_authority_evidence": "Parent 2b752566 exact-head Rust desktop runtime 38216855900 and Desktop Chat Parity CI 38216855977 passed; this accounting descendant requires fresh same-head Actions.",
-    "current_source_read_through": 14388,
-    "first_unread_order": 14389,
-    "first_unread_path": "doc/gh-pages::search/functions_10.js"
+    "source_read_reconciliation": "Accepted prefix 14,452/16,125; orders 14,389-14,452 exact-read as Doxygen generated search HTML/searchData outputs plus search/mag_sel.svg consumer-reachability audit.",
+    "source_authority_evidence": "Current 14,452 accounting descendant requires fresh same-head Actions.",
+    "current_source_read_through": 14452,
+    "first_unread_order": 14453,
+    "first_unread_path": "doc/gh-pages::search/namespaces_1.html"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "deterministic_prefix_closed": 57,
-    "development_only_non_applicable": 1147,
-    "unknown_closed": 1221,
+    "development_only_non_applicable": 1211,
+    "unknown_closed": 1285,
     "omitted": 0,
-    "read_through": 14388,
-    "first_unread_order": 14389,
-    "first_unread_path": "doc/gh-pages::search/functions_10.js",
+    "read_through": 14452,
+    "first_unread_order": 14453,
+    "first_unread_path": "doc/gh-pages::search/namespaces_1.html",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
