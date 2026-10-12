@@ -233,8 +233,179 @@ jobs:
           if ($p.ExitCode -ne 0) { throw "Windows baseline install failed" }
           $exe = Get-ChildItem "$env:LOCALAPPDATA\Programs" -Recurse -Filter fabushi.exe | Select-Object -First 1
           if (-not $exe) { throw "Installed Windows baseline executable missing" }
-          $version = $exe.VersionInfo.ProductVersion
-          if ([string]::IsNullOrWhiteSpace($version) -or $version -eq $env:CANDIDATE_VERSION) { throw "Windows baseline version is invalid" }
+          if ($setup.Name -notmatch '^fabushi-(?<version>[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?)-setup\\.exe
+          "executable=$($exe.FullName)" | Out-File $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Update through shipping updater
+        working-directory: desktop
+        shell: pwsh
+        env:
+          FABUSHI_UPDATER_BASELINE_EXECUTABLE: ${{ steps.baseline.outputs.executable }}
+          FABUSHI_UPDATER_BASELINE_VERSION: ${{ steps.baseline.outputs.version }}
+          FABUSHI_UPDATER_TARGET_VERSION: ${{ inputs.candidate_version }}
+          FABUSHI_UPDATER_EVIDENCE_DIR: ${{ runner.temp }}\windows-updater-evidence
+        run: node scripts/release-updater-acceptance.mjs
+
+      - name: Verify updater restart, Authenticode identity, and candidate provenance
+        shell: pwsh
+        env:
+          EXECUTABLE: ${{ steps.baseline.outputs.executable }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          $deadline = (Get-Date).AddMinutes(2)
+          $restarted = $false
+          while ((Get-Date) -lt $deadline) {
+            if (Get-Process fabushi -ErrorAction SilentlyContinue) { $restarted = $true; break }
+            Start-Sleep -Seconds 2
+          }
+          if (-not $restarted) { throw "Windows updater did not relaunch the candidate" }
+          New-Item "$env:RUNNER_TEMP\windows-updater-evidence" -ItemType Directory -Force | Out-Null
+          '{"autoRelaunched":true}' | Set-Content "$env:RUNNER_TEMP\windows-updater-evidence\restart.json"
+          Get-Process fabushi -ErrorAction SilentlyContinue | Stop-Process -Force
+          $exe = Get-Item $env:EXECUTABLE
+          if (-not $exe.VersionInfo.ProductVersion.StartsWith($env:CANDIDATE_VERSION)) { throw "Updated Windows file version mismatch: $($exe.VersionInfo.ProductVersion)" }
+          gh release download $env:CANDIDATE_TAG --repo $env:GITHUB_REPOSITORY --dir $env:RUNNER_TEMP -p "provenance-windows.json" -p "*setup.exe"
+          $prov = Get-Content "$env:RUNNER_TEMP\provenance-windows.json" -Raw | ConvertFrom-Json
+          if ($prov.source -ne $env:CANDIDATE_SHA) { throw "Windows candidate source provenance mismatch" }
+          $installedSig = Get-AuthenticodeSignature $env:EXECUTABLE
+          if ($installedSig.Status -ne "Valid" -or $installedSig.SignerCertificate.Thumbprint -ne $prov.signerThumbprint) { throw "Updated Windows signer/provenance mismatch" }
+
+      - name: Verify running updated candidate exact identity
+        working-directory: desktop
+        shell: pwsh
+        env:
+          FABUSHI_RELEASE_IDENTITY_EXECUTABLE: ${{ steps.baseline.outputs.executable }}
+          FABUSHI_RELEASE_IDENTITY_VERSION: ${{ inputs.candidate_version }}
+          FABUSHI_RELEASE_IDENTITY_SOURCE_SHA: ${{ inputs.candidate_sha }}
+          FABUSHI_RELEASE_IDENTITY_EVIDENCE_DIR: ${{ runner.temp }}\windows-release-identity
+        run: node scripts/verify-release-identity.mjs
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: real-updater-windows-${{ inputs.candidate_sha }}
+          path: |
+            ${{ runner.temp }}/windows-updater-evidence
+            ${{ runner.temp }}/windows-release-identity
+          if-no-files-found: error
+          retention-days: 90
+
+  linux-real-updater:
+    name: Linux trusted baseline -> shipping updater -> exact candidate
+    needs: bind-candidate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      GH_TOKEN: ${{ github.token }}
+      CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+      CANDIDATE_TAG: ${{ inputs.candidate_tag }}
+      CANDIDATE_VERSION: ${{ inputs.candidate_version }}
+      BASELINE_TAG: ${{ inputs.linux_baseline_tag }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.candidate_sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - run: sudo apt-get update && sudo apt-get install -y xvfb
+      - run: npm --prefix desktop ci --prefer-offline --no-audit --no-fund
+
+      - name: Download and authenticate previously accepted Linux baseline
+        id: baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="$RUNNER_TEMP/linux-baseline"
+          mkdir -p "$base"
+          gh release download "$BASELINE_TAG" --repo "$GITHUB_REPOSITORY" --dir "$base" \
+            -p '*.AppImage' -p '*.AppImage.asc' -p 'linux-release-signing-key.asc' -p 'provenance-linux.json'
+          appimage="$(find "$base" -maxdepth 1 -type f -name '*.AppImage' -print -quit)"
+          test -n "$appimage"
+          prov="$base/provenance-linux.json"
+          test -s "$prov"
+          key="$base/linux-release-signing-key.asc"
+          test -s "$key"
+          fingerprint="$(gpg --batch --with-colons --import-options show-only --import "$key" 2>/dev/null | awk -F: '$1=="fpr"{print $10;exit}')"
+          test -n "$fingerprint"
+          test "$fingerprint" = "$(jq -r .signingFingerprint "$prov")"
+          gpg --batch --import "$key"
+          gpg --batch --verify "$appimage.asc" "$appimage"
+          chmod +x "$appimage"
+          version="$(printf '%s' "$(basename "$appimage")" | sed -n 's/^fabushi-\([0-9][0-9.]*\)-x64\.AppImage$/\1/p')"
+          test -n "$version"
+          test "$version" != "$CANDIDATE_VERSION"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "executable=$appimage" >> "$GITHUB_OUTPUT"
+          echo "fingerprint=$fingerprint" >> "$GITHUB_OUTPUT"
+
+      - name: Update through shipping updater
+        working-directory: desktop
+        shell: bash
+        env:
+          APPIMAGE_EXTRACT_AND_RUN: '1'
+          FABUSHI_UPDATER_BASELINE_EXECUTABLE: ${{ steps.baseline.outputs.executable }}
+          FABUSHI_UPDATER_BASELINE_VERSION: ${{ steps.baseline.outputs.version }}
+          FABUSHI_UPDATER_TARGET_VERSION: ${{ inputs.candidate_version }}
+          FABUSHI_UPDATER_EVIDENCE_DIR: ${{ runner.temp }}/linux-updater-evidence
+        run: xvfb-run -a node scripts/release-updater-acceptance.mjs
+
+      - name: Verify updater restart, package signature/hash, and candidate provenance
+        shell: bash
+        env:
+          APPIMAGE: ${{ steps.baseline.outputs.executable }}
+          BASELINE_FINGERPRINT: ${{ steps.baseline.outputs.fingerprint }}
+        run: |
+          set -euo pipefail
+          deadline=$((SECONDS+120))
+          restarted=0
+          while [ "$SECONDS" -lt "$deadline" ]; do
+            if pgrep -fa fabushi | grep -v grep >/dev/null 2>&1; then restarted=1; break; fi
+            sleep 2
+          done
+          test "$restarted" = 1
+          mkdir -p "$RUNNER_TEMP/linux-updater-evidence"
+          printf '{"autoRelaunched":true}\n' > "$RUNNER_TEMP/linux-updater-evidence/restart.json"
+          pkill -f fabushi || true
+          candidate="$RUNNER_TEMP/linux-candidate"
+          mkdir -p "$candidate"
+          gh release download "$CANDIDATE_TAG" --repo "$GITHUB_REPOSITORY" --dir "$candidate" \
+            -p '*.AppImage' -p '*.AppImage.asc' -p 'linux-release-signing-key.asc' -p 'provenance-linux.json'
+          candidate_image="$(find "$candidate" -maxdepth 1 -type f -name '*.AppImage' -print -quit)"
+          test -n "$candidate_image"
+          test "$(sha256sum "$APPIMAGE" | awk '{print $1}')" = "$(sha256sum "$candidate_image" | awk '{print $1}')"
+          prov="$candidate/provenance-linux.json"
+          test "$(jq -r .source "$prov")" = "$CANDIDATE_SHA"
+          test "$(jq -r .signingFingerprint "$prov")" = "$BASELINE_FINGERPRINT"
+          gpg --batch --verify "$candidate_image.asc" "$candidate_image"
+
+      - name: Verify running updated candidate exact identity
+        working-directory: desktop
+        shell: bash
+        env:
+          APPIMAGE_EXTRACT_AND_RUN: '1'
+          FABUSHI_RELEASE_IDENTITY_EXECUTABLE: ${{ steps.baseline.outputs.executable }}
+          FABUSHI_RELEASE_IDENTITY_VERSION: ${{ inputs.candidate_version }}
+          FABUSHI_RELEASE_IDENTITY_SOURCE_SHA: ${{ inputs.candidate_sha }}
+          FABUSHI_RELEASE_IDENTITY_EVIDENCE_DIR: ${{ runner.temp }}/linux-release-identity
+        run: xvfb-run -a node scripts/verify-release-identity.mjs
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: real-updater-linux-${{ inputs.candidate_sha }}
+          path: |
+            ${{ runner.temp }}/linux-updater-evidence
+            ${{ runner.temp }}/linux-release-identity
+          if-no-files-found: error
+          retention-days: 90
+) { throw "Windows baseline installer filename does not contain an exact semantic version" }
+          $version = $Matches.version
+          if ($version -eq $env:CANDIDATE_VERSION) { throw "Windows baseline must be older than the candidate" }
           "version=$version" | Out-File $env:GITHUB_OUTPUT -Encoding utf8 -Append
           "executable=$($exe.FullName)" | Out-File $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
