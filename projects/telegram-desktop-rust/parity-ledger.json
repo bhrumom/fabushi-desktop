@@ -10124,14 +10124,24 @@
       "network_service_dependencies": [],
       "service_owner": "Not applicable.",
       "deployment_evidence": [],
-      "implementation_status": "mapped",
+      "implementation_status": "implemented",
       "coverage_disposition": "rewritten",
       "blockers": [
-        "End-to-end child deletion/resource invalidation composition remains open"
+        "Fresh exact-head GitHub Actions and independent acceptance remain open.",
+        "Profile/UserPhotos source responsibilities are tracked separately by canonical Identity/Profile/Resource owners; this row closes only the source-neutral no-second-storage-owner facade contract."
       ],
-      "production_entrypoints": [],
-      "production_evidence": [],
-      "test_evidence": [],
+      "production_entrypoints": [
+        "MessagingService/MessagingEngine canonical Message state -> SearchIndex derived search/media projection + MediaCache independent physical materialization; no StorageFacade state owner"
+      ],
+      "production_evidence": [
+        "path:native/mahayana-messaging/src/engine.rs#MessagingEngine",
+        "path:native/mahayana-messaging/src/search.rs#SearchIndex",
+        "path:native/mahayana-messaging/src/media_cache.rs#MediaCache"
+      ],
+      "test_evidence": [
+        "native/mahayana-messaging/tests/messaging_contract.rs#shared_media_projection_uses_canonical_message_and_child_state_only",
+        "native/mahayana-messaging/tests/messaging_contract.rs#shared_media_search_deletion_rebuilds_from_canonical_state_without_evicting_media_cache"
+      ],
       "target_commit": "6e6744eb8716671f060251aacc986ef5fb483b0c",
       "workflow_run": null,
       "run_attempt": null,
@@ -10349,14 +10359,24 @@
       "network_service_dependencies": [],
       "service_owner": "Not applicable.",
       "deployment_evidence": [],
-      "implementation_status": "mapped",
+      "implementation_status": "implemented",
       "coverage_disposition": "rewritten",
       "blockers": [
-        "Shipping SavedMessages deletion still needs child-message/search/resource composition"
+        "Fresh exact-head GitHub Actions and independent acceptance remain open.",
+        "Profile/UserPhotos source responsibilities remain separate Identity/Profile/Resource responsibilities rather than being claimed by this storage delegation row."
       ],
-      "production_entrypoints": [],
-      "production_evidence": [],
-      "test_evidence": [],
+      "production_entrypoints": [
+        "MessagingService::handle -> MessagingEngine canonical lifecycle -> SearchIndex rebuild/removal while MediaCache retains independent byte ownership"
+      ],
+      "production_evidence": [
+        "path:native/mahayana-messaging/src/engine.rs#MessagingEngine",
+        "path:native/mahayana-messaging/src/search.rs#SearchIndex",
+        "path:native/mahayana-messaging/src/media_cache.rs#MediaCache"
+      ],
+      "test_evidence": [
+        "native/mahayana-messaging/tests/messaging_contract.rs#shared_media_projection_uses_canonical_message_and_child_state_only",
+        "native/mahayana-messaging/tests/messaging_contract.rs#shared_media_search_deletion_rebuilds_from_canonical_state_without_evicting_media_cache"
+      ],
       "target_commit": "6e6744eb8716671f060251aacc986ef5fb483b0c",
       "workflow_run": null,
       "run_attempt": null,
