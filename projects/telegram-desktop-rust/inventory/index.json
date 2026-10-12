@@ -13,10 +13,10 @@
     "recursive_non_directory_entries": 16125,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 14392,
-    "unread_minimum": 1225,
+    "unknown_minimum": 14328,
+    "unread_minimum": 1161,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through deterministic order 14,900; unknown 14,392; unread 1,225; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition through deterministic order 14,964; unknown 14,328; unread 1,161; omitted 0."
   },
   "latest_recursive_evidence": {
     "run_id": 38216855900,
@@ -35,7 +35,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live baseline accepted; closure open. Read-through 14,900; unread_minimum is 1,225; unknown remains 14,392; omitted remains 0; first unread 14,901 is doc/gh-pages::structranges_1_1detail_1_1flipped.html.",
+  "note": "Live baseline accepted; closure open. Read-through 14,964; unread_minimum is 1,161; unknown remains 14,328; omitted remains 0; first unread 14,965 is doc/gh-pages::structranges_1_1filter__view.html.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -53,23 +53,23 @@
       6541,
       6627
     ],
-    "current_source_read_through": 14900,
-    "first_unread_order": 14901,
-    "first_unread_path": "doc/gh-pages::structranges_1_1detail_1_1flipped.html",
-    "current_head_source_authority_evidence": "Orders 14,837-14,900 directly exact-read on current PR lineage; fresh same-head Actions required.",
-    "source_read_reconciliation": "Accepted prefix 14,900/16,125; orders 14,837-14,900 exact-read as Doxygen structure/API HTML and JS sidecars plus diagram PNGs with exact Git identity, PNG signature/byte-size, and generated-HTML reachability.",
-    "source_authority_evidence": "Fresh exact-head validation required for the 14,900 accounting descendant."
+    "current_source_read_through": 14964,
+    "first_unread_order": 14965,
+    "first_unread_path": "doc/gh-pages::structranges_1_1filter__view.html",
+    "current_head_source_authority_evidence": "Orders 14,901-14,964 directly exact-read on current PR lineage; fresh same-head Actions required.",
+    "source_read_reconciliation": "Accepted prefix 14,964/16,125; orders 14,901-14,964 exact-read as Doxygen structure/API HTML and JS sidecars plus diagram PNGs with exact Git identity, PNG signature/byte-size, and generated-HTML reachability.",
+    "source_authority_evidence": "Fresh exact-head validation required for the 14,964 accounting descendant."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "deterministic_prefix_closed": 57,
-    "development_only_non_applicable": 1659,
-    "unknown_closed": 1733,
+    "development_only_non_applicable": 1723,
+    "unknown_closed": 1797,
     "omitted": 0,
-    "read_through": 14900,
-    "first_unread_order": 14901,
-    "first_unread_path": "doc/gh-pages::structranges_1_1detail_1_1flipped.html",
+    "read_through": 14964,
+    "first_unread_order": 14965,
+    "first_unread_path": "doc/gh-pages::structranges_1_1filter__view.html",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }
