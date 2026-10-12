@@ -266,9 +266,9 @@
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
     "unknown_minimum": 15845,
-    "unread_minimum": 3409,
+    "unread_minimum": 3345,
     "omitted_known": 0,
-    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 12,716; unknown=15,845, unread=3,409, omitted=0."
+    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 12,780; unknown=15,845, unread=3,345, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -282,7 +282,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Closure open. Read-through 12,716/16,125; first unread 12,717 Telegram/lib_lottie::lottie/details/lottie_instance.h@810b3d4c5a1dc4a59bed5c9a59f77d56c4703f0b; unknown remains 15,845; call-tone packaged audible/restart acceptance and full real Group/SFU shipping composition remain open."
+    "note": "Closure open. Read-through 12,780/16,125; first unread 12,781 Telegram/lib_spellcheck::spellcheck/platform/mac/spellcheck_mac.h@49d672c09ca5c6cec8d24db69ad6858279a5d6b3; unknown remains 15,845; call-tone packaged audible/restart acceptance and full real Group/SFU shipping composition remain open."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",
@@ -301,17 +301,17 @@
   "recursive_inventory_evidence": {
     "status": "predecessor-exact-source-window-current-descendant-validation-pending",
     "runner": "github-actions",
-    "run_id": 38187443700,
+    "run_id": 38187773453,
     "run_attempt": 1,
-    "job_id": 114612781490,
-    "validation_head_sha": "78cdb89d41ac19de0411df8e033a5960b2c29a7c",
-    "artifact_id": 11719943351,
-    "artifact_name": "tdrp-revision9-authority-78cdb89d41ac19de0411df8e033a5960b2c29a7c",
-    "artifact_digest": "sha256:f2837449ff27e3fdfaac9028fd573f1afdfbf1dcfc250a070fa1e42f02274934",
+    "job_id": 114614699733,
+    "validation_head_sha": "c1affdc7c11a03bd471cf290b43f7eebd9ac8006",
+    "artifact_id": 11720595473,
+    "artifact_name": "tdrp-revision9-authority-c1affdc7c11a03bd471cf290b43f7eebd9ac8006",
+    "artifact_digest": "sha256:d53c4936ad4a4f3b3dd483211f67f3ff10a4cc0c2ffcd9ccf28c0c010f7448f8",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "recursive_non_directory_entries": 16125,
     "source_closure_ready": false,
-    "note": "Orders 12,653-12,716 were exact-blob materialized on 78cdb89d and formally reviewed; the accounting descendant requires fresh exact-head Actions."
+    "note": "Orders 12,717-12,780 were exact-blob materialized on c1affdc7 and formally reviewed; the accounting descendant requires fresh exact-head Actions."
   },
   "build_time_acquisition_inventory": {
     "path": "projects/telegram-desktop-rust/inventory/build-time-acquisitions.json",
@@ -635,9 +635,9 @@
     "development_only_non_applicable": 206,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 12716,
-    "first_unread_order": 12717,
-    "first_unread_path": "Telegram/lib_lottie::lottie/details/lottie_instance.h",
+    "read_through": 12780,
+    "first_unread_order": 12781,
+    "first_unread_path": "Telegram/lib_spellcheck::spellcheck/platform/mac/spellcheck_mac.h",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
@@ -738,5 +738,5 @@
     ],
     "note": "Valid exact-head evidence for 46dfaf only; main reconciliation/accounting descendants require fresh Actions."
   },
-  "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 12,460; unknown=15,845, unread=3,665, omitted=0; first unread=12,461 Telegram/lib_base::base/match_method.h@31a85ab3465bec439be6e70f7c2c3c109acfae7d."
+  "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 12,780; unknown=15,845, unread=3,345, omitted=0; first unread=12,781 Telegram/lib_spellcheck::spellcheck/platform/mac/spellcheck_mac.h@49d672c09ca5c6cec8d24db69ad6858279a5d6b3."
 }
