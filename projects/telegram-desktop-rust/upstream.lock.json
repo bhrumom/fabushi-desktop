@@ -629,12 +629,12 @@
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "deterministic_prefix_closed": 57,
-    "development_only_non_applicable": 699,
-    "unknown_closed": 773,
+    "development_only_non_applicable": 763,
+    "unknown_closed": 837,
     "omitted": 0,
-    "read_through": 13940,
-    "first_unread_order": 13941,
-    "first_unread_path": "doc/gh-pages::functions_dup.js",
+    "read_through": 14004,
+    "first_unread_order": 14005,
+    "first_unread_path": "doc/gh-pages::group__integral.js",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
