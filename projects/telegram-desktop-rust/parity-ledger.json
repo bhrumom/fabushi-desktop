@@ -8973,7 +8973,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5b81fa35aaa8d24e14ec9603e5929d324850d9c9",
+      "source_commit": "63a1831728147e941ad2dc8939879cf5afe419c7",
       "source_path": "Telegram/SourceFiles/data/components/recent_peers.cpp",
       "source_blob_sha": "bf676e4407fcfa4bf93b2bf7e468b8f61c6ffd05",
       "source_kind": "source",
@@ -9051,25 +9051,25 @@
       ],
       "service_owner": "Fabushi canonical messaging/sync service",
       "deployment_evidence": [],
-      "implementation_status": "mapped",
+      "implementation_status": "implemented",
       "coverage_disposition": "rewritten",
       "blockers": [
-        "Shipping composition is now present and c6fa6d8 predecessor diagnostics are green, but this ledger update is bundled with a new Shared Media production change; fresh GitHub Actions evidence must be established on the descendant exact HEAD before implementation_status can be promoted.",
-        "Same-release-candidate packaging/install/upgrade/restart provenance, updater temporal acceptance, full Fabushi Bot regression and independent release acceptance remain open."
+        "Same-release-candidate macOS/Windows/Linux package signing/install/upgrade/restart recovery, updater provenance/temporal acceptance, full Fabushi Bot regression and independent release acceptance remain open."
       ],
       "production_entrypoints": [
         "frontend/src/production/ProductionRenderer.tsx::noteRecentParticipantSelection -> client.call(\"noteRecentParticipantSuggestion\", createCanonicalRecentParticipantSelectionRequest(...))",
         "source/host/src/host_gateway_api.rs::host_gateway_owner(\"noteRecentParticipantSuggestion\") -> HostGatewayOwner::Session",
-        "source/host/src/extensions/session/production.rs::ProductionSessionWorkers::note_recent_participant_suggestion -> canonical _messaging MessagingService",
+        "source/host/src/extensions/session/production.rs::ProductionSessionWorkers::note_recent_participant_suggestion -> unique _messaging MessagingService",
         "native/mahayana-messaging/src/service.rs::MessagingService::note_recent_participant_selection -> persist_recent_projection_mutation",
         "native/mahayana-messaging/src/engine.rs::MessagingEngine::note_recent_participant_suggestion"
       ],
       "production_evidence": [
-        "predecessor-commit:c6fa6d8da1c6f038d05bab3648972b8507ca6b39",
-        "predecessor-github-actions:38264577322:job-114863874282:success",
-        "predecessor-github-actions:38264577177:job-114863873489:success",
-        "predecessor-artifact:11753784269:sha256:2ffff8ad4ea3a811f4bde65f6d99a201b5ee0b3e72a1b48a1fc0130d579bf06a",
-        "predecessor-artifact:11754731636:sha256:2b1843a22f7ae500454bb584a642c5b10ff5423ba01f0672639d09bc623d8779"
+        "exact-head:494de75d926f36bb4f2fda38d55623d20d58af96",
+        "github-actions:38272194858:job-114889158111:success",
+        "github-actions:38272194813:job-114889364816:success",
+        "artifact:11756974159:sha256:4fd735a81b14af668e3de3fcdec32bcc6912246df8fb285f8258c6dc0751f9b0",
+        "artifact:11756789145:sha256:01046e1c11dcf81ac7775fae5e9ba6f22d5b810cba2c7ac3e61cf1de9d26b9bc",
+        "source-authority:38272194858:job-114889158201:artifact-11757920879:sha256:3496e286cbb424eaad580e8f4a5805536cb2e60547e6c37dd6ed27700ed3c894"
       ],
       "test_evidence": [
         "native/mahayana-messaging/src/engine.rs::recent_participant_suggestions_are_durable_bounded_deduped_and_fail_closed",
@@ -9084,12 +9084,12 @@
         "native/mahayana-messaging/src/service.rs::atomic_recent_selection_rolls_back_actor_projection_on_mutation_and_persistence_failure",
         "desktop/e2e/mahayana-agent-workbench.spec.ts::canonical participant search selection persists Recent Peers through the shipping renderer and Host"
       ],
-      "target_commit": "e2a0295b215521406b4fb40fe62d926330e927df",
-      "workflow_run": 38247222064,
+      "target_commit": "494de75d926f36bb4f2fda38d55623d20d58af96",
+      "workflow_run": 38272194858,
       "run_attempt": 1,
       "job": "rust-host / Test canonical Fabushi messaging responsibilities",
-      "artifact_id": 11746468411,
-      "artifact_digest": "sha256:83c77f3a18ec22cc0ad8a1cede217b104c3537f0fcfb367a2dafa185d6ef4301",
+      "artifact_id": 11756974159,
+      "artifact_digest": "sha256:4fd735a81b14af668e3de3fcdec32bcc6912246df8fb285f8258c6dc0751f9b0",
       "composition_root": "Fabushi ProductShell -> Messages -> ConversationWorkspace",
       "composition_slot": "Canonical Conversation child collection/runtime",
       "capability_component": "Typed Conversation child capability",
@@ -9210,21 +9210,21 @@
       "test_environment_ids": [
         "GitHub Actions only"
       ],
-      "coverage_matrix_status": "shipping-composition-present-fresh-descendant-exact-head-evidence-pending",
-      "flake_status": "predecessor-green-descendant-not-run",
+      "coverage_matrix_status": "implemented-current-exact-head-production-and-shipping-e2e-evidence-captured",
+      "flake_status": "current-exact-head-success",
       "test_execution_evidence": [
-        "predecessor-github-actions:38264577322:job-114863874282:success@c6fa6d8da1c6f038d05bab3648972b8507ca6b39",
-        "predecessor-github-actions:38264577177:job-114863873489:success@c6fa6d8da1c6f038d05bab3648972b8507ca6b39"
+        "github-actions:38272194858:job-114889158111:success@494de75d926f36bb4f2fda38d55623d20d58af96",
+        "github-actions:38272194813:job-114889364816:success@494de75d926f36bb4f2fda38d55623d20d58af96"
       ],
       "acceptance_reviewer": null,
       "release_gate_status": "pending",
       "license_and_provenance": "Source-informed mapping from accepted telegramdesktop/tdesktop recent_peers authority; no retained Telegram C++ runtime or copied presentation.",
       "reviewer": null,
-      "notes": "The obsolete 'shipping composition absent' finding is removed: current production code routes canonical participant selection through ProductionRenderer -> noteRecentParticipantSuggestion -> Session Host gateway -> ProductionSessionWorkers::note_recent_participant_suggestion -> the single _messaging MessagingService durable owner. c6fa6d8 passed rust-host and focused Electron E2E, but because this ledger change ships with a descendant Shared Media production change those runs are explicitly predecessor diagnostics only. Keep mapped until fresh exact-head Actions bind the descendant SHA; release_gate_status remains pending."
+      "notes": "Canonical Recent Peers ordinary suggestions are durably owned by the existing _messaging MessagingService/engine and are reached from ProductionRenderer participant selection through the Session Host gateway. Exact-head 494de75 production, native messaging, Host and shipping Electron evidence is green. Status is implemented only; same-release-candidate packaging/updater/full-regression/independent acceptance remain pending."
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5b81fa35aaa8d24e14ec9603e5929d324850d9c9",
+      "source_commit": "63a1831728147e941ad2dc8939879cf5afe419c7",
       "source_path": "Telegram/SourceFiles/storage/storage_shared_media.h",
       "source_blob_sha": "cd0d29d594e012d5fabb0e53e148fe98e4e86d44",
       "source_kind": "source",
@@ -9312,11 +9312,11 @@
       ],
       "service_owner": "Fabushi canonical messaging/sync service; SavedSublist membership feed remains blocked.",
       "deployment_evidence": [],
-      "implementation_status": "mapped",
+      "implementation_status": "implemented",
       "coverage_disposition": "rewritten",
       "blockers": [
-        "Fresh exact-head GitHub Actions evidence for the new authoritative SavedSublist destruction, search invalidation, rollback/retry and restart coverage is pending.",
-        "Authoritative SavedSublist membership is already fail-closed in the canonical engine/service contract; any external shipping sync/feed that supplies that authority must still be proven on the accepted release candidate before service-dependent verification."
+        "External shipping sync/feed wiring that supplies server/native-authoritative SavedSublist membership has not been proven on the accepted release candidate; destructive SavedSublist cleanup remains correctly fail-closed without it.",
+        "Same-release-candidate package/install/upgrade/restart, updater provenance/temporal acceptance, full Bot regression and independent release acceptance remain open."
       ],
       "production_entrypoints": [
         "native/mahayana-messaging/src/engine.rs::MessagingEngine::{shared_media_message_ids,shared_media_message_ids_for_kind,decide(Command::DestroyConversationChild),apply(Event::MessagesDeleted),apply(Event::ConversationChildDestroyed)}",
@@ -9324,7 +9324,12 @@
         "native/mahayana-messaging/src/media_cache.rs::MediaCache -> independent bounded physical materialization lifecycle",
         "native/mahayana-messaging/src/service.rs::MessagingService::handle -> transactional engine/cursor rollback on command or persistence failure"
       ],
-      "production_evidence": [],
+      "production_evidence": [
+        "exact-head:494de75d926f36bb4f2fda38d55623d20d58af96",
+        "github-actions:38272194858:job-114889158111:success",
+        "artifact:11756974159:sha256:4fd735a81b14af668e3de3fcdec32bcc6912246df8fb285f8258c6dc0751f9b0",
+        "source-authority:38272194858:job-114889158201:artifact-11757920879:sha256:3496e286cbb424eaad580e8f4a5805536cb2e60547e6c37dd6ed27700ed3c894"
+      ],
       "test_evidence": [
         "native/mahayana-messaging/src/engine.rs::shared_media_projection_is_typed_derived_and_saved_sublist_fail_closed",
         "native/mahayana-messaging/src/engine.rs::shared_media_deletion_and_child_destroy_invalidate_exact_projection_only",
@@ -9336,12 +9341,12 @@
         "native/mahayana-messaging/tests/m4_media_contract.rs::media_resolve_refresh_fences_stale_callbacks_and_cancel_is_terminal_for_a_lease",
         "native/mahayana-messaging/tests/m4_media_contract.rs::media_resolve_teardown_cancels_all_current_generations_and_fences_late_completion"
       ],
-      "target_commit": "6e6744eb8716671f060251aacc986ef5fb483b0c",
-      "workflow_run": null,
-      "run_attempt": null,
-      "job": null,
-      "artifact_id": null,
-      "artifact_digest": null,
+      "target_commit": "494de75d926f36bb4f2fda38d55623d20d58af96",
+      "workflow_run": 38272194858,
+      "run_attempt": 1,
+      "job": "rust-host / Test canonical Fabushi messaging responsibilities",
+      "artifact_id": 11756974159,
+      "artifact_digest": "sha256:4fd735a81b14af668e3de3fcdec32bcc6912246df8fb285f8258c6dc0751f9b0",
       "composition_root": "Fabushi ProductShell -> Messages -> ConversationWorkspace",
       "composition_slot": "Canonical Conversation child collection/runtime",
       "capability_component": "Typed Conversation child capability",
@@ -9448,16 +9453,16 @@
       "test_environment_ids": [
         "GitHub Actions only"
       ],
-      "coverage_matrix_status": "production-change-authored-fresh-exact-head-evidence-pending",
-      "flake_status": "not-run-on-descendant",
+      "coverage_matrix_status": "implemented-current-exact-head-native-evidence-service-feed-blocked",
+      "flake_status": "current-exact-head-success",
       "test_execution_evidence": [
-        "predecessor-github-actions:38264577322:job-114863874282:success@c6fa6d8da1c6f038d05bab3648972b8507ca6b39"
+        "github-actions:38272194858:job-114889158111:success@494de75d926f36bb4f2fda38d55623d20d58af96"
       ],
       "acceptance_reviewer": null,
       "release_gate_status": "pending",
       "license_and_provenance": "Source-informed mapping from accepted telegramdesktop/tdesktop storage_shared_media.h; no Telegram runtime or presentation retained.",
       "reviewer": null,
-      "notes": "Canonical Shared Media remains a derived projection, not a second store. Search rebuilds from canonical non-deleted messages; MediaCache owns physical bytes independently. The descendant production change makes SavedSublist destruction fail closed without authoritative membership, deletes exactly the authoritative child-owned message set when membership is known, then destroys only that child; Topic/nested destruction remains projection unload when no exact membership authority exists. MessagingService generic mutations now restore engine and cursor on command/persistence failure, enabling retry without in-memory/persisted divergence. Fresh descendant exact-head evidence is required before status promotion.",
+      "notes": "Canonical Shared Media is a derived projection from non-deleted canonical Message state; MediaCache remains the separate bounded physical-byte lifecycle owner. SavedSublist destruction deletes exactly the authoritative child-owned message set, Search/shared-media derives the deletion immediately, and MessagingService rolls back command/cursor state on persistence failure so retry/restart remain exact. Topic/nested destruction remains projection-only without an exact membership feed. External shipping SavedSublist membership-feed wiring is still blocked, so this row is implemented but not verified/release-accepted.",
       "fabushi_target_bindings": [
         {
           "path": "native/mahayana-messaging/src/message.rs",
@@ -9492,7 +9497,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5b81fa35aaa8d24e14ec9603e5929d324850d9c9",
+      "source_commit": "63a1831728147e941ad2dc8939879cf5afe419c7",
       "source_path": "Telegram/SourceFiles/storage/storage_shared_media.cpp",
       "source_blob_sha": "b52ec6c64d3c8d05e211ae4abe92b5dc5c19d642",
       "source_kind": "source",
@@ -9578,11 +9583,11 @@
       ],
       "service_owner": "Fabushi canonical messaging/sync service.",
       "deployment_evidence": [],
-      "implementation_status": "mapped",
+      "implementation_status": "implemented",
       "coverage_disposition": "rewritten",
       "blockers": [
-        "Fresh exact-head GitHub Actions evidence for the new authoritative SavedSublist destruction, search invalidation, rollback/retry and restart coverage is pending.",
-        "Authoritative SavedSublist membership is already fail-closed in the canonical engine/service contract; any external shipping sync/feed that supplies that authority must still be proven on the accepted release candidate before service-dependent verification."
+        "External shipping sync/feed wiring that supplies server/native-authoritative SavedSublist membership has not been proven on the accepted release candidate; destructive SavedSublist cleanup remains correctly fail-closed without it.",
+        "Same-release-candidate package/install/upgrade/restart, updater provenance/temporal acceptance, full Bot regression and independent release acceptance remain open."
       ],
       "production_entrypoints": [
         "native/mahayana-messaging/src/engine.rs::MessagingEngine::{shared_media_message_ids,shared_media_message_ids_for_kind,decide(Command::DestroyConversationChild),apply(Event::MessagesDeleted),apply(Event::ConversationChildDestroyed)}",
@@ -9590,7 +9595,12 @@
         "native/mahayana-messaging/src/media_cache.rs::MediaCache -> independent bounded physical materialization lifecycle",
         "native/mahayana-messaging/src/service.rs::MessagingService::handle -> transactional engine/cursor rollback on command or persistence failure"
       ],
-      "production_evidence": [],
+      "production_evidence": [
+        "exact-head:494de75d926f36bb4f2fda38d55623d20d58af96",
+        "github-actions:38272194858:job-114889158111:success",
+        "artifact:11756974159:sha256:4fd735a81b14af668e3de3fcdec32bcc6912246df8fb285f8258c6dc0751f9b0",
+        "source-authority:38272194858:job-114889158201:artifact-11757920879:sha256:3496e286cbb424eaad580e8f4a5805536cb2e60547e6c37dd6ed27700ed3c894"
+      ],
       "test_evidence": [
         "native/mahayana-messaging/src/engine.rs::shared_media_projection_is_typed_derived_and_saved_sublist_fail_closed",
         "native/mahayana-messaging/src/engine.rs::shared_media_deletion_and_child_destroy_invalidate_exact_projection_only",
@@ -9602,12 +9612,12 @@
         "native/mahayana-messaging/tests/m4_media_contract.rs::media_resolve_refresh_fences_stale_callbacks_and_cancel_is_terminal_for_a_lease",
         "native/mahayana-messaging/tests/m4_media_contract.rs::media_resolve_teardown_cancels_all_current_generations_and_fences_late_completion"
       ],
-      "target_commit": "6e6744eb8716671f060251aacc986ef5fb483b0c",
-      "workflow_run": null,
-      "run_attempt": null,
-      "job": null,
-      "artifact_id": null,
-      "artifact_digest": null,
+      "target_commit": "494de75d926f36bb4f2fda38d55623d20d58af96",
+      "workflow_run": 38272194858,
+      "run_attempt": 1,
+      "job": "rust-host / Test canonical Fabushi messaging responsibilities",
+      "artifact_id": 11756974159,
+      "artifact_digest": "sha256:4fd735a81b14af668e3de3fcdec32bcc6912246df8fb285f8258c6dc0751f9b0",
       "composition_root": "Fabushi ProductShell -> Messages -> ConversationWorkspace",
       "composition_slot": "Canonical Conversation child collection/runtime",
       "capability_component": "Typed Conversation child capability",
@@ -9714,16 +9724,16 @@
       "test_environment_ids": [
         "GitHub Actions only"
       ],
-      "coverage_matrix_status": "production-change-authored-fresh-exact-head-evidence-pending",
-      "flake_status": "not-run-on-descendant",
+      "coverage_matrix_status": "implemented-current-exact-head-native-evidence-service-feed-blocked",
+      "flake_status": "current-exact-head-success",
       "test_execution_evidence": [
-        "predecessor-github-actions:38264577322:job-114863874282:success@c6fa6d8da1c6f038d05bab3648972b8507ca6b39"
+        "github-actions:38272194858:job-114889158111:success@494de75d926f36bb4f2fda38d55623d20d58af96"
       ],
       "acceptance_reviewer": null,
       "release_gate_status": "pending",
       "license_and_provenance": "Source-informed mapping from accepted telegramdesktop/tdesktop storage_shared_media.cpp; no source cache implementation retained.",
       "reviewer": null,
-      "notes": "Canonical Shared Media remains a derived projection, not a second store. Search rebuilds from canonical non-deleted messages; MediaCache owns physical bytes independently. The descendant production change makes SavedSublist destruction fail closed without authoritative membership, deletes exactly the authoritative child-owned message set when membership is known, then destroys only that child; Topic/nested destruction remains projection unload when no exact membership authority exists. MessagingService generic mutations now restore engine and cursor on command/persistence failure, enabling retry without in-memory/persisted divergence. Fresh descendant exact-head evidence is required before status promotion.",
+      "notes": "Canonical Shared Media is a derived projection from non-deleted canonical Message state; MediaCache remains the separate bounded physical-byte lifecycle owner. SavedSublist destruction deletes exactly the authoritative child-owned message set, Search/shared-media derives the deletion immediately, and MessagingService rolls back command/cursor state on persistence failure so retry/restart remain exact. Topic/nested destruction remains projection-only without an exact membership feed. External shipping SavedSublist membership-feed wiring is still blocked, so this row is implemented but not verified/release-accepted.",
       "fabushi_target_bindings": [
         {
           "path": "native/mahayana-messaging/src/search.rs",
