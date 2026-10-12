@@ -13482,7 +13482,7 @@
     "source_authority_evidence": "Parent fa3b27 source authority and Focused Electron chat E2E succeeded; descendant requires fresh exact-head Actions.",
     "current_source_read_through": 13940,
     "first_unread_order": 13941,
-    "first_unread_path": "doc/gh-pages::functions_e.html"
+    "first_unread_path": "doc/gh-pages::functions_dup.js"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13493,7 +13493,7 @@
     "omitted": 0,
     "read_through": 13940,
     "first_unread_order": 13941,
-    "first_unread_path": "doc/gh-pages::functions_e.html",
+    "first_unread_path": "doc/gh-pages::functions_dup.js",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
