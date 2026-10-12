@@ -26,6 +26,7 @@ fn gateway_protocol_keeps_frozen_command_inventory_and_upgrade_path() {
     assert_eq!(
         FABUSHI_HOST_GATEWAY_METHODS,
         &[
+            "noteRecentParticipantSuggestion",
             "getStoryStealthStatus",
             "activateStoryStealth",
             "listStories",
@@ -34,7 +35,19 @@ fn gateway_protocol_keeps_frozen_command_inventory_and_upgrade_path() {
             "deleteStory",
         ]
     );
-    for method in FABUSHI_HOST_GATEWAY_METHODS {
+    assert_eq!(
+        host_gateway_owner("noteRecentParticipantSuggestion"),
+        Some(HostGatewayOwner::Session),
+        "recent participant durability must remain owned by the canonical Session gateway owner"
+    );
+    for method in [
+        "getStoryStealthStatus",
+        "activateStoryStealth",
+        "listStories",
+        "viewStory",
+        "reactStory",
+        "deleteStory",
+    ] {
         assert_eq!(
             host_gateway_owner(method),
             Some(HostGatewayOwner::Stories),
