@@ -1,3 +1,0 @@
-# Hime menu, localization and migration scripts — orders 8,045–8,060
-
-This range finishes phrase-learning/input-service manpages, symmetric Settings launcher registration, localization extraction/compile/install plus English/zh_CN/zh_TW settings semantics, a fail-fast scan-build gate, helper packaging, non-clobbering first-run initialization, platform diagnostics and deterministic phrase/config merge. Upstream arbitrary UTF-8 editor launching maps to the canonical Fabushi editable Resource/Settings surface and platform policy. Exact identities are bound to artifact 11681780325; all rows remain mapped-open and unknown is unchanged.
