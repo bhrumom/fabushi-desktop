@@ -410,7 +410,7 @@
       "referencePath": "frontend/src/recovered/features/conversation/workspace/draft-state.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "65487e13af9eee02339423a19d91163211e9032b",
+      "targetBlobSha": "cfc5dae776269e871e160db58c6a472bfec83dbb",
       "behavioralEvidence": [
         "frontend/src/recovered/features/conversation/workspace/draft-state.ts"
       ],
@@ -499,7 +499,7 @@
       "referencePath": "frontend/src/recovered/features/conversation/workspace/model.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "eb9b4499278ac4b7c3f52ad6c872a6c9f2c2c2a7",
+      "targetBlobSha": "97c78ba1e3ea3ad43937aa6db5f2993bac277b19",
       "behavioralEvidence": [
         "frontend/src/recovered/features/conversation/workspace/model.ts",
         "frontend/src/recovered/features/conversation/workspace/submission.ts",
@@ -1107,7 +1107,7 @@
       "referencePath": "source/electron-main/main-production-services.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "b5fd6292ac7dea50b38552c324ec870e28643b77",
+      "targetBlobSha": "151cad23664e4901a1f7e99386fc04474afcda2f",
       "behavioralEvidence": [
         "source/electron-main/main-production-services.ts",
         "source/electron-main/adapters/mcp-oauth.ts",
@@ -1248,7 +1248,7 @@
       "referencePath": "source/electron-main/production-binding-providers.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "e90f5ea002ef2bcd1dc915cc0c380add850b1296",
+      "targetBlobSha": "6fd08453d9d97678e43449bd1d9725977e7bb09a",
       "behavioralEvidence": [
         "source/electron-main/production-binding-providers.ts",
         "source/electron-main/update/update-wiring.ts",
@@ -1314,7 +1314,7 @@
       "referencePath": "source/electron-main/update/sand-update-service.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "775f4ae544f11c908789c93486d69aa1c1964e31",
+      "targetBlobSha": "36e4fcc4d304a9cd4b95a7e412cb3b3fc0ec19a6",
       "behavioralEvidence": [
         "source/electron-main/update/update-feed.ts",
         "source/electron-main/update/update-download.ts",
@@ -1559,7 +1559,7 @@
       "referencePath": "source/shared/node/cursor-backend/cursor-inference.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "296eeb02b7b0bc37256fc0d89b5c215d7cd1d501",
+      "targetBlobSha": "4e8b4d57613080c705a7a6a57642a7958df1d813",
       "behavioralEvidence": [
         "source/shared/node/cursor-backend/cursor-inference.ts",
         "source/shared/node/sand-data-root.ts",
@@ -1856,7 +1856,7 @@
       "referencePath": "source/electron-main/update/update-wiring.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "ec9af241de35f9c1abf82cf5f12796274acf1667",
+      "targetBlobSha": "58e7f900f2c385e940277b84d2e0237f0721723b",
       "behavioralEvidence": [
         "source/electron-main/update/update-wiring.ts",
         "source/electron-main/update/sand-update-service.ts",
