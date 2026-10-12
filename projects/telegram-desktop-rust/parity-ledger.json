@@ -6,8 +6,8 @@
   "target_commit": "371b72f1cd20de03dc4dff9a15ed761054968093",
   "coverage": {
     "source_entries_total": 16125,
-    "unknown": 15688,
-    "unread": 2521,
+    "unknown": 15664,
+    "unread": 2497,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,22 +13478,22 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Accepted prefix 13,604/16,125. Orders 13,581-13,604 individually exact-read; Doxygen HTML/JS/diagram PNG artifacts were closed only after per-blob identity/generation/reference/shipping audit. unread=2,521, unknown=15,688, omitted=0.",
-    "source_authority_evidence": "Direct exact-blob read through 13,604; current accounting descendant requires fresh exact-head Actions.",
-    "current_source_read_through": 13604,
-    "first_unread_order": 13605,
-    "first_unread_path": "doc/gh-pages::classranges_1_1box_3_01Element_00_01Tag_00_01detail_1_1box__compress_1_1coalesce_01_4.html"
+    "source_read_reconciliation": "Accepted prefix 13,628/16,125. Orders 13,605-13,628 individually exact-read; Doxygen HTML/JS/PNG artifacts were closed only after per-blob identity/generation/reference/shipping audit. unread=2,497, unknown=15,664, omitted=0.",
+    "source_authority_evidence": "Direct exact-blob read through 13,628; current accounting descendant requires fresh exact-head Actions.",
+    "current_source_read_through": 13628,
+    "first_unread_order": 13629,
+    "first_unread_path": "doc/gh-pages::common__tuple_8hpp.html"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "deterministic_prefix_closed": 57,
-    "development_only_non_applicable": 363,
-    "unknown_closed": 437,
+    "development_only_non_applicable": 387,
+    "unknown_closed": 461,
     "omitted": 0,
-    "read_through": 13604,
-    "first_unread_order": 13605,
-    "first_unread_path": "doc/gh-pages::classranges_1_1box_3_01Element_00_01Tag_00_01detail_1_1box__compress_1_1coalesce_01_4.html",
+    "read_through": 13628,
+    "first_unread_order": 13629,
+    "first_unread_path": "doc/gh-pages::common__tuple_8hpp.html",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
