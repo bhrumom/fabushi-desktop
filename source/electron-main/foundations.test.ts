@@ -400,7 +400,8 @@ test("dock badge, process roots, and window broadcast preserve production semant
 test("update gates fail closed unless every safe-relaunch condition holds", () => {
   assert.equal(computeUpdateDisabledReason({ envDisabled: true, isLabBuild: false, hasDevFeedOverride: false, isPackaged: true, platform: "darwin" }), "disabled-by-env");
   assert.equal(computeUpdateDisabledReason({ envDisabled: false, isLabBuild: true, hasDevFeedOverride: false, isPackaged: true, platform: "darwin" }), "lab-build");
-  assert.equal(computeUpdateDisabledReason({ envDisabled: false, isLabBuild: false, hasDevFeedOverride: true, isPackaged: false, platform: "linux" }), null);
+  assert.equal(computeUpdateDisabledReason({ envDisabled: false, isLabBuild: false, hasDevFeedOverride: true, isPackaged: false, platform: "linux" }), "unsupported-platform");
+  assert.equal(computeUpdateDisabledReason({ envDisabled: false, isLabBuild: false, hasDevFeedOverride: true, isPackaged: true, platform: "linux" }), "unsupported-platform");
   assert.equal(computeUpdateDisabledReason({ envDisabled: false, isLabBuild: false, hasDevFeedOverride: false, isPackaged: false, platform: "darwin" }), "not-packaged");
   assert.equal(computeUpdateDisabledReason({ envDisabled: false, isLabBuild: false, hasDevFeedOverride: false, isPackaged: true, platform: "linux" }), "unsupported-platform");
 
