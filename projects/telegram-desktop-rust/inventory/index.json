@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 3473,
+    "unread_minimum": 3409,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through deterministic order 12,652; unread 3,473; unknown 15,845; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition through deterministic order 12,716; unread 3,409; unknown 15,845; omitted 0."
   },
   "latest_recursive_evidence": {
     "run_id": 38185945096,
@@ -41,7 +41,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live baseline accepted; closure open. Read-through 12,652; unread_minimum is 3,473; unknown remains 15,845; omitted remains 0; first unread order 12,653 is Telegram/lib_crl::crl/common/crl_common_list.cpp.",
+  "note": "Live baseline accepted; closure open. Read-through 12,716; unread_minimum is 3,409; unknown remains 15,845; omitted remains 0; first unread order 12,717 is Telegram/lib_lottie::lottie/details/lottie_instance.h.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -59,12 +59,12 @@
       6541,
       6627
     ],
-    "current_source_read_through": 12652,
-    "first_unread_order": 12653,
-    "first_unread_path": "Telegram/lib_crl::crl/common/crl_common_list.cpp",
-    "current_head_source_authority_evidence": "Orders 12,589-12,652 were exact-source materialized by 866618f6 Source authority run 38186819205/job 114610867800 artifact 11719418408 (sha256:60285dbf014e7b7d6526f068b6b552297604d3c950c81b1640fa79b26a509cca) and formally reviewed; this accounting descendant requires fresh same-head Actions.",
-    "source_read_reconciliation": "Accepted prefix 12,652/16,125; orders 12,589-12,652 exact-read from 866618f6 source-authority artifact 11719418408; unread 3,473; unknown 15,845; omitted 0; reading alone closes no unknown.",
-    "source_authority_evidence": "Exact-head 866618f6 Rust desktop runtime 38186819205 / source-authority job 114610867800 succeeded with artifact 11719418408 (sha256:60285dbf014e7b7d6526f068b6b552297604d3c950c81b1640fa79b26a509cca), materializing 12,589-12,652. The accounting descendant must obtain fresh same-head validation."
+    "current_source_read_through": 12716,
+    "first_unread_order": 12717,
+    "first_unread_path": "Telegram/lib_lottie::lottie/details/lottie_instance.h",
+    "current_head_source_authority_evidence": "Orders 12,653-12,716 were exact-source materialized by 78cdb89d Source authority run 38187443700/job 114612781490 artifact 11719943351 (sha256:f2837449ff27e3fdfaac9028fd573f1afdfbf1dcfc250a070fa1e42f02274934) and formally reviewed; this accounting descendant requires fresh same-head Actions.",
+    "source_read_reconciliation": "Accepted prefix 12,716/16,125; orders 12,653-12,716 exact-read from 78cdb89d source-authority artifact 11719943351; unread 3,409; unknown 15,845; omitted 0; reading alone closes no unknown.",
+    "source_authority_evidence": "Exact-head 78cdb89d Rust desktop runtime 38187443700 / source-authority job 114612781490 succeeded with artifact 11719943351 (sha256:f2837449ff27e3fdfaac9028fd573f1afdfbf1dcfc250a070fa1e42f02274934), materializing 12,653-12,716. The accounting descendant must obtain fresh same-head validation."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -73,9 +73,9 @@
     "development_only_non_applicable": 206,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 12652,
-    "first_unread_order": 12653,
-    "first_unread_path": "Telegram/lib_crl::crl/common/crl_common_list.cpp",
+    "read_through": 12716,
+    "first_unread_order": 12717,
+    "first_unread_path": "Telegram/lib_lottie::lottie/details/lottie_instance.h",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }
