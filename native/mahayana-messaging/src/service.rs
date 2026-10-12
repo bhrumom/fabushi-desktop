@@ -3224,15 +3224,20 @@ mod recent_participant_suggestion_service_tests {
     #[test]
     fn saved_sublist_destroy_persistence_failure_rolls_back_and_retry_commits_exactly_once() {
         let owner = ActorId::new("human:saved-destroy-owner");
+        let participant = ActorId::new("human:saved-destroy-peer");
         let conversation_id = ConversationId::new("saved:saved-destroy");
         let message_id = MessageId::new("message:saved-destroy");
         let destination = ConversationDestination::saved_sublist(
             conversation_id.clone(),
-            ActorId::new("human:saved-destroy-peer"),
+            participant.clone(),
         );
 
         let mut state = crate::engine::MessagingState::default();
         state.actors.insert(owner.clone(), Actor::human(owner.0.clone(), "Owner"));
+        state.actors.insert(
+            participant.clone(),
+            Actor::human(participant.0.clone(), "Saved peer"),
+        );
         let mut conversation = Conversation::direct(
             conversation_id.0.clone(),
             "Saved destroy",
