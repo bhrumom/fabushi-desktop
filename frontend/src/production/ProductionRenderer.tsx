@@ -1156,16 +1156,55 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   }): Promise<readonly ForwardRecipient[]> => {
     if (client == null) throw new Error("coordinator is unavailable for recipient search");
     const raw = await client.call("searchHumanRecipients", input);
-    return projectHumanConversations(raw).map((conversation) => {
-      const destination: ForwardDestination = {
-        conversationId: conversation.id,
-        child: null,
-      };
-      return {
+    return projectHumanConversations(raw).flatMap((conversation) => {
+      const candidate = conversation.raw.forwardDestination;
+      let destination: ForwardDestination;
+      if (candidate === undefined) {
+        // Compatibility for older Host responses: absence means the canonical
+        // root conversation. A malformed explicit destination never broadens to
+        // root access.
+        destination = { conversationId: conversation.id, child: null };
+      } else {
+        if (
+          candidate == null
+          || typeof candidate !== "object"
+          || typeof (candidate as Record<string, unknown>).conversationId !== "string"
+          || (candidate as Record<string, unknown>).conversationId !== conversation.id
+        ) return [];
+        const child = (candidate as Record<string, unknown>).child;
+        if (child === null) {
+          destination = { conversationId: conversation.id, child: null };
+        } else {
+          if (child == null || typeof child !== "object") return [];
+          const childRecord = child as Record<string, unknown>;
+          if (childRecord.kind === "topic" && typeof childRecord.rootMessageId === "string" && childRecord.rootMessageId.length > 0) {
+            destination = {
+              conversationId: conversation.id,
+              child: { kind: "topic", rootMessageId: childRecord.rootMessageId },
+            };
+          } else if (childRecord.kind === "savedSublist" && typeof childRecord.participantId === "string" && childRecord.participantId.length > 0) {
+            destination = {
+              conversationId: conversation.id,
+              child: { kind: "savedSublist", participantId: childRecord.participantId },
+            };
+          } else if (childRecord.kind === "conversation" && typeof childRecord.conversationId === "string" && childRecord.conversationId.length > 0) {
+            destination = {
+              conversationId: conversation.id,
+              child: { kind: "conversation", conversationId: childRecord.conversationId },
+            };
+          } else {
+            return [];
+          }
+        }
+      }
+      const forwardLabel = conversation.raw.forwardLabel;
+      return [{
         id: forwardDestinationKey(destination),
-        name: conversation.name,
+        name: typeof forwardLabel === "string" && forwardLabel.trim().length > 0
+          ? forwardLabel
+          : conversation.name,
         destination,
-      };
+      }];
     });
   }, [client]);
 
