@@ -54,7 +54,7 @@ test('a stale denominator cannot pass ordinary validation', () => {
   f.lock.coverage.recursive_source_entries_total=5;
   f.inventoryIndex.inventory.recursive_non_directory_entries=5;
   f.ledger.coverage.source_entries_total=5;
-  assert.throws(() => checkRecursiveInventory(f),/actual recursive total/);
+  assert.throws(() => checkRecursiveInventory(f),/live recursive total differs from lock\/inventory\/ledger/);
 });
 test('an xxHash-style per-component addition cannot pass stale component pins', () => {
   const f=fixture();
