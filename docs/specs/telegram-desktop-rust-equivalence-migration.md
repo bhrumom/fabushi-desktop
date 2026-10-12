@@ -1,3 +1,5 @@
+Current accepted TDRP Revision 9 upstream authority: telegramdesktop/tdesktop@63a1831728147e941ad2dc8939879cf5afe419c7 tree c259b2d6982213b2231266508316cd23f99f5a47; recursive non-directory 16,137; exact read-through 16,137; unread=0; unknown=12,435; omitted=0.
+
 Accepted TDRP Revision 9 upstream authority (2026-10-12): `5b81fa35aaa8d24e14ec9603e5929d324850d9c9` tree `7539504ec9294b9c1ca03332570127b8b69ad201`; recursive non-directory=16,135, read-through=16,135, unread=0, unknown=12,435, omitted=0; fresh same-head Actions required.
 
 Live Revision 9 source accounting continuation (2026-10-12): deterministic read-through remains 16,125/16,125 with unread=0 and omitted=0. Exact-object closure now additionally covers 74 xdg documentation/repository artifacts and 27 tgcalls mobile/fake platform implementations; applicable portal and portable call responsibilities remain canonical. Accounting is unknown=12,436, unknown_closed=3,689, development-only-non-applicable=3,615. Fresh same-head Actions remain required.
