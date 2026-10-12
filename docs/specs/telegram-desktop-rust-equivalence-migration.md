@@ -1303,3 +1303,11 @@ Orders 13,761–13,820 were individually exact-read from `ericniebler/range-v3@2
 Predecessor `a273db52141b9fe704e37d7d8539f504163bf3b4` fresh Source authority job `114662096260` passed the repaired 313-row nested parent provenance and then failed closed on the persisted inventory narrative wording contract. This descendant keeps the validator unchanged and makes the narrative explicitly state `unread_minimum is 2,305`, `unknown remains 15,472`, and `omitted remains 0`, synchronized with lock/index/ledger.
 
 Accounting: **13,820/16,125 read; 2,305 unread; 15,472 unknown; 0 omitted; 653 unknown_closed; 579 development-only-non-applicable**. First unread is 13,821 `doc/gh-pages::concepts_2concepts_8hpp.js`. Fresh same-head Rust desktop runtime and Desktop Chat Parity CI are required.
+
+## Revision 9 deterministic read-through — range-v3 generated documentation 13,821–13,883
+
+Exact parent `2dc42962d59f46d0742cbd602357f0de2200914c` passed fresh Source authority / recursive inventory job `114662796378`, proving repaired nested-parent provenance and synchronized inventory narrative. Orders 13,821–13,882 were individually exact-read from `ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae` under nested mount `doc/gh-pages`: all HTML files carry Doxygen 1.9.4 generated-page evidence and every JS sidecar is a generated documentation symbol/file/directory index; returned lengths match the accepted recursive inventory.
+
+Order 13,883 `doc.png@973a030e1e0dadee7b174cb0907ee039dc104794` was read through GitHub's base64 file path rather than UTF-8 blob decoding. Decoded length is exactly 752 bytes, PNG signature is `89504e470d0a1a0a`, IHDR dimensions are 24×22, and the file ends with a complete IEND chunk. It belongs to the standard Doxygen documentation-site asset cohort alongside the exact `doxygen.css`/navigation assets; no canonical Fabushi runtime, package, resource owner, or shipping entrypoint consumes this site output. It is therefore explicitly `development-only-non-applicable`, not directory-inferred N/A.
+
+Accounting: **13,883/16,125 read; 2,242 unread; 15,409 unknown; 0 omitted; 716 unknown_closed; 642 development-only-non-applicable**. First unread is 13,884 `doc/gh-pages::doxygen.css`. Fresh same-head Rust desktop runtime and Desktop Chat Parity CI are required after this descendant.
