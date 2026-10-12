@@ -14,20 +14,20 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 3089,
+    "unread_minimum": 3025,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through deterministic order 13,036; unread 3,089; unknown 15,845; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition through deterministic order 13,100; unread 3,025; unknown 15,845; omitted 0."
   },
   "latest_recursive_evidence": {
-    "run_id": 38189544832,
+    "run_id": 38193879974,
     "run_attempt": 1,
-    "job_id": 114619149670,
-    "head_sha": "d5e700722a392de1f74a338649ce124f73b21f8b",
-    "artifact_id": 11721111016,
-    "artifact_digest": "sha256:2b82a4517bf5c8849bb2965d0cf0ab9ea2ba6a6e16639f34a11a48a425711248",
-    "evidence_status": "authoritative-recursive-identities-plus-current-window-artifact-verified-descendant-validation-required",
+    "job_id": 114632283461,
+    "head_sha": "8078202c06877edff2afbc04ede1052329b342f6",
+    "artifact_id": 11722831694,
+    "artifact_digest": "sha256:36d50ab536d7dda5507e4d722e19732f5cb8ed97199ea84832c82b153ad557d8",
+    "evidence_status": "authoritative-recursive-identities-plus-current-window-materialization-reviewed-descendant-validation-required",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
-    "note": "Orders 12,845-12,908 were materialized from the current-head Source authority artifact and independently verified against byte length, SHA-256, Git blob identity and accepted lib_ui exact-ref; binary font/PNG inputs were inspected without UTF-8 assumptions."
+    "note": "Orders 13,037-13,100 were materialized by exact-head Source authority and directly read/decomposed against accepted desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd. Accounting descendant requires fresh same-head Actions."
   },
   "closure_rules": {
     "executable_runner": "github-actions",
@@ -37,7 +37,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live baseline accepted; closure open. Read-through 13,036; unread_minimum is 3,089; unknown remains 15,845; omitted remains 0; first unread order 13,037 is Telegram/lib_ui::ui/gl/gl_surface.h.",
+  "note": "Live baseline accepted; closure open. Read-through 13,100; unread_minimum is 3,025; unknown remains 15,845; omitted remains 0; first unread order 13,101 is Telegram/lib_ui::ui/platform/win/ui_window_title_win.cpp.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -55,12 +55,12 @@
       6541,
       6627
     ],
-    "current_source_read_through": 13036,
-    "first_unread_order": 13037,
-    "first_unread_path": "Telegram/lib_ui::ui/gl/gl_surface.h",
-    "current_head_source_authority_evidence": "Orders 12,973-13,036 were read directly from accepted desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd. Predecessor e4e455cd artifact 11722021776 is used only for accepted recursive ordering; no predecessor workflow result is accepted for the descendant.",
-    "source_read_reconciliation": "Accepted prefix 13,036/16,125. The window covers URL/click command security and pointer lifecycle, focus activation/restoration, drag-scroll selection, DPR/dynamic images, animation/reduced-motion/spoiler-cache lifecycle, emoji resource/cache integrity, and GPU/GL capability/fallback/resource/surface lifecycle. All remain mapped-open with unknown_closed=false. Unread 3,089; unknown 15,845; omitted 0.",
-    "source_authority_evidence": "Direct exact accepted-gitlink blob/content review for every 12,973-13,036 entry; predecessor artifact only preserves recursive order. Fresh same-head Actions remain required."
+    "current_source_read_through": 13100,
+    "first_unread_order": 13101,
+    "first_unread_path": "Telegram/lib_ui::ui/platform/win/ui_window_title_win.cpp",
+    "current_head_source_authority_evidence": "Exact parent 8078202c06877edff2afbc04ede1052329b342f6 Source authority 38193879974/114632283461, artifact 11722831694 sha256:36d50ab536d7dda5507e4d722e19732f5cb8ed97199ea84832c82b153ad557d8, materialized 13,037-13,100; all entries were read/decomposed at accepted lib_ui commit.",
+    "source_read_reconciliation": "Accepted prefix 13,100/16,125. The window covers GL/window lifecycle, bounded image/SVG security, inactive-press and integration commands, canonical layer/modal/focus lifecycle, main-queue handoff, paint/motion/localization, Linux font settings and cross-platform native window/title/shadow responsibilities. All remain mapped-open with unknown_closed=false. Unread 3,025; unknown 15,845; omitted 0.",
+    "source_authority_evidence": "Exact accepted gitlink content identity plus current-head Source authority materialization for every 13,037-13,100 entry. Fresh descendant same-head Actions remain required."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -69,9 +69,9 @@
     "development_only_non_applicable": 206,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 13036,
-    "first_unread_order": 13037,
-    "first_unread_path": "Telegram/lib_ui::ui/gl/gl_surface.h",
+    "read_through": 13100,
+    "first_unread_order": 13101,
+    "first_unread_path": "Telegram/lib_ui::ui/platform/win/ui_window_title_win.cpp",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }
