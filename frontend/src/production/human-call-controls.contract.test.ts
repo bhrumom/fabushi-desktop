@@ -261,3 +261,21 @@ test("screen sharing mixes selected-source system audio into the existing call s
   assert.ok(source.includes("System audio shared"));
   assert.ok(source.includes("Screen video only"));
 });
+
+
+test("macOS and MAS packages declare system-audio capture purpose for call screen sharing", () => {
+  const desktopPackage = JSON.parse(fs.readFileSync(
+    new URL("../../../desktop/package.json", import.meta.url),
+    "utf8"
+  )) as {
+    build?: {
+      mac?: { extendInfo?: Record<string, string> };
+      mas?: { extendInfo?: Record<string, string> };
+    };
+  };
+  const macPurpose = desktopPackage.build?.mac?.extendInfo?.NSAudioCaptureUsageDescription;
+  const masPurpose = desktopPackage.build?.mas?.extendInfo?.NSAudioCaptureUsageDescription;
+  assert.equal(typeof macPurpose, "string");
+  assert.equal(macPurpose?.length > 0, true);
+  assert.equal(masPurpose, macPurpose);
+});
