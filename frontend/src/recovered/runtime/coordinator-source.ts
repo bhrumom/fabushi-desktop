@@ -528,7 +528,7 @@ const TELEMETRY_DOMAIN_BY_METHOD: Record<CoordinatorMethod, string> = {
   listRoutedMcpTools: "plugins", executeRoutedMcpTool: "plugins",
   respondToWidget: "widgets", dismissWidget: "widgets", submitSecret: "widgets",
   resolveAutoReviewApproval: "approvals", resolveLocalToolPermission: "approvals",
-  listAgents: "roster", countAgents: "roster", searchAgents: "roster", createAgent: "roster",
+  listAgents: "roster", noteRecentParticipantSuggestion: "roster", countAgents: "roster", searchAgents: "roster", createAgent: "roster",
   createGroup: "roster", setGroupMembers: "roster", updateAgent: "roster", deleteAgents: "roster",
   duplicateAgent: "roster", kickstartAgent: "roster", requestDiskSaverAudit: "roster",
   broadcastToAgents: "roster", setAgentUnread: "roster", setAgentHiddenFromSidebar: "roster",
