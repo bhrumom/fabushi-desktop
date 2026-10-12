@@ -1080,7 +1080,7 @@
       "referencePath": "source/electron-main/main-edge.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "aed17aceed420265d4972b9cd3f75c1622fbba96",
+      "targetBlobSha": "848825c521cb01d1b10512b42b253bcd02f5e6f8",
       "behavioralEvidence": [
         "source/electron-main/main-edge.ts",
         "source/shared/node/settings/sand-settings-store.ts",
@@ -1376,7 +1376,7 @@
       "referencePath": "source/electron-preload/preload.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "c4a1e479987603e69997e650a791b02f6b54428a",
+      "targetBlobSha": "4279b1a312dac33e5cb2f143f433c6737677d52e",
       "behavioralEvidence": [
         "source/electron-preload/preload.ts",
         "source/electron-preload/runtime/primary.ts",
