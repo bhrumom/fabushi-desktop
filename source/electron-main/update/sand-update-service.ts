@@ -25,7 +25,7 @@ export interface ReleaseUpdaterPort {
   autoDownload: boolean;
   autoInstallOnAppQuit: boolean;
   allowPrerelease: boolean;
-  channel?: string;
+  channel?: string | null;
   checkForUpdates(): Promise<{ readonly updateInfo?: { readonly version?: string } } | null>;
   downloadUpdate(): Promise<unknown>;
   quitAndInstall(isSilent?: boolean, isForceRunAfter?: boolean): void;
@@ -33,7 +33,7 @@ export interface ReleaseUpdaterPort {
 interface WindowsPort { verifySignature(path: string): Promise<void>; quit(): void; installOnQuit(path: string, options: { forceRun: boolean; onSpawnError(error: unknown): void }): void }
 interface ApplyMarkerPort { peek(): UpdateApplyMarker | null; recordStaged(input: any): void; recordRequested(input: any): void; recordSpawned(): void; recordSpawnFailed(error: unknown): void; clear(): void }
 export interface SandUpdateServiceOptions {
-  readonly currentVersion: string; readonly buildDefaultTrack: SandUpdateTrack | null; readonly disabledReason?: UpdateDisabledReason | null; readonly squirrel?: SquirrelPort | null; readonly windows?: WindowsPort | null; readonly releaseUpdater?: ReleaseUpdaterPort | null; readonly quitForReleaseUpdate?: () => void; readonly tempDir: string; readonly machineId: string; readonly feedBaseUrl?: string; readonly platform?: NodeJS.Platform; readonly arch?: string;
+  readonly currentVersion: string; readonly buildDefaultTrack: SandUpdateTrack | null; readonly disabledReason?: UpdateDisabledReason | null; readonly squirrel?: SquirrelPort | null; readonly windows?: WindowsPort | null; readonly releaseUpdater?: ReleaseUpdaterPort | null; readonly quitForReleaseUpdate?: () => void; readonly allowReleasePrerelease?: boolean; readonly tempDir: string; readonly machineId: string; readonly feedBaseUrl?: string; readonly platform?: NodeJS.Platform; readonly arch?: string;
   readonly getTrackOverride: () => SandUpdateTrack | null | undefined; readonly persistTrackOverride: (track: SandUpdateTrack | null) => void; readonly getReleaseTrackGate?: () => { managedTrack?: SandUpdateTrack | undefined; unlockInternalTracks: boolean }; readonly hasLiveExperimentBootstrap?: () => boolean; readonly getFlagsAgeMs?: () => number | undefined; readonly getMinimumVersion?: () => unknown;
   readonly getAutoUpdateWhenIdleOptIn?: () => boolean; readonly persistAutoUpdateWhenIdleOptIn?: (enabled: boolean) => void; readonly getAutoUpdateWhenIdleGateEnabled?: () => boolean; readonly idleRelaunchSignals?: any;
   readonly onStatusChange: (status: any) => void; readonly reportOutcome?: (report: any) => void; readonly reportCheck?: (report: any) => void; readonly reportApply?: (report: any) => void; readonly applyMarker?: ApplyMarkerPort; readonly log?: (message: string) => void; readonly fetchImpl?: typeof fetch;
@@ -92,8 +92,8 @@ export class SandUpdateService {
     const started = this.now();
     this.emitCheckReport({ action: "started", seq, trigger: input.trigger, track });
     if (this.state.type === "idle") this.setState({ type: "checking" });
-    updater.channel = track === "stable" ? "latest" : track;
-    updater.allowPrerelease = track !== "stable";
+    updater.channel = track === "stable" ? null : track;
+    updater.allowPrerelease = track !== "stable" || this.options.allowReleasePrerelease === true;
     let attemptedVersion: string | undefined;
     try {
       const result = await updater.checkForUpdates();
