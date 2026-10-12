@@ -13740,12 +13740,13 @@
         "Symbols, checksums/provenance and publication metadata",
         "Update publication ordering and independently owned platform metadata"
       ],
-      "platform_delta": "Telegram Bot API/channel transport is N/A. The applicable release semantics map to source-neutral Fabushi GitHub release/updater owners. macOS owner exists; Windows/Linux signed package/publication equivalence remains open.",
+      "platform_delta": "Telegram Bot API/channel transport is N/A. Source-neutral Fabushi formal release owners now exist for macOS, Windows and Linux; Linux shipping updater apply/Fabushi update-feed trust and same-candidate upgrade/restart/recovery acceptance remain open.",
       "existing_owner_candidates": [
         ".github/workflows/release-macos-main.yml",
+        ".github/workflows/release-windows-main.yml",
+        ".github/workflows/release-linux-main.yml",
         ".github/workflows/rust-desktop-runtime.yml",
-        "desktop packaging/update configuration and generated updater metadata",
-        "native updater contract owners exercised by Rust desktop runtime"
+        "desktop packaging/update configuration and generated updater metadata"
       ],
       "existing_owner": "Existing Fabushi canonical packaging/updater/release owners",
       "rejected_existing_owners": [
@@ -13756,12 +13757,16 @@
       "new_owner_adr": null,
       "fabushi_target_paths": [
         ".github/workflows/release-macos-main.yml",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/release-windows-main.yml",
+        ".github/workflows/release-linux-main.yml"
       ],
       "fabushi_target_symbols": [
         "Build, notarize, and publish macOS arm64",
         "updater-platform-contract",
-        "Updater contract / ${{ matrix.os }}"
+        "Updater contract / ${{ matrix.os }}",
+        "Build, sign, install, and publish Windows x64",
+        "Build, sign, install, and publish Linux x64"
       ],
       "target_language": "GitHub Actions + existing packaging/updater implementation",
       "language_rationale": "Release orchestration belongs to existing source-neutral Fabushi packaging/updater workflows, not a product runtime port.",
@@ -13783,11 +13788,16 @@
       "implementation_status": "mapped",
       "coverage_disposition": "rewritten-partial",
       "blockers": [
-        "Windows and Linux signed package owners plus same-release-candidate install/upgrade/restart/provenance acceptance are not yet evidenced.",
+        "Windows/Linux formal release workflows require fresh exact-head GitHub Actions signing/package acceptance evidence; workflow presence alone is not acceptance.",
+        "Linux packaged updater is still disabled/incorrectly identified in the shipping updater owner and has no AppImage apply/recovery path.",
+        "Desktop updater still defaults to Cursor update infrastructure instead of the existing Fabushi app-version policy owner with a signed update manifest/hash contract.",
+        "Same-release-candidate install -> upgrade -> restart/recovery acceptance is not yet evidenced on all three platforms.",
         "Independent release acceptance remains open."
       ],
       "production_entrypoints": [
         ".github/workflows/release-macos-main.yml::Build, notarize, and publish macOS arm64",
+        ".github/workflows/release-windows-main.yml::Build, sign, install, and publish Windows x64",
+        ".github/workflows/release-linux-main.yml::Build, sign, install, and publish Linux x64",
         ".github/workflows/rust-desktop-runtime.yml::updater-platform-contract / Updater contract / ${{ matrix.os }}"
       ],
       "production_evidence": [
@@ -13921,7 +13931,7 @@
       "test_environment_ids": [
         "GitHub Actions only"
       ],
-      "coverage_matrix_status": "mapped-macos-owner-and-three-platform-updater-contracts-evidenced-windows-linux-signed-package-acceptance-open",
+      "coverage_matrix_status": "mapped-three-platform-formal-release-owners-created-fresh-signed-package-and-updater-acceptance-open",
       "flake_status": "current-exact-head-success-for-existing-contracts",
       "test_execution_evidence": [
         "predecessor-evidence:github-actions:38273831359:success@92944016319539f8115607f05aeeff0c7fb7de4f"
@@ -13929,7 +13939,7 @@
       "acceptance_reviewer": null,
       "release_gate_status": "pending",
       "license_and_provenance": "Source-informed release-semantics mapping from telegramdesktop/tdesktop .github/workflows/canary.yml at accepted blob cff0a8cd8bb0008ddd1dc833c37005c8890e6a8c. No Telegram canary runtime, Bot API publication transport, signing material, or source-specific infrastructure is retained; Fabushi reuses its source-neutral GitHub Actions, platform signing, packaging, updater trust, and provenance owners.",
-      "notes": "Schema-complete canary decomposition records the accepted upstream exact blob, existing-owner audit, exact target bindings for the macOS formal release owner and the source-neutral updater matrix owner, tests, security boundary, licensing and provenance. Windows/Linux signed package acceptance and independent release acceptance remain open.",
+      "notes": "Schema-complete canary decomposition now binds source-neutral formal macOS, Windows, and Linux release workflow owners plus the three-platform updater contract. Windows/Linux workflows fail closed on formal signing credentials and run installed packaged acceptance before publication. Linux updater apply/Fabushi signed update feed, same-candidate upgrade/restart/recovery, fresh signed package evidence and independent release acceptance remain open.",
       "reviewer": null,
       "fabushi_target_bindings": [
         {
@@ -13938,6 +13948,20 @@
             "Build, notarize, and publish macOS arm64"
           ],
           "responsibility_scope": "formal macOS signed/notarized release-candidate packaging, packaged acceptance, checksum/provenance, and publication owner"
+        },
+        {
+          "path": ".github/workflows/release-windows-main.yml",
+          "symbols": [
+            "Build, sign, install, and publish Windows x64"
+          ],
+          "responsibility_scope": "formal Windows Authenticode-signed NSIS plus portable packaging, installed-candidate acceptance, checksum/provenance, and publication owner"
+        },
+        {
+          "path": ".github/workflows/release-linux-main.yml",
+          "symbols": [
+            "Build, sign, install, and publish Linux x64"
+          ],
+          "responsibility_scope": "formal Linux AppImage/deb detached-signature packaging, installed-candidate acceptance, checksum/provenance, and publication owner"
         },
         {
           "path": ".github/workflows/rust-desktop-runtime.yml",

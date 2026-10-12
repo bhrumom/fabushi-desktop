@@ -1,0 +1,327 @@
+name: Package Linux installer from exact source
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: Exact source commit to package. Empty means main.
+        required: false
+        type: string
+      publish_release:
+        description: Publish signed artifacts as a GitHub prerelease only after packaged acceptance passes.
+        required: true
+        default: false
+        type: boolean
+  push:
+    branches: [main]
+    paths:
+      - 'desktop/**'
+      - 'source/**'
+      - 'frontend/**'
+      - 'contracts/**'
+      - 'native/**'
+      - 'projects/telegram-desktop-rust/**'
+      - '.github/workflows/release-linux-main.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: package-linux-${{ github.event_name == 'push' && github.sha || inputs.source_sha || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Build, sign, install, and publish Linux x64
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    env:
+      SUPPORT_REPO: bhrumom/fabushi
+      SUPPORT_SHA: 5d75920308fa17f5000308df1a0153309eb8e9ab
+    steps:
+      - name: Checkout exact source
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'push' && github.sha || inputs.source_sha || 'main' }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Bind exact source and refuse stale publication
+        id: source
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha="$(git rev-parse HEAD)"
+          requested="${{ inputs.source_sha }}"
+          if [ -n "$requested" ]; then
+            test "$sha" = "$requested"
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            test "$sha" = "${{ github.sha }}"
+            test "${{ github.ref }}" = "refs/heads/main"
+          else
+            test "$(git rev-parse --abbrev-ref HEAD)" = "main"
+          fi
+          if [ "${{ github.event_name }}" = "push" ] || [ "${{ inputs.publish_release }}" = "true" ]; then
+            live="$(git ls-remote origin refs/heads/main | awk '{print $1}')"
+            test -n "$live"
+            test "$sha" = "$live"
+          fi
+          version="$(node -p "require('./desktop/package.json').version")"
+          short="${sha:0:12}"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "short=$short" >> "$GITHUB_OUTPUT"
+          echo "tag=linux-main-v${version}-${short}" >> "$GITHUB_OUTPUT"
+
+      - name: Require Linux release signing and production account secrets
+        shell: bash
+        env:
+          LINUX_RELEASE_GPG_PRIVATE_KEY_BASE64: ${{ secrets.LINUX_RELEASE_GPG_PRIVATE_KEY_BASE64 }}
+          LINUX_RELEASE_GPG_PASSPHRASE: ${{ secrets.LINUX_RELEASE_GPG_PASSPHRASE }}
+          FABUSHI_CI_TEST_USERNAME: ${{ secrets.FABUSHI_CI_TEST_USERNAME }}
+          FABUSHI_CI_TEST_PASSWORD: ${{ secrets.FABUSHI_CI_TEST_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test -n "$LINUX_RELEASE_GPG_PRIVATE_KEY_BASE64"
+          test -n "$LINUX_RELEASE_GPG_PASSPHRASE"
+          test -n "$FABUSHI_CI_TEST_USERNAME"
+          test -n "$FABUSHI_CI_TEST_PASSWORD"
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.97.1
+
+      - name: Install native packaging and display dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y libfuse2 xvfb gnupg
+
+      - name: Install desktop dependencies
+        shell: bash
+        run: npm --prefix desktop ci --prefer-offline --no-audit --no-fund
+
+      - name: Require complete architecture cutover and adapter contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/check-grok-architecture.mjs --strict
+          npm --prefix desktop run build:electron
+          ./desktop/node_modules/.bin/tsc -p desktop/tsconfig.fabushi-product.json
+          node --test desktop/.tmp-fabushi-product/source/product/fabushi/fabushi-account-service.contract.test.js
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: source/mahayana/mahayana-rs -> target
+          shared-key: fabushi-desktop-linux-release-rust-1.97.1
+
+      - name: Import exact Linux release signing key
+        id: signing
+        shell: bash
+        env:
+          LINUX_RELEASE_GPG_PRIVATE_KEY_BASE64: ${{ secrets.LINUX_RELEASE_GPG_PRIVATE_KEY_BASE64 }}
+        run: |
+          set -euo pipefail
+          key="$RUNNER_TEMP/fabushi-linux-release.asc"
+          printf '%s' "$LINUX_RELEASE_GPG_PRIVATE_KEY_BASE64" | base64 --decode > "$key"
+          gpg --batch --import "$key"
+          fingerprint="$(gpg --batch --with-colons --list-secret-keys | awk -F: '$1=="fpr"{print $10; exit}')"
+          test -n "$fingerprint"
+          echo "fingerprint=$fingerprint" >> "$GITHUB_OUTPUT"
+
+      - name: Build and stage Mahayana desktop host
+        working-directory: desktop
+        shell: bash
+        run: npm run build:host
+
+      - name: Build pinned offline ASR engine
+        shell: bash
+        run: |
+          set -euo pipefail
+          manifest="source/packaging/offline-asr-engine.json"
+          repo="$(node -e 'const fs=require("fs");const m=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));process.stdout.write(m.whisperCpp.repository)' "$manifest")"
+          commit="$(node -e 'const fs=require("fs");const m=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));process.stdout.write(m.whisperCpp.commit)' "$manifest")"
+          src="$RUNNER_TEMP/whisper-cpp"
+          build="$RUNNER_TEMP/whisper-build"
+          git clone --filter=blob:none --no-checkout "$repo" "$src"
+          git -C "$src" checkout --detach "$commit"
+          cmake -S "$src" -B "$build" -DWHISPER_BUILD_TESTS=OFF -DWHISPER_BUILD_EXAMPLES=ON -DWHISPER_BUILD_SERVER=OFF -DBUILD_SHARED_LIBS=OFF -DGGML_NATIVE=OFF
+          cmake --build "$build" --config Release --parallel 2
+          binary="$(find "$build" -type f -name whisper-cli -perm -111 -print -quit)"
+          test -n "$binary"
+          out="desktop/resources/asr/linux-x64"
+          rm -rf "$out"
+          mkdir -p "$out"
+          cp "$binary" "$out/whisper-cli"
+          chmod 755 "$out/whisper-cli"
+          cp "$src/LICENSE" "$out/LICENSE.whisper.cpp"
+          printf '{"repository":"%s","commit":"%s","platform":"linux","arch":"x64"}\n' "$repo" "$commit" > "$out/build.json"
+
+      - name: Stage bundled Computer Use runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          support="$RUNNER_TEMP/fabushi-support"
+          git clone --filter=blob:none --no-checkout "https://github.com/$SUPPORT_REPO.git" "$support"
+          git -C "$support" sparse-checkout init --cone
+          git -C "$support" sparse-checkout set chatgpt-vps-control
+          git -C "$support" checkout "$SUPPORT_SHA"
+          npm --prefix "$support/chatgpt-vps-control" ci --ignore-scripts --prefer-offline --no-audit --no-fund
+          mkdir -p "$support/desktop/resources"
+          export CHATGPT_COMPUTER_HOME="$support/desktop/resources/computer-control"
+          node "$support/chatgpt-vps-control/bin/prepare-fabushi-bundle.js"
+          rm -rf desktop/resources/computer-control
+          mkdir -p desktop/resources/computer-control
+          cp -a "$support/desktop/resources/computer-control/." desktop/resources/computer-control/
+          test -f desktop/resources/computer-control/active-runtime.json
+
+      - name: Build production desktop runtime
+        working-directory: desktop
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run build:electron
+          npm run build:renderer
+          npm run check:desktop-runtime
+          node scripts/check-desktop-bundle.mjs
+
+      - name: Package Linux AppImage and deb
+        working-directory: desktop
+        shell: bash
+        run: npx electron-builder --linux AppImage deb --x64 --publish never
+
+      - name: Sign and verify every Linux release package
+        id: artifacts
+        shell: bash
+        env:
+          GPG_PASSPHRASE: ${{ secrets.LINUX_RELEASE_GPG_PASSPHRASE }}
+          EXPECTED_FINGERPRINT: ${{ steps.signing.outputs.fingerprint }}
+        run: |
+          set -euo pipefail
+          mapfile -t packages < <(find desktop/release -maxdepth 1 -type f \( -name '*.AppImage' -o -name '*.deb' \) | sort)
+          test "${#packages[@]}" -ge 2
+          for package in "${packages[@]}"; do
+            gpg --batch --yes --pinentry-mode loopback --passphrase "$GPG_PASSPHRASE" --local-user "$EXPECTED_FINGERPRINT" --detach-sign --armor "$package"
+            gpg --batch --verify "$package.asc" "$package"
+          done
+          appimage="$(printf '%s\n' "${packages[@]}" | grep -m1 '\.AppImage$')"
+          deb="$(printf '%s\n' "${packages[@]}" | grep -m1 '\.deb$')"
+          test -n "$appimage"
+          test -n "$deb"
+          echo "appimage=$appimage" >> "$GITHUB_OUTPUT"
+          echo "deb=$deb" >> "$GITHUB_OUTPUT"
+
+      - name: Install exact signed deb candidate
+        id: candidate
+        shell: bash
+        env:
+          DEB: ${{ steps.artifacts.outputs.deb }}
+        run: |
+          set -euo pipefail
+          sudo dpkg -i "$DEB" || { sudo apt-get -f install -y; sudo dpkg -i "$DEB"; }
+          executable="$(command -v fabushi || true)"
+          if [ -z "$executable" ]; then
+            executable="$(find /opt /usr -type f -name fabushi -perm -111 2>/dev/null | head -1)"
+          fi
+          test -n "$executable"
+          test -x "$executable"
+          echo "executable=$executable" >> "$GITHUB_OUTPUT"
+
+      - name: Provision bounded production CI account session
+        shell: bash
+        env:
+          FABUSHI_CI_TEST_USERNAME: ${{ secrets.FABUSHI_CI_TEST_USERNAME }}
+          FABUSHI_CI_TEST_PASSWORD: ${{ secrets.FABUSHI_CI_TEST_PASSWORD }}
+          FABUSHI_API_BASE_URL: ${{ vars.FABUSHI_API_BASE_URL || 'https://api.ombhrum.com' }}
+          DEVICE_ID: gha-${{ github.run_id }}-${{ github.run_attempt }}-linux
+        run: |
+          set -euo pipefail
+          support="$RUNNER_TEMP/fabushi-support"
+          account_dir="$RUNNER_TEMP/fabushi-candidate-account"
+          app_session_dir="$RUNNER_TEMP/fabushi-candidate-app-session"
+          mkdir -p "$account_dir" "$app_session_dir"
+          export FABUSHI_ACCOUNT_SESSION_FILE="$account_dir/session.json"
+          export FABUSHI_CI_ACCOUNT_SESSION_FILE="$app_session_dir/session.json"
+          node "$support/chatgpt-vps-control/scripts/login-ci-test-account.mjs"
+          node "$support/chatgpt-vps-control/scripts/export-ci-app-account-session.mjs"
+          rm -f "$FABUSHI_ACCOUNT_SESSION_FILE"
+          {
+            echo "DEVICE_ID=$DEVICE_ID"
+            echo "FABUSHI_CI_ACCOUNT_SESSION_FILE=$FABUSHI_CI_ACCOUNT_SESSION_FILE"
+          } >> "$GITHUB_ENV"
+
+      - name: Run real signed packaged acceptance
+        working-directory: desktop
+        shell: bash
+        timeout-minutes: 60
+        env:
+          OBF_REAL_ACCEPTANCE: '1'
+          OBF_SOURCE_SHA: ${{ steps.source.outputs.sha }}
+          OBF_EXPECTED_SOURCE_SHA: ${{ steps.source.outputs.sha }}
+          OBF_EVIDENCE_DIR: ${{ runner.temp }}/fabushi-candidate-acceptance
+          FABUSHI_ELECTRON_EXECUTABLE: ${{ steps.candidate.outputs.executable }}
+          FABUSHI_FEATURE_HOST_MODE: production
+          FABUSHI_E2E: '0'
+        run: |
+          set -euo pipefail
+          rm -rf "$OBF_EVIDENCE_DIR"
+          mkdir -p "$OBF_EVIDENCE_DIR"
+          xvfb-run -a npx playwright test e2e/openbot-packaged-acceptance.spec.ts --workers=1
+          test -s "$OBF_EVIDENCE_DIR/trace.zip"
+          test -s "$OBF_EVIDENCE_DIR/candidate.json"
+
+      - name: Write SHA256 provenance
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd desktop/release
+          find . -maxdepth 1 -type f \( -name '*.AppImage' -o -name '*.deb' -o -name '*.asc' -o -name '*.yml' \) -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.txt
+          node -e 'const fs=require("fs"); fs.writeFileSync("provenance.json", JSON.stringify({source:process.env.SOURCE_SHA,runId:process.env.GITHUB_RUN_ID,runAttempt:process.env.GITHUB_RUN_ATTEMPT,platform:"linux"},null,2))'
+        env:
+          SOURCE_SHA: ${{ steps.source.outputs.sha }}
+
+      - name: Upload packaged acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: fabushi-linux-acceptance-${{ steps.source.outputs.short }}
+          path: |
+            ${{ runner.temp }}/fabushi-candidate-acceptance
+            desktop/playwright-report
+            desktop/test-results
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Upload workflow artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: fabushi-linux-${{ steps.source.outputs.short }}
+          path: |
+            desktop/release/*.AppImage
+            desktop/release/*.deb
+            desktop/release/*.asc
+            desktop/release/*.yml
+            desktop/release/SHA256SUMS.txt
+            desktop/release/provenance.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Publish exact-source GitHub prerelease
+        if: ${{ (github.event_name == 'push' && startsWith(github.event.head_commit.message, 'release:')) || (github.event_name == 'workflow_dispatch' && inputs.publish_release) }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.source.outputs.tag }}
+          SOURCE_SHA: ${{ steps.source.outputs.sha }}
+        run: |
+          set -euo pipefail
+          git ls-remote origin refs/heads/main | grep -F "$SOURCE_SHA"
+          gh release create "$TAG" desktop/release/*.AppImage desktop/release/*.deb desktop/release/*.asc desktop/release/*.yml desktop/release/SHA256SUMS.txt desktop/release/provenance.json --repo "$GITHUB_REPOSITORY" --target "$SOURCE_SHA" --prerelease --title "Fabushi Linux ${TAG}" --notes "Exact-source signed Linux candidate: ${SOURCE_SHA}"

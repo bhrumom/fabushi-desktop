@@ -1,0 +1,310 @@
+name: Package Windows installer from exact source
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: Exact source commit to package. Empty means main.
+        required: false
+        type: string
+      publish_release:
+        description: Publish signed artifacts as a GitHub prerelease only after packaged acceptance passes.
+        required: true
+        default: false
+        type: boolean
+  push:
+    branches: [main]
+    paths:
+      - 'desktop/**'
+      - 'source/**'
+      - 'frontend/**'
+      - 'contracts/**'
+      - 'native/**'
+      - 'projects/telegram-desktop-rust/**'
+      - '.github/workflows/release-windows-main.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: package-windows-${{ github.event_name == 'push' && github.sha || inputs.source_sha || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Build, sign, install, and publish Windows x64
+    runs-on: windows-2025
+    timeout-minutes: 180
+    env:
+      SUPPORT_REPO: bhrumom/fabushi
+      SUPPORT_SHA: 5d75920308fa17f5000308df1a0153309eb8e9ab
+    steps:
+      - name: Checkout exact source
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'push' && github.sha || inputs.source_sha || 'main' }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Bind exact source and refuse stale publication
+        id: source
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha="$(git rev-parse HEAD)"
+          requested="${{ inputs.source_sha }}"
+          if [ -n "$requested" ]; then
+            test "$sha" = "$requested"
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            test "$sha" = "${{ github.sha }}"
+            test "${{ github.ref }}" = "refs/heads/main"
+          else
+            test "$(git rev-parse --abbrev-ref HEAD)" = "main"
+          fi
+          if [ "${{ github.event_name }}" = "push" ] || [ "${{ inputs.publish_release }}" = "true" ]; then
+            live="$(git ls-remote origin refs/heads/main | awk '{print $1}')"
+            test -n "$live"
+            test "$sha" = "$live"
+          fi
+          version="$(node -p "require('./desktop/package.json').version")"
+          short="${sha:0:12}"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "short=$short" >> "$GITHUB_OUTPUT"
+          echo "tag=windows-main-v${version}-${short}" >> "$GITHUB_OUTPUT"
+
+      - name: Require Windows signing and production account secrets
+        shell: pwsh
+        env:
+          WINDOWS_CERTIFICATE_P12_BASE64: ${{ secrets.WINDOWS_CERTIFICATE_P12_BASE64 }}
+          WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+          FABUSHI_CI_TEST_USERNAME: ${{ secrets.FABUSHI_CI_TEST_USERNAME }}
+          FABUSHI_CI_TEST_PASSWORD: ${{ secrets.FABUSHI_CI_TEST_PASSWORD }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:WINDOWS_CERTIFICATE_P12_BASE64)) { throw "WINDOWS_CERTIFICATE_P12_BASE64 is required" }
+          if ([string]::IsNullOrWhiteSpace($env:WINDOWS_CERTIFICATE_PASSWORD)) { throw "WINDOWS_CERTIFICATE_PASSWORD is required" }
+          if ([string]::IsNullOrWhiteSpace($env:FABUSHI_CI_TEST_USERNAME)) { throw "FABUSHI_CI_TEST_USERNAME is required" }
+          if ([string]::IsNullOrWhiteSpace($env:FABUSHI_CI_TEST_PASSWORD)) { throw "FABUSHI_CI_TEST_PASSWORD is required" }
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.97.1
+
+      - name: Install desktop dependencies
+        shell: bash
+        run: npm --prefix desktop ci --prefer-offline --no-audit --no-fund
+
+      - name: Require complete architecture cutover and adapter contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/check-grok-architecture.mjs --strict
+          npm --prefix desktop run build:electron
+          ./desktop/node_modules/.bin/tsc -p desktop/tsconfig.fabushi-product.json
+          node --test desktop/.tmp-fabushi-product/source/product/fabushi/fabushi-account-service.contract.test.js
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: source/mahayana/mahayana-rs -> target
+          shared-key: fabushi-desktop-windows-release-rust-1.97.1
+
+      - name: Install exact Windows signing certificate
+        id: signing
+        shell: pwsh
+        env:
+          WINDOWS_CERTIFICATE_P12_BASE64: ${{ secrets.WINDOWS_CERTIFICATE_P12_BASE64 }}
+          WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+        run: |
+          $certPath = Join-Path $env:RUNNER_TEMP "fabushi-windows.p12"
+          [IO.File]::WriteAllBytes($certPath, [Convert]::FromBase64String($env:WINDOWS_CERTIFICATE_P12_BASE64))
+          $secure = ConvertTo-SecureString $env:WINDOWS_CERTIFICATE_PASSWORD -AsPlainText -Force
+          $cert = Import-PfxCertificate -FilePath $certPath -CertStoreLocation Cert:\CurrentUser\My -Password $secure -Exportable
+          if (-not $cert -or -not $cert.Thumbprint) { throw "Windows signing certificate import failed" }
+          "CSC_LINK=$certPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "CSC_KEY_PASSWORD=$env:WINDOWS_CERTIFICATE_PASSWORD" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "thumbprint=$($cert.Thumbprint)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Build and stage Mahayana desktop host
+        working-directory: desktop
+        shell: bash
+        run: npm run build:host
+
+      - name: Build pinned offline ASR engine
+        shell: pwsh
+        run: |
+          $manifest = Get-Content source/packaging/offline-asr-engine.json | ConvertFrom-Json
+          $src = Join-Path $env:RUNNER_TEMP "whisper-cpp"
+          $build = Join-Path $env:RUNNER_TEMP "whisper-build"
+          git clone --filter=blob:none --no-checkout $manifest.whisperCpp.repository $src
+          git -C $src checkout --detach $manifest.whisperCpp.commit
+          cmake -S $src -B $build -DWHISPER_BUILD_TESTS=OFF -DWHISPER_BUILD_EXAMPLES=ON -DWHISPER_BUILD_SERVER=OFF -DBUILD_SHARED_LIBS=OFF -DGGML_NATIVE=OFF
+          cmake --build $build --config Release --parallel 2
+          $binary = Get-ChildItem $build -Recurse -Filter whisper-cli.exe | Select-Object -First 1
+          if (-not $binary) { throw "whisper-cli.exe not found" }
+          $out = "desktop/resources/asr/win32-x64"
+          Remove-Item $out -Recurse -Force -ErrorAction SilentlyContinue
+          New-Item $out -ItemType Directory -Force | Out-Null
+          Copy-Item $binary.FullName "$out/whisper-cli.exe"
+          Copy-Item "$src/LICENSE" "$out/LICENSE.whisper.cpp"
+          @{repository=$manifest.whisperCpp.repository;commit=$manifest.whisperCpp.commit;platform="win32";arch="x64"} | ConvertTo-Json -Compress | Set-Content "$out/build.json"
+
+      - name: Stage bundled Computer Use runtime
+        shell: pwsh
+        run: |
+          $support = Join-Path $env:RUNNER_TEMP "fabushi-support"
+          git clone --filter=blob:none --no-checkout "https://github.com/$env:SUPPORT_REPO.git" $support
+          git -C $support sparse-checkout init --cone
+          git -C $support sparse-checkout set chatgpt-vps-control
+          git -C $support checkout $env:SUPPORT_SHA
+          npm --prefix "$support/chatgpt-vps-control" ci --ignore-scripts --prefer-offline --no-audit --no-fund
+          New-Item "$support/desktop/resources" -ItemType Directory -Force | Out-Null
+          $env:CHATGPT_COMPUTER_HOME = "$support/desktop/resources/computer-control"
+          node "$support/chatgpt-vps-control/bin/prepare-fabushi-bundle.js"
+          Remove-Item desktop/resources/computer-control -Recurse -Force -ErrorAction SilentlyContinue
+          Copy-Item "$support/desktop/resources/computer-control" desktop/resources/computer-control -Recurse
+          if (-not (Test-Path desktop/resources/computer-control/active-runtime.json)) { throw "Computer Use runtime was not staged" }
+
+      - name: Build production desktop runtime
+        working-directory: desktop
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run build:electron
+          npm run build:renderer
+          npm run check:desktop-runtime
+          node scripts/check-desktop-bundle.mjs
+
+      - name: Package signed NSIS installer
+        working-directory: desktop
+        shell: pwsh
+        run: npx electron-builder --win nsis --x64 --publish never
+
+      - name: Package signed portable artifact
+        working-directory: desktop
+        shell: pwsh
+        run: npx electron-builder --win portable --x64 --publish never --config.artifactName="fabushi-${version}-portable-${arch}.${ext}"
+
+      - name: Verify Authenticode trust for every release executable
+        id: artifacts
+        shell: pwsh
+        env:
+          EXPECTED_THUMBPRINT: ${{ steps.signing.outputs.thumbprint }}
+        run: |
+          $files = Get-ChildItem desktop/release -File -Filter *.exe
+          if ($files.Count -lt 2) { throw "Expected signed installer and portable executable" }
+          foreach ($file in $files) {
+            $sig = Get-AuthenticodeSignature -LiteralPath $file.FullName
+            if ($sig.Status -ne "Valid") { throw "Invalid Authenticode signature: $($file.Name) / $($sig.Status)" }
+            if ($sig.SignerCertificate.Thumbprint -ne $env:EXPECTED_THUMBPRINT) { throw "Unexpected signer thumbprint: $($file.Name)" }
+          }
+          $setup = $files | Where-Object { $_.Name -match "setup.*\.exe$" } | Select-Object -First 1
+          $portable = $files | Where-Object { $_.Name -match "portable.*\.exe$" } | Select-Object -First 1
+          if (-not $setup -or -not $portable) { throw "Could not bind installer and portable artifacts" }
+          "setup=$($setup.FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          "portable=$($portable.FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Install exact signed candidate
+        id: candidate
+        shell: pwsh
+        env:
+          SETUP: ${{ steps.artifacts.outputs.setup }}
+          EXPECTED_THUMBPRINT: ${{ steps.signing.outputs.thumbprint }}
+        run: |
+          $p = Start-Process -FilePath $env:SETUP -ArgumentList "/S" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "NSIS install failed: $($p.ExitCode)" }
+          $candidate = Get-ChildItem "$env:LOCALAPPDATA\Programs" -Recurse -Filter fabushi.exe -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $candidate) { throw "Installed fabushi.exe not found" }
+          $sig = Get-AuthenticodeSignature -LiteralPath $candidate.FullName
+          if ($sig.Status -ne "Valid" -or $sig.SignerCertificate.Thumbprint -ne $env:EXPECTED_THUMBPRINT) { throw "Installed candidate trust verification failed" }
+          "executable=$($candidate.FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Provision bounded production CI account session
+        shell: pwsh
+        env:
+          FABUSHI_CI_TEST_USERNAME: ${{ secrets.FABUSHI_CI_TEST_USERNAME }}
+          FABUSHI_CI_TEST_PASSWORD: ${{ secrets.FABUSHI_CI_TEST_PASSWORD }}
+          FABUSHI_API_BASE_URL: ${{ vars.FABUSHI_API_BASE_URL || 'https://api.ombhrum.com' }}
+          DEVICE_ID: gha-${{ github.run_id }}-${{ github.run_attempt }}-windows
+        run: |
+          $support = Join-Path $env:RUNNER_TEMP "fabushi-support"
+          $accountDir = Join-Path $env:RUNNER_TEMP "fabushi-candidate-account"
+          $appSessionDir = Join-Path $env:RUNNER_TEMP "fabushi-candidate-app-session"
+          New-Item $accountDir,$appSessionDir -ItemType Directory -Force | Out-Null
+          $env:FABUSHI_ACCOUNT_SESSION_FILE = Join-Path $accountDir "session.json"
+          $env:FABUSHI_CI_ACCOUNT_SESSION_FILE = Join-Path $appSessionDir "session.json"
+          node "$support/chatgpt-vps-control/scripts/login-ci-test-account.mjs"
+          node "$support/chatgpt-vps-control/scripts/export-ci-app-account-session.mjs"
+          Remove-Item $env:FABUSHI_ACCOUNT_SESSION_FILE -Force -ErrorAction SilentlyContinue
+          "DEVICE_ID=$env:DEVICE_ID" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "FABUSHI_CI_ACCOUNT_SESSION_FILE=$env:FABUSHI_CI_ACCOUNT_SESSION_FILE" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Run real signed packaged acceptance
+        working-directory: desktop
+        shell: pwsh
+        timeout-minutes: 60
+        env:
+          OBF_REAL_ACCEPTANCE: '1'
+          OBF_SOURCE_SHA: ${{ steps.source.outputs.sha }}
+          OBF_EXPECTED_SOURCE_SHA: ${{ steps.source.outputs.sha }}
+          OBF_EVIDENCE_DIR: ${{ runner.temp }}\fabushi-candidate-acceptance
+          FABUSHI_ELECTRON_EXECUTABLE: ${{ steps.candidate.outputs.executable }}
+          FABUSHI_FEATURE_HOST_MODE: production
+          FABUSHI_E2E: '0'
+        run: |
+          Remove-Item $env:OBF_EVIDENCE_DIR -Recurse -Force -ErrorAction SilentlyContinue
+          New-Item $env:OBF_EVIDENCE_DIR -ItemType Directory -Force | Out-Null
+          npx playwright test e2e/openbot-packaged-acceptance.spec.ts --workers=1
+          if (-not (Test-Path "$env:OBF_EVIDENCE_DIR\trace.zip")) { throw "Packaged acceptance trace missing" }
+          if (-not (Test-Path "$env:OBF_EVIDENCE_DIR\candidate.json")) { throw "Candidate evidence missing" }
+
+      - name: Write SHA256 provenance
+        shell: pwsh
+        run: |
+          $files = Get-ChildItem desktop/release -File | Where-Object { $_.Extension -in ".exe", ".yml", ".blockmap" }
+          $lines = foreach ($file in $files) { $h = Get-FileHash $file.FullName -Algorithm SHA256; "$($h.Hash.ToLower())  $($file.Name)" }
+          $lines | Set-Content desktop/release/SHA256SUMS.txt
+          @{source="${{ steps.source.outputs.sha }}";runId="${{ github.run_id }}";runAttempt="${{ github.run_attempt }}";platform="windows";artifacts=$lines} | ConvertTo-Json -Depth 4 | Set-Content desktop/release/provenance.json
+
+      - name: Upload packaged acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: fabushi-windows-acceptance-${{ steps.source.outputs.short }}
+          path: |
+            ${{ runner.temp }}/fabushi-candidate-acceptance
+            desktop/playwright-report
+            desktop/test-results
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Upload workflow artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: fabushi-windows-${{ steps.source.outputs.short }}
+          path: |
+            desktop/release/*.exe
+            desktop/release/*.yml
+            desktop/release/*.blockmap
+            desktop/release/SHA256SUMS.txt
+            desktop/release/provenance.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Publish exact-source GitHub prerelease
+        if: ${{ (github.event_name == 'push' && startsWith(github.event.head_commit.message, 'release:')) || (github.event_name == 'workflow_dispatch' && inputs.publish_release) }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.source.outputs.tag }}
+          SOURCE_SHA: ${{ steps.source.outputs.sha }}
+        run: |
+          set -euo pipefail
+          git ls-remote origin refs/heads/main | grep -F "$SOURCE_SHA"
+          gh release create "$TAG" desktop/release/*.exe desktop/release/*.yml desktop/release/*.blockmap desktop/release/SHA256SUMS.txt desktop/release/provenance.json --repo "$GITHUB_REPOSITORY" --target "$SOURCE_SHA" --prerelease --title "Fabushi Windows ${TAG}" --notes "Exact-source signed Windows candidate: ${SOURCE_SHA}"
