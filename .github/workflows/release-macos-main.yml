@@ -421,11 +421,13 @@ jobs:
         shell: bash
         env:
           SOURCE_SHA: ${{ steps.source.outputs.sha }}
+          SIGNING_IDENTITY: ${{ env.MACOS_CODESIGN_IDENTITY }}
+          SIGNING_TEAM_ID: ${{ env.APPLE_TEAM_ID_RESOLVED }}
         run: |
           set -euo pipefail
           cd desktop/release
           find . -maxdepth 1 -type f \( -name '*.dmg' -o -name '*.zip' -o -name '*.blockmap' -o -name 'latest-mac.yml' \) -print0 | sort -z | xargs -0 shasum -a 256 > SHA256SUMS-macos.txt
-          node -e 'const fs=require("fs"); fs.writeFileSync("provenance-macos.json", JSON.stringify({source:process.env.SOURCE_SHA,runId:process.env.GITHUB_RUN_ID,runAttempt:process.env.GITHUB_RUN_ATTEMPT,platform:"macos"},null,2))'
+          node -e 'const fs=require("fs"); fs.writeFileSync("provenance-macos.json", JSON.stringify({source:process.env.SOURCE_SHA,runId:process.env.GITHUB_RUN_ID,runAttempt:process.env.GITHUB_RUN_ATTEMPT,platform:"macos",signingIdentity:process.env.SIGNING_IDENTITY,teamId:process.env.SIGNING_TEAM_ID},null,2))'
           cat SHA256SUMS-macos.txt
 
       - name: Upload workflow artifacts
