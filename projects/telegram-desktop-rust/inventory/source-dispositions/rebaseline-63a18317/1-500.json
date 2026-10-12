@@ -1298,15 +1298,15 @@
         ".github/workflows/rust-desktop-runtime.yml::Updater contract / ubuntu-24.04|macos-15|windows-2025"
       ],
       "current_head_evidence": [
-        "github-actions:38273831359:success@92944016319539f8115607f05aeeff0c7fb7de4f",
-        "github-actions:38273831359:job-114894362259:Updater contract / ubuntu-24.04:success",
-        "github-actions:38273831359:job-114894362334:Updater contract / macos-15:success",
-        "github-actions:38273831359:job-114894362359:Updater contract / windows-2025:success",
-        "artifact:11758466363:sha256:1cf412bb2399e3c6f6dbf7ad5cfd80c907692244a3070439b0d22837befbbcb6"
+        "predecessor-evidence:github-actions:38273831359:success@92944016319539f8115607f05aeeff0c7fb7de4f",
+        "predecessor-evidence:github-actions:38273831359:job-114894362259:Updater contract / ubuntu-24.04:success",
+        "predecessor-evidence:github-actions:38273831359:job-114894362334:Updater contract / macos-15:success",
+        "predecessor-evidence:github-actions:38273831359:job-114894362359:Updater contract / windows-2025:success",
+        "predecessor-evidence:artifact:11758466363:sha256:1cf412bb2399e3c6f6dbf7ad5cfd80c907692244a3070439b0d22837befbbcb6"
       ],
       "security_boundary": "No Telegram Bot API or lane secret is adopted. Fabushi must preserve least-privilege signing credentials, OIDC scope, exact-source binding, stale-tip refusal and signed-update trust with source-neutral publication.",
       "licensing_provenance": "Behavioral release semantics are reimplemented source-neutrally; no Telegram publication runtime or branded transport is embedded. Exact upstream blob cff0a8cd8bb0008ddd1dc833c37005c8890e6a8c remains provenance authority.",
-      "evidence_gap": "macOS exact-source signing/notarization/package owner exists; Windows/Linux signed package + real install/upgrade/restart/publication/provenance acceptance on one release-candidate SHA remain open. Therefore order 58 stays mapped-incomplete and unknown_closed=false."
+      "evidence_gap": "The 9294401 updater/authority results are predecessor evidence after descendant ledger/canary work. macOS exact-source signing/notarization/package owner exists; Windows/Linux signed package + real install/upgrade/restart/publication/provenance acceptance on one release-candidate SHA remain open, and fresh exact-head Actions are required."
     },
     {
       "recursive_order": 59,

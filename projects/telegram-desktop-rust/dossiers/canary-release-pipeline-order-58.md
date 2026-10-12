@@ -29,7 +29,7 @@ This workflow is not migrated as a Telegram canary runtime. It is decomposed int
 
 Telegram Bot API/channel identifiers, Telegram API credentials, Telegram channel metadata messages and Telegram-specific branch names are source-specific transport details and are **N/A individually**, not grounds to mark the entire workflow N/A.
 
-## Existing-owner audit on Fabushi exact head 9294401…
+## Existing-owner audit and predecessor evidence
 
 ### macOS
 
@@ -39,14 +39,14 @@ This is a real owner, so no new macOS release subsystem is introduced.
 
 ### Cross-platform updater contract
 
-`.github/workflows/rust-desktop-runtime.yml` owns updater contract qualification on Ubuntu, macOS and Windows. Current exact-head run `38273831359` completed successfully:
+`.github/workflows/rust-desktop-runtime.yml` owns updater contract qualification on Ubuntu, macOS and Windows. Predecessor run `38273831359` at `92944016319539f8115607f05aeeff0c7fb7de4f` completed successfully, but is historical after descendant ledger/canary changes:
 - Ubuntu updater job `114894362259`
 - macOS updater job `114894362334`
 - Windows updater job `114894362359`
 - Source authority job `114894362277`
 - Authority artifact `11758466363`, digest `sha256:1cf412bb2399e3c6f6dbf7ad5cfd80c907692244a3070439b0d22837befbbcb6`
 
-These prove existing updater contract behavior, not signed Windows/Linux release packages.
+These prove the existing updater contract behavior at that predecessor SHA, not current-head acceptance and not signed Windows/Linux release packages. Any descendant must obtain fresh exact-head Actions.
 
 ### Open owner gap
 

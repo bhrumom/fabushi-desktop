@@ -8846,23 +8846,42 @@
       "implementation_status": "implemented",
       "coverage_disposition": "rewritten",
       "blockers": [
+        "Fresh exact-head GitHub Actions must pass after this ledger traceability correction; predecessor 9294401 runs are diagnostic/implementation evidence only.",
         "Same-release-candidate macOS/Windows/Linux signed package install/upgrade/restart recovery, updater provenance/temporal acceptance, full Fabushi Bot regression and independent release acceptance remain open."
       ],
-      "production_entrypoints": [],
+      "production_entrypoints": [
+        "frontend/src/production/ProductionRenderer.tsx::noteRecentParticipantSelection -> client.call(\"noteRecentParticipantSuggestion\", createCanonicalRecentParticipantSelectionRequest(...))",
+        "source/host/src/host_gateway_api.rs::host_gateway_owner(\"noteRecentParticipantSuggestion\") -> HostGatewayOwner::Session",
+        "source/host/src/extensions/session/production.rs::ProductionSessionWorkers::note_recent_participant_suggestion -> unique _messaging MessagingService",
+        "native/mahayana-messaging/src/service.rs::MessagingService::note_recent_participant_selection -> persist_recent_projection_mutation",
+        "native/mahayana-messaging/src/engine.rs::MessagingEngine::note_recent_participant_suggestion"
+      ],
       "production_evidence": [
-        "exact-head:92944016319539f8115607f05aeeff0c7fb7de4f",
+        "predecessor-evidence:exact-head:92944016319539f8115607f05aeeff0c7fb7de4f",
         "frontend/src/production/ProductionRenderer.tsx::noteRecentParticipantSelection",
         "source/host/src/host_gateway_api.rs::noteRecentParticipantSuggestion -> Session owner",
         "source/host/src/extensions/session/production.rs::note_recent_participant_suggestion -> unique _messaging MessagingService",
         "native/mahayana-messaging/src/service.rs::note_recent_participant_selection -> persist_recent_projection_mutation",
         "native/mahayana-messaging/src/engine.rs::note_recent_participant_suggestion",
-        "github-actions:38273831359:job-114894361960:success",
-        "github-actions:38273831135:job-114894360906:success",
-        "artifact:11758446321:sha256:e825c99c7d10dacc5ea0466843fe00948de7dc5b5018f5f2abeaee9706c55248",
-        "artifact:11757879899:sha256:4ae3418e2255709ef657d8869c7b2458126bee64e10bf5a943490919fa04f756",
-        "source-authority:38273831359:job-114894362277:artifact-11758466363:sha256:1cf412bb2399e3c6f6dbf7ad5cfd80c907692244a3070439b0d22837befbbcb6"
+        "predecessor-evidence:github-actions:38273831359:job-114894361960:success",
+        "predecessor-evidence:github-actions:38273831135:job-114894360906:success",
+        "predecessor-evidence:artifact:11758446321:sha256:e825c99c7d10dacc5ea0466843fe00948de7dc5b5018f5f2abeaee9706c55248",
+        "predecessor-evidence:artifact:11757879899:sha256:4ae3418e2255709ef657d8869c7b2458126bee64e10bf5a943490919fa04f756",
+        "predecessor-evidence:source-authority:38273831359:job-114894362277:artifact-11758466363:sha256:1cf412bb2399e3c6f6dbf7ad5cfd80c907692244a3070439b0d22837befbbcb6"
       ],
-      "test_evidence": [],
+      "test_evidence": [
+        "native/mahayana-messaging/src/engine.rs::recent_participant_suggestions_are_durable_bounded_deduped_and_fail_closed",
+        "native/mahayana-messaging/src/engine.rs::recent_participant_remove_and_clear_are_exact_and_account_scoped",
+        "native/mahayana-messaging/src/engine.rs::recent_open_history_is_bounded_deduped_and_move_front",
+        "native/mahayana-messaging/src/engine.rs::destroyed_child_event_removes_only_exact_recent_open_destination",
+        "native/mahayana-messaging/src/engine.rs::recent_open_history_is_runtime_only_across_state_restore",
+        "native/mahayana-messaging/src/service.rs::recent_participant_suggestions_persist_without_server_journal_cursor",
+        "native/mahayana-messaging/src/service.rs::recent_participant_persistence_failure_rolls_back_and_retry_commits_exactly_once",
+        "native/mahayana-messaging/src/service.rs::recent_participant_interleaved_accounts_remain_isolated_across_restart",
+        "native/mahayana-messaging/src/service.rs::recent_participant_remove_and_clear_persistence_failures_restore_account_scope",
+        "native/mahayana-messaging/src/service.rs::atomic_recent_selection_rolls_back_actor_projection_on_mutation_and_persistence_failure",
+        "desktop/e2e/mahayana-agent-workbench.spec.ts::canonical participant search selection persists Recent Peers through the shipping renderer and Host"
+      ],
       "target_commit": "92944016319539f8115607f05aeeff0c7fb7de4f",
       "workflow_run": 38273831359,
       "run_attempt": 1,
@@ -8951,7 +8970,10 @@
       "unit_case_ids": [],
       "property_state_case_ids": [],
       "contract_case_ids": [],
-      "integration_case_ids": [],
+      "integration_case_ids": [
+        "recent_participant_suggestions_persist_without_server_journal_cursor",
+        "recent_participant_interleaved_accounts_remain_isolated_across_restart"
+      ],
       "functional_e2e_case_ids": [],
       "temporal_case_ids": [],
       "fault_recovery_case_ids": [],
@@ -8973,17 +8995,17 @@
       "test_environment_ids": [
         "GitHub Actions only"
       ],
-      "coverage_matrix_status": "implemented-current-exact-head-production-and-shipping-e2e-evidence-captured",
-      "flake_status": "current-exact-head-success",
+      "coverage_matrix_status": "implemented-predecessor-evidence-fresh-exact-head-required",
+      "flake_status": "predecessor-success-current-head-not-yet-qualified",
       "test_execution_evidence": [
-        "github-actions:38273831359:job-114894361960:success@92944016319539f8115607f05aeeff0c7fb7de4f",
-        "github-actions:38273831135:job-114894360906:success@92944016319539f8115607f05aeeff0c7fb7de4f"
+        "predecessor-evidence:github-actions:38273831359:job-114894361960:success@92944016319539f8115607f05aeeff0c7fb7de4f",
+        "predecessor-evidence:github-actions:38273831135:job-114894360906:success@92944016319539f8115607f05aeeff0c7fb7de4f"
       ],
       "acceptance_reviewer": null,
       "release_gate_status": "pending",
       "license_and_provenance": "Source-informed mapping from accepted telegramdesktop/tdesktop recent_peers authority; no retained Telegram C++ runtime or copied presentation.",
       "reviewer": null,
-      "notes": "Exact accepted header read complete; global unknown is unchanged and this row is mapped-open only."
+      "notes": "Canonical Recent Peers contract is implemented through the same renderer -> Host Session -> unique durable MessagingService -> MessagingEngine chain as lifecycle ownership. The 9294401 Actions are predecessor implementation evidence only; fresh exact-head authority/runtime/shipping evidence is required after this ledger correction."
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
@@ -9080,12 +9102,12 @@
       "production_evidence": [
         "artifact:11756974159:sha256:4fd735a81b14af668e3de3fcdec32bcc6912246df8fb285f8258c6dc0751f9b0",
         "artifact:11756789145:sha256:01046e1c11dcf81ac7775fae5e9ba6f22d5b810cba2c7ac3e61cf1de9d26b9bc",
-        "exact-head:92944016319539f8115607f05aeeff0c7fb7de4f",
-        "github-actions:38273831359:job-114894361960:success",
-        "github-actions:38273831135:job-114894360906:success",
-        "artifact:11758446321:sha256:e825c99c7d10dacc5ea0466843fe00948de7dc5b5018f5f2abeaee9706c55248",
-        "artifact:11757879899:sha256:4ae3418e2255709ef657d8869c7b2458126bee64e10bf5a943490919fa04f756",
-        "source-authority:38273831359:job-114894362277:artifact-11758466363:sha256:1cf412bb2399e3c6f6dbf7ad5cfd80c907692244a3070439b0d22837befbbcb6"
+        "predecessor-evidence:exact-head:92944016319539f8115607f05aeeff0c7fb7de4f",
+        "predecessor-evidence:github-actions:38273831359:job-114894361960:success",
+        "predecessor-evidence:github-actions:38273831135:job-114894360906:success",
+        "predecessor-evidence:artifact:11758446321:sha256:e825c99c7d10dacc5ea0466843fe00948de7dc5b5018f5f2abeaee9706c55248",
+        "predecessor-evidence:artifact:11757879899:sha256:4ae3418e2255709ef657d8869c7b2458126bee64e10bf5a943490919fa04f756",
+        "predecessor-evidence:source-authority:38273831359:job-114894362277:artifact-11758466363:sha256:1cf412bb2399e3c6f6dbf7ad5cfd80c907692244a3070439b0d22837befbbcb6"
       ],
       "test_evidence": [
         "native/mahayana-messaging/src/engine.rs::recent_participant_suggestions_are_durable_bounded_deduped_and_fail_closed",
@@ -9229,8 +9251,8 @@
       "coverage_matrix_status": "implemented-current-exact-head-production-and-shipping-e2e-evidence-captured",
       "flake_status": "current-exact-head-success",
       "test_execution_evidence": [
-        "github-actions:38273831359:job-114894361960:success@92944016319539f8115607f05aeeff0c7fb7de4f",
-        "github-actions:38273831135:job-114894360906:success@92944016319539f8115607f05aeeff0c7fb7de4f"
+        "predecessor-evidence:github-actions:38273831359:job-114894361960:success@92944016319539f8115607f05aeeff0c7fb7de4f",
+        "predecessor-evidence:github-actions:38273831135:job-114894360906:success@92944016319539f8115607f05aeeff0c7fb7de4f"
       ],
       "acceptance_reviewer": null,
       "release_gate_status": "pending",
@@ -9341,10 +9363,10 @@
         "native/mahayana-messaging/src/service.rs::MessagingService::handle -> transactional engine/cursor rollback on command or persistence failure"
       ],
       "production_evidence": [
-        "exact-head:92944016319539f8115607f05aeeff0c7fb7de4f",
-        "github-actions:38273831359:job-114894361960:success",
-        "artifact:11758446321:sha256:e825c99c7d10dacc5ea0466843fe00948de7dc5b5018f5f2abeaee9706c55248",
-        "source-authority:38273831359:job-114894362277:artifact-11758466363:sha256:1cf412bb2399e3c6f6dbf7ad5cfd80c907692244a3070439b0d22837befbbcb6"
+        "predecessor-evidence:exact-head:92944016319539f8115607f05aeeff0c7fb7de4f",
+        "predecessor-evidence:github-actions:38273831359:job-114894361960:success",
+        "predecessor-evidence:artifact:11758446321:sha256:e825c99c7d10dacc5ea0466843fe00948de7dc5b5018f5f2abeaee9706c55248",
+        "predecessor-evidence:source-authority:38273831359:job-114894362277:artifact-11758466363:sha256:1cf412bb2399e3c6f6dbf7ad5cfd80c907692244a3070439b0d22837befbbcb6"
       ],
       "test_evidence": [
         "native/mahayana-messaging/src/engine.rs::shared_media_projection_is_typed_derived_and_saved_sublist_fail_closed",
@@ -9472,7 +9494,7 @@
       "coverage_matrix_status": "implemented-current-exact-head-native-evidence-service-feed-blocked",
       "flake_status": "current-exact-head-success",
       "test_execution_evidence": [
-        "github-actions:38273831359:job-114894361960:success@92944016319539f8115607f05aeeff0c7fb7de4f"
+        "predecessor-evidence:github-actions:38273831359:job-114894361960:success@92944016319539f8115607f05aeeff0c7fb7de4f"
       ],
       "acceptance_reviewer": null,
       "release_gate_status": "pending",
@@ -9612,10 +9634,10 @@
         "native/mahayana-messaging/src/service.rs::MessagingService::handle -> transactional engine/cursor rollback on command or persistence failure"
       ],
       "production_evidence": [
-        "exact-head:92944016319539f8115607f05aeeff0c7fb7de4f",
-        "github-actions:38273831359:job-114894361960:success",
-        "artifact:11758446321:sha256:e825c99c7d10dacc5ea0466843fe00948de7dc5b5018f5f2abeaee9706c55248",
-        "source-authority:38273831359:job-114894362277:artifact-11758466363:sha256:1cf412bb2399e3c6f6dbf7ad5cfd80c907692244a3070439b0d22837befbbcb6"
+        "predecessor-evidence:exact-head:92944016319539f8115607f05aeeff0c7fb7de4f",
+        "predecessor-evidence:github-actions:38273831359:job-114894361960:success",
+        "predecessor-evidence:artifact:11758446321:sha256:e825c99c7d10dacc5ea0466843fe00948de7dc5b5018f5f2abeaee9706c55248",
+        "predecessor-evidence:source-authority:38273831359:job-114894362277:artifact-11758466363:sha256:1cf412bb2399e3c6f6dbf7ad5cfd80c907692244a3070439b0d22837befbbcb6"
       ],
       "test_evidence": [
         "native/mahayana-messaging/src/engine.rs::shared_media_projection_is_typed_derived_and_saved_sublist_fail_closed",
@@ -9743,7 +9765,7 @@
       "coverage_matrix_status": "implemented-current-exact-head-native-evidence-service-feed-blocked",
       "flake_status": "current-exact-head-success",
       "test_execution_evidence": [
-        "github-actions:38273831359:job-114894361960:success@92944016319539f8115607f05aeeff0c7fb7de4f"
+        "predecessor-evidence:github-actions:38273831359:job-114894361960:success@92944016319539f8115607f05aeeff0c7fb7de4f"
       ],
       "acceptance_reviewer": null,
       "release_gate_status": "pending",
@@ -13770,11 +13792,11 @@
         ".github/workflows/rust-desktop-runtime.yml::Updater contract / ubuntu-24.04|macos-15|windows-2025"
       ],
       "production_evidence": [
-        "github-actions:38273831359:success@92944016319539f8115607f05aeeff0c7fb7de4f",
-        "github-actions:38273831359:job-114894362259:Updater contract / ubuntu-24.04:success",
-        "github-actions:38273831359:job-114894362334:Updater contract / macos-15:success",
-        "github-actions:38273831359:job-114894362359:Updater contract / windows-2025:success",
-        "artifact:11758466363:sha256:1cf412bb2399e3c6f6dbf7ad5cfd80c907692244a3070439b0d22837befbbcb6"
+        "predecessor-evidence:github-actions:38273831359:success@92944016319539f8115607f05aeeff0c7fb7de4f",
+        "predecessor-evidence:github-actions:38273831359:job-114894362259:Updater contract / ubuntu-24.04:success",
+        "predecessor-evidence:github-actions:38273831359:job-114894362334:Updater contract / macos-15:success",
+        "predecessor-evidence:github-actions:38273831359:job-114894362359:Updater contract / windows-2025:success",
+        "predecessor-evidence:artifact:11758466363:sha256:1cf412bb2399e3c6f6dbf7ad5cfd80c907692244a3070439b0d22837befbbcb6"
       ],
       "test_evidence": [
         ".github/workflows/rust-desktop-runtime.yml updater contract matrix",
@@ -13903,7 +13925,7 @@
       "coverage_matrix_status": "mapped-macos-owner-and-three-platform-updater-contracts-evidenced-windows-linux-signed-package-acceptance-open",
       "flake_status": "current-exact-head-success-for-existing-contracts",
       "test_execution_evidence": [
-        "github-actions:38273831359:success@92944016319539f8115607f05aeeff0c7fb7de4f"
+        "predecessor-evidence:github-actions:38273831359:success@92944016319539f8115607f05aeeff0c7fb7de4f"
       ],
       "acceptance_reviewer": null,
       "release_gate_status": "pending"
