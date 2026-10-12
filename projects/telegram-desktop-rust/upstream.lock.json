@@ -265,10 +265,10 @@
   "coverage": {
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
-    "unknown_minimum": 14904,
-    "unread_minimum": 1737,
+    "unknown_minimum": 14840,
+    "unread_minimum": 1673,
     "omitted_known": 0,
-    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 14,388; unknown=14,904, unread=1,737, omitted=0."
+    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 14,452; unknown=14,840, unread=1,673, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -282,7 +282,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Closure open. Read-through 14,388/16,125; first unread 14,389 doc/gh-pages::search/functions_10.js; unknown remains 14,904; product/release closure remains open."
+    "note": "Closure open. Read-through 14,452/16,125; first unread 14,453 doc/gh-pages::search/namespaces_1.html; unknown remains 14,840; product/release closure remains open."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",
@@ -629,12 +629,12 @@
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "deterministic_prefix_closed": 57,
-    "development_only_non_applicable": 1147,
-    "unknown_closed": 1221,
+    "development_only_non_applicable": 1211,
+    "unknown_closed": 1285,
     "omitted": 0,
-    "read_through": 14388,
-    "first_unread_order": 14389,
-    "first_unread_path": "doc/gh-pages::search/functions_10.js",
+    "read_through": 14452,
+    "first_unread_order": 14453,
+    "first_unread_path": "doc/gh-pages::search/namespaces_1.html",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
@@ -695,28 +695,20 @@
     ],
     "note": "Valid for parent 2b752566 only; descendant requires fresh Actions."
   },
-  "note": "Accepted baseline; exact read-through 14,388; unknown=14,904, unread=1,737, omitted=0; first unread 14,389 doc/gh-pages::search/functions_10.js.",
+  "note": "Accepted baseline; exact read-through 14,452; unknown=14,840, unread=1,673, omitted=0; first unread 14,453 doc/gh-pages::search/namespaces_1.html.",
   "source_accounting": {
     "recursive_total": 16125,
-    "read_through": 14388,
-    "first_unread_order": 14389,
-    "first_unread_path": "doc/gh-pages::search/functions_10.js",
-    "unread": 1737,
-    "unknown": 14904,
+    "read_through": 14452,
+    "first_unread_order": 14453,
+    "first_unread_path": "doc/gh-pages::search/namespaces_1.html",
+    "unread": 1673,
+    "unknown": 14840,
     "omitted": 0,
     "parent_exact_head_evidence": {
-      "head": "2b7525663fed3eceb22a062b816bdeff781b93e7",
-      "rust_runtime_run": 38216855900,
-      "source_authority_job": 114704898380,
-      "rust_host_job": 114704898266,
-      "windows_pressure_profiler_job": 114704898283,
-      "macos_pressure_profiler_job": 114704898255,
-      "chat_parity_run": 38216855977,
-      "focused_e2e_job": 114703504093,
-      "authority_artifact": 11732670599,
-      "playwright_artifact": 11732745413
+      "head": "c3a1da8a064956dd5647ecbf296374c5300900cb",
+      "status": "fresh-actions-pending-at-time-of-direct-read"
     },
-    "development_only_non_applicable": 1147,
-    "unknown_closed": 1221
+    "development_only_non_applicable": 1211,
+    "unknown_closed": 1285
   }
 }
