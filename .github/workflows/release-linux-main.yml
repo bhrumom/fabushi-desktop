@@ -218,6 +218,38 @@ jobs:
           echo "appimage=$appimage" >> "$GITHUB_OUTPUT"
           echo "deb=$deb" >> "$GITHUB_OUTPUT"
 
+      - name: Verify Linux updater publication metadata
+        shell: bash
+        env:
+          VERSION: ${{ steps.source.outputs.version }}
+        run: |
+          set -euo pipefail
+          metadata="desktop/release/latest-linux.yml"
+          test -s "$metadata"
+          grep -F "fabushi-${VERSION}-x64.AppImage" "$metadata"
+          find desktop/release -maxdepth 1 -type f -name '*.blockmap' -size +0c -print -quit | grep -q .
+
+      - name: Verify AppImage portable boot and restart
+        shell: bash
+        env:
+          APPIMAGE: ${{ steps.artifacts.outputs.appimage }}
+        run: |
+          set -euo pipefail
+          test -n "$APPIMAGE"
+          test -x "$APPIMAGE"
+          for attempt in 1 2; do
+            log="$RUNNER_TEMP/fabushi-appimage-smoke-${attempt}.log"
+            set +e
+            timeout 15s xvfb-run -a env APPIMAGE_EXTRACT_AND_RUN=1 FABUSHI_E2E=1 FABUSHI_FEATURE_HOST_MODE=production "$APPIMAGE" >"$log" 2>&1
+            status=$?
+            set -e
+            if [ "$status" -ne 124 ]; then
+              cat "$log"
+              echo "::error::AppImage exited during boot/restart smoke attempt $attempt with status $status"
+              exit 1
+            fi
+          done
+
       - name: Install exact signed deb candidate
         id: candidate
         shell: bash
