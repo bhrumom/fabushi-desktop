@@ -890,38 +890,31 @@ fn recent_participant_selection_projection_is_durable_bounded_account_scoped_and
     let owner_b = ActorId::new("human:recent-integration-owner-b");
     let mut service = MessagingService::load(MemoryStateStore::default()).unwrap();
 
-    service
-        .upsert_recent_participant_actor_projection(
-            Actor::human(owner_a.0.clone(), "Owner A"),
-            1,
-        )
-        .unwrap();
-    service
-        .upsert_recent_participant_actor_projection(
-            Actor::human(owner_b.0.clone(), "Owner B"),
-            2,
-        )
-        .unwrap();
-
     for index in 0_i64..=48 {
         let peer = ActorId::new(format!("human:recent-integration-peer:{index}"));
         service
-            .upsert_recent_participant_actor_projection(
+            .note_recent_participant_selection(
+                Actor::human(owner_a.0.clone(), "Owner A"),
                 Actor::human(peer.0.clone(), format!("Peer {index}")),
-                10 + index,
+                100 + index,
             )
-            .unwrap();
-        service
-            .note_recent_participant_suggestion(owner_a.clone(), peer, 100 + index)
             .unwrap();
     }
 
     let repeated = ActorId::new("human:recent-integration-peer:5");
     service
-        .note_recent_participant_suggestion(owner_a.clone(), repeated.clone(), 200)
+        .note_recent_participant_selection(
+            Actor::human(owner_a.0.clone(), "Owner A"),
+            Actor::human(repeated.0.clone(), "Peer 5"),
+            200,
+        )
         .unwrap();
     service
-        .note_recent_participant_suggestion(owner_b.clone(), repeated.clone(), 201)
+        .note_recent_participant_selection(
+            Actor::human(owner_b.0.clone(), "Owner B"),
+            Actor::human(repeated.0.clone(), "Peer 5"),
+            201,
+        )
         .unwrap();
 
     let recent_a = service.engine().recent_participant_suggestions(&owner_a);
@@ -969,4 +962,3 @@ fn recent_participant_selection_projection_is_durable_bounded_account_scoped_and
         &[repeated]
     );
 }
-

@@ -3675,26 +3675,12 @@ impl ProductionSessionWorkers {
         .map_err(|error| format!("canonical Recent Peers service could not load: {error}"))?;
         let now_ms = Self::story_server_time_ms();
 
-        if !service.engine().state().actors.contains_key(&owner_id) {
-            service
-                .upsert_recent_participant_actor_projection(
-                    MessagingActor::human(owner_id.0.clone(), "Fabushi Human"),
-                    now_ms,
-                )
-                .map_err(|error| {
-                    format!("canonical Recent Peers owner projection failed: {error}")
-                })?;
-        }
-        if !service.engine().state().actors.contains_key(&peer_actor_id) {
-            service
-                .upsert_recent_participant_actor_projection(peer_actor, now_ms)
-                .map_err(|error| {
-                    format!("canonical Recent Peers participant projection failed: {error}")
-                })?;
-        }
-
         service
-            .note_recent_participant_suggestion(owner_id.clone(), peer_actor_id.clone(), now_ms)
+            .note_recent_participant_selection(
+                MessagingActor::human(owner_id.0.clone(), "Fabushi Human"),
+                peer_actor,
+                now_ms,
+            )
             .map_err(|error| format!("canonical Recent Peers persistence failed: {error}"))?;
         let recent_participant_actor_ids = service
             .engine()

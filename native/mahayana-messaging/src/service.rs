@@ -131,6 +131,28 @@ impl<S: MessagingStateStore> MessagingService<S> {
         })
     }
 
+    /// Atomically project both canonical participant actors and move the peer
+    /// to the front of the account-scoped Recent Peers list. The whole
+    /// selection is one cursor-neutral persistence transaction.
+    pub fn note_recent_participant_selection(
+        &mut self,
+        owner: Actor,
+        peer: Actor,
+        now_ms: i64,
+    ) -> Result<(), MessagingServiceError> {
+        let owner_id = owner.id.clone();
+        let peer_id = peer.id.clone();
+        self.persist_recent_projection_mutation(now_ms, move |engine| {
+            if !engine.state().actors.contains_key(&owner_id) {
+                engine.execute(Command::UpsertActor { actor: owner })?;
+            }
+            if !engine.state().actors.contains_key(&peer_id) {
+                engine.execute(Command::UpsertActor { actor: peer })?;
+            }
+            engine.note_recent_participant_suggestion(&owner_id, &peer_id)
+        })
+    }
+
     pub fn cursor(&self) -> u64 {
         self.cursor
     }
@@ -233,7 +255,10 @@ impl<S: MessagingStateStore> MessagingService<S> {
         F: FnOnce(&mut MessagingEngine) -> Result<(), EngineError>,
     {
         let previous_engine = self.engine.clone();
-        mutate(&mut self.engine)?;
+        if let Err(error) = mutate(&mut self.engine) {
+            self.engine = previous_engine;
+            return Err(error.into());
+        }
         if let Err(error) = self.persist(now_ms) {
             self.engine = previous_engine;
             return Err(error);

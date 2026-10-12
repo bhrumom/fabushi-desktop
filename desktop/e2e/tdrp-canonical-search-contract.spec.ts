@@ -98,10 +98,11 @@ test('shipping canonical selection crosses renderer gateway into the one durable
   expect(renderer).toContain('accountScopeGenerationRef.current === accountScopeGeneration');
   expect(renderer).toContain('openAgentRequestGenerationRef.current === requestGeneration');
   expect(sessionGateway).toContain('"noteRecentParticipantSuggestion"');
-  expect(productionSession).toContain('service.note_recent_participant_suggestion(');
+  expect(productionSession).toContain('service.note_recent_participant_selection(');
   expect(productionSession).toContain('self.agents_root.join("_messaging")');
+  expect(messagingService).toContain('pub fn note_recent_participant_selection(');
   expect(messagingService).toContain('pub fn note_recent_participant_suggestion(');
-  expect(messagingService).toContain('self.engine = previous_engine');
+  expect(messagingService.match(/self\.engine = previous_engine/g)?.length).toBeGreaterThanOrEqual(2);
   expect(coordinatorRpc).toContain('noteRecentParticipantSuggestion: { args: "object", reply: "record" }');
 
   const openAgentStart = renderer.indexOf('const openAgent = useCallback');
