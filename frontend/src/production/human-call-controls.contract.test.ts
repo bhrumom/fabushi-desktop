@@ -185,6 +185,17 @@ test("SFU partial track results are identity-complete before runtime settlement"
 });
 
 
+test("shipping SFU publication advertises actual camera simulcast layers", () => {
+  assert.ok(source.includes('const CALL_VIDEO_SIMULCAST_RIDS = ["f", "h", "q"] as const;'));
+  assert.ok(source.includes("callVideoSimulcastEncodings(): RTCRtpEncodingParameters[]"));
+  assert.ok(source.includes('rid: "f", scaleResolutionDownBy: 1'));
+  assert.ok(source.includes('rid: "h", scaleResolutionDownBy: 2'));
+  assert.ok(source.includes('rid: "q", scaleResolutionDownBy: 4'));
+  assert.ok(source.includes("publishPc.addTransceiver(track"));
+  assert.ok(source.includes("sendEncodings: callVideoSimulcastEncodings()"));
+  assert.ok(source.includes('simulcastRids: track.kind === "video" ? [...CALL_VIDEO_SIMULCAST_RIDS] : []'));
+});
+
 test("shipping SFU layer switching uses durable subscription identity and explicit applied settlement", () => {
   assert.ok(source.includes("remoteVideoSubscriptions: Map<string, SfuRemoteVideoSubscription>"));
   assert.ok(source.includes("successfulSubscriptions.set(raw.publicationId, raw.subscriptionId)"));
