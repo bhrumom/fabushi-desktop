@@ -265,10 +265,10 @@
   "coverage": {
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
-    "unknown_minimum": 13880,
-    "unread_minimum": 713,
+    "unknown_minimum": 13816,
+    "unread_minimum": 649,
     "omitted_known": 0,
-    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 15,412; unknown=13,880, unread=713, omitted=0."
+    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 15,476; unknown=13,816, unread=649, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -282,7 +282,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Closure open. Read-through 15,412/16,125; first unread 15,413 doc/gh-pages::structranges_1_1views_1_1chunk__base__fn.html; unknown remains 13,880; product/release closure remains open."
+    "note": "Closure open. Read-through 15,476/16,125; first unread 15,477 doc/gh-pages::structranges_1_1views_1_1drop__base__fn.js; unknown remains 13,816; product/release closure remains open."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",
@@ -629,12 +629,12 @@
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "deterministic_prefix_closed": 57,
-    "development_only_non_applicable": 2171,
-    "unknown_closed": 2245,
+    "development_only_non_applicable": 2235,
+    "unknown_closed": 2309,
     "omitted": 0,
-    "read_through": 15412,
-    "first_unread_order": 15413,
-    "first_unread_path": "doc/gh-pages::structranges_1_1views_1_1chunk__base__fn.html",
+    "read_through": 15476,
+    "first_unread_order": 15477,
+    "first_unread_path": "doc/gh-pages::structranges_1_1views_1_1drop__base__fn.js",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
@@ -671,17 +671,17 @@
   "note": "Accepted baseline; exact read-through 14,964; unknown=14,328, unread=1,161, omitted=0; first unread 14,965 doc/gh-pages::structranges_1_1filter__view.html.",
   "source_accounting": {
     "recursive_total": 16125,
-    "read_through": 15412,
-    "first_unread_order": 15413,
-    "first_unread_path": "doc/gh-pages::structranges_1_1views_1_1chunk__base__fn.html",
-    "unread": 713,
-    "unknown": 13880,
+    "read_through": 15476,
+    "first_unread_order": 15477,
+    "first_unread_path": "doc/gh-pages::structranges_1_1views_1_1drop__base__fn.js",
+    "unread": 649,
+    "unknown": 13816,
     "omitted": 0,
     "parent_exact_head_evidence": {
-      "head": "3b6e56ba424c31c97ff6ddd91b3410972e5b83f7",
-      "note": "Orders 15,349-15,412 individually byte-audited on this lineage; fresh same-head Actions required for descendant."
+      "head": "dd59ba252c3499b468a140ec393a539daab584b2",
+      "note": "Orders 15,413-15,476 individually byte-audited on this lineage; fresh same-head Actions required for descendant."
     },
-    "development_only_non_applicable": 2171,
-    "unknown_closed": 2245
+    "development_only_non_applicable": 2235,
+    "unknown_closed": 2309
   }
 }
