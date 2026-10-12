@@ -1,5 +1,5 @@
-Live Revision 9 authority (2026-10-12): telegramdesktop/tdesktop@63a1831728147e941ad2dc8939879cf5afe419c7 (tree c259b2d6982213b2231266508316cd23f99f5a47). Recursive non-directory=16,137; read-through=16,137; first unread=16,138 none; unread=0; unknown=12,435; omitted=0. Two newly added OSS Scanner development/security-review artifacts were exact-read and dispositioned; fresh same-head Actions required.
-<!-- TDRP_CURRENT_SUMMARY read-through=16137 unread=0 unknown=12435 omitted=0 first-unread=16138 path=none -->
+Live Revision 9 authority (2026-10-12): telegramdesktop/tdesktop@63a1831728147e941ad2dc8939879cf5afe419c7 (tree c259b2d6982213b2231266508316cd23f99f5a47). Recursive non-directory=16,137; read-through=16,137; first unread=16,138 none; unread=0; unknown=12,432; omitted=0. Two newly added OSS Scanner development/security-review artifacts were exact-read and dispositioned; fresh same-head Actions required.
+<!-- TDRP_CURRENT_SUMMARY read-through=16137 unread=0 unknown=12432 omitted=0 first-unread=16138 path=none -->
 
 Live Revision 9 authority (2026-10-12): telegramdesktop/tdesktop@5b81fa35aaa8d24e14ec9603e5929d324850d9c9 (tree 7539504ec9294b9c1ca03332570127b8b69ad201). Recursive non-directory=16,135; read-through=16,135; first unread=16,136 none; unread=0; unknown=12,435; omitted=0. Root delta 31 and recursive range-v3 667→677/lib_ui rebaseline are source-read reconciled; fresh same-head Actions required.
 
