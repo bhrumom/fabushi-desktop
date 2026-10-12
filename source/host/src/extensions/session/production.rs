@@ -1,7 +1,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex, OnceLock};
+use std::sync::{Arc, Condvar, Mutex, OnceLock};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use sha2::{Digest, Sha256};
@@ -132,6 +132,21 @@ pub enum FallbackSession {
     Created(MaterializedAgentRecord),
 }
 
+#[derive(Debug, Default)]
+struct SavedSublistAuthoritySyncState {
+    generation: u64,
+    in_flight: bool,
+    refresh_pending: bool,
+    waiters: usize,
+    last_error: Option<String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum SavedSublistAuthoritySyncAdmission {
+    Leader(u64),
+    Follower,
+}
+
 pub struct ProductionMaterializedSession {
     pub record: MaterializedAgentRecord,
     pub prepared: PreparedAgentBlobStore,
@@ -184,10 +199,13 @@ pub struct ProductionSessionWorkers {
     call_session_store: Option<Arc<CallSessionStore>>,
     call_session_store_error: Option<String>,
     remote_resource_resolver: Mutex<MediaResolveCoordinator>,
-    // Monotonic, runtime-only generation per shipping Human conversation.
-    // It fences late SavedSublist authority settlement without creating a second
-    // persistent message/child store; restart intentionally begins a fresh epoch.
-    saved_sublist_authority_generations: Mutex<BTreeMap<String, u64>>,
+    // Runtime-only request lifecycle per shipping Human conversation. One leader
+    // owns the remote sync while concurrent callers coalesce as waiters; generation
+    // fencing prevents an older settlement from overwriting a newer refresh.
+    // Restart intentionally begins a fresh epoch and does not create a second
+    // persistent message/child store.
+    saved_sublist_authority_generations: Mutex<BTreeMap<String, SavedSublistAuthoritySyncState>>,
+    saved_sublist_authority_changed: Condvar,
     busy_timeout_ms: u64,
 }
 
@@ -387,6 +405,7 @@ impl ProductionSessionWorkers {
                     .expect("remote resource resolve budget is non-zero"),
             ),
             saved_sublist_authority_generations: Mutex::new(BTreeMap::new()),
+            saved_sublist_authority_changed: Condvar::new(),
             busy_timeout_ms,
         }
     }
@@ -2576,18 +2595,119 @@ impl ProductionSessionWorkers {
     fn begin_saved_sublist_authority_generation(
         &self,
         conversation_id: &str,
-    ) -> Result<u64, String> {
-        let mut generations = self
+    ) -> Result<SavedSublistAuthoritySyncAdmission, String> {
+        let mut states = self
             .saved_sublist_authority_generations
             .lock()
             .map_err(|_| "SavedSublist authority generation lock is poisoned".to_string())?;
-        let next = generations
-            .get(conversation_id)
-            .copied()
-            .unwrap_or(0)
-            .saturating_add(1);
-        generations.insert(conversation_id.to_string(), next);
-        Ok(next)
+        loop {
+            {
+                let state = states.entry(conversation_id.to_string()).or_default();
+                if state.in_flight {
+                    state.refresh_pending = true;
+                    state.waiters = state
+                        .waiters
+                        .checked_add(1)
+                        .ok_or_else(|| "SavedSublist authority waiter count overflowed".to_string())?;
+                    return Ok(SavedSublistAuthoritySyncAdmission::Follower);
+                }
+                if state.waiters == 0 {
+                    let next = state
+                        .generation
+                        .checked_add(1)
+                        .ok_or_else(|| "SavedSublist authority generation overflowed".to_string())?;
+                    state.generation = next;
+                    state.in_flight = true;
+                    state.refresh_pending = false;
+                    state.last_error = None;
+                    return Ok(SavedSublistAuthoritySyncAdmission::Leader(next));
+                }
+            }
+            states = self
+                .saved_sublist_authority_changed
+                .wait(states)
+                .map_err(|_| "SavedSublist authority generation lock is poisoned".to_string())?;
+        }
+    }
+
+    fn wait_for_saved_sublist_authority_generation(
+        &self,
+        conversation_id: &str,
+    ) -> Result<(), String> {
+        let mut states = self
+            .saved_sublist_authority_generations
+            .lock()
+            .map_err(|_| "SavedSublist authority generation lock is poisoned".to_string())?;
+        loop {
+            let completed = {
+                let state = states
+                    .get_mut(conversation_id)
+                    .ok_or_else(|| "SavedSublist authority coalesced request lost its state".to_string())?;
+                if state.in_flight {
+                    None
+                } else {
+                    if state.waiters == 0 {
+                        return Err("SavedSublist authority coalesced request lost its waiter".into());
+                    }
+                    state.waiters -= 1;
+                    let result = match state.last_error.as_ref() {
+                        Some(error) => Err(error.clone()),
+                        None => Ok(()),
+                    };
+                    Some((result, state.waiters == 0))
+                }
+            };
+            if let Some((result, drained)) = completed {
+                if drained {
+                    self.saved_sublist_authority_changed.notify_all();
+                }
+                return result;
+            }
+            states = self
+                .saved_sublist_authority_changed
+                .wait(states)
+                .map_err(|_| "SavedSublist authority generation lock is poisoned".to_string())?;
+        }
+    }
+
+    fn complete_saved_sublist_authority_generation(
+        &self,
+        conversation_id: &str,
+        generation: u64,
+        error: Option<String>,
+    ) -> Result<Option<u64>, String> {
+        let mut states = self
+            .saved_sublist_authority_generations
+            .lock()
+            .map_err(|_| "SavedSublist authority generation lock is poisoned".to_string())?;
+        let state = states
+            .get_mut(conversation_id)
+            .ok_or_else(|| "SavedSublist authority leader lost its state".to_string())?;
+        if !state.in_flight || state.generation != generation {
+            return Err("SavedSublist authority leader generation is stale".into());
+        }
+        if error.is_none() && state.refresh_pending {
+            let next = match state.generation.checked_add(1) {
+                Some(next) => next,
+                None => {
+                    let overflow = "SavedSublist authority generation overflowed".to_string();
+                    state.in_flight = false;
+                    state.refresh_pending = false;
+                    state.last_error = Some(overflow.clone());
+                    self.saved_sublist_authority_changed.notify_all();
+                    return Err(overflow);
+                }
+            };
+            state.generation = next;
+            state.refresh_pending = false;
+            state.last_error = None;
+            return Ok(Some(next));
+        }
+        state.in_flight = false;
+        state.refresh_pending = false;
+        state.last_error = error;
+        self.saved_sublist_authority_changed.notify_all();
+        Ok(None)
     }
 
     fn reconcile_saved_sublist_authority_from_transcript(
@@ -2672,7 +2792,9 @@ impl ProductionSessionWorkers {
             .saved_sublist_authority_generations
             .lock()
             .map_err(|_| "SavedSublist authority generation lock is poisoned".to_string())?;
-        if generations.get(conversation_id).copied() != Some(generation) {
+        if !generations.get(conversation_id).is_some_and(|state| {
+            state.in_flight && state.generation == generation
+        }) {
             return Ok(false);
         }
         let root = self.agents_root.join("_messaging");
@@ -2716,6 +2838,49 @@ impl ProductionSessionWorkers {
         &self,
         conversation_id: &str,
     ) -> Result<Vec<serde_json::Value>, String> {
+        let owner = self.open_human_conversation_db_owner(conversation_id)?;
+        let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+        if !self.metadata_has_local_human(&metadata)? {
+            return Err("local Human identity is not a conversation participant".into());
+        }
+        let Some(client) = self.shipping_native_messaging()? else {
+            return owner.get_transcript_entries().map_err(|error| error.to_string());
+        };
+        let local_human_id = self.local_human_id()?.to_string();
+        let identity = client.identity()?;
+        if identity.user_id != local_human_id {
+            return Err(format!(
+                "Fabushi native messaging credential user {} does not match active Human identity {}",
+                identity.user_id, local_human_id
+            ));
+        }
+
+        match self.begin_saved_sublist_authority_generation(conversation_id)? {
+            SavedSublistAuthoritySyncAdmission::Follower => {
+                self.wait_for_saved_sublist_authority_generation(conversation_id)?;
+                owner.get_transcript_entries().map_err(|error| error.to_string())
+            }
+            SavedSublistAuthoritySyncAdmission::Leader(mut generation) => loop {
+                let result =
+                    self.sync_human_conversation_generation(conversation_id, generation);
+                let error = result.as_ref().err().cloned();
+                match self.complete_saved_sublist_authority_generation(
+                    conversation_id,
+                    generation,
+                    error,
+                )? {
+                    Some(next_generation) => generation = next_generation,
+                    None => return result,
+                }
+            },
+        }
+    }
+
+    fn sync_human_conversation_generation(
+        &self,
+        conversation_id: &str,
+        saved_sublist_authority_generation: u64,
+    ) -> Result<Vec<serde_json::Value>, String> {
         const PAGE_LIMIT: usize = 200;
         const MAX_GAP_PAGES: usize = 32;
 
@@ -2735,8 +2900,6 @@ impl ProductionSessionWorkers {
                 identity.user_id, local_human_id
             ));
         }
-        let saved_sublist_authority_generation =
-            self.begin_saved_sublist_authority_generation(conversation_id)?;
         let pending = owner
             .get_transcript_entries()
             .map_err(|error| error.to_string())?
@@ -4598,9 +4761,15 @@ mod sharebox_shipping_tests {
             }),
         ];
 
-        let first_generation = workers
+        let first_generation = match workers
             .begin_saved_sublist_authority_generation("saved:self")
-            .unwrap();
+            .unwrap()
+        {
+            SavedSublistAuthoritySyncAdmission::Leader(generation) => generation,
+            SavedSublistAuthoritySyncAdmission::Follower => {
+                panic!("first SavedSublist authority request must lead")
+            }
+        };
         assert!(workers
             .reconcile_saved_sublist_authority_from_transcript(
                 "saved:self",
@@ -4609,15 +4778,30 @@ mod sharebox_shipping_tests {
             )
             .unwrap());
 
+        // A concurrent duplicate joins the in-flight request instead of launching
+        // a parallel authority write. Its refresh intent is folded into exactly
+        // one next generation before the waiter is released.
+        assert_eq!(
+            workers
+                .begin_saved_sublist_authority_generation("saved:self")
+                .unwrap(),
+            SavedSublistAuthoritySyncAdmission::Follower
+        );
+        let current_generation = workers
+            .complete_saved_sublist_authority_generation(
+                "saved:self",
+                first_generation,
+                None,
+            )
+            .unwrap()
+            .expect("coalesced refresh should advance one generation");
+
         let stale_only = vec![serde_json::json!({
             "id": "human-server-message:9",
             "kind": "message",
             "remoteMessageId": "9",
             "destination": serde_json::to_value(&destination).unwrap(),
         })];
-        let current_generation = workers
-            .begin_saved_sublist_authority_generation("saved:self")
-            .unwrap();
         assert!(!workers
             .reconcile_saved_sublist_authority_from_transcript(
                 "saved:self",
@@ -4638,6 +4822,19 @@ mod sharebox_shipping_tests {
                 &untrusted_local_only,
             )
             .unwrap());
+        assert_eq!(
+            workers
+                .complete_saved_sublist_authority_generation(
+                    "saved:self",
+                    current_generation,
+                    None,
+                )
+                .unwrap(),
+            None
+        );
+        workers
+            .wait_for_saved_sublist_authority_generation("saved:self")
+            .unwrap();
 
         let actor_id = workers.story_actor_id().unwrap();
         let messaging_root = root.join("_messaging");
