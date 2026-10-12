@@ -395,3 +395,162 @@ fn websocket_retention_survives_sqlite_restart_and_does_not_resurrect_expired_me
     ));
     close_and_join(restarted, restart_handle);
 }
+
+
+#[test]
+fn retention_policy_and_expiry_are_authoritative_across_two_devices() {
+    let fixture = Fixture::new("retention-multidevice");
+    let conversation_id = ConversationId::new("chat:websocket-retention-multidevice");
+
+    let (address, first_handle) = start_gateway(&fixture, 500, 2_000, 8 * 1024 * 1024);
+    let mut device_a = connect(address);
+
+    send_request(
+        &mut device_a,
+        &authenticated_command(
+            &fixture,
+            "profile-device-a",
+            ClientCommand::UpsertProfile {
+                actor: Actor::human(fixture.actor_id.0.clone(), "Retention multi-device owner"),
+            },
+        ),
+    );
+    assert!(matches!(read_server_frame(&mut device_a), ServerFrame::Events { .. }));
+
+    let mut conversation = Conversation::direct(
+        conversation_id.0.clone(),
+        "WebSocket retention multi-device",
+        vec![Participant {
+            actor_id: fixture.actor_id.clone(),
+            role: ParticipantRole::Owner,
+            joined_at_ms: 1,
+            muted_until_ms: None,
+        }],
+        1,
+    );
+    conversation.owner_id = Some(fixture.actor_id.clone());
+    send_request(
+        &mut device_a,
+        &authenticated_command(
+            &fixture,
+            "conversation-device-a",
+            ClientCommand::CreateConversation { conversation },
+        ),
+    );
+    assert!(matches!(read_server_frame(&mut device_a), ServerFrame::Events { .. }));
+
+    send_request(
+        &mut device_a,
+        &authenticated_command(
+            &fixture,
+            "retention-device-a",
+            ClientCommand::SetConversationMessageRetention {
+                conversation_id: conversation_id.clone(),
+                retention_seconds: Some(1),
+                expected_revision: 0,
+            },
+        ),
+    );
+    assert!(matches!(
+        read_server_frame(&mut device_a),
+        ServerFrame::Events { ref events }
+            if events.iter().any(|event| matches!(
+                &event.event,
+                ServerEvent::ConversationMessageRetentionChanged {
+                    conversation_id: changed_id,
+                    retention_seconds: Some(1),
+                    revision: 1,
+                } if changed_id == &conversation_id
+            ))
+    ));
+
+    send_request(
+        &mut device_a,
+        &authenticated_command(
+            &fixture,
+            "message-device-a",
+            ClientCommand::SendMessage {
+                conversation_id: conversation_id.clone(),
+                client_message_id: ClientMessageId("client:retention-multidevice:1".into()),
+                content: MessageContent::Text {
+                    text: FormattedText::plain("expire before device B sync"),
+                },
+                reply_to_message_id: None,
+                thread_root_message_id: None,
+                scheduled_at_ms: Some(1),
+                silent: false,
+                protected_content: false,
+            },
+        ),
+    );
+    assert!(matches!(
+        read_server_frame(&mut device_a),
+        ServerFrame::Events { ref events }
+            if events.iter().any(|event| matches!(
+                &event.event,
+                ServerEvent::MessageAdded { message }
+                    if message.conversation_id == conversation_id
+                        && message.expires_at_ms == Some(1_001)
+                        && !message.deleted
+            ))
+    ));
+    close_and_join(device_a, first_handle);
+
+    let second_device_id = format!("{}:second", fixture.device_id);
+    let second_session_id = format!("{}:second", fixture.session_id);
+    let second_token = FileAccessTokenStore::new(&fixture.access_registry)
+        .issue_random(AccessGrant {
+            id: "grant:retention-multidevice:second".into(),
+            actor_id: fixture.actor_id.clone(),
+            device_id: second_device_id.clone(),
+            session_id: second_session_id.clone(),
+            scopes: BTreeSet::from([AccessScope::Messaging]),
+            issued_at_ms: 1,
+            expires_at_ms: None,
+            revoked_at_ms: None,
+        })
+        .expect("issue second-device access token")
+        .token;
+
+    let (address, second_handle) = start_gateway(&fixture, 500, 2_000, 8 * 1024 * 1024);
+    let mut device_b = connect(address);
+    send_request(
+        &mut device_b,
+        &AuthenticatedClientFrame {
+            access_token: second_token,
+            envelope: ClientEnvelope::new(
+                RequestContext {
+                    request_id: "sync-device-b".into(),
+                    device_id: second_device_id,
+                    actor_id: fixture.actor_id.clone(),
+                    session_id: second_session_id,
+                    sent_at_ms: 2_000,
+                },
+                ClientCommand::Sync {
+                    cursor: None,
+                    limit: 100,
+                },
+            ),
+        },
+    );
+    let frame = read_server_frame(&mut device_b);
+    assert!(matches!(
+        frame,
+        ServerFrame::Events { ref events }
+            if events.iter().any(|event| matches!(
+                &event.event,
+                ServerEvent::SyncBatch {
+                    conversations,
+                    messages,
+                    ..
+                } if conversations.iter().any(|conversation| {
+                    conversation.id == conversation_id
+                        && conversation.message_retention_seconds == Some(1)
+                        && conversation.retention_revision == 1
+                }) && messages.iter().all(|message| {
+                    message.conversation_id != conversation_id || message.expires_at_ms != Some(1_001)
+                })
+            ))
+    ));
+    close_and_join(device_b, second_handle);
+}
