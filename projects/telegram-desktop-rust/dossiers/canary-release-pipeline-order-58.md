@@ -48,9 +48,13 @@ This is a real owner, so no new macOS release subsystem is introduced.
 
 These prove the existing updater contract behavior at that predecessor SHA, not current-head acceptance and not signed Windows/Linux release packages. Any descendant must obtain fresh exact-head Actions.
 
-### Open owner gap
+### Windows and Linux formal release owners
 
-No complete current-head source-neutral Windows/Linux signed package + real install/upgrade/restart/publication/provenance owner/evidence equivalent to the macOS release workflow was found in the workflow inventory. Those responsibilities remain mapped/open. A future implementation must extend canonical Fabushi release infrastructure rather than create a Telegram canary runtime.
+.github/workflows/release-windows-main.yml and .github/workflows/release-linux-main.yml now extend the existing source-neutral Fabushi release infrastructure. Windows owns exact-source fencing, Authenticode-signed NSIS plus portable artifacts, generated updater metadata, signed installed-candidate trust checks, real packaged product acceptance, checksums/provenance and shared GitHub prerelease publication. Linux owns exact-source fencing, signed AppImage plus deb artifacts, generated updater metadata, AppImage restart smoke, installed deb candidate execution, real packaged product acceptance, checksums/provenance and the same shared prerelease identity.
+
+The shipping updater has also been extended existing-owner-first: Electron Main injects the canonical electron-updater release port; macOS and Windows packaged builds may use it directly, while Linux is fail-closed unless it is actually running from an AppImage. The legacy custom feed remains an explicit override path rather than the production default.
+
+These owners close the prior implementation-owner absence, but **do not close acceptance**. Current workflows still install the current candidate and exercise restart/package behavior; they do not yet prove a real older trusted baseline discovering, downloading, applying and recovering into the same exact candidate through the shipping updater. Windows/Linux also lack a previously accepted published package baseline. Therefore E2E-TDRP-SIGNED-PACKAGE-UPGRADE-001, SOAK-TDRP-UPDATER-RESTART-001, same-candidate three-platform acceptance and independent release acceptance remain open, and this responsibility must not reduce unknown yet.
 
 ## Traceability binding
 
@@ -63,7 +67,7 @@ This dossier is the source-analysis owner for `TDRP-R9-RELEASE-CANARY-SEMANTICS-
 - e2e/temporal/fault: `E2E-TDRP-SIGNED-PACKAGE-UPGRADE-001`, `TEMP-TDRP-UPDATER-MONOTONIC-001`, `FAULT-TDRP-RELEASE-STALE-RERUN-001`
 - soak/security/regression: `SOAK-TDRP-UPDATER-RESTART-001`, `SEC-TDRP-RELEASE-LEAST-PRIVILEGE-001`, `SEC-TDRP-UPDATE-SIGNATURE-001`, `REG-TDRP-FABUSHI-BOT-PACKAGED-001`
 
-The existing macOS release owner and three-platform updater contract are partial owner/evidence bindings only. They do not satisfy `INV-TDRP-RELEASE-SIGNED-PRODUCTION-001` for Windows/Linux and do not turn `AC-50` into ACCEPT without same-candidate signed package install/upgrade/restart/recovery and independent release review.
+The macOS, Windows and Linux release owners plus the three-platform updater contract are implementation bindings, not current-head acceptance evidence. They do not turn `AC-50` into ACCEPT without fresh exact-head signed package evidence and real baseline-to-candidate updater install/upgrade/restart/recovery on the same candidate, followed by independent release review.
 
 ## Security and provenance
 
@@ -71,4 +75,4 @@ Fabushi must retain the transferable security properties: exact source binding, 
 
 ## Status
 
-`applicable-mapped-incomplete`. The source responsibility is fully decomposed, but it is **not verified** and does not reduce unknown yet because signed Windows/Linux package acceptance and one-release-candidate install/upgrade/restart/provenance gates remain open.
+`applicable-mapped-incomplete`. The source responsibility is fully decomposed and formal three-platform release owners now exist, but it is **not verified** and does not reduce unknown yet because fresh signed-package evidence, real baseline-to-candidate updater upgrade/restart/recovery and independent one-release-candidate acceptance remain open.

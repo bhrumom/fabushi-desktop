@@ -13740,7 +13740,7 @@
         "Symbols, checksums/provenance and publication metadata",
         "Update publication ordering and independently owned platform metadata"
       ],
-      "platform_delta": "Telegram Bot API/channel transport is N/A. Source-neutral Fabushi formal release owners now exist for macOS, Windows and Linux; Linux shipping updater apply/Fabushi update-feed trust and same-candidate upgrade/restart/recovery acceptance remain open.",
+      "platform_delta": "Telegram Bot API/channel transport is N/A. Source-neutral Fabushi formal release owners now exist for macOS, Windows and Linux; the shipping updater is wired to the canonical release updater on all three platforms, with Linux gated to real AppImage identity. Fresh exact-head signed package execution plus true baseline-to-candidate updater upgrade/restart/recovery acceptance remain open.",
       "existing_owner_candidates": [
         ".github/workflows/release-macos-main.yml",
         ".github/workflows/release-windows-main.yml",
@@ -13788,10 +13788,9 @@
       "implementation_status": "mapped",
       "coverage_disposition": "rewritten-partial",
       "blockers": [
-        "Windows/Linux formal release workflows require fresh exact-head GitHub Actions signing/package acceptance evidence; workflow presence alone is not acceptance.",
-        "Linux packaged updater is still disabled/incorrectly identified in the shipping updater owner and has no AppImage apply/recovery path.",
-        "Desktop updater still defaults to Cursor update infrastructure instead of the existing Fabushi app-version policy owner with a signed update manifest/hash contract.",
-        "Same-release-candidate install -> upgrade -> restart/recovery acceptance is not yet evidenced on all three platforms.",
+        "macOS/Windows/Linux formal release workflows require fresh exact-head GitHub Actions signing/package acceptance evidence; workflow presence alone is not acceptance.",
+        "Same-release-candidate real baseline -> updater download/apply -> restart/recovery acceptance is not yet evidenced on all three platforms.",
+        "Windows/Linux do not yet have a previously accepted published baseline package that can be reused as independent upgrade evidence; bootstrap/baseline provenance must be established without substituting installer-overwrite smoke for updater acceptance.",
         "Independent release acceptance remains open."
       ],
       "production_entrypoints": [
@@ -13809,7 +13808,9 @@
       ],
       "test_evidence": [
         ".github/workflows/rust-desktop-runtime.yml updater contract matrix",
-        ".github/workflows/release-macos-main.yml signed/notarized packaged acceptance"
+        ".github/workflows/release-macos-main.yml signed/notarized packaged acceptance owner",
+        ".github/workflows/release-windows-main.yml signed NSIS/portable packaged acceptance owner",
+        ".github/workflows/release-linux-main.yml signed AppImage/deb packaged acceptance owner"
       ],
       "target_commit": "92944016319539f8115607f05aeeff0c7fb7de4f",
       "workflow_run": 38273831359,
