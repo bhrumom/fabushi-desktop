@@ -11490,7 +11490,7 @@
         "native/mahayana-messaging/src/conversation.rs",
         "native/mahayana-messaging/src/engine.rs"
       ],
-      "existing_owner": "Fabushi canonical Conversation child runtime + MessagingEngine; renderer Composer/ConversationWorkspace remains the UI projection owner",
+      "existing_owner": "Existing canonical Human messaging Host + ForwardMessageDialog + ProductionRenderer composition",
       "rejected_existing_owners": [
         "New Telegram ForwardPanel owner would duplicate canonical Composer/Conversation state.",
         "ShareBox search/gateway alone cannot own destination-scoped composer staging or reply/draft lifecycle."
@@ -11498,12 +11498,18 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
-        "native/mahayana-messaging/src/conversation.rs",
-        "native/mahayana-messaging/src/engine.rs"
+        "source/host/src/extensions/session/production.rs",
+        "frontend/src/production/ForwardMessageDialog.tsx",
+        "frontend/src/production/ProductionRenderer.tsx"
       ],
       "fabushi_target_symbols": [
-        "ConversationChildRuntimeState",
-        "MessagingEngine"
+        "search_human_recipients",
+        "authorize_canonical_forward_destination",
+        "forward_human_message",
+        "ForwardMessageDialog",
+        "forwardDestinationKey",
+        "searchForwardRecipients",
+        "forwardHumanMessage"
       ],
       "target_language": "Rust + React/TypeScript",
       "language_rationale": "Durable forward/draft lifecycle and authorization state belong in the existing Rust messaging domain; visual projection belongs in existing canonical renderer components.",
@@ -11521,17 +11527,30 @@
       ],
       "service_owner": "Fabushi canonical messaging/sync service",
       "deployment_evidence": [],
-      "implementation_status": "mapped",
+      "implementation_status": "implemented",
       "coverage_disposition": "rewritten",
       "blockers": [
-        "Canonical forward staging has not yet been proven across all Conversation kinds.",
-        "SavedSublist scope remains blocked on authoritative server relation/membership feed.",
-        "Current renderer/native composition does not yet prove all source panel behaviors."
+        "Fresh exact-head GitHub Actions are required for this ledger descendant before verification credit.",
+        "The current implementation proves canonical Human root/Topic/SavedSublist/nested-Conversation forwarding with search-time and send-time revalidation; Agent/Group/Channel/Hybrid forwarding breadth and independent packaged acceptance remain open.",
+        "SavedSublist forwarding remains fail-closed until production server authority is actually deployed and production E2E establishes authoritative parent access/membership."
       ],
-      "production_entrypoints": [],
-      "production_evidence": [],
-      "test_evidence": [],
-      "target_commit": "3829278c343117c949a19cf5b015a49ebad233dc",
+      "production_entrypoints": [
+        "ProductShell -> ProductionRenderer -> ForwardMessageDialog -> searchHumanRecipients -> ProductionSessionWorkers::search_human_recipients",
+        "ForwardMessageDialog submit -> ProductionRenderer forwardHumanMessage -> Host ProductionSessionWorkers::forward_human_message -> canonical MessagingService/ConversationDestination"
+      ],
+      "production_evidence": [
+        "path:source/host/src/extensions/session/production.rs#search_human_recipients",
+        "path:source/host/src/extensions/session/production.rs#authorize_canonical_forward_destination",
+        "path:source/host/src/extensions/session/production.rs#forward_human_message",
+        "path:frontend/src/production/ForwardMessageDialog.tsx#ForwardMessageDialog",
+        "path:frontend/src/production/ProductionRenderer.tsx#searchForwardRecipients",
+        "path:frontend/src/production/ProductionRenderer.tsx#forwardHumanMessage"
+      ],
+      "test_evidence": [
+        "source/host/src/extensions/session/production.rs#shipping_human_forward_accepts_authoritative_typed_children_and_fails_closed_when_stale",
+        "source/host/src/extensions/session/production.rs#shipping_human_forward_reuses_session_owner_across_retry_and_restart"
+      ],
+      "target_commit": "dbb30bc548a53d146301bcba850d42944c127635",
       "workflow_run": null,
       "run_attempt": null,
       "job": null,
@@ -11660,21 +11679,32 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior is source-informed from the accepted Telegram Desktop blob and re-expressed against canonical Fabushi owners; no Telegram C++/Qt runtime is retained.",
       "reviewer": null,
-      "notes": "Full accepted header read. Mapped/open only; no implementation or verification credit.",
+      "notes": "Full accepted header read. Mapped/open only; no implementation or verification credit. Current descendant audit credits the already-shipping Forward Panel implementation: typed child recipients are projected from the single canonical MessagingService, filtered by send-time-equivalent authorization before renderer exposure, malformed explicit renderer destinations fail closed, forwarding is deduplicated/idempotent with partial settlement/retry, and focused Host tests cover stale child state plus SavedSublist parent-access/membership fencing. Status is implemented, not verified.",
       "fabushi_target_bindings": [
         {
-          "path": "native/mahayana-messaging/src/conversation.rs",
+          "path": "source/host/src/extensions/session/production.rs",
           "symbols": [
-            "ConversationChildRuntimeState"
+            "search_human_recipients",
+            "authorize_canonical_forward_destination",
+            "forward_human_message"
           ],
-          "responsibility_scope": "typed destination-child identity and destination-scoped forward-staging state contract"
+          "responsibility_scope": "canonical recipient discovery, permission filtering, typed-child authority revalidation, idempotent forwarding and partial settlement"
         },
         {
-          "path": "native/mahayana-messaging/src/engine.rs",
+          "path": "frontend/src/production/ForwardMessageDialog.tsx",
           "symbols": [
-            "MessagingEngine"
+            "ForwardMessageDialog",
+            "forwardDestinationKey"
           ],
-          "responsibility_scope": "canonical forward-staging command/mutation boundary and authorization contract"
+          "responsibility_scope": "single canonical forwarding interaction surface, multi-select state, privacy options, request identity, partial retry and keyboard/a11y behavior"
+        },
+        {
+          "path": "frontend/src/production/ProductionRenderer.tsx",
+          "symbols": [
+            "searchForwardRecipients",
+            "forwardHumanMessage"
+          ],
+          "responsibility_scope": "shipping renderer composition, strict typed-destination parsing and Coordinator/Host transport binding"
         }
       ]
     },
@@ -11738,7 +11768,7 @@
         "native/mahayana-messaging/src/conversation.rs",
         "native/mahayana-messaging/src/engine.rs"
       ],
-      "existing_owner": "Fabushi canonical Conversation child runtime + MessagingEngine; renderer Composer/ConversationWorkspace remains the UI projection owner",
+      "existing_owner": "Existing canonical Human messaging Host + ForwardMessageDialog + ProductionRenderer composition",
       "rejected_existing_owners": [
         "New Telegram ForwardPanel owner would duplicate canonical Composer/Conversation state.",
         "ShareBox search/gateway alone cannot own destination-scoped composer staging or reply/draft lifecycle."
@@ -11746,12 +11776,18 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
-        "native/mahayana-messaging/src/conversation.rs",
-        "native/mahayana-messaging/src/engine.rs"
+        "source/host/src/extensions/session/production.rs",
+        "frontend/src/production/ForwardMessageDialog.tsx",
+        "frontend/src/production/ProductionRenderer.tsx"
       ],
       "fabushi_target_symbols": [
-        "ConversationChildRuntimeState",
-        "MessagingEngine"
+        "search_human_recipients",
+        "authorize_canonical_forward_destination",
+        "forward_human_message",
+        "ForwardMessageDialog",
+        "forwardDestinationKey",
+        "searchForwardRecipients",
+        "forwardHumanMessage"
       ],
       "target_language": "Rust + React/TypeScript",
       "language_rationale": "Durable forward/draft lifecycle and authorization state belong in the existing Rust messaging domain; visual projection belongs in existing canonical renderer components.",
@@ -11769,17 +11805,30 @@
       ],
       "service_owner": "Fabushi canonical messaging/sync service",
       "deployment_evidence": [],
-      "implementation_status": "mapped",
+      "implementation_status": "implemented",
       "coverage_disposition": "rewritten",
       "blockers": [
-        "Production canonical forward-staging owner still lacks exact behavior/evidence for all these lifecycle rules.",
-        "Paid-send/revalidation and Group/Channel/Topic/SavedSublist destination-universe work remains open.",
-        "SavedSublist authoritative relation/membership feed remains a service blocker."
+        "Fresh exact-head GitHub Actions are required for this ledger descendant before verification credit.",
+        "The current implementation proves canonical Human root/Topic/SavedSublist/nested-Conversation forwarding with search-time and send-time revalidation; Agent/Group/Channel/Hybrid forwarding breadth and independent packaged acceptance remain open.",
+        "SavedSublist forwarding remains fail-closed until production server authority is actually deployed and production E2E establishes authoritative parent access/membership."
       ],
-      "production_entrypoints": [],
-      "production_evidence": [],
-      "test_evidence": [],
-      "target_commit": "3829278c343117c949a19cf5b015a49ebad233dc",
+      "production_entrypoints": [
+        "ProductShell -> ProductionRenderer -> ForwardMessageDialog -> searchHumanRecipients -> ProductionSessionWorkers::search_human_recipients",
+        "ForwardMessageDialog submit -> ProductionRenderer forwardHumanMessage -> Host ProductionSessionWorkers::forward_human_message -> canonical MessagingService/ConversationDestination"
+      ],
+      "production_evidence": [
+        "path:source/host/src/extensions/session/production.rs#search_human_recipients",
+        "path:source/host/src/extensions/session/production.rs#authorize_canonical_forward_destination",
+        "path:source/host/src/extensions/session/production.rs#forward_human_message",
+        "path:frontend/src/production/ForwardMessageDialog.tsx#ForwardMessageDialog",
+        "path:frontend/src/production/ProductionRenderer.tsx#searchForwardRecipients",
+        "path:frontend/src/production/ProductionRenderer.tsx#forwardHumanMessage"
+      ],
+      "test_evidence": [
+        "source/host/src/extensions/session/production.rs#shipping_human_forward_accepts_authoritative_typed_children_and_fails_closed_when_stale",
+        "source/host/src/extensions/session/production.rs#shipping_human_forward_reuses_session_owner_across_retry_and_restart"
+      ],
+      "target_commit": "dbb30bc548a53d146301bcba850d42944c127635",
       "workflow_run": null,
       "run_attempt": null,
       "job": null,
@@ -11908,21 +11957,32 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior is source-informed from the accepted Telegram Desktop blob and re-expressed against canonical Fabushi owners; no Telegram C++/Qt runtime is retained.",
       "reviewer": null,
-      "notes": "Full accepted implementation read. Mapped/open only; no implementation or verification credit.",
+      "notes": "Full accepted implementation read. Mapped/open only; no implementation or verification credit. Current descendant audit credits the already-shipping Forward Panel implementation: typed child recipients are projected from the single canonical MessagingService, filtered by send-time-equivalent authorization before renderer exposure, malformed explicit renderer destinations fail closed, forwarding is deduplicated/idempotent with partial settlement/retry, and focused Host tests cover stale child state plus SavedSublist parent-access/membership fencing. Status is implemented, not verified.",
       "fabushi_target_bindings": [
         {
-          "path": "native/mahayana-messaging/src/conversation.rs",
+          "path": "source/host/src/extensions/session/production.rs",
           "symbols": [
-            "ConversationChildRuntimeState"
+            "search_human_recipients",
+            "authorize_canonical_forward_destination",
+            "forward_human_message"
           ],
-          "responsibility_scope": "destination-child destruction cleanup and stale staged-state retirement lifecycle"
+          "responsibility_scope": "canonical recipient discovery, permission filtering, typed-child authority revalidation, idempotent forwarding and partial settlement"
         },
         {
-          "path": "native/mahayana-messaging/src/engine.rs",
+          "path": "frontend/src/production/ForwardMessageDialog.tsx",
           "symbols": [
-            "MessagingEngine"
+            "ForwardMessageDialog",
+            "forwardDestinationKey"
           ],
-          "responsibility_scope": "source-message removal convergence, child-destroy sequencing, and stale-forward lifecycle fencing"
+          "responsibility_scope": "single canonical forwarding interaction surface, multi-select state, privacy options, request identity, partial retry and keyboard/a11y behavior"
+        },
+        {
+          "path": "frontend/src/production/ProductionRenderer.tsx",
+          "symbols": [
+            "searchForwardRecipients",
+            "forwardHumanMessage"
+          ],
+          "responsibility_scope": "shipping renderer composition, strict typed-destination parsing and Coordinator/Host transport binding"
         }
       ]
     },
@@ -14282,7 +14342,7 @@
     "upstream_commit": "63a1831728147e941ad2dc8939879cf5afe419c7",
     "deterministic_prefix_closed": 57,
     "development_only_non_applicable": 3617,
-    "unknown_closed": 3705,
+    "unknown_closed": 3706,
     "omitted": 0,
     "read_through": 16137,
     "first_unread_order": 16138,
