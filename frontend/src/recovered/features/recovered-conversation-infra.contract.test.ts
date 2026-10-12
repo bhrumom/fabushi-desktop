@@ -944,6 +944,24 @@ test("CONTRACT-TDRP-MEDIAVIEW-WINDOW-CHROME-REPLACEMENT-001 media preview replac
   assert.match(styles, /\.sand-media-viewer__image \{[\s\S]{0,100}max-width: 92vw;[\s\S]{0,100}max-height: calc\(100vh - 145px\)/);
 });
 
+test("CONTRACT-TDRP-IV-ARTICLE-LIFECYCLE-A11Y-MOTION-001 article resources fence stale settlement and preserve keyboard/a11y/reduced-motion policy", () => {
+  const math = readFileSync(new URL("./conversation/workspace/math.tsx", import.meta.url), "utf8");
+  const media = readFileSync(new URL("./conversation/workspace/media-viewer.tsx", import.meta.url), "utf8");
+  const visibility = readFileSync(new URL("./conversation/workspace/media-visibility.ts", import.meta.url), "utf8");
+  const styles = readFileSync(new URL("./conversation/workspace/transcript-utility-parity.css", import.meta.url), "utf8");
+
+  assert.match(math, /let active = true;[\s\S]{0,260}if \(active\) setMarkup\(next\);[\s\S]{0,220}return \(\) => \{ active = false; \};/);
+  assert.match(media, /let active = true;[\s\S]{0,520}resolveWithSingleRetry\(resolveMedia, current\.path\)[\s\S]{0,220}if \(!active\) return;[\s\S]{0,420}return \(\) => \{ active = false; \};/);
+  assert.match(visibility, /let disposed = false;[\s\S]{0,420}if \(disposed\) return;[\s\S]{0,360}unobserve\(element\)[\s\S]{0,300}disconnect\(\)[\s\S]{0,180}visibilityBuckets\.delete\(rootMargin\)/);
+
+  assert.match(media, /aria-modal="true"[\s\S]{0,220}role="dialog"/);
+  assert.match(media, /event\.key === "Escape"[\s\S]{0,220}onClose\(\)/);
+  assert.match(media, /event\.key === "ArrowLeft"[\s\S]{0,300}event\.key === "ArrowRight"/);
+  assert.match(media, /aria-live="polite"[\s\S]{0,120}role=\{failed \? "alert" : "status"\}/);
+  assert.match(styles, /@media \(prefers-reduced-motion: reduce\)/);
+  assert.match(styles, /transition-duration:\s*\.01ms/);
+});
+
 test("CONTRACT-TDRP-MEDIAVIEW-NATIVE-PLAYBACK-001 canonical media preview delegates video playback to Chromium without a second renderer owner", () => {
   const source = readFileSync(new URL("./conversation/workspace/media-viewer.tsx", import.meta.url), "utf8");
   assert.match(source, /const videoRef = useRef<HTMLVideoElement \| null>\(null\);/);
