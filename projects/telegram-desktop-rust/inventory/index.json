@@ -14,20 +14,20 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 3025,
+    "unread_minimum": 2851,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through deterministic order 13,100; unread 3,025; unknown 15,845; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition through deterministic order 13,274; unread 2,851; unknown 15,845; omitted 0."
   },
   "latest_recursive_evidence": {
-    "run_id": 38193879974,
+    "run_id": 38195100566,
     "run_attempt": 1,
-    "job_id": 114632283461,
-    "head_sha": "8078202c06877edff2afbc04ede1052329b342f6",
-    "artifact_id": 11722831694,
-    "artifact_digest": "sha256:36d50ab536d7dda5507e4d722e19732f5cb8ed97199ea84832c82b153ad557d8",
-    "evidence_status": "authoritative-recursive-identities-plus-current-window-materialization-reviewed-descendant-validation-required",
+    "job_id": 114635964356,
+    "head_sha": "7d1fcf83444040521a01d97a3e1bd2570522d222",
+    "artifact_id": 11722749905,
+    "artifact_digest": "sha256:fd8a374ee26069c98ef1919e00066dadc2f9ef2876fd02ebc341e5542d978d56",
+    "evidence_status": "parent-authority-validated-corrected-13037-13100-and-materialized-13101-13164; direct-read-through-13274-descendant-validation-required",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
-    "note": "Orders 13,037-13,100 were materialized by exact-head Source authority and directly read/decomposed against accepted desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd. Accounting descendant requires fresh same-head Actions."
+    "note": "13,101-13,274 were directly read/decomposed at accepted lib_ui commit. Accounting descendant requires fresh exact-head Actions."
   },
   "closure_rules": {
     "executable_runner": "github-actions",
@@ -37,7 +37,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live baseline accepted; closure open. Read-through 13,100; unread_minimum is 3,025; unknown remains 15,845; omitted remains 0; first unread order 13,101 is Telegram/lib_ui::ui/platform/win/ui_window_title_win.cpp.",
+  "note": "Live baseline accepted; closure open. Read-through 13,274; unread_minimum 2,851; unknown remains 15,845; omitted remains 0; first unread 13,275 is Telegram/lib_webrtc::CMakeLists.txt.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -55,12 +55,12 @@
       6541,
       6627
     ],
-    "current_source_read_through": 13100,
-    "first_unread_order": 13101,
-    "first_unread_path": "Telegram/lib_ui::ui/platform/win/ui_window_title_win.cpp",
-    "current_head_source_authority_evidence": "Exact parent 8078202c06877edff2afbc04ede1052329b342f6 Source authority 38193879974/114632283461, artifact 11722831694 sha256:36d50ab536d7dda5507e4d722e19732f5cb8ed97199ea84832c82b153ad557d8, materialized 13,037-13,100; all entries were read/decomposed at accepted lib_ui commit.",
-    "source_read_reconciliation": "Accepted prefix 13,100/16,125. The window covers GL/window lifecycle, bounded image/SVG security, inactive-press and integration commands, canonical layer/modal/focus lifecycle, main-queue handoff, paint/motion/localization, Linux font settings and cross-platform native window/title/shadow responsibilities. All remain mapped-open with unknown_closed=false. Unread 3,025; unknown 15,845; omitted 0.",
-    "source_authority_evidence": "Exact accepted gitlink content identity plus current-head Source authority materialization for every 13,037-13,100 entry. Fresh descendant same-head Actions remain required."
+    "current_source_read_through": 13274,
+    "first_unread_order": 13275,
+    "first_unread_path": "Telegram/lib_webrtc::CMakeLists.txt",
+    "current_head_source_authority_evidence": "Parent 7d1fcf83444040521a01d97a3e1bd2570522d222 Source authority 38195100566/114635964356 succeeded; artifact 11722749905 sha256:fd8a374ee26069c98ef1919e00066dadc2f9ef2876fd02ebc341e5542d978d56 establishes global recursive identity and 13,101-13,164 materialization. Direct source read/decomposition continued through 13,274.",
+    "source_read_reconciliation": "Accepted prefix 13,274/16,125. The window completes lib_ui: Windows platform/input/RHI/a11y, style/text/custom emoji/entity shaping, canonical controls/input/menu/scroll and layout/motion/reorder. All entries remain mapped-open with unknown_closed=false. Unread 2,851; unknown 15,845; omitted 0.",
+    "source_authority_evidence": "Exact accepted recursive inventory from Source authority artifact plus direct lib_ui blob reads through 13,274. Fresh descendant same-head Actions required."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -69,9 +69,9 @@
     "development_only_non_applicable": 206,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 13100,
-    "first_unread_order": 13101,
-    "first_unread_path": "Telegram/lib_ui::ui/platform/win/ui_window_title_win.cpp",
+    "read_through": 13274,
+    "first_unread_order": 13275,
+    "first_unread_path": "Telegram/lib_webrtc::CMakeLists.txt",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }
