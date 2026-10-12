@@ -635,8 +635,31 @@ test.afterAll(async () => {
   });
 });
 
+async function reserveLoopbackPort(): Promise<number> {
+  const server = createServer();
+  await new Promise<void>((resolve, reject) => {
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', resolve);
+  });
+  const address = server.address();
+  if (address == null || typeof address === 'string') {
+    server.close();
+    throw new Error('Focused Electron box exec-daemon port reservation did not bind a TCP address.');
+  }
+  const port = address.port;
+  await new Promise<void>((resolve, reject) => {
+    server.close((error) => error == null ? resolve() : reject(error));
+  });
+  return port;
+}
+
 async function launchDesktopApp(appDataDir: string): Promise<ElectronApplication> {
   const e2eAuthBackendUrl = await ensureE2eAuthBackend();
+  // A focused suite may run more than one shipping Electron instance at once
+  // to prove cross-device convergence. Each Host owns its managed box
+  // exec-daemon, so give every process an isolated loopback endpoint instead
+  // of letting the second process collide with the production default :1337.
+  const boxExecDaemonPort = await reserveLoopbackPort();
   // Exercise the shipping Fabushi account -> private Host credential ->
   // Responses transport chain. The browser-first login below owns the token;
   // focused acceptance must not seed a parallel Cursor inference credential.
@@ -656,6 +679,7 @@ async function launchDesktopApp(appDataDir: string): Promise<ElectronApplication
       FABUSHI_API_BASE_URL: e2eAuthBackendUrl,
       FABUSHI_RESPONSES_URL: `${e2eAuthBackendUrl}/v1/ai/responses`,
       SAND_CURSOR_WEBSITE_URL: e2eAuthBackendUrl,
+      SAND_BOX_EXEC_DAEMON_PORT: String(boxExecDaemonPort),
       SAND_DISABLE_SENTRY: '1',
       FABUSHI_FEATURE_HOST_MODE: process.env.FABUSHI_FEATURE_HOST_MODE || 'test',
       MAHAYANA_APP_HOST_BIN: process.env.MAHAYANA_APP_HOST_BIN || '',
