@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 3217,
+    "unread": 3153,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,11 +13478,11 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Accepted prefix 12,908/16,125; 12,845-12,846 preserve palette/style codegen provenance; 12,847-12,853 current/historical emoji compatibility inputs; 12,854-12,857 map mature Composer autocomplete normalization/word-prefix/dedupe/ranking into the existing EmojiCatalog + EditorSuggestionController; 12,858-12,864 font provenance/fallback packaging; 12,865-12,908 visual resource semantics map to canonical Design System/components. All 64 source rows remain mapped-open; unread 3,217; unknown 15,845; omitted 0.",
-    "source_authority_evidence": "Authoritative d5e70072 Source authority 38189544832/114619149670 artifact 11721111016 plus independent 64/64 byte/SHA-256/Git-blob and binary type/dimension verification; current descendant same-head validation required.",
-    "current_source_read_through": 12908,
-    "first_unread_order": 12909,
-    "first_unread_path": "Telegram/lib_ui::icons/round_shadow_box_left@3x.png"
+    "source_read_reconciliation": "Accepted prefix 12,972/16,125; 12,909-12,960 preserve raster window/elevation/command semantics; 12,961-12,962 map GPU compatibility and packaging; 12,963-12,964 map mature button press/keyboard/accessibility behavior into canonical Button/IconButton owners; 12,965-12,970 map stable dynamic accessibility identity/actions/selection/orientation into DOM/ARIA and existing bridge owners; 12,971-12,972 map animated resource timing/lifecycle/reduced-motion responsibilities. All 64 source rows remain mapped-open; unread 3,153; unknown 15,845; omitted 0.",
+    "source_authority_evidence": "Predecessor e4e455cd recursive artifact 11722021776 plus direct accepted lib_ui@91ff4463 exact-blob/content review; current descendant same-head Actions required.",
+    "current_source_read_through": 12972,
+    "first_unread_order": 12973,
+    "first_unread_path": "Telegram/lib_ui::ui/arc_angles.h"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 206,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 12908,
-    "first_unread_order": 12909,
-    "first_unread_path": "Telegram/lib_ui::icons/round_shadow_box_left@3x.png",
+    "read_through": 12972,
+    "first_unread_order": 12973,
+    "first_unread_path": "Telegram/lib_ui::ui/arc_angles.h",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
