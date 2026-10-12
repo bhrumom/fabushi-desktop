@@ -220,7 +220,7 @@
         "scope": "direct-gitlink",
         "mount": "Telegram/lib_base",
         "path": "base/platform/linux/io.snapcraft.Settings.xml",
-        "mode": "100644",
+        "mode": "100755",
         "type": "blob",
         "object": "d3579af9a4257ac3dada3010007228e7cc1e8265",
         "size": 1093
