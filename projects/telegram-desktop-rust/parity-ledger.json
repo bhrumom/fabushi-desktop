@@ -12761,14 +12761,14 @@
           "symbols": [
             "SearchIndex"
           ],
-          "responsibility_scope": "contract: canonical message search projection removal/rebuild after exact message or child destruction"
+          "responsibility_scope": "data-changes contract: canonical message search projection removal/rebuild after exact message or child destruction"
         },
         {
           "path": "native/mahayana-messaging/src/media_cache.rs",
           "symbols": [
             "MediaCache"
           ],
-          "responsibility_scope": "contract: independent physical media-cache ownership retained across logical history/search projection destruction"
+          "responsibility_scope": "data-changes contract: independent physical media-cache ownership retained across logical projection destruction"
         }
       ]
     },
@@ -13025,14 +13025,14 @@
           "symbols": [
             "SearchIndex"
           ],
-          "responsibility_scope": "lifecycle: canonical message search projection removal/rebuild after exact message or child destruction"
+          "responsibility_scope": "data-changes lifecycle: canonical message search projection removal/rebuild after exact message or child destruction"
         },
         {
           "path": "native/mahayana-messaging/src/media_cache.rs",
           "symbols": [
             "MediaCache"
           ],
-          "responsibility_scope": "lifecycle: independent physical media-cache ownership retained across logical history/search projection destruction"
+          "responsibility_scope": "data-changes lifecycle: independent physical media-cache ownership retained across logical projection destruction"
         }
       ]
     },
@@ -13564,14 +13564,14 @@
           "symbols": [
             "SearchIndex"
           ],
-          "responsibility_scope": "contract: canonical message search projection removal/rebuild after exact message or child destruction"
+          "responsibility_scope": "history-state contract: canonical message search projection removal/rebuild after exact message or child destruction"
         },
         {
           "path": "native/mahayana-messaging/src/media_cache.rs",
           "symbols": [
             "MediaCache"
           ],
-          "responsibility_scope": "contract: independent physical media-cache ownership retained across logical history/search projection destruction"
+          "responsibility_scope": "history-state contract: independent physical media-cache ownership retained across logical history destruction"
         }
       ]
     },
@@ -13858,14 +13858,14 @@
           "symbols": [
             "SearchIndex"
           ],
-          "responsibility_scope": "lifecycle: canonical message search projection removal/rebuild after exact message or child destruction"
+          "responsibility_scope": "history lifecycle: canonical message search projection removal/rebuild after exact message or child destruction"
         },
         {
           "path": "native/mahayana-messaging/src/media_cache.rs",
           "symbols": [
             "MediaCache"
           ],
-          "responsibility_scope": "lifecycle: independent physical media-cache ownership retained across logical history/search projection destruction"
+          "responsibility_scope": "history lifecycle: independent physical media-cache ownership retained across logical history destruction"
         }
       ]
     },
