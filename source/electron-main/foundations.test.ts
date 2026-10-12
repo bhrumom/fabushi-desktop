@@ -14,6 +14,7 @@ import { computeDockBadgeTotal } from "./notifications/dock-badge.js";
 import { SandOsNotificationManager } from "./notifications/os-notification-manager.js";
 import { resolveScanRoots } from "./process-metrics/wiring.js";
 import { computeUpdateDisabledReason } from "./update/update-gate.js";
+import { SandUpdateService } from "./update/sand-update-service.js";
 import { isSafeToRelaunchForUpdate } from "./update/safe-relaunch-gate.js";
 import { SandWindowsInstaller, WINDOWS_PARENT_EXIT_GRACE_MS, buildWindowsInstallerParentHandoffScript } from "./update/win32-installer.js";
 import { parseUpdateResponse } from "./update/update-feed.js";
@@ -398,12 +399,14 @@ test("dock badge, process roots, and window broadcast preserve production semant
 });
 
 test("update gates fail closed unless every safe-relaunch condition holds", () => {
-  assert.equal(computeUpdateDisabledReason({ envDisabled: true, isLabBuild: false, hasDevFeedOverride: false, isPackaged: true, platform: "darwin" }), "disabled-by-env");
-  assert.equal(computeUpdateDisabledReason({ envDisabled: false, isLabBuild: true, hasDevFeedOverride: false, isPackaged: true, platform: "darwin" }), "lab-build");
-  assert.equal(computeUpdateDisabledReason({ envDisabled: false, isLabBuild: false, hasDevFeedOverride: true, isPackaged: false, platform: "linux" }), "unsupported-platform");
-  assert.equal(computeUpdateDisabledReason({ envDisabled: false, isLabBuild: false, hasDevFeedOverride: true, isPackaged: true, platform: "linux" }), "unsupported-platform");
-  assert.equal(computeUpdateDisabledReason({ envDisabled: false, isLabBuild: false, hasDevFeedOverride: false, isPackaged: false, platform: "darwin" }), "not-packaged");
-  assert.equal(computeUpdateDisabledReason({ envDisabled: false, isLabBuild: false, hasDevFeedOverride: false, isPackaged: true, platform: "linux" }), "unsupported-platform");
+  assert.equal(computeUpdateDisabledReason({ envDisabled: true, isLabBuild: false, hasDevFeedOverride: false, releaseUpdaterAvailable: true, isPackaged: true, platform: "darwin" }), "disabled-by-env");
+  assert.equal(computeUpdateDisabledReason({ envDisabled: false, isLabBuild: true, hasDevFeedOverride: false, releaseUpdaterAvailable: true, isPackaged: true, platform: "darwin" }), "lab-build");
+  assert.equal(computeUpdateDisabledReason({ envDisabled: false, isLabBuild: false, hasDevFeedOverride: true, releaseUpdaterAvailable: false, isPackaged: false, platform: "linux" }), "unsupported-platform");
+  assert.equal(computeUpdateDisabledReason({ envDisabled: false, isLabBuild: false, hasDevFeedOverride: true, releaseUpdaterAvailable: false, isPackaged: false, platform: "win32" }), null);
+  assert.equal(computeUpdateDisabledReason({ envDisabled: false, isLabBuild: false, hasDevFeedOverride: false, releaseUpdaterAvailable: true, isPackaged: false, platform: "darwin" }), "not-packaged");
+  assert.equal(computeUpdateDisabledReason({ envDisabled: false, isLabBuild: false, hasDevFeedOverride: false, releaseUpdaterAvailable: true, isPackaged: true, platform: "darwin" }), null);
+  assert.equal(computeUpdateDisabledReason({ envDisabled: false, isLabBuild: false, hasDevFeedOverride: false, releaseUpdaterAvailable: true, supportsLinuxAppImage: false, isPackaged: true, platform: "linux" }), "unsupported-platform");
+  assert.equal(computeUpdateDisabledReason({ envDisabled: false, isLabBuild: false, hasDevFeedOverride: false, releaseUpdaterAvailable: true, supportsLinuxAppImage: true, isPackaged: true, platform: "linux" }), null);
 
   const safe = {
     optInEnabled: true,
@@ -420,6 +423,74 @@ test("update gates fail closed unless every safe-relaunch condition holds", () =
   assert.equal(isSafeToRelaunchForUpdate({ ...safe, screenLocked: false }), false);
 });
 
+
+test("release updater preserves canonical Linux staged apply and restart semantics", async () => {
+  const statuses: unknown[] = [];
+  const markerEvents: string[] = [];
+  let appQuitCalls = 0;
+  let downloadCalls = 0;
+  const quitAndInstallCalls: Array<[boolean | undefined, boolean | undefined]> = [];
+  const releaseUpdater = {
+    autoDownload: true,
+    autoInstallOnAppQuit: true,
+    allowPrerelease: false,
+    channel: undefined as string | undefined,
+    async checkForUpdates() {
+      return { updateInfo: { version: "9.9.9" } };
+    },
+    async downloadUpdate() {
+      downloadCalls += 1;
+    },
+    quitAndInstall(isSilent?: boolean, isForceRunAfter?: boolean) {
+      quitAndInstallCalls.push([isSilent, isForceRunAfter]);
+    },
+  };
+  const service = new SandUpdateService({
+    currentVersion: "1.0.0",
+    buildDefaultTrack: "stable",
+    releaseUpdater,
+    quitForReleaseUpdate: () => { appQuitCalls += 1; },
+    tempDir: tmpdir(),
+    machineId: "release-updater-linux-test",
+    platform: "linux",
+    arch: "x64",
+    getTrackOverride: () => null,
+    persistTrackOverride: () => undefined,
+    onStatusChange: (status) => { statuses.push(status); },
+    applyMarker: {
+      peek: () => null,
+      recordStaged: (input) => { markerEvents.push(`staged:${input.mechanism}:${input.targetVersion}`); },
+      recordRequested: (input) => { markerEvents.push(`requested:${input.mechanism}:${input.targetVersion}`); },
+      recordSpawned: () => { markerEvents.push("spawned"); },
+      recordSpawnFailed: () => { markerEvents.push("spawn_failed"); },
+      clear: () => undefined,
+    },
+  });
+
+  assert.equal(releaseUpdater.autoDownload, false);
+  assert.equal(releaseUpdater.autoInstallOnAppQuit, false);
+  assert.equal(service.updatePlatform, "linux-x64");
+
+  const checked = await service.checkForUpdates({ trigger: "explicit" });
+  assert.equal(checked.state.type, "ready");
+  assert.equal(checked.state.version, "9.9.9");
+  assert.equal(releaseUpdater.channel, "latest");
+  assert.equal(releaseUpdater.allowPrerelease, false);
+  assert.equal(downloadCalls, 1);
+  assert.deepEqual(markerEvents, ["staged:appimage:9.9.9"]);
+
+  assert.equal(service.quitAndInstall(), true);
+  assert.equal(appQuitCalls, 1);
+  assert.deepEqual(markerEvents, ["staged:appimage:9.9.9", "requested:appimage:9.9.9"]);
+  assert.equal(service.willRunStagedInstallerOnQuit(), true);
+
+  service.applyStagedOnQuit();
+  assert.deepEqual(quitAndInstallCalls, [[false, true]]);
+  assert.deepEqual(markerEvents, ["staged:appimage:9.9.9", "requested:appimage:9.9.9", "spawned"]);
+  assert.equal(service.willRunStagedInstallerOnQuit(), false);
+  assert.ok(statuses.length > 0);
+  service.dispose();
+});
 
 test("Windows updater handoff waits for the exact parent identity before NSIS apply", () => {
   const script = buildWindowsInstallerParentHandoffScript({
