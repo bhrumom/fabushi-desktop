@@ -118,7 +118,8 @@ export function parseComposerDraft(value: unknown): ComposerDraft | null {
     || !Array.isArray(candidate.attachments)
   ) return null;
 
-  const cursor = candidate.cursor === undefined ? undefined : (() => {
+  let cursor: ComposerDraftCursor | undefined;
+  if (candidate.cursor !== undefined) {
     if (typeof candidate.cursor !== "object" || candidate.cursor == null || Array.isArray(candidate.cursor)) return null;
     const valueCursor = candidate.cursor as Record<string, unknown>;
     if (
@@ -126,15 +127,15 @@ export function parseComposerDraft(value: unknown): ComposerDraft | null {
       || !Number.isSafeInteger(valueCursor.anchor)
       || !Number.isSafeInteger(valueCursor.scroll)
     ) return null;
-    return {
+    cursor = {
       position: valueCursor.position as number,
       anchor: valueCursor.anchor as number,
       scroll: valueCursor.scroll as number,
     };
-  })();
-  if (candidate.cursor !== undefined && cursor == null) return null;
+  }
 
-  const linkPreview = candidate.linkPreview === undefined ? undefined : (() => {
+  let linkPreview: ComposerDraftLinkPreview | undefined;
+  if (candidate.linkPreview !== undefined) {
     if (typeof candidate.linkPreview !== "object" || candidate.linkPreview == null || Array.isArray(candidate.linkPreview)) return null;
     const valuePreview = candidate.linkPreview as Record<string, unknown>;
     if (
@@ -146,17 +147,16 @@ export function parseComposerDraft(value: unknown): ComposerDraft | null {
       || (valuePreview.manual !== undefined && typeof valuePreview.manual !== "boolean")
       || (valuePreview.removed !== undefined && typeof valuePreview.removed !== "boolean")
     ) return null;
-    return {
+    linkPreview = {
       url: valuePreview.url,
-      ...(valuePreview.id === undefined ? {} : { id: valuePreview.id as string }),
-      ...(valuePreview.forceLargeMedia === undefined ? {} : { forceLargeMedia: valuePreview.forceLargeMedia as boolean }),
-      ...(valuePreview.forceSmallMedia === undefined ? {} : { forceSmallMedia: valuePreview.forceSmallMedia as boolean }),
-      ...(valuePreview.invert === undefined ? {} : { invert: valuePreview.invert as boolean }),
-      ...(valuePreview.manual === undefined ? {} : { manual: valuePreview.manual as boolean }),
-      ...(valuePreview.removed === undefined ? {} : { removed: valuePreview.removed as boolean }),
+      ...(valuePreview.id === undefined ? {} : { id: valuePreview.id }),
+      ...(valuePreview.forceLargeMedia === undefined ? {} : { forceLargeMedia: valuePreview.forceLargeMedia }),
+      ...(valuePreview.forceSmallMedia === undefined ? {} : { forceSmallMedia: valuePreview.forceSmallMedia }),
+      ...(valuePreview.invert === undefined ? {} : { invert: valuePreview.invert }),
+      ...(valuePreview.manual === undefined ? {} : { manual: valuePreview.manual }),
+      ...(valuePreview.removed === undefined ? {} : { removed: valuePreview.removed }),
     };
-  })();
-  if (candidate.linkPreview !== undefined && linkPreview == null) return null;
+  }
 
   const attachments: DraftAttachment[] = [];
   for (const valueAttachment of candidate.attachments) {
