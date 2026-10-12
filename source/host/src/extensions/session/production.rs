@@ -2977,11 +2977,23 @@ impl ProductionSessionWorkers {
         if matches!(
             destination.child.as_ref(),
             Some(fabushi_messaging_core::ConversationChildIdentity::SavedSublist { .. })
-        ) && !child.authoritative_membership_known
-        {
-            return Err(
-                "SavedSublist forwarding requires authoritative child membership".into(),
-            );
+        ) {
+            let parent_access = service
+                .engine()
+                .state()
+                .saved_sublist_parent_access
+                .get(&destination.conversation_id)
+                .is_some_and(|actors| actors.contains(&actor_id));
+            if !parent_access {
+                return Err(
+                    "SavedSublist forwarding requires authoritative parent access".into(),
+                );
+            }
+            if !child.authoritative_membership_known {
+                return Err(
+                    "SavedSublist forwarding requires authoritative child membership".into(),
+                );
+            }
         }
         Ok(transport_conversation_id)
     }
@@ -4401,9 +4413,10 @@ mod sharebox_shipping_tests {
         value.get("id").and_then(serde_json::Value::as_str).unwrap().to_string()
     }
 
-    fn seed_forward_child_authorities(
+    fn seed_forward_child_authorities_with_parent_access(
         workers: &ProductionSessionWorkers,
         destinations: &[(fabushi_messaging_core::ConversationDestination, bool)],
+        saved_parent_access: bool,
     ) {
         let actor_id = workers.story_actor_id().unwrap();
         let mut state = fabushi_messaging_core::MessagingState::default();
@@ -4416,12 +4429,31 @@ mod sharebox_shipping_tests {
             if *membership_known {
                 assert!(child.reconcile_authoritative_message_ids(Vec::new()));
             }
+            if saved_parent_access
+                && matches!(
+                    destination.child.as_ref(),
+                    Some(fabushi_messaging_core::ConversationChildIdentity::SavedSublist { .. })
+                )
+            {
+                state
+                    .saved_sublist_parent_access
+                    .entry(destination.conversation_id.clone())
+                    .or_default()
+                    .insert(actor_id.clone());
+            }
             state.conversation_child_states.push(child);
         }
         let snapshot = fabushi_messaging_core::MessagingSnapshot::new(state, 0, 1);
         let snapshot_path = workers.agents_root.join("_messaging").join("snapshot.json");
         fs::create_dir_all(snapshot_path.parent().unwrap()).unwrap();
         fs::write(snapshot_path, serde_json::to_vec(&snapshot).unwrap()).unwrap();
+    }
+
+    fn seed_forward_child_authorities(
+        workers: &ProductionSessionWorkers,
+        destinations: &[(fabushi_messaging_core::ConversationDestination, bool)],
+    ) {
+        seed_forward_child_authorities_with_parent_access(workers, destinations, true);
     }
 
     #[test]
@@ -4670,6 +4702,28 @@ mod sharebox_shipping_tests {
         );
         assert!(stale.pointer("/destinations/0/error").and_then(serde_json::Value::as_str)
             .is_some_and(|error| error.contains("no authoritative child state")));
+
+        seed_forward_child_authorities_with_parent_access(
+            &workers,
+            &[(saved.clone(), true)],
+            false,
+        );
+        let missing_parent_access = workers
+            .forward_human_message(
+                &source,
+                source_entry_id,
+                &[serde_json::to_value(&saved).unwrap()],
+                "typed-saved-no-parent-access",
+                false,
+                false,
+            )
+            .unwrap();
+        assert_eq!(
+            missing_parent_access.pointer("/destinations/0/status").and_then(serde_json::Value::as_str),
+            Some("failed"),
+        );
+        assert!(missing_parent_access.pointer("/destinations/0/error").and_then(serde_json::Value::as_str)
+            .is_some_and(|error| error.contains("authoritative parent access")));
 
         seed_forward_child_authorities(&workers, &[(saved.clone(), false)]);
         let missing_membership = workers
