@@ -9,7 +9,7 @@
     "unknown": 12435,
     "unread": 0,
     "omitted": 0,
-    "responsibilities_total": 55,
+    "responsibilities_total": 56,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -8843,21 +8843,32 @@
       ],
       "service_owner": "Fabushi canonical messaging/sync service",
       "deployment_evidence": [],
-      "implementation_status": "mapped",
+      "implementation_status": "implemented",
       "coverage_disposition": "rewritten",
       "blockers": [
-        "Canonical recent suggestion persistence and recent-open destruction wiring remain open",
-        "SavedSublist parent/membership authority remains separately service-blocked"
+        "Same-release-candidate macOS/Windows/Linux signed package install/upgrade/restart recovery, updater provenance/temporal acceptance, full Fabushi Bot regression and independent release acceptance remain open."
       ],
       "production_entrypoints": [],
-      "production_evidence": [],
+      "production_evidence": [
+        "exact-head:92944016319539f8115607f05aeeff0c7fb7de4f",
+        "frontend/src/production/ProductionRenderer.tsx::noteRecentParticipantSelection",
+        "source/host/src/host_gateway_api.rs::noteRecentParticipantSuggestion -> Session owner",
+        "source/host/src/extensions/session/production.rs::note_recent_participant_suggestion -> unique _messaging MessagingService",
+        "native/mahayana-messaging/src/service.rs::note_recent_participant_selection -> persist_recent_projection_mutation",
+        "native/mahayana-messaging/src/engine.rs::note_recent_participant_suggestion",
+        "github-actions:38273831359:job-114894361960:success",
+        "github-actions:38273831135:job-114894360906:success",
+        "artifact:11758446321:sha256:e825c99c7d10dacc5ea0466843fe00948de7dc5b5018f5f2abeaee9706c55248",
+        "artifact:11757879899:sha256:4ae3418e2255709ef657d8869c7b2458126bee64e10bf5a943490919fa04f756",
+        "source-authority:38273831359:job-114894362277:artifact-11758466363:sha256:1cf412bb2399e3c6f6dbf7ad5cfd80c907692244a3070439b0d22837befbbcb6"
+      ],
       "test_evidence": [],
-      "target_commit": "6e6744eb8716671f060251aacc986ef5fb483b0c",
-      "workflow_run": null,
-      "run_attempt": null,
-      "job": null,
-      "artifact_id": null,
-      "artifact_digest": null,
+      "target_commit": "92944016319539f8115607f05aeeff0c7fb7de4f",
+      "workflow_run": 38273831359,
+      "run_attempt": 1,
+      "job": "rust-host / Test canonical Fabushi messaging responsibilities",
+      "artifact_id": 11758446321,
+      "artifact_digest": "sha256:e825c99c7d10dacc5ea0466843fe00948de7dc5b5018f5f2abeaee9706c55248",
       "composition_root": "Fabushi ProductShell -> Messages -> ConversationWorkspace",
       "composition_slot": "Canonical Conversation child collection/runtime",
       "capability_component": "Typed Conversation child capability",
@@ -8962,9 +8973,12 @@
       "test_environment_ids": [
         "GitHub Actions only"
       ],
-      "coverage_matrix_status": "pending",
-      "flake_status": "not-run",
-      "test_execution_evidence": [],
+      "coverage_matrix_status": "implemented-current-exact-head-production-and-shipping-e2e-evidence-captured",
+      "flake_status": "current-exact-head-success",
+      "test_execution_evidence": [
+        "github-actions:38273831359:job-114894361960:success@92944016319539f8115607f05aeeff0c7fb7de4f",
+        "github-actions:38273831135:job-114894360906:success@92944016319539f8115607f05aeeff0c7fb7de4f"
+      ],
       "acceptance_reviewer": null,
       "release_gate_status": "pending",
       "license_and_provenance": "Source-informed mapping from accepted telegramdesktop/tdesktop recent_peers authority; no retained Telegram C++ runtime or copied presentation.",
@@ -9064,12 +9078,14 @@
         "native/mahayana-messaging/src/engine.rs::MessagingEngine::note_recent_participant_suggestion"
       ],
       "production_evidence": [
-        "exact-head:494de75d926f36bb4f2fda38d55623d20d58af96",
-        "github-actions:38272194858:job-114889158111:success",
-        "github-actions:38272194813:job-114889364816:success",
         "artifact:11756974159:sha256:4fd735a81b14af668e3de3fcdec32bcc6912246df8fb285f8258c6dc0751f9b0",
         "artifact:11756789145:sha256:01046e1c11dcf81ac7775fae5e9ba6f22d5b810cba2c7ac3e61cf1de9d26b9bc",
-        "source-authority:38272194858:job-114889158201:artifact-11757920879:sha256:3496e286cbb424eaad580e8f4a5805536cb2e60547e6c37dd6ed27700ed3c894"
+        "exact-head:92944016319539f8115607f05aeeff0c7fb7de4f",
+        "github-actions:38273831359:job-114894361960:success",
+        "github-actions:38273831135:job-114894360906:success",
+        "artifact:11758446321:sha256:e825c99c7d10dacc5ea0466843fe00948de7dc5b5018f5f2abeaee9706c55248",
+        "artifact:11757879899:sha256:4ae3418e2255709ef657d8869c7b2458126bee64e10bf5a943490919fa04f756",
+        "source-authority:38273831359:job-114894362277:artifact-11758466363:sha256:1cf412bb2399e3c6f6dbf7ad5cfd80c907692244a3070439b0d22837befbbcb6"
       ],
       "test_evidence": [
         "native/mahayana-messaging/src/engine.rs::recent_participant_suggestions_are_durable_bounded_deduped_and_fail_closed",
@@ -9084,12 +9100,12 @@
         "native/mahayana-messaging/src/service.rs::atomic_recent_selection_rolls_back_actor_projection_on_mutation_and_persistence_failure",
         "desktop/e2e/mahayana-agent-workbench.spec.ts::canonical participant search selection persists Recent Peers through the shipping renderer and Host"
       ],
-      "target_commit": "494de75d926f36bb4f2fda38d55623d20d58af96",
-      "workflow_run": 38272194858,
+      "target_commit": "92944016319539f8115607f05aeeff0c7fb7de4f",
+      "workflow_run": 38273831359,
       "run_attempt": 1,
       "job": "rust-host / Test canonical Fabushi messaging responsibilities",
-      "artifact_id": 11756974159,
-      "artifact_digest": "sha256:4fd735a81b14af668e3de3fcdec32bcc6912246df8fb285f8258c6dc0751f9b0",
+      "artifact_id": 11758446321,
+      "artifact_digest": "sha256:e825c99c7d10dacc5ea0466843fe00948de7dc5b5018f5f2abeaee9706c55248",
       "composition_root": "Fabushi ProductShell -> Messages -> ConversationWorkspace",
       "composition_slot": "Canonical Conversation child collection/runtime",
       "capability_component": "Typed Conversation child capability",
@@ -9213,8 +9229,8 @@
       "coverage_matrix_status": "implemented-current-exact-head-production-and-shipping-e2e-evidence-captured",
       "flake_status": "current-exact-head-success",
       "test_execution_evidence": [
-        "github-actions:38272194858:job-114889158111:success@494de75d926f36bb4f2fda38d55623d20d58af96",
-        "github-actions:38272194813:job-114889364816:success@494de75d926f36bb4f2fda38d55623d20d58af96"
+        "github-actions:38273831359:job-114894361960:success@92944016319539f8115607f05aeeff0c7fb7de4f",
+        "github-actions:38273831135:job-114894360906:success@92944016319539f8115607f05aeeff0c7fb7de4f"
       ],
       "acceptance_reviewer": null,
       "release_gate_status": "pending",
@@ -9325,10 +9341,10 @@
         "native/mahayana-messaging/src/service.rs::MessagingService::handle -> transactional engine/cursor rollback on command or persistence failure"
       ],
       "production_evidence": [
-        "exact-head:494de75d926f36bb4f2fda38d55623d20d58af96",
-        "github-actions:38272194858:job-114889158111:success",
-        "artifact:11756974159:sha256:4fd735a81b14af668e3de3fcdec32bcc6912246df8fb285f8258c6dc0751f9b0",
-        "source-authority:38272194858:job-114889158201:artifact-11757920879:sha256:3496e286cbb424eaad580e8f4a5805536cb2e60547e6c37dd6ed27700ed3c894"
+        "exact-head:92944016319539f8115607f05aeeff0c7fb7de4f",
+        "github-actions:38273831359:job-114894361960:success",
+        "artifact:11758446321:sha256:e825c99c7d10dacc5ea0466843fe00948de7dc5b5018f5f2abeaee9706c55248",
+        "source-authority:38273831359:job-114894362277:artifact-11758466363:sha256:1cf412bb2399e3c6f6dbf7ad5cfd80c907692244a3070439b0d22837befbbcb6"
       ],
       "test_evidence": [
         "native/mahayana-messaging/src/engine.rs::shared_media_projection_is_typed_derived_and_saved_sublist_fail_closed",
@@ -9341,12 +9357,12 @@
         "native/mahayana-messaging/tests/m4_media_contract.rs::media_resolve_refresh_fences_stale_callbacks_and_cancel_is_terminal_for_a_lease",
         "native/mahayana-messaging/tests/m4_media_contract.rs::media_resolve_teardown_cancels_all_current_generations_and_fences_late_completion"
       ],
-      "target_commit": "494de75d926f36bb4f2fda38d55623d20d58af96",
-      "workflow_run": 38272194858,
+      "target_commit": "92944016319539f8115607f05aeeff0c7fb7de4f",
+      "workflow_run": 38273831359,
       "run_attempt": 1,
       "job": "rust-host / Test canonical Fabushi messaging responsibilities",
-      "artifact_id": 11756974159,
-      "artifact_digest": "sha256:4fd735a81b14af668e3de3fcdec32bcc6912246df8fb285f8258c6dc0751f9b0",
+      "artifact_id": 11758446321,
+      "artifact_digest": "sha256:e825c99c7d10dacc5ea0466843fe00948de7dc5b5018f5f2abeaee9706c55248",
       "composition_root": "Fabushi ProductShell -> Messages -> ConversationWorkspace",
       "composition_slot": "Canonical Conversation child collection/runtime",
       "capability_component": "Typed Conversation child capability",
@@ -9456,7 +9472,7 @@
       "coverage_matrix_status": "implemented-current-exact-head-native-evidence-service-feed-blocked",
       "flake_status": "current-exact-head-success",
       "test_execution_evidence": [
-        "github-actions:38272194858:job-114889158111:success@494de75d926f36bb4f2fda38d55623d20d58af96"
+        "github-actions:38273831359:job-114894361960:success@92944016319539f8115607f05aeeff0c7fb7de4f"
       ],
       "acceptance_reviewer": null,
       "release_gate_status": "pending",
@@ -9596,10 +9612,10 @@
         "native/mahayana-messaging/src/service.rs::MessagingService::handle -> transactional engine/cursor rollback on command or persistence failure"
       ],
       "production_evidence": [
-        "exact-head:494de75d926f36bb4f2fda38d55623d20d58af96",
-        "github-actions:38272194858:job-114889158111:success",
-        "artifact:11756974159:sha256:4fd735a81b14af668e3de3fcdec32bcc6912246df8fb285f8258c6dc0751f9b0",
-        "source-authority:38272194858:job-114889158201:artifact-11757920879:sha256:3496e286cbb424eaad580e8f4a5805536cb2e60547e6c37dd6ed27700ed3c894"
+        "exact-head:92944016319539f8115607f05aeeff0c7fb7de4f",
+        "github-actions:38273831359:job-114894361960:success",
+        "artifact:11758446321:sha256:e825c99c7d10dacc5ea0466843fe00948de7dc5b5018f5f2abeaee9706c55248",
+        "source-authority:38273831359:job-114894362277:artifact-11758466363:sha256:1cf412bb2399e3c6f6dbf7ad5cfd80c907692244a3070439b0d22837befbbcb6"
       ],
       "test_evidence": [
         "native/mahayana-messaging/src/engine.rs::shared_media_projection_is_typed_derived_and_saved_sublist_fail_closed",
@@ -9612,12 +9628,12 @@
         "native/mahayana-messaging/tests/m4_media_contract.rs::media_resolve_refresh_fences_stale_callbacks_and_cancel_is_terminal_for_a_lease",
         "native/mahayana-messaging/tests/m4_media_contract.rs::media_resolve_teardown_cancels_all_current_generations_and_fences_late_completion"
       ],
-      "target_commit": "494de75d926f36bb4f2fda38d55623d20d58af96",
-      "workflow_run": 38272194858,
+      "target_commit": "92944016319539f8115607f05aeeff0c7fb7de4f",
+      "workflow_run": 38273831359,
       "run_attempt": 1,
       "job": "rust-host / Test canonical Fabushi messaging responsibilities",
-      "artifact_id": 11756974159,
-      "artifact_digest": "sha256:4fd735a81b14af668e3de3fcdec32bcc6912246df8fb285f8258c6dc0751f9b0",
+      "artifact_id": 11758446321,
+      "artifact_digest": "sha256:e825c99c7d10dacc5ea0466843fe00948de7dc5b5018f5f2abeaee9706c55248",
       "composition_root": "Fabushi ProductShell -> Messages -> ConversationWorkspace",
       "composition_slot": "Canonical Conversation child collection/runtime",
       "capability_component": "Typed Conversation child capability",
@@ -9727,7 +9743,7 @@
       "coverage_matrix_status": "implemented-current-exact-head-native-evidence-service-feed-blocked",
       "flake_status": "current-exact-head-success",
       "test_execution_evidence": [
-        "github-actions:38272194858:job-114889158111:success@494de75d926f36bb4f2fda38d55623d20d58af96"
+        "github-actions:38273831359:job-114894361960:success@92944016319539f8115607f05aeeff0c7fb7de4f"
       ],
       "acceptance_reviewer": null,
       "release_gate_status": "pending",
@@ -13634,6 +13650,263 @@
       "license_and_provenance": "Behavior was source-informed from accepted telegramdesktop/tdesktop ComposeStash/StashManager code and rewritten into existing Fabushi canonical composer owners; no Telegram C++ runtime or UI root is retained.",
       "reviewer": null,
       "notes": "Implemented scope now includes keyed transient exchange plus canonical saved-draft send/remove actions. Saved-draft send uses the existing submission/Host transport and exact-content compare-and-remove; remove retains queued-send attachment references. Forward-draft integration, silent-send, durable schedule/reminder, full topic/child Mahayana composition, and exact-head acceptance remain open and must not be inferred complete."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "63a1831728147e941ad2dc8939879cf5afe419c7",
+      "source_path": ".github/workflows/canary.yml",
+      "source_blob_sha": "cff0a8cd8bb0008ddd1dc833c37005c8890e6a8c",
+      "source_kind": "workflow",
+      "module_id": "tdesktop.release.canary",
+      "responsibility_id": "TDRP-R9-RELEASE-CANARY-SEMANTICS-001",
+      "source_symbols": [
+        "version: repository/lane/branch fencing and stale-tip refusal",
+        "version: monotonic github.run_number + CANARY_COUNTER_BASE ordering",
+        "permissions: contents:read globally; id-token:write only on signing/packing jobs",
+        "windows: Authenticode signing and portable/update packaging",
+        "macos: dual-arch build, universal assembly, codesign, notarization, stapling and assessment",
+        "linux: isolated x64 package/update build and portable archive",
+        "pack: v2 update envelope signing through OIDC-backed key",
+        "publish-*: per-platform independent publication and metadata ownership",
+        "CANARY_ALLOW_UNSIGNED: explicit bring-up-only isolation",
+        "CANARY_BOT_API_IMAGE: digest-pinned publication transport",
+        "symbols: breakpad symbol extraction/publication inputs"
+      ],
+      "capability_ids": [
+        "CAP-RELEASE-SIGNED-PACKAGING",
+        "CAP-UPDATER-TRUST",
+        "CAP-RELEASE-PROVENANCE"
+      ],
+      "dependency_ids": [
+        "GitHub Actions",
+        "platform signing identities",
+        "Fabushi updater metadata"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/canary-release-pipeline-order-58.md",
+      "behavior_contract": "A Fabushi release candidate must be exact-source bound, stale-tip safe, monotonically ordered, least-privilege signed, independently packageable per platform, provenance-bearing and accepted by the canonical updater without introducing a Telegram release runtime.",
+      "state_machine": "exact current source tip -> derive monotonic release identity -> platform-isolated build -> platform signature/notary -> signed updater metadata/envelope -> portable/installable package -> checksum/provenance -> publication/acceptance; any trust or identity failure fails closed.",
+      "side_effects": [
+        "signed release artifacts",
+        "updater metadata",
+        "checksums/provenance",
+        "release publication"
+      ],
+      "failure_cases": [
+        "stale source tip",
+        "wrong release lane/repository",
+        "counter regression",
+        "excess secret/OIDC scope",
+        "signature/notary failure",
+        "unsigned production publication",
+        "update trust failure",
+        "cross-platform package failure",
+        "provenance mismatch"
+      ],
+      "ui_disposition": "Non-UI shipping release responsibility; no Telegram-branded surface.",
+      "non_ui_responsibilities": [
+        "Release lane, branch, repository-visibility and current-tip fencing",
+        "Reject stale workflow reruns from republishing old source as a newer update",
+        "Monotonic build/update counter independent of branch history",
+        "Least-privilege workflow/OIDC/secret boundary",
+        "Windows platform signing and portable package",
+        "macOS universal package signing, notarization, stapling and execution assessment",
+        "Linux portable package and updater artifact",
+        "v2 update signing/trust semantics and signed envelope",
+        "Strict separation of unsigned bring-up from formal signed publication",
+        "Digest-pinned publication infrastructure",
+        "Per-platform build/publication failure isolation",
+        "Symbols, checksums/provenance and publication metadata",
+        "Update publication ordering and independently owned platform metadata"
+      ],
+      "platform_delta": "Telegram Bot API/channel transport is N/A. The applicable release semantics map to source-neutral Fabushi GitHub release/updater owners. macOS owner exists; Windows/Linux signed package/publication equivalence remains open.",
+      "existing_owner_candidates": [
+        ".github/workflows/release-macos-main.yml",
+        ".github/workflows/rust-desktop-runtime.yml",
+        "desktop packaging/update configuration and generated updater metadata",
+        "native updater contract owners exercised by Rust desktop runtime"
+      ],
+      "existing_owner": "Existing Fabushi canonical packaging/updater/release owners",
+      "rejected_existing_owners": [
+        "Telegram canary Bot API transport: source-specific and prohibited",
+        "new parallel Telegram release runtime: prohibited"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        ".github/workflows/release-macos-main.yml",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "fabushi_target_symbols": [
+        "Build, notarize, and publish macOS arm64",
+        "Updater contract / ubuntu-24.04",
+        "Updater contract / macos-15",
+        "Updater contract / windows-2025"
+      ],
+      "target_language": "GitHub Actions + existing packaging/updater implementation",
+      "language_rationale": "Release orchestration belongs to existing source-neutral Fabushi packaging/updater workflows, not a product runtime port.",
+      "command_event_contracts": [
+        "release exact source SHA -> signed package/updater artifacts -> checksums/provenance -> acceptance"
+      ],
+      "state_owner": "GitHub release workflow + canonical updater metadata",
+      "lifecycle_owner": "Fabushi release/packaging workflows",
+      "persistence_and_restart": "Release identity and updater ordering must remain monotonic and recovery-safe across reruns; installed package restart/upgrade acceptance remains release-gated.",
+      "concurrency_and_cancellation": "Per-platform failures must not falsify other platform evidence; stale-tip reruns must not publish as newer source.",
+      "security_boundary": "No Telegram Bot API or lane secret is adopted. Fabushi must preserve least-privilege signing credentials, OIDC scope, exact-source binding, stale-tip refusal and signed-update trust with source-neutral publication.",
+      "network_service_dependencies": [
+        "GitHub Actions/Release",
+        "Apple notarization for macOS",
+        "platform signing services/credentials"
+      ],
+      "service_owner": "Existing Fabushi release infrastructure",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "rewritten-partial",
+      "blockers": [
+        "Windows and Linux signed package owners plus same-release-candidate install/upgrade/restart/provenance acceptance are not yet evidenced.",
+        "Independent release acceptance remains open."
+      ],
+      "production_entrypoints": [
+        ".github/workflows/release-macos-main.yml::Build, notarize, and publish macOS arm64",
+        ".github/workflows/rust-desktop-runtime.yml::Updater contract / ubuntu-24.04|macos-15|windows-2025"
+      ],
+      "production_evidence": [
+        "github-actions:38273831359:success@92944016319539f8115607f05aeeff0c7fb7de4f",
+        "github-actions:38273831359:job-114894362259:Updater contract / ubuntu-24.04:success",
+        "github-actions:38273831359:job-114894362334:Updater contract / macos-15:success",
+        "github-actions:38273831359:job-114894362359:Updater contract / windows-2025:success",
+        "artifact:11758466363:sha256:1cf412bb2399e3c6f6dbf7ad5cfd80c907692244a3070439b0d22837befbbcb6"
+      ],
+      "test_evidence": [
+        ".github/workflows/rust-desktop-runtime.yml updater contract matrix",
+        ".github/workflows/release-macos-main.yml signed/notarized packaged acceptance"
+      ],
+      "target_commit": "92944016319539f8115607f05aeeff0c7fb7de4f",
+      "workflow_run": 38273831359,
+      "run_attempt": 1,
+      "job": "Updater contract matrix",
+      "artifact_id": 11758466363,
+      "artifact_digest": "sha256:1cf412bb2399e3c6f6dbf7ad5cfd80c907692244a3070439b0d22837befbbcb6",
+      "composition_root": "Fabushi release engineering",
+      "composition_slot": "Packaging / updater / publication",
+      "capability_component": "Signed release pipeline",
+      "variation_axes": [
+        "macOS",
+        "Windows",
+        "Linux",
+        "signed vs bring-up-only unsigned"
+      ],
+      "shared_owner_contracts": [
+        "exact-source authority",
+        "canonical updater trust",
+        "release provenance"
+      ],
+      "duplicate_root_check": "No Telegram canary runtime or second updater/release owner introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "not-applicable",
+      "primary_navigation_target": "not-applicable",
+      "collection_surface": "not-applicable",
+      "creation_flow": "not-applicable",
+      "object_action_scope": "release engineering",
+      "detail_section": "not-applicable",
+      "capability_surface": "release pipeline",
+      "route_contract": "not-applicable",
+      "search_scope": "not-applicable",
+      "search_provider": "not-applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "not-applicable",
+      "search_local_remote_contract": "not-applicable",
+      "responsive_disposition": "not-applicable",
+      "accessibility_contract": "not-applicable",
+      "keyboard_contract": "not-applicable",
+      "state_continuity_contract": "Updater/release ordering and trust must survive reruns, restart and upgrade without rollback to stale code.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "not-applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "not-applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "not-applicable",
+      "icon_asset_contract": "not-applicable",
+      "avatar_contract": "not-applicable",
+      "content_copy_keys": [],
+      "motion_contract": "not-applicable",
+      "reduced_motion_contract": "not-applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "critical",
+      "requirement_ids": [
+        "TDRP-R9-RELEASE-CANARY-SEMANTICS-001",
+        "AC-47",
+        "AC-48",
+        "AC-49",
+        "AC-50"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-RELEASE-EXACT-SOURCE-001",
+        "ORA-TDRP-UPDATER-TRUST-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-RELEASE-NO-STALE-TIP-001",
+        "INV-TDRP-RELEASE-MONOTONIC-001",
+        "INV-TDRP-RELEASE-SIGNED-PRODUCTION-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-UPDATER-MATRIX-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-RELEASE-PACKAGING-001"
+      ],
+      "functional_e2e_case_ids": [
+        "E2E-TDRP-SIGNED-PACKAGE-UPGRADE-001"
+      ],
+      "temporal_case_ids": [
+        "TEMP-TDRP-UPDATER-MONOTONIC-001"
+      ],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-RELEASE-STALE-RERUN-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [
+        "SOAK-TDRP-UPDATER-RESTART-001"
+      ],
+      "security_case_ids": [
+        "SEC-TDRP-RELEASE-LEAST-PRIVILEGE-001",
+        "SEC-TDRP-UPDATE-SIGNATURE-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-FABUSHI-BOT-PACKAGED-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-PACKAGING",
+        "G-UPDATER",
+        "G-PROVENANCE",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "GitHub Actions only"
+      ],
+      "coverage_matrix_status": "mapped-macos-owner-and-three-platform-updater-contracts-evidenced-windows-linux-signed-package-acceptance-open",
+      "flake_status": "current-exact-head-success-for-existing-contracts",
+      "test_execution_evidence": [
+        "github-actions:38273831359:success@92944016319539f8115607f05aeeff0c7fb7de4f"
+      ],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending"
     }
   ],
   "rebaseline": {

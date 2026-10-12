@@ -1252,11 +1252,61 @@
       "side_effects": "signed platform binaries, update envelopes, portable archives, symbols and release-channel publication",
       "failure_cases": "stale/non-tip source, wrong repository/lane, missing channel metadata, unpinned Bot API image, build/toolchain mismatch, missing signing credentials, failed Authenticode/codesign/notary/staple/spctl, update trust failure, architecture mismatch, unsigned publish, artifact/publish failure",
       "ui_disposition": "non-UI but shipping release/update responsibility; no source-branded UI component",
-      "fabushi_canonical_owner": "Fabushi canonical packaging/updater/release workflows; existing mac owner is .github/workflows/release-macos-main.yml, Windows/Linux signed packaging and cross-platform update-channel equivalence remain open",
-      "fabushi_target": ".github/workflows/release-macos-main.yml + required canonical Windows/Linux packaging/updater owners",
+      "fabushi_canonical_owner": "Fabushi canonical packaging/updater/release workflows",
+      "fabushi_target": ".github/workflows/release-macos-main.yml + existing updater contracts + missing source-neutral Windows/Linux signed package owners",
       "platform_differences": "Windows x64 Authenticode + portable zip; mac x86_64/arm64 thin builds assembled universal, Developer ID/notary/staple/spctl, per-arch updates; Linux x64 container build + portable tar.xz; independent publish lanes",
       "production_evidence": "Fabushi macOS owner currently proves exact-source Developer ID/notarization/stapling/updater metadata/installed packaged acceptance/checksums; no equivalent complete Windows/Linux canary/update publication evidence found at current head",
-      "test_evidence": "Telegram source requires update trust-chain tests and signature witnesses; Fabushi current exact-head CI has updater contracts but full three-platform signed packaging/publication acceptance is still open"
+      "test_evidence": "Telegram source requires update trust-chain tests and signature witnesses; Fabushi current exact-head CI has updater contracts but full three-platform signed packaging/publication acceptance is still open",
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/canary-release-pipeline-order-58.md",
+      "source_symbols": [
+        "version: repository/lane/branch fencing and stale-tip refusal",
+        "version: monotonic github.run_number + CANARY_COUNTER_BASE ordering",
+        "permissions: contents:read globally; id-token:write only on signing/packing jobs",
+        "windows: Authenticode signing and portable/update packaging",
+        "macos: dual-arch build, universal assembly, codesign, notarization, stapling and assessment",
+        "linux: isolated x64 package/update build and portable archive",
+        "pack: v2 update envelope signing through OIDC-backed key",
+        "publish-*: per-platform independent publication and metadata ownership",
+        "CANARY_ALLOW_UNSIGNED: explicit bring-up-only isolation",
+        "CANARY_BOT_API_IMAGE: digest-pinned publication transport",
+        "symbols: breakpad symbol extraction/publication inputs"
+      ],
+      "responsibilities": [
+        "Release lane, branch, repository-visibility and current-tip fencing",
+        "Reject stale workflow reruns from republishing old source as a newer update",
+        "Monotonic build/update counter independent of branch history",
+        "Least-privilege workflow/OIDC/secret boundary",
+        "Windows platform signing and portable package",
+        "macOS universal package signing, notarization, stapling and execution assessment",
+        "Linux portable package and updater artifact",
+        "v2 update signing/trust semantics and signed envelope",
+        "Strict separation of unsigned bring-up from formal signed publication",
+        "Digest-pinned publication infrastructure",
+        "Per-platform build/publication failure isolation",
+        "Symbols, checksums/provenance and publication metadata",
+        "Update publication ordering and independently owned platform metadata"
+      ],
+      "existing_owner_candidates": [
+        ".github/workflows/release-macos-main.yml",
+        ".github/workflows/rust-desktop-runtime.yml",
+        "desktop packaging/update configuration and generated updater metadata",
+        "native updater contract owners exercised by Rust desktop runtime"
+      ],
+      "chosen_owner": "Existing Fabushi canonical packaging/updater/release owners; no Telegram canary runtime",
+      "production_entrypoints": [
+        ".github/workflows/release-macos-main.yml::Build, notarize, and publish macOS arm64",
+        ".github/workflows/rust-desktop-runtime.yml::Updater contract / ubuntu-24.04|macos-15|windows-2025"
+      ],
+      "current_head_evidence": [
+        "github-actions:38273831359:success@92944016319539f8115607f05aeeff0c7fb7de4f",
+        "github-actions:38273831359:job-114894362259:Updater contract / ubuntu-24.04:success",
+        "github-actions:38273831359:job-114894362334:Updater contract / macos-15:success",
+        "github-actions:38273831359:job-114894362359:Updater contract / windows-2025:success",
+        "artifact:11758466363:sha256:1cf412bb2399e3c6f6dbf7ad5cfd80c907692244a3070439b0d22837befbbcb6"
+      ],
+      "security_boundary": "No Telegram Bot API or lane secret is adopted. Fabushi must preserve least-privilege signing credentials, OIDC scope, exact-source binding, stale-tip refusal and signed-update trust with source-neutral publication.",
+      "licensing_provenance": "Behavioral release semantics are reimplemented source-neutrally; no Telegram publication runtime or branded transport is embedded. Exact upstream blob cff0a8cd8bb0008ddd1dc833c37005c8890e6a8c remains provenance authority.",
+      "evidence_gap": "macOS exact-source signing/notarization/package owner exists; Windows/Linux signed package + real install/upgrade/restart/publication/provenance acceptance on one release-candidate SHA remain open. Therefore order 58 stays mapped-incomplete and unknown_closed=false."
     },
     {
       "recursive_order": 59,
