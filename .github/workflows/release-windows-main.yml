@@ -191,6 +191,15 @@ jobs:
           npm run check:desktop-runtime
           node scripts/check-desktop-bundle.mjs
 
+      - name: Stamp exact source into packaged metadata
+        shell: bash
+        env:
+          SOURCE_SHA: ${{ steps.source.outputs.sha }}
+        run: |
+          set -euo pipefail
+          node -e 'const fs=require("fs");const p="desktop/package.json";const j=JSON.parse(fs.readFileSync(p,"utf8"));j.fabushiSourceSha=process.env.SOURCE_SHA;fs.writeFileSync(p,JSON.stringify(j,null,2)+"\\n")'
+          node -e 'const p=require("./desktop/package.json"); if(p.fabushiSourceSha!==process.env.SOURCE_SHA) process.exit(1)'
+
       - name: Package signed NSIS installer
         working-directory: desktop
         shell: pwsh
@@ -296,6 +305,7 @@ jobs:
           OBF_REAL_ACCEPTANCE: '1'
           OBF_SOURCE_SHA: ${{ steps.source.outputs.sha }}
           OBF_EXPECTED_SOURCE_SHA: ${{ steps.source.outputs.sha }}
+          OBF_EXPECTED_VERSION: ${{ steps.source.outputs.version }}
           OBF_EVIDENCE_DIR: ${{ runner.temp }}\fabushi-candidate-acceptance
           FABUSHI_ELECTRON_EXECUTABLE: ${{ steps.candidate.outputs.executable }}
           FABUSHI_FEATURE_HOST_MODE: production
