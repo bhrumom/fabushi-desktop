@@ -324,6 +324,7 @@ export function createProductionUpdaterInstallerBinding(
       const getHostStatus = coordinatorHostStatus(context);
       const updateService = createUpdateServiceWiring({
         currentVersion: context.resources.metadata.version,
+        ...(context.resources.metadata.sourceSha === undefined ? {} : { currentSourceSha: context.resources.metadata.sourceSha }),
         buildDefaultTrack: isSandUpdateTrack(context.resources.metadata.sandTrack)
           ? context.resources.metadata.sandTrack
           : null,
