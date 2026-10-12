@@ -1,0 +1,632 @@
+name: TDRP Revision 9 source authority
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  candidate-authority:
+    name: Source authority / recursive inventory
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact event SHA
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - name: Assert exact checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+      - name: Validate Revision 9 source authority
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/validate-tdrp-revision9-authority.mjs
+      - name: Assert source closure remains fail-closed
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const lock = require('./projects/telegram-desktop-rust/upstream.lock.json');
+          if (lock.upstream.accepted === true) {
+            const evidence = lock.baseline_identity_evidence;
+            if (evidence == null || !Number.isInteger(evidence.run_id) || typeof evidence.validation_head_sha !== 'string' || typeof evidence.artifact_digest !== 'string') {
+              throw new Error('accepted baseline identity requires explicit GitHub Actions provenance');
+            }
+          }
+          if (lock.acceptance.accepted !== false || lock.acceptance.baseline_ready !== false) throw new Error('source closure must remain false until zero-counter closure');
+          if (!(lock.coverage.unknown_minimum > 0 && lock.coverage.unread_minimum > 0)) throw new Error('source closure must not fabricate semantic coverage');
+          NODE
+      - name: Discover build-time acquisition candidates at exact upstream
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/tdrp-authority
+          : > artifacts/tdrp-authority/build-time-acquisition-candidates.txt
+          upstream_sha="$(node -p "require('./projects/telegram-desktop-rust/upstream.lock.json').upstream.commit")"
+          work="$RUNNER_TEMP/tdesktop-acquisition-scan"
+          git clone --filter=blob:none --no-checkout https://github.com/telegramdesktop/tdesktop.git "$work"
+          git -C "$work" checkout --detach "$upstream_sha"
+          test "$(git -C "$work" rev-parse HEAD)" = "$upstream_sha"
+          (
+            cd "$work"
+            grep -RInE --exclude-dir=.git --exclude='*.patch' --exclude='*.diff' \
+              '(git[[:space:]]+(clone|fetch|submodule)|curl[[:space:]]|wget[[:space:]]|(^|[;&|[:space:]])(iwr|Invoke-WebRequest)[[:space:]]|git\+https?://|^[[:space:]]*source[[:space:]]*:|source-(url|commit|tag|branch):|GIT_REPOSITORY|GIT_TAG|URL[[:space:]]+https?://|python(3(\.[0-9]+)*)?[[:space:]]+-m[[:space:]]+pip[[:space:]]+install|pip(3)?[[:space:]]+install|pacman[[:space:]]+-S|apt(-get)?[[:space:]]+(install|update)|dnf[[:space:]][^#]*install|brew[[:space:]]+install|cargo[[:space:]]+install|uses:[[:space:]]|^[[:space:]]*FROM[[:space:]]|https://github\.com/.+\.git|https://gitlab\.com/.+\.git)' \
+              Telegram/build Telegram/cmake cmake snap tools .github 2>/dev/null || true
+          ) | LC_ALL=C sort -u > "$GITHUB_WORKSPACE/artifacts/tdrp-authority/build-time-acquisition-candidates.txt"
+          test -s artifacts/tdrp-authority/build-time-acquisition-candidates.txt
+          actual_count="$(wc -l < artifacts/tdrp-authority/build-time-acquisition-candidates.txt | tr -d '[:space:]')"
+          expected_count="$(node -p "require('./projects/telegram-desktop-rust/inventory/build-time-acquisitions.json').discovery.candidate_lines_total")"
+          if [ "$actual_count" != "$expected_count" ]; then
+            echo "::error::build-time acquisition candidate drift: discovered $actual_count, inventory expects $expected_count"
+            exit 1
+          fi
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const inventory = require('./projects/telegram-desktop-rust/inventory/build-time-acquisitions.json');
+          const discovered = fs.readFileSync('artifacts/tdrp-authority/build-time-acquisition-candidates.txt', 'utf8').split(/\r?\n/).filter(Boolean);
+          const liveKeys = new Set(discovered.map(line => {
+            const match = line.match(/^(.*):(\d+):/);
+            if (!match) throw new Error('unparseable acquisition discovery line: ' + line);
+            return match[1] + ':' + match[2];
+          }));
+          const hasLiveKey = (key) => liveKeys.has(key);
+          const classified = new Set();
+          for (const item of inventory.immutable_commit_pin_occurrences || []) {
+            const key = item.source_path + ':' + item.source_line;
+            if (!hasLiveKey(key)) throw new Error('immutable acquisition missing from live discovery: ' + key);
+            if (classified.has(key)) throw new Error('duplicate classified acquisition: ' + key);
+            classified.add(key);
+          }
+          for (const group of inventory.candidate_disposition_groups || []) {
+            for (const line of group.source_lines || []) {
+              const key = group.source_path + ':' + line;
+              if (!hasLiveKey(key)) throw new Error('dispositioned acquisition missing from live discovery: ' + key);
+              if (classified.has(key)) throw new Error('duplicate classified acquisition: ' + key);
+              classified.add(key);
+            }
+          }
+          if (classified.size !== inventory.discovery.candidate_lines_classified) throw new Error('classified acquisition count disagrees with explicit live keys');
+          if (discovered.length - classified.size !== inventory.discovery.candidate_lines_pending_classification) throw new Error('pending acquisition count disagrees with live discovery');
+          NODE
+
+      - name: Discover external recursive child authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/discover-tdrp-external-child-authority.mjs
+
+      - name: Discover root mutable and tool authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/discover-tdrp-root-open-authority.mjs
+
+      - name: Discover tool and versioned source authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/discover-tdrp-root-tool-authority.mjs
+
+      - name: Upload source-authority evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: tdrp-revision9-authority-${{ github.sha }}
+          path: artifacts/tdrp-authority
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+
+  accepted-gate-contract:
+    name: Accepted gate is executable and fail-closed
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - name: Verify full source-closure mode rejects current open baseline
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if node scripts/validate-tdrp-revision9-authority.mjs --require-accepted > accepted.log 2>&1; then
+            cat accepted.log
+            echo "full source-closure gate unexpectedly passed before P0 closure" >&2
+            exit 1
+          fi
+          grep -E 'accepted mode requires|G-INVENTORY' accepted.log
+          echo "Fail-closed source-closure gate correctly rejected the unclosed baseline."
+
+  recursive-root-authority-shards:
+    name: Recursive root authority shard ${{ matrix.shard }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+    env:
+      SHARD_INDEX: ${{ matrix.shard }}
+      SHARD_COUNT: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - name: Assert exact checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+      - name: Recursively discover locked root source authorities
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/discover-tdrp-recursive-root-authority.mjs
+      - name: Upload recursive root authority shard
+        uses: actions/upload-artifact@v4
+        with:
+          name: tdrp-recursive-root-${{ github.sha }}-${{ matrix.shard }}
+          path: artifacts/tdrp-recursive-root
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+
+  recursive-root-authority-gate:
+    name: Recursive root authority accounting gate
+    needs: recursive-root-authority-shards
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      SHARD_COUNT: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - name: Assert exact checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+      - name: Download all recursive authority shards
+        uses: actions/download-artifact@v4
+        with:
+          pattern: tdrp-recursive-root-${{ github.sha }}-*
+          path: artifacts/tdrp-recursive-merged
+          merge-multiple: true
+      - name: Prove every locked source authority was scanned exactly once
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/discover-tdrp-recursive-root-authority.mjs --validate-reports artifacts/tdrp-recursive-merged
+      - name: Upload aggregate recursive authority evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: tdrp-recursive-root-aggregate-${{ github.sha }}
+          path: artifacts/tdrp-recursive-merged
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+
+  recursive-child-authority-shards:
+    name: Recursive child authority shard ${{ matrix.shard }}
+    needs: recursive-root-authority-gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]
+    env:
+      SHARD_INDEX: ${{ matrix.shard }}
+      SHARD_COUNT: 24
+      PARENT_REPORT_DIR: artifacts/tdrp-parent-recursive
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - name: Assert exact checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+      - name: Download parent recursive authority evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: tdrp-recursive-root-aggregate-${{ github.sha }}
+          path: artifacts/tdrp-parent-recursive
+      - name: Recursively discover next immutable child layer
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/discover-tdrp-recursive-child-layer.mjs
+      - name: Upload child recursive authority shard
+        uses: actions/upload-artifact@v4
+        with:
+          name: tdrp-recursive-child-${{ github.sha }}-${{ matrix.shard }}
+          path: artifacts/tdrp-recursive-child
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+
+  recursive-child-authority-gate:
+    name: Recursive child authority accounting gate
+    needs: recursive-child-authority-shards
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      SHARD_COUNT: 24
+      PARENT_REPORT_DIR: artifacts/tdrp-parent-recursive
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - name: Assert exact checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+      - name: Download parent recursive authority evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: tdrp-recursive-root-aggregate-${{ github.sha }}
+          path: artifacts/tdrp-parent-recursive
+      - name: Download child recursive authority shards
+        uses: actions/download-artifact@v4
+        with:
+          pattern: tdrp-recursive-child-${{ github.sha }}-*
+          path: artifacts/tdrp-recursive-child-merged
+          merge-multiple: true
+      - name: Prove every newly discovered immutable child was scanned exactly once
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/discover-tdrp-recursive-child-layer.mjs --validate-reports artifacts/tdrp-recursive-child-merged
+      - name: Upload aggregate child recursive authority evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: tdrp-recursive-child-aggregate-${{ github.sha }}
+          path: artifacts/tdrp-recursive-child-merged
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+
+  recursive-next-authority-shards:
+    name: Recursive next authority shard ${{ matrix.shard }}
+    needs: recursive-child-authority-gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    env:
+      SHARD_INDEX: ${{ matrix.shard }}
+      SHARD_COUNT: 16
+      PARENT_REPORT_DIR: artifacts/tdrp-layer-parent
+      ALREADY_REPORT_DIRS: artifacts/tdrp-layer-root:artifacts/tdrp-layer-parent
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - name: Assert exact checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+      - name: Download root recursive authority evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: tdrp-recursive-root-aggregate-${{ github.sha }}
+          path: artifacts/tdrp-layer-root
+      - name: Download child recursive authority evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: tdrp-recursive-child-aggregate-${{ github.sha }}
+          path: artifacts/tdrp-layer-parent
+      - name: Recursively discover third immutable authority layer
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/discover-tdrp-recursive-next-layer.mjs
+      - name: Upload next recursive authority shard
+        uses: actions/upload-artifact@v4
+        with:
+          name: tdrp-recursive-next-${{ github.sha }}-${{ matrix.shard }}
+          path: artifacts/tdrp-recursive-next
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+
+  recursive-next-authority-gate:
+    name: Recursive next authority accounting gate
+    needs: recursive-next-authority-shards
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      SHARD_COUNT: 16
+      PARENT_REPORT_DIR: artifacts/tdrp-layer-parent
+      ALREADY_REPORT_DIRS: artifacts/tdrp-layer-root:artifacts/tdrp-layer-parent
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - name: Assert exact checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+      - name: Download root recursive authority evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: tdrp-recursive-root-aggregate-${{ github.sha }}
+          path: artifacts/tdrp-layer-root
+      - name: Download child recursive authority evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: tdrp-recursive-child-aggregate-${{ github.sha }}
+          path: artifacts/tdrp-layer-parent
+      - name: Download next recursive authority shards
+        uses: actions/download-artifact@v4
+        with:
+          pattern: tdrp-recursive-next-${{ github.sha }}-*
+          path: artifacts/tdrp-recursive-next-merged
+          merge-multiple: true
+      - name: Prove every third-layer immutable authority was scanned exactly once
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/discover-tdrp-recursive-next-layer.mjs --validate-reports artifacts/tdrp-recursive-next-merged
+      - name: Upload aggregate next recursive authority evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: tdrp-recursive-next-aggregate-${{ github.sha }}
+          path: artifacts/tdrp-recursive-next-merged
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+
+
+  recursive-fixed-point-authority-gate:
+    name: Recursive authority fixed-point gate
+    needs: recursive-next-authority-gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      SCANNED_REPORT_DIRS: artifacts/tdrp-layer-root:artifacts/tdrp-layer-child:artifacts/tdrp-layer-next
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - name: Assert exact checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+      - name: Download root recursive authority evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: tdrp-recursive-root-aggregate-${{ github.sha }}
+          path: artifacts/tdrp-layer-root
+      - name: Download child recursive authority evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: tdrp-recursive-child-aggregate-${{ github.sha }}
+          path: artifacts/tdrp-layer-child
+      - name: Download third-layer recursive authority evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: tdrp-recursive-next-aggregate-${{ github.sha }}
+          path: artifacts/tdrp-layer-next
+      - name: Recursively scan until immutable gitlink authority fixed point
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/discover-tdrp-recursive-fixed-point.mjs
+      - name: Assert fixed point does not imply disposition closure
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const report = JSON.parse(fs.readFileSync('artifacts/tdrp-recursive-closure/recursive-closure-aggregate.json', 'utf8'));
+          if (report.gitlink_fixed_point_status !== 'closed') throw new Error('gitlink fixed point is not closed');
+          if (report.unresolved_gitlink_authorities !== 0) throw new Error('unresolved gitlink authorities remain');
+          if (report.source_closure_ready !== false) throw new Error('gitlink closure must not fabricate full source closure');
+          if (report.recursive_disposition_status !== 'open') throw new Error('recursive input disposition must remain open');
+          NODE
+      - name: Upload recursive fixed-point evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: tdrp-recursive-closure-${{ github.sha }}
+          path: artifacts/tdrp-recursive-closure
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+
+
+  recursive-build-reachability-gate:
+    name: Recursive build reachability gate
+    needs: recursive-fixed-point-authority-gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      REPORT_DIRS: artifacts/tdrp-layer-root:artifacts/tdrp-layer-child:artifacts/tdrp-layer-next:artifacts/tdrp-layer-closure
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - name: Assert exact checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+      - name: Download root authority evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: tdrp-recursive-root-aggregate-${{ github.sha }}
+          path: artifacts/tdrp-layer-root
+      - name: Download child authority evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: tdrp-recursive-child-aggregate-${{ github.sha }}
+          path: artifacts/tdrp-layer-child
+      - name: Download third-layer authority evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: tdrp-recursive-next-aggregate-${{ github.sha }}
+          path: artifacts/tdrp-layer-next
+      - name: Download fixed-point authority evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: tdrp-recursive-closure-${{ github.sha }}
+          path: artifacts/tdrp-layer-closure
+      - name: Audit recursive build reachability from accepted TDesktop build paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/audit-tdrp-recursive-build-reachability.mjs
+      - name: Assert reachability accounting remains fail-closed
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const report = JSON.parse(fs.readFileSync('artifacts/tdrp-recursive-reachability/recursive-build-reachability.json','utf8'));
+          if (report.target_commit !== process.env.GITHUB_SHA) throw new Error('reachability evidence HEAD drift');
+          if (report.proven_non_reachable_authorities <= 0) throw new Error('reachability audit proved no dispositions');
+          if (report.reachability_disposition_status !== 'partial-audited-open') throw new Error('reachability audit must remain partial/open');
+          if (report.source_closure_ready !== false) throw new Error('partial reachability must not fabricate source closure');
+          NODE
+      - name: Upload recursive build reachability evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: tdrp-recursive-reachability-${{ github.sha }}
+          path: artifacts/tdrp-recursive-reachability
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+
+  root-source-archive-accounting:
+    name: Root source archive accounting
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - name: Assert exact checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+      - name: Verify and inspect immutable source archives
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/discover-tdrp-root-source-archives.mjs
+      - name: Upload source archive evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: tdrp-root-source-archives-${{ github.sha }}
+          path: artifacts/tdrp-root-source-archives
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+
+
+  boost-source-archive-build-reachability:
+    name: Boost source archive build reachability
+    needs: root-source-archive-accounting
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - name: Assert exact checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+      - name: Download current-head source archive discovery
+        uses: actions/download-artifact@v4
+        with:
+          name: tdrp-root-source-archives-${{ github.sha }}
+          path: artifacts/tdrp-source-archives
+      - name: Download and verify exact Boost 1.90.0 archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "${RUNNER_TEMP}/tdrp-boost"
+          node - <<'NODE' > "${RUNNER_TEMP}/tdrp-boost/source.env"
+          const fs = require('node:fs');
+          const report = JSON.parse(fs.readFileSync('artifacts/tdrp-source-archives/root-source-archive-discovery.json','utf8'));
+          const boost = report.archives.find((item) => item.id === 'ROOT-ARCHIVE-BOOST-190');
+          if (!boost) throw new Error('Boost source archive evidence missing');
+          console.log('BOOST_URL=' + boost.url);
+          console.log('BOOST_SHA256=' + boost.actual_sha256);
+          NODE
+          source "${RUNNER_TEMP}/tdrp-boost/source.env"
+          curl --fail --location --retry 4 --retry-delay 2 "${BOOST_URL}" -o "${RUNNER_TEMP}/tdrp-boost/boost.tar.gz"
+          echo "${BOOST_SHA256}  ${RUNNER_TEMP}/tdrp-boost/boost.tar.gz" | sha256sum --check -
+          tar -xzf "${RUNNER_TEMP}/tdrp-boost/boost.tar.gz" -C "${RUNNER_TEMP}/tdrp-boost"
+      - name: Execute accepted TDesktop Boost regex build path
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "${RUNNER_TEMP}/tdrp-boost/boost_1_90_0"
+          mkdir -p "${GITHUB_WORKSPACE}/artifacts/tdrp-boost-reachability"
+          {
+            echo '$ ./bootstrap.sh --prefix=<temp>/install --with-libraries=regex'
+            ./bootstrap.sh --prefix="${RUNNER_TEMP}/tdrp-boost/install" --with-libraries=regex
+            echo '$ ./b2 release link=static -j2 install'
+            ./b2 release link=static -j2 install
+          } 2>&1 | tee "${GITHUB_WORKSPACE}/artifacts/tdrp-boost-reachability/boost-build.log"
+          cd "${GITHUB_WORKSPACE}"
+          echo "BOOST_BUILD_LOG_SHA256=$(sha256sum artifacts/tdrp-boost-reachability/boost-build.log | awk '{print $1}')" >> "${GITHUB_ENV}"
+      - name: Disposition every Boost acquisition candidate against executed build path
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/audit-tdrp-boost-archive-reachability.mjs
+      - name: Assert Boost acquisition closure is exact and scoped
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const report = JSON.parse(fs.readFileSync('artifacts/tdrp-boost-reachability/boost-build-reachability.json','utf8'));
+          if (report.target_commit !== process.env.GITHUB_SHA) throw new Error('Boost reachability HEAD drift');
+          if (report.acquisition_candidates !== 582 || report.dispositioned !== 582 || report.open !== 0) throw new Error('Boost acquisition accounting is not closed');
+          if (report.status !== 'complete-for-boost-acquisition-candidates') throw new Error('Boost candidate status is not complete');
+          if (report.source_closure_ready !== false) throw new Error('Boost candidate closure must not fabricate full source closure');
+          NODE
+      - name: Upload Boost build-reachability evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: tdrp-boost-reachability-${{ github.sha }}
+          path: artifacts/tdrp-boost-reachability
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0

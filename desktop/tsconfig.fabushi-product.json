@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "ES2024",
+    "module": "ES2022",
+    "moduleResolution": "Bundler",
+    "rootDir": "..",
+    "outDir": ".tmp-fabushi-product",
+    "strict": true,
+    "skipLibCheck": true,
+    "types": ["node"],
+    "declaration": false,
+    "sourceMap": false
+  },
+  "include": [
+    "../source/product/fabushi/fabushi-account-policy.ts",
+    "../source/product/fabushi/fabushi-account-service.contract.test.ts"
+  ]
+}
