@@ -6,8 +6,8 @@
   "target_commit": "371b72f1cd20de03dc4dff9a15ed761054968093",
   "coverage": {
     "source_entries_total": 16125,
-    "unknown": 14584,
-    "unread": 1417,
+    "unknown": 14520,
+    "unread": 1353,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,22 +13478,22 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Accepted prefix 14,708/16,125; orders 14,645-14,708 exact-read as Doxygen structure/action HTML and JS sidecars plus six diagram PNGs with exact byte identity and generated-HTML consumer evidence.",
-    "source_authority_evidence": "Exact HEAD b3b56c0e614e Source authority run 38224090293/job 114727317144 failed only because lock/ledger global coverage still reflected the prior 14,516 prefix; this descendant reconciles those authority counts and requires fresh same-head Actions.",
-    "current_source_read_through": 14708,
-    "first_unread_order": 14709,
-    "first_unread_path": "doc/gh-pages::structranges_1_1actions_1_1transform__fn-members.html"
+    "source_read_reconciliation": "Accepted prefix 14,772/16,125; orders 14,709-14,772 exact-read as Doxygen structure/action HTML and JS sidecars plus nine diagram PNGs with exact Git identity, PNG signature/byte-size, and generated-HTML consumer evidence.",
+    "source_authority_evidence": "Direct per-blob audit through 14,772 is durable on this PR lineage; fresh same-head Actions required after accounting writes.",
+    "current_source_read_through": 14772,
+    "first_unread_order": 14773,
+    "first_unread_path": "doc/gh-pages::structranges_1_1bad__optional__access.png"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "deterministic_prefix_closed": 57,
-    "development_only_non_applicable": 1467,
-    "unknown_closed": 1541,
+    "development_only_non_applicable": 1531,
+    "unknown_closed": 1605,
     "omitted": 0,
-    "read_through": 14708,
-    "first_unread_order": 14709,
-    "first_unread_path": "doc/gh-pages::structranges_1_1actions_1_1transform__fn-members.html",
+    "read_through": 14772,
+    "first_unread_order": 14773,
+    "first_unread_path": "doc/gh-pages::structranges_1_1bad__optional__access.png",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
