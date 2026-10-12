@@ -265,10 +265,10 @@
   "coverage": {
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
-    "unknown_minimum": 15736,
-    "unread_minimum": 2569,
+    "unknown_minimum": 15712,
+    "unread_minimum": 2545,
     "omitted_known": 0,
-    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 13,556; unknown=15,736, unread=2,569, omitted=0."
+    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 13,580; unknown=15,712, unread=2,545, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -282,7 +282,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Closure open. Read-through 13,556/16,125; first unread 13,557 doc/gh-pages::bc_s.png; unknown remains 15,736; product/release closure remains open."
+    "note": "Closure open. Read-through 13,580/16,125; first unread 13,581 doc/gh-pages::classDerived.html; unknown remains 15,712; product/release closure remains open."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",
@@ -629,12 +629,12 @@
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "deterministic_prefix_closed": 57,
-    "development_only_non_applicable": 315,
-    "unknown_closed": 389,
+    "development_only_non_applicable": 339,
+    "unknown_closed": 413,
     "omitted": 0,
-    "read_through": 13556,
-    "first_unread_order": 13557,
-    "first_unread_path": "doc/gh-pages::bc_s.png",
+    "read_through": 13580,
+    "first_unread_order": 13581,
+    "first_unread_path": "doc/gh-pages::classDerived.html",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {

@@ -13,10 +13,10 @@
     "recursive_non_directory_entries": 16125,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 15736,
-    "unread_minimum": 2569,
+    "unknown_minimum": 15712,
+    "unread_minimum": 2545,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through deterministic order 13,556; 45 additional individually proven Doxygen generated API HTML/JS blobs closed by explicit non-applicable dispositions; unknown 15,736; unread 2,569; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition through deterministic order 13,580; 24 additional individually proven Doxygen generated HTML/JS/static-site PNG blobs closed by explicit per-blob non-applicable dispositions; unknown 15,712; unread 2,545; omitted 0."
   },
   "latest_recursive_evidence": {
     "run_id": 38195834460,
@@ -35,7 +35,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live baseline accepted; closure open. Read-through 13,556; unread_minimum 2,569; unknown 15,736; omitted 0; first unread 13,557 is doc/gh-pages::bc_s.png.",
+  "note": "Live baseline accepted; closure open. Read-through 13,580; unread_minimum 2,545; unknown 15,712; omitted 0; first unread 13,581 is doc/gh-pages::classDerived.html.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -53,23 +53,23 @@
       6541,
       6627
     ],
-    "current_source_read_through": 13556,
-    "first_unread_order": 13557,
-    "first_unread_path": "doc/gh-pages::bc_s.png",
-    "current_head_source_authority_evidence": "Predecessor exact-head 1b906f5802e8bba7ddbd4098ceac4849f4feeec5 Source authority 38196463543/114640171027 and artifact 11722994428 preserve accepted recursive ordering only. Current accounting descendant requires fresh exact-head Actions.",
-    "source_read_reconciliation": "Accepted prefix 13,556/16,125. Orders 13,512-13,556 individually exact-read as Doxygen-generated API HTML/JS display artifacts; no directory-level N/A. unread=2,569, unknown=15,736, omitted=0.",
-    "source_authority_evidence": "Direct exact-blob reads at ericniebler/range-v3 doc/gh-pages@2dae74bb693e42d850fb0adcc9045c5b71fbdeae through order 13,556; descendant same-head Actions required."
+    "current_source_read_through": 13580,
+    "first_unread_order": 13581,
+    "first_unread_path": "doc/gh-pages::classDerived.html",
+    "current_head_source_authority_evidence": "Predecessor exact-head 79fdd63547e7985c8e99b20c28fa82bc91e253fd Desktop Chat Parity 38200664755 succeeded and Rust desktop runtime 38200664669 was in progress when this accounting batch was prepared. Current accounting descendant requires fresh exact-head Actions.",
+    "source_read_reconciliation": "Accepted prefix 13,580/16,125. Orders 13,557-13,580 individually exact-read at ericniebler/range-v3 doc/gh-pages@2dae74bb693e42d850fb0adcc9045c5b71fbdeae; HTML/JS are generated Doxygen output/indexes and PNGs were binary-validated plus reference-checked. No directory-level N/A. unread=2,545, unknown=15,712, omitted=0.",
+    "source_authority_evidence": "Direct exact-blob reads at ericniebler/range-v3 doc/gh-pages@2dae74bb693e42d850fb0adcc9045c5b71fbdeae through order 13,580; descendant same-head Actions required."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "deterministic_prefix_closed": 57,
-    "development_only_non_applicable": 315,
-    "unknown_closed": 389,
+    "development_only_non_applicable": 339,
+    "unknown_closed": 413,
     "omitted": 0,
-    "read_through": 13556,
-    "first_unread_order": 13557,
-    "first_unread_path": "doc/gh-pages::bc_s.png",
+    "read_through": 13580,
+    "first_unread_order": 13581,
+    "first_unread_path": "doc/gh-pages::classDerived.html",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }
