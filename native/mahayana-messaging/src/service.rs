@@ -3170,6 +3170,67 @@ mod recent_participant_suggestion_service_tests {
     }
 
     #[test]
+    fn recent_participant_interleaved_accounts_remain_isolated_across_restart() {
+        let owner_a = ActorId::new("human:recent-owner-a");
+        let owner_b = ActorId::new("human:recent-owner-b");
+        let peer_a = ActorId::new("human:recent-peer-a");
+        let peer_b = ActorId::new("human:recent-peer-b");
+        let mut state = crate::engine::MessagingState::default();
+        for actor in [
+            Actor::human(owner_a.0.clone(), "Owner A"),
+            Actor::human(owner_b.0.clone(), "Owner B"),
+            Actor::human(peer_a.0.clone(), "Peer A"),
+            Actor::human(peer_b.0.clone(), "Peer B"),
+        ] {
+            state.actors.insert(actor.id.clone(), actor);
+        }
+
+        let mut store = MemoryStateStore::default();
+        store
+            .save(&MessagingSnapshot::new(state, 31, 100))
+            .expect("seed messaging snapshot");
+        let mut service = MessagingService::load(store).expect("load seeded service");
+
+        service
+            .note_recent_participant_suggestion(owner_a.clone(), peer_a.clone(), 110)
+            .expect("owner A first suggestion");
+        service
+            .note_recent_participant_suggestion(owner_b.clone(), peer_b.clone(), 111)
+            .expect("owner B first suggestion");
+        service
+            .note_recent_participant_suggestion(owner_a.clone(), peer_b.clone(), 112)
+            .expect("owner A move-to-front suggestion");
+        service
+            .note_recent_participant_suggestion(owner_b.clone(), peer_a.clone(), 113)
+            .expect("owner B move-to-front suggestion");
+        service
+            .remove_recent_participant_suggestion(owner_a.clone(), peer_a.clone(), 114)
+            .expect("owner A removes only own peer");
+
+        assert_eq!(
+            service.engine().recent_participant_suggestions(&owner_a),
+            &[peer_b.clone()]
+        );
+        assert_eq!(
+            service.engine().recent_participant_suggestions(&owner_b),
+            &[peer_a.clone(), peer_b.clone()]
+        );
+        assert_eq!(service.cursor(), 31);
+
+        let store = service.into_store();
+        let restored = MessagingService::load(store).expect("restore interleaved accounts");
+        assert_eq!(
+            restored.engine().recent_participant_suggestions(&owner_a),
+            &[peer_b.clone()]
+        );
+        assert_eq!(
+            restored.engine().recent_participant_suggestions(&owner_b),
+            &[peer_a, peer_b]
+        );
+        assert_eq!(restored.cursor(), 31);
+    }
+
+    #[test]
     fn recent_participant_remove_and_clear_persistence_failures_restore_account_scope() {
         let owner = ActorId::new("human:recent-owner-rollback");
         let other = ActorId::new("human:recent-owner-other");
