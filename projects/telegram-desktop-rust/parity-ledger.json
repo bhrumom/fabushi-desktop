@@ -6989,7 +6989,16 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Source-informed reimplementation mapping from accepted telegramdesktop/tdesktop authority; no retained Telegram C++ runtime.",
       "reviewer": null,
-      "notes": "Mapped from complete-read SavedMessages authority. This row does not claim shipping completion or verification; authoritative server/native feed and exact-head evidence remain open."
+      "notes": "Mapped from complete-read SavedMessages authority. This row does not claim shipping completion or verification; authoritative server/native feed and exact-head evidence remain open.",
+      "fabushi_target_bindings": [
+        {
+          "path": "native/mahayana-messaging/src/service.rs",
+          "symbols": [
+            "reconcile_saved_sublist_parent_access"
+          ],
+          "responsibility_scope": "authoritative SavedSublist parent-access grant and revocation fencing for explicit parent-scoped SavedMessages"
+        }
+      ]
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
