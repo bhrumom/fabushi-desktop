@@ -14,7 +14,7 @@
   },
   "exact_head_evidence": {
     "production_owner_audit_head": "49b6a082e468d354c419aae7813f28a88157030a",
-    "status": "48 exact Doxygen blobs individually read; parent source-authority proved registry restoration then failed closed on stale human-document live-summary marker; descendant fixes status contract and requires fresh exact-head validation"
+    "status": "Exact-head cccbbaa0833a753b71a2d4ca698fc85eeeb7869b Source authority job 114661446563 exposed omitted nested-gitlink parent provenance beginning at order 13,448; this shard now binds source_identity.parent to the accepted recursive parent without changing disposition or responsibility classification. Descendant validation required."
   },
   "accounting": {
     "recursive_total": 16125,
@@ -45,7 +45,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "c9a4f80cea9ac643fdebe07ca74cc5cb4714b7c4",
-        "size": 6144
+        "size": 6144,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -102,7 +103,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "98b1fe056a27c95143035bc5c7318a1cfc4f400d",
-        "size": 6431
+        "size": 6431,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -159,7 +161,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "74946c2b8e3007eebad5428386caf5bb607ec86e",
-        "size": 6803
+        "size": 6803,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -216,7 +219,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "af1a857bd0262b65bada289270d35b80edd0781c",
-        "size": 6416
+        "size": 6416,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -273,7 +277,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "bd8cdff3ca26be86bc98bb3040f19769fff08170",
-        "size": 7124
+        "size": 7124,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -330,7 +335,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "bf3e90c6ad20b2e1ee398822ec5072bedaee95ef",
-        "size": 6161
+        "size": 6161,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -387,7 +393,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "6c008e30b7f1ade8244921bd6cb1bcb05e6bcf94",
-        "size": 6173
+        "size": 6173,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -444,7 +451,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "4e7ddb015578ae860b8ef7d832e09040bd35afa4",
-        "size": 6317
+        "size": 6317,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -501,7 +509,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "acbee829a168c6ff9586ee6a678d991c90889dda",
-        "size": 5894
+        "size": 5894,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -558,7 +567,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "cb497e2249af8346144e545b95daf668192ae1fa",
-        "size": 6754
+        "size": 6754,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -615,7 +625,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "94f63ea51bdea416d4b317102311b9ce68658f39",
-        "size": 7334
+        "size": 7334,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -672,7 +683,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "dcf4895ef52e19a48d3ca6d6c0fe9bc4059856ae",
-        "size": 6606
+        "size": 6606,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -729,7 +741,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "6aba558088a49f0220d126ea8c7055830952e480",
-        "size": 7126
+        "size": 7126,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -786,7 +799,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "212f1a250605fa58931b1ec015ee61ad61b25a3d",
-        "size": 6297
+        "size": 6297,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -843,7 +857,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "943aed07baecd4ca15c14e3297d134e02ebb015f",
-        "size": 6094
+        "size": 6094,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -900,7 +915,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "03614b77feb75794aced20c9b75f0010c7070e61",
-        "size": 6753
+        "size": 6753,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -957,7 +973,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "cf44c082b76a064c29bf06e8b75ac0a909ee3836",
-        "size": 7404
+        "size": 7404,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -1014,7 +1031,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "a0d02ed8b0dce0a90bda60ac3de10ba41933875f",
-        "size": 6543
+        "size": 6543,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -1071,7 +1089,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "37d140ae41491123f93a46004c0a6705b684a1e0",
-        "size": 6705
+        "size": 6705,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -1128,7 +1147,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "15005cf8247e2ae1c7de4680af456893bd9751a4",
-        "size": 7728
+        "size": 7728,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -1185,7 +1205,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "d7a2bf2946e2e7e42d7d8d9265894f5e4e4cf1a7",
-        "size": 6751
+        "size": 6751,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -1242,7 +1263,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "094049fdc71ef6ab75bed5e0d0b1db984c12206e",
-        "size": 6465
+        "size": 6465,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -1299,7 +1321,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "5970e4c21a4be27096536bfe6bb2d69143040f13",
-        "size": 6198
+        "size": 6198,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -1356,7 +1379,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "8fbcadbeb768775504b5f8d8128beaed38ee0b8c",
-        "size": 6359
+        "size": 6359,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -1413,7 +1437,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "d89a8e53f97bf9660431f533f06f821c78d60e1c",
-        "size": 6340
+        "size": 6340,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -1470,7 +1495,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "f9c1fb824d5d7bfbde7fc4d5ea771ab6b34f60c9",
-        "size": 6535
+        "size": 6535,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -1527,7 +1553,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "a085903fd7250db59df04b66df5eb73dad7a5e20",
-        "size": 6841
+        "size": 6841,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -1584,7 +1611,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "89a33e6a01a0bc7f6fe3399bb8d8998811664a3c",
-        "size": 6344
+        "size": 6344,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -1641,7 +1669,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "4e992e53c5d8777cee3d1aa80419620c4436b495",
-        "size": 6333
+        "size": 6333,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -1698,7 +1727,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "afaa3635c8698e50f79a1e8a324bb67dcc7b6198",
-        "size": 6514
+        "size": 6514,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -1755,7 +1785,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "b4693f5510c5a8eac64526ac7dac097e7e05bee7",
-        "size": 6799
+        "size": 6799,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -1812,7 +1843,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "5c457c099c723109cfbfdaf8a29821907149ba67",
-        "size": 5901
+        "size": 5901,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -1869,7 +1901,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "96737441d5c9b9148c1545e515522ffbc9eb0506",
-        "size": 6699
+        "size": 6699,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -1926,7 +1959,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "84355bc4ec20fc609f53e622b8e468dcc1d731bc",
-        "size": 7204
+        "size": 7204,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -1983,7 +2017,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "b0f97b44805130db7bbb379d06e27685dc44fe69",
-        "size": 6570
+        "size": 6570,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -2040,7 +2075,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "1a14c5059388f3422d27341a9f3a0b3f7d324c75",
-        "size": 6175
+        "size": 6175,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -2097,7 +2133,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "9e8b7df77a0b457fed5e2e0827bacdf47be9854c",
-        "size": 6116
+        "size": 6116,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -2154,7 +2191,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "854c0644a1e55513209e080e8acf9a02cc117245",
-        "size": 5928
+        "size": 5928,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -2211,7 +2249,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "dfb07f15022e4990ea51866a588652b618663222",
-        "size": 6863
+        "size": 6863,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -2268,7 +2307,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "f63f9d7c6aadbb95dbc3f9415d97910ac5befb7d",
-        "size": 8146
+        "size": 8146,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -2325,7 +2365,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "4cec806b4477f013cf046c7e7b4a6eb4a6edd407",
-        "size": 6785
+        "size": 6785,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -2382,7 +2423,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "bfa5bd3d0b049285cfaec94f9a7be9a7c453751e",
-        "size": 6440
+        "size": 6440,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -2439,7 +2481,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "cb1b31838da6575bbe25a4950fe96581cc711102",
-        "size": 5983
+        "size": 5983,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -2496,7 +2539,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "063830a8246b5be1f5c8958cba5e20660e1d4fe1",
-        "size": 6091
+        "size": 6091,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -2553,7 +2597,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "c9b17b571b69c66144cd3de1423608a31e41d200",
-        "size": 6132
+        "size": 6132,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -2610,7 +2655,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "3f35ba4dfecc64da6bce9eb069f4906b3f894990",
-        "size": 6051
+        "size": 6051,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -2667,7 +2713,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "256dadfa41f2c899a38ebb61b1c6062684da7c6e",
-        "size": 6293
+        "size": 6293,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -2724,7 +2771,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "0ad6dcbf3c67ed5ab0556f03c218cf6ade5def66",
-        "size": 6342
+        "size": 6342,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,

@@ -14,7 +14,7 @@
   },
   "exact_head_evidence": {
     "production_owner_audit_head": "e57a1b17889178f722b035b1f5b4fcce86e53e15",
-    "status": "exact blob audit complete; canonical-tree deletion residue diagnosed and repaired in descendant; fresh same-head CI required"
+    "status": "Exact-head cccbbaa0833a753b71a2d4ca698fc85eeeb7869b Source authority job 114661446563 exposed omitted nested-gitlink parent provenance beginning at order 13,448; this shard now binds source_identity.parent to the accepted recursive parent without changing disposition or responsibility classification. Descendant validation required."
   },
   "accounting": {
     "recursive_total": 16125,
@@ -45,7 +45,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "3c96e40f5a67d500316c37316267c49a6e3d53ea",
-        "size": 37627
+        "size": 37627,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -102,7 +103,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "fc8cb6258db0a9b35e1ef2de27ba74a866bb05d0",
-        "size": 1188
+        "size": 1188,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -159,7 +161,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "a44bd2f88e0fd458eb7b59a2de3281eff46388aa",
-        "size": 7522
+        "size": 7522,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -216,7 +219,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "7fea32d7727b2a39c3e481fd754732cae8797890",
-        "size": 7338
+        "size": 7338,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -273,7 +277,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "f227b22d59eefaa62588d07518b6e9b64cbec315",
-        "size": 6246
+        "size": 6246,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -330,7 +335,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "9c0a3678b6ea29871024949f7786118490d122f4",
-        "size": 103
+        "size": 103,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -387,7 +393,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "c7f5dd9d99239791d905ca686cd327bb1782c112",
-        "size": 10051
+        "size": 10051,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -444,7 +451,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "e389942ad91a600ae7411c5d031e268a523cbb66",
-        "size": 1677
+        "size": 1677,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -501,7 +509,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "0be66bbaace70bcdecdfea4f379981f721f92340",
-        "size": 5625
+        "size": 5625,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -558,7 +567,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "fc8dfa36cfcec287fbc0443cc76a0ddf36f31a24",
-        "size": 107
+        "size": 107,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -615,7 +625,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "7579357a4916cfafd76d90ee23a6065e13a71b9f",
-        "size": 6477
+        "size": 6477,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -672,7 +683,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "233cebeee76b91804fefbb003822ef9fcb5318dc",
-        "size": 6335
+        "size": 6335,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -729,7 +741,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "aff930b71d44d0d3e5e523fade81c98769ec7f2f",
-        "size": 5926
+        "size": 5926,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -786,7 +799,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "bb1eae067ea180e9b832d291042c2c4c7a02f343",
-        "size": 7024
+        "size": 7024,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -843,7 +857,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "66db73d04421f899b15eda7f5a551f65f6f0e6f6",
-        "size": 5770
+        "size": 5770,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -900,7 +915,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "ae05722f46d6ddb2a5e1404c4f9151d7d34b90d2",
-        "size": 8053
+        "size": 8053,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -957,7 +973,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "eef38bc7c765660c279bfbec56ba0ef5e2d73818",
-        "size": 6336
+        "size": 6336,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -1014,7 +1031,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "0473c09d8c83bf3070812cdf686a5f5fdc2f8ef1",
-        "size": 6812
+        "size": 6812,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -1071,7 +1089,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "500e4a748d48c3e602d46dde32ed0db25c1aca9a",
-        "size": 6212
+        "size": 6212,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -1128,7 +1147,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "e0cb667a43df2e6610e0fbbd0481dfa0db44f3bc",
-        "size": 6322
+        "size": 6322,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -1185,7 +1205,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "178189841763c01dc988f1ec01a23714c03fc934",
-        "size": 7394
+        "size": 7394,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -1242,7 +1263,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "83152bba22a31163b9bd993340f0a84e5c60a0f8",
-        "size": 6594
+        "size": 6594,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -1299,7 +1321,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "df17c249a1096f723af535ebffb60e0aff32bcb1",
-        "size": 6274
+        "size": 6274,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -1356,7 +1379,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "033f1bfa2cdfbe51dda6054417827598fe022e76",
-        "size": 5869
+        "size": 5869,
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,

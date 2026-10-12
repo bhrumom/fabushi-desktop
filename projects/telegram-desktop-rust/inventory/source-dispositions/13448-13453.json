@@ -15,7 +15,7 @@
   "exact_head_evidence": {
     "production_owner_audit_head": "f23d5f2de55f8e58b5dd338cae99186e8a7dd015",
     "predecessor_source_authority": "38196463543/114640171027 success at 1b906f5802e8bba7ddbd4098ceac4849f4feeec5; artifact 11722994428 supplies accepted recursive ordering only",
-    "status": "direct exact-blob read plus explicit documentation-only applicability disposition complete; accounting descendant exact-head validation required"
+    "status": "Exact-head cccbbaa0833a753b71a2d4ca698fc85eeeb7869b Source authority job 114661446563 exposed omitted nested-gitlink parent provenance beginning at order 13,448; this shard now binds source_identity.parent to the accepted recursive parent without changing disposition or responsibility classification. Descendant validation required."
   },
   "accounting": {
     "recursive_total": 16125,
@@ -46,7 +46,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "8c86dae5cbd19cc9311d17caddaa717e48920b24",
-        "size": 6090
+        "size": 6090,
+        "parent": "PJK/libcbor@170bee2b82cdb7b2ed25af301f62cb6efdd40ec1"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -103,7 +104,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "cc9abbf534bab2887c1658598278543e672282e9",
-        "size": 35118
+        "size": 35118,
+        "parent": "PJK/libcbor@170bee2b82cdb7b2ed25af301f62cb6efdd40ec1"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -160,7 +162,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "6bc71694ffc5c245a2b8a191555fa785cfd49460",
-        "size": 1083
+        "size": 1083,
+        "parent": "PJK/libcbor@170bee2b82cdb7b2ed25af301f62cb6efdd40ec1"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -217,7 +220,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "6573a26f7f4b8e5877ffdd7cbc471a6381bd530f",
-        "size": 25184
+        "size": 25184,
+        "parent": "PJK/libcbor@170bee2b82cdb7b2ed25af301f62cb6efdd40ec1"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -274,7 +278,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "8c86dae5cbd19cc9311d17caddaa717e48920b24",
-        "size": 6090
+        "size": 6090,
+        "parent": "PJK/libcbor@170bee2b82cdb7b2ed25af301f62cb6efdd40ec1"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
@@ -331,7 +336,8 @@
         "mode": "100644",
         "type": "blob",
         "object": "bae8cba646b3b0177a7d3986d1dfbdc0b46e19a0",
-        "size": 21152
+        "size": 21152,
+        "parent": "PJK/libcbor@170bee2b82cdb7b2ed25af301f62cb6efdd40ec1"
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
