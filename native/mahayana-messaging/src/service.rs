@@ -3042,3 +3042,42 @@ impl<S: MessagingStateStore> MessagingService<S> {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod recent_participant_suggestion_service_tests {
+    use super::*;
+    use crate::actor::Actor;
+    use crate::store::{MemoryStateStore, MessagingStateStore};
+
+    #[test]
+    fn recent_participant_suggestions_persist_without_server_journal_cursor() {
+        let owner = ActorId::new("human:recent-owner");
+        let peer = ActorId::new("human:recent-peer");
+        let mut state = crate::engine::MessagingState::default();
+        state.actors.insert(owner.clone(), Actor::human(owner.0.clone(), "Owner"));
+        state.actors.insert(peer.clone(), Actor::human(peer.0.clone(), "Peer"));
+        let mut store = MemoryStateStore::default();
+        store
+            .save(&MessagingSnapshot::new(state, 41, 100))
+            .expect("seed messaging snapshot");
+
+        let mut service = MessagingService::load(store).expect("load seeded service");
+        service
+            .note_recent_participant_suggestion(owner.clone(), peer.clone(), 110)
+            .expect("persist recent suggestion");
+        assert_eq!(service.cursor(), 41);
+        assert_eq!(service.engine().recent_participant_suggestions(&owner), &[peer.clone()]);
+
+        let store = service.into_store();
+        let persisted = store.snapshot().expect("persisted snapshot");
+        assert_eq!(persisted.cursor, 41);
+        assert_eq!(
+            persisted.state.recent_participant_suggestions.get(&owner),
+            Some(&vec![peer.clone()])
+        );
+
+        let restored = MessagingService::load(store).expect("restore service");
+        assert_eq!(restored.cursor(), 41);
+        assert_eq!(restored.engine().recent_participant_suggestions(&owner), &[peer]);
+    }
+}
