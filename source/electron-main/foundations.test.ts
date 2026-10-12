@@ -36,6 +36,7 @@ import { createDesktopAccountAuthorizer } from "./account/account-authorization.
 import { createSandRecreateCommands, type RecreateOperationId } from "./box/box-recreate-commands.js";
 import { createDesktopHostSettingsFields } from "./prefs/host-settings-fields.js";
 import { createReleaseMetadata } from "./update/release-metadata.js";
+import { readElectronPackageMetadata } from "./main-production-services.js";
 import { SandSettingsStore } from "../shared/node/settings/sand-settings-store.js";
 import { normalizeSandCallMediaPreferences, normalizeSandUiPreferences, resolveSandUiDirection } from "../shared/desktop.js";
 import { createDesktopCallMediaPort } from "./call-media.js";
@@ -848,6 +849,30 @@ test("host settings field hydrates from live box state and clears on account dep
   assert.equal(cleared, 1);
 });
 
+
+test("packaged release metadata preserves exact source identity and rejects malformed SHAs", () => {
+  const sourceSha = "0123456789abcdef0123456789abcdef01234567";
+  assert.deepEqual(
+    readElectronPackageMetadata("/tmp/fabushi/dist/electron-main", () => JSON.stringify({
+      version: "1.2.77",
+      fabushiSourceSha: sourceSha,
+    })),
+    { version: "1.2.77", sandLab: false, sourceSha },
+  );
+  assert.deepEqual(
+    readElectronPackageMetadata("/tmp/fabushi/dist/electron-main", () => JSON.stringify({
+      version: "1.2.77",
+    })),
+    { version: "1.2.77", sandLab: false },
+  );
+  assert.throws(
+    () => readElectronPackageMetadata("/tmp/fabushi/dist/electron-main", () => JSON.stringify({
+      version: "1.2.77",
+      fabushiSourceSha: "not-a-commit",
+    })),
+    /fabushiSourceSha must be a lowercase 40-character commit SHA/u,
+  );
+});
 
 test("release metadata resolves package identity and live update gates", async () => {
   const metadata = createReleaseMetadata({
