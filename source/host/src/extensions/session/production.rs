@@ -4517,6 +4517,85 @@ mod sharebox_shipping_tests {
         value.get("id").and_then(serde_json::Value::as_str).unwrap().to_string()
     }
 
+    #[test]
+    fn shipping_saved_sublist_server_authority_reconciles_durably_and_survives_restart() {
+        let root =
+            std::env::temp_dir().join(format!("fabushi-saved-authority-{}", Uuid::new_v4()));
+        let workers = test_workers(&root);
+        let destination = fabushi_messaging_core::ConversationDestination::saved_sublist(
+            fabushi_messaging_core::ConversationId::new("saved:self"),
+            fabushi_messaging_core::ActorId::new("human:peer"),
+        );
+        let entries = vec![
+            serde_json::json!({
+                "id": "human-server-message:7",
+                "kind": "message",
+                "destination": serde_json::to_value(&destination).unwrap(),
+            }),
+            serde_json::json!({
+                "id": "human-server-message:8",
+                "kind": "message",
+                "destination": serde_json::to_value(&destination).unwrap(),
+            }),
+        ];
+
+        workers
+            .reconcile_saved_sublist_authority_from_transcript(&entries)
+            .unwrap();
+
+        let actor_id = workers.story_actor_id().unwrap();
+        let messaging_root = root.join("_messaging");
+        let load = || {
+            MessagingService::load_with_blob_store(
+                MessagingJsonFileStateStore::new(messaging_root.join("snapshot.json")),
+                MessagingFileBlobStore::new(messaging_root.join("blobs")),
+            )
+            .unwrap()
+        };
+        let service = load();
+        let state = service.engine().state();
+        assert!(
+            state
+                .saved_sublist_parent_access
+                .get(&destination.conversation_id)
+                .is_some_and(|actors| actors.contains(&actor_id))
+        );
+        let child = state
+            .conversation_child_states
+            .iter()
+            .find(|child| child.destination == destination && child.actor_id == actor_id)
+            .unwrap();
+        assert!(child.authoritative_membership_known);
+        assert_eq!(
+            child.authoritative_message_ids,
+            vec![
+                "human-server-message:7".to_string(),
+                "human-server-message:8".to_string(),
+            ]
+        );
+        drop(service);
+
+        let restarted = load();
+        let restarted_child = restarted
+            .engine()
+            .state()
+            .conversation_child_states
+            .iter()
+            .find(|child| child.destination == destination && child.actor_id == actor_id)
+            .unwrap();
+        assert!(restarted_child.authoritative_membership_known);
+        assert_eq!(
+            restarted_child.authoritative_message_ids,
+            vec![
+                "human-server-message:7".to_string(),
+                "human-server-message:8".to_string(),
+            ]
+        );
+        drop(restarted);
+        workers.shutdown();
+        let _ = fs::remove_dir_all(root);
+    }
+
     fn seed_forward_child_authorities_with_parent_access(
         workers: &ProductionSessionWorkers,
         destinations: &[(fabushi_messaging_core::ConversationDestination, bool)],
