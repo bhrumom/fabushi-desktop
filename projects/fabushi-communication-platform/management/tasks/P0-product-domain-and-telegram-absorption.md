@@ -726,3 +726,11 @@ After the 809-file canonical-tree repair, exact-head `2bfe0f3ea5f9a4c0f1240a9566
 Orders 13,653–13,712 were individually exact-read at `ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae`; all 60 carry Doxygen 1.9.4 generator/footer evidence and are generated API/concept HTML with no independent shipping Fabushi responsibility. They are explicitly `development-only-non-applicable`, `unknown_closed=true`.
 
 Accounting: **13,712/16,125 read; 2,413 unread; 15,580 unknown; 0 omitted; 545 unknown_closed; 471 development-only-non-applicable**. First unread is 13,713 `doc/gh-pages::conceptranges_1_1erasable__range.html`. Parent runs become predecessor evidence; fresh same-head Rust desktop runtime and Desktop Chat Parity CI are required.
+
+## Revision 9 current-summary contract repair + deterministic read-through 13,713–13,760
+
+Exact-head `49b6a082e468d354c419aae7813f28a88157030a` proved the 329-entry source-disposition shard registry is now tree-complete, then source-authority job 114659010334 failed closed at `validateCurrentSummary`: the human documents still exposed an older first `Live Revision 9 authority` line and a stale `TDRP_CURRENT_SUMMARY` marker. The validator is left strict. This descendant updates the single machine marker and the first live summary in both STATUS and SOURCE_OF_TRUTH to the same values as inventory/index, parity-ledger and upstream.lock.
+
+Orders 13,713–13,760 were individually exact-read at `ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae`. All 48 carry Doxygen 1.9.4 generator/footer evidence and are generated API/concept HTML with no independent shipping Fabushi responsibility; each is explicitly `development-only-non-applicable` and `unknown_closed=true`.
+
+Accounting: **13,760/16,125 read; 2,365 unread; 15,532 unknown; 0 omitted; 593 unknown_closed; 519 development-only-non-applicable**. First unread is 13,761 `doc/gh-pages::conceptranges_1_1invocable__action__closure__.html`. Parent runs are predecessor evidence after this commit; fresh same-head Rust desktop runtime and Desktop Chat Parity CI are mandatory.

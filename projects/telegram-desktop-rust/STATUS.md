@@ -14,7 +14,7 @@ Live Revision 9 continuation (2026-10-12): exact upstream remains telegramdeskto
 
 ### Revision 9 deterministic read-through — cmake_helpers 13,347–13,410
 
-Live Revision 9 authority continuation (2026-10-12): accepted telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 / tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6. Recursive non-directory=16,125; read-through=13,346; first unread=13,347 cmake::.gitmodules@c92fbea3467f72e188cba4cbfe51c8c68a7e2e77; unread=2,779; unknown=15,845; omitted=0. Orders 13,275-13,314 were directly read/decomposed at desktop-app/lib_webrtc@52636e86eaa493de670daf71959d000b281bd153 and 13,315-13,346 at desktop-app/lib_webview@d6e2e0b8b171a104cd7b63bd351f056563e964b0. Parent b714e70a2adee840cb172ccfc076791a22a7ae79 passed Validate Revision 9 authority in 38195834460/114638198808 before this accounting descendant; reading alone closes no unknown.
+Live Revision 9 authority (2026-10-12): telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 (tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6). Recursive non-directory=16,125; read-through=13,760; first unread=13,761 doc/gh-pages::conceptranges_1_1invocable__action__closure__.html; unread=2,365; unknown=15,532; omitted=0. Exact-head parent 49b6a082e468d354c419aae7813f28a88157030a source-authority progressed through the restored 329-shard registry and failed closed only on stale STATUS/SOURCE_OF_TRUTH current-summary text; this descendant synchronizes the machine-readable and human live summary and requires fresh same-head Actions.
 
 ### Revision 9 deterministic read-through — lib_webrtc + lib_webview 13,275–13,346
 
@@ -161,7 +161,7 @@ All seven rows remain mapped-open with unknown_closed=false and omitted=false; r
 Current PR source-accounting continuation: exact-source HEAD `f8ef44c69b134ba5b0172a21bc563fce6c98138e` materialized and reviewed orders 12,333-12,396; formal accounting is now 12,396 read, 3,729 unread, 15,845 unknown, 0 omitted. The descendant containing these dispositions requires fresh same-head Actions; all f8ef runtime/chat jobs become predecessor evidence after this commit.
 
 Live Revision 9 authority (2026-10-12): telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 (tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6). Recursive non-directory=16,125; read-through=12,396; first unread=12,397 Telegram/codegen::codegen/style/parsed_file.h@cc45c9aa2bf109947329c1a7d62c528b97ce4545; unread=3,729; unknown=15,845; omitted=0. Exact-head f8ef44c69b134ba5b0172a21bc563fce6c98138e Source authority 38183407863/114600617044 succeeded and materialized artifact 11719100308 (sha256:452825df19243d3d425b9716b405782b708dab74f3655d56cdc1a7c0c6ccbe1d); orders 12,333-12,396 were formally reviewed from that materialization plus exact pinned blobs. This accounting descendant requires fresh same-head runtime/chat validation.
-<!-- TDRP_CURRENT_SUMMARY read-through=13556 unread=2569 unknown=15736 omitted=0 first-unread=13557 path=doc/gh-pages::bc_s.png -->
+<!-- TDRP_CURRENT_SUMMARY read-through=13760 unread=2365 unknown=15532 omitted=0 first-unread=13761 path=doc/gh-pages::conceptranges_1_1invocable__action__closure__.html -->
 
 ### Revision 9 deterministic read-through — zxcvbn password strength + codegen emoji/lang/style 12,333–12,396
 
