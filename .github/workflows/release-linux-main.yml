@@ -325,8 +325,8 @@ jobs:
         run: |
           set -euo pipefail
           cd desktop/release
-          find . -maxdepth 1 -type f \( -name '*.AppImage' -o -name '*.deb' -o -name '*.asc' -o -name '*.yml' \) -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.txt
-          node -e 'const fs=require("fs"); fs.writeFileSync("provenance.json", JSON.stringify({source:process.env.SOURCE_SHA,runId:process.env.GITHUB_RUN_ID,runAttempt:process.env.GITHUB_RUN_ATTEMPT,platform:"linux"},null,2))'
+          find . -maxdepth 1 -type f \( -name '*.AppImage' -o -name '*.deb' -o -name '*.asc' -o -name '*.yml' \) -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS-linux.txt
+          node -e 'const fs=require("fs"); fs.writeFileSync("provenance-linux.json", JSON.stringify({source:process.env.SOURCE_SHA,runId:process.env.GITHUB_RUN_ID,runAttempt:process.env.GITHUB_RUN_ATTEMPT,platform:"linux"},null,2))'
         env:
           SOURCE_SHA: ${{ steps.source.outputs.sha }}
 
@@ -352,8 +352,8 @@ jobs:
             desktop/release/*.deb
             desktop/release/*.asc
             desktop/release/*.yml
-            desktop/release/SHA256SUMS.txt
-            desktop/release/provenance.json
+            desktop/release/SHA256SUMS-linux.txt
+            desktop/release/provenance-linux.json
           if-no-files-found: error
           retention-days: 90
 
@@ -374,4 +374,4 @@ jobs:
           fi
           remote_tag="$(git ls-remote origin "refs/tags/$TAG" | awk '{print $1}')"
           test "$remote_tag" = "$SOURCE_SHA"
-          gh release upload "$TAG" desktop/release/*.AppImage desktop/release/*.deb desktop/release/*.asc desktop/release/*.yml desktop/release/SHA256SUMS.txt desktop/release/provenance.json --repo "$repo" --clobber
+          gh release upload "$TAG" desktop/release/*.AppImage desktop/release/*.deb desktop/release/*.asc desktop/release/*.yml desktop/release/SHA256SUMS-linux.txt desktop/release/provenance-linux.json --repo "$repo" --clobber
