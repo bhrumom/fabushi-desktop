@@ -3508,7 +3508,7 @@ impl ProductionSessionWorkers {
                     .map_err(|error| error.to_string())?
                     .ok_or_else(|| "Human pending send disappeared before dispatch".to_string())?;
 
-                let remote = client.send_direct_message(&peer_human_id, text, client_nonce, remote_reply_to_id.as_deref(), &uploaded, silent, scheduled_at_ms)?;
+                let remote = client.send_direct_message(&peer_human_id, text, client_nonce, remote_reply_to_id.as_deref(), &uploaded, silent, scheduled_at_ms, None)?;
                 let remote_sender = fabushi_identity_text(&remote.sender_user_id)?;
                 let remote_recipient = fabushi_identity_text(&remote.recipient_user_id)?;
                 let remote_reply_matches = match (&remote_reply_to_id, &remote.reply_to_message_id) {
