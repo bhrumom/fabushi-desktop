@@ -109,6 +109,15 @@ type CallTonePlaybackState = "idle" | CallToneKind | "failed";
 export const CALL_TONE_SAMPLE_RATE = 48_000;
 export const CALL_TONE_LOOP_COUNT = 60;
 export const CALL_TONE_INITIAL_OFFSET_SAMPLES = 0;
+const CALL_VIDEO_SIMULCAST_RIDS = ["f", "h", "q"] as const;
+
+function callVideoSimulcastEncodings(): RTCRtpEncodingParameters[] {
+  return [
+    { rid: "f", scaleResolutionDownBy: 1 },
+    { rid: "h", scaleResolutionDownBy: 2 },
+    { rid: "q", scaleResolutionDownBy: 4 },
+  ];
+}
 const CALL_TONE_PERIOD_SECONDS = 4;
 
 interface CallToneResource {
@@ -954,7 +963,17 @@ export function HumanCallControls({
     };
     sfuRuntimeRef.current = runtime;
 
-    for (const track of local.getTracks()) publishPc.addTrack(track, local);
+    for (const track of local.getTracks()) {
+      if (track.kind === "video") {
+        publishPc.addTransceiver(track, {
+          direction: "sendonly",
+          streams: [local],
+          sendEncodings: callVideoSimulcastEncodings(),
+        });
+      } else {
+        publishPc.addTrack(track, local);
+      }
+    }
     const remote = new MediaStream();
     remoteStreamRef.current = remote;
     if (remoteVideoRef.current != null) remoteVideoRef.current.srcObject = remote;
@@ -1021,6 +1040,7 @@ export function HumanCallControls({
         trackName: `fabushi_${track.kind}_${mid || index}`,
         mid,
         mediaKind: track.kind,
+        simulcastRids: track.kind === "video" ? [...CALL_VIDEO_SIMULCAST_RIDS] : [],
       }];
     });
     if (publications.length === 0) throw new Error("No local media tracks were available for SFU publication.");
