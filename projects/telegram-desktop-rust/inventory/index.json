@@ -35,7 +35,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live baseline accepted; source read closure complete. Read-through 16,125; unread_minimum is 0; unknown remains 12,537; omitted remains 0; first unread 16,126 is none.",
+  "note": "Live baseline accepted; source read closure complete. Read-through 16,125; unread_minimum is 0; unknown remains 12,436; omitted remains 0; first unread 16,126 is none.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
