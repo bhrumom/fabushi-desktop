@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 13314,
-    "unread": 73,
+    "unread": 9,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13480,9 +13480,9 @@
     "changed_paths": 10,
     "source_read_reconciliation": "Accepted prefix 15,732/16,125; orders 15,669-15,732 exact-read per blob as 33 Doxygen HTML, 15 generated JS and 16 PNGs with direct full-byte Git SHA/size/signature/complete-IEND and generated-HTML consumer verification.",
     "source_authority_evidence": "Direct exact-blob audit through 15,732 is durable on this PR lineage; fresh same-head Actions required after accounting write.",
-    "current_source_read_through": 16052,
-    "first_unread_order": 16053,
-    "first_unread_path": "external/glib/cppgir::override/gstglegl/gstglegl_setup_pre_def.hpp"
+    "current_source_read_through": 16116,
+    "first_unread_order": 16117,
+    "first_unread_path": "expected-lite::test/t-noexcept.bat"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 2737,
     "unknown_closed": 2811,
     "omitted": 0,
-    "read_through": 16052,
-    "first_unread_order": 16053,
-    "first_unread_path": "external/glib/cppgir::override/gstglegl/gstglegl_setup_pre_def.hpp",
+    "read_through": 16116,
+    "first_unread_order": 16117,
+    "first_unread_path": "expected-lite::test/t-noexcept.bat",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {

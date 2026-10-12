@@ -1,0 +1,3470 @@
+{
+  "format_version": 1,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+    "tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6"
+  },
+  "source_components": [
+    {
+      "repository": "gitlab.com/mnauw/cppgir",
+      "commit": "47cf94f83b54cda59018135601e19d7fb0c77776",
+      "mount": "external/glib/cppgir"
+    },
+    {
+      "repository": "martinmoene/expected-lite",
+      "commit": "95b9cb015fa17baa749c2b396b335906e1596a9e",
+      "mount": "expected-lite"
+    }
+  ],
+  "exact_head_evidence": {
+    "production_owner_audit_head": "b9b7c895fc2f2b3679205791fea45081cb6a6f75",
+    "status": "64 exact source objects individually audited; generated documentation closes only after per-entry type/consumer checks; dependency source remains mapped-open where reachability is unresolved. Fresh same-head Actions required after accounting write."
+  },
+  "accounting": {
+    "recursive_total": 16125,
+    "read_through": 16116,
+    "unread": 9,
+    "unknown": 13314,
+    "omitted": 0,
+    "unknown_closed": 2811
+  },
+  "range": {
+    "first_order": 16053,
+    "last_order": 16116,
+    "entries": 64,
+    "next_order": 16117,
+    "next_source_path": "expected-lite::test/t-noexcept.bat"
+  },
+  "rows": [
+    {
+      "recursive_order": 16053,
+      "source_path": "external/glib/cppgir::override/gstglegl/gstglegl_setup_pre_def.hpp",
+      "source_blob_sha": "579dcd9dcf4fb3015a4805609c93e49440f960bf",
+      "source_identity": {
+        "repository": "gitlab.com/mnauw/cppgir",
+        "commit": "47cf94f83b54cda59018135601e19d7fb0c77776",
+        "scope": "nested-gitlink",
+        "path": "override/gstglegl/gstglegl_setup_pre_def.hpp",
+        "object": "579dcd9dcf4fb3015a4805609c93e49440f960bf",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "mount": "external/glib/cppgir",
+        "size": null
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "C/C++ source or header",
+        "gstglegl_setup_pre_def.hpp"
+      ],
+      "upstream_owner": "override/gstglegl/gstglegl_setup_pre_def.hpp",
+      "responsibility": "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability.",
+      "responsibilities": [
+        "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776:579dcd9dcf4fb3015a4805609c93e49440f960bf",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=579dcd9dcf4fb3015a4805609c93e49440f960bf; byte_length=266"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16054,
+      "source_path": "external/glib/cppgir::override/gtk/builder_extra_def.hpp",
+      "source_blob_sha": "7208a26ec725f7f75755723ecf456be8daf28cb1",
+      "source_identity": {
+        "repository": "gitlab.com/mnauw/cppgir",
+        "commit": "47cf94f83b54cda59018135601e19d7fb0c77776",
+        "scope": "nested-gitlink",
+        "path": "override/gtk/builder_extra_def.hpp",
+        "object": "7208a26ec725f7f75755723ecf456be8daf28cb1",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "mount": "external/glib/cppgir",
+        "size": null
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "gi",
+        "repository",
+        "Gtk",
+        "Builder",
+        "base",
+        "BuilderExtra",
+        "constructor",
+        "that",
+        "get_object",
+        "super::get_object",
+        "BaseClass",
+        "g_error"
+      ],
+      "upstream_owner": "override/gtk/builder_extra_def.hpp",
+      "responsibility": "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability.",
+      "responsibilities": [
+        "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776:7208a26ec725f7f75755723ecf456be8daf28cb1",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=7208a26ec725f7f75755723ecf456be8daf28cb1; byte_length=2729"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16055,
+      "source_path": "external/glib/cppgir::override/gtk/gtk_extra_def.hpp",
+      "source_blob_sha": "af679903854ede37bad31fcfc407d2570241ceea",
+      "source_identity": {
+        "repository": "gitlab.com/mnauw/cppgir",
+        "commit": "47cf94f83b54cda59018135601e19d7fb0c77776",
+        "scope": "nested-gitlink",
+        "path": "override/gtk/gtk_extra_def.hpp",
+        "object": "af679903854ede37bad31fcfc407d2570241ceea",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "mount": "external/glib/cppgir",
+        "size": null
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "gi",
+        "repository",
+        "Gtk",
+        "base",
+        "generated",
+        "impl",
+        "WidgetTemplateHelper",
+        "class",
+        "tuple_strip_last",
+        "inner",
+        "ProxyClosure",
+        "make_thunk"
+      ],
+      "upstream_owner": "override/gtk/gtk_extra_def.hpp",
+      "responsibility": "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability.",
+      "responsibilities": [
+        "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776:af679903854ede37bad31fcfc407d2570241ceea",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=af679903854ede37bad31fcfc407d2570241ceea; byte_length=13477"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16056,
+      "source_path": "external/glib/cppgir::override/gtk/gtk_setup_post_def.hpp",
+      "source_blob_sha": "204fe4cf4ed553957a1e752efa1dacac78ff6941",
+      "source_identity": {
+        "repository": "gitlab.com/mnauw/cppgir",
+        "commit": "47cf94f83b54cda59018135601e19d7fb0c77776",
+        "scope": "nested-gitlink",
+        "path": "override/gtk/gtk_setup_post_def.hpp",
+        "object": "204fe4cf4ed553957a1e752efa1dacac78ff6941",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "mount": "external/glib/cppgir",
+        "size": null
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "C/C++ source or header",
+        "gtk_setup_post_def.hpp"
+      ],
+      "upstream_owner": "override/gtk/gtk_setup_post_def.hpp",
+      "responsibility": "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability.",
+      "responsibilities": [
+        "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776:204fe4cf4ed553957a1e752efa1dacac78ff6941",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=204fe4cf4ed553957a1e752efa1dacac78ff6941; byte_length=541"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16057,
+      "source_path": "external/glib/cppgir::override/gtk/gtk_setup_pre_def.hpp",
+      "source_blob_sha": "c1eaf845a9257cf67ebb8194c644c08db880893a",
+      "source_identity": {
+        "repository": "gitlab.com/mnauw/cppgir",
+        "commit": "47cf94f83b54cda59018135601e19d7fb0c77776",
+        "scope": "nested-gitlink",
+        "path": "override/gtk/gtk_setup_pre_def.hpp",
+        "object": "c1eaf845a9257cf67ebb8194c644c08db880893a",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "mount": "external/glib/cppgir",
+        "size": null
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "GI_PATCH_GtkSnapshot"
+      ],
+      "upstream_owner": "override/gtk/gtk_setup_pre_def.hpp",
+      "responsibility": "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability.",
+      "responsibilities": [
+        "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776:c1eaf845a9257cf67ebb8194c644c08db880893a",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=c1eaf845a9257cf67ebb8194c644c08db880893a; byte_length=398"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16058,
+      "source_path": "external/glib/cppgir::override/gtk/liststore_extra_def.hpp",
+      "source_blob_sha": "e04c02f7867b78ece15281b6c6435baf3cd26606",
+      "source_identity": {
+        "repository": "gitlab.com/mnauw/cppgir",
+        "commit": "47cf94f83b54cda59018135601e19d7fb0c77776",
+        "scope": "nested-gitlink",
+        "path": "override/gtk/liststore_extra_def.hpp",
+        "object": "e04c02f7867b78ece15281b6c6435baf3cd26606",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "mount": "external/glib/cppgir",
+        "size": null
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "gi",
+        "repository",
+        "Gtk",
+        "base",
+        "ListStoreExtra",
+        "new_type_"
+      ],
+      "upstream_owner": "override/gtk/liststore_extra_def.hpp",
+      "responsibility": "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability.",
+      "responsibilities": [
+        "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776:e04c02f7867b78ece15281b6c6435baf3cd26606",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=e04c02f7867b78ece15281b6c6435baf3cd26606; byte_length=537"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16059,
+      "source_path": "external/glib/cppgir::override/gtk/treeviewcolumn_extra_def.hpp",
+      "source_blob_sha": "97b4370cd5b893febd9a76d444faf26b0dc1fe38",
+      "source_identity": {
+        "repository": "gitlab.com/mnauw/cppgir",
+        "commit": "47cf94f83b54cda59018135601e19d7fb0c77776",
+        "scope": "nested-gitlink",
+        "path": "override/gtk/treeviewcolumn_extra_def.hpp",
+        "object": "97b4370cd5b893febd9a76d444faf26b0dc1fe38",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "mount": "external/glib/cppgir",
+        "size": null
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "gi",
+        "repository",
+        "Gtk",
+        "base",
+        "TreeViewColumnExtra"
+      ],
+      "upstream_owner": "override/gtk/treeviewcolumn_extra_def.hpp",
+      "responsibility": "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability.",
+      "responsibilities": [
+        "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776:97b4370cd5b893febd9a76d444faf26b0dc1fe38",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=97b4370cd5b893febd9a76d444faf26b0dc1fe38; byte_length=654"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16060,
+      "source_path": "external/glib/cppgir::override/gtk/treeviewcolumn_extra_def_impl.hpp",
+      "source_blob_sha": "d260992e483768d7d232b27644041c85d7250eec",
+      "source_identity": {
+        "repository": "gitlab.com/mnauw/cppgir",
+        "commit": "47cf94f83b54cda59018135601e19d7fb0c77776",
+        "scope": "nested-gitlink",
+        "path": "override/gtk/treeviewcolumn_extra_def_impl.hpp",
+        "object": "d260992e483768d7d232b27644041c85d7250eec",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "mount": "external/glib/cppgir",
+        "size": null
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "gi",
+        "repository",
+        "Gtk",
+        "base",
+        "TreeViewColumnBase::new_",
+        "set_title",
+        "pack_start",
+        "add_attribute"
+      ],
+      "upstream_owner": "override/gtk/treeviewcolumn_extra_def_impl.hpp",
+      "responsibility": "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability.",
+      "responsibilities": [
+        "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776:d260992e483768d7d232b27644041c85d7250eec",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=d260992e483768d7d232b27644041c85d7250eec; byte_length=669"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16061,
+      "source_path": "external/glib/cppgir::override/pango/pango_setup_pre_def.hpp",
+      "source_blob_sha": "12bc4d938e3e9ba7c67b0068abf8b82713963745",
+      "source_identity": {
+        "repository": "gitlab.com/mnauw/cppgir",
+        "commit": "47cf94f83b54cda59018135601e19d7fb0c77776",
+        "scope": "nested-gitlink",
+        "path": "override/pango/pango_setup_pre_def.hpp",
+        "object": "12bc4d938e3e9ba7c67b0068abf8b82713963745",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "mount": "external/glib/cppgir",
+        "size": null
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "C/C++ source or header",
+        "pango_setup_pre_def.hpp"
+      ],
+      "upstream_owner": "override/pango/pango_setup_pre_def.hpp",
+      "responsibility": "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability.",
+      "responsibilities": [
+        "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776:12bc4d938e3e9ba7c67b0068abf8b82713963745",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=12bc4d938e3e9ba7c67b0068abf8b82713963745; byte_length=202"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16062,
+      "source_path": "external/glib/cppgir::test/main.cpp",
+      "source_blob_sha": "662c3e90778954f21a57bd810280b77a5d91532a",
+      "source_identity": {
+        "repository": "gitlab.com/mnauw/cppgir",
+        "commit": "47cf94f83b54cda59018135601e19d7fb0c77776",
+        "scope": "nested-gitlink",
+        "path": "test/main.cpp",
+        "object": "662c3e90778954f21a57bd810280b77a5d91532a",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "mount": "external/glib/cppgir",
+        "size": null
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "gi",
+        "GLib",
+        "GObject_",
+        "repository",
+        "GBoxedExampleBase",
+        "GBoxedExampleRef",
+        "GBoxedExample",
+        "CBoxedExampleBase",
+        "CBoxedExampleRef",
+        "CBoxedExample",
+        "class",
+        "declare_cpptype_of"
+      ],
+      "upstream_owner": "test/main.cpp",
+      "responsibility": "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability.",
+      "responsibilities": [
+        "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776:662c3e90778954f21a57bd810280b77a5d91532a",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=662c3e90778954f21a57bd810280b77a5d91532a; byte_length=77131"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16063,
+      "source_path": "external/glib/cppgir::test/test_boxed.c",
+      "source_blob_sha": "bda303dac6d4b50b979d28589198df083e1a9da4",
+      "source_identity": {
+        "repository": "gitlab.com/mnauw/cppgir",
+        "commit": "47cf94f83b54cda59018135601e19d7fb0c77776",
+        "scope": "nested-gitlink",
+        "path": "test/test_boxed.c",
+        "object": "bda303dac6d4b50b979d28589198df083e1a9da4",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "mount": "external/glib/cppgir",
+        "size": null
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "gi_cpp_gbexample_new",
+        "g_new0",
+        "gb_example_copy",
+        "gb_example_free",
+        "g_free",
+        "gi_cpp_cbexample_new",
+        "gi_cpp_cbexample_free"
+      ],
+      "upstream_owner": "test/test_boxed.c",
+      "responsibility": "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability.",
+      "responsibilities": [
+        "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776:bda303dac6d4b50b979d28589198df083e1a9da4",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=bda303dac6d4b50b979d28589198df083e1a9da4; byte_length=563"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16064,
+      "source_path": "external/glib/cppgir::test/test_boxed.h",
+      "source_blob_sha": "db5cb4ece754cacf4d5a9b0a4dab437c2aa59e3a",
+      "source_identity": {
+        "repository": "gitlab.com/mnauw/cppgir",
+        "commit": "47cf94f83b54cda59018135601e19d7fb0c77776",
+        "scope": "nested-gitlink",
+        "path": "test/test_boxed.h",
+        "object": "db5cb4ece754cacf4d5a9b0a4dab437c2aa59e3a",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "mount": "external/glib/cppgir",
+        "size": null
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "_GBExample",
+        "example",
+        "_CBExample",
+        "gi_cpp_gbexample_get_type",
+        "gi_cpp_gbexample_new",
+        "gi_cpp_cbexample_new",
+        "gi_cpp_cbexample_free"
+      ],
+      "upstream_owner": "test/test_boxed.h",
+      "responsibility": "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability.",
+      "responsibilities": [
+        "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776:db5cb4ece754cacf4d5a9b0a4dab437c2aa59e3a",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=db5cb4ece754cacf4d5a9b0a4dab437c2aa59e3a; byte_length=516"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16065,
+      "source_path": "external/glib/cppgir::test/test_object.c",
+      "source_blob_sha": "f9f756869d4faf257a2afb38f32fea176309b04d",
+      "source_identity": {
+        "repository": "gitlab.com/mnauw/cppgir",
+        "commit": "47cf94f83b54cda59018135601e19d7fb0c77776",
+        "scope": "nested-gitlink",
+        "path": "test/test_object.c",
+        "object": "f9f756869d4faf257a2afb38f32fea176309b04d",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "mount": "external/glib/cppgir",
+        "size": null
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "GType",
+        "_GICppExample",
+        "gi_cpp_enum_get_type",
+        "g_enum_register_static",
+        "gi_cpp_flags_get_type",
+        "g_flags_register_static",
+        "gi_cpp_example_interface_default_init",
+        "gi_cpp_property_interface_default_init",
+        "vmethod_interface_default",
+        "g_assert",
+        "gi_cpp_example_interface_init",
+        "GI_CPP_EXAMPLE"
+      ],
+      "upstream_owner": "test/test_object.c",
+      "responsibility": "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability.",
+      "responsibilities": [
+        "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776:f9f756869d4faf257a2afb38f32fea176309b04d",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=f9f756869d4faf257a2afb38f32fea176309b04d; byte_length=7763"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16066,
+      "source_path": "external/glib/cppgir::test/test_object.h",
+      "source_blob_sha": "5282ee3eb6ff8142af1df579248683b640119995",
+      "source_identity": {
+        "repository": "gitlab.com/mnauw/cppgir",
+        "commit": "47cf94f83b54cda59018135601e19d7fb0c77776",
+        "scope": "nested-gitlink",
+        "path": "test/test_object.h",
+        "object": "5282ee3eb6ff8142af1df579248683b640119995",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "mount": "external/glib/cppgir",
+        "size": null
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "typedef",
+        "_CEnum",
+        "_CFlags",
+        "_GICppExample",
+        "_GICppExampleClass",
+        "_GICppExampleItf",
+        "_GICppExampleInterface",
+        "_GICppPropertyItf",
+        "_GICppPropertyInterface",
+        "gi_cpp_enum_get_type",
+        "gi_cpp_flags_get_type",
+        "gi_cpp_example_get_type"
+      ],
+      "upstream_owner": "test/test_object.h",
+      "responsibility": "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability.",
+      "responsibilities": [
+        "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776:5282ee3eb6ff8142af1df579248683b640119995",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=5282ee3eb6ff8142af1df579248683b640119995; byte_length=2315"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16067,
+      "source_path": "external/glib/cppgir::tools/common.hpp",
+      "source_blob_sha": "3595068da131f0e59261abeb3f4e1ea100481c6f",
+      "source_identity": {
+        "repository": "gitlab.com/mnauw/cppgir",
+        "commit": "47cf94f83b54cda59018135601e19d7fb0c77776",
+        "scope": "nested-gitlink",
+        "path": "tools/common.hpp",
+        "object": "3595068da131f0e59261abeb3f4e1ea100481c6f",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "mount": "external/glib/cppgir",
+        "size": null
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "enum",
+        "Log",
+        "GIR_GOBJECT",
+        "GIR_GINITIALLYUNOWNED",
+        "GIR_GVARIANT",
+        "GIR_VOID",
+        "GIR_GDESTROYNOTIFY",
+        "GDESTROYNOTIFY",
+        "CPP_VOID",
+        "GIR_SUFFIX",
+        "PT_ATTR",
+        "GI_NS"
+      ],
+      "upstream_owner": "tools/common.hpp",
+      "responsibility": "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability.",
+      "responsibilities": [
+        "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776:3595068da131f0e59261abeb3f4e1ea100481c6f",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=3595068da131f0e59261abeb3f4e1ea100481c6f; byte_length=5450"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16068,
+      "source_path": "external/glib/cppgir::tools/cppgir.cpp",
+      "source_blob_sha": "3c169a84087f29723216954113792cc9e27fedbd",
+      "source_identity": {
+        "repository": "gitlab.com/mnauw/cppgir",
+        "commit": "47cf94f83b54cda59018135601e19d7fb0c77776",
+        "scope": "nested-gitlink",
+        "path": "tools/cppgir.cpp",
+        "object": "3c169a84087f29723216954113792cc9e27fedbd",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "mount": "external/glib/cppgir",
+        "size": null
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "Generator",
+        "auto",
+        "options",
+        "Option",
+        "OptionData",
+        "implementation",
+        "methods",
+        "ctx_",
+        "find_in_dir",
+        "emplace_back",
+        "string",
+        "path"
+      ],
+      "upstream_owner": "tools/cppgir.cpp",
+      "responsibility": "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability.",
+      "responsibilities": [
+        "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776:3c169a84087f29723216954113792cc9e27fedbd",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=3c169a84087f29723216954113792cc9e27fedbd; byte_length=14731"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16069,
+      "source_path": "external/glib/cppgir::tools/format.hpp",
+      "source_blob_sha": "1d9286329fed0ec4fd1daa4ff8f4e9781324901e",
+      "source_identity": {
+        "repository": "gitlab.com/mnauw/cppgir",
+        "commit": "47cf94f83b54cda59018135601e19d7fb0c77776",
+        "scope": "nested-gitlink",
+        "path": "tools/format.hpp",
+        "object": "1d9286329fed0ec4fd1daa4ff8f4e9781324901e",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "mount": "external/glib/cppgir",
+        "size": null
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "fmt",
+        "format",
+        "std::vformat"
+      ],
+      "upstream_owner": "tools/format.hpp",
+      "responsibility": "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability.",
+      "responsibilities": [
+        "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776:1d9286329fed0ec4fd1daa4ff8f4e9781324901e",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=1d9286329fed0ec4fd1daa4ff8f4e9781324901e; byte_length=444"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16070,
+      "source_path": "external/glib/cppgir::tools/fs.hpp",
+      "source_blob_sha": "ab451246782fe304fa336c43a1c18c8cc5c80660",
+      "source_identity": {
+        "repository": "gitlab.com/mnauw/cppgir",
+        "commit": "47cf94f83b54cda59018135601e19d7fb0c77776",
+        "scope": "nested-gitlink",
+        "path": "tools/fs.hpp",
+        "object": "ab451246782fe304fa336c43a1c18c8cc5c80660",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "mount": "external/glib/cppgir",
+        "size": null
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "fs",
+        "std::filesystem"
+      ],
+      "upstream_owner": "tools/fs.hpp",
+      "responsibility": "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability.",
+      "responsibilities": [
+        "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776:ab451246782fe304fa336c43a1c18c8cc5c80660",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=ab451246782fe304fa336c43a1c18c8cc5c80660; byte_length=198"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16071,
+      "source_path": "external/glib/cppgir::tools/function.cpp",
+      "source_blob_sha": "1ed724d494f04a779ba2aed18d9e43bec3704d80",
+      "source_identity": {
+        "repository": "gitlab.com/mnauw/cppgir",
+        "commit": "47cf94f83b54cda59018135601e19d7fb0c77776",
+        "scope": "nested-gitlink",
+        "path": "tools/function.cpp",
+        "object": "1ed724d494f04a779ba2aed18d9e43bec3704d80",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "mount": "external/glib/cppgir",
+        "size": null
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "FunctionGenerator",
+        "class",
+        "Options",
+        "FunctionDataExtended",
+        "instance",
+        "const_method",
+        "directly",
+        "and",
+        "is",
+        "DeclData",
+        "CallArgsData",
+        "entry"
+      ],
+      "upstream_owner": "tools/function.cpp",
+      "responsibility": "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability.",
+      "responsibilities": [
+        "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776:1ed724d494f04a779ba2aed18d9e43bec3704d80",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=1ed724d494f04a779ba2aed18d9e43bec3704d80; byte_length=84566"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16072,
+      "source_path": "external/glib/cppgir::tools/function.hpp",
+      "source_blob_sha": "63f2bb1a15acf114cb26ab1165621925da5551e1",
+      "source_identity": {
+        "repository": "gitlab.com/mnauw/cppgir",
+        "commit": "47cf94f83b54cda59018135601e19d7fb0c77776",
+        "scope": "nested-gitlink",
+        "path": "tools/function.hpp",
+        "object": "63f2bb1a15acf114cb26ab1165621925da5551e1",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "mount": "external/glib/cppgir",
+        "size": null
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "ElementFunction",
+        "FunctionParameter",
+        "FunctionDefinition",
+        "Output",
+        "ArgTrait"
+      ],
+      "upstream_owner": "tools/function.hpp",
+      "responsibility": "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability.",
+      "responsibilities": [
+        "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776:63f2bb1a15acf114cb26ab1165621925da5551e1",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=63f2bb1a15acf114cb26ab1165621925da5551e1; byte_length=3952"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16073,
+      "source_path": "external/glib/cppgir::tools/genbase.cpp",
+      "source_blob_sha": "1dc40dd2b08decf91cee2ae7848fa440f1557727",
+      "source_identity": {
+        "repository": "gitlab.com/mnauw/cppgir",
+        "commit": "47cf94f83b54cda59018135601e19d7fb0c77776",
+        "scope": "nested-gitlink",
+        "path": "tools/genbase.cpp",
+        "object": "1dc40dd2b08decf91cee2ae7848fa440f1557727",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "mount": "external/glib/cppgir",
+        "size": null
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "qualify",
+        "ctx",
+        "GeneratorBase::qualify",
+        "lookup",
+        "GeneratorBase::parse_arginfo",
+        "get_child_optional",
+        "get",
+        "skip",
+        "get_name",
+        "parse_typeinfo",
+        "get_attribute",
+        "GeneratorBase::track_dependency"
+      ],
+      "upstream_owner": "tools/genbase.cpp",
+      "responsibility": "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability.",
+      "responsibilities": [
+        "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776:1dc40dd2b08decf91cee2ae7848fa440f1557727",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=1dc40dd2b08decf91cee2ae7848fa440f1557727; byte_length=6982"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16074,
+      "source_path": "external/glib/cppgir::tools/genbase.hpp",
+      "source_blob_sha": "df8b04c1a8cd60a1e902bfaf2ea365e4dc39971f",
+      "source_identity": {
+        "repository": "gitlab.com/mnauw/cppgir",
+        "commit": "47cf94f83b54cda59018135601e19d7fb0c77776",
+        "scope": "nested-gitlink",
+        "path": "tools/genbase.hpp",
+        "object": "df8b04c1a8cd60a1e902bfaf2ea365e4dc39971f",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "mount": "external/glib/cppgir",
+        "size": null
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "GeneratorOptions",
+        "implementation",
+        "GeneratorContext",
+        "GeneratorBase",
+        "ArgTypeInfo",
+        "ArgInfo",
+        "cppreftype",
+        "qualify",
+        "parse_typeinfo",
+        "track_dependency"
+      ],
+      "upstream_owner": "tools/genbase.hpp",
+      "responsibility": "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability.",
+      "responsibilities": [
+        "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776:df8b04c1a8cd60a1e902bfaf2ea365e4dc39971f",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=df8b04c1a8cd60a1e902bfaf2ea365e4dc39971f; byte_length=3477"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16075,
+      "source_path": "external/glib/cppgir::tools/genns.cpp",
+      "source_blob_sha": "e1032b673839fe4122ba50e23ec6b0e1ef64bbd0",
+      "source_identity": {
+        "repository": "gitlab.com/mnauw/cppgir",
+        "commit": "47cf94f83b54cda59018135601e19d7fb0c77776",
+        "scope": "nested-gitlink",
+        "path": "tools/genns.cpp",
+        "object": "e1032b673839fe4122ba50e23ec6b0e1ef64bbd0",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "mount": "external/glib/cppgir",
+        "size": null
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "File",
+        "NamespaceGeneratorImpl",
+        "declare_",
+        "name",
+        "NamespaceGuard",
+        "in",
+        "class",
+        "declare_gtype_of",
+        "is_bitfield",
+        "type",
+        "field",
+        "XXX"
+      ],
+      "upstream_owner": "tools/genns.cpp",
+      "responsibility": "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability.",
+      "responsibilities": [
+        "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776:e1032b673839fe4122ba50e23ec6b0e1ef64bbd0",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=e1032b673839fe4122ba50e23ec6b0e1ef64bbd0; byte_length=60996"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16076,
+      "source_path": "external/glib/cppgir::tools/genns.hpp",
+      "source_blob_sha": "88833d47e050d0df8ea97e2d1079f6af87f9c5c1",
+      "source_identity": {
+        "repository": "gitlab.com/mnauw/cppgir",
+        "commit": "47cf94f83b54cda59018135601e19d7fb0c77776",
+        "scope": "nested-gitlink",
+        "path": "tools/genns.hpp",
+        "object": "88833d47e050d0df8ea97e2d1079f6af87f9c5c1",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "mount": "external/glib/cppgir",
+        "size": null
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "GeneratorContext",
+        "NamespaceGenerator"
+      ],
+      "upstream_owner": "tools/genns.hpp",
+      "responsibility": "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability.",
+      "responsibilities": [
+        "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776:88833d47e050d0df8ea97e2d1079f6af87f9c5c1",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=88833d47e050d0df8ea97e2d1079f6af87f9c5c1; byte_length=507"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16077,
+      "source_path": "external/glib/cppgir::tools/genutils.cpp",
+      "source_blob_sha": "c8b503ce33981d62f1fc289c47c082e29830ccd5",
+      "source_identity": {
+        "repository": "gitlab.com/mnauw/cppgir",
+        "commit": "47cf94f83b54cda59018135601e19d7fb0c77776",
+        "scope": "nested-gitlink",
+        "path": "tools/genutils.cpp",
+        "object": "c8b503ce33981d62f1fc289c47c082e29830ccd5",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "mount": "external/glib/cppgir",
+        "size": null
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "unreserve",
+        "res",
+        "insert"
+      ],
+      "upstream_owner": "tools/genutils.cpp",
+      "responsibility": "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability.",
+      "responsibilities": [
+        "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776:c8b503ce33981d62f1fc289c47c082e29830ccd5",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=c8b503ce33981d62f1fc289c47c082e29830ccd5; byte_length=1413"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16078,
+      "source_path": "external/glib/cppgir::tools/genutils.hpp",
+      "source_blob_sha": "b6a8e274eb02ce348ce28139084fe6ab9cdb0ba1",
+      "source_identity": {
+        "repository": "gitlab.com/mnauw/cppgir",
+        "commit": "47cf94f83b54cda59018135601e19d7fb0c77776",
+        "scope": "nested-gitlink",
+        "path": "tools/genutils.hpp",
+        "object": "b6a8e274eb02ce348ce28139084fe6ab9cdb0ba1",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "mount": "external/glib/cppgir",
+        "size": null
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "skip",
+        "ScopeGuard",
+        "NamespaceGuard",
+        "Matcher",
+        "std::runtime_error",
+        "std::uncaught_exceptions",
+        "std::uncaught_exception",
+        "cleanup_",
+        "catch",
+        "push",
+        "push_back",
+        "pop_back"
+      ],
+      "upstream_owner": "tools/genutils.hpp",
+      "responsibility": "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability.",
+      "responsibilities": [
+        "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776:b6a8e274eb02ce348ce28139084fe6ab9cdb0ba1",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=b6a8e274eb02ce348ce28139084fe6ab9cdb0ba1; byte_length=4535"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16079,
+      "source_path": "external/glib/cppgir::tools/ignore.hpp.in",
+      "source_blob_sha": "35cb9376b3aec780d3edaf19cc104411a59bccf7",
+      "source_identity": {
+        "repository": "gitlab.com/mnauw/cppgir",
+        "commit": "47cf94f83b54cda59018135601e19d7fb0c77776",
+        "scope": "nested-gitlink",
+        "path": "tools/ignore.hpp.in",
+        "object": "35cb9376b3aec780d3edaf19cc104411a59bccf7",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "mount": "external/glib/cppgir",
+        "size": null
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "build/test/tooling input",
+        "ignore.hpp.in"
+      ],
+      "upstream_owner": "tools/ignore.hpp.in",
+      "responsibility": "Audit this exact build/test/tooling input for accepted tdesktop acquisition, generator, platform, packaging and CI responsibility; retain mapped-open until shipping/build reachability and owner evidence are closed.",
+      "responsibilities": [
+        "Audit this exact build/test/tooling input for accepted tdesktop acquisition, generator, platform, packaging and CI responsibility; retain mapped-open until shipping/build reachability and owner evidence are closed."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776:35cb9376b3aec780d3edaf19cc104411a59bccf7",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=35cb9376b3aec780d3edaf19cc104411a59bccf7; byte_length=164"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16080,
+      "source_path": "external/glib/cppgir::tools/repository.cpp",
+      "source_blob_sha": "c33ec8a0a7cc9716e96c096b3126a5cc009de106",
+      "source_identity": {
+        "repository": "gitlab.com/mnauw/cppgir",
+        "commit": "47cf94f83b54cda59018135601e19d7fb0c77776",
+        "scope": "nested-gitlink",
+        "path": "tools/repository.cpp",
+        "object": "c33ec8a0a7cc9716e96c096b3126a5cc009de106",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "mount": "external/glib/cppgir",
+        "size": null
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "RepositoryPriv",
+        "mishap",
+        "used",
+        "qualification",
+        "cpptype",
+        "type",
+        "types",
+        "get_self",
+        "Repository::set_ns",
+        "Repository::qualify",
+        "find",
+        "substr"
+      ],
+      "upstream_owner": "tools/repository.cpp",
+      "responsibility": "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability.",
+      "responsibilities": [
+        "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776:c33ec8a0a7cc9716e96c096b3126a5cc009de106",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=c33ec8a0a7cc9716e96c096b3126a5cc009de106; byte_length=11264"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16081,
+      "source_path": "external/glib/cppgir::tools/repository.hpp",
+      "source_blob_sha": "8e5bc87e019b63b230f05e6a8f0a1983f79a6217",
+      "source_identity": {
+        "repository": "gitlab.com/mnauw/cppgir",
+        "commit": "47cf94f83b54cda59018135601e19d7fb0c77776",
+        "scope": "nested-gitlink",
+        "path": "tools/repository.hpp",
+        "object": "8e5bc87e019b63b230f05e6a8f0a1983f79a6217",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "mount": "external/glib/cppgir",
+        "size": null
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "pt",
+        "TYPE_TRAITS",
+        "type",
+        "declare",
+        "TypeInfo",
+        "context",
+        "Repository",
+        "RepositoryPriv",
+        "mapped_type",
+        "used",
+        "get_attribute",
+        "get_name"
+      ],
+      "upstream_owner": "tools/repository.hpp",
+      "responsibility": "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability.",
+      "responsibilities": [
+        "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776:8e5bc87e019b63b230f05e6a8f0a1983f79a6217",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=8e5bc87e019b63b230f05e6a8f0a1983f79a6217; byte_length=3380"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16082,
+      "source_path": "external/glib/cppgir::expected-lite",
+      "source_blob_sha": "95b9cb015fa17baa749c2b396b335906e1596a9e",
+      "source_identity": {
+        "repository": "gitlab.com/mnauw/cppgir",
+        "commit": "47cf94f83b54cda59018135601e19d7fb0c77776",
+        "scope": "nested-gitlink",
+        "path": "expected-lite",
+        "object": "95b9cb015fa17baa749c2b396b335906e1596a9e",
+        "mode": "160000",
+        "type": "commit",
+        "parent": "desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "mount": "external/glib/cppgir",
+        "size": null
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "nested dependency pin",
+        "expected-lite"
+      ],
+      "upstream_owner": "expected-lite",
+      "responsibility": "Preserve the exact nested dependency pin and audit whether expected-lite participates in accepted cppgir build/runtime reachability before assigning or excluding any Fabushi responsibility.",
+      "responsibilities": [
+        "Preserve the exact nested dependency pin and audit whether expected-lite participates in accepted cppgir build/runtime reachability before assigning or excluding any Fabushi responsibility."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776:95b9cb015fa17baa749c2b396b335906e1596a9e",
+        "gitlink-audit: exact mode=160000 commit pin 95b9cb015fa17baa749c2b396b335906e1596a9e"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16083,
+      "source_path": "expected-lite::.editorconfig",
+      "source_blob_sha": "accf57ad530b456b5885aee0cca0b0c9786affae",
+      "source_identity": {
+        "repository": "martinmoene/expected-lite",
+        "commit": "95b9cb015fa17baa749c2b396b335906e1596a9e",
+        "scope": "nested-gitlink-child",
+        "path": ".editorconfig",
+        "object": "accf57ad530b456b5885aee0cca0b0c9786affae",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776",
+        "mount": "expected-lite",
+        "size": 604
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "documentation/configuration/license or dependency input",
+        ".editorconfig"
+      ],
+      "upstream_owner": ".editorconfig",
+      "responsibility": "Audit this exact dependency input for provenance, consumer/build reachability, policy and generated-input obligations; retain mapped-open until applicability is individually resolved.",
+      "responsibilities": [
+        "Audit this exact dependency input for provenance, consumer/build reachability, policy and generated-input obligations; retain mapped-open until applicability is individually resolved."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:martinmoene/expected-lite@95b9cb015fa17baa749c2b396b335906e1596a9e:accf57ad530b456b5885aee0cca0b0c9786affae",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=accf57ad530b456b5885aee0cca0b0c9786affae; byte_length=604"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16084,
+      "source_path": "expected-lite::.gitattributes",
+      "source_blob_sha": "fb147c0c9cf68a31934bc3c4cdf7d6676229a0d6",
+      "source_identity": {
+        "repository": "martinmoene/expected-lite",
+        "commit": "95b9cb015fa17baa749c2b396b335906e1596a9e",
+        "scope": "nested-gitlink-child",
+        "path": ".gitattributes",
+        "object": "fb147c0c9cf68a31934bc3c4cdf7d6676229a0d6",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776",
+        "mount": "expected-lite",
+        "size": 556
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "documentation/configuration/license or dependency input",
+        ".gitattributes"
+      ],
+      "upstream_owner": ".gitattributes",
+      "responsibility": "Audit this exact dependency input for provenance, consumer/build reachability, policy and generated-input obligations; retain mapped-open until applicability is individually resolved.",
+      "responsibilities": [
+        "Audit this exact dependency input for provenance, consumer/build reachability, policy and generated-input obligations; retain mapped-open until applicability is individually resolved."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:martinmoene/expected-lite@95b9cb015fa17baa749c2b396b335906e1596a9e:fb147c0c9cf68a31934bc3c4cdf7d6676229a0d6",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=fb147c0c9cf68a31934bc3c4cdf7d6676229a0d6; byte_length=556"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16085,
+      "source_path": "expected-lite::.github/workflows/ci.yml",
+      "source_blob_sha": "938715b8d4d06f7427fb532afd743ceee98cf316",
+      "source_identity": {
+        "repository": "martinmoene/expected-lite",
+        "commit": "95b9cb015fa17baa749c2b396b335906e1596a9e",
+        "scope": "nested-gitlink-child",
+        "path": ".github/workflows/ci.yml",
+        "object": "938715b8d4d06f7427fb532afd743ceee98cf316",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776",
+        "mount": "expected-lite",
+        "size": 2286
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "build/test/tooling input",
+        "ci.yml"
+      ],
+      "upstream_owner": ".github/workflows/ci.yml",
+      "responsibility": "Audit this exact build/test/tooling input for accepted tdesktop acquisition, generator, platform, packaging and CI responsibility; retain mapped-open until shipping/build reachability and owner evidence are closed.",
+      "responsibilities": [
+        "Audit this exact build/test/tooling input for accepted tdesktop acquisition, generator, platform, packaging and CI responsibility; retain mapped-open until shipping/build reachability and owner evidence are closed."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:martinmoene/expected-lite@95b9cb015fa17baa749c2b396b335906e1596a9e:938715b8d4d06f7427fb532afd743ceee98cf316",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=938715b8d4d06f7427fb532afd743ceee98cf316; byte_length=2286"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16086,
+      "source_path": "expected-lite::.gitignore",
+      "source_blob_sha": "08a9666e44d981003bb87bf1f1f1f66b0efe5ccb",
+      "source_identity": {
+        "repository": "martinmoene/expected-lite",
+        "commit": "95b9cb015fa17baa749c2b396b335906e1596a9e",
+        "scope": "nested-gitlink-child",
+        "path": ".gitignore",
+        "object": "08a9666e44d981003bb87bf1f1f1f66b0efe5ccb",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776",
+        "mount": "expected-lite",
+        "size": 370
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "documentation/configuration/license or dependency input",
+        ".gitignore"
+      ],
+      "upstream_owner": ".gitignore",
+      "responsibility": "Audit this exact dependency input for provenance, consumer/build reachability, policy and generated-input obligations; retain mapped-open until applicability is individually resolved.",
+      "responsibilities": [
+        "Audit this exact dependency input for provenance, consumer/build reachability, policy and generated-input obligations; retain mapped-open until applicability is individually resolved."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:martinmoene/expected-lite@95b9cb015fa17baa749c2b396b335906e1596a9e:08a9666e44d981003bb87bf1f1f1f66b0efe5ccb",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=08a9666e44d981003bb87bf1f1f1f66b0efe5ccb; byte_length=370"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16087,
+      "source_path": "expected-lite::.tgitconfig",
+      "source_blob_sha": "9d5e66adb1d32816c3c3aae2f4c1a4de3a15a3fd",
+      "source_identity": {
+        "repository": "martinmoene/expected-lite",
+        "commit": "95b9cb015fa17baa749c2b396b335906e1596a9e",
+        "scope": "nested-gitlink-child",
+        "path": ".tgitconfig",
+        "object": "9d5e66adb1d32816c3c3aae2f4c1a4de3a15a3fd",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776",
+        "mount": "expected-lite",
+        "size": 139
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "documentation/configuration/license or dependency input",
+        ".tgitconfig"
+      ],
+      "upstream_owner": ".tgitconfig",
+      "responsibility": "Audit this exact dependency input for provenance, consumer/build reachability, policy and generated-input obligations; retain mapped-open until applicability is individually resolved.",
+      "responsibilities": [
+        "Audit this exact dependency input for provenance, consumer/build reachability, policy and generated-input obligations; retain mapped-open until applicability is individually resolved."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:martinmoene/expected-lite@95b9cb015fa17baa749c2b396b335906e1596a9e:9d5e66adb1d32816c3c3aae2f4c1a4de3a15a3fd",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=9d5e66adb1d32816c3c3aae2f4c1a4de3a15a3fd; byte_length=139"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16088,
+      "source_path": "expected-lite::.travis.yml",
+      "source_blob_sha": "0b3d9ff3bcd08ffc3d50690cdb180edadea7d2ea",
+      "source_identity": {
+        "repository": "martinmoene/expected-lite",
+        "commit": "95b9cb015fa17baa749c2b396b335906e1596a9e",
+        "scope": "nested-gitlink-child",
+        "path": ".travis.yml",
+        "object": "0b3d9ff3bcd08ffc3d50690cdb180edadea7d2ea",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776",
+        "mount": "expected-lite",
+        "size": 3962
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "build/test/tooling input",
+        ".travis.yml"
+      ],
+      "upstream_owner": ".travis.yml",
+      "responsibility": "Audit this exact build/test/tooling input for accepted tdesktop acquisition, generator, platform, packaging and CI responsibility; retain mapped-open until shipping/build reachability and owner evidence are closed.",
+      "responsibilities": [
+        "Audit this exact build/test/tooling input for accepted tdesktop acquisition, generator, platform, packaging and CI responsibility; retain mapped-open until shipping/build reachability and owner evidence are closed."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:martinmoene/expected-lite@95b9cb015fa17baa749c2b396b335906e1596a9e:0b3d9ff3bcd08ffc3d50690cdb180edadea7d2ea",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=0b3d9ff3bcd08ffc3d50690cdb180edadea7d2ea; byte_length=3962"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16089,
+      "source_path": "expected-lite::CHANGES.txt",
+      "source_blob_sha": "9c18a5702f2d1483f3aa8f59e52a99991e74b819",
+      "source_identity": {
+        "repository": "martinmoene/expected-lite",
+        "commit": "95b9cb015fa17baa749c2b396b335906e1596a9e",
+        "scope": "nested-gitlink-child",
+        "path": "CHANGES.txt",
+        "object": "9c18a5702f2d1483f3aa8f59e52a99991e74b819",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776",
+        "mount": "expected-lite",
+        "size": 74
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "documentation/configuration/license or dependency input",
+        "CHANGES.txt"
+      ],
+      "upstream_owner": "CHANGES.txt",
+      "responsibility": "Audit this exact dependency input for provenance, consumer/build reachability, policy and generated-input obligations; retain mapped-open until applicability is individually resolved.",
+      "responsibilities": [
+        "Audit this exact dependency input for provenance, consumer/build reachability, policy and generated-input obligations; retain mapped-open until applicability is individually resolved."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:martinmoene/expected-lite@95b9cb015fa17baa749c2b396b335906e1596a9e:9c18a5702f2d1483f3aa8f59e52a99991e74b819",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=9c18a5702f2d1483f3aa8f59e52a99991e74b819; byte_length=74"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16090,
+      "source_path": "expected-lite::CMakeLists.txt",
+      "source_blob_sha": "d4e90c9030c6a6967f550dab3fe414273ae7416c",
+      "source_identity": {
+        "repository": "martinmoene/expected-lite",
+        "commit": "95b9cb015fa17baa749c2b396b335906e1596a9e",
+        "scope": "nested-gitlink-child",
+        "path": "CMakeLists.txt",
+        "object": "d4e90c9030c6a6967f550dab3fe414273ae7416c",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776",
+        "mount": "expected-lite",
+        "size": 3855
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "build/test/tooling input",
+        "CMakeLists.txt"
+      ],
+      "upstream_owner": "CMakeLists.txt",
+      "responsibility": "Audit this exact build/test/tooling input for accepted tdesktop acquisition, generator, platform, packaging and CI responsibility; retain mapped-open until shipping/build reachability and owner evidence are closed.",
+      "responsibilities": [
+        "Audit this exact build/test/tooling input for accepted tdesktop acquisition, generator, platform, packaging and CI responsibility; retain mapped-open until shipping/build reachability and owner evidence are closed."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:martinmoene/expected-lite@95b9cb015fa17baa749c2b396b335906e1596a9e:d4e90c9030c6a6967f550dab3fe414273ae7416c",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=d4e90c9030c6a6967f550dab3fe414273ae7416c; byte_length=3855"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16091,
+      "source_path": "expected-lite::LICENSE.txt",
+      "source_blob_sha": "36b7cd93cdfbac762f5be4c6ce276df2ea6305c2",
+      "source_identity": {
+        "repository": "martinmoene/expected-lite",
+        "commit": "95b9cb015fa17baa749c2b396b335906e1596a9e",
+        "scope": "nested-gitlink-child",
+        "path": "LICENSE.txt",
+        "object": "36b7cd93cdfbac762f5be4c6ce276df2ea6305c2",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776",
+        "mount": "expected-lite",
+        "size": 1338
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "documentation/configuration/license or dependency input",
+        "LICENSE.txt"
+      ],
+      "upstream_owner": "LICENSE.txt",
+      "responsibility": "Audit this exact dependency input for provenance, consumer/build reachability, policy and generated-input obligations; retain mapped-open until applicability is individually resolved.",
+      "responsibilities": [
+        "Audit this exact dependency input for provenance, consumer/build reachability, policy and generated-input obligations; retain mapped-open until applicability is individually resolved."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:martinmoene/expected-lite@95b9cb015fa17baa749c2b396b335906e1596a9e:36b7cd93cdfbac762f5be4c6ce276df2ea6305c2",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=36b7cd93cdfbac762f5be4c6ce276df2ea6305c2; byte_length=1338"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16092,
+      "source_path": "expected-lite::Notes.md",
+      "source_blob_sha": "d2a73367ecaaddbb8675dea09020f2ed0055ed5a",
+      "source_identity": {
+        "repository": "martinmoene/expected-lite",
+        "commit": "95b9cb015fa17baa749c2b396b335906e1596a9e",
+        "scope": "nested-gitlink-child",
+        "path": "Notes.md",
+        "object": "d2a73367ecaaddbb8675dea09020f2ed0055ed5a",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776",
+        "mount": "expected-lite",
+        "size": 214
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "documentation/configuration/license or dependency input",
+        "Notes.md"
+      ],
+      "upstream_owner": "Notes.md",
+      "responsibility": "Audit this exact dependency input for provenance, consumer/build reachability, policy and generated-input obligations; retain mapped-open until applicability is individually resolved.",
+      "responsibilities": [
+        "Audit this exact dependency input for provenance, consumer/build reachability, policy and generated-input obligations; retain mapped-open until applicability is individually resolved."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:martinmoene/expected-lite@95b9cb015fa17baa749c2b396b335906e1596a9e:d2a73367ecaaddbb8675dea09020f2ed0055ed5a",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=d2a73367ecaaddbb8675dea09020f2ed0055ed5a; byte_length=214"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16093,
+      "source_path": "expected-lite::README.md",
+      "source_blob_sha": "6c9e3749bd8ae534f1ae1595d8bd33baeac0d244",
+      "source_identity": {
+        "repository": "martinmoene/expected-lite",
+        "commit": "95b9cb015fa17baa749c2b396b335906e1596a9e",
+        "scope": "nested-gitlink-child",
+        "path": "README.md",
+        "object": "6c9e3749bd8ae534f1ae1595d8bd33baeac0d244",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776",
+        "mount": "expected-lite",
+        "size": 34992
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "documentation/configuration/license or dependency input",
+        "README.md"
+      ],
+      "upstream_owner": "README.md",
+      "responsibility": "Audit this exact dependency input for provenance, consumer/build reachability, policy and generated-input obligations; retain mapped-open until applicability is individually resolved.",
+      "responsibilities": [
+        "Audit this exact dependency input for provenance, consumer/build reachability, policy and generated-input obligations; retain mapped-open until applicability is individually resolved."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:martinmoene/expected-lite@95b9cb015fa17baa749c2b396b335906e1596a9e:6c9e3749bd8ae534f1ae1595d8bd33baeac0d244",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=6c9e3749bd8ae534f1ae1595d8bd33baeac0d244; byte_length=34992"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16094,
+      "source_path": "expected-lite::appveyor.yml",
+      "source_blob_sha": "a1dc098f4ac6a9b1961ad845797dce8d4a202417",
+      "source_identity": {
+        "repository": "martinmoene/expected-lite",
+        "commit": "95b9cb015fa17baa749c2b396b335906e1596a9e",
+        "scope": "nested-gitlink-child",
+        "path": "appveyor.yml",
+        "object": "a1dc098f4ac6a9b1961ad845797dce8d4a202417",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776",
+        "mount": "expected-lite",
+        "size": 2213
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "build/test/tooling input",
+        "appveyor.yml"
+      ],
+      "upstream_owner": "appveyor.yml",
+      "responsibility": "Audit this exact build/test/tooling input for accepted tdesktop acquisition, generator, platform, packaging and CI responsibility; retain mapped-open until shipping/build reachability and owner evidence are closed.",
+      "responsibilities": [
+        "Audit this exact build/test/tooling input for accepted tdesktop acquisition, generator, platform, packaging and CI responsibility; retain mapped-open until shipping/build reachability and owner evidence are closed."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:martinmoene/expected-lite@95b9cb015fa17baa749c2b396b335906e1596a9e:a1dc098f4ac6a9b1961ad845797dce8d4a202417",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=a1dc098f4ac6a9b1961ad845797dce8d4a202417; byte_length=2213"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16095,
+      "source_path": "expected-lite::cmake/expected-lite-config-version.cmake.in",
+      "source_blob_sha": "d94242a4ff58474968b274b13a3e6faa2157311a",
+      "source_identity": {
+        "repository": "martinmoene/expected-lite",
+        "commit": "95b9cb015fa17baa749c2b396b335906e1596a9e",
+        "scope": "nested-gitlink-child",
+        "path": "cmake/expected-lite-config-version.cmake.in",
+        "object": "d94242a4ff58474968b274b13a3e6faa2157311a",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776",
+        "mount": "expected-lite",
+        "size": 787
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "build/test/tooling input",
+        "expected-lite-config-version.cmake.in"
+      ],
+      "upstream_owner": "cmake/expected-lite-config-version.cmake.in",
+      "responsibility": "Audit this exact build/test/tooling input for accepted tdesktop acquisition, generator, platform, packaging and CI responsibility; retain mapped-open until shipping/build reachability and owner evidence are closed.",
+      "responsibilities": [
+        "Audit this exact build/test/tooling input for accepted tdesktop acquisition, generator, platform, packaging and CI responsibility; retain mapped-open until shipping/build reachability and owner evidence are closed."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:martinmoene/expected-lite@95b9cb015fa17baa749c2b396b335906e1596a9e:d94242a4ff58474968b274b13a3e6faa2157311a",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=d94242a4ff58474968b274b13a3e6faa2157311a; byte_length=787"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16096,
+      "source_path": "expected-lite::cmake/expected-lite-config.cmake.in",
+      "source_blob_sha": "97497605c69319984390593ca1e8a27ad4335613",
+      "source_identity": {
+        "repository": "martinmoene/expected-lite",
+        "commit": "95b9cb015fa17baa749c2b396b335906e1596a9e",
+        "scope": "nested-gitlink-child",
+        "path": "cmake/expected-lite-config.cmake.in",
+        "object": "97497605c69319984390593ca1e8a27ad4335613",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776",
+        "mount": "expected-lite",
+        "size": 168
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "build/test/tooling input",
+        "expected-lite-config.cmake.in"
+      ],
+      "upstream_owner": "cmake/expected-lite-config.cmake.in",
+      "responsibility": "Audit this exact build/test/tooling input for accepted tdesktop acquisition, generator, platform, packaging and CI responsibility; retain mapped-open until shipping/build reachability and owner evidence are closed.",
+      "responsibilities": [
+        "Audit this exact build/test/tooling input for accepted tdesktop acquisition, generator, platform, packaging and CI responsibility; retain mapped-open until shipping/build reachability and owner evidence are closed."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:martinmoene/expected-lite@95b9cb015fa17baa749c2b396b335906e1596a9e:97497605c69319984390593ca1e8a27ad4335613",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=97497605c69319984390593ca1e8a27ad4335613; byte_length=168"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16097,
+      "source_path": "expected-lite::conanfile.py",
+      "source_blob_sha": "78b0757dcc05da490559c88ce3fa4cd869ccc734",
+      "source_identity": {
+        "repository": "martinmoene/expected-lite",
+        "commit": "95b9cb015fa17baa749c2b396b335906e1596a9e",
+        "scope": "nested-gitlink-child",
+        "path": "conanfile.py",
+        "object": "78b0757dcc05da490559c88ce3fa4cd869ccc734",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776",
+        "mount": "expected-lite",
+        "size": 930
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "build/test/tooling input",
+        "conanfile.py"
+      ],
+      "upstream_owner": "conanfile.py",
+      "responsibility": "Audit this exact build/test/tooling input for accepted tdesktop acquisition, generator, platform, packaging and CI responsibility; retain mapped-open until shipping/build reachability and owner evidence are closed.",
+      "responsibilities": [
+        "Audit this exact build/test/tooling input for accepted tdesktop acquisition, generator, platform, packaging and CI responsibility; retain mapped-open until shipping/build reachability and owner evidence are closed."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:martinmoene/expected-lite@95b9cb015fa17baa749c2b396b335906e1596a9e:78b0757dcc05da490559c88ce3fa4cd869ccc734",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=78b0757dcc05da490559c88ce3fa4cd869ccc734; byte_length=930"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16098,
+      "source_path": "expected-lite::example/01-basic.cpp",
+      "source_blob_sha": "04ffd600b03e9c7975890d6d2587dc939829020c",
+      "source_identity": {
+        "repository": "martinmoene/expected-lite",
+        "commit": "95b9cb015fa17baa749c2b396b335906e1596a9e",
+        "scope": "nested-gitlink-child",
+        "path": "example/01-basic.cpp",
+        "object": "04ffd600b03e9c7975890d6d2587dc939829020c",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776",
+        "mount": "expected-lite",
+        "size": 953
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "nonstd",
+        "std::literals",
+        "strtol",
+        "make_unexpected",
+        "main",
+        "to_int",
+        "error"
+      ],
+      "upstream_owner": "example/01-basic.cpp",
+      "responsibility": "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability.",
+      "responsibilities": [
+        "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:martinmoene/expected-lite@95b9cb015fa17baa749c2b396b335906e1596a9e:04ffd600b03e9c7975890d6d2587dc939829020c",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=04ffd600b03e9c7975890d6d2587dc939829020c; byte_length=953"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16099,
+      "source_path": "expected-lite::example/02-required.cpp",
+      "source_blob_sha": "55aa0049d246eea17f4778f1b8a6ac052588514b",
+      "source_identity": {
+        "repository": "martinmoene/expected-lite",
+        "commit": "95b9cb015fa17baa749c2b396b335906e1596a9e",
+        "scope": "nested-gitlink-child",
+        "path": "example/02-required.cpp",
+        "object": "55aa0049d246eea17f4778f1b8a6ac052588514b",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776",
+        "mount": "expected-lite",
+        "size": 1464
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "nonstd",
+        "required",
+        "content",
+        "ignored",
+        "std::runtime_error",
+        "std::move",
+        "make_required",
+        "main",
+        "produce",
+        "catch",
+        "what"
+      ],
+      "upstream_owner": "example/02-required.cpp",
+      "responsibility": "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability.",
+      "responsibilities": [
+        "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:martinmoene/expected-lite@95b9cb015fa17baa749c2b396b335906e1596a9e:55aa0049d246eea17f4778f1b8a6ac052588514b",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=55aa0049d246eea17f4778f1b8a6ac052588514b; byte_length=1464"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16100,
+      "source_path": "expected-lite::example/03-no-exceptions.cpp",
+      "source_blob_sha": "51757145ae4b8236b2fd8f8201a8443a56d37b61",
+      "source_identity": {
+        "repository": "martinmoene/expected-lite",
+        "commit": "95b9cb015fa17baa749c2b396b335906e1596a9e",
+        "scope": "nested-gitlink-child",
+        "path": "example/03-no-exceptions.cpp",
+        "object": "51757145ae4b8236b2fd8f8201a8443a56d37b61",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776",
+        "mount": "expected-lite",
+        "size": 1828
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "use",
+        "report",
+        "expected_PRESENT",
+        "expected_ABSENT",
+        "violate_access",
+        "eu",
+        "value",
+        "main",
+        "__except"
+      ],
+      "upstream_owner": "example/03-no-exceptions.cpp",
+      "responsibility": "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability.",
+      "responsibilities": [
+        "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:martinmoene/expected-lite@95b9cb015fa17baa749c2b396b335906e1596a9e:51757145ae4b8236b2fd8f8201a8443a56d37b61",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=51757145ae4b8236b2fd8f8201a8443a56d37b61; byte_length=1828"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16101,
+      "source_path": "expected-lite::example/CMakeLists.txt",
+      "source_blob_sha": "86dfa2c0a9ce622784faf0c3b60f5a92610fcd94",
+      "source_identity": {
+        "repository": "martinmoene/expected-lite",
+        "commit": "95b9cb015fa17baa749c2b396b335906e1596a9e",
+        "scope": "nested-gitlink-child",
+        "path": "example/CMakeLists.txt",
+        "object": "86dfa2c0a9ce622784faf0c3b60f5a92610fcd94",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776",
+        "mount": "expected-lite",
+        "size": 2028
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "build/test/tooling input",
+        "CMakeLists.txt"
+      ],
+      "upstream_owner": "example/CMakeLists.txt",
+      "responsibility": "Audit this exact build/test/tooling input for accepted tdesktop acquisition, generator, platform, packaging and CI responsibility; retain mapped-open until shipping/build reachability and owner evidence are closed.",
+      "responsibilities": [
+        "Audit this exact build/test/tooling input for accepted tdesktop acquisition, generator, platform, packaging and CI responsibility; retain mapped-open until shipping/build reachability and owner evidence are closed."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:martinmoene/expected-lite@95b9cb015fa17baa749c2b396b335906e1596a9e:86dfa2c0a9ce622784faf0c3b60f5a92610fcd94",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=86dfa2c0a9ce622784faf0c3b60f5a92610fcd94; byte_length=2028"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16102,
+      "source_path": "expected-lite::include/nonstd/expected.hpp",
+      "source_blob_sha": "f2b7f94021c9ed618eae89be804cbe5a26f654e4",
+      "source_identity": {
+        "repository": "martinmoene/expected-lite",
+        "commit": "95b9cb015fa17baa749c2b396b335906e1596a9e",
+        "scope": "nested-gitlink-child",
+        "path": "include/nonstd/expected.hpp",
+        "object": "f2b7f94021c9ed618eae89be804cbe5a26f654e4",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776",
+        "mount": "expected-lite",
+        "size": 69855
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "to",
+        "nonstd",
+        "detail",
+        "T",
+        "in_place_type_tag",
+        "in_place_index_tag",
+        "in_place_t",
+        "expected_lite",
+        "std17",
+        "is_swappable",
+        "is_nothrow_swappable",
+        "conjunction"
+      ],
+      "upstream_owner": "include/nonstd/expected.hpp",
+      "responsibility": "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability.",
+      "responsibilities": [
+        "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:martinmoene/expected-lite@95b9cb015fa17baa749c2b396b335906e1596a9e:f2b7f94021c9ed618eae89be804cbe5a26f654e4",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=f2b7f94021c9ed618eae89be804cbe5a26f654e4; byte_length=69855"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16103,
+      "source_path": "expected-lite::project/CodeBlocks/expected-lite.cbp",
+      "source_blob_sha": "b6670db238903ec4bdbeded9c5dd7f7534cd34d7",
+      "source_identity": {
+        "repository": "martinmoene/expected-lite",
+        "commit": "95b9cb015fa17baa749c2b396b335906e1596a9e",
+        "scope": "nested-gitlink-child",
+        "path": "project/CodeBlocks/expected-lite.cbp",
+        "object": "b6670db238903ec4bdbeded9c5dd7f7534cd34d7",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776",
+        "mount": "expected-lite",
+        "size": 2227
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "build/test/tooling input",
+        "expected-lite.cbp"
+      ],
+      "upstream_owner": "project/CodeBlocks/expected-lite.cbp",
+      "responsibility": "Audit this exact build/test/tooling input for accepted tdesktop acquisition, generator, platform, packaging and CI responsibility; retain mapped-open until shipping/build reachability and owner evidence are closed.",
+      "responsibilities": [
+        "Audit this exact build/test/tooling input for accepted tdesktop acquisition, generator, platform, packaging and CI responsibility; retain mapped-open until shipping/build reachability and owner evidence are closed."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:martinmoene/expected-lite@95b9cb015fa17baa749c2b396b335906e1596a9e:b6670db238903ec4bdbeded9c5dd7f7534cd34d7",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=b6670db238903ec4bdbeded9c5dd7f7534cd34d7; byte_length=2227"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16104,
+      "source_path": "expected-lite::project/CodeBlocks/expected-lite.workspace",
+      "source_blob_sha": "6ca75f7b4afa09616cc611abc38a1b5c2cc143f0",
+      "source_identity": {
+        "repository": "martinmoene/expected-lite",
+        "commit": "95b9cb015fa17baa749c2b396b335906e1596a9e",
+        "scope": "nested-gitlink-child",
+        "path": "project/CodeBlocks/expected-lite.workspace",
+        "object": "6ca75f7b4afa09616cc611abc38a1b5c2cc143f0",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776",
+        "mount": "expected-lite",
+        "size": 406
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "build/test/tooling input",
+        "expected-lite.workspace"
+      ],
+      "upstream_owner": "project/CodeBlocks/expected-lite.workspace",
+      "responsibility": "Audit this exact build/test/tooling input for accepted tdesktop acquisition, generator, platform, packaging and CI responsibility; retain mapped-open until shipping/build reachability and owner evidence are closed.",
+      "responsibilities": [
+        "Audit this exact build/test/tooling input for accepted tdesktop acquisition, generator, platform, packaging and CI responsibility; retain mapped-open until shipping/build reachability and owner evidence are closed."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:martinmoene/expected-lite@95b9cb015fa17baa749c2b396b335906e1596a9e:6ca75f7b4afa09616cc611abc38a1b5c2cc143f0",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=6ca75f7b4afa09616cc611abc38a1b5c2cc143f0; byte_length=406"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16105,
+      "source_path": "expected-lite::script/create-cov-rpt.py",
+      "source_blob_sha": "c7fedee1c33eedcc693c33b5e11974375e2d1daa",
+      "source_identity": {
+        "repository": "martinmoene/expected-lite",
+        "commit": "95b9cb015fa17baa749c2b396b335906e1596a9e",
+        "scope": "nested-gitlink-child",
+        "path": "script/create-cov-rpt.py",
+        "object": "c7fedee1c33eedcc693c33b5e11974375e2d1daa",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776",
+        "mount": "expected-lite",
+        "size": 3113
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "build/test/tooling input",
+        "create-cov-rpt.py"
+      ],
+      "upstream_owner": "script/create-cov-rpt.py",
+      "responsibility": "Audit this exact build/test/tooling input for accepted tdesktop acquisition, generator, platform, packaging and CI responsibility; retain mapped-open until shipping/build reachability and owner evidence are closed.",
+      "responsibilities": [
+        "Audit this exact build/test/tooling input for accepted tdesktop acquisition, generator, platform, packaging and CI responsibility; retain mapped-open until shipping/build reachability and owner evidence are closed."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:martinmoene/expected-lite@95b9cb015fa17baa749c2b396b335906e1596a9e:c7fedee1c33eedcc693c33b5e11974375e2d1daa",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=c7fedee1c33eedcc693c33b5e11974375e2d1daa; byte_length=3113"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16106,
+      "source_path": "expected-lite::script/create-vcpkg.py",
+      "source_blob_sha": "de29dad35c6afd9865ada60ce0ffc31d01c7ad02",
+      "source_identity": {
+        "repository": "martinmoene/expected-lite",
+        "commit": "95b9cb015fa17baa749c2b396b335906e1596a9e",
+        "scope": "nested-gitlink-child",
+        "path": "script/create-vcpkg.py",
+        "object": "de29dad35c6afd9865ada60ce0ffc31d01c7ad02",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776",
+        "mount": "expected-lite",
+        "size": 6166
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "build/test/tooling input",
+        "create-vcpkg.py"
+      ],
+      "upstream_owner": "script/create-vcpkg.py",
+      "responsibility": "Audit this exact build/test/tooling input for accepted tdesktop acquisition, generator, platform, packaging and CI responsibility; retain mapped-open until shipping/build reachability and owner evidence are closed.",
+      "responsibilities": [
+        "Audit this exact build/test/tooling input for accepted tdesktop acquisition, generator, platform, packaging and CI responsibility; retain mapped-open until shipping/build reachability and owner evidence are closed."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:martinmoene/expected-lite@95b9cb015fa17baa749c2b396b335906e1596a9e:de29dad35c6afd9865ada60ce0ffc31d01c7ad02",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=de29dad35c6afd9865ada60ce0ffc31d01c7ad02; byte_length=6166"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16107,
+      "source_path": "expected-lite::script/update-version.py",
+      "source_blob_sha": "034e4f00671a011ffed11919b8981d460d2c1063",
+      "source_identity": {
+        "repository": "martinmoene/expected-lite",
+        "commit": "95b9cb015fa17baa749c2b396b335906e1596a9e",
+        "scope": "nested-gitlink-child",
+        "path": "script/update-version.py",
+        "object": "034e4f00671a011ffed11919b8981d460d2c1063",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776",
+        "mount": "expected-lite",
+        "size": 3877
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "build/test/tooling input",
+        "update-version.py"
+      ],
+      "upstream_owner": "script/update-version.py",
+      "responsibility": "Audit this exact build/test/tooling input for accepted tdesktop acquisition, generator, platform, packaging and CI responsibility; retain mapped-open until shipping/build reachability and owner evidence are closed.",
+      "responsibilities": [
+        "Audit this exact build/test/tooling input for accepted tdesktop acquisition, generator, platform, packaging and CI responsibility; retain mapped-open until shipping/build reachability and owner evidence are closed."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:martinmoene/expected-lite@95b9cb015fa17baa749c2b396b335906e1596a9e:034e4f00671a011ffed11919b8981d460d2c1063",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=034e4f00671a011ffed11919b8981d460d2c1063; byte_length=3877"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16108,
+      "source_path": "expected-lite::script/upload-conan.py",
+      "source_blob_sha": "532c61e59beb583c81f4873ed20f5f32369e14b5",
+      "source_identity": {
+        "repository": "martinmoene/expected-lite",
+        "commit": "95b9cb015fa17baa749c2b396b335906e1596a9e",
+        "scope": "nested-gitlink-child",
+        "path": "script/upload-conan.py",
+        "object": "532c61e59beb583c81f4873ed20f5f32369e14b5",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776",
+        "mount": "expected-lite",
+        "size": 3091
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "build/test/tooling input",
+        "upload-conan.py"
+      ],
+      "upstream_owner": "script/upload-conan.py",
+      "responsibility": "Audit this exact build/test/tooling input for accepted tdesktop acquisition, generator, platform, packaging and CI responsibility; retain mapped-open until shipping/build reachability and owner evidence are closed.",
+      "responsibilities": [
+        "Audit this exact build/test/tooling input for accepted tdesktop acquisition, generator, platform, packaging and CI responsibility; retain mapped-open until shipping/build reachability and owner evidence are closed."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:martinmoene/expected-lite@95b9cb015fa17baa749c2b396b335906e1596a9e:532c61e59beb583c81f4873ed20f5f32369e14b5",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=532c61e59beb583c81f4873ed20f5f32369e14b5; byte_length=3091"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16109,
+      "source_path": "expected-lite::test/CMakeLists.txt",
+      "source_blob_sha": "c2098c1cedc712e8735f6c126cde8715ca746b00",
+      "source_identity": {
+        "repository": "martinmoene/expected-lite",
+        "commit": "95b9cb015fa17baa749c2b396b335906e1596a9e",
+        "scope": "nested-gitlink-child",
+        "path": "test/CMakeLists.txt",
+        "object": "c2098c1cedc712e8735f6c126cde8715ca746b00",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776",
+        "mount": "expected-lite",
+        "size": 7314
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "build/test/tooling input",
+        "CMakeLists.txt"
+      ],
+      "upstream_owner": "test/CMakeLists.txt",
+      "responsibility": "Audit this exact build/test/tooling input for accepted tdesktop acquisition, generator, platform, packaging and CI responsibility; retain mapped-open until shipping/build reachability and owner evidence are closed.",
+      "responsibilities": [
+        "Audit this exact build/test/tooling input for accepted tdesktop acquisition, generator, platform, packaging and CI responsibility; retain mapped-open until shipping/build reachability and owner evidence are closed."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:martinmoene/expected-lite@95b9cb015fa17baa749c2b396b335906e1596a9e:c2098c1cedc712e8735f6c126cde8715ca746b00",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=c2098c1cedc712e8735f6c126cde8715ca746b00; byte_length=7314"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16110,
+      "source_path": "expected-lite::test/expected-main.t.cpp",
+      "source_blob_sha": "690662af1d808dc08dc002f4e8908d71b6c38c2c",
+      "source_identity": {
+        "repository": "martinmoene/expected-lite",
+        "commit": "95b9cb015fa17baa749c2b396b335906e1596a9e",
+        "scope": "nested-gitlink-child",
+        "path": "test/expected-main.t.cpp",
+        "object": "690662af1d808dc08dc002f4e8908d71b6c38c2c",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776",
+        "mount": "expected-lite",
+        "size": 3724
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "specification",
+        "CASE",
+        "expected_PRESENT",
+        "expected_ABSENT",
+        "main",
+        "lest::run"
+      ],
+      "upstream_owner": "test/expected-main.t.cpp",
+      "responsibility": "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability.",
+      "responsibilities": [
+        "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:martinmoene/expected-lite@95b9cb015fa17baa749c2b396b335906e1596a9e:690662af1d808dc08dc002f4e8908d71b6c38c2c",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=690662af1d808dc08dc002f4e8908d71b6c38c2c; byte_length=3724"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16111,
+      "source_path": "expected-lite::test/expected-main.t.hpp",
+      "source_blob_sha": "43e8395d982427153174eb9c1506c35bdfaf61e8",
+      "source_identity": {
+        "repository": "martinmoene/expected-lite",
+        "commit": "95b9cb015fa17baa749c2b396b335906e1596a9e",
+        "scope": "nested-gitlink-child",
+        "path": "test/expected-main.t.hpp",
+        "object": "43e8395d982427153174eb9c1506c35bdfaf61e8",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776",
+        "mount": "expected-lite",
+        "size": 2088
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "lest",
+        "specification"
+      ],
+      "upstream_owner": "test/expected-main.t.hpp",
+      "responsibility": "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability.",
+      "responsibilities": [
+        "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:martinmoene/expected-lite@95b9cb015fa17baa749c2b396b335906e1596a9e:43e8395d982427153174eb9c1506c35bdfaf61e8",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=43e8395d982427153174eb9c1506c35bdfaf61e8; byte_length=2088"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16112,
+      "source_path": "expected-lite::test/expected-noexcept.t.cpp",
+      "source_blob_sha": "b2caa4bd179dce8731fb5fbe4ef70751addccee8",
+      "source_identity": {
+        "repository": "martinmoene/expected-lite",
+        "commit": "95b9cb015fa17baa749c2b396b335906e1596a9e",
+        "scope": "nested-gitlink-child",
+        "path": "test/expected-noexcept.t.cpp",
+        "object": "b2caa4bd179dce8731fb5fbe4ef70751addccee8",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776",
+        "mount": "expected-lite",
+        "size": 1487
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "use",
+        "report",
+        "expected_PRESENT",
+        "expected_ABSENT",
+        "violate_access",
+        "eu",
+        "value",
+        "main",
+        "__except"
+      ],
+      "upstream_owner": "test/expected-noexcept.t.cpp",
+      "responsibility": "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability.",
+      "responsibilities": [
+        "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:martinmoene/expected-lite@95b9cb015fa17baa749c2b396b335906e1596a9e:b2caa4bd179dce8731fb5fbe4ef70751addccee8",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=b2caa4bd179dce8731fb5fbe4ef70751addccee8; byte_length=1487"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16113,
+      "source_path": "expected-lite::test/expected.t.cpp",
+      "source_blob_sha": "f7664ab1bb9f116d0e85575a38983e224b9120f5",
+      "source_identity": {
+        "repository": "martinmoene/expected-lite",
+        "commit": "95b9cb015fa17baa749c2b396b335906e1596a9e",
+        "scope": "nested-gitlink-child",
+        "path": "test/expected.t.cpp",
+        "object": "f7664ab1bb9f116d0e85575a38983e224b9120f5",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776",
+        "mount": "expected-lite",
+        "size": 46213
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "to",
+        "nonstd",
+        "Implicit",
+        "Explicit",
+        "MoveOnly",
+        "InitList",
+        "State",
+        "OracleVal",
+        "Oracle",
+        "namespace",
+        "nonpod",
+        "CASE"
+      ],
+      "upstream_owner": "test/expected.t.cpp",
+      "responsibility": "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability.",
+      "responsibilities": [
+        "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:martinmoene/expected-lite@95b9cb015fa17baa749c2b396b335906e1596a9e:f7664ab1bb9f116d0e85575a38983e224b9120f5",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=f7664ab1bb9f116d0e85575a38983e224b9120f5; byte_length=46213"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16114,
+      "source_path": "expected-lite::test/lest/lest.hpp",
+      "source_blob_sha": "f3c9f495ca505c6159bf830e53d9c543a1a56834",
+      "source_identity": {
+        "repository": "martinmoene/expected-lite",
+        "commit": "95b9cb015fa17baa749c2b396b335906e1596a9e",
+        "scope": "nested-gitlink-child",
+        "path": "test/lest/lest.hpp",
+        "object": "f3c9f495ca505c6159bf830e53d9c543a1a56834",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776",
+        "mount": "expected-lite",
+        "size": 44525
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "lest",
+        "env",
+        "test",
+        "add_test",
+        "add_module",
+        "result",
+        "location",
+        "comment",
+        "message",
+        "failure",
+        "success",
+        "passing"
+      ],
+      "upstream_owner": "test/lest/lest.hpp",
+      "responsibility": "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability.",
+      "responsibilities": [
+        "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:martinmoene/expected-lite@95b9cb015fa17baa749c2b396b335906e1596a9e:f3c9f495ca505c6159bf830e53d9c543a1a56834",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=f3c9f495ca505c6159bf830e53d9c543a1a56834; byte_length=44525"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16115,
+      "source_path": "expected-lite::test/nonstd/expected.tweak.hpp",
+      "source_blob_sha": "79581e8befb744ca724e2d0c43a4e45d80c3fb80",
+      "source_identity": {
+        "repository": "martinmoene/expected-lite",
+        "commit": "95b9cb015fa17baa749c2b396b335906e1596a9e",
+        "scope": "nested-gitlink-child",
+        "path": "test/nonstd/expected.tweak.hpp",
+        "object": "79581e8befb744ca724e2d0c43a4e45d80c3fb80",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776",
+        "mount": "expected-lite",
+        "size": 32
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "C/C++ source or header",
+        "expected.tweak.hpp"
+      ],
+      "upstream_owner": "test/nonstd/expected.tweak.hpp",
+      "responsibility": "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability.",
+      "responsibilities": [
+        "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:martinmoene/expected-lite@95b9cb015fa17baa749c2b396b335906e1596a9e:79581e8befb744ca724e2d0c43a4e45d80c3fb80",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=79581e8befb744ca724e2d0c43a4e45d80c3fb80; byte_length=32"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    },
+    {
+      "recursive_order": 16116,
+      "source_path": "expected-lite::test/odr.cpp",
+      "source_blob_sha": "8798c6670d12512fedbd3b10261b120f9a774dde",
+      "source_identity": {
+        "repository": "martinmoene/expected-lite",
+        "commit": "95b9cb015fa17baa749c2b396b335906e1596a9e",
+        "scope": "nested-gitlink-child",
+        "path": "test/odr.cpp",
+        "object": "8798c6670d12512fedbd3b10261b120f9a774dde",
+        "mode": "100644",
+        "type": "blob",
+        "parent": "gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776",
+        "mount": "expected-lite",
+        "size": 37
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open-dependency-reachability-audit",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "chosen_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
+      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "source_symbols": [
+        "C/C++ source or header",
+        "odr.cpp"
+      ],
+      "upstream_owner": "test/odr.cpp",
+      "responsibility": "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability.",
+      "responsibilities": [
+        "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability."
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-entry applicability/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:martinmoene/expected-lite@95b9cb015fa17baa749c2b396b335906e1596a9e:8798c6670d12512fedbd3b10261b120f9a774dde",
+        "byte-audit: exact bytes read; recomputed Git blob SHA=8798c6670d12512fedbd3b10261b120f9a774dde; byte_length=37"
+      ],
+      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "production_entrypoints": [
+        "pending exact consumer/reachability and canonical-owner audit"
+      ]
+    }
+  ]
+}

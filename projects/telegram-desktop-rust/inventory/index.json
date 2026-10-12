@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 13314,
-    "unread_minimum": 73,
+    "unread_minimum": 9,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through deterministic order 16,052; unknown 13,314; unread 73; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition through deterministic order 16,116; unknown 13,314; unread 9; omitted 0."
   },
   "latest_recursive_evidence": {
     "run_id": 38216855900,
@@ -35,7 +35,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live baseline accepted; closure open. Read-through 16,052; unread_minimum is 73; unknown remains 13,314; omitted remains 0; first unread 16,053 is external/glib/cppgir::override/gstglegl/gstglegl_setup_pre_def.hpp.",
+  "note": "Live baseline accepted; closure open. Read-through 16,116; unread_minimum is 9; unknown remains 13,314; omitted remains 0; first unread 16,117 is expected-lite::test/t-noexcept.bat.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -53,12 +53,12 @@
       6541,
       6627
     ],
-    "current_source_read_through": 16052,
-    "first_unread_order": 16053,
-    "first_unread_path": "external/glib/cppgir::override/gstglegl/gstglegl_setup_pre_def.hpp",
-    "current_head_source_authority_evidence": "Orders 15,989-16,052 individually exact-object audited against accepted component commits; this descendant requires fresh same-head Actions.",
-    "source_read_reconciliation": "Accepted prefix 16,052/16,125; unread=73; generated documentation closed only per object; cppgir/expected-lite remain mapped-open where product/build reachability is unresolved.",
-    "source_authority_evidence": "Fresh exact-head validation required for the 16,052 accounting descendant."
+    "current_source_read_through": 16116,
+    "first_unread_order": 16117,
+    "first_unread_path": "expected-lite::test/t-noexcept.bat",
+    "current_head_source_authority_evidence": "Orders 16,053-16,116 individually exact-object audited against accepted component commits; this descendant requires fresh same-head Actions.",
+    "source_read_reconciliation": "Accepted prefix 16,116/16,125; unread=9; generated documentation closed only per object; cppgir/expected-lite remain mapped-open where product/build reachability is unresolved.",
+    "source_authority_evidence": "Fresh exact-head validation required for the 16,116 accounting descendant."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -67,9 +67,9 @@
     "development_only_non_applicable": 2737,
     "unknown_closed": 2811,
     "omitted": 0,
-    "read_through": 16052,
-    "first_unread_order": 16053,
-    "first_unread_path": "external/glib/cppgir::override/gstglegl/gstglegl_setup_pre_def.hpp",
+    "read_through": 16116,
+    "first_unread_order": 16117,
+    "first_unread_path": "expected-lite::test/t-noexcept.bat",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }
