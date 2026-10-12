@@ -265,10 +265,10 @@
   "coverage": {
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
-    "unknown_minimum": 14840,
-    "unread_minimum": 1673,
+    "unknown_minimum": 14776,
+    "unread_minimum": 1609,
     "omitted_known": 0,
-    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 14,452; unknown=14,840, unread=1,673, omitted=0."
+    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 14,516; unknown=14,776, unread=1,609, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -282,7 +282,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Closure open. Read-through 14,452/16,125; first unread 14,453 doc/gh-pages::search/namespaces_1.html; unknown remains 14,840; product/release closure remains open."
+    "note": "Closure open. Read-through 14,516/16,125; first unread 14,517 doc/gh-pages::search/variables_0.js; unknown remains 14,776; product/release closure remains open."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",
@@ -629,86 +629,62 @@
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "deterministic_prefix_closed": 57,
-    "development_only_non_applicable": 1211,
-    "unknown_closed": 1285,
+    "development_only_non_applicable": 1275,
+    "unknown_closed": 1349,
     "omitted": 0,
-    "read_through": 14452,
-    "first_unread_order": 14453,
-    "first_unread_path": "doc/gh-pages::search/namespaces_1.html",
+    "read_through": 14516,
+    "first_unread_order": 14517,
+    "first_unread_path": "doc/gh-pages::search/variables_0.js",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
-    "status": "parent-evidence-only-after-descendant-accounting-commit",
-    "target_head": "2b7525663fed3eceb22a062b816bdeff781b93e7",
+    "status": "parent-source-authority-success-descendant-validation-required",
+    "target_head": "f0c4965a18a3b15d8770b67a7e82a28100f3e374",
     "runs": [
       {
-        "id": 38216855900,
+        "id": 38221698605,
         "workflow": "Rust desktop runtime",
-        "attempt": 1,
-        "conclusion": "success"
+        "conclusion": "in_progress-at-descendant-write"
       },
       {
-        "id": 38216855977,
+        "id": 38221698586,
         "workflow": "Desktop Chat Parity CI",
-        "attempt": 1,
-        "conclusion": "success"
+        "conclusion": "in_progress-at-descendant-write"
       }
     ],
     "jobs": [
       {
-        "id": 114704898380,
+        "id": 114719528020,
         "name": "Source authority / recursive inventory",
-        "conclusion": "success"
-      },
-      {
-        "id": 114704898266,
-        "name": "rust-host",
-        "conclusion": "success"
-      },
-      {
-        "id": 114704898283,
-        "name": "Pressure profiler / windows-2025",
-        "conclusion": "success"
-      },
-      {
-        "id": 114704898255,
-        "name": "Pressure profiler / macos-15",
-        "conclusion": "success"
-      },
-      {
-        "id": 114703504093,
-        "name": "Focused Electron chat E2E",
         "conclusion": "success"
       }
     ],
     "artifacts": [
       {
-        "id": 11732670599,
-        "name": "tdrp-revision9-authority-2b7525663fed3eceb22a062b816bdeff781b93e7",
-        "digest": "sha256:86d2d743d499b531d4ae72eeec0433603c9bc64285d73c02a324534a5ad13d05"
-      },
-      {
-        "id": 11732745413,
-        "name": "desktop-chat-parity-playwright-2b7525663fed3eceb22a062b816bdeff781b93e7",
-        "digest": "sha256:4146ef83234163a7d8616c33ebc091a1aaf2fb38057430dba85f188e86737260"
+        "id": 11734751172,
+        "name": "tdrp-revision9-authority-f0c4965a18a3b15d8770b67a7e82a28100f3e374",
+        "digest": "sha256:f3f7940092a94aae678db9a06f59a90e99d35394546877e1c124fb19da4cdb8b"
       }
     ],
-    "note": "Valid for parent 2b752566 only; descendant requires fresh Actions."
+    "note": "Parent Source authority succeeded; full workflows still running when descendant accounting was written."
   },
-  "note": "Accepted baseline; exact read-through 14,452; unknown=14,840, unread=1,673, omitted=0; first unread 14,453 doc/gh-pages::search/namespaces_1.html.",
+  "note": "Accepted baseline; exact read-through 14,516; unknown=14,776, unread=1,609, omitted=0; first unread 14,517 doc/gh-pages::search/variables_0.js.",
   "source_accounting": {
     "recursive_total": 16125,
-    "read_through": 14452,
-    "first_unread_order": 14453,
-    "first_unread_path": "doc/gh-pages::search/namespaces_1.html",
-    "unread": 1673,
-    "unknown": 14840,
+    "read_through": 14516,
+    "first_unread_order": 14517,
+    "first_unread_path": "doc/gh-pages::search/variables_0.js",
+    "unread": 1609,
+    "unknown": 14776,
     "omitted": 0,
     "parent_exact_head_evidence": {
-      "head": "c3a1da8a064956dd5647ecbf296374c5300900cb",
-      "status": "fresh-actions-pending-at-time-of-direct-read"
+      "head": "f0c4965a18a3b15d8770b67a7e82a28100f3e374",
+      "rust_runtime_run": 38221698605,
+      "source_authority_job": 114719528020,
+      "authority_artifact": 11734751172,
+      "authority_artifact_digest": "sha256:f3f7940092a94aae678db9a06f59a90e99d35394546877e1c124fb19da4cdb8b"
     },
-    "development_only_non_applicable": 1211,
-    "unknown_closed": 1285
+    "development_only_non_applicable": 1275,
+    "unknown_closed": 1349
   }
 }
