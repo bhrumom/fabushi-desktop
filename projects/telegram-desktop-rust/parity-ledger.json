@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 2715,
+    "unread": 2678,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,11 +13478,11 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Accepted prefix 13,410/16,125. 13,347-13,410 map cmake_helpers build/dependency, updater, language/spell, rich-content/math, crash, media/resource, crypto/TLS and Linux platform/IME responsibilities to existing canonical owners. Reading alone closes no unknown; unread 2,715; unknown 15,845; omitted 0.",
-    "source_authority_evidence": "Direct desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422 exact-blob review through order 13,410; exact-head 1b906f58 Actions validate the mount-path correction, and the accounting descendant requires fresh same-head validation.",
-    "current_source_read_through": 13410,
-    "first_unread_order": 13411,
-    "first_unread_path": "cmake::external/tde2e/CMakeLists.txt"
+    "source_read_reconciliation": "Accepted prefix 13,447/16,125; cmake_helpers complete. Existing-owner-first mapping retained; no Telegram/Qt/TON side runtime and no unknown closure by reading. unread=2,678, unknown=15,845, omitted=0.",
+    "source_authority_evidence": "1b906f58 predecessor Source authority succeeded; direct exact-blob review through 13,447; this accounting descendant requires fresh exact-head Actions.",
+    "current_source_read_through": 13447,
+    "first_unread_order": 13448,
+    "first_unread_path": "doxygen-theme::DoxygenLayout.xml"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 206,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 13410,
-    "first_unread_order": 13411,
-    "first_unread_path": "cmake::external/tde2e/CMakeLists.txt",
+    "read_through": 13447,
+    "first_unread_order": 13448,
+    "first_unread_path": "doxygen-theme::DoxygenLayout.xml",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {

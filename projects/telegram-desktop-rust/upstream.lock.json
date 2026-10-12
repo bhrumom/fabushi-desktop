@@ -266,9 +266,9 @@
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
     "unknown_minimum": 15845,
-    "unread_minimum": 2715,
+    "unread_minimum": 2678,
     "omitted_known": 0,
-    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 13,410; unknown=15,845, unread=2,715, omitted=0."
+    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 13,447; unknown=15,845, unread=2,678, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -735,5 +735,5 @@
     ],
     "note": "Valid exact-head evidence for 46dfaf only; main reconciliation/accounting descendants require fresh Actions."
   },
-  "note": "Accepted baseline; exact read-through 13,410; unknown=15,845, unread=2,715, omitted=0; first unread=13,411 cmake::external/tde2e/CMakeLists.txt from desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422."
+  "note": "Accepted baseline; exact read-through 13,447; unknown=15,845, unread=2,678, omitted=0; first unread 13,448 doxygen-theme::DoxygenLayout.xml."
 }

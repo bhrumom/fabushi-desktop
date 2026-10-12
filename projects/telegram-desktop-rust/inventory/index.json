@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 2715,
+    "unread_minimum": 2678,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through deterministic order 13,410; unknown 15,845; unread 2,715; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition through deterministic order 13,447; unknown 15,845; unread 2,678; omitted 0."
   },
   "latest_recursive_evidence": {
     "run_id": 38195834460,
@@ -35,7 +35,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live baseline accepted; closure open. Read-through 13,410; unread_minimum is 2,715; unknown remains 15,845; omitted remains 0; first unread 13,411 is cmake::external/tde2e/CMakeLists.txt.",
+  "note": "Live baseline accepted; closure open. Read-through 13,447; unread_minimum 2,678; unknown 15,845; omitted 0; first unread 13,448 is doxygen-theme::DoxygenLayout.xml.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -53,12 +53,12 @@
       6541,
       6627
     ],
-    "current_source_read_through": 13410,
-    "first_unread_order": 13411,
-    "first_unread_path": "cmake::external/tde2e/CMakeLists.txt",
+    "current_source_read_through": 13447,
+    "first_unread_order": 13448,
+    "first_unread_path": "doxygen-theme::DoxygenLayout.xml",
     "current_head_source_authority_evidence": "Exact-head 1b906f5802e8bba7ddbd4098ceac4849f4feeec5 fixes the canonical cmake mount-path drift; its fresh GitHub Actions validation is in progress. Direct source read/decomposition continued through cmake_helpers order 13,410.",
-    "source_read_reconciliation": "Accepted prefix 13,410/16,125. 13,347-13,410 cover cmake_helpers dependency provenance, updater compression, language/spell/Markdown/math dependencies, crash telemetry, media/resource codecs, TLS/crypto linkage, Linux D-Bus/IME and Qt/platform plugin composition. Existing canonical owners are reused; all rows remain mapped-open with unknown_closed=false. Unread 2,715; unknown 15,845; omitted 0.",
-    "source_authority_evidence": "Direct exact-blob reads at desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422 through order 13,410; descendant same-head Actions required."
+    "source_read_reconciliation": "Accepted prefix 13,447/16,125. 13,411-13,447 finish cmake_helpers: E2E/build-only tde2e, no-retained tdesktop Rust staticlib, Lottie/media, TON/wallet mapped-open commerce/security, WebRTC/VPX Human Call, compression/hash integrity, allocation telemetry, build hardening, WebView2 pin, version/special-target policy, and fail-closed D3D compiler validation. No unknown closed by reading. unread=2,678, unknown=15,845, omitted=0.",
+    "source_authority_evidence": "Predecessor exact-head 1b906f58 Source authority 38196463543/114640171027 succeeded after canonical cmake mount fix. Direct exact-blob review now reaches 13,447; descendant exact-head validation required."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -67,9 +67,9 @@
     "development_only_non_applicable": 206,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 13410,
-    "first_unread_order": 13411,
-    "first_unread_path": "cmake::external/tde2e/CMakeLists.txt",
+    "read_through": 13447,
+    "first_unread_order": 13448,
+    "first_unread_path": "doxygen-theme::DoxygenLayout.xml",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }
