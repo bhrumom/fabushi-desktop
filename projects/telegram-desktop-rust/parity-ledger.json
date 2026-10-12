@@ -6,8 +6,8 @@
   "target_commit": "371b72f1cd20de03dc4dff9a15ed761054968093",
   "coverage": {
     "source_entries_total": 16125,
-    "unknown": 15032,
-    "unread": 1865,
+    "unknown": 14968,
+    "unread": 1801,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13488,10 +13488,10 @@
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "deterministic_prefix_closed": 57,
-    "development_only_non_applicable": 1019,
-    "unknown_closed": 1093,
+    "development_only_non_applicable": 1083,
+    "unknown_closed": 1157,
     "omitted": 0,
-    "read_through": 14260,
+    "read_through": 14324,
     "first_unread_order": 14133,
     "first_unread_path": "doc/gh-pages::navtreeindex2.js",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
