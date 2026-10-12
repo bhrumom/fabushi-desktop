@@ -629,12 +629,12 @@
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "deterministic_prefix_closed": 57,
-    "development_only_non_applicable": 1339,
-    "unknown_closed": 1413,
+    "development_only_non_applicable": 1403,
+    "unknown_closed": 1477,
     "omitted": 0,
-    "read_through": 14580,
-    "first_unread_order": 14581,
-    "first_unread_path": "doc/gh-pages::structconcepts_1_1common__type_3_01T_00_01U_00_01Vs_8_8_8_01_4.html",
+    "read_through": 14644,
+    "first_unread_order": 14645,
+    "first_unread_path": "doc/gh-pages::structmeta_1_1quote__i.html",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
@@ -671,17 +671,17 @@
   "note": "Accepted baseline; exact read-through 14,516; unknown=14,776, unread=1,609, omitted=0; first unread 14,517 doc/gh-pages::search/variables_0.js.",
   "source_accounting": {
     "recursive_total": 16125,
-    "read_through": 14580,
-    "first_unread_order": 14581,
-    "first_unread_path": "doc/gh-pages::structconcepts_1_1common__type_3_01T_00_01U_00_01Vs_8_8_8_01_4.html",
-    "unread": 1545,
-    "unknown": 14712,
+    "read_through": 14644,
+    "first_unread_order": 14645,
+    "first_unread_path": "doc/gh-pages::structmeta_1_1quote__i.html",
+    "unread": 1481,
+    "unknown": 14648,
     "omitted": 0,
     "parent_exact_head_evidence": {
-      "head": "e6602143e99bae211b907350b8eb9b2e0f329bc7",
-      "note": "Orders 14,517-14,580 directly exact-read on this lineage; fresh same-head Actions required for descendant."
+      "head": "1e1b5e070dbcd7143fffb9ae46e2893aa0f0d37b",
+      "note": "Orders 14,581-14,644 directly exact-read on this lineage; fresh same-head Actions required for descendant."
     },
-    "development_only_non_applicable": 1339,
-    "unknown_closed": 1413
+    "development_only_non_applicable": 1403,
+    "unknown_closed": 1477
   }
 }
