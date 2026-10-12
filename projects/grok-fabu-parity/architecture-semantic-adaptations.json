@@ -952,16 +952,17 @@
       "referencePath": "source/electron-main/attachments/attachment-manager.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "3d32f0d981474aac28eb987b5ed6d1dc987bd6ea",
+      "targetBlobSha": "5c17dcca5e248afae6f32c4744934bad03ddf41f",
       "behavioralEvidence": [
         "source/electron-main/attachments/attachment-manager.ts",
-        "source/shared/node/sand-data-root.ts"
+        "source/shared/node/sand-data-root.ts",
+        "source/shared/media/svg-preview-safety.ts"
       ],
       "testEvidence": [
         "source/electron-main/foundations.test.ts",
         ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "rationale": "Keeps the frozen Grok attachment manager semantics while sourcing data-root and path reanchoring from the shared Node boundary rather than legacy Host TypeScript. This is a dependency-direction adaptation only; attachment lifecycle and path semantics remain owned by Electron Main. The same owner now reads local preview files through an exact bounded file handle before decode, rejects non-files/zero/oversized content and size changes, and applies the canonical preview cap to injected reads as well; foundations.test.ts provides focused evidence without adding a second media runtime."
+      "rationale": "Keeps the frozen Grok attachment manager semantics while sourcing data-root and path reanchoring from the shared Node boundary rather than legacy Host TypeScript. Attachment lifecycle and path semantics remain owned by Electron Main. The same owner reads local preview files through an exact bounded file handle before decode, rejects non-files/zero/oversized content and size changes, and applies the canonical preview cap to injected reads as well. Untrusted SVG previews now cross one source-neutral fail-closed sanitizer that rejects scriptable elements, CSS/URL execution, external/reference resources, malformed attributes/entities and parser-confusing markup; rejected SVG cannot bypass that boundary through the remote image fast path and remains a downloadable attachment. foundations.test.ts provides focused shipping-owner evidence without adding a second media runtime."
     },
     {
       "referencePath": "source/electron-main/attachments/attachments.ts",
