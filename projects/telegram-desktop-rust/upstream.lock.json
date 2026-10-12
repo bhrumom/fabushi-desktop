@@ -265,10 +265,10 @@
   "coverage": {
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
-    "unknown_minimum": 13624,
-    "unread_minimum": 457,
+    "unknown_minimum": 13560,
+    "unread_minimum": 393,
     "omitted_known": 0,
-    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 15,668; unknown=13,624, unread=457, omitted=0."
+    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 15,732; unknown=13,560, unread=393, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -629,12 +629,12 @@
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "deterministic_prefix_closed": 57,
-    "development_only_non_applicable": 2427,
-    "unknown_closed": 2501,
+    "development_only_non_applicable": 2491,
+    "unknown_closed": 2565,
     "omitted": 0,
-    "read_through": 15668,
-    "first_unread_order": 15669,
-    "first_unread_path": "doc/gh-pages::structranges_1_1views_1_1sample__base__fn.html",
+    "read_through": 15732,
+    "first_unread_order": 15733,
+    "first_unread_path": "doc/gh-pages::structranges_1_1views_1_1split__when__base__fn-members.html",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
@@ -671,17 +671,17 @@
   "note": "Accepted baseline; exact read-through 14,964; unknown=14,328, unread=1,161, omitted=0; first unread 14,965 doc/gh-pages::structranges_1_1filter__view.html.",
   "source_accounting": {
     "recursive_total": 16125,
-    "read_through": 15668,
-    "first_unread_order": 15669,
-    "first_unread_path": "doc/gh-pages::structranges_1_1views_1_1sample__base__fn.html",
-    "unread": 457,
-    "unknown": 13624,
+    "read_through": 15732,
+    "first_unread_order": 15733,
+    "first_unread_path": "doc/gh-pages::structranges_1_1views_1_1split__when__base__fn-members.html",
+    "unread": 393,
+    "unknown": 13560,
     "omitted": 0,
     "parent_exact_head_evidence": {
-      "head": "dc324dcedf19eaf064865dfc02c07ae58175e846",
-      "note": "Orders 15,605-15,668 individually exact-blob audited from authority artifact 11741059333 (sha256:6704a270d220d0ffa3a8ebeaa6edc8b52d9ebea8998a94de1660be37aa490c24); fresh same-head Actions required for descendant."
+      "head": "8292a1883cb5d7418c4bcce6bda31c240318cdce",
+      "note": "Orders 15,669-15,732 individually direct exact-blob audited from accepted nested commit; fresh same-head Actions required for descendant."
     },
-    "development_only_non_applicable": 2427,
-    "unknown_closed": 2501
+    "development_only_non_applicable": 2491,
+    "unknown_closed": 2565
   }
 }
