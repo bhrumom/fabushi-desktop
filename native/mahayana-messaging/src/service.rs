@@ -3119,6 +3119,7 @@ mod recent_participant_suggestion_service_tests {
         let restored = MessagingService::load(store).expect("restore service");
         assert_eq!(restored.cursor(), 41);
         assert_eq!(restored.engine().recent_participant_suggestions(&owner), &[peer]);
+    }
 
     #[test]
     fn recent_participant_persistence_failure_rolls_back_and_retry_commits_exactly_once() {
@@ -3225,6 +3226,5 @@ mod recent_participant_suggestion_service_tests {
             &[peer]
         );
         assert_eq!(service.cursor(), 23);
-    }
     }
 }
