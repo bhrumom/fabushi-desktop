@@ -1,0 +1,2559 @@
+{
+  "format_version": 2,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+    "tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6"
+  },
+  "source_component": {
+    "repository": "desktop-app/lib_webrtc",
+    "commit": "52636e86eaa493de670daf71959d000b281bd153",
+    "mount": "Telegram/lib_webrtc"
+  },
+  "exact_head_evidence": {
+    "production_owner_audit_head": "b714e70a2adee840cb172ccfc076791a22a7ae79",
+    "status": "direct source read/decomposition complete; central accounting and descendant exact-head validation pending"
+  },
+  "accounting": {
+    "recursive_total": 16125,
+    "read_through": 13314,
+    "unread": 2811,
+    "unknown": 15845,
+    "omitted": 0,
+    "unknown_closed": 280
+  },
+  "range": {
+    "first_order": 13275,
+    "last_order": 13314,
+    "entries": 40,
+    "next_order": 13315
+  },
+  "rows": [
+    {
+      "recursive_order": 13275,
+      "source_path": "Telegram/lib_webrtc::CMakeLists.txt",
+      "source_blob_sha": "d3c786bef0f4a4b8746493eee7ab76908b723737",
+      "source_identity": {
+        "repository": "desktop-app/lib_webrtc",
+        "commit": "52636e86eaa493de670daf71959d000b281bd153",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_webrtc",
+        "path": "CMakeLists.txt",
+        "mode": "100644",
+        "type": "blob",
+        "object": "d3c786bef0f4a4b8746493eee7ab76908b723737",
+        "size": 3028
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "CMakeLists.txt"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "CMakeLists.txt",
+      "responsibility": "Build/common glue for canonical Human Call media responsibilities; no Telegram-specific owner retained.",
+      "responsibilities": [
+        "Build/common glue for canonical Human Call media responsibilities; no Telegram-specific owner retained."
+      ],
+      "existing_owner_candidates": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "chosen_owner": "Existing Human Call media/session owner",
+      "fabushi_canonical_owner": "Existing Human Call media/session owner",
+      "fabushi_target": "frontend/src/production/human-call-media.tsx, source/host/src/extensions/session/call_session.rs",
+      "fabushi_target_paths": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "fabushi_target_symbols": [
+        "HumanCallMedia",
+        "CallSession"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "tests": [
+        "frontend/src/production/human-call-controls.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "desktop/e2e/miniapp-bot-parity.spec.ts",
+        "exact-head production/E2E acceptance required where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_webrtc@52636e86eaa493de670daf71959d000b281bd153:d3c786bef0f4a4b8746493eee7ab76908b723737",
+        "production-owner-audit:b714e70a2adee840cb172ccfc076791a22a7ae79"
+      ],
+      "evidence_gap": "Mapped-open until full Human Call exact-head acceptance."
+    },
+    {
+      "recursive_order": 13276,
+      "source_path": "Telegram/lib_webrtc::webrtc/details/webrtc_environment_openal.cpp",
+      "source_blob_sha": "e96fb4af646e4182c977fd489960407dfc52c55a",
+      "source_identity": {
+        "repository": "desktop-app/lib_webrtc",
+        "commit": "52636e86eaa493de670daf71959d000b281bd153",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_webrtc",
+        "path": "webrtc/details/webrtc_environment_openal.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "e96fb4af646e4182c977fd489960407dfc52c55a",
+        "size": 4122
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Webrtc::Environment",
+        "Webrtc::Environment::devices"
+      ],
+      "disposition": "mapped-open-blocked-production-evidence",
+      "upstream_owner": "webrtc/details/webrtc_environment_openal.cpp",
+      "responsibility": "Audio/video device enumeration, default-device change/disconnect recovery, stable device identity resolution, mute/device-list change propagation and permission-aware capture availability.",
+      "responsibilities": [
+        "Audio/video device enumeration, default-device change/disconnect recovery, stable device identity resolution, mute/device-list change propagation and permission-aware capture availability."
+      ],
+      "existing_owner_candidates": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "chosen_owner": "Existing Human Call media preference/capture owner",
+      "fabushi_canonical_owner": "Existing Human Call media preference/capture owner",
+      "fabushi_target": "frontend/src/production/human-call-media.tsx, source/electron-main/call-media.ts, source/host/src/extensions/session/call_session.rs",
+      "fabushi_target_paths": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "fabushi_target_symbols": [
+        "getPreferredUserMedia",
+        "persistCapturedDevices",
+        "CallSession"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "tests": [
+        "frontend/src/production/human-call-controls.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "desktop/e2e/miniapp-bot-parity.spec.ts",
+        "exact-head production/E2E acceptance required where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_webrtc@52636e86eaa493de670daf71959d000b281bd153:e96fb4af646e4182c977fd489960407dfc52c55a",
+        "production-owner-audit:b714e70a2adee840cb172ccfc076791a22a7ae79"
+      ],
+      "evidence_gap": "Saved preferred device IDs and one-shot camera recovery exist, but complete devicechange/enumerateDevices hot-plug/default-device resolver parity is not yet proven."
+    },
+    {
+      "recursive_order": 13277,
+      "source_path": "Telegram/lib_webrtc::webrtc/details/webrtc_environment_openal.h",
+      "source_blob_sha": "35563799ed72b8237416a0f1909ea312f0b7730e",
+      "source_identity": {
+        "repository": "desktop-app/lib_webrtc",
+        "commit": "52636e86eaa493de670daf71959d000b281bd153",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_webrtc",
+        "path": "webrtc/details/webrtc_environment_openal.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "35563799ed72b8237416a0f1909ea312f0b7730e",
+        "size": 1515
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Webrtc::Environment",
+        "Webrtc::Environment::devices"
+      ],
+      "disposition": "mapped-open-blocked-production-evidence",
+      "upstream_owner": "webrtc/details/webrtc_environment_openal.h",
+      "responsibility": "Audio/video device enumeration, default-device change/disconnect recovery, stable device identity resolution, mute/device-list change propagation and permission-aware capture availability.",
+      "responsibilities": [
+        "Audio/video device enumeration, default-device change/disconnect recovery, stable device identity resolution, mute/device-list change propagation and permission-aware capture availability."
+      ],
+      "existing_owner_candidates": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "chosen_owner": "Existing Human Call media preference/capture owner",
+      "fabushi_canonical_owner": "Existing Human Call media preference/capture owner",
+      "fabushi_target": "frontend/src/production/human-call-media.tsx, source/electron-main/call-media.ts, source/host/src/extensions/session/call_session.rs",
+      "fabushi_target_paths": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "fabushi_target_symbols": [
+        "getPreferredUserMedia",
+        "persistCapturedDevices",
+        "CallSession"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "tests": [
+        "frontend/src/production/human-call-controls.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "desktop/e2e/miniapp-bot-parity.spec.ts",
+        "exact-head production/E2E acceptance required where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_webrtc@52636e86eaa493de670daf71959d000b281bd153:35563799ed72b8237416a0f1909ea312f0b7730e",
+        "production-owner-audit:b714e70a2adee840cb172ccfc076791a22a7ae79"
+      ],
+      "evidence_gap": "Saved preferred device IDs and one-shot camera recovery exist, but complete devicechange/enumerateDevices hot-plug/default-device resolver parity is not yet proven."
+    },
+    {
+      "recursive_order": 13278,
+      "source_path": "Telegram/lib_webrtc::webrtc/details/webrtc_environment_video_capture.cpp",
+      "source_blob_sha": "0b38efc69b9adacb87cf565646bde137b32d348d",
+      "source_identity": {
+        "repository": "desktop-app/lib_webrtc",
+        "commit": "52636e86eaa493de670daf71959d000b281bd153",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_webrtc",
+        "path": "webrtc/details/webrtc_environment_video_capture.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "0b38efc69b9adacb87cf565646bde137b32d348d",
+        "size": 3662
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Webrtc::Environment",
+        "Webrtc::Environment::devices"
+      ],
+      "disposition": "mapped-open-blocked-production-evidence",
+      "upstream_owner": "webrtc/details/webrtc_environment_video_capture.cpp",
+      "responsibility": "Audio/video device enumeration, default-device change/disconnect recovery, stable device identity resolution, mute/device-list change propagation and permission-aware capture availability.",
+      "responsibilities": [
+        "Audio/video device enumeration, default-device change/disconnect recovery, stable device identity resolution, mute/device-list change propagation and permission-aware capture availability."
+      ],
+      "existing_owner_candidates": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "chosen_owner": "Existing Human Call media preference/capture owner",
+      "fabushi_canonical_owner": "Existing Human Call media preference/capture owner",
+      "fabushi_target": "frontend/src/production/human-call-media.tsx, source/electron-main/call-media.ts, source/host/src/extensions/session/call_session.rs",
+      "fabushi_target_paths": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "fabushi_target_symbols": [
+        "getPreferredUserMedia",
+        "persistCapturedDevices",
+        "CallSession"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "tests": [
+        "frontend/src/production/human-call-controls.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "desktop/e2e/miniapp-bot-parity.spec.ts",
+        "exact-head production/E2E acceptance required where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_webrtc@52636e86eaa493de670daf71959d000b281bd153:0b38efc69b9adacb87cf565646bde137b32d348d",
+        "production-owner-audit:b714e70a2adee840cb172ccfc076791a22a7ae79"
+      ],
+      "evidence_gap": "Saved preferred device IDs and one-shot camera recovery exist, but complete devicechange/enumerateDevices hot-plug/default-device resolver parity is not yet proven."
+    },
+    {
+      "recursive_order": 13279,
+      "source_path": "Telegram/lib_webrtc::webrtc/details/webrtc_environment_video_capture.h",
+      "source_blob_sha": "19ab254862439f3452f88e64fd33a84029c0ff23",
+      "source_identity": {
+        "repository": "desktop-app/lib_webrtc",
+        "commit": "52636e86eaa493de670daf71959d000b281bd153",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_webrtc",
+        "path": "webrtc/details/webrtc_environment_video_capture.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "19ab254862439f3452f88e64fd33a84029c0ff23",
+        "size": 1174
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Webrtc::Environment",
+        "Webrtc::Environment::devices"
+      ],
+      "disposition": "mapped-open-blocked-production-evidence",
+      "upstream_owner": "webrtc/details/webrtc_environment_video_capture.h",
+      "responsibility": "Audio/video device enumeration, default-device change/disconnect recovery, stable device identity resolution, mute/device-list change propagation and permission-aware capture availability.",
+      "responsibilities": [
+        "Audio/video device enumeration, default-device change/disconnect recovery, stable device identity resolution, mute/device-list change propagation and permission-aware capture availability."
+      ],
+      "existing_owner_candidates": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "chosen_owner": "Existing Human Call media preference/capture owner",
+      "fabushi_canonical_owner": "Existing Human Call media preference/capture owner",
+      "fabushi_target": "frontend/src/production/human-call-media.tsx, source/electron-main/call-media.ts, source/host/src/extensions/session/call_session.rs",
+      "fabushi_target_paths": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "fabushi_target_symbols": [
+        "getPreferredUserMedia",
+        "persistCapturedDevices",
+        "CallSession"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "tests": [
+        "frontend/src/production/human-call-controls.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "desktop/e2e/miniapp-bot-parity.spec.ts",
+        "exact-head production/E2E acceptance required where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_webrtc@52636e86eaa493de670daf71959d000b281bd153:19ab254862439f3452f88e64fd33a84029c0ff23",
+        "production-owner-audit:b714e70a2adee840cb172ccfc076791a22a7ae79"
+      ],
+      "evidence_gap": "Saved preferred device IDs and one-shot camera recovery exist, but complete devicechange/enumerateDevices hot-plug/default-device resolver parity is not yet proven."
+    },
+    {
+      "recursive_order": 13280,
+      "source_path": "Telegram/lib_webrtc::webrtc/details/webrtc_openal_adm.cpp",
+      "source_blob_sha": "4962d89bd1972c6f7c60a0f58deededd77dcf104",
+      "source_identity": {
+        "repository": "desktop-app/lib_webrtc",
+        "commit": "52636e86eaa493de670daf71959d000b281bd153",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_webrtc",
+        "path": "webrtc/details/webrtc_openal_adm.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "4962d89bd1972c6f7c60a0f58deededd77dcf104",
+        "size": 35681
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Webrtc::OpenALADM"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "webrtc/details/webrtc_openal_adm.cpp",
+      "responsibility": "Audio device module initialization, playback/record callbacks, volume/mute/sample framing and lifecycle under canonical Human Call media ownership.",
+      "responsibilities": [
+        "Audio device module initialization, playback/record callbacks, volume/mute/sample framing and lifecycle under canonical Human Call media ownership."
+      ],
+      "existing_owner_candidates": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/host/src/extensions/session/call_session.rs",
+        "source/mahayana/codex-rs/realtime-webrtc/src/native.rs"
+      ],
+      "chosen_owner": "Existing Human Call audio capture/playback owner",
+      "fabushi_canonical_owner": "Existing Human Call audio capture/playback owner",
+      "fabushi_target": "frontend/src/production/human-call-media.tsx, source/host/src/extensions/session/call_session.rs, source/mahayana/codex-rs/realtime-webrtc/src/native.rs",
+      "fabushi_target_paths": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/host/src/extensions/session/call_session.rs",
+        "source/mahayana/codex-rs/realtime-webrtc/src/native.rs"
+      ],
+      "fabushi_target_symbols": [
+        "getPreferredUserMedia",
+        "CallSession",
+        "native realtime WebRTC"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/host/src/extensions/session/call_session.rs",
+        "source/mahayana/codex-rs/realtime-webrtc/src/native.rs"
+      ],
+      "tests": [
+        "frontend/src/production/human-call-controls.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "desktop/e2e/miniapp-bot-parity.spec.ts",
+        "exact-head production/E2E acceptance required where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_webrtc@52636e86eaa493de670daf71959d000b281bd153:4962d89bd1972c6f7c60a0f58deededd77dcf104",
+        "production-owner-audit:b714e70a2adee840cb172ccfc076791a22a7ae79"
+      ],
+      "evidence_gap": "Existing call/WebRTC owners are present; full platform audio-device acceptance remains open."
+    },
+    {
+      "recursive_order": 13281,
+      "source_path": "Telegram/lib_webrtc::webrtc/details/webrtc_openal_adm.h",
+      "source_blob_sha": "d68507be356a39f2a7a730ec36f903244f89c68e",
+      "source_identity": {
+        "repository": "desktop-app/lib_webrtc",
+        "commit": "52636e86eaa493de670daf71959d000b281bd153",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_webrtc",
+        "path": "webrtc/details/webrtc_openal_adm.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "d68507be356a39f2a7a730ec36f903244f89c68e",
+        "size": 7172
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Webrtc::OpenALADM"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "webrtc/details/webrtc_openal_adm.h",
+      "responsibility": "Audio device module initialization, playback/record callbacks, volume/mute/sample framing and lifecycle under canonical Human Call media ownership.",
+      "responsibilities": [
+        "Audio device module initialization, playback/record callbacks, volume/mute/sample framing and lifecycle under canonical Human Call media ownership."
+      ],
+      "existing_owner_candidates": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/host/src/extensions/session/call_session.rs",
+        "source/mahayana/codex-rs/realtime-webrtc/src/native.rs"
+      ],
+      "chosen_owner": "Existing Human Call audio capture/playback owner",
+      "fabushi_canonical_owner": "Existing Human Call audio capture/playback owner",
+      "fabushi_target": "frontend/src/production/human-call-media.tsx, source/host/src/extensions/session/call_session.rs, source/mahayana/codex-rs/realtime-webrtc/src/native.rs",
+      "fabushi_target_paths": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/host/src/extensions/session/call_session.rs",
+        "source/mahayana/codex-rs/realtime-webrtc/src/native.rs"
+      ],
+      "fabushi_target_symbols": [
+        "getPreferredUserMedia",
+        "CallSession",
+        "native realtime WebRTC"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/host/src/extensions/session/call_session.rs",
+        "source/mahayana/codex-rs/realtime-webrtc/src/native.rs"
+      ],
+      "tests": [
+        "frontend/src/production/human-call-controls.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "desktop/e2e/miniapp-bot-parity.spec.ts",
+        "exact-head production/E2E acceptance required where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_webrtc@52636e86eaa493de670daf71959d000b281bd153:d68507be356a39f2a7a730ec36f903244f89c68e",
+        "production-owner-audit:b714e70a2adee840cb172ccfc076791a22a7ae79"
+      ],
+      "evidence_gap": "Existing call/WebRTC owners are present; full platform audio-device acceptance remains open."
+    },
+    {
+      "recursive_order": 13282,
+      "source_path": "Telegram/lib_webrtc::webrtc/platform/linux/webrtc_environment_linux.cpp",
+      "source_blob_sha": "e89717ca810cb566355b3e06a655a342958aed7d",
+      "source_identity": {
+        "repository": "desktop-app/lib_webrtc",
+        "commit": "52636e86eaa493de670daf71959d000b281bd153",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_webrtc",
+        "path": "webrtc/platform/linux/webrtc_environment_linux.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "e89717ca810cb566355b3e06a655a342958aed7d",
+        "size": 2826
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Webrtc::Environment",
+        "Webrtc::Environment::devices"
+      ],
+      "disposition": "mapped-open-blocked-production-evidence",
+      "upstream_owner": "webrtc/platform/linux/webrtc_environment_linux.cpp",
+      "responsibility": "Audio/video device enumeration, default-device change/disconnect recovery, stable device identity resolution, mute/device-list change propagation and permission-aware capture availability.",
+      "responsibilities": [
+        "Audio/video device enumeration, default-device change/disconnect recovery, stable device identity resolution, mute/device-list change propagation and permission-aware capture availability."
+      ],
+      "existing_owner_candidates": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "chosen_owner": "Existing Human Call media preference/capture owner",
+      "fabushi_canonical_owner": "Existing Human Call media preference/capture owner",
+      "fabushi_target": "frontend/src/production/human-call-media.tsx, source/electron-main/call-media.ts, source/host/src/extensions/session/call_session.rs",
+      "fabushi_target_paths": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "fabushi_target_symbols": [
+        "getPreferredUserMedia",
+        "persistCapturedDevices",
+        "CallSession"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "tests": [
+        "frontend/src/production/human-call-controls.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "desktop/e2e/miniapp-bot-parity.spec.ts",
+        "exact-head production/E2E acceptance required where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_webrtc@52636e86eaa493de670daf71959d000b281bd153:e89717ca810cb566355b3e06a655a342958aed7d",
+        "production-owner-audit:b714e70a2adee840cb172ccfc076791a22a7ae79"
+      ],
+      "evidence_gap": "Saved preferred device IDs and one-shot camera recovery exist, but complete devicechange/enumerateDevices hot-plug/default-device resolver parity is not yet proven."
+    },
+    {
+      "recursive_order": 13283,
+      "source_path": "Telegram/lib_webrtc::webrtc/platform/linux/webrtc_environment_linux.h",
+      "source_blob_sha": "910ed3b2ac51ce2ecbd6f4e342b72f1a5457a18e",
+      "source_identity": {
+        "repository": "desktop-app/lib_webrtc",
+        "commit": "52636e86eaa493de670daf71959d000b281bd153",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_webrtc",
+        "path": "webrtc/platform/linux/webrtc_environment_linux.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "910ed3b2ac51ce2ecbd6f4e342b72f1a5457a18e",
+        "size": 1317
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Webrtc::Environment",
+        "Webrtc::Environment::devices"
+      ],
+      "disposition": "mapped-open-blocked-production-evidence",
+      "upstream_owner": "webrtc/platform/linux/webrtc_environment_linux.h",
+      "responsibility": "Audio/video device enumeration, default-device change/disconnect recovery, stable device identity resolution, mute/device-list change propagation and permission-aware capture availability.",
+      "responsibilities": [
+        "Audio/video device enumeration, default-device change/disconnect recovery, stable device identity resolution, mute/device-list change propagation and permission-aware capture availability."
+      ],
+      "existing_owner_candidates": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "chosen_owner": "Existing Human Call media preference/capture owner",
+      "fabushi_canonical_owner": "Existing Human Call media preference/capture owner",
+      "fabushi_target": "frontend/src/production/human-call-media.tsx, source/electron-main/call-media.ts, source/host/src/extensions/session/call_session.rs",
+      "fabushi_target_paths": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "fabushi_target_symbols": [
+        "getPreferredUserMedia",
+        "persistCapturedDevices",
+        "CallSession"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "tests": [
+        "frontend/src/production/human-call-controls.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "desktop/e2e/miniapp-bot-parity.spec.ts",
+        "exact-head production/E2E acceptance required where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_webrtc@52636e86eaa493de670daf71959d000b281bd153:910ed3b2ac51ce2ecbd6f4e342b72f1a5457a18e",
+        "production-owner-audit:b714e70a2adee840cb172ccfc076791a22a7ae79"
+      ],
+      "evidence_gap": "Saved preferred device IDs and one-shot camera recovery exist, but complete devicechange/enumerateDevices hot-plug/default-device resolver parity is not yet proven."
+    },
+    {
+      "recursive_order": 13284,
+      "source_path": "Telegram/lib_webrtc::webrtc/platform/linux/webrtc_loopback_adm_linux.cpp",
+      "source_blob_sha": "62fa3cbc501daadf91b8d4b4e1df3267e5e90106",
+      "source_identity": {
+        "repository": "desktop-app/lib_webrtc",
+        "commit": "52636e86eaa493de670daf71959d000b281bd153",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_webrtc",
+        "path": "webrtc/platform/linux/webrtc_loopback_adm_linux.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "62fa3cbc501daadf91b8d4b4e1df3267e5e90106",
+        "size": 3336
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Webrtc::LoopbackCapture",
+        "Webrtc::LoopbackADM"
+      ],
+      "disposition": "mapped-open-blocked-production-evidence",
+      "upstream_owner": "webrtc/platform/linux/webrtc_loopback_adm_linux.cpp",
+      "responsibility": "System-audio/loopback capture lifecycle, platform source selection, 10ms audio framing/resampling, start/stop/error/restart semantics and permission fencing. Existing Human Call owner must absorb this; no second WebRTC runtime.",
+      "responsibilities": [
+        "System-audio/loopback capture lifecycle, platform source selection, 10ms audio framing/resampling, start/stop/error/restart semantics and permission fencing. Existing Human Call owner must absorb this; no second WebRTC runtime."
+      ],
+      "existing_owner_candidates": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "chosen_owner": "Existing Human Call media owner + Electron platform capture adapter",
+      "fabushi_canonical_owner": "Existing Human Call media owner + Electron platform capture adapter",
+      "fabushi_target": "frontend/src/production/human-call-media.tsx, source/electron-main/call-media.ts, source/host/src/extensions/session/call_session.rs",
+      "fabushi_target_paths": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "fabushi_target_symbols": [
+        "getPreferredUserMedia",
+        "createCallMediaBridge",
+        "CallSession"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "tests": [
+        "frontend/src/production/human-call-controls.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "desktop/e2e/miniapp-bot-parity.spec.ts",
+        "exact-head production/E2E acceptance required where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_webrtc@52636e86eaa493de670daf71959d000b281bd153:62fa3cbc501daadf91b8d4b4e1df3267e5e90106",
+        "production-owner-audit:b714e70a2adee840cb172ccfc076791a22a7ae79"
+      ],
+      "evidence_gap": "Current exact-head audit proves screen source capture and Human Call media lifecycle, but does not yet prove complete Linux/macOS/Windows system-audio/loopback production parity and real acceptance."
+    },
+    {
+      "recursive_order": 13285,
+      "source_path": "Telegram/lib_webrtc::webrtc/platform/linux/webrtc_loopback_adm_linux.h",
+      "source_blob_sha": "369bd5f980220ab5677277b0c5741630480eae6a",
+      "source_identity": {
+        "repository": "desktop-app/lib_webrtc",
+        "commit": "52636e86eaa493de670daf71959d000b281bd153",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_webrtc",
+        "path": "webrtc/platform/linux/webrtc_loopback_adm_linux.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "369bd5f980220ab5677277b0c5741630480eae6a",
+        "size": 701
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Webrtc::LoopbackCapture",
+        "Webrtc::LoopbackADM"
+      ],
+      "disposition": "mapped-open-blocked-production-evidence",
+      "upstream_owner": "webrtc/platform/linux/webrtc_loopback_adm_linux.h",
+      "responsibility": "System-audio/loopback capture lifecycle, platform source selection, 10ms audio framing/resampling, start/stop/error/restart semantics and permission fencing. Existing Human Call owner must absorb this; no second WebRTC runtime.",
+      "responsibilities": [
+        "System-audio/loopback capture lifecycle, platform source selection, 10ms audio framing/resampling, start/stop/error/restart semantics and permission fencing. Existing Human Call owner must absorb this; no second WebRTC runtime."
+      ],
+      "existing_owner_candidates": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "chosen_owner": "Existing Human Call media owner + Electron platform capture adapter",
+      "fabushi_canonical_owner": "Existing Human Call media owner + Electron platform capture adapter",
+      "fabushi_target": "frontend/src/production/human-call-media.tsx, source/electron-main/call-media.ts, source/host/src/extensions/session/call_session.rs",
+      "fabushi_target_paths": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "fabushi_target_symbols": [
+        "getPreferredUserMedia",
+        "createCallMediaBridge",
+        "CallSession"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "tests": [
+        "frontend/src/production/human-call-controls.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "desktop/e2e/miniapp-bot-parity.spec.ts",
+        "exact-head production/E2E acceptance required where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_webrtc@52636e86eaa493de670daf71959d000b281bd153:369bd5f980220ab5677277b0c5741630480eae6a",
+        "production-owner-audit:b714e70a2adee840cb172ccfc076791a22a7ae79"
+      ],
+      "evidence_gap": "Current exact-head audit proves screen source capture and Human Call media lifecycle, but does not yet prove complete Linux/macOS/Windows system-audio/loopback production parity and real acceptance."
+    },
+    {
+      "recursive_order": 13286,
+      "source_path": "Telegram/lib_webrtc::webrtc/platform/linux/webrtc_loopback_capture_linux.cpp",
+      "source_blob_sha": "c0ab1f93b493001c7cfaa57422e26679beb04a7b",
+      "source_identity": {
+        "repository": "desktop-app/lib_webrtc",
+        "commit": "52636e86eaa493de670daf71959d000b281bd153",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_webrtc",
+        "path": "webrtc/platform/linux/webrtc_loopback_capture_linux.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "c0ab1f93b493001c7cfaa57422e26679beb04a7b",
+        "size": 4550
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Webrtc::LoopbackCapture",
+        "Webrtc::LoopbackADM"
+      ],
+      "disposition": "mapped-open-blocked-production-evidence",
+      "upstream_owner": "webrtc/platform/linux/webrtc_loopback_capture_linux.cpp",
+      "responsibility": "System-audio/loopback capture lifecycle, platform source selection, 10ms audio framing/resampling, start/stop/error/restart semantics and permission fencing. Existing Human Call owner must absorb this; no second WebRTC runtime.",
+      "responsibilities": [
+        "System-audio/loopback capture lifecycle, platform source selection, 10ms audio framing/resampling, start/stop/error/restart semantics and permission fencing. Existing Human Call owner must absorb this; no second WebRTC runtime."
+      ],
+      "existing_owner_candidates": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "chosen_owner": "Existing Human Call media owner + Electron platform capture adapter",
+      "fabushi_canonical_owner": "Existing Human Call media owner + Electron platform capture adapter",
+      "fabushi_target": "frontend/src/production/human-call-media.tsx, source/electron-main/call-media.ts, source/host/src/extensions/session/call_session.rs",
+      "fabushi_target_paths": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "fabushi_target_symbols": [
+        "getPreferredUserMedia",
+        "createCallMediaBridge",
+        "CallSession"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "tests": [
+        "frontend/src/production/human-call-controls.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "desktop/e2e/miniapp-bot-parity.spec.ts",
+        "exact-head production/E2E acceptance required where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_webrtc@52636e86eaa493de670daf71959d000b281bd153:c0ab1f93b493001c7cfaa57422e26679beb04a7b",
+        "production-owner-audit:b714e70a2adee840cb172ccfc076791a22a7ae79"
+      ],
+      "evidence_gap": "Current exact-head audit proves screen source capture and Human Call media lifecycle, but does not yet prove complete Linux/macOS/Windows system-audio/loopback production parity and real acceptance."
+    },
+    {
+      "recursive_order": 13287,
+      "source_path": "Telegram/lib_webrtc::webrtc/platform/linux/webrtc_loopback_capture_linux.h",
+      "source_blob_sha": "372a8c8585933924556fe336d8d3da3d5e9d95fd",
+      "source_identity": {
+        "repository": "desktop-app/lib_webrtc",
+        "commit": "52636e86eaa493de670daf71959d000b281bd153",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_webrtc",
+        "path": "webrtc/platform/linux/webrtc_loopback_capture_linux.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "372a8c8585933924556fe336d8d3da3d5e9d95fd",
+        "size": 959
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Webrtc::LoopbackCapture",
+        "Webrtc::LoopbackADM"
+      ],
+      "disposition": "mapped-open-blocked-production-evidence",
+      "upstream_owner": "webrtc/platform/linux/webrtc_loopback_capture_linux.h",
+      "responsibility": "System-audio/loopback capture lifecycle, platform source selection, 10ms audio framing/resampling, start/stop/error/restart semantics and permission fencing. Existing Human Call owner must absorb this; no second WebRTC runtime.",
+      "responsibilities": [
+        "System-audio/loopback capture lifecycle, platform source selection, 10ms audio framing/resampling, start/stop/error/restart semantics and permission fencing. Existing Human Call owner must absorb this; no second WebRTC runtime."
+      ],
+      "existing_owner_candidates": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "chosen_owner": "Existing Human Call media owner + Electron platform capture adapter",
+      "fabushi_canonical_owner": "Existing Human Call media owner + Electron platform capture adapter",
+      "fabushi_target": "frontend/src/production/human-call-media.tsx, source/electron-main/call-media.ts, source/host/src/extensions/session/call_session.rs",
+      "fabushi_target_paths": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "fabushi_target_symbols": [
+        "getPreferredUserMedia",
+        "createCallMediaBridge",
+        "CallSession"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "tests": [
+        "frontend/src/production/human-call-controls.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "desktop/e2e/miniapp-bot-parity.spec.ts",
+        "exact-head production/E2E acceptance required where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_webrtc@52636e86eaa493de670daf71959d000b281bd153:372a8c8585933924556fe336d8d3da3d5e9d95fd",
+        "production-owner-audit:b714e70a2adee840cb172ccfc076791a22a7ae79"
+      ],
+      "evidence_gap": "Current exact-head audit proves screen source capture and Human Call media lifecycle, but does not yet prove complete Linux/macOS/Windows system-audio/loopback production parity and real acceptance."
+    },
+    {
+      "recursive_order": 13288,
+      "source_path": "Telegram/lib_webrtc::webrtc/platform/linux/webrtc_system_audio_capture_linux.cpp",
+      "source_blob_sha": "f9910edbef5d3369ff6c89abd2024784d413a4ed",
+      "source_identity": {
+        "repository": "desktop-app/lib_webrtc",
+        "commit": "52636e86eaa493de670daf71959d000b281bd153",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_webrtc",
+        "path": "webrtc/platform/linux/webrtc_system_audio_capture_linux.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "f9910edbef5d3369ff6c89abd2024784d413a4ed",
+        "size": 1169
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Webrtc::SystemAudioCapture"
+      ],
+      "disposition": "mapped-open-blocked-production-evidence",
+      "upstream_owner": "webrtc/platform/linux/webrtc_system_audio_capture_linux.cpp",
+      "responsibility": "System-audio/loopback capture lifecycle, platform source selection, 10ms audio framing/resampling, start/stop/error/restart semantics and permission fencing. Existing Human Call owner must absorb this; no second WebRTC runtime.",
+      "responsibilities": [
+        "System-audio/loopback capture lifecycle, platform source selection, 10ms audio framing/resampling, start/stop/error/restart semantics and permission fencing. Existing Human Call owner must absorb this; no second WebRTC runtime."
+      ],
+      "existing_owner_candidates": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "chosen_owner": "Existing Human Call media owner + Electron platform capture adapter",
+      "fabushi_canonical_owner": "Existing Human Call media owner + Electron platform capture adapter",
+      "fabushi_target": "frontend/src/production/human-call-media.tsx, source/electron-main/call-media.ts, source/host/src/extensions/session/call_session.rs",
+      "fabushi_target_paths": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "fabushi_target_symbols": [
+        "getPreferredUserMedia",
+        "createCallMediaBridge",
+        "CallSession"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "tests": [
+        "frontend/src/production/human-call-controls.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "desktop/e2e/miniapp-bot-parity.spec.ts",
+        "exact-head production/E2E acceptance required where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_webrtc@52636e86eaa493de670daf71959d000b281bd153:f9910edbef5d3369ff6c89abd2024784d413a4ed",
+        "production-owner-audit:b714e70a2adee840cb172ccfc076791a22a7ae79"
+      ],
+      "evidence_gap": "Current exact-head audit proves screen source capture and Human Call media lifecycle, but does not yet prove complete Linux/macOS/Windows system-audio/loopback production parity and real acceptance."
+    },
+    {
+      "recursive_order": 13289,
+      "source_path": "Telegram/lib_webrtc::webrtc/platform/linux/webrtc_system_audio_capture_linux.h",
+      "source_blob_sha": "2f7b162e11238034046f34abe11bea140b72f87d",
+      "source_identity": {
+        "repository": "desktop-app/lib_webrtc",
+        "commit": "52636e86eaa493de670daf71959d000b281bd153",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_webrtc",
+        "path": "webrtc/platform/linux/webrtc_system_audio_capture_linux.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "2f7b162e11238034046f34abe11bea140b72f87d",
+        "size": 714
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Webrtc::SystemAudioCapture"
+      ],
+      "disposition": "mapped-open-blocked-production-evidence",
+      "upstream_owner": "webrtc/platform/linux/webrtc_system_audio_capture_linux.h",
+      "responsibility": "System-audio/loopback capture lifecycle, platform source selection, 10ms audio framing/resampling, start/stop/error/restart semantics and permission fencing. Existing Human Call owner must absorb this; no second WebRTC runtime.",
+      "responsibilities": [
+        "System-audio/loopback capture lifecycle, platform source selection, 10ms audio framing/resampling, start/stop/error/restart semantics and permission fencing. Existing Human Call owner must absorb this; no second WebRTC runtime."
+      ],
+      "existing_owner_candidates": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "chosen_owner": "Existing Human Call media owner + Electron platform capture adapter",
+      "fabushi_canonical_owner": "Existing Human Call media owner + Electron platform capture adapter",
+      "fabushi_target": "frontend/src/production/human-call-media.tsx, source/electron-main/call-media.ts, source/host/src/extensions/session/call_session.rs",
+      "fabushi_target_paths": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "fabushi_target_symbols": [
+        "getPreferredUserMedia",
+        "createCallMediaBridge",
+        "CallSession"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "tests": [
+        "frontend/src/production/human-call-controls.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "desktop/e2e/miniapp-bot-parity.spec.ts",
+        "exact-head production/E2E acceptance required where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_webrtc@52636e86eaa493de670daf71959d000b281bd153:2f7b162e11238034046f34abe11bea140b72f87d",
+        "production-owner-audit:b714e70a2adee840cb172ccfc076791a22a7ae79"
+      ],
+      "evidence_gap": "Current exact-head audit proves screen source capture and Human Call media lifecycle, but does not yet prove complete Linux/macOS/Windows system-audio/loopback production parity and real acceptance."
+    },
+    {
+      "recursive_order": 13290,
+      "source_path": "Telegram/lib_webrtc::webrtc/platform/mac/webrtc_environment_mac.h",
+      "source_blob_sha": "3026cb01826dbc05689e7eb608b9c35821986d92",
+      "source_identity": {
+        "repository": "desktop-app/lib_webrtc",
+        "commit": "52636e86eaa493de670daf71959d000b281bd153",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_webrtc",
+        "path": "webrtc/platform/mac/webrtc_environment_mac.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "3026cb01826dbc05689e7eb608b9c35821986d92",
+        "size": 2360
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Webrtc::Environment",
+        "Webrtc::Environment::devices"
+      ],
+      "disposition": "mapped-open-blocked-production-evidence",
+      "upstream_owner": "webrtc/platform/mac/webrtc_environment_mac.h",
+      "responsibility": "Audio/video device enumeration, default-device change/disconnect recovery, stable device identity resolution, mute/device-list change propagation and permission-aware capture availability.",
+      "responsibilities": [
+        "Audio/video device enumeration, default-device change/disconnect recovery, stable device identity resolution, mute/device-list change propagation and permission-aware capture availability."
+      ],
+      "existing_owner_candidates": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "chosen_owner": "Existing Human Call media preference/capture owner",
+      "fabushi_canonical_owner": "Existing Human Call media preference/capture owner",
+      "fabushi_target": "frontend/src/production/human-call-media.tsx, source/electron-main/call-media.ts, source/host/src/extensions/session/call_session.rs",
+      "fabushi_target_paths": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "fabushi_target_symbols": [
+        "getPreferredUserMedia",
+        "persistCapturedDevices",
+        "CallSession"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "tests": [
+        "frontend/src/production/human-call-controls.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "desktop/e2e/miniapp-bot-parity.spec.ts",
+        "exact-head production/E2E acceptance required where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_webrtc@52636e86eaa493de670daf71959d000b281bd153:3026cb01826dbc05689e7eb608b9c35821986d92",
+        "production-owner-audit:b714e70a2adee840cb172ccfc076791a22a7ae79"
+      ],
+      "evidence_gap": "Saved preferred device IDs and one-shot camera recovery exist, but complete devicechange/enumerateDevices hot-plug/default-device resolver parity is not yet proven."
+    },
+    {
+      "recursive_order": 13291,
+      "source_path": "Telegram/lib_webrtc::webrtc/platform/mac/webrtc_environment_mac.mm",
+      "source_blob_sha": "c133ccc4c02d6ef3ac8eb13752b620edefce286c",
+      "source_identity": {
+        "repository": "desktop-app/lib_webrtc",
+        "commit": "52636e86eaa493de670daf71959d000b281bd153",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_webrtc",
+        "path": "webrtc/platform/mac/webrtc_environment_mac.mm",
+        "mode": "100644",
+        "type": "blob",
+        "object": "c133ccc4c02d6ef3ac8eb13752b620edefce286c",
+        "size": 18220
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Webrtc::Environment",
+        "Webrtc::Environment::devices"
+      ],
+      "disposition": "mapped-open-blocked-production-evidence",
+      "upstream_owner": "webrtc/platform/mac/webrtc_environment_mac.mm",
+      "responsibility": "Audio/video device enumeration, default-device change/disconnect recovery, stable device identity resolution, mute/device-list change propagation and permission-aware capture availability.",
+      "responsibilities": [
+        "Audio/video device enumeration, default-device change/disconnect recovery, stable device identity resolution, mute/device-list change propagation and permission-aware capture availability."
+      ],
+      "existing_owner_candidates": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "chosen_owner": "Existing Human Call media preference/capture owner",
+      "fabushi_canonical_owner": "Existing Human Call media preference/capture owner",
+      "fabushi_target": "frontend/src/production/human-call-media.tsx, source/electron-main/call-media.ts, source/host/src/extensions/session/call_session.rs",
+      "fabushi_target_paths": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "fabushi_target_symbols": [
+        "getPreferredUserMedia",
+        "persistCapturedDevices",
+        "CallSession"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "tests": [
+        "frontend/src/production/human-call-controls.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "desktop/e2e/miniapp-bot-parity.spec.ts",
+        "exact-head production/E2E acceptance required where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_webrtc@52636e86eaa493de670daf71959d000b281bd153:c133ccc4c02d6ef3ac8eb13752b620edefce286c",
+        "production-owner-audit:b714e70a2adee840cb172ccfc076791a22a7ae79"
+      ],
+      "evidence_gap": "Saved preferred device IDs and one-shot camera recovery exist, but complete devicechange/enumerateDevices hot-plug/default-device resolver parity is not yet proven."
+    },
+    {
+      "recursive_order": 13292,
+      "source_path": "Telegram/lib_webrtc::webrtc/platform/mac/webrtc_loopback_adm_mac.h",
+      "source_blob_sha": "a9a7885ab7b287065b3ba1179a3bce9d9865ca7b",
+      "source_identity": {
+        "repository": "desktop-app/lib_webrtc",
+        "commit": "52636e86eaa493de670daf71959d000b281bd153",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_webrtc",
+        "path": "webrtc/platform/mac/webrtc_loopback_adm_mac.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "a9a7885ab7b287065b3ba1179a3bce9d9865ca7b",
+        "size": 4400
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Webrtc::LoopbackCapture",
+        "Webrtc::LoopbackADM"
+      ],
+      "disposition": "mapped-open-blocked-production-evidence",
+      "upstream_owner": "webrtc/platform/mac/webrtc_loopback_adm_mac.h",
+      "responsibility": "System-audio/loopback capture lifecycle, platform source selection, 10ms audio framing/resampling, start/stop/error/restart semantics and permission fencing. Existing Human Call owner must absorb this; no second WebRTC runtime.",
+      "responsibilities": [
+        "System-audio/loopback capture lifecycle, platform source selection, 10ms audio framing/resampling, start/stop/error/restart semantics and permission fencing. Existing Human Call owner must absorb this; no second WebRTC runtime."
+      ],
+      "existing_owner_candidates": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "chosen_owner": "Existing Human Call media owner + Electron platform capture adapter",
+      "fabushi_canonical_owner": "Existing Human Call media owner + Electron platform capture adapter",
+      "fabushi_target": "frontend/src/production/human-call-media.tsx, source/electron-main/call-media.ts, source/host/src/extensions/session/call_session.rs",
+      "fabushi_target_paths": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "fabushi_target_symbols": [
+        "getPreferredUserMedia",
+        "createCallMediaBridge",
+        "CallSession"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "tests": [
+        "frontend/src/production/human-call-controls.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "desktop/e2e/miniapp-bot-parity.spec.ts",
+        "exact-head production/E2E acceptance required where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_webrtc@52636e86eaa493de670daf71959d000b281bd153:a9a7885ab7b287065b3ba1179a3bce9d9865ca7b",
+        "production-owner-audit:b714e70a2adee840cb172ccfc076791a22a7ae79"
+      ],
+      "evidence_gap": "Current exact-head audit proves screen source capture and Human Call media lifecycle, but does not yet prove complete Linux/macOS/Windows system-audio/loopback production parity and real acceptance."
+    },
+    {
+      "recursive_order": 13293,
+      "source_path": "Telegram/lib_webrtc::webrtc/platform/mac/webrtc_loopback_adm_mac.mm",
+      "source_blob_sha": "7d6138d6743e3413e7d3f526bed0b3d6474f9afc",
+      "source_identity": {
+        "repository": "desktop-app/lib_webrtc",
+        "commit": "52636e86eaa493de670daf71959d000b281bd153",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_webrtc",
+        "path": "webrtc/platform/mac/webrtc_loopback_adm_mac.mm",
+        "mode": "100644",
+        "type": "blob",
+        "object": "7d6138d6743e3413e7d3f526bed0b3d6474f9afc",
+        "size": 16787
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Webrtc::LoopbackCapture",
+        "Webrtc::LoopbackADM"
+      ],
+      "disposition": "mapped-open-blocked-production-evidence",
+      "upstream_owner": "webrtc/platform/mac/webrtc_loopback_adm_mac.mm",
+      "responsibility": "System-audio/loopback capture lifecycle, platform source selection, 10ms audio framing/resampling, start/stop/error/restart semantics and permission fencing. Existing Human Call owner must absorb this; no second WebRTC runtime.",
+      "responsibilities": [
+        "System-audio/loopback capture lifecycle, platform source selection, 10ms audio framing/resampling, start/stop/error/restart semantics and permission fencing. Existing Human Call owner must absorb this; no second WebRTC runtime."
+      ],
+      "existing_owner_candidates": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "chosen_owner": "Existing Human Call media owner + Electron platform capture adapter",
+      "fabushi_canonical_owner": "Existing Human Call media owner + Electron platform capture adapter",
+      "fabushi_target": "frontend/src/production/human-call-media.tsx, source/electron-main/call-media.ts, source/host/src/extensions/session/call_session.rs",
+      "fabushi_target_paths": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "fabushi_target_symbols": [
+        "getPreferredUserMedia",
+        "createCallMediaBridge",
+        "CallSession"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "tests": [
+        "frontend/src/production/human-call-controls.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "desktop/e2e/miniapp-bot-parity.spec.ts",
+        "exact-head production/E2E acceptance required where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_webrtc@52636e86eaa493de670daf71959d000b281bd153:7d6138d6743e3413e7d3f526bed0b3d6474f9afc",
+        "production-owner-audit:b714e70a2adee840cb172ccfc076791a22a7ae79"
+      ],
+      "evidence_gap": "Current exact-head audit proves screen source capture and Human Call media lifecycle, but does not yet prove complete Linux/macOS/Windows system-audio/loopback production parity and real acceptance."
+    },
+    {
+      "recursive_order": 13294,
+      "source_path": "Telegram/lib_webrtc::webrtc/platform/mac/webrtc_system_audio_capture_mac.h",
+      "source_blob_sha": "37389e500aa73652a0aadd5bcb3b47bd77d23e34",
+      "source_identity": {
+        "repository": "desktop-app/lib_webrtc",
+        "commit": "52636e86eaa493de670daf71959d000b281bd153",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_webrtc",
+        "path": "webrtc/platform/mac/webrtc_system_audio_capture_mac.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "37389e500aa73652a0aadd5bcb3b47bd77d23e34",
+        "size": 709
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Webrtc::SystemAudioCapture"
+      ],
+      "disposition": "mapped-open-blocked-production-evidence",
+      "upstream_owner": "webrtc/platform/mac/webrtc_system_audio_capture_mac.h",
+      "responsibility": "System-audio/loopback capture lifecycle, platform source selection, 10ms audio framing/resampling, start/stop/error/restart semantics and permission fencing. Existing Human Call owner must absorb this; no second WebRTC runtime.",
+      "responsibilities": [
+        "System-audio/loopback capture lifecycle, platform source selection, 10ms audio framing/resampling, start/stop/error/restart semantics and permission fencing. Existing Human Call owner must absorb this; no second WebRTC runtime."
+      ],
+      "existing_owner_candidates": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "chosen_owner": "Existing Human Call media owner + Electron platform capture adapter",
+      "fabushi_canonical_owner": "Existing Human Call media owner + Electron platform capture adapter",
+      "fabushi_target": "frontend/src/production/human-call-media.tsx, source/electron-main/call-media.ts, source/host/src/extensions/session/call_session.rs",
+      "fabushi_target_paths": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "fabushi_target_symbols": [
+        "getPreferredUserMedia",
+        "createCallMediaBridge",
+        "CallSession"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "tests": [
+        "frontend/src/production/human-call-controls.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "desktop/e2e/miniapp-bot-parity.spec.ts",
+        "exact-head production/E2E acceptance required where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_webrtc@52636e86eaa493de670daf71959d000b281bd153:37389e500aa73652a0aadd5bcb3b47bd77d23e34",
+        "production-owner-audit:b714e70a2adee840cb172ccfc076791a22a7ae79"
+      ],
+      "evidence_gap": "Current exact-head audit proves screen source capture and Human Call media lifecycle, but does not yet prove complete Linux/macOS/Windows system-audio/loopback production parity and real acceptance."
+    },
+    {
+      "recursive_order": 13295,
+      "source_path": "Telegram/lib_webrtc::webrtc/platform/mac/webrtc_system_audio_capture_mac.mm",
+      "source_blob_sha": "92ad8aca776310d3cfa2fcbfa2e9fb1f7737ee99",
+      "source_identity": {
+        "repository": "desktop-app/lib_webrtc",
+        "commit": "52636e86eaa493de670daf71959d000b281bd153",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_webrtc",
+        "path": "webrtc/platform/mac/webrtc_system_audio_capture_mac.mm",
+        "mode": "100644",
+        "type": "blob",
+        "object": "92ad8aca776310d3cfa2fcbfa2e9fb1f7737ee99",
+        "size": 8437
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Webrtc::SystemAudioCapture"
+      ],
+      "disposition": "mapped-open-blocked-production-evidence",
+      "upstream_owner": "webrtc/platform/mac/webrtc_system_audio_capture_mac.mm",
+      "responsibility": "System-audio/loopback capture lifecycle, platform source selection, 10ms audio framing/resampling, start/stop/error/restart semantics and permission fencing. Existing Human Call owner must absorb this; no second WebRTC runtime.",
+      "responsibilities": [
+        "System-audio/loopback capture lifecycle, platform source selection, 10ms audio framing/resampling, start/stop/error/restart semantics and permission fencing. Existing Human Call owner must absorb this; no second WebRTC runtime."
+      ],
+      "existing_owner_candidates": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "chosen_owner": "Existing Human Call media owner + Electron platform capture adapter",
+      "fabushi_canonical_owner": "Existing Human Call media owner + Electron platform capture adapter",
+      "fabushi_target": "frontend/src/production/human-call-media.tsx, source/electron-main/call-media.ts, source/host/src/extensions/session/call_session.rs",
+      "fabushi_target_paths": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "fabushi_target_symbols": [
+        "getPreferredUserMedia",
+        "createCallMediaBridge",
+        "CallSession"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "tests": [
+        "frontend/src/production/human-call-controls.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "desktop/e2e/miniapp-bot-parity.spec.ts",
+        "exact-head production/E2E acceptance required where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_webrtc@52636e86eaa493de670daf71959d000b281bd153:92ad8aca776310d3cfa2fcbfa2e9fb1f7737ee99",
+        "production-owner-audit:b714e70a2adee840cb172ccfc076791a22a7ae79"
+      ],
+      "evidence_gap": "Current exact-head audit proves screen source capture and Human Call media lifecycle, but does not yet prove complete Linux/macOS/Windows system-audio/loopback production parity and real acceptance."
+    },
+    {
+      "recursive_order": 13296,
+      "source_path": "Telegram/lib_webrtc::webrtc/platform/webrtc_platform_environment.h",
+      "source_blob_sha": "ef9e0ab3be6142031351f39d12da66d2f7819edc",
+      "source_identity": {
+        "repository": "desktop-app/lib_webrtc",
+        "commit": "52636e86eaa493de670daf71959d000b281bd153",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_webrtc",
+        "path": "webrtc/platform/webrtc_platform_environment.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "ef9e0ab3be6142031351f39d12da66d2f7819edc",
+        "size": 1465
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "webrtc/platform/webrtc_platform_environment"
+      ],
+      "disposition": "mapped-open-blocked-production-evidence",
+      "upstream_owner": "webrtc/platform/webrtc_platform_environment.h",
+      "responsibility": "Audio/video device enumeration, default-device change/disconnect recovery, stable device identity resolution, mute/device-list change propagation and permission-aware capture availability.",
+      "responsibilities": [
+        "Audio/video device enumeration, default-device change/disconnect recovery, stable device identity resolution, mute/device-list change propagation and permission-aware capture availability."
+      ],
+      "existing_owner_candidates": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "chosen_owner": "Existing Human Call media preference/capture owner",
+      "fabushi_canonical_owner": "Existing Human Call media preference/capture owner",
+      "fabushi_target": "frontend/src/production/human-call-media.tsx, source/electron-main/call-media.ts, source/host/src/extensions/session/call_session.rs",
+      "fabushi_target_paths": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "fabushi_target_symbols": [
+        "getPreferredUserMedia",
+        "persistCapturedDevices",
+        "CallSession"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "tests": [
+        "frontend/src/production/human-call-controls.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "desktop/e2e/miniapp-bot-parity.spec.ts",
+        "exact-head production/E2E acceptance required where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_webrtc@52636e86eaa493de670daf71959d000b281bd153:ef9e0ab3be6142031351f39d12da66d2f7819edc",
+        "production-owner-audit:b714e70a2adee840cb172ccfc076791a22a7ae79"
+      ],
+      "evidence_gap": "Saved preferred device IDs and one-shot camera recovery exist, but complete devicechange/enumerateDevices hot-plug/default-device resolver parity is not yet proven."
+    },
+    {
+      "recursive_order": 13297,
+      "source_path": "Telegram/lib_webrtc::webrtc/platform/win/webrtc_environment_win.cpp",
+      "source_blob_sha": "05e0e0e25f5bbe9f6d8948f38f998571c39ae279",
+      "source_identity": {
+        "repository": "desktop-app/lib_webrtc",
+        "commit": "52636e86eaa493de670daf71959d000b281bd153",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_webrtc",
+        "path": "webrtc/platform/win/webrtc_environment_win.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "05e0e0e25f5bbe9f6d8948f38f998571c39ae279",
+        "size": 11200
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Webrtc::Environment",
+        "Webrtc::Environment::devices"
+      ],
+      "disposition": "mapped-open-blocked-production-evidence",
+      "upstream_owner": "webrtc/platform/win/webrtc_environment_win.cpp",
+      "responsibility": "Audio/video device enumeration, default-device change/disconnect recovery, stable device identity resolution, mute/device-list change propagation and permission-aware capture availability.",
+      "responsibilities": [
+        "Audio/video device enumeration, default-device change/disconnect recovery, stable device identity resolution, mute/device-list change propagation and permission-aware capture availability."
+      ],
+      "existing_owner_candidates": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "chosen_owner": "Existing Human Call media preference/capture owner",
+      "fabushi_canonical_owner": "Existing Human Call media preference/capture owner",
+      "fabushi_target": "frontend/src/production/human-call-media.tsx, source/electron-main/call-media.ts, source/host/src/extensions/session/call_session.rs",
+      "fabushi_target_paths": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "fabushi_target_symbols": [
+        "getPreferredUserMedia",
+        "persistCapturedDevices",
+        "CallSession"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "tests": [
+        "frontend/src/production/human-call-controls.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "desktop/e2e/miniapp-bot-parity.spec.ts",
+        "exact-head production/E2E acceptance required where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_webrtc@52636e86eaa493de670daf71959d000b281bd153:05e0e0e25f5bbe9f6d8948f38f998571c39ae279",
+        "production-owner-audit:b714e70a2adee840cb172ccfc076791a22a7ae79"
+      ],
+      "evidence_gap": "Saved preferred device IDs and one-shot camera recovery exist, but complete devicechange/enumerateDevices hot-plug/default-device resolver parity is not yet proven."
+    },
+    {
+      "recursive_order": 13298,
+      "source_path": "Telegram/lib_webrtc::webrtc/platform/win/webrtc_environment_win.h",
+      "source_blob_sha": "6a966bb855e30c32d3f1af39763c006d61f41c2e",
+      "source_identity": {
+        "repository": "desktop-app/lib_webrtc",
+        "commit": "52636e86eaa493de670daf71959d000b281bd153",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_webrtc",
+        "path": "webrtc/platform/win/webrtc_environment_win.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "6a966bb855e30c32d3f1af39763c006d61f41c2e",
+        "size": 1869
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Webrtc::Environment",
+        "Webrtc::Environment::devices"
+      ],
+      "disposition": "mapped-open-blocked-production-evidence",
+      "upstream_owner": "webrtc/platform/win/webrtc_environment_win.h",
+      "responsibility": "Audio/video device enumeration, default-device change/disconnect recovery, stable device identity resolution, mute/device-list change propagation and permission-aware capture availability.",
+      "responsibilities": [
+        "Audio/video device enumeration, default-device change/disconnect recovery, stable device identity resolution, mute/device-list change propagation and permission-aware capture availability."
+      ],
+      "existing_owner_candidates": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "chosen_owner": "Existing Human Call media preference/capture owner",
+      "fabushi_canonical_owner": "Existing Human Call media preference/capture owner",
+      "fabushi_target": "frontend/src/production/human-call-media.tsx, source/electron-main/call-media.ts, source/host/src/extensions/session/call_session.rs",
+      "fabushi_target_paths": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "fabushi_target_symbols": [
+        "getPreferredUserMedia",
+        "persistCapturedDevices",
+        "CallSession"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "tests": [
+        "frontend/src/production/human-call-controls.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "desktop/e2e/miniapp-bot-parity.spec.ts",
+        "exact-head production/E2E acceptance required where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_webrtc@52636e86eaa493de670daf71959d000b281bd153:6a966bb855e30c32d3f1af39763c006d61f41c2e",
+        "production-owner-audit:b714e70a2adee840cb172ccfc076791a22a7ae79"
+      ],
+      "evidence_gap": "Saved preferred device IDs and one-shot camera recovery exist, but complete devicechange/enumerateDevices hot-plug/default-device resolver parity is not yet proven."
+    },
+    {
+      "recursive_order": 13299,
+      "source_path": "Telegram/lib_webrtc::webrtc/platform/win/webrtc_loopback_adm_win.cpp",
+      "source_blob_sha": "8777b492251ad208f15bea65a0bfea474551434a",
+      "source_identity": {
+        "repository": "desktop-app/lib_webrtc",
+        "commit": "52636e86eaa493de670daf71959d000b281bd153",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_webrtc",
+        "path": "webrtc/platform/win/webrtc_loopback_adm_win.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "8777b492251ad208f15bea65a0bfea474551434a",
+        "size": 30962
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Webrtc::LoopbackCapture",
+        "Webrtc::LoopbackADM"
+      ],
+      "disposition": "mapped-open-blocked-production-evidence",
+      "upstream_owner": "webrtc/platform/win/webrtc_loopback_adm_win.cpp",
+      "responsibility": "System-audio/loopback capture lifecycle, platform source selection, 10ms audio framing/resampling, start/stop/error/restart semantics and permission fencing. Existing Human Call owner must absorb this; no second WebRTC runtime.",
+      "responsibilities": [
+        "System-audio/loopback capture lifecycle, platform source selection, 10ms audio framing/resampling, start/stop/error/restart semantics and permission fencing. Existing Human Call owner must absorb this; no second WebRTC runtime."
+      ],
+      "existing_owner_candidates": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "chosen_owner": "Existing Human Call media owner + Electron platform capture adapter",
+      "fabushi_canonical_owner": "Existing Human Call media owner + Electron platform capture adapter",
+      "fabushi_target": "frontend/src/production/human-call-media.tsx, source/electron-main/call-media.ts, source/host/src/extensions/session/call_session.rs",
+      "fabushi_target_paths": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "fabushi_target_symbols": [
+        "getPreferredUserMedia",
+        "createCallMediaBridge",
+        "CallSession"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "tests": [
+        "frontend/src/production/human-call-controls.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "desktop/e2e/miniapp-bot-parity.spec.ts",
+        "exact-head production/E2E acceptance required where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_webrtc@52636e86eaa493de670daf71959d000b281bd153:8777b492251ad208f15bea65a0bfea474551434a",
+        "production-owner-audit:b714e70a2adee840cb172ccfc076791a22a7ae79"
+      ],
+      "evidence_gap": "Current exact-head audit proves screen source capture and Human Call media lifecycle, but does not yet prove complete Linux/macOS/Windows system-audio/loopback production parity and real acceptance."
+    },
+    {
+      "recursive_order": 13300,
+      "source_path": "Telegram/lib_webrtc::webrtc/platform/win/webrtc_loopback_adm_win.h",
+      "source_blob_sha": "ac6099bf164f985fb61f604b81260c82dbf9acc1",
+      "source_identity": {
+        "repository": "desktop-app/lib_webrtc",
+        "commit": "52636e86eaa493de670daf71959d000b281bd153",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_webrtc",
+        "path": "webrtc/platform/win/webrtc_loopback_adm_win.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "ac6099bf164f985fb61f604b81260c82dbf9acc1",
+        "size": 6227
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Webrtc::LoopbackCapture",
+        "Webrtc::LoopbackADM"
+      ],
+      "disposition": "mapped-open-blocked-production-evidence",
+      "upstream_owner": "webrtc/platform/win/webrtc_loopback_adm_win.h",
+      "responsibility": "System-audio/loopback capture lifecycle, platform source selection, 10ms audio framing/resampling, start/stop/error/restart semantics and permission fencing. Existing Human Call owner must absorb this; no second WebRTC runtime.",
+      "responsibilities": [
+        "System-audio/loopback capture lifecycle, platform source selection, 10ms audio framing/resampling, start/stop/error/restart semantics and permission fencing. Existing Human Call owner must absorb this; no second WebRTC runtime."
+      ],
+      "existing_owner_candidates": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "chosen_owner": "Existing Human Call media owner + Electron platform capture adapter",
+      "fabushi_canonical_owner": "Existing Human Call media owner + Electron platform capture adapter",
+      "fabushi_target": "frontend/src/production/human-call-media.tsx, source/electron-main/call-media.ts, source/host/src/extensions/session/call_session.rs",
+      "fabushi_target_paths": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "fabushi_target_symbols": [
+        "getPreferredUserMedia",
+        "createCallMediaBridge",
+        "CallSession"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "tests": [
+        "frontend/src/production/human-call-controls.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "desktop/e2e/miniapp-bot-parity.spec.ts",
+        "exact-head production/E2E acceptance required where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_webrtc@52636e86eaa493de670daf71959d000b281bd153:ac6099bf164f985fb61f604b81260c82dbf9acc1",
+        "production-owner-audit:b714e70a2adee840cb172ccfc076791a22a7ae79"
+      ],
+      "evidence_gap": "Current exact-head audit proves screen source capture and Human Call media lifecycle, but does not yet prove complete Linux/macOS/Windows system-audio/loopback production parity and real acceptance."
+    },
+    {
+      "recursive_order": 13301,
+      "source_path": "Telegram/lib_webrtc::webrtc/webrtc_audio_input_tester.cpp",
+      "source_blob_sha": "3b25c949fee155d5a43032f8291086ece4cee1f2",
+      "source_identity": {
+        "repository": "desktop-app/lib_webrtc",
+        "commit": "52636e86eaa493de670daf71959d000b281bd153",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_webrtc",
+        "path": "webrtc/webrtc_audio_input_tester.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "3b25c949fee155d5a43032f8291086ece4cee1f2",
+        "size": 5133
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Webrtc::AudioInputTester"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "webrtc/webrtc_audio_input_tester.cpp",
+      "responsibility": "Audio device module initialization, playback/record callbacks, volume/mute/sample framing and lifecycle under canonical Human Call media ownership.",
+      "responsibilities": [
+        "Audio device module initialization, playback/record callbacks, volume/mute/sample framing and lifecycle under canonical Human Call media ownership."
+      ],
+      "existing_owner_candidates": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/host/src/extensions/session/call_session.rs",
+        "source/mahayana/codex-rs/realtime-webrtc/src/native.rs"
+      ],
+      "chosen_owner": "Existing Human Call audio capture/playback owner",
+      "fabushi_canonical_owner": "Existing Human Call audio capture/playback owner",
+      "fabushi_target": "frontend/src/production/human-call-media.tsx, source/host/src/extensions/session/call_session.rs, source/mahayana/codex-rs/realtime-webrtc/src/native.rs",
+      "fabushi_target_paths": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/host/src/extensions/session/call_session.rs",
+        "source/mahayana/codex-rs/realtime-webrtc/src/native.rs"
+      ],
+      "fabushi_target_symbols": [
+        "getPreferredUserMedia",
+        "CallSession",
+        "native realtime WebRTC"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/host/src/extensions/session/call_session.rs",
+        "source/mahayana/codex-rs/realtime-webrtc/src/native.rs"
+      ],
+      "tests": [
+        "frontend/src/production/human-call-controls.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "desktop/e2e/miniapp-bot-parity.spec.ts",
+        "exact-head production/E2E acceptance required where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_webrtc@52636e86eaa493de670daf71959d000b281bd153:3b25c949fee155d5a43032f8291086ece4cee1f2",
+        "production-owner-audit:b714e70a2adee840cb172ccfc076791a22a7ae79"
+      ],
+      "evidence_gap": "Existing call/WebRTC owners are present; full platform audio-device acceptance remains open."
+    },
+    {
+      "recursive_order": 13302,
+      "source_path": "Telegram/lib_webrtc::webrtc/webrtc_audio_input_tester.h",
+      "source_blob_sha": "a18e0b090a3935ca2acbd5a3f69c163d7050e169",
+      "source_identity": {
+        "repository": "desktop-app/lib_webrtc",
+        "commit": "52636e86eaa493de670daf71959d000b281bd153",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_webrtc",
+        "path": "webrtc/webrtc_audio_input_tester.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "a18e0b090a3935ca2acbd5a3f69c163d7050e169",
+        "size": 681
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Webrtc::AudioInputTester"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "webrtc/webrtc_audio_input_tester.h",
+      "responsibility": "Audio device module initialization, playback/record callbacks, volume/mute/sample framing and lifecycle under canonical Human Call media ownership.",
+      "responsibilities": [
+        "Audio device module initialization, playback/record callbacks, volume/mute/sample framing and lifecycle under canonical Human Call media ownership."
+      ],
+      "existing_owner_candidates": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/host/src/extensions/session/call_session.rs",
+        "source/mahayana/codex-rs/realtime-webrtc/src/native.rs"
+      ],
+      "chosen_owner": "Existing Human Call audio capture/playback owner",
+      "fabushi_canonical_owner": "Existing Human Call audio capture/playback owner",
+      "fabushi_target": "frontend/src/production/human-call-media.tsx, source/host/src/extensions/session/call_session.rs, source/mahayana/codex-rs/realtime-webrtc/src/native.rs",
+      "fabushi_target_paths": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/host/src/extensions/session/call_session.rs",
+        "source/mahayana/codex-rs/realtime-webrtc/src/native.rs"
+      ],
+      "fabushi_target_symbols": [
+        "getPreferredUserMedia",
+        "CallSession",
+        "native realtime WebRTC"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/host/src/extensions/session/call_session.rs",
+        "source/mahayana/codex-rs/realtime-webrtc/src/native.rs"
+      ],
+      "tests": [
+        "frontend/src/production/human-call-controls.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "desktop/e2e/miniapp-bot-parity.spec.ts",
+        "exact-head production/E2E acceptance required where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_webrtc@52636e86eaa493de670daf71959d000b281bd153:a18e0b090a3935ca2acbd5a3f69c163d7050e169",
+        "production-owner-audit:b714e70a2adee840cb172ccfc076791a22a7ae79"
+      ],
+      "evidence_gap": "Existing call/WebRTC owners are present; full platform audio-device acceptance remains open."
+    },
+    {
+      "recursive_order": 13303,
+      "source_path": "Telegram/lib_webrtc::webrtc/webrtc_create_adm.cpp",
+      "source_blob_sha": "8a087fb9bbc7b504a2a74ccdb70174a09e4382cd",
+      "source_identity": {
+        "repository": "desktop-app/lib_webrtc",
+        "commit": "52636e86eaa493de670daf71959d000b281bd153",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_webrtc",
+        "path": "webrtc/webrtc_create_adm.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "8a087fb9bbc7b504a2a74ccdb70174a09e4382cd",
+        "size": 2660
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Webrtc::CreateAudioDeviceModule"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "webrtc/webrtc_create_adm.cpp",
+      "responsibility": "Audio device module initialization, playback/record callbacks, volume/mute/sample framing and lifecycle under canonical Human Call media ownership.",
+      "responsibilities": [
+        "Audio device module initialization, playback/record callbacks, volume/mute/sample framing and lifecycle under canonical Human Call media ownership."
+      ],
+      "existing_owner_candidates": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/host/src/extensions/session/call_session.rs",
+        "source/mahayana/codex-rs/realtime-webrtc/src/native.rs"
+      ],
+      "chosen_owner": "Existing Human Call audio capture/playback owner",
+      "fabushi_canonical_owner": "Existing Human Call audio capture/playback owner",
+      "fabushi_target": "frontend/src/production/human-call-media.tsx, source/host/src/extensions/session/call_session.rs, source/mahayana/codex-rs/realtime-webrtc/src/native.rs",
+      "fabushi_target_paths": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/host/src/extensions/session/call_session.rs",
+        "source/mahayana/codex-rs/realtime-webrtc/src/native.rs"
+      ],
+      "fabushi_target_symbols": [
+        "getPreferredUserMedia",
+        "CallSession",
+        "native realtime WebRTC"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/host/src/extensions/session/call_session.rs",
+        "source/mahayana/codex-rs/realtime-webrtc/src/native.rs"
+      ],
+      "tests": [
+        "frontend/src/production/human-call-controls.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "desktop/e2e/miniapp-bot-parity.spec.ts",
+        "exact-head production/E2E acceptance required where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_webrtc@52636e86eaa493de670daf71959d000b281bd153:8a087fb9bbc7b504a2a74ccdb70174a09e4382cd",
+        "production-owner-audit:b714e70a2adee840cb172ccfc076791a22a7ae79"
+      ],
+      "evidence_gap": "Existing call/WebRTC owners are present; full platform audio-device acceptance remains open."
+    },
+    {
+      "recursive_order": 13304,
+      "source_path": "Telegram/lib_webrtc::webrtc/webrtc_create_adm.h",
+      "source_blob_sha": "e2624c0d07364c277d42e43d22623de7452395d2",
+      "source_identity": {
+        "repository": "desktop-app/lib_webrtc",
+        "commit": "52636e86eaa493de670daf71959d000b281bd153",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_webrtc",
+        "path": "webrtc/webrtc_create_adm.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "e2624c0d07364c277d42e43d22623de7452395d2",
+        "size": 1218
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Webrtc::CreateAudioDeviceModule"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "webrtc/webrtc_create_adm.h",
+      "responsibility": "Audio device module initialization, playback/record callbacks, volume/mute/sample framing and lifecycle under canonical Human Call media ownership.",
+      "responsibilities": [
+        "Audio device module initialization, playback/record callbacks, volume/mute/sample framing and lifecycle under canonical Human Call media ownership."
+      ],
+      "existing_owner_candidates": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/host/src/extensions/session/call_session.rs",
+        "source/mahayana/codex-rs/realtime-webrtc/src/native.rs"
+      ],
+      "chosen_owner": "Existing Human Call audio capture/playback owner",
+      "fabushi_canonical_owner": "Existing Human Call audio capture/playback owner",
+      "fabushi_target": "frontend/src/production/human-call-media.tsx, source/host/src/extensions/session/call_session.rs, source/mahayana/codex-rs/realtime-webrtc/src/native.rs",
+      "fabushi_target_paths": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/host/src/extensions/session/call_session.rs",
+        "source/mahayana/codex-rs/realtime-webrtc/src/native.rs"
+      ],
+      "fabushi_target_symbols": [
+        "getPreferredUserMedia",
+        "CallSession",
+        "native realtime WebRTC"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/host/src/extensions/session/call_session.rs",
+        "source/mahayana/codex-rs/realtime-webrtc/src/native.rs"
+      ],
+      "tests": [
+        "frontend/src/production/human-call-controls.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "desktop/e2e/miniapp-bot-parity.spec.ts",
+        "exact-head production/E2E acceptance required where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_webrtc@52636e86eaa493de670daf71959d000b281bd153:e2624c0d07364c277d42e43d22623de7452395d2",
+        "production-owner-audit:b714e70a2adee840cb172ccfc076791a22a7ae79"
+      ],
+      "evidence_gap": "Existing call/WebRTC owners are present; full platform audio-device acceptance remains open."
+    },
+    {
+      "recursive_order": 13305,
+      "source_path": "Telegram/lib_webrtc::webrtc/webrtc_device_common.h",
+      "source_blob_sha": "509228aa5a0a2f983c41f0528db783e77f636f31",
+      "source_identity": {
+        "repository": "desktop-app/lib_webrtc",
+        "commit": "52636e86eaa493de670daf71959d000b281bd153",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_webrtc",
+        "path": "webrtc/webrtc_device_common.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "509228aa5a0a2f983c41f0528db783e77f636f31",
+        "size": 1960
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "webrtc/webrtc_device_common"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "webrtc/webrtc_device_common.h",
+      "responsibility": "Build/common glue for canonical Human Call media responsibilities; no Telegram-specific owner retained.",
+      "responsibilities": [
+        "Build/common glue for canonical Human Call media responsibilities; no Telegram-specific owner retained."
+      ],
+      "existing_owner_candidates": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "chosen_owner": "Existing Human Call media/session owner",
+      "fabushi_canonical_owner": "Existing Human Call media/session owner",
+      "fabushi_target": "frontend/src/production/human-call-media.tsx, source/host/src/extensions/session/call_session.rs",
+      "fabushi_target_paths": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "fabushi_target_symbols": [
+        "HumanCallMedia",
+        "CallSession"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "tests": [
+        "frontend/src/production/human-call-controls.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "desktop/e2e/miniapp-bot-parity.spec.ts",
+        "exact-head production/E2E acceptance required where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_webrtc@52636e86eaa493de670daf71959d000b281bd153:509228aa5a0a2f983c41f0528db783e77f636f31",
+        "production-owner-audit:b714e70a2adee840cb172ccfc076791a22a7ae79"
+      ],
+      "evidence_gap": "Mapped-open until full Human Call exact-head acceptance."
+    },
+    {
+      "recursive_order": 13306,
+      "source_path": "Telegram/lib_webrtc::webrtc/webrtc_device_resolver.cpp",
+      "source_blob_sha": "5431babf2533c16c7b78509141fb2e7b94a2363b",
+      "source_identity": {
+        "repository": "desktop-app/lib_webrtc",
+        "commit": "52636e86eaa493de670daf71959d000b281bd153",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_webrtc",
+        "path": "webrtc/webrtc_device_resolver.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "5431babf2533c16c7b78509141fb2e7b94a2363b",
+        "size": 3499
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Webrtc::DeviceResolver"
+      ],
+      "disposition": "mapped-open-blocked-production-evidence",
+      "upstream_owner": "webrtc/webrtc_device_resolver.cpp",
+      "responsibility": "Audio/video device enumeration, default-device change/disconnect recovery, stable device identity resolution, mute/device-list change propagation and permission-aware capture availability.",
+      "responsibilities": [
+        "Audio/video device enumeration, default-device change/disconnect recovery, stable device identity resolution, mute/device-list change propagation and permission-aware capture availability."
+      ],
+      "existing_owner_candidates": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "chosen_owner": "Existing Human Call media preference/capture owner",
+      "fabushi_canonical_owner": "Existing Human Call media preference/capture owner",
+      "fabushi_target": "frontend/src/production/human-call-media.tsx, source/electron-main/call-media.ts, source/host/src/extensions/session/call_session.rs",
+      "fabushi_target_paths": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "fabushi_target_symbols": [
+        "getPreferredUserMedia",
+        "persistCapturedDevices",
+        "CallSession"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "tests": [
+        "frontend/src/production/human-call-controls.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "desktop/e2e/miniapp-bot-parity.spec.ts",
+        "exact-head production/E2E acceptance required where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_webrtc@52636e86eaa493de670daf71959d000b281bd153:5431babf2533c16c7b78509141fb2e7b94a2363b",
+        "production-owner-audit:b714e70a2adee840cb172ccfc076791a22a7ae79"
+      ],
+      "evidence_gap": "Saved preferred device IDs and one-shot camera recovery exist, but complete devicechange/enumerateDevices hot-plug/default-device resolver parity is not yet proven."
+    },
+    {
+      "recursive_order": 13307,
+      "source_path": "Telegram/lib_webrtc::webrtc/webrtc_device_resolver.h",
+      "source_blob_sha": "5ab466729c9f1d9a6a4d76a560bd2c65c7af18e3",
+      "source_identity": {
+        "repository": "desktop-app/lib_webrtc",
+        "commit": "52636e86eaa493de670daf71959d000b281bd153",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_webrtc",
+        "path": "webrtc/webrtc_device_resolver.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "5ab466729c9f1d9a6a4d76a560bd2c65c7af18e3",
+        "size": 1362
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Webrtc::DeviceResolver"
+      ],
+      "disposition": "mapped-open-blocked-production-evidence",
+      "upstream_owner": "webrtc/webrtc_device_resolver.h",
+      "responsibility": "Audio/video device enumeration, default-device change/disconnect recovery, stable device identity resolution, mute/device-list change propagation and permission-aware capture availability.",
+      "responsibilities": [
+        "Audio/video device enumeration, default-device change/disconnect recovery, stable device identity resolution, mute/device-list change propagation and permission-aware capture availability."
+      ],
+      "existing_owner_candidates": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "chosen_owner": "Existing Human Call media preference/capture owner",
+      "fabushi_canonical_owner": "Existing Human Call media preference/capture owner",
+      "fabushi_target": "frontend/src/production/human-call-media.tsx, source/electron-main/call-media.ts, source/host/src/extensions/session/call_session.rs",
+      "fabushi_target_paths": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "fabushi_target_symbols": [
+        "getPreferredUserMedia",
+        "persistCapturedDevices",
+        "CallSession"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "tests": [
+        "frontend/src/production/human-call-controls.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "desktop/e2e/miniapp-bot-parity.spec.ts",
+        "exact-head production/E2E acceptance required where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_webrtc@52636e86eaa493de670daf71959d000b281bd153:5ab466729c9f1d9a6a4d76a560bd2c65c7af18e3",
+        "production-owner-audit:b714e70a2adee840cb172ccfc076791a22a7ae79"
+      ],
+      "evidence_gap": "Saved preferred device IDs and one-shot camera recovery exist, but complete devicechange/enumerateDevices hot-plug/default-device resolver parity is not yet proven."
+    },
+    {
+      "recursive_order": 13308,
+      "source_path": "Telegram/lib_webrtc::webrtc/webrtc_environment.cpp",
+      "source_blob_sha": "a1cd3d9c5a099441ebca201ecee208c9adfaf225",
+      "source_identity": {
+        "repository": "desktop-app/lib_webrtc",
+        "commit": "52636e86eaa493de670daf71959d000b281bd153",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_webrtc",
+        "path": "webrtc/webrtc_environment.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "a1cd3d9c5a099441ebca201ecee208c9adfaf225",
+        "size": 11026
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Webrtc::Environment",
+        "Webrtc::Environment::devices"
+      ],
+      "disposition": "mapped-open-blocked-production-evidence",
+      "upstream_owner": "webrtc/webrtc_environment.cpp",
+      "responsibility": "Audio/video device enumeration, default-device change/disconnect recovery, stable device identity resolution, mute/device-list change propagation and permission-aware capture availability.",
+      "responsibilities": [
+        "Audio/video device enumeration, default-device change/disconnect recovery, stable device identity resolution, mute/device-list change propagation and permission-aware capture availability."
+      ],
+      "existing_owner_candidates": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "chosen_owner": "Existing Human Call media preference/capture owner",
+      "fabushi_canonical_owner": "Existing Human Call media preference/capture owner",
+      "fabushi_target": "frontend/src/production/human-call-media.tsx, source/electron-main/call-media.ts, source/host/src/extensions/session/call_session.rs",
+      "fabushi_target_paths": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "fabushi_target_symbols": [
+        "getPreferredUserMedia",
+        "persistCapturedDevices",
+        "CallSession"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "tests": [
+        "frontend/src/production/human-call-controls.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "desktop/e2e/miniapp-bot-parity.spec.ts",
+        "exact-head production/E2E acceptance required where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_webrtc@52636e86eaa493de670daf71959d000b281bd153:a1cd3d9c5a099441ebca201ecee208c9adfaf225",
+        "production-owner-audit:b714e70a2adee840cb172ccfc076791a22a7ae79"
+      ],
+      "evidence_gap": "Saved preferred device IDs and one-shot camera recovery exist, but complete devicechange/enumerateDevices hot-plug/default-device resolver parity is not yet proven."
+    },
+    {
+      "recursive_order": 13309,
+      "source_path": "Telegram/lib_webrtc::webrtc/webrtc_environment.h",
+      "source_blob_sha": "705bcdb58796287bb2d63ae6ed2527aaa138bd69",
+      "source_identity": {
+        "repository": "desktop-app/lib_webrtc",
+        "commit": "52636e86eaa493de670daf71959d000b281bd153",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_webrtc",
+        "path": "webrtc/webrtc_environment.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "705bcdb58796287bb2d63ae6ed2527aaa138bd69",
+        "size": 3598
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Webrtc::Environment",
+        "Webrtc::Environment::devices"
+      ],
+      "disposition": "mapped-open-blocked-production-evidence",
+      "upstream_owner": "webrtc/webrtc_environment.h",
+      "responsibility": "Audio/video device enumeration, default-device change/disconnect recovery, stable device identity resolution, mute/device-list change propagation and permission-aware capture availability.",
+      "responsibilities": [
+        "Audio/video device enumeration, default-device change/disconnect recovery, stable device identity resolution, mute/device-list change propagation and permission-aware capture availability."
+      ],
+      "existing_owner_candidates": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "chosen_owner": "Existing Human Call media preference/capture owner",
+      "fabushi_canonical_owner": "Existing Human Call media preference/capture owner",
+      "fabushi_target": "frontend/src/production/human-call-media.tsx, source/electron-main/call-media.ts, source/host/src/extensions/session/call_session.rs",
+      "fabushi_target_paths": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "fabushi_target_symbols": [
+        "getPreferredUserMedia",
+        "persistCapturedDevices",
+        "CallSession"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "tests": [
+        "frontend/src/production/human-call-controls.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "desktop/e2e/miniapp-bot-parity.spec.ts",
+        "exact-head production/E2E acceptance required where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_webrtc@52636e86eaa493de670daf71959d000b281bd153:705bcdb58796287bb2d63ae6ed2527aaa138bd69",
+        "production-owner-audit:b714e70a2adee840cb172ccfc076791a22a7ae79"
+      ],
+      "evidence_gap": "Saved preferred device IDs and one-shot camera recovery exist, but complete devicechange/enumerateDevices hot-plug/default-device resolver parity is not yet proven."
+    },
+    {
+      "recursive_order": 13310,
+      "source_path": "Telegram/lib_webrtc::webrtc/webrtc_pch.h",
+      "source_blob_sha": "112aa2e6fa82c8757f297269b593eec6f64ca5ed",
+      "source_identity": {
+        "repository": "desktop-app/lib_webrtc",
+        "commit": "52636e86eaa493de670daf71959d000b281bd153",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_webrtc",
+        "path": "webrtc/webrtc_pch.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "112aa2e6fa82c8757f297269b593eec6f64ca5ed",
+        "size": 484
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "webrtc/webrtc_pch"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "webrtc/webrtc_pch.h",
+      "responsibility": "Build/common glue for canonical Human Call media responsibilities; no Telegram-specific owner retained.",
+      "responsibilities": [
+        "Build/common glue for canonical Human Call media responsibilities; no Telegram-specific owner retained."
+      ],
+      "existing_owner_candidates": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "chosen_owner": "Existing Human Call media/session owner",
+      "fabushi_canonical_owner": "Existing Human Call media/session owner",
+      "fabushi_target": "frontend/src/production/human-call-media.tsx, source/host/src/extensions/session/call_session.rs",
+      "fabushi_target_paths": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "fabushi_target_symbols": [
+        "HumanCallMedia",
+        "CallSession"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "tests": [
+        "frontend/src/production/human-call-controls.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "desktop/e2e/miniapp-bot-parity.spec.ts",
+        "exact-head production/E2E acceptance required where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_webrtc@52636e86eaa493de670daf71959d000b281bd153:112aa2e6fa82c8757f297269b593eec6f64ca5ed",
+        "production-owner-audit:b714e70a2adee840cb172ccfc076791a22a7ae79"
+      ],
+      "evidence_gap": "Mapped-open until full Human Call exact-head acceptance."
+    },
+    {
+      "recursive_order": 13311,
+      "source_path": "Telegram/lib_webrtc::webrtc/webrtc_system_audio_capture.cpp",
+      "source_blob_sha": "b7b8c80b373b4927d657e33796b46452528a4945",
+      "source_identity": {
+        "repository": "desktop-app/lib_webrtc",
+        "commit": "52636e86eaa493de670daf71959d000b281bd153",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_webrtc",
+        "path": "webrtc/webrtc_system_audio_capture.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "b7b8c80b373b4927d657e33796b46452528a4945",
+        "size": 1461
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Webrtc::SystemAudioCapture"
+      ],
+      "disposition": "mapped-open-blocked-production-evidence",
+      "upstream_owner": "webrtc/webrtc_system_audio_capture.cpp",
+      "responsibility": "System-audio/loopback capture lifecycle, platform source selection, 10ms audio framing/resampling, start/stop/error/restart semantics and permission fencing. Existing Human Call owner must absorb this; no second WebRTC runtime.",
+      "responsibilities": [
+        "System-audio/loopback capture lifecycle, platform source selection, 10ms audio framing/resampling, start/stop/error/restart semantics and permission fencing. Existing Human Call owner must absorb this; no second WebRTC runtime."
+      ],
+      "existing_owner_candidates": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "chosen_owner": "Existing Human Call media owner + Electron platform capture adapter",
+      "fabushi_canonical_owner": "Existing Human Call media owner + Electron platform capture adapter",
+      "fabushi_target": "frontend/src/production/human-call-media.tsx, source/electron-main/call-media.ts, source/host/src/extensions/session/call_session.rs",
+      "fabushi_target_paths": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "fabushi_target_symbols": [
+        "getPreferredUserMedia",
+        "createCallMediaBridge",
+        "CallSession"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "tests": [
+        "frontend/src/production/human-call-controls.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "desktop/e2e/miniapp-bot-parity.spec.ts",
+        "exact-head production/E2E acceptance required where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_webrtc@52636e86eaa493de670daf71959d000b281bd153:b7b8c80b373b4927d657e33796b46452528a4945",
+        "production-owner-audit:b714e70a2adee840cb172ccfc076791a22a7ae79"
+      ],
+      "evidence_gap": "Current exact-head audit proves screen source capture and Human Call media lifecycle, but does not yet prove complete Linux/macOS/Windows system-audio/loopback production parity and real acceptance."
+    },
+    {
+      "recursive_order": 13312,
+      "source_path": "Telegram/lib_webrtc::webrtc/webrtc_system_audio_capture.h",
+      "source_blob_sha": "9854bc30f9ad47a3d5c8d1f4e19e490475680b91",
+      "source_identity": {
+        "repository": "desktop-app/lib_webrtc",
+        "commit": "52636e86eaa493de670daf71959d000b281bd153",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_webrtc",
+        "path": "webrtc/webrtc_system_audio_capture.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "9854bc30f9ad47a3d5c8d1f4e19e490475680b91",
+        "size": 757
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Webrtc::SystemAudioCapture"
+      ],
+      "disposition": "mapped-open-blocked-production-evidence",
+      "upstream_owner": "webrtc/webrtc_system_audio_capture.h",
+      "responsibility": "System-audio/loopback capture lifecycle, platform source selection, 10ms audio framing/resampling, start/stop/error/restart semantics and permission fencing. Existing Human Call owner must absorb this; no second WebRTC runtime.",
+      "responsibilities": [
+        "System-audio/loopback capture lifecycle, platform source selection, 10ms audio framing/resampling, start/stop/error/restart semantics and permission fencing. Existing Human Call owner must absorb this; no second WebRTC runtime."
+      ],
+      "existing_owner_candidates": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "chosen_owner": "Existing Human Call media owner + Electron platform capture adapter",
+      "fabushi_canonical_owner": "Existing Human Call media owner + Electron platform capture adapter",
+      "fabushi_target": "frontend/src/production/human-call-media.tsx, source/electron-main/call-media.ts, source/host/src/extensions/session/call_session.rs",
+      "fabushi_target_paths": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "fabushi_target_symbols": [
+        "getPreferredUserMedia",
+        "createCallMediaBridge",
+        "CallSession"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "tests": [
+        "frontend/src/production/human-call-controls.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "desktop/e2e/miniapp-bot-parity.spec.ts",
+        "exact-head production/E2E acceptance required where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_webrtc@52636e86eaa493de670daf71959d000b281bd153:9854bc30f9ad47a3d5c8d1f4e19e490475680b91",
+        "production-owner-audit:b714e70a2adee840cb172ccfc076791a22a7ae79"
+      ],
+      "evidence_gap": "Current exact-head audit proves screen source capture and Human Call media lifecycle, but does not yet prove complete Linux/macOS/Windows system-audio/loopback production parity and real acceptance."
+    },
+    {
+      "recursive_order": 13313,
+      "source_path": "Telegram/lib_webrtc::webrtc/webrtc_video_track.cpp",
+      "source_blob_sha": "2bac8b1c4e495dc393ec047f657b6c1788a33297",
+      "source_identity": {
+        "repository": "desktop-app/lib_webrtc",
+        "commit": "52636e86eaa493de670daf71959d000b281bd153",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_webrtc",
+        "path": "webrtc/webrtc_video_track.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "2bac8b1c4e495dc393ec047f657b6c1788a33297",
+        "size": 14435
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Webrtc::VideoTrack",
+        "Webrtc::VideoTrack::setSink"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "webrtc/webrtc_video_track.cpp",
+      "responsibility": "Video capture/track sink lifecycle, bounded latest-frame buffering, rotation/resize, mute/inactive/end handling, replacement/recovery and SFU publication/subscription ownership.",
+      "responsibilities": [
+        "Video capture/track sink lifecycle, bounded latest-frame buffering, rotation/resize, mute/inactive/end handling, replacement/recovery and SFU publication/subscription ownership."
+      ],
+      "existing_owner_candidates": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "chosen_owner": "Existing Human Call camera/track/SFU media owner",
+      "fabushi_canonical_owner": "Existing Human Call camera/track/SFU media owner",
+      "fabushi_target": "frontend/src/production/human-call-media.tsx, source/host/src/extensions/session/call_session.rs",
+      "fabushi_target_paths": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "fabushi_target_symbols": [
+        "attachCameraTrackLifecycle",
+        "configurePeer",
+        "CallSession"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "tests": [
+        "frontend/src/production/human-call-controls.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "desktop/e2e/miniapp-bot-parity.spec.ts",
+        "exact-head production/E2E acceptance required where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_webrtc@52636e86eaa493de670daf71959d000b281bd153:2bac8b1c4e495dc393ec047f657b6c1788a33297",
+        "production-owner-audit:b714e70a2adee840cb172ccfc076791a22a7ae79"
+      ],
+      "evidence_gap": "Production owner exists with camera recovery and SFU media path; complete source responsibility still requires exact-head real media acceptance."
+    },
+    {
+      "recursive_order": 13314,
+      "source_path": "Telegram/lib_webrtc::webrtc/webrtc_video_track.h",
+      "source_blob_sha": "a6a812ae1498d7b20d9d4719fc64b3ad3a620b50",
+      "source_identity": {
+        "repository": "desktop-app/lib_webrtc",
+        "commit": "52636e86eaa493de670daf71959d000b281bd153",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_webrtc",
+        "path": "webrtc/webrtc_video_track.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "a6a812ae1498d7b20d9d4719fc64b3ad3a620b50",
+        "size": 2705
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Webrtc::VideoTrack",
+        "Webrtc::VideoTrack::setSink"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "webrtc/webrtc_video_track.h",
+      "responsibility": "Video capture/track sink lifecycle, bounded latest-frame buffering, rotation/resize, mute/inactive/end handling, replacement/recovery and SFU publication/subscription ownership.",
+      "responsibilities": [
+        "Video capture/track sink lifecycle, bounded latest-frame buffering, rotation/resize, mute/inactive/end handling, replacement/recovery and SFU publication/subscription ownership."
+      ],
+      "existing_owner_candidates": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "chosen_owner": "Existing Human Call camera/track/SFU media owner",
+      "fabushi_canonical_owner": "Existing Human Call camera/track/SFU media owner",
+      "fabushi_target": "frontend/src/production/human-call-media.tsx, source/host/src/extensions/session/call_session.rs",
+      "fabushi_target_paths": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "fabushi_target_symbols": [
+        "attachCameraTrackLifecycle",
+        "configurePeer",
+        "CallSession"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "tests": [
+        "frontend/src/production/human-call-controls.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "desktop/e2e/miniapp-bot-parity.spec.ts",
+        "exact-head production/E2E acceptance required where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_webrtc@52636e86eaa493de670daf71959d000b281bd153:a6a812ae1498d7b20d9d4719fc64b3ad3a620b50",
+        "production-owner-audit:b714e70a2adee840cb172ccfc076791a22a7ae79"
+      ],
+      "evidence_gap": "Production owner exists with camera recovery and SFU media path; complete source responsibility still requires exact-head real media acceptance."
+    }
+  ]
+}

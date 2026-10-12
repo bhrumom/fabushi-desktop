@@ -266,9 +266,9 @@
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
     "unknown_minimum": 15845,
-    "unread_minimum": 2851,
+    "unread_minimum": 2779,
     "omitted_known": 0,
-    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 13,274; unknown=15,845, unread=2,851, omitted=0."
+    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 13,346; unknown=15,845, unread=2,779, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -282,7 +282,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Closure open. Read-through 13,274/16,125; first unread 13,275 Telegram/lib_webrtc::CMakeLists.txt@d3c786bef0f4a4b8746493eee7ab76908b723737; unknown remains 15,845; product/release closure remains open."
+    "note": "Closure open. Read-through 13,346/16,125; first unread 13,347 Telegram/cmake_helpers::.gitmodules@c92fbea3467f72e188cba4cbfe51c8c68a7e2e77; unknown remains 15,845; product/release closure remains open."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",
@@ -299,19 +299,16 @@
     "superseded_by_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941"
   },
   "recursive_inventory_evidence": {
-    "status": "parent-authority-validated-descendant-validation-pending",
+    "status": "parent-authority-validation-passed-descendant-validation-pending",
     "runner": "github-actions",
-    "run_id": 38195100566,
+    "run_id": 38195834460,
     "run_attempt": 1,
-    "job_id": 114635964356,
-    "validation_head_sha": "7d1fcf83444040521a01d97a3e1bd2570522d222",
-    "artifact_id": 11722749905,
-    "artifact_name": "tdrp-revision9-authority-7d1fcf83444040521a01d97a3e1bd2570522d222",
-    "artifact_digest": "sha256:fd8a374ee26069c98ef1919e00066dadc2f9ef2876fd02ebc341e5542d978d56",
+    "job_id": 114638198808,
+    "validation_head_sha": "b714e70a2adee840cb172ccfc076791a22a7ae79",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "recursive_non_directory_entries": 16125,
     "source_closure_ready": false,
-    "note": "Corrected 13,037-13,100 authority passed. 13,101-13,274 were read/decomposed against accepted lib_ui; fresh descendant Actions required."
+    "note": "Parent authority validation passed. 13,275-13,346 directly read/decomposed at accepted lib_webrtc/lib_webview commits; fresh descendant Actions required."
   },
   "build_time_acquisition_inventory": {
     "path": "projects/telegram-desktop-rust/inventory/build-time-acquisitions.json",
@@ -635,9 +632,9 @@
     "development_only_non_applicable": 206,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 13274,
-    "first_unread_order": 13275,
-    "first_unread_path": "Telegram/lib_webrtc::CMakeLists.txt",
+    "read_through": 13346,
+    "first_unread_order": 13347,
+    "first_unread_path": "Telegram/cmake_helpers::.gitmodules",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
@@ -738,5 +735,5 @@
     ],
     "note": "Valid exact-head evidence for 46dfaf only; main reconciliation/accounting descendants require fresh Actions."
   },
-  "note": "Accepted baseline; exact read-through 13,274; unknown=15,845, unread=2,851, omitted=0; first unread=13,275 Telegram/lib_webrtc::CMakeLists.txt@d3c786bef0f4a4b8746493eee7ab76908b723737 from desktop-app/lib_webrtc@52636e86eaa493de670daf71959d000b281bd153."
+  "note": "Accepted baseline; exact read-through 13,346; unknown=15,845, unread=2,779, omitted=0; first unread=13,347 Telegram/cmake_helpers::.gitmodules@c92fbea3467f72e188cba4cbfe51c8c68a7e2e77 from desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422."
 }
