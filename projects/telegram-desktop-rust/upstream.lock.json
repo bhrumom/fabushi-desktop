@@ -265,10 +265,10 @@
   "coverage": {
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
-    "unknown_minimum": 15532,
-    "unread_minimum": 2365,
+    "unknown_minimum": 15472,
+    "unread_minimum": 2305,
     "omitted_known": 0,
-    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 13,760; unknown=15,532, unread=2,365, omitted=0."
+    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 13,820; unknown=15,472, unread=2,305, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -282,7 +282,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Closure open. Read-through 13,760/16,125; first unread 13,761 doc/gh-pages::conceptranges_1_1invocable__action__closure__.html; unknown remains 15,532; product/release closure remains open."
+    "note": "Closure open. Read-through 13,820/16,125; first unread 13,821 doc/gh-pages::concepts_2concepts_8hpp.js; unknown remains 15,472; product/release closure remains open."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",
@@ -629,12 +629,12 @@
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "deterministic_prefix_closed": 57,
-    "development_only_non_applicable": 519,
-    "unknown_closed": 593,
+    "development_only_non_applicable": 579,
+    "unknown_closed": 653,
     "omitted": 0,
-    "read_through": 13760,
-    "first_unread_order": 13761,
-    "first_unread_path": "doc/gh-pages::conceptranges_1_1invocable__action__closure__.html",
+    "read_through": 13820,
+    "first_unread_order": 13821,
+    "first_unread_path": "doc/gh-pages::concepts_2concepts_8hpp.js",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
@@ -735,5 +735,5 @@
     ],
     "note": "Valid exact-head evidence for 46dfaf only; main reconciliation/accounting descendants require fresh Actions."
   },
-  "note": "Accepted baseline; exact read-through 13,556; unknown=15,736, unread=2,569, omitted=0; first unread 13,557 doc/gh-pages::bc_s.png."
+  "note": "Accepted baseline; exact read-through 13,820; unknown=15,472, unread=2,305, omitted=0; first unread 13,821 doc/gh-pages::concepts_2concepts_8hpp.js."
 }

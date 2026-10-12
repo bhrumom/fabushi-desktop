@@ -1295,3 +1295,11 @@ Exact-head `49b6a082e468d354c419aae7813f28a88157030a` proved the 329-entry sourc
 Orders 13,713–13,760 were individually exact-read at `ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae`. All 48 carry Doxygen 1.9.4 generator/footer evidence and are generated API/concept HTML with no independent shipping Fabushi responsibility; each is explicitly `development-only-non-applicable` and `unknown_closed=true`.
 
 Accounting: **13,760/16,125 read; 2,365 unread; 15,532 unknown; 0 omitted; 593 unknown_closed; 519 development-only-non-applicable**. First unread is 13,761 `doc/gh-pages::conceptranges_1_1invocable__action__closure__.html`. Parent runs are predecessor evidence after this commit; fresh same-head Rust desktop runtime and Desktop Chat Parity CI are mandatory.
+
+## Revision 9 deterministic read-through 13,761–13,820
+
+Orders 13,761–13,820 were individually exact-read from `ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae` under nested mount `doc/gh-pages`. Fifty-nine entries are Doxygen 1.9.4 generated XHTML concept/API pages. Order 13,818 `concepts.js@15140fe9a387f3b8f277519377f0e1609fef9798` is a 16,052-byte generated `var concepts = [...]` documentation index mapping into those generated pages. Every blob length matches the accepted recursive inventory. All 60 are explicitly `development-only-non-applicable` with `unknown_closed=true`; no directory-level N/A is used.
+
+Predecessor `a273db52141b9fe704e37d7d8539f504163bf3b4` fresh Source authority job `114662096260` passed the repaired 313-row nested parent provenance and then failed closed on the persisted inventory narrative wording contract. This descendant keeps the validator unchanged and makes the narrative explicitly state `unread_minimum is 2,305`, `unknown remains 15,472`, and `omitted remains 0`, synchronized with lock/index/ledger.
+
+Accounting: **13,820/16,125 read; 2,305 unread; 15,472 unknown; 0 omitted; 653 unknown_closed; 579 development-only-non-applicable**. First unread is 13,821 `doc/gh-pages::concepts_2concepts_8hpp.js`. Fresh same-head Rust desktop runtime and Desktop Chat Parity CI are required.

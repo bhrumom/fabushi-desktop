@@ -14,7 +14,7 @@ Live Revision 9 continuation (2026-10-12): exact upstream remains telegramdeskto
 
 ### Revision 9 deterministic read-through — cmake_helpers 13,347–13,410
 
-Live Revision 9 authority (2026-10-12): telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 (tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6). Recursive non-directory=16,125; read-through=13,760; first unread=13,761 doc/gh-pages::conceptranges_1_1invocable__action__closure__.html; unread=2,365; unknown=15,532; omitted=0. Exact-head parent 49b6a082e468d354c419aae7813f28a88157030a source-authority progressed through the restored 329-shard registry and failed closed only on stale STATUS/SOURCE_OF_TRUTH current-summary text; this descendant synchronizes the machine-readable and human live summary and requires fresh same-head Actions.
+Live Revision 9 authority (2026-10-12): telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 (tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6). Recursive non-directory=16,125; read-through=13,820; first unread=13,821 doc/gh-pages::concepts_2concepts_8hpp.js; unread=2,305; unknown=15,472; omitted=0. Orders 13,761-13,820 were individually exact-read from ericniebler/range-v3 doc/gh-pages@2dae74bb693e42d850fb0adcc9045c5b71fbdeae: 59 Doxygen 1.9.4 generated XHTML pages plus concepts.js generated documentation index metadata. Predecessor a273db52141b9fe704e37d7d8539f504163bf3b4 Source authority job 114662096260 validated repaired nested parent provenance, then failed closed only on inventory narrative wording; this descendant repairs that contract and requires fresh same-head Actions.
 
 ### Revision 9 deterministic read-through — lib_webrtc + lib_webview 13,275–13,346
 
@@ -161,7 +161,7 @@ All seven rows remain mapped-open with unknown_closed=false and omitted=false; r
 Current PR source-accounting continuation: exact-source HEAD `f8ef44c69b134ba5b0172a21bc563fce6c98138e` materialized and reviewed orders 12,333-12,396; formal accounting is now 12,396 read, 3,729 unread, 15,845 unknown, 0 omitted. The descendant containing these dispositions requires fresh same-head Actions; all f8ef runtime/chat jobs become predecessor evidence after this commit.
 
 Live Revision 9 authority (2026-10-12): telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 (tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6). Recursive non-directory=16,125; read-through=12,396; first unread=12,397 Telegram/codegen::codegen/style/parsed_file.h@cc45c9aa2bf109947329c1a7d62c528b97ce4545; unread=3,729; unknown=15,845; omitted=0. Exact-head f8ef44c69b134ba5b0172a21bc563fce6c98138e Source authority 38183407863/114600617044 succeeded and materialized artifact 11719100308 (sha256:452825df19243d3d425b9716b405782b708dab74f3655d56cdc1a7c0c6ccbe1d); orders 12,333-12,396 were formally reviewed from that materialization plus exact pinned blobs. This accounting descendant requires fresh same-head runtime/chat validation.
-<!-- TDRP_CURRENT_SUMMARY read-through=13760 unread=2365 unknown=15532 omitted=0 first-unread=13761 path=doc/gh-pages::conceptranges_1_1invocable__action__closure__.html -->
+<!-- TDRP_CURRENT_SUMMARY read-through=13820 unread=2305 unknown=15472 omitted=0 first-unread=13821 path=doc/gh-pages::concepts_2concepts_8hpp.js -->
 
 ### Revision 9 deterministic read-through — zxcvbn password strength + codegen emoji/lang/style 12,333–12,396
 
@@ -1704,3 +1704,11 @@ After the 809-file canonical-tree repair, exact-head `2bfe0f3ea5f9a4c0f1240a9566
 Orders 13,653–13,712 were individually exact-read at `ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae`; all 60 carry Doxygen 1.9.4 generator/footer evidence and are generated API/concept HTML with no independent shipping Fabushi responsibility. They are explicitly `development-only-non-applicable`, `unknown_closed=true`.
 
 Accounting: **13,712/16,125 read; 2,413 unread; 15,580 unknown; 0 omitted; 545 unknown_closed; 471 development-only-non-applicable**. First unread is 13,713 `doc/gh-pages::conceptranges_1_1erasable__range.html`. Parent runs become predecessor evidence; fresh same-head Rust desktop runtime and Desktop Chat Parity CI are required.
+
+## Revision 9 deterministic read-through 13,761–13,820
+
+Orders 13,761–13,820 were individually exact-read from `ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae` under nested mount `doc/gh-pages`. Fifty-nine entries are Doxygen 1.9.4 generated XHTML concept/API pages. Order 13,818 `concepts.js@15140fe9a387f3b8f277519377f0e1609fef9798` is a 16,052-byte generated `var concepts = [...]` documentation index mapping into those generated pages. Every blob length matches the accepted recursive inventory. All 60 are explicitly `development-only-non-applicable` with `unknown_closed=true`; no directory-level N/A is used.
+
+Predecessor `a273db52141b9fe704e37d7d8539f504163bf3b4` fresh Source authority job `114662096260` passed the repaired 313-row nested parent provenance and then failed closed on the persisted inventory narrative wording contract. This descendant keeps the validator unchanged and makes the narrative explicitly state `unread_minimum is 2,305`, `unknown remains 15,472`, and `omitted remains 0`, synchronized with lock/index/ledger.
+
+Accounting: **13,820/16,125 read; 2,305 unread; 15,472 unknown; 0 omitted; 653 unknown_closed; 579 development-only-non-applicable**. First unread is 13,821 `doc/gh-pages::concepts_2concepts_8hpp.js`. Fresh same-head Rust desktop runtime and Desktop Chat Parity CI are required.

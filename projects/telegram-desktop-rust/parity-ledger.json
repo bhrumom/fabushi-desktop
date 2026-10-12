@@ -6,8 +6,8 @@
   "target_commit": "371b72f1cd20de03dc4dff9a15ed761054968093",
   "coverage": {
     "source_entries_total": 16125,
-    "unknown": 15532,
-    "unread": 2365,
+    "unknown": 15472,
+    "unread": 2305,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,22 +13478,22 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Accepted prefix 13,760/16,125; orders 13,713-13,760 individually exact-read as Doxygen 1.9.4 generated HTML and closed only after per-blob audit.",
-    "source_authority_evidence": "Parent source-authority passed restored shard registry and failed only on stale STATUS/SOURCE_OF_TRUTH live-summary contract; descendant repairs the contract and requires fresh exact-head Actions.",
-    "current_source_read_through": 13760,
-    "first_unread_order": 13761,
-    "first_unread_path": "doc/gh-pages::conceptranges_1_1invocable__action__closure__.html"
+    "source_read_reconciliation": "Accepted prefix 13,820/16,125; 13,761-13,820 exact-read and individually classified as generated documentation output/index metadata.",
+    "source_authority_evidence": "Predecessor a273db52141b9fe704e37d7d8539f504163bf3b4 Source authority 114662096260 passed parent provenance and failed only on stale narrative wording; descendant fixes the persisted contract.",
+    "current_source_read_through": 13820,
+    "first_unread_order": 13821,
+    "first_unread_path": "doc/gh-pages::concepts_2concepts_8hpp.js"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "deterministic_prefix_closed": 57,
-    "development_only_non_applicable": 519,
-    "unknown_closed": 593,
+    "development_only_non_applicable": 579,
+    "unknown_closed": 653,
     "omitted": 0,
-    "read_through": 13760,
-    "first_unread_order": 13761,
-    "first_unread_path": "doc/gh-pages::conceptranges_1_1invocable__action__closure__.html",
+    "read_through": 13820,
+    "first_unread_order": 13821,
+    "first_unread_path": "doc/gh-pages::concepts_2concepts_8hpp.js",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
