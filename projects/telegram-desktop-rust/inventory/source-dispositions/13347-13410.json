@@ -14,7 +14,7 @@
   },
   "exact_head_evidence": {
     "production_owner_audit_head": "1b906f5802e8bba7ddbd4098ceac4849f4feeec5",
-    "status": "direct source read/decomposition complete; central accounting and descendant exact-head validation pending"
+    "status": "direct source read/decomposition complete; exact-head 3076318fa0f3b86942bba99c09baf9b002f24e68 Source authority job 114659860033 proved restored order 13,368 gitlink size metadata must be null rather than historical 0; descendant validation required"
   },
   "accounting": {
     "recursive_total": 16125,
@@ -1316,7 +1316,7 @@
         "mode": "160000",
         "type": "commit",
         "object": "47cf94f83b54cda59018135601e19d7fb0c77776",
-        "size": 0
+        "size": null
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
