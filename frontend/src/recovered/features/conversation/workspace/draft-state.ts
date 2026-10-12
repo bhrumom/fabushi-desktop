@@ -239,8 +239,9 @@ export function createComposerDraftStateStore(persistence: ComposerDraftPersiste
     !disposed && generation === expectedGeneration && accountSlot === expectedAccount;
 
   return {
-    snapshotsFor(agentKey) {
-      const state = snapshotFor(agentKey);
+    snapshotsFor(scope) {
+      const scopeKey = composerDraftScopeKey(scope);
+      const state = snapshotFor(scopeKey);
       return {
         get: () => state.snapshot,
         subscribe(listener) {
@@ -249,97 +250,110 @@ export function createComposerDraftStateStore(persistence: ComposerDraftPersiste
         }
       };
     },
-    setDraft(agentKey, draft) {
-      if (disposed || agentKey.length === 0) return;
-      const current = currentRecord(agentKey);
+    setDraft(scope, draft) {
+      if (disposed) return;
+      const scopeKey = composerDraftScopeKey(scope);
+      const current = currentRecord(scopeKey);
       if (draft.prompt.trim().length === 0 && draft.attachments.length === 0) {
         if (current.draft == null) return;
-        replace(agentKey, { draft: null, draftId: null, recovery: current.recovery });
+        replace(scopeKey, { draft: null, draftId: null, recovery: current.recovery });
         return;
       }
       if (current.draft != null && areComposerDraftsEqual(current.draft, draft)) return;
-      replace(agentKey, { draft, draftId: draftId(), recovery: current.recovery });
+      replace(scopeKey, { draft, draftId: draftId(), recovery: current.recovery });
     },
     identifyDraft({ agentId, draft }) {
       if (disposed || agentId.length === 0) return null;
-      const current = currentRecord(agentId);
+      const scopeKey = composerDraftScopeKey(agentId);
+      const current = currentRecord(scopeKey);
       return current.draft != null && current.draftId != null && areComposerDraftsEqual(current.draft, draft)
         ? { agentId, draftId: current.draftId }
         : null;
     },
     clearDraftIfCurrent({ agentId, draftId: currentDraftId }) {
       if (disposed || agentId.length === 0) return false;
-      const current = currentRecord(agentId);
+      const scopeKey = composerDraftScopeKey(agentId);
+      const current = currentRecord(scopeKey);
       if (current.draft == null || current.draftId !== currentDraftId) return false;
-      replace(agentId, { draft: null, draftId: null, recovery: current.recovery });
+      replace(scopeKey, { draft: null, draftId: null, recovery: current.recovery });
       return true;
     },
     clearDraftIfMatches({ agentId, draft }) {
       if (disposed || agentId.length === 0) return false;
-      const current = currentRecord(agentId);
+      const scopeKey = composerDraftScopeKey(agentId);
+      const current = currentRecord(scopeKey);
       if (current.draft == null || !areComposerDraftsEqual(current.draft, draft)) return false;
-      replace(agentId, { draft: null, draftId: null, recovery: current.recovery });
+      replace(scopeKey, { draft: null, draftId: null, recovery: current.recovery });
       return true;
     },
-    clearDraft(agentKey) {
-      if (disposed || agentKey.length === 0) return;
-      const current = currentRecord(agentKey);
-      if (current.draft != null) replace(agentKey, { draft: null, draftId: null, recovery: current.recovery });
+    clearDraft(scope) {
+      if (disposed) return;
+      const scopeKey = composerDraftScopeKey(scope);
+      const current = currentRecord(scopeKey);
+      if (current.draft != null) replace(scopeKey, { draft: null, draftId: null, recovery: current.recovery });
     },
-    recoverDraft(agentKey, recovery) {
-      if (disposed || agentKey.length === 0 || recovery.prompt.trim().length === 0 && recovery.attachments.length === 0) return;
-      const current = currentRecord(agentKey);
-      replace(agentKey, current.draft == null
+    recoverDraft(scope, recovery) {
+      if (disposed || recovery.prompt.trim().length === 0 && recovery.attachments.length === 0) return;
+      const scopeKey = composerDraftScopeKey(scope);
+      const current = currentRecord(scopeKey);
+      replace(scopeKey, current.draft == null
         ? { draft: recovery, draftId: draftId(), recovery: current.recovery }
         : { draft: current.draft, draftId: current.draftId, recovery });
     },
-    clearRecovery(agentKey) {
-      if (disposed || agentKey.length === 0) return;
-      const current = currentRecord(agentKey);
-      if (current.recovery != null) replace(agentKey, { draft: current.draft, draftId: current.draftId, recovery: null });
+    clearRecovery(scope) {
+      if (disposed) return;
+      const scopeKey = composerDraftScopeKey(scope);
+      const current = currentRecord(scopeKey);
+      if (current.recovery != null) replace(scopeKey, { draft: current.draft, draftId: current.draftId, recovery: null });
     },
-    canExchangeDraft(agentKey) {
-      if (disposed || agentKey.length === 0) return false;
-      return currentRecord(agentKey).draft != null || stashes.has(agentKey);
+    canExchangeDraft(scope) {
+      if (disposed) return false;
+      const scopeKey = composerDraftScopeKey(scope);
+      return currentRecord(scopeKey).draft != null || stashes.has(scopeKey);
     },
-    exchangeDraft(agentKey, validate) {
-      if (disposed || agentKey.length === 0) return false;
-      const current = currentRecord(agentKey);
-      const stashed = stashes.get(agentKey) ?? null;
+    exchangeDraft(scope, validate) {
+      if (disposed) return false;
+      const scopeKey = composerDraftScopeKey(scope);
+      const current = currentRecord(scopeKey);
+      const stashed = stashes.get(scopeKey) ?? null;
       if (stashed != null && validate != null && !validate(stashed)) return false;
       if (current.draft == null && stashed == null) return false;
-      if (current.draft == null) stashes.delete(agentKey);
-      else stashes.set(agentKey, cloneDraft(current.draft)!);
+      if (current.draft == null) stashes.delete(scopeKey);
+      else stashes.set(scopeKey, cloneDraft(current.draft)!);
       const nextDraft = cloneDraft(stashed);
-      replace(agentKey, {
+      replace(scopeKey, {
         draft: nextDraft,
         draftId: nextDraft == null ? null : draftId(),
         recovery: current.recovery
       });
       return true;
     },
-    removeStash(agentKey) {
-      if (disposed || agentKey.length === 0 || !stashes.delete(agentKey)) return false;
-      const current = currentRecord(agentKey);
-      notify(agentKey, { draft: current.draft, recovery: current.recovery, stash: null });
+    removeStash(scope) {
+      if (disposed) return false;
+      const scopeKey = composerDraftScopeKey(scope);
+      if (!stashes.delete(scopeKey)) return false;
+      const current = currentRecord(scopeKey);
+      notify(scopeKey, { draft: current.draft, recovery: current.recovery, stash: null });
       return true;
     },
-    removeStashIfMatches(agentKey, draft) {
-      if (disposed || agentKey.length === 0) return false;
-      const stashed = stashes.get(agentKey);
+    removeStashIfMatches(scope, draft) {
+      if (disposed) return false;
+      const scopeKey = composerDraftScopeKey(scope);
+      const stashed = stashes.get(scopeKey);
       if (stashed == null || !areComposerDraftsEqual(stashed, draft)) return false;
-      stashes.delete(agentKey);
-      const current = currentRecord(agentKey);
-      notify(agentKey, { draft: current.draft, recovery: current.recovery, stash: null });
+      stashes.delete(scopeKey);
+      const current = currentRecord(scopeKey);
+      notify(scopeKey, { draft: current.draft, recovery: current.recovery, stash: null });
       return true;
     },
-    clearScope(agentKey) {
-      if (disposed || agentKey.length === 0) return;
-      const hadStash = stashes.delete(agentKey);
-      const hadRecord = records.delete(agentKey);
+    clearScope(scope) {
+      if (disposed) return;
+      const scopeKey = composerDraftScopeKey(scope);
+      const hadStash = stashes.delete(scopeKey);
+      const hadRecord = records.delete(scopeKey);
       if (!hadStash && !hadRecord) return;
       mutationRevision += 1;
-      notify(agentKey, EMPTY_SNAPSHOT);
+      notify(scopeKey, EMPTY_SNAPSHOT);
       enqueueWrite();
     },
     async restore(nextAccountSlot) {
@@ -356,19 +370,20 @@ export function createComposerDraftStateStore(persistence: ComposerDraftPersiste
       const stored = parseEnvelope(await persistence.read(nextAccountSlot));
       if (!isCurrent(expectedGeneration, nextAccountSlot) || mutationRevision !== expectedMutationRevision) return;
       if (stored.kind === "absent") return;
-      if (stored.kind === "corrupt" || stored.schemaVersion !== COMPOSER_DRAFT_SLICE.schemaVersion) {
+      if (stored.kind === "corrupt" || stored.schemaVersion !== 1 && stored.schemaVersion !== COMPOSER_DRAFT_SLICE.schemaVersion) {
         writes = writes.then(() => persistence.clear(nextAccountSlot)).catch(() => {});
         return;
       }
-      const restored = parsePersistedValue(stored.value);
+      const restored = parsePersistedValue(stored.value, stored.schemaVersion);
       if (restored == null) {
         writes = writes.then(() => persistence.clear(nextAccountSlot)).catch(() => {});
         return;
       }
-      for (const [agentKey, record] of restored) {
-        records.set(agentKey, record);
-        notify(agentKey, { draft: record.draft, recovery: record.recovery, stash: null });
+      for (const [scopeKey, record] of restored) {
+        records.set(scopeKey, record);
+        notify(scopeKey, { draft: record.draft, recovery: record.recovery, stash: null });
       }
+      if (stored.schemaVersion === 1) enqueueWrite();
     },
     reset() {
       generation += 1;
