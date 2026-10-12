@@ -6864,14 +6864,23 @@
       ],
       "service_owner": "Fabushi canonical messaging/sync service",
       "deployment_evidence": [],
-      "implementation_status": "mapped",
+      "implementation_status": "implemented",
       "coverage_disposition": "rewritten",
       "blockers": [
-        "Authoritative server/native feed and full shipping composition remain open"
+        "Production Worker APNs security gate currently blocks exact-main server rollout, so real production server-authoritative E2E remains open.",
+        "Fresh exact-head Rust/renderer/packaged evidence and independent acceptance remain open."
       ],
-      "production_entrypoints": [],
-      "production_evidence": [],
-      "test_evidence": [],
+      "production_entrypoints": [
+        "ProductionSessionWorkers::sync_human_conversation -> reconcile_saved_sublist_authority_from_transcript -> MessagingService::reconcile_saved_sublist_parent_access -> canonical MessagingState"
+      ],
+      "production_evidence": [
+        "path:source/host/src/extensions/session/production.rs#reconcile_saved_sublist_authority_from_transcript",
+        "path:native/mahayana-messaging/src/service.rs#reconcile_saved_sublist_parent_access"
+      ],
+      "test_evidence": [
+        "native/mahayana-messaging/src/service.rs#saved_sublist_parent_access_persistence_failure_rolls_back_and_retry_commits_exactly_once",
+        "source/host/src/extensions/session/production.rs#shipping_human_sync_reconciles_saved_sublist_authority_and_survives_restart"
+      ],
       "target_commit": "6e6744eb8716671f060251aacc986ef5fb483b0c",
       "workflow_run": null,
       "run_attempt": null,
@@ -7049,10 +7058,13 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
-        "native/mahayana-messaging/src/conversation.rs"
+        "native/mahayana-messaging/src/conversation.rs",
+        "native/mahayana-messaging/src/engine.rs"
       ],
       "fabushi_target_symbols": [
-        "saved_sublist"
+        "saved_sublist",
+        "authoritative_membership_known",
+        "shared_media_message_ids"
       ],
       "target_language": "Rust",
       "language_rationale": "Non-UI product/state-machine responsibility belongs in the canonical Rust messaging domain.",
@@ -7069,14 +7081,23 @@
       ],
       "service_owner": "Fabushi canonical messaging/sync service",
       "deployment_evidence": [],
-      "implementation_status": "mapped",
+      "implementation_status": "implemented",
       "coverage_disposition": "rewritten",
       "blockers": [
-        "Authoritative server/native feed and full shipping composition remain open"
+        "Positive authoritative server/native feed production deployment remains blocked externally; unsupported/unknown authority behavior itself is implemented fail-closed.",
+        "Fresh exact-head GitHub Actions and independent acceptance remain open."
       ],
-      "production_entrypoints": [],
-      "production_evidence": [],
-      "test_evidence": [],
+      "production_entrypoints": [
+        "ConversationDestination::saved_sublist -> ConversationChildRuntimeState(authoritative_membership_known=false) -> MessagingEngine::shared_media_message_ids fail-closed projection"
+      ],
+      "production_evidence": [
+        "path:native/mahayana-messaging/src/conversation.rs#ConversationChildRuntimeState",
+        "path:native/mahayana-messaging/src/engine.rs#shared_media_message_ids"
+      ],
+      "test_evidence": [
+        "native/mahayana-messaging/src/conversation.rs#child_destination_tests::topic_saved_sublist_and_nested_conversation_keep_distinct_identity",
+        "native/mahayana-messaging/src/engine.rs#shared_media_projection_is_typed_derived_and_saved_sublist_fail_closed"
+      ],
       "target_commit": "6e6744eb8716671f060251aacc986ef5fb483b0c",
       "workflow_run": null,
       "run_attempt": null,
@@ -7194,7 +7215,24 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Source-informed reimplementation mapping from accepted telegramdesktop/tdesktop authority; no retained Telegram C++ runtime.",
       "reviewer": null,
-      "notes": "Mapped from complete-read SavedMessages authority. This row does not claim shipping completion or verification; authoritative server/native feed and exact-head evidence remain open."
+      "notes": "Mapped from complete-read SavedMessages authority. This row does not claim shipping completion or verification; authoritative server/native feed and exact-head evidence remain open.",
+      "fabushi_target_bindings": [
+        {
+          "path": "native/mahayana-messaging/src/conversation.rs",
+          "symbols": [
+            "saved_sublist",
+            "authoritative_membership_known"
+          ],
+          "responsibility_scope": "typed SavedSublist identity with membership unknown by default and no renderer-minted authority"
+        },
+        {
+          "path": "native/mahayana-messaging/src/engine.rs",
+          "symbols": [
+            "shared_media_message_ids"
+          ],
+          "responsibility_scope": "fail-closed projection access when a SavedSublist lacks authoritative child state"
+        }
+      ]
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
@@ -7464,14 +7502,21 @@
       ],
       "service_owner": "Fabushi canonical messaging/sync service",
       "deployment_evidence": [],
-      "implementation_status": "mapped",
+      "implementation_status": "implemented",
       "coverage_disposition": "rewritten",
       "blockers": [
-        "Authoritative server/native feed and full shipping composition remain open"
+        "Remote page request-generation/coalescing is tracked separately by TDRP-R9-SAVED-MESSAGES-REQUEST-BATCH-001 and remains open.",
+        "Fresh exact-head GitHub Actions and independent acceptance remain open."
       ],
-      "production_entrypoints": [],
-      "production_evidence": [],
-      "test_evidence": [],
+      "production_entrypoints": [
+        "ConversationChildRuntimeState.pagination -> ConversationChildPaginationState::replace_window"
+      ],
+      "production_evidence": [
+        "path:native/mahayana-messaging/src/conversation.rs#ConversationChildPaginationState::replace_window"
+      ],
+      "test_evidence": [
+        "native/mahayana-messaging/src/conversation.rs#child_destination_tests::child_runtime_page_accounting_rejects_duplicates_and_bad_gaps"
+      ],
       "target_commit": "6e6744eb8716671f060251aacc986ef5fb483b0c",
       "workflow_run": null,
       "run_attempt": null,
@@ -7589,7 +7634,16 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Source-informed reimplementation mapping from accepted telegramdesktop/tdesktop authority; no retained Telegram C++ runtime.",
       "reviewer": null,
-      "notes": "Mapped from complete-read SavedMessages authority. This row does not claim shipping completion or verification; authoritative server/native feed and exact-head evidence remain open."
+      "notes": "Mapped from complete-read SavedMessages authority. This row does not claim shipping completion or verification; authoritative server/native feed and exact-head evidence remain open.",
+      "fabushi_target_bindings": [
+        {
+          "path": "native/mahayana-messaging/src/conversation.rs",
+          "symbols": [
+            "replace_window"
+          ],
+          "responsibility_scope": "typed child page-window replacement with duplicate rejection and exact skipped/full-count boundary accounting"
+        }
+      ]
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
@@ -7644,7 +7698,8 @@
         "native/mahayana-messaging/src/conversation.rs"
       ],
       "fabushi_target_symbols": [
-        "note_locally_empty"
+        "note_locally_empty",
+        "note_non_empty"
       ],
       "target_language": "Rust",
       "language_rationale": "Non-UI product/state-machine responsibility belongs in the canonical Rust messaging domain.",
@@ -7661,14 +7716,21 @@
       ],
       "service_owner": "Fabushi canonical messaging/sync service",
       "deployment_evidence": [],
-      "implementation_status": "mapped",
+      "implementation_status": "implemented",
       "coverage_disposition": "rewritten",
       "blockers": [
-        "Authoritative server/native feed and full shipping composition remain open"
+        "Fresh exact-head GitHub Actions and independent acceptance remain open."
       ],
-      "production_entrypoints": [],
-      "production_evidence": [],
-      "test_evidence": [],
+      "production_entrypoints": [
+        "ConversationChildRuntimeState::{note_locally_empty,note_non_empty} -> canonical child pin continuity"
+      ],
+      "production_evidence": [
+        "path:native/mahayana-messaging/src/conversation.rs#ConversationChildRuntimeState::note_locally_empty",
+        "path:native/mahayana-messaging/src/conversation.rs#ConversationChildRuntimeState::note_non_empty"
+      ],
+      "test_evidence": [
+        "native/mahayana-messaging/src/conversation.rs#child_destination_tests::child_runtime_preserves_pin_across_temporary_empty_and_clears_on_destroy"
+      ],
       "target_commit": "6e6744eb8716671f060251aacc986ef5fb483b0c",
       "workflow_run": null,
       "run_attempt": null,
@@ -7786,7 +7848,17 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Source-informed reimplementation mapping from accepted telegramdesktop/tdesktop authority; no retained Telegram C++ runtime.",
       "reviewer": null,
-      "notes": "Mapped from complete-read SavedMessages authority. This row does not claim shipping completion or verification; authoritative server/native feed and exact-head evidence remain open."
+      "notes": "Mapped from complete-read SavedMessages authority. This row does not claim shipping completion or verification; authoritative server/native feed and exact-head evidence remain open.",
+      "fabushi_target_bindings": [
+        {
+          "path": "native/mahayana-messaging/src/conversation.rs",
+          "symbols": [
+            "note_locally_empty",
+            "note_non_empty"
+          ],
+          "responsibility_scope": "temporary local emptiness removes visible pin while preserving restore intent until authoritative non-empty recovery"
+        }
+      ]
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
@@ -7840,7 +7912,8 @@
         "native/mahayana-messaging/src/conversation.rs"
       ],
       "fabushi_target_symbols": [
-        "select"
+        "select",
+        "clear_destroyed_child"
       ],
       "target_language": "Rust",
       "language_rationale": "Non-UI product/state-machine responsibility belongs in the canonical Rust messaging domain.",
@@ -7857,14 +7930,21 @@
       ],
       "service_owner": "Fabushi canonical messaging/sync service",
       "deployment_evidence": [],
-      "implementation_status": "mapped",
+      "implementation_status": "implemented",
       "coverage_disposition": "rewritten",
       "blockers": [
-        "Authoritative server/native feed and full shipping composition remain open"
+        "Shipping renderer selection composition and independent packaged acceptance remain open.",
+        "Fresh exact-head GitHub Actions remain open."
       ],
-      "production_entrypoints": [],
-      "production_evidence": [],
-      "test_evidence": [],
+      "production_entrypoints": [
+        "ConversationDestinationSelection::{select,clear_destroyed_child} -> canonical Conversation child selection"
+      ],
+      "production_evidence": [
+        "path:native/mahayana-messaging/src/conversation.rs#ConversationDestinationSelection"
+      ],
+      "test_evidence": [
+        "native/mahayana-messaging/src/conversation.rs#child_destination_tests::destroying_exact_child_clears_selection_without_parent_fallback"
+      ],
       "target_commit": "6e6744eb8716671f060251aacc986ef5fb483b0c",
       "workflow_run": null,
       "run_attempt": null,
@@ -7982,7 +8062,17 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Source-informed reimplementation mapping from accepted telegramdesktop/tdesktop authority; no retained Telegram C++ runtime.",
       "reviewer": null,
-      "notes": "Mapped from complete-read SavedMessages authority. This row does not claim shipping completion or verification; authoritative server/native feed and exact-head evidence remain open."
+      "notes": "Mapped from complete-read SavedMessages authority. This row does not claim shipping completion or verification; authoritative server/native feed and exact-head evidence remain open.",
+      "fabushi_target_bindings": [
+        {
+          "path": "native/mahayana-messaging/src/conversation.rs",
+          "symbols": [
+            "select",
+            "clear_destroyed_child"
+          ],
+          "responsibility_scope": "single canonical typed-child selection and exact-identity destruction clearing without silent parent fallback"
+        }
+      ]
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
@@ -8035,10 +8125,14 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
-        "native/mahayana-messaging/src/conversation.rs"
+        "native/mahayana-messaging/src/conversation.rs",
+        "native/mahayana-messaging/src/engine.rs",
+        "native/mahayana-messaging/src/service.rs"
       ],
       "fabushi_target_symbols": [
-        "clear_destroyed_child"
+        "destroy",
+        "ConversationChildDestroyed",
+        "handle"
       ],
       "target_language": "Rust",
       "language_rationale": "Non-UI product/state-machine responsibility belongs in the canonical Rust messaging domain.",
@@ -8055,14 +8149,25 @@
       ],
       "service_owner": "Fabushi canonical messaging/sync service",
       "deployment_evidence": [],
-      "implementation_status": "mapped",
+      "implementation_status": "implemented",
       "coverage_disposition": "rewritten",
       "blockers": [
-        "Authoritative server/native feed and full shipping composition remain open"
+        "Full OS-notification/resource adapter cleanup beyond canonical child state is tracked by notification/resource responsibilities and remains open.",
+        "Fresh exact-head GitHub Actions and independent acceptance remain open."
       ],
-      "production_entrypoints": [],
-      "production_evidence": [],
-      "test_evidence": [],
+      "production_entrypoints": [
+        "ClientCommand::DestroyConversationChild -> MessagingService::handle -> MessagingEngine::DestroyConversationChild/Event::ConversationChildDestroyed -> ConversationChildRuntimeState::destroy"
+      ],
+      "production_evidence": [
+        "path:native/mahayana-messaging/src/conversation.rs#ConversationChildRuntimeState::destroy",
+        "path:native/mahayana-messaging/src/engine.rs#ConversationChildDestroyed",
+        "path:native/mahayana-messaging/src/service.rs#handle"
+      ],
+      "test_evidence": [
+        "native/mahayana-messaging/src/conversation.rs#child_destination_tests::child_runtime_preserves_pin_across_temporary_empty_and_clears_on_destroy",
+        "native/mahayana-messaging/src/service.rs#saved_sublist_destroy_persistence_failure_rolls_back_and_retry_commits_exactly_once",
+        "native/mahayana-messaging/src/engine.rs#destroyed_child_event_removes_only_exact_recent_open_destination"
+      ],
       "target_commit": "6e6744eb8716671f060251aacc986ef5fb483b0c",
       "workflow_run": null,
       "run_attempt": null,
@@ -8180,7 +8285,30 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Source-informed reimplementation mapping from accepted telegramdesktop/tdesktop authority; no retained Telegram C++ runtime.",
       "reviewer": null,
-      "notes": "Mapped from complete-read SavedMessages authority. This row does not claim shipping completion or verification; authoritative server/native feed and exact-head evidence remain open."
+      "notes": "Mapped from complete-read SavedMessages authority. This row does not claim shipping completion or verification; authoritative server/native feed and exact-head evidence remain open.",
+      "fabushi_target_bindings": [
+        {
+          "path": "native/mahayana-messaging/src/conversation.rs",
+          "symbols": [
+            "destroy"
+          ],
+          "responsibility_scope": "exact child-owned draft/unread/notification/pagination/pin transient cleanup"
+        },
+        {
+          "path": "native/mahayana-messaging/src/engine.rs",
+          "symbols": [
+            "ConversationChildDestroyed"
+          ],
+          "responsibility_scope": "canonical child destruction event and cross-projection cleanup trigger"
+        },
+        {
+          "path": "native/mahayana-messaging/src/service.rs",
+          "symbols": [
+            "handle"
+          ],
+          "responsibility_scope": "durable child-destroy transaction rollback and retry boundary through the single messaging service"
+        }
+      ]
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
@@ -8231,10 +8359,11 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
-        "native/mahayana-messaging/src/conversation.rs"
+        "native/mahayana-messaging/src/engine.rs"
       ],
       "fabushi_target_symbols": [
-        "destroy"
+        "note_destination_opened",
+        "recent_open_destinations"
       ],
       "target_language": "Rust",
       "language_rationale": "Non-UI product/state-machine responsibility belongs in the canonical Rust messaging domain.",
@@ -8251,14 +8380,24 @@
       ],
       "service_owner": "Fabushi canonical messaging/sync service",
       "deployment_evidence": [],
-      "implementation_status": "mapped",
+      "implementation_status": "implemented",
       "coverage_disposition": "rewritten",
       "blockers": [
-        "Authoritative server/native feed and full shipping composition remain open"
+        "Server-provided authoritative child availability still gates which SavedSublists may be opened; production rollout remains externally blocked.",
+        "Fresh exact-head GitHub Actions and independent acceptance remain open."
       ],
-      "production_entrypoints": [],
-      "production_evidence": [],
-      "test_evidence": [],
+      "production_entrypoints": [
+        "MessagingEngine::{note_destination_opened,recent_open_destinations} -> actor-scoped canonical recent child projection"
+      ],
+      "production_evidence": [
+        "path:native/mahayana-messaging/src/engine.rs#note_destination_opened",
+        "path:native/mahayana-messaging/src/engine.rs#recent_open_destinations"
+      ],
+      "test_evidence": [
+        "native/mahayana-messaging/src/engine.rs#recent_open_history_is_bounded_deduped_and_move_front",
+        "native/mahayana-messaging/src/engine.rs#destroyed_child_event_removes_only_exact_recent_open_destination",
+        "native/mahayana-messaging/src/engine.rs#recent_open_history_is_runtime_only_across_state_restore"
+      ],
       "target_commit": "6e6744eb8716671f060251aacc986ef5fb483b0c",
       "workflow_run": null,
       "run_attempt": null,
@@ -8376,7 +8515,17 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Source-informed reimplementation mapping from accepted telegramdesktop/tdesktop authority; no retained Telegram C++ runtime.",
       "reviewer": null,
-      "notes": "Mapped from complete-read SavedMessages authority. This row does not claim shipping completion or verification; authoritative server/native feed and exact-head evidence remain open."
+      "notes": "Mapped from complete-read SavedMessages authority. This row does not claim shipping completion or verification; authoritative server/native feed and exact-head evidence remain open.",
+      "fabushi_target_bindings": [
+        {
+          "path": "native/mahayana-messaging/src/engine.rs",
+          "symbols": [
+            "note_destination_opened",
+            "recent_open_destinations"
+          ],
+          "responsibility_scope": "account-scoped bounded move-to-front recent child projection with dedupe and exact-destroy pruning"
+        }
+      ]
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
@@ -8448,14 +8597,22 @@
       ],
       "service_owner": "Fabushi canonical messaging/sync service",
       "deployment_evidence": [],
-      "implementation_status": "mapped",
+      "implementation_status": "implemented",
       "coverage_disposition": "rewritten",
       "blockers": [
-        "Authoritative server/native feed and full shipping composition remain open"
+        "Authoritative remote unread feed composition is not yet proven in production for all Human/Topic/SavedSublist paths.",
+        "Fresh exact-head GitHub Actions and independent acceptance remain open."
       ],
-      "production_entrypoints": [],
-      "production_evidence": [],
-      "test_evidence": [],
+      "production_entrypoints": [
+        "ConversationChildRuntimeState::advance_inbox_read_till -> canonical typed-child unread/read state"
+      ],
+      "production_evidence": [
+        "path:native/mahayana-messaging/src/conversation.rs#ConversationChildRuntimeState::advance_inbox_read_till"
+      ],
+      "test_evidence": [
+        "native/mahayana-messaging/src/conversation.rs#child_destination_tests::child_runtime_read_cursor_never_moves_backwards",
+        "native/mahayana-messaging/src/conversation.rs#child_destination_tests::child_runtime_reconciles_unread_things_and_notification_ids_without_message_reaction_truth"
+      ],
       "target_commit": "6e6744eb8716671f060251aacc986ef5fb483b0c",
       "workflow_run": null,
       "run_attempt": null,
@@ -8573,7 +8730,16 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Source-informed reimplementation mapping from accepted telegramdesktop/tdesktop authority; no retained Telegram C++ runtime.",
       "reviewer": null,
-      "notes": "Mapped from complete-read SavedMessages authority. This row does not claim shipping completion or verification; authoritative server/native feed and exact-head evidence remain open."
+      "notes": "Mapped from complete-read SavedMessages authority. This row does not claim shipping completion or verification; authoritative server/native feed and exact-head evidence remain open.",
+      "fabushi_target_bindings": [
+        {
+          "path": "native/mahayana-messaging/src/conversation.rs",
+          "symbols": [
+            "advance_inbox_read_till"
+          ],
+          "responsibility_scope": "monotonic typed-child inbox read cursor with unknown-preserving unread count semantics"
+        }
+      ]
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
@@ -8625,10 +8791,16 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
-        "native/mahayana-messaging/src/engine.rs"
+        "native/mahayana-messaging/src/conversation.rs",
+        "native/mahayana-messaging/src/engine.rs",
+        "native/mahayana-messaging/src/service.rs",
+        "source/host/src/extensions/session/production.rs"
       ],
       "fabushi_target_symbols": [
-        "destination_message_conversation_id"
+        "reconcile_authoritative_message_ids",
+        "ReconcileSavedSublistMembership",
+        "reconcile_saved_sublist_membership",
+        "reconcile_saved_sublist_authority_from_transcript"
       ],
       "target_language": "Rust",
       "language_rationale": "Non-UI product/state-machine responsibility belongs in the canonical Rust messaging domain.",
@@ -8645,14 +8817,27 @@
       ],
       "service_owner": "Fabushi canonical messaging/sync service",
       "deployment_evidence": [],
-      "implementation_status": "mapped",
+      "implementation_status": "implemented",
       "coverage_disposition": "rewritten",
       "blockers": [
-        "Authoritative server/native feed and full shipping composition remain open"
+        "Server main contains destination authorization but production Worker rollout is blocked by missing APNs Worker secrets; real production authenticated E2E remains open.",
+        "Fresh exact-head GitHub Actions and independent acceptance remain open."
       ],
-      "production_entrypoints": [],
-      "production_evidence": [],
-      "test_evidence": [],
+      "production_entrypoints": [
+        "ProductionSessionWorkers::sync_human_conversation -> reconcile_saved_sublist_authority_from_transcript -> MessagingService::reconcile_saved_sublist_membership -> MessagingEngine::ReconcileSavedSublistMembership -> ConversationChildRuntimeState::reconcile_authoritative_message_ids"
+      ],
+      "production_evidence": [
+        "path:source/host/src/extensions/session/production.rs#reconcile_saved_sublist_authority_from_transcript",
+        "path:native/mahayana-messaging/src/service.rs#reconcile_saved_sublist_membership",
+        "path:native/mahayana-messaging/src/engine.rs#Command::ReconcileSavedSublistMembership",
+        "path:native/mahayana-messaging/src/conversation.rs#reconcile_authoritative_message_ids"
+      ],
+      "test_evidence": [
+        "native/mahayana-messaging/src/service.rs#saved_sublist_membership_persistence_failure_rolls_back_and_retry_commits_exactly_once",
+        "native/mahayana-messaging/src/engine.rs#shared_media_projection_is_typed_derived_and_saved_sublist_fail_closed",
+        "native/mahayana-messaging/src/engine.rs#deleted_message_cleans_only_authoritative_saved_sublist_membership",
+        "source/host/src/extensions/session/production.rs#shipping_human_sync_reconciles_saved_sublist_authority_and_survives_restart"
+      ],
       "target_commit": "6e6744eb8716671f060251aacc986ef5fb483b0c",
       "workflow_run": null,
       "run_attempt": null,
@@ -8770,7 +8955,37 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Source-informed reimplementation mapping from accepted telegramdesktop/tdesktop authority; no retained Telegram C++ runtime.",
       "reviewer": null,
-      "notes": "Mapped from complete-read SavedMessages authority. This row does not claim shipping completion or verification; authoritative server/native feed and exact-head evidence remain open."
+      "notes": "Mapped from complete-read SavedMessages authority. This row does not claim shipping completion or verification; authoritative server/native feed and exact-head evidence remain open.",
+      "fabushi_target_bindings": [
+        {
+          "path": "native/mahayana-messaging/src/conversation.rs",
+          "symbols": [
+            "reconcile_authoritative_message_ids"
+          ],
+          "responsibility_scope": "exact authoritative child message-set replacement and stale transient projection pruning"
+        },
+        {
+          "path": "native/mahayana-messaging/src/engine.rs",
+          "symbols": [
+            "ReconcileSavedSublistMembership"
+          ],
+          "responsibility_scope": "domain command/event validation for server-authoritative SavedSublist membership"
+        },
+        {
+          "path": "native/mahayana-messaging/src/service.rs",
+          "symbols": [
+            "reconcile_saved_sublist_membership"
+          ],
+          "responsibility_scope": "durable exact SavedSublist membership transaction with persistence rollback and retry"
+        },
+        {
+          "path": "source/host/src/extensions/session/production.rs",
+          "symbols": [
+            "reconcile_saved_sublist_authority_from_transcript"
+          ],
+          "responsibility_scope": "shipping Human transcript settlement to server-returned ConversationDestination membership reconciliation"
+        }
+      ]
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
