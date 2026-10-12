@@ -96,6 +96,24 @@ test("UNIT-TDRP-EMOJI-AUTOCOMPLETE-001 Composer emoji suggestions preserve matur
   assert.equal(searchEmojiSuggestions(TDRP_EMOJI_SUGGESTION_CATALOG, "mile").length, 0);
   assert.equal(searchEmojiSuggestions(TDRP_EMOJI_SUGGESTION_CATALOG, "smile").filter((entry) => entry.native === "🙂").length, 1);
   assert.equal(searchEmoji(TDRP_EMOJI_SUGGESTION_CATALOG, "mile")[0]?.id, "smile", "picker substring search remains independent from Composer colon completion");
+
+  const wordTierCatalog: EmojiCatalog = {
+    categories: [{
+      id: "symbols",
+      label: "Symbols",
+      emojis: [
+        { id: "alpha_beta", name: "Alpha Beta", native: "🅰️", shortcodes: ["alpha_beta"], search: "alpha beta" },
+        { id: "alphabet", name: "Alphabet", native: "🔤", shortcodes: ["alphabet"], search: "alphabet" },
+      ],
+    }],
+    skinTones: [],
+    subgroups: [],
+  };
+  assert.deepEqual(
+    searchEmojiSuggestions(wordTierCatalog, "alp").map((entry) => entry.id),
+    ["alphabet", "alpha_beta"],
+    "a single-word prefix must outrank a multi-word replacement even when source order is reversed",
+  );
 });
 
 test("CONTRACT-TDRP-EMOJI-AUTOCOMPLETE-001 shipping EditorSuggestionController uses the canonical EmojiCatalog autocomplete owner", () => {
