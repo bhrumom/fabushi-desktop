@@ -17,6 +17,7 @@ export function canonicalSourcePath(entry) {
 }
 
 export function selectCurrentFirstUnread(index, recursiveInventory) {
+  if (index?.inventory?.unread_minimum === 0) return null;
   const order = index?.rebaseline?.first_unread_order;
   const expectedPath = index?.rebaseline?.first_unread_path;
   if (!Number.isInteger(order) || order < 1) throw new Error('inventory index has no valid first_unread_order');
@@ -40,6 +41,7 @@ export function selectCurrentReviewWindow(index, recursiveInventory, maxEntries 
   if (!Number.isInteger(maxEntries) || maxEntries < 1 || maxEntries > 64) {
     throw new Error('review window must contain 1..64 entries');
   }
+  if (first === null) return [];
   const entries = [];
   for (let offset = 0; offset < maxEntries; offset++) {
     const entry = recursiveInventory.entries[first.order - 1 + offset];

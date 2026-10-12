@@ -61,3 +61,11 @@ test('current review window is contiguous from the persisted first unread cursor
   assert.throws(() => selectCurrentReviewWindow(index, recursiveInventory, 0), /1\.\.64/);
   assert.throws(() => selectCurrentReviewWindow(index, recursiveInventory, 65), /1\.\.64/);
 });
+
+
+test('exhausted recursive inventory produces no current unread selection or review window', () => {
+  const index = { inventory: { unread_minimum: 0 }, rebaseline: { first_unread_order: 16126, first_unread_path: 'none' } };
+  const recursiveInventory = { entries: [{ scope: 'root', path: 'one' }] };
+  assert.equal(selectCurrentFirstUnread(index, recursiveInventory), null);
+  assert.deepEqual(selectCurrentReviewWindow(index, recursiveInventory, 64), []);
+});

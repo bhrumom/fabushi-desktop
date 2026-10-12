@@ -266,9 +266,9 @@
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
     "unknown_minimum": 13314,
-    "unread_minimum": 9,
+    "unread_minimum": 0,
     "omitted_known": 0,
-    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 16,116; unknown=13,314, unread=9, omitted=0."
+    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 16,125; unknown=13,314, unread=0, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -632,9 +632,9 @@
     "development_only_non_applicable": 2737,
     "unknown_closed": 2811,
     "omitted": 0,
-    "read_through": 16116,
-    "first_unread_order": 16117,
-    "first_unread_path": "expected-lite::test/t-noexcept.bat",
+    "read_through": 16125,
+    "first_unread_order": 16126,
+    "first_unread_path": "none",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
