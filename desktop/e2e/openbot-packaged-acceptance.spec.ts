@@ -8,6 +8,7 @@ const realAcceptance = process.env.OBF_REAL_ACCEPTANCE === '1';
 const executable = process.env.FABUSHI_ELECTRON_EXECUTABLE?.trim() || '';
 const sourceSha = process.env.OBF_SOURCE_SHA?.trim() || '';
 const expectedSourceSha = process.env.OBF_EXPECTED_SOURCE_SHA?.trim() || sourceSha;
+const expectedVersion = process.env.OBF_EXPECTED_VERSION?.trim() || '';
 const evidenceRoot = process.env.OBF_EVIDENCE_DIR?.trim()
   || path.join(tmpdir(), `fabushi-openbot-acceptance-${sourceSha.slice(0, 12) || 'unknown'}`);
 
@@ -709,6 +710,7 @@ test.describe('signed candidate packaged acceptance', () => {
     expect(sourceSha, 'OBF_SOURCE_SHA must be the exact candidate HEAD').toMatch(/^[0-9a-f]{40}$/);
     expect(expectedSourceSha, 'OBF_EXPECTED_SOURCE_SHA must be a full SHA').toMatch(/^[0-9a-f]{40}$/);
     expect(sourceSha, 'candidate executable must be built from the requested exact HEAD').toBe(expectedSourceSha);
+    expect(expectedVersion, 'OBF_EXPECTED_VERSION must bind the packaged candidate version').toMatch(/^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/u);
     expect(process.env.FABUSHI_FEATURE_HOST_MODE || '').not.toBe('test');
     expect(process.env.FABUSHI_E2E || '').not.toBe('1');
 
@@ -796,6 +798,14 @@ test.describe('signed candidate packaged acceptance', () => {
       };
       attachPageDiagnostics(page);
 
+      const releaseIdentity = await page.evaluate(async () => {
+        const update = (window as unknown as { desktop?: { update?: { getStatus?: () => Promise<unknown> } } }).desktop?.update;
+        if (typeof update?.getStatus !== 'function') throw new Error('Packaged release identity requires the shipping updater bridge.');
+        return await update.getStatus() as { currentVersion?: unknown; currentSourceSha?: unknown };
+      });
+      expect(releaseIdentity.currentVersion, 'running candidate version must match release metadata').toBe(expectedVersion);
+      expect(releaseIdentity.currentSourceSha, 'running candidate source SHA must match exact workflow source').toBe(sourceSha);
+
       traceContext = page.context();
       await traceContext.tracing.start({
         screenshots: true,
@@ -805,6 +815,8 @@ test.describe('signed candidate packaged acceptance', () => {
       traceStarted = true;
       await writeFile(path.join(evidenceRoot, 'startup.json'), JSON.stringify({
         sourceSha,
+        version: expectedVersion,
+        releaseIdentity,
         pageUrl: page.url(),
         binding: binding.binding,
         launchMode: 'signed-production-process',
