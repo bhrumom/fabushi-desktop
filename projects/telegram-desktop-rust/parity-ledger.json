@@ -9051,11 +9051,11 @@
       ],
       "service_owner": "Fabushi canonical messaging/sync service",
       "deployment_evidence": [],
-      "implementation_status": "implemented",
+      "implementation_status": "mapped",
       "coverage_disposition": "rewritten",
       "blockers": [
-        "Current-head whole-workflow terminal evidence is still pending until Rust desktop runtime 38247222064 finishes all Host/Runner/attachment/Computer/CapabilityBroker regression steps.",
-        "Independent release acceptance and same-release-candidate packaging/install/upgrade/restart provenance remain open; therefore this row is not verified."
+        "Domain/store implementation and focused recovery tests are present, but current-head shipping composition does not yet call MessagingService::note_recent_participant_suggestion from the canonical participant/recipient search selection path. DesktopBridge/ProductionRenderer/current canonical search E2E expose no durable recent-suggestion mutation boundary, so the responsibility is not production-wired.",
+        "Fresh exact-head GitHub Actions, same-release-candidate packaging/install/upgrade/restart provenance, and independent release acceptance remain open."
       ],
       "production_entrypoints": [
         "native/mahayana-messaging/src/engine.rs::MessagingEngine::{from_state,recent_participant_suggestions,note_recent_participant_suggestion,remove_recent_participant_suggestion,clear_recent_participant_suggestions,recent_open_destinations,note_destination_opened,remove_recent_destination}",
@@ -9205,7 +9205,7 @@
       "test_environment_ids": [
         "GitHub Actions only"
       ],
-      "coverage_matrix_status": "implemented-current-head-focused-evidence",
+      "coverage_matrix_status": "mapped-domain-implemented-shipping-composition-open",
       "flake_status": "current-head-focused-step-passed",
       "test_execution_evidence": [
         "github-actions:38247222064:job-114804542217:step-Test canonical Fabushi messaging responsibilities:success@e2a0295b215521406b4fb40fe62d926330e927df",
@@ -9215,7 +9215,7 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Source-informed mapping from accepted telegramdesktop/tdesktop recent_peers authority; no retained Telegram C++ runtime or copied presentation.",
       "reviewer": null,
-      "notes": "Accepted recent_peers semantics are implemented in canonical MessagingEngine/MessagingService: durable ordinary suggestions are account-scoped, bounded to 48, deduped move-to-front, reject self/unknown actors, clear an invalid owner projection on restore, and support exact remove/clear; service persistence rolls back the complete pre-mutation engine state on save failure and supports retry without cursor/journal mutation. Recent-open ConversationDestination history is separate runtime-only state bounded to 32, move-to-front, restart-empty, and exact child destruction retires only the matching destination. Focused messaging step passed on e2a0295b; whole Rust workflow and independent release acceptance remain open, so status is implemented rather than verified."
+      "notes": "Accepted recent_peers semantics are implemented in canonical MessagingEngine/MessagingService: durable ordinary suggestions are account-scoped, bounded to 48, deduped move-to-front, reject self/unknown actors, clear an invalid owner projection on restore, and support exact remove/clear; service persistence rolls back the complete pre-mutation engine state on save failure and supports retry without cursor/journal mutation. Recent-open ConversationDestination history is separate runtime-only state bounded to 32, move-to-front, restart-empty, and exact child destruction retires only the matching destination. Focused messaging step passed on e2a0295b; whole Rust workflow and independent release acceptance remain open, so status is implemented rather than verified. Follow-up shipping audit at 67c05a11 found no call from DesktopBridge, ProductionRenderer, or canonical search/recipient E2E into the durable recent-participant mutation API. Under strict composition rules this row is downgraded from implemented to mapped until the canonical selection path is wired and evidenced."
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
