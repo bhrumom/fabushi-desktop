@@ -410,7 +410,7 @@
       "referencePath": "frontend/src/recovered/features/conversation/workspace/draft-state.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "3010e0e89af79593d371cb6c58f9f372bf7e08e9",
+      "targetBlobSha": "81ca4018738703d769d78c697de9b59bf0e42860",
       "behavioralEvidence": [
         "frontend/src/recovered/features/conversation/workspace/draft-state.ts"
       ],
@@ -419,7 +419,7 @@
         ".github/workflows/rust-desktop-runtime.yml",
         ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "rationale": "Preserves the frozen Grok 0.18 account-scoped composer draft store while adapting a shipping race exposed by real desktop attachment staging: a late persistence restore must not overwrite a draft mutation that occurred while the read was in flight. A monotonic mutation revision fences both pre-read and post-read restore settlement without changing account generation semantics, persistence format, or normal draft equality rules. The explicit .ts model import makes this recovered module executable under the Node 24 strip-types contract-test runner while remaining valid under the desktop Bundler TypeScript configuration. The current shipping adaptation also adds a keyed transient ComposeStash per canonical draft scope. exchangeDraft performs an atomic current-draft/stash swap, clones rich-text/reply/prepared-attachment state, revalidates restored attachments through the caller-provided current-limit predicate before commit, and never serializes stash into the durable persistence envelope. removeStash and clearScope retire transient state explicitly, while account restore, reset, and dispose clear stale stashes so no draft crosses account or lifecycle boundaries. A compare-and-remove stash primitive fences asynchronous send completion so an older accepted send cannot delete a newer stash created by a subsequent exchange."
+      "rationale": "Preserves the frozen Grok 0.18 account-scoped composer draft store while adapting a shipping race exposed by real desktop attachment staging: a late persistence restore must not overwrite a draft mutation that occurred while the read was in flight. A monotonic mutation revision fences both pre-read and post-read restore settlement without changing account generation semantics, persistence format, or normal draft equality rules. The explicit .ts model import makes this recovered module executable under the Node 24 strip-types contract-test runner while remaining valid under the desktop Bundler TypeScript configuration. The current shipping adaptation also adds a keyed transient ComposeStash per canonical draft scope. exchangeDraft performs an atomic current-draft/stash swap, clones rich-text/reply/prepared-attachment state, revalidates restored attachments through the caller-provided current-limit predicate before commit, and never serializes stash into the durable persistence envelope. removeStash and clearScope retire transient state explicitly, while account restore, reset, and dispose clear stale stashes so no draft crosses account or lifecycle boundaries. A compare-and-remove stash primitive fences asynchronous send completion so an older accepted send cannot delete a newer stash created by a subsequent exchange. The same account-scoped draft store now clones and persists the canonical cursor and link-preview fields across typed Agent/Conversation/Topic/SavedSublist/conversation-child scopes, so restore/stash/recovery paths do not drop draft selection or preview policy state. This remains within the existing Composer draft owner and does not create a source-specific WebPage store."
     },
     {
       "referencePath": "frontend/src/recovered/features/conversation/workspace/find-in-chat-controller.ts",
@@ -499,7 +499,7 @@
       "referencePath": "frontend/src/recovered/features/conversation/workspace/model.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "97c78ba1e3ea3ad43937aa6db5f2993bac277b19",
+      "targetBlobSha": "cc60f0439403b543782958388bafd17703d52279",
       "behavioralEvidence": [
         "frontend/src/recovered/features/conversation/workspace/model.ts",
         "frontend/src/recovered/features/conversation/workspace/submission.ts",
@@ -509,9 +509,10 @@
       "testEvidence": [
         "frontend/src/production/human-silent-scheduled-message.contract.test.ts",
         ".github/workflows/desktop-chat-parity-ci.yml",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts"
       ],
-      "rationale": "Preserves the frozen Grok transcript model while explicitly adapting TranscriptDelivery with a scheduled state required by canonical Fabushi Human direct-message transport. The new state represents a server-persisted message that is visible to the sender but fenced from the recipient until the single durable D1 scheduler activates it; it does not introduce a second transcript/message owner or alter ordinary sent/pending/queued/failed semantics."
+      "rationale": "Preserves the frozen Grok transcript model while explicitly adapting TranscriptDelivery with a scheduled state required by canonical Fabushi Human direct-message transport. The new state represents a server-persisted message that is visible to the sender but fenced from the recipient until the single durable D1 scheduler activates it; it does not introduce a second transcript/message owner or alter ordinary sent/pending/queued/failed semantics. TDRP Draft Identity additionally extends the canonical ComposerDraft value contract with source-neutral cursor selection/scroll state and link-preview metadata equivalent to the mature WebPageDraft policy bits. Preview ids remain strings to avoid JavaScript 64-bit precision loss; parsing fails closed on malformed cursor or preview values, and draft equality includes these fields so stale persistence cannot silently overwrite semantically distinct draft state."
     },
     {
       "referencePath": "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
