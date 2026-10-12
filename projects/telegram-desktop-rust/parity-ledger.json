@@ -6,8 +6,8 @@
   "target_commit": "371b72f1cd20de03dc4dff9a15ed761054968093",
   "coverage": {
     "source_entries_total": 16125,
-    "unknown": 13368,
-    "unread": 201,
+    "unknown": 13314,
+    "unread": 137,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13480,20 +13480,20 @@
     "changed_paths": 10,
     "source_read_reconciliation": "Accepted prefix 15,732/16,125; orders 15,669-15,732 exact-read per blob as 33 Doxygen HTML, 15 generated JS and 16 PNGs with direct full-byte Git SHA/size/signature/complete-IEND and generated-HTML consumer verification.",
     "source_authority_evidence": "Direct exact-blob audit through 15,732 is durable on this PR lineage; fresh same-head Actions required after accounting write.",
-    "current_source_read_through": 15924,
-    "first_unread_order": 15925,
-    "first_unread_path": "doc/gh-pages::view_2drop_8hpp.js"
+    "current_source_read_through": 15988,
+    "first_unread_order": 15989,
+    "first_unread_path": "external/glib/cppgir::cmake/cpp20_format.cpp"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "deterministic_prefix_closed": 57,
-    "development_only_non_applicable": 2683,
-    "unknown_closed": 2757,
+    "development_only_non_applicable": 2737,
+    "unknown_closed": 2811,
     "omitted": 0,
-    "read_through": 15924,
-    "first_unread_order": 15925,
-    "first_unread_path": "doc/gh-pages::view_2drop_8hpp.js",
+    "read_through": 15988,
+    "first_unread_order": 15989,
+    "first_unread_path": "external/glib/cppgir::cmake/cpp20_format.cpp",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {

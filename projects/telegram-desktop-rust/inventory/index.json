@@ -13,10 +13,10 @@
     "recursive_non_directory_entries": 16125,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 13368,
-    "unread_minimum": 201,
+    "unknown_minimum": 13314,
+    "unread_minimum": 137,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through deterministic order 15,924; unknown 13,368; unread 201; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition through deterministic order 15,988; unknown 13,314; unread 137; omitted 0."
   },
   "latest_recursive_evidence": {
     "run_id": 38216855900,
@@ -35,7 +35,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live baseline accepted; closure open. Read-through 15,924; unread_minimum is 201; unknown remains 13,368; omitted remains 0; first unread 15,925 is doc/gh-pages::view_2drop_8hpp.js.",
+  "note": "Live baseline accepted; closure open. Read-through 15,988; unread_minimum is 137; unknown remains 13,314; omitted remains 0; first unread 15,989 is external/glib/cppgir::cmake/cpp20_format.cpp.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -53,23 +53,23 @@
       6541,
       6627
     ],
-    "current_source_read_through": 15924,
-    "first_unread_order": 15925,
-    "first_unread_path": "doc/gh-pages::view_2drop_8hpp.js",
-    "current_head_source_authority_evidence": "Orders 15,861-15,924 individually exact-object audited against accepted component commits; this descendant requires fresh same-head Actions.",
-    "source_read_reconciliation": "Accepted prefix 15,924/16,125; unread=201; generated documentation closed only per object; cppgir/expected-lite remain mapped-open where product/build reachability is unresolved.",
-    "source_authority_evidence": "Fresh exact-head validation required for the 15,924 accounting descendant."
+    "current_source_read_through": 15988,
+    "first_unread_order": 15989,
+    "first_unread_path": "external/glib/cppgir::cmake/cpp20_format.cpp",
+    "current_head_source_authority_evidence": "Orders 15,925-15,988 individually exact-object audited against accepted component commits; this descendant requires fresh same-head Actions.",
+    "source_read_reconciliation": "Accepted prefix 15,988/16,125; unread=137; generated documentation closed only per object; cppgir/expected-lite remain mapped-open where product/build reachability is unresolved.",
+    "source_authority_evidence": "Fresh exact-head validation required for the 15,988 accounting descendant."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "deterministic_prefix_closed": 57,
-    "development_only_non_applicable": 2683,
-    "unknown_closed": 2757,
+    "development_only_non_applicable": 2737,
+    "unknown_closed": 2811,
     "omitted": 0,
-    "read_through": 15924,
-    "first_unread_order": 15925,
-    "first_unread_path": "doc/gh-pages::view_2drop_8hpp.js",
+    "read_through": 15988,
+    "first_unread_order": 15989,
+    "first_unread_path": "external/glib/cppgir::cmake/cpp20_format.cpp",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }
