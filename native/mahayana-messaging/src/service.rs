@@ -399,10 +399,19 @@ impl<S: MessagingStateStore> MessagingService<S> {
                     return Ok(replay);
                 }
 
+                let previous_engine = self.engine.clone();
+                let previous_cursor = self.cursor;
                 let commands = self.project_command(&actor_id, command, server_time_ms);
                 let mut events = Vec::new();
                 for command in commands {
-                    events.extend(self.engine.execute(command)?);
+                    match self.engine.execute(command) {
+                        Ok(command_events) => events.extend(command_events),
+                        Err(error) => {
+                            self.engine = previous_engine.clone();
+                            self.cursor = previous_cursor;
+                            return Err(error.into());
+                        }
+                    }
                 }
                 if events.is_empty() {
                     return Ok(Vec::new());
@@ -432,7 +441,11 @@ impl<S: MessagingStateStore> MessagingService<S> {
                         }),
                 );
                 let journal = self.journal_entries(&actor_id, &responses);
-                self.persist_with_events(server_time_ms, &journal)?;
+                if let Err(error) = self.persist_with_events(server_time_ms, &journal) {
+                    self.engine = previous_engine;
+                    self.cursor = previous_cursor;
+                    return Err(error);
+                }
                 Ok(responses)
             }
         }
@@ -3206,6 +3219,126 @@ mod recent_participant_suggestion_service_tests {
         let restored =
             MessagingService::load(store.inner).expect("restore service after retry");
         assert_eq!(restored.engine().recent_participant_suggestions(&owner), &[peer]);
+    }
+
+    #[test]
+    fn saved_sublist_destroy_persistence_failure_rolls_back_and_retry_commits_exactly_once() {
+        let owner = ActorId::new("human:saved-destroy-owner");
+        let conversation_id = ConversationId::new("saved:saved-destroy");
+        let message_id = MessageId::new("message:saved-destroy");
+        let destination = ConversationDestination::saved_sublist(
+            conversation_id.clone(),
+            ActorId::new("human:saved-destroy-peer"),
+        );
+
+        let mut state = crate::engine::MessagingState::default();
+        state.actors.insert(owner.clone(), Actor::human(owner.0.clone(), "Owner"));
+        let mut conversation = Conversation::direct(
+            conversation_id.0.clone(),
+            "Saved destroy",
+            vec![crate::actor::Participant {
+                actor_id: owner.clone(),
+                role: ParticipantRole::Owner,
+                joined_at_ms: 1,
+                muted_until_ms: None,
+            }],
+            1,
+        );
+        conversation.kind = ConversationKind::SavedMessages;
+        conversation.owner_id = Some(owner.clone());
+        state.conversations.insert(conversation_id.clone(), conversation);
+        state.messages.entry(conversation_id.clone()).or_default().insert(
+            message_id.clone(),
+            Message {
+                id: message_id.clone(),
+                conversation_id: conversation_id.clone(),
+                sender_id: owner.clone(),
+                content: MessageContent::Text {
+                    text: crate::message::FormattedText::plain("owned child message"),
+                },
+                reply_to_message_id: None,
+                thread_root_message_id: None,
+                forward_origin: None,
+                reply_markup: None,
+                reactions: Vec::new(),
+                delivery_state: DeliveryState::Delivered,
+                created_at_ms: 2,
+                edited_at_ms: None,
+                scheduled_at_ms: None,
+                silent: false,
+                protected_content: false,
+                pinned: false,
+                deleted: false,
+            },
+        );
+        let mut child = crate::conversation::ConversationChildRuntimeState::new(
+            destination.clone(),
+            owner.clone(),
+        )
+        .expect("valid SavedSublist child");
+        assert!(child.reconcile_authoritative_message_ids(vec![message_id.0.clone()]));
+        state.conversation_child_states.push(child);
+
+        let mut inner = MemoryStateStore::default();
+        inner
+            .save(&MessagingSnapshot::new(state, 9, 100))
+            .expect("seed SavedSublist destruction state");
+        let store = FailOnceStateStore {
+            inner,
+            fail_next_save: true,
+        };
+        let mut service = MessagingService::load(store).expect("load SavedSublist destruction state");
+        let envelope = |request_id: &str| {
+            ClientEnvelope::new(
+                crate::protocol::RequestContext {
+                    request_id: request_id.into(),
+                    device_id: "desktop:saved-destroy".into(),
+                    actor_id: owner.clone(),
+                    session_id: "session:saved-destroy".into(),
+                    sent_at_ms: 100,
+                },
+                ClientCommand::DestroyConversationChild {
+                    destination: destination.clone(),
+                },
+            )
+        };
+
+        assert!(matches!(
+            service.handle(envelope("request:saved-destroy-fail"), 110),
+            Err(MessagingServiceError::Store(StoreError::Io(_)))
+        ));
+        assert_eq!(service.cursor(), 9);
+        assert!(
+            service
+                .engine()
+                .state()
+                .conversation_child_states
+                .iter()
+                .any(|child| child.destination == destination && child.actor_id == owner)
+        );
+        assert!(!service.engine().state().messages[&conversation_id][&message_id].deleted);
+
+        service
+            .handle(envelope("request:saved-destroy-retry"), 120)
+            .expect("retry exact SavedSublist destruction");
+        assert_eq!(service.cursor(), 11);
+        assert!(
+            service
+                .engine()
+                .state()
+                .conversation_child_states
+                .iter()
+                .all(|child| child.destination != destination || child.actor_id != owner)
+        );
+        assert!(service.engine().state().messages[&conversation_id][&message_id].deleted);
+
+        let store = service.into_store();
+        let persisted = store.inner.snapshot().expect("persisted SavedSublist destruction");
+        assert_eq!(persisted.cursor, 11);
+        assert!(persisted.state.messages[&conversation_id][&message_id].deleted);
+        let restored = MessagingService::load(store.inner).expect("restore SavedSublist destruction");
+        assert_eq!(restored.cursor(), 11);
+        assert!(restored.engine().state().messages[&conversation_id][&message_id].deleted);
     }
 
     #[test]

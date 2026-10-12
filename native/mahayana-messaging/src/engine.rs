@@ -3086,10 +3086,46 @@ impl MessagingEngine {
                     reply_to_message_id: None,
                     updated_at_ms: 0,
                 })?;
-                Ok(vec![Event::ConversationChildDestroyed {
+
+                let mut events = Vec::new();
+                if matches!(
+                    &destination.child,
+                    Some(ConversationChildIdentity::SavedSublist { .. })
+                ) {
+                    // SavedSublist is the only child kind with a trusted,
+                    // server/native-authoritative exact message-membership feed.
+                    // Destruction therefore deletes exactly that set; unknown
+                    // membership fails closed rather than guessing.
+                    let child = self
+                        .state
+                        .child_state(&destination, &actor_id)
+                        .ok_or(EngineError::InvalidConversationChildDestination)?;
+                    if !child.authoritative_membership_known {
+                        return Err(EngineError::ConversationChildMessageMismatch);
+                    }
+                    let message_ids = child
+                        .authoritative_message_ids
+                        .iter()
+                        .cloned()
+                        .map(MessageId::new)
+                        .collect::<Vec<_>>();
+                    if !message_ids.is_empty() {
+                        events.extend(self.decide(Command::DeleteMessages {
+                            conversation_id: destination_message_conversation_id(&destination)
+                                .clone(),
+                            message_ids,
+                        })?);
+                    }
+                }
+
+                // Topic and nested Conversation destruction remains projection
+                // unload. Without an exact authoritative membership feed,
+                // deleting canonical messages would be destructive guessing.
+                events.push(Event::ConversationChildDestroyed {
                     destination,
                     actor_id,
-                }])
+                });
+                Ok(events)
             }
             Command::SetReaction {
                 conversation_id,

@@ -1242,6 +1242,14 @@ fn shared_media_search_deletion_rebuilds_from_canonical_state_without_evicting_m
     let actor_id = ActorId::new("human:shared-media-search-owner");
     let conversation_id = ConversationId::new("conversation:shared-media-search");
     let message_id = MessageId::new("message:shared-media-search");
+    let saved = ConversationDestination::saved_sublist(
+        conversation_id.clone(),
+        ActorId::new("human:shared-media-search-peer"),
+    );
+    let unknown_saved = ConversationDestination::saved_sublist(
+        conversation_id.clone(),
+        ActorId::new("human:shared-media-search-unknown"),
+    );
     let media = MediaRef {
         id: "media:shared-media-search".into(),
         file_name: Some("searchable.jpg".into()),
@@ -1255,12 +1263,14 @@ fn shared_media_search_deletion_rebuilds_from_canonical_state_without_evicting_m
         remote_url: None,
         content_hash: None,
     };
-    let conversation = Conversation::direct(
+    let mut conversation = Conversation::direct(
         conversation_id.0.clone(),
         "Shared Media Search",
         vec![participant(&actor_id.0, ParticipantRole::Owner)],
         1,
     );
+    conversation.kind = ConversationKind::SavedMessages;
+    conversation.owner_id = Some(actor_id.clone());
     let message = Message {
         id: message_id.clone(),
         conversation_id: conversation_id.clone(),
@@ -1290,14 +1300,18 @@ fn shared_media_search_deletion_rebuilds_from_canonical_state_without_evicting_m
         actor_id.clone(),
         Actor::human(actor_id.0.clone(), "Shared Media Search Owner"),
     );
-    state
-        .conversations
-        .insert(conversation_id.clone(), conversation);
-    state
-        .messages
-        .entry(conversation_id.clone())
-        .or_default()
-        .insert(message_id.clone(), message);
+    state.conversations.insert(conversation_id.clone(), conversation);
+    state.messages.entry(conversation_id.clone()).or_default().insert(
+        message_id.clone(),
+        message,
+    );
+    let mut saved_state =
+        ConversationChildRuntimeState::new(saved.clone(), actor_id.clone()).unwrap();
+    assert!(saved_state.reconcile_authoritative_message_ids(vec![message_id.0.clone()]));
+    state.conversation_child_states.push(saved_state);
+    state.conversation_child_states.push(
+        ConversationChildRuntimeState::new(unknown_saved.clone(), actor_id.clone()).unwrap(),
+    );
 
     let mut store = MemoryStateStore::default();
     store
@@ -1325,57 +1339,121 @@ fn shared_media_search_deletion_rebuilds_from_canonical_state_without_evicting_m
         .handle(
             ClientEnvelope::new(
                 context("request:shared-media-search-before"),
-                ClientCommand::Search {
-                    query: query.clone(),
-                },
+                ClientCommand::Search { query: query.clone() },
             ),
             11,
         )
-        .expect("search canonical shared media before deletion");
+        .expect("search shared media before child destruction");
     let ServerEvent::SearchResults { results, .. } = &before[0].event else {
         panic!("expected shared-media search results");
     };
     assert_eq!(results.len(), 1);
     assert_eq!(results[0].id, message_id.0);
+    assert_eq!(
+        service
+            .engine()
+            .shared_media_message_ids(&saved, &actor_id)
+            .unwrap(),
+        vec![message_id.clone()]
+    );
 
     let mut media_cache = MediaCache::new(1024).expect("create independent media cache");
     media_cache
         .insert(media, "/cache/shared-media-search.jpg", 512, 11, false)
         .expect("materialize media independently from search projection");
 
+    assert!(
+        service
+            .handle(
+                ClientEnvelope::new(
+                    context("request:shared-media-search-unknown-destroy"),
+                    ClientCommand::DestroyConversationChild {
+                        destination: unknown_saved.clone(),
+                    },
+                ),
+                12,
+            )
+            .is_err(),
+        "SavedSublist destruction must fail closed before authoritative membership arrives"
+    );
+    assert!(
+        service
+            .engine()
+            .state()
+            .conversation_child_states
+            .iter()
+            .any(|child| child.destination == unknown_saved && child.actor_id == actor_id)
+    );
+    assert!(!service.engine().state().messages[&conversation_id][&message_id].deleted);
+
     service
         .handle(
             ClientEnvelope::new(
-                context("request:shared-media-search-delete"),
-                ClientCommand::DeleteMessages {
-                    conversation_id: conversation_id.clone(),
-                    message_ids: vec![message_id],
-                    for_everyone: false,
+                context("request:shared-media-search-destroy"),
+                ClientCommand::DestroyConversationChild {
+                    destination: saved.clone(),
                 },
             ),
-            12,
+            13,
         )
-        .expect("delete canonical message");
+        .expect("destroy authoritative SavedSublist");
+    assert!(
+        service
+            .engine()
+            .state()
+            .conversation_child_states
+            .iter()
+            .all(|child| child.destination != saved || child.actor_id != actor_id)
+    );
+    assert!(service.engine().state().messages[&conversation_id][&message_id].deleted);
 
     let after = service
         .handle(
             ClientEnvelope::new(
                 context("request:shared-media-search-after"),
+                ClientCommand::Search { query: query.clone() },
+            ),
+            14,
+        )
+        .expect("search after child destruction");
+    let ServerEvent::SearchResults { results, .. } = &after[0].event else {
+        panic!("expected shared-media search results after child destruction");
+    };
+    assert!(results.is_empty());
+    assert!(
+        service
+            .engine()
+            .shared_media_message_ids(&saved, &actor_id)
+            .is_err()
+    );
+
+    let store = service.into_store();
+    let mut reopened = MessagingService::load(store).expect("restore after child destruction");
+    assert!(reopened.engine().state().messages[&conversation_id][&message_id].deleted);
+    assert!(
+        reopened
+            .engine()
+            .state()
+            .conversation_child_states
+            .iter()
+            .all(|child| child.destination != saved || child.actor_id != actor_id)
+    );
+    let after_restart = reopened
+        .handle(
+            ClientEnvelope::new(
+                context("request:shared-media-search-after-restart"),
                 ClientCommand::Search { query },
             ),
-            13,
+            15,
         )
-        .expect("rebuild shared-media search after deletion");
-    let ServerEvent::SearchResults { results, .. } = &after[0].event else {
-        panic!("expected shared-media search results after deletion");
+        .expect("search after restart");
+    let ServerEvent::SearchResults { results, .. } = &after_restart[0].event else {
+        panic!("expected shared-media search results after restart");
     };
-    assert!(
-        results.is_empty(),
-        "shipping search must rebuild from canonical state and exclude deleted media"
-    );
+    assert!(results.is_empty());
     assert!(
         media_cache.entries().contains_key("media:shared-media-search"),
-        "derived projection invalidation must not transfer ownership of physical media cache bytes"
+        "logical projection destruction must not seize physical cache ownership"
     );
 }
 
