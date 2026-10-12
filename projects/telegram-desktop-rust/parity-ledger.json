@@ -8975,21 +8975,40 @@
       ],
       "service_owner": "Fabushi canonical messaging/sync service",
       "deployment_evidence": [],
-      "implementation_status": "mapped",
+      "implementation_status": "implemented",
       "coverage_disposition": "rewritten",
       "blockers": [
-        "Bounded recent-suggestion persistence/fail-closed recovery and bounded recent-open lifecycle are not yet production-wired",
-        "Current exact-head temporal/recovery evidence remains open"
+        "Current-head whole-workflow terminal evidence is still pending until Rust desktop runtime 38247222064 finishes all Host/Runner/attachment/Computer/CapabilityBroker regression steps.",
+        "Independent release acceptance and same-release-candidate packaging/install/upgrade/restart provenance remain open; therefore this row is not verified."
       ],
-      "production_entrypoints": [],
-      "production_evidence": [],
-      "test_evidence": [],
-      "target_commit": "6e6744eb8716671f060251aacc986ef5fb483b0c",
-      "workflow_run": null,
-      "run_attempt": null,
-      "job": null,
-      "artifact_id": null,
-      "artifact_digest": null,
+      "production_entrypoints": [
+        "native/mahayana-messaging/src/engine.rs::MessagingEngine::{from_state,recent_participant_suggestions,note_recent_participant_suggestion,remove_recent_participant_suggestion,clear_recent_participant_suggestions,recent_open_destinations,note_destination_opened,remove_recent_destination}",
+        "native/mahayana-messaging/src/service.rs::MessagingService::{note_recent_participant_suggestion,remove_recent_participant_suggestion,clear_recent_participant_suggestions,persist_recent_projection_mutation}",
+        "native/mahayana-messaging/src/engine.rs::Event::ConversationChildDestroyed -> exact recent-open retirement"
+      ],
+      "production_evidence": [
+        "commit:e2a0295b215521406b4fb40fe62d926330e927df",
+        "path:native/mahayana-messaging/src/engine.rs",
+        "path:native/mahayana-messaging/src/service.rs",
+        "path:native/mahayana-messaging/src/store.rs"
+      ],
+      "test_evidence": [
+        "native/mahayana-messaging/src/engine.rs::recent_participant_suggestions_are_durable_bounded_deduped_and_fail_closed",
+        "native/mahayana-messaging/src/engine.rs::recent_participant_remove_and_clear_are_exact_and_account_scoped",
+        "native/mahayana-messaging/src/engine.rs::recent_open_history_is_bounded_deduped_and_move_front",
+        "native/mahayana-messaging/src/engine.rs::destroyed_child_event_removes_only_exact_recent_open_destination",
+        "native/mahayana-messaging/src/engine.rs::recent_open_history_is_runtime_only_across_state_restore",
+        "native/mahayana-messaging/src/service.rs::recent_participant_suggestions_persist_without_server_journal_cursor",
+        "native/mahayana-messaging/src/service.rs::recent_participant_persistence_failure_rolls_back_and_retry_commits_exactly_once",
+        "native/mahayana-messaging/src/service.rs::recent_participant_interleaved_accounts_remain_isolated_across_restart",
+        "native/mahayana-messaging/src/service.rs::recent_participant_remove_and_clear_persistence_failures_restore_account_scope"
+      ],
+      "target_commit": "e2a0295b215521406b4fb40fe62d926330e927df",
+      "workflow_run": 38247222064,
+      "run_attempt": 1,
+      "job": "rust-host / Test canonical Fabushi messaging responsibilities",
+      "artifact_id": 11746468411,
+      "artifact_digest": "sha256:83c77f3a18ec22cc0ad8a1cede217b104c3537f0fcfb367a2dafa185d6ef4301",
       "composition_root": "Fabushi ProductShell -> Messages -> ConversationWorkspace",
       "composition_slot": "Canonical Conversation child collection/runtime",
       "capability_component": "Typed Conversation child capability",
@@ -9069,19 +9088,35 @@
       "invariant_ids": [
         "INV-TDRP-R9-RECENT-PEERS-LIFECYCLE-001-CANONICAL"
       ],
-      "unit_case_ids": [],
+      "unit_case_ids": [
+        "recent_participant_suggestions_are_durable_bounded_deduped_and_fail_closed",
+        "recent_participant_remove_and_clear_are_exact_and_account_scoped",
+        "recent_open_history_is_bounded_deduped_and_move_front"
+      ],
       "property_state_case_ids": [],
       "contract_case_ids": [],
-      "integration_case_ids": [],
+      "integration_case_ids": [
+        "recent_participant_suggestions_persist_without_server_journal_cursor",
+        "recent_participant_interleaved_accounts_remain_isolated_across_restart"
+      ],
       "functional_e2e_case_ids": [],
-      "temporal_case_ids": [],
-      "fault_recovery_case_ids": [],
+      "temporal_case_ids": [
+        "recent_open_history_is_runtime_only_across_state_restore",
+        "destroyed_child_event_removes_only_exact_recent_open_destination"
+      ],
+      "fault_recovery_case_ids": [
+        "recent_participant_persistence_failure_rolls_back_and_retry_commits_exactly_once",
+        "recent_participant_remove_and_clear_persistence_failures_restore_account_scope"
+      ],
       "ui_functional_case_ids": [],
       "visual_case_ids": [],
       "accessibility_case_ids": [],
       "performance_case_ids": [],
       "soak_case_ids": [],
-      "security_case_ids": [],
+      "security_case_ids": [
+        "recent_participant_suggestions_are_durable_bounded_deduped_and_fail_closed",
+        "recent_participant_interleaved_accounts_remain_isolated_across_restart"
+      ],
       "regression_ids": [],
       "exploratory_charter_ids": [],
       "release_gate_ids": [
@@ -9094,14 +9129,17 @@
       "test_environment_ids": [
         "GitHub Actions only"
       ],
-      "coverage_matrix_status": "pending",
-      "flake_status": "not-run",
-      "test_execution_evidence": [],
+      "coverage_matrix_status": "implemented-current-head-focused-evidence",
+      "flake_status": "current-head-focused-step-passed",
+      "test_execution_evidence": [
+        "github-actions:38247222064:job-114804542217:step-Test canonical Fabushi messaging responsibilities:success@e2a0295b215521406b4fb40fe62d926330e927df",
+        "artifact:11746468411:sha256:83c77f3a18ec22cc0ad8a1cede217b104c3537f0fcfb367a2dafa185d6ef4301"
+      ],
       "acceptance_reviewer": null,
       "release_gate_status": "pending",
       "license_and_provenance": "Source-informed mapping from accepted telegramdesktop/tdesktop recent_peers authority; no retained Telegram C++ runtime or copied presentation.",
       "reviewer": null,
-      "notes": "Exact accepted cpp read complete; do not infer persistence for recent-open _opens because this file serializes only ordinary _list."
+      "notes": "Accepted recent_peers semantics are implemented in canonical MessagingEngine/MessagingService: durable ordinary suggestions are account-scoped, bounded to 48, deduped move-to-front, reject self/unknown actors, clear an invalid owner projection on restore, and support exact remove/clear; service persistence rolls back the complete pre-mutation engine state on save failure and supports retry without cursor/journal mutation. Recent-open ConversationDestination history is separate runtime-only state bounded to 32, move-to-front, restart-empty, and exact child destruction retires only the matching destination. Focused messaging step passed on e2a0295b; whole Rust workflow and independent release acceptance remain open, so status is implemented rather than verified."
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
