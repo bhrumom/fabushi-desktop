@@ -1371,6 +1371,62 @@ impl MessagingEngine {
     pub fn state(&self) -> &MessagingState {
         &self.state
     }
+
+    /// Derive one shared-media projection directly from canonical Message state.
+    ///
+    /// No media/message identity is persisted here: the projection is rebuilt on
+    /// demand so message deletion and child destruction cannot leave a second
+    /// storage truth behind. Typed child scopes require an already-materialized
+    /// account-scoped child state. SavedSublist results additionally require the
+    /// exact authoritative membership snapshot for each message.
+    pub fn shared_media_message_ids(
+        &self,
+        destination: &ConversationDestination,
+        actor_id: &ActorId,
+    ) -> Result<Vec<MessageId>, EngineError> {
+        if !destination.is_valid() {
+            return Err(EngineError::InvalidConversationChildDestination);
+        }
+        self.require_actor(actor_id)?;
+
+        let child_state = if destination.child.is_some() {
+            Some(
+                self.state
+                    .child_state(destination, actor_id)
+                    .ok_or(EngineError::InvalidConversationChildDestination)?,
+            )
+        } else {
+            None
+        };
+        let conversation_id = destination_message_conversation_id(destination);
+        let mut messages = self
+            .state
+            .messages
+            .get(conversation_id)
+            .into_iter()
+            .flat_map(|messages| messages.values())
+            .filter(|message| !message.deleted && message_content_uses_media(&message.content))
+            .filter(|message| match destination.child.as_ref() {
+                None => true,
+                Some(ConversationChildIdentity::Topic { root_message_id }) => message
+                    .thread_root_message_id
+                    .as_ref()
+                    .is_some_and(|root| &root.0 == root_message_id),
+                Some(ConversationChildIdentity::SavedSublist { .. }) => child_state
+                    .is_some_and(|child| child.has_authoritative_message(&message.id.0)),
+                Some(ConversationChildIdentity::Conversation { .. }) => true,
+            })
+            .collect::<Vec<_>>();
+        messages.sort_by(|left, right| {
+            left.created_at_ms
+                .cmp(&right.created_at_ms)
+                .then_with(|| left.id.0.cmp(&right.id.0))
+        });
+        Ok(messages
+            .into_iter()
+            .map(|message| message.id.clone())
+            .collect())
+    }
     pub fn recent_participant_suggestions(&self, actor_id: &ActorId) -> &[ActorId] {
         self.state
             .recent_participant_suggestions
@@ -5752,6 +5808,222 @@ mod recent_open_history_tests {
 
         let restored = MessagingEngine::from_state(engine.state().clone());
         assert!(restored.recent_open_destinations(&actor_id).is_empty());
+    }
+
+    fn shared_media_test_message(
+        id: &str,
+        conversation_id: &ConversationId,
+        thread_root_message_id: Option<&str>,
+        created_at_ms: i64,
+        media: bool,
+    ) -> Message {
+        let content = if media {
+            MessageContent::Photo {
+                media: crate::message::MediaRef {
+                    id: format!("media:{id}"),
+                    file_name: Some(format!("{id}.jpg")),
+                    mime_type: Some("image/jpeg".into()),
+                    size_bytes: Some(128),
+                    width: Some(16),
+                    height: Some(16),
+                    duration_ms: None,
+                    thumbnail_id: None,
+                    local_path: None,
+                    remote_url: None,
+                    content_hash: None,
+                },
+                caption: crate::message::FormattedText::plain(""),
+                spoiler: false,
+            }
+        } else {
+            MessageContent::Text {
+                text: crate::message::FormattedText::plain("not media"),
+            }
+        };
+        Message {
+            id: MessageId::new(id),
+            conversation_id: conversation_id.clone(),
+            sender_id: ActorId::new("human:shared-media-peer"),
+            content,
+            reply_to_message_id: None,
+            thread_root_message_id: thread_root_message_id.map(MessageId::new),
+            forward_origin: None,
+            reply_markup: None,
+            reactions: Vec::new(),
+            delivery_state: DeliveryState::Delivered,
+            created_at_ms,
+            edited_at_ms: None,
+            scheduled_at_ms: None,
+            silent: false,
+            protected_content: false,
+            pinned: false,
+            deleted: false,
+        }
+    }
+
+    #[test]
+    fn shared_media_projection_is_typed_derived_and_saved_sublist_fail_closed() {
+        let actor_id = ActorId::new("human:shared-media-owner");
+        let parent = ConversationId::new("conversation:shared-media-parent");
+        let root = ConversationDestination {
+            conversation_id: parent.clone(),
+            child: None,
+        };
+        let topic = ConversationDestination::topic(parent.clone(), "topic:42");
+        let saved = ConversationDestination::saved_sublist(
+            parent.clone(),
+            ActorId::new("human:saved-peer"),
+        );
+        let unrelated = ConversationDestination::saved_sublist(
+            parent.clone(),
+            ActorId::new("human:unrelated-peer"),
+        );
+
+        let mut topic_state =
+            ConversationChildRuntimeState::new(topic.clone(), actor_id.clone()).unwrap();
+        assert!(topic_state
+            .pagination
+            .replace_window(vec!["message:topic".into()], Some(0), Some(0), Some(1)));
+        let mut saved_state =
+            ConversationChildRuntimeState::new(saved.clone(), actor_id.clone()).unwrap();
+        assert!(saved_state
+            .reconcile_authoritative_message_ids(vec!["message:saved".into()]));
+        let mut unrelated_state =
+            ConversationChildRuntimeState::new(unrelated.clone(), actor_id.clone()).unwrap();
+        assert!(unrelated_state
+            .reconcile_authoritative_message_ids(vec!["message:other-topic".into()]));
+
+        let mut state = MessagingState::default();
+        state.actors.insert(
+            actor_id.clone(),
+            Actor::human(actor_id.0.clone(), "Shared Media Owner"),
+        );
+        state.conversation_child_states = vec![topic_state, saved_state, unrelated_state];
+        for message in [
+            shared_media_test_message("message:root", &parent, None, 1, true),
+            shared_media_test_message("message:topic", &parent, Some("topic:42"), 2, true),
+            shared_media_test_message("message:other-topic", &parent, Some("topic:99"), 3, true),
+            shared_media_test_message("message:saved", &parent, None, 4, true),
+            shared_media_test_message("message:text", &parent, None, 5, false),
+        ] {
+            state
+                .messages
+                .entry(parent.clone())
+                .or_default()
+                .insert(message.id.clone(), message);
+        }
+        let engine = MessagingEngine::from_state(state);
+
+        assert_eq!(
+            engine.shared_media_message_ids(&root, &actor_id).unwrap(),
+            vec![
+                MessageId::new("message:root"),
+                MessageId::new("message:topic"),
+                MessageId::new("message:other-topic"),
+                MessageId::new("message:saved"),
+            ]
+        );
+        assert_eq!(
+            engine.shared_media_message_ids(&topic, &actor_id).unwrap(),
+            vec![MessageId::new("message:topic")]
+        );
+        assert_eq!(
+            engine.shared_media_message_ids(&saved, &actor_id).unwrap(),
+            vec![MessageId::new("message:saved")]
+        );
+        assert_eq!(
+            engine.shared_media_message_ids(&unrelated, &actor_id).unwrap(),
+            vec![MessageId::new("message:other-topic")]
+        );
+
+        let unknown = ConversationDestination::saved_sublist(
+            parent,
+            ActorId::new("human:unknown-saved-peer"),
+        );
+        assert_eq!(
+            engine.shared_media_message_ids(&unknown, &actor_id),
+            Err(EngineError::InvalidConversationChildDestination),
+            "renderer-visible parent messages must never invent SavedSublist membership"
+        );
+    }
+
+    #[test]
+    fn shared_media_deletion_and_child_destroy_invalidate_exact_projection_only() {
+        let actor_id = ActorId::new("human:shared-media-delete-owner");
+        let parent = ConversationId::new("conversation:shared-media-delete-parent");
+        let root = ConversationDestination {
+            conversation_id: parent.clone(),
+            child: None,
+        };
+        let saved = ConversationDestination::saved_sublist(
+            parent.clone(),
+            ActorId::new("human:delete-saved-peer"),
+        );
+        let sibling = ConversationDestination::saved_sublist(
+            parent.clone(),
+            ActorId::new("human:keep-saved-peer"),
+        );
+        let deleted_id = MessageId::new("message:delete-media");
+        let keep_id = MessageId::new("message:keep-media");
+
+        let mut saved_state =
+            ConversationChildRuntimeState::new(saved.clone(), actor_id.clone()).unwrap();
+        assert!(saved_state
+            .reconcile_authoritative_message_ids(vec![deleted_id.0.clone()]));
+        let mut sibling_state =
+            ConversationChildRuntimeState::new(sibling.clone(), actor_id.clone()).unwrap();
+        assert!(sibling_state
+            .reconcile_authoritative_message_ids(vec![keep_id.0.clone()]));
+
+        let mut state = MessagingState::default();
+        state.actors.insert(
+            actor_id.clone(),
+            Actor::human(actor_id.0.clone(), "Shared Media Delete Owner"),
+        );
+        state.conversation_child_states = vec![saved_state, sibling_state];
+        for message in [
+            shared_media_test_message(&deleted_id.0, &parent, None, 1, true),
+            shared_media_test_message(&keep_id.0, &parent, None, 2, true),
+        ] {
+            state
+                .messages
+                .entry(parent.clone())
+                .or_default()
+                .insert(message.id.clone(), message);
+        }
+        let mut engine = MessagingEngine::from_state(state);
+
+        engine.apply(Event::MessagesDeleted {
+            conversation_id: parent.clone(),
+            message_ids: vec![deleted_id],
+        });
+        assert!(engine
+            .shared_media_message_ids(&saved, &actor_id)
+            .unwrap()
+            .is_empty());
+        assert_eq!(
+            engine.shared_media_message_ids(&sibling, &actor_id).unwrap(),
+            vec![keep_id.clone()]
+        );
+        assert_eq!(
+            engine.shared_media_message_ids(&root, &actor_id).unwrap(),
+            vec![keep_id.clone()],
+            "deleted media must disappear from the parent projection without a separate cache invalidation pass"
+        );
+
+        engine.apply(Event::ConversationChildDestroyed {
+            destination: sibling.clone(),
+            actor_id: actor_id.clone(),
+        });
+        assert_eq!(
+            engine.shared_media_message_ids(&sibling, &actor_id),
+            Err(EngineError::InvalidConversationChildDestination)
+        );
+        assert_eq!(
+            engine.shared_media_message_ids(&root, &actor_id).unwrap(),
+            vec![keep_id],
+            "unloading one typed child must not erase parent-global canonical media state"
+        );
     }
 }
 
