@@ -265,10 +265,10 @@
   "coverage": {
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
-    "unknown_minimum": 13432,
-    "unread_minimum": 265,
+    "unknown_minimum": 13368,
+    "unread_minimum": 201,
     "omitted_known": 0,
-    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 15,860; unknown=13,432, unread=265, omitted=0."
+    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 15,924; unknown=13,368, unread=201, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -629,12 +629,12 @@
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "deterministic_prefix_closed": 57,
-    "development_only_non_applicable": 2619,
-    "unknown_closed": 2693,
+    "development_only_non_applicable": 2683,
+    "unknown_closed": 2757,
     "omitted": 0,
-    "read_through": 15860,
-    "first_unread_order": 15861,
-    "first_unread_path": "doc/gh-pages::structstd_1_1tuple__element_3_011_00_01_1_1ranges_1_1compressed__pair_3_01First_00_01Second_01_4_01_4.html",
+    "read_through": 15924,
+    "first_unread_order": 15925,
+    "first_unread_path": "doc/gh-pages::view_2drop_8hpp.js",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
