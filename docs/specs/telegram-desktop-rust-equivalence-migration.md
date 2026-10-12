@@ -1348,7 +1348,6 @@ Accounting: **13,712/16,125 read; 2,413 unread; 15,580 unknown; 0 omitted; 545 u
 
 ## Revision 9 current-summary contract repair + deterministic read-through 13,713–13,760
 
-<!-- TDRP_CURRENT_SUMMARY read-through=15668 unread=457 unknown=13624 omitted=0 first-unread=15669 path=doc/gh-pages::structranges_1_1views_1_1sample__base__fn.html -->
 
 Orders 13,713–13,760 were individually exact-read at `ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae`. All 48 carry Doxygen 1.9.4 generator/footer evidence and are generated API/concept HTML with no independent shipping Fabushi responsibility; each is explicitly `development-only-non-applicable` and `unknown_closed=true`.
 
