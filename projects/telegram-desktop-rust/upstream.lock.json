@@ -8,16 +8,16 @@
     "repository": "telegramdesktop/tdesktop",
     "url": "https://github.com/telegramdesktop/tdesktop",
     "discovery_ref": "refs/heads/dev",
-    "commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
-    "tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
-    "committed_at": "2026-10-10T08:14:37Z",
+    "commit": "5b81fa35aaa8d24e14ec9603e5929d324850d9c9",
+    "tree": "7539504ec9294b9c1ca03332570127b8b69ad201",
+    "committed_at": "2026-10-11T05:13:19Z",
     "accepted": true
   },
   "previous_historical_baseline": {
-    "commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
-    "tree": "9d8fa87ce68c832d2f4c99f372a5bb672463c3e1",
+    "commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+    "tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
     "evidence_status": "historical-only",
-    "reason": "Live dev advanced four commits to 6fed91ff; ten root blobs changed with no path additions/removals. The predecessor target evidence is diagnostic only and fresh exact-head Actions are required."
+    "reason": "Live dev advanced 13 commits to 5b81fa35; 31 root objects changed including range-v3 and lib_ui gitlinks. range-v3 adds 10 recursive non-directory entries, so predecessor evidence is diagnostic only and fresh exact-head Actions are required."
   },
   "observed_root_inventory": {
     "tree_truncated": false,
@@ -29,10 +29,10 @@
     "root_non_directory_count": 6653
   },
   "delta_from_previous_baseline": {
-    "ahead_by": 4,
-    "changed_paths": 10,
+    "ahead_by": 13,
+    "changed_paths": 31,
     "added_paths": 0,
-    "modified_paths": 10
+    "modified_paths": 31
   },
   "direct_gitlinks": [
     {
@@ -123,7 +123,7 @@
     {
       "path": "Telegram/ThirdParty/range-v3",
       "repository": "ericniebler/range-v3",
-      "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
+      "commit": "5ba39112d2eafbb3c851a16a537f29b445022998"
     },
     {
       "path": "Telegram/ThirdParty/tgcalls",
@@ -198,7 +198,7 @@
     {
       "path": "Telegram/lib_ui",
       "repository": "desktop-app/lib_ui",
-      "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd"
+      "commit": "625d68a9156deb9bdb193a83e74629e9a32e2518"
     },
     {
       "path": "Telegram/lib_webrtc",
@@ -224,7 +224,7 @@
       "commit": "46111c61a9f49b7a9886127e679d4317478fab1c"
     },
     {
-      "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+      "parent": "ericniebler/range-v3@5ba39112d2eafbb3c851a16a537f29b445022998",
       "path": "doc/gh-pages",
       "repository": "ericniebler/range-v3",
       "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae"
@@ -264,11 +264,11 @@
   },
   "coverage": {
     "root_source_entries_total": 6653,
-    "recursive_source_entries_total": 16125,
-    "unknown_minimum": 12436,
+    "recursive_source_entries_total": 16135,
+    "unknown_minimum": 12435,
     "unread_minimum": 0,
     "omitted_known": 0,
-    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 16,125; unknown=12,436, unread=0, omitted=0."
+    "note": "Accepted 5b81fa35aaa8d24e14ec9603e5929d324850d9c9 tree 7539504ec9294b9c1ca03332570127b8b69ad201; exact read-through 16,135; unknown=12,435, unread=0, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -299,7 +299,7 @@
     "superseded_by_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941"
   },
   "recursive_inventory_evidence": {
-    "status": "parent-authority-validation-passed-descendant-validation-pending",
+    "status": "historical-only-predecessor-upstream",
     "runner": "github-actions",
     "run_id": 38195834460,
     "run_attempt": 1,
@@ -308,7 +308,8 @@
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "recursive_non_directory_entries": 16125,
     "source_closure_ready": false,
-    "note": "Parent authority validation passed. 13,275-13,346 directly read/decomposed at accepted lib_webrtc/lib_webview commits; fresh descendant Actions required."
+    "note": "Parent authority validation passed. 13,275-13,346 directly read/decomposed at accepted lib_webrtc/lib_webview commits; fresh descendant Actions required.",
+    "superseded_by_upstream_commit": "5b81fa35aaa8d24e14ec9603e5929d324850d9c9"
   },
   "build_time_acquisition_inventory": {
     "path": "projects/telegram-desktop-rust/inventory/build-time-acquisitions.json",
@@ -480,8 +481,8 @@
       {
         "mount": "Telegram/ThirdParty/range-v3",
         "repository": "ericniebler/range-v3",
-        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
-        "entries": 667
+        "commit": "5ba39112d2eafbb3c851a16a537f29b445022998",
+        "entries": 677
       },
       {
         "mount": "Telegram/ThirdParty/tgcalls",
@@ -570,7 +571,7 @@
       {
         "mount": "Telegram/lib_ui",
         "repository": "desktop-app/lib_ui",
-        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "commit": "625d68a9156deb9bdb193a83e74629e9a32e2518",
         "entries": 432
       },
       {
@@ -601,7 +602,7 @@
         "entries": 6
       },
       {
-        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "parent": "ericniebler/range-v3@5ba39112d2eafbb3c851a16a537f29b445022998",
         "path": "doc/gh-pages",
         "repository": "ericniebler/range-v3",
         "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
@@ -620,25 +621,25 @@
       "commit": "95b9cb015fa17baa749c2b396b335906e1596a9e",
       "entries": 43
     },
-    "total_recursive_non_directory_entries": 16125,
+    "total_recursive_non_directory_entries": 16135,
     "superseded_by_upstream_commit": "cf478d37c8f57df831cdedb5621e1cf2ef069a0f",
-    "current_census_status": "live-6fed91ff-authority-current-descendant-actions-required",
-    "current_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941"
+    "current_census_status": "live-5b81fa35-authority-current-exact-head-actions-required",
+    "current_upstream_commit": "5b81fa35aaa8d24e14ec9603e5929d324850d9c9"
   },
   "source_disposition_evidence": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
-    "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+    "upstream_commit": "5b81fa35aaa8d24e14ec9603e5929d324850d9c9",
     "deterministic_prefix_closed": 57,
     "development_only_non_applicable": 3615,
-    "unknown_closed": 3689,
+    "unknown_closed": 3700,
     "omitted": 0,
-    "read_through": 16125,
-    "first_unread_order": 16126,
+    "read_through": 16135,
+    "first_unread_order": 16136,
     "first_unread_path": "none",
-    "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
+    "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-5b81fa35.json"
   },
   "historical_exact_head_evidence": {
-    "status": "parent-source-authority-success-descendant-validation-required",
+    "status": "historical-only-predecessor-upstream",
     "target_head": "f0c4965a18a3b15d8770b67a7e82a28100f3e374",
     "runs": [
       {
@@ -666,16 +667,17 @@
         "digest": "sha256:f3f7940092a94aae678db9a06f59a90e99d35394546877e1c124fb19da4cdb8b"
       }
     ],
-    "note": "Parent Source authority succeeded; full workflows still running when descendant accounting was written."
+    "note": "Parent Source authority succeeded; full workflows still running when descendant accounting was written.",
+    "superseded_by_upstream_commit": "5b81fa35aaa8d24e14ec9603e5929d324850d9c9"
   },
-  "note": "Accepted baseline; exact read-through 14,964; unknown=14,328, unread=1,161, omitted=0; first unread 14,965 doc/gh-pages::structranges_1_1filter__view.html.",
+  "note": "Accepted live upstream 5b81fa35; exact source read-through 16,135 with unread=0, unknown=12,435, omitted=0; product/release closure remains open.",
   "source_accounting": {
-    "recursive_total": 16125,
-    "read_through": 15732,
-    "first_unread_order": 15733,
-    "first_unread_path": "doc/gh-pages::structranges_1_1views_1_1split__when__base__fn-members.html",
-    "unread": 393,
-    "unknown": 13560,
+    "recursive_total": 16135,
+    "read_through": 16135,
+    "first_unread_order": 16136,
+    "first_unread_path": "none",
+    "unread": 0,
+    "unknown": 12435,
     "omitted": 0,
     "parent_exact_head_evidence": {
       "head": "8292a1883cb5d7418c4bcce6bda31c240318cdce",

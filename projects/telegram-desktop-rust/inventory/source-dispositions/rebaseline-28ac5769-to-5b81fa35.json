@@ -1,0 +1,375 @@
+{
+  "format_version": 1,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "from": {
+    "commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+    "tree": "9d8fa87ce68c832d2f4c99f372a5bb672463c3e1"
+  },
+  "to": {
+    "commit": "5b81fa35aaa8d24e14ec9603e5929d324850d9c9",
+    "tree": "7539504ec9294b9c1ca03332570127b8b69ad201"
+  },
+  "rows": [
+    {
+      "recursive_order": 3155,
+      "source_path": "Telegram/Resources/uwp/AppX/AppxManifest.xml",
+      "previous_blob_sha": "bac5785d2ae4240264577d97444187090e9bbdb7",
+      "current_blob_sha": "7636e50ea7c18c6146b8005e0ed0c5d4049eac25",
+      "read_complete": true,
+      "responsibility_reconciled": true,
+      "responsibility_delta": "Prior 28ac→6fed reconciliation: Version-only packaging identity advanced 7.3.0.0→7.3.1.0; Fabushi keeps its own package identity/version owner and exact release metadata coherence."
+    },
+    {
+      "recursive_order": 3201,
+      "source_path": "Telegram/Resources/winrc/Telegram.rc",
+      "previous_blob_sha": "d3ab29c8f583ed0645f4a0de344530180eaa3265",
+      "current_blob_sha": "62080c78d82a7bc8e921f2e83f5827816f058a39",
+      "read_complete": true,
+      "responsibility_reconciled": true,
+      "responsibility_delta": "Prior 28ac→6fed reconciliation: Windows executable version resource advanced 7.3.0.0→7.3.1.0; source-neutral responsibility remains coherent signed package/file/product version metadata."
+    },
+    {
+      "recursive_order": 3202,
+      "source_path": "Telegram/Resources/winrc/Updater.rc",
+      "previous_blob_sha": "5064d9df4282b377272b583071c00de207039abd",
+      "current_blob_sha": "e6ce9158c1ecad8ce25f4d17287676ba057ae8d3",
+      "read_complete": true,
+      "responsibility_reconciled": true,
+      "responsibility_delta": "Prior 28ac→6fed reconciliation: Windows updater version resource advanced 7.3.0.0→7.3.1.0; Fabushi updater/package metadata must remain release-candidate coherent."
+    },
+    {
+      "recursive_order": 3302,
+      "source_path": "Telegram/SourceFiles/api/api_stickers_creator.cpp",
+      "previous_blob_sha": "be75f982162afd09fed7ee14f84bdd3a877b2c74",
+      "current_blob_sha": "6f3d5b5ba8d8a191c8af953dda2a3023f93b35ec",
+      "read_complete": true,
+      "responsibility_reconciled": true,
+      "responsibility_delta": "Current 6fed→5b81 reconciliation: Owned sticker/emoji-set submenu keeps canonical action semantics while constraining long owned-set menus to bounded scrolling; presentation remains Fabushi design-system owned."
+    },
+    {
+      "recursive_order": 3348,
+      "source_path": "Telegram/SourceFiles/boxes/boxes.style",
+      "previous_blob_sha": "69bc8c96ee299c1c7d597db898226c4fab5fbd96",
+      "current_blob_sha": "3f19208ddc0be0bf4faf6042a137be00a114bfec",
+      "read_complete": true,
+      "responsibility_reconciled": true,
+      "responsibility_delta": "Current 6fed→5b81 reconciliation: Presentation-only bounded height for owned sticker-set submenu; no new product owner, preserve canonical overflow/keyboard/a11y behavior."
+    },
+    {
+      "recursive_order": 3602,
+      "source_path": "Telegram/SourceFiles/calls/group/calls_group_panel.cpp",
+      "previous_blob_sha": "b2d3a68a0019def9662b5c58c62e6da394228006",
+      "current_blob_sha": "c887798ef1897de49e33ed2107d1ed990932f3ec",
+      "read_complete": true,
+      "responsibility_reconciled": true,
+      "responsibility_delta": "Current 6fed→5b81 reconciliation: Group-call title/subtitle geometry follows platform title alignment capability (macOS 26 left alignment) without changing CallSession state ownership."
+    },
+    {
+      "recursive_order": 3689,
+      "source_path": "Telegram/SourceFiles/chat_helpers/ttl_media_layer_widget.cpp",
+      "previous_blob_sha": "d62657a8b5d0ef06fea36cf6b9f82b80f8687a5d",
+      "current_blob_sha": "9ae19aeab654e9d86500926c0c7bc3107efb6ffb",
+      "read_complete": true,
+      "responsibility_reconciled": true,
+      "responsibility_delta": "Current 6fed→5b81 reconciliation: TTL protected-media surface now registers screenshot-protection reason against its exact window; preserve per-window lifetime/fail-closed capture boundary."
+    },
+    {
+      "recursive_order": 3706,
+      "source_path": "Telegram/SourceFiles/core/core_screenshot_protection.cpp",
+      "previous_blob_sha": "3607ebf8ed865154330b8e9f9e79fed7a0cae3e6",
+      "current_blob_sha": "cdb94ab14cd5bceb72e0f885778b6ba7efd135e4",
+      "read_complete": true,
+      "responsibility_reconciled": true,
+      "responsibility_delta": "Current 6fed→5b81 reconciliation: Screenshot protection changes from app-global state to per-window reasons, weak window lifetime tracking, WinId recreation reapply, and independent applied-state reconciliation."
+    },
+    {
+      "recursive_order": 3707,
+      "source_path": "Telegram/SourceFiles/core/core_screenshot_protection.h",
+      "previous_blob_sha": "76b4d061248117aeaec815612a0e3207ae794771",
+      "current_blob_sha": "c729d41aba3539bead688863092a38090716a350",
+      "read_complete": true,
+      "responsibility_reconciled": true,
+      "responsibility_delta": "Current 6fed→5b81 reconciliation: Public screenshot-protection contract now requires the target window and tracks per-window reason/applied state; map to canonical platform security owner."
+    },
+    {
+      "recursive_order": 3749,
+      "source_path": "Telegram/SourceFiles/core/shortcuts.cpp",
+      "previous_blob_sha": "67f248f66b79be8eeb90f0542afcad8f39b87e1c",
+      "current_blob_sha": "d6de1a8f13646e1bc02a6e7a79a4e96d6e5736e3",
+      "read_complete": true,
+      "responsibility_reconciled": true,
+      "responsibility_delta": "Current 6fed→5b81 reconciliation: Shortcut owner can match a QKeyEvent against canonical commands across platform possible-key mappings; required for correct active-window command arbitration."
+    },
+    {
+      "recursive_order": 3750,
+      "source_path": "Telegram/SourceFiles/core/shortcuts.h",
+      "previous_blob_sha": "abd1b093b2b0dc97639c67a46086f9dabbb7a613",
+      "current_blob_sha": "818de8affa1564b398cac1e0b6c7dab964f26b80",
+      "read_complete": true,
+      "responsibility_reconciled": true,
+      "responsibility_delta": "Current 6fed→5b81 reconciliation: Exports event-to-command matching contract; preserve one canonical shortcut/command owner rather than page-local key tables."
+    },
+    {
+      "recursive_order": 3766,
+      "source_path": "Telegram/SourceFiles/core/version.h",
+      "previous_blob_sha": "84ea0f90963b3a8a8dc3f9595b4e3d37dbf8dedf",
+      "current_blob_sha": "2de28811834786f129ce0afaf509025ff6c7499f",
+      "read_complete": true,
+      "responsibility_reconciled": true,
+      "responsibility_delta": "Prior 28ac→6fed reconciliation: Application semantic/build version advanced to 7.3.1; responsibility remains one canonical product-version authority projected into runtime and packaging."
+    },
+    {
+      "recursive_order": 4297,
+      "source_path": "Telegram/SourceFiles/history/history_inner_widget.cpp",
+      "previous_blob_sha": "391e1d3a01b5eecea099950601227402fad467b7",
+      "current_blob_sha": "c2c2ceda83aa55bfdd6458e514e10275edf8929a",
+      "read_complete": true,
+      "responsibility_reconciled": true,
+      "responsibility_delta": "Current 6fed→5b81 reconciliation: After copying selected transcript items, selection is cleared; canonical transcript selection lifecycle must settle after copy."
+    },
+    {
+      "recursive_order": 4311,
+      "source_path": "Telegram/SourceFiles/history/history_item_text.cpp",
+      "previous_blob_sha": "947b1f9d072362ce3c2b13c421773ff27475a523",
+      "current_blob_sha": "d5ee290e13979ef62733e0c4e5358884a65e0a7d",
+      "read_complete": true,
+      "responsibility_reconciled": true,
+      "responsibility_delta": "Current 6fed→5b81 reconciliation: Copied message attribution prefers forwarded original sender/hidden sender and signed post author; canonical forward provenance must drive clipboard author text."
+    },
+    {
+      "recursive_order": 4414,
+      "source_path": "Telegram/SourceFiles/history/view/history_view_list_widget.cpp",
+      "previous_blob_sha": "fdbce141359dbeffe05220a137e3f0e88c419cc3",
+      "current_blob_sha": "9c68bd84f3ac02d93a8e621790c6139dc77e3a5d",
+      "read_complete": true,
+      "responsibility_reconciled": true,
+      "responsibility_delta": "Current 6fed→5b81 reconciliation: After copying selected transcript items, selection is cleared in list view too; selection settlement is shared transcript behavior."
+    },
+    {
+      "recursive_order": 4521,
+      "source_path": "Telegram/SourceFiles/history/view/media/history_view_photo.cpp",
+      "previous_blob_sha": "44beb4ffa87e94f18184f0e3b7fb5d46b2dd9396",
+      "current_blob_sha": "4a563307fe671139f6113e093351e4363fe72ebc",
+      "read_complete": true,
+      "responsibility_reconciled": true,
+      "responsibility_delta": "Prior 28ac→6fed reconciliation: Webpage photo enlarge affordance was factored into owned state with hit-testing plus press/release ripple lifecycle; eligibility still excludes sponsored/editor/non-suggested/small media. Applicable Fabushi responsibility is canonical media-action eligibility, pointer pressed-state lifecycle, repaint ownership, and purchased-tag geometry coexistence—not Telegram UI."
+    },
+    {
+      "recursive_order": 4522,
+      "source_path": "Telegram/SourceFiles/history/view/media/history_view_photo.h",
+      "previous_blob_sha": "8bb536d269f75a00a04f40828ba8da7cc10ed364",
+      "current_blob_sha": "2724cbfafca3611757e0192433ad297cc92c6122",
+      "read_complete": true,
+      "responsibility_reconciled": true,
+      "responsibility_delta": "Prior 28ac→6fed reconciliation: Photo interface now owns enlarge interaction state and clickHandlerPressedChanged lifecycle; map to the existing Transcript/media interaction owner without a second media root."
+    },
+    {
+      "recursive_order": 4629,
+      "source_path": "Telegram/SourceFiles/info/info.style",
+      "previous_blob_sha": "b58295bc6dbef65c564a582410bee03567eba0ff",
+      "current_blob_sha": "7a12559ddf14cdeeed2341fb7ff8aadf702025b2",
+      "read_complete": true,
+      "responsibility_reconciled": true,
+      "responsibility_delta": "Current 6fed→5b81 reconciliation: Story archive icon is normalized to shared archive semantics; presentation-only token/icon reuse under canonical design system."
+    },
+    {
+      "recursive_order": 4630,
+      "source_path": "Telegram/SourceFiles/info/info_content_widget.cpp",
+      "previous_blob_sha": "a0a9211d1f78996ff353758d608ae46365b96a6d",
+      "current_blob_sha": "3100d6667305bffbc3a2a0f7398f1f2b81c52f60",
+      "read_complete": true,
+      "responsibility_reconciled": true,
+      "responsibility_delta": "Current 6fed→5b81 reconciliation: Reactive visible-range tuple refactor only; preserves DetailPanel visible-top/bottom and scroll-till-bottom semantics, no new product responsibility."
+    },
+    {
+      "recursive_order": 5037,
+      "source_path": "Telegram/SourceFiles/mainwidget.cpp",
+      "previous_blob_sha": "619d6ad925a31424c65dd4d83c1d118376d76f4b",
+      "current_blob_sha": "5c210ca99d83d6c8a7639215e7cc2c1e776489da",
+      "read_complete": true,
+      "responsibility_reconciled": true,
+      "responsibility_delta": "Current 6fed→5b81 reconciliation: Reactive tuple mapper refactor only; preserves active-chat send restriction projection and third-column orchestration."
+    },
+    {
+      "recursive_order": 5084,
+      "source_path": "Telegram/SourceFiles/media/player/media_player_instance.cpp",
+      "previous_blob_sha": "e0ff3b966c0173dcd3e7be5ccb2b19b62c1aa105",
+      "current_blob_sha": "145a9f15f029e29359ca97d87054ef71e5371508",
+      "read_complete": true,
+      "responsibility_reconciled": true,
+      "responsibility_delta": "Current 6fed→5b81 reconciliation: Voice playback pauses an actively playing song and resumes it on voice stop/finish/failure unless a call is active; explicit resumeOnVoiceEnd state must not survive user stop/clear."
+    },
+    {
+      "recursive_order": 5085,
+      "source_path": "Telegram/SourceFiles/media/player/media_player_instance.h",
+      "previous_blob_sha": "7751f6a4090f31430fd57d18cc3c8d36c8e3c8f1",
+      "current_blob_sha": "cf491d92a8ed19da81e376077077b900d97754de",
+      "read_complete": true,
+      "responsibility_reconciled": true,
+      "responsibility_delta": "Current 6fed→5b81 reconciliation: Media player state adds resumeOnVoiceEnd plus pause/resume helpers; map to canonical media playback arbitration/lifecycle owner."
+    },
+    {
+      "recursive_order": 5088,
+      "source_path": "Telegram/SourceFiles/media/player/media_player_panel.cpp",
+      "previous_blob_sha": "65baa116915c96f2d6fe2c0dc75c278b6ac0a590",
+      "current_blob_sha": "3aa54512db5e1cc4417bfe30440ff3a6e110316c",
+      "read_complete": true,
+      "responsibility_reconciled": true,
+      "responsibility_delta": "Current 6fed→5b81 reconciliation: Reactive visible-range tuple refactor only; playlist virtualization behavior unchanged."
+    },
+    {
+      "recursive_order": 5166,
+      "source_path": "Telegram/SourceFiles/media/view/media_view_overlay_widget.cpp",
+      "previous_blob_sha": "e35f67119323850a3cea450548566186c8a2231c",
+      "current_blob_sha": "edb35a4d70bbcaa514613efe1bca0a8b226a63d7",
+      "read_complete": true,
+      "responsibility_reconciled": true,
+      "responsibility_delta": "Prior 28ac→6fed reconciliation: Media viewer application event filter now claims Save/SaveAs so competing shortcuts cannot consume Ctrl+S before the viewer handles save; applicable responsibility is shortcut arbitration/ownership in canonical media viewer. Current 6fed→5b81 reconciliation: Media viewer owns only its own screenshot-protection state after app protection becomes per-window; native-window recreation must reapply viewer-local protection."
+    },
+    {
+      "recursive_order": 5333,
+      "source_path": "Telegram/SourceFiles/payments/payments_checkout_process.cpp",
+      "previous_blob_sha": "cfa02cf756fe35be4e17a3545780fcd1a59e7d98",
+      "current_blob_sha": "5ca5f5aea525c97491ebb8debed5c5abdf0ea8f4",
+      "read_complete": true,
+      "responsibility_reconciled": true,
+      "responsibility_delta": "Current 6fed→5b81 reconciliation: Checkout screenshot protection binds explicitly to the payment window; payment security boundary remains fail-closed per window."
+    },
+    {
+      "recursive_order": 5380,
+      "source_path": "Telegram/SourceFiles/payments/ui/payments_panel.cpp",
+      "previous_blob_sha": "adf27afecbee264df8933d4645fc1c12da84fe31",
+      "current_blob_sha": "e1e3037a2eb19bac35281f9003050a0a56e9dbc1",
+      "read_complete": true,
+      "responsibility_reconciled": true,
+      "responsibility_delta": "Current 6fed→5b81 reconciliation: Payment panel exposes its exact native widget solely so the existing payment/security owner can bind per-window screenshot protection."
+    },
+    {
+      "recursive_order": 5381,
+      "source_path": "Telegram/SourceFiles/payments/ui/payments_panel.h",
+      "previous_blob_sha": "db6f345c6fb03f5978c524c29f4628c74df7d141",
+      "current_blob_sha": "12bfdd42803f8654ed69be36c4f3d2905f106331",
+      "read_complete": true,
+      "responsibility_reconciled": true,
+      "responsibility_delta": "Current 6fed→5b81 reconciliation: Payment panel contract exposes target window identity for screenshot-protection ownership; no second payment owner."
+    },
+    {
+      "recursive_order": 5466,
+      "source_path": "Telegram/SourceFiles/platform/mac/window_title_mac.mm",
+      "previous_blob_sha": "5453e5431a2a382cc1d1a2670bb3a8f280fd7f4f",
+      "current_blob_sha": "0a3044718e0851ac6d9d4518bc312b378d124aae",
+      "read_complete": true,
+      "responsibility_reconciled": true,
+      "responsibility_delta": "Current 6fed→5b81 reconciliation: macOS 26+ preview title aligns left after traffic-light inset; platform-specific presentation capability, not a separate shell."
+    },
+    {
+      "recursive_order": 5483,
+      "source_path": "Telegram/SourceFiles/platform/platform_window_title.h",
+      "previous_blob_sha": "a684ad1960d3e4d3523ad1d84a46dcd84fba4d40",
+      "current_blob_sha": "3adfbac016cc7c1ba2ae5250594e025ad4132455",
+      "read_complete": true,
+      "responsibility_reconciled": true,
+      "responsibility_delta": "Current 6fed→5b81 reconciliation: Adds platform capability WindowTitleAlignsLeft for macOS 26+; canonical platform adapter should expose equivalent capability."
+    },
+    {
+      "recursive_order": 5638,
+      "source_path": "Telegram/SourceFiles/settings/settings_intro.cpp",
+      "previous_blob_sha": "e0f2ac53a54036746f1ade304da51f6dc3109308",
+      "current_blob_sha": "2b95fbb5ac269abaeeae82e921c09a3f5b447fc5",
+      "read_complete": true,
+      "responsibility_reconciled": true,
+      "responsibility_delta": "Current 6fed→5b81 reconciliation: Reactive visible-range tuple refactor only; Settings scroll/virtualization semantics unchanged."
+    },
+    {
+      "recursive_order": 5923,
+      "source_path": "Telegram/SourceFiles/ui/chat/attach/attach_bot_webview.cpp",
+      "previous_blob_sha": "540dc2afe3845ca8a0e8db34104f0654e7c522d0",
+      "current_blob_sha": "2959557fd41e26d52eb1b3e43d24d678b3bea113",
+      "read_complete": true,
+      "responsibility_reconciled": true,
+      "responsibility_delta": "Current 6fed→5b81 reconciliation: Bot WebView installs application ShortcutOverride arbitration only while active, maps Close command through canonical shortcuts, and preserves close-confirmation semantics."
+    },
+    {
+      "recursive_order": 5924,
+      "source_path": "Telegram/SourceFiles/ui/chat/attach/attach_bot_webview.h",
+      "previous_blob_sha": "ca7fde6aa39e5075e12af3d345b2634c434bbeb5",
+      "current_blob_sha": "f8d27991da8137a7a7fd56643b67d96272fa1b95",
+      "read_complete": true,
+      "responsibility_reconciled": true,
+      "responsibility_delta": "Current 6fed→5b81 reconciliation: Bot WebView owns active-window detection/event-filter lifetime and requestWindowClose contract; integrate with existing Plugin/WebView shell and shortcut owner."
+    },
+    {
+      "recursive_order": 5943,
+      "source_path": "Telegram/SourceFiles/ui/chat/chat.style",
+      "previous_blob_sha": "b67008036a5f969406aa2c6968eb5c33d2b15c08",
+      "current_blob_sha": "3f7770b717542a5a7764f4633b3c687156ddbb02",
+      "read_complete": true,
+      "responsibility_reconciled": true,
+      "responsibility_delta": "Prior 28ac→6fed reconciliation: Adds ripple opacity token for the enlarge affordance; presentation value itself is not copied, while semantic pressed-feedback state stays under the Fabushi design system."
+    },
+    {
+      "recursive_order": 6156,
+      "source_path": "Telegram/SourceFiles/ui/effects/thanos_effect_controller.cpp",
+      "previous_blob_sha": "d27491dbd162bfb91d261e484eeb82aa7f9d2ef4",
+      "current_blob_sha": "eaa4924d886f91b9c22d6c855f5c80809e0d02e8",
+      "read_complete": true,
+      "responsibility_reconciled": true,
+      "responsibility_delta": "Current 6fed→5b81 reconciliation: Star Gift service messages become eligible for removal animation while other service messages remain excluded; typed gift/service classification controls effect eligibility."
+    },
+    {
+      "recursive_order": 6196,
+      "source_path": "Telegram/SourceFiles/ui/menu_icons.style",
+      "previous_blob_sha": "8e3a7e6d7a341e013f1283ccd095d4e1e1f72824",
+      "current_blob_sha": "bfae6e7f68ead1ae81d04611c32b5879dfba534c",
+      "read_complete": true,
+      "responsibility_reconciled": true,
+      "responsibility_delta": "Current 6fed→5b81 reconciliation: Story archive actions reuse canonical archive icon; presentation-only semantic icon consolidation."
+    },
+    {
+      "recursive_order": 6449,
+      "source_path": "Telegram/SourceFiles/window/window_session_controller.cpp",
+      "previous_blob_sha": "df2166f1e0643c810e05f7b0edcd01e7ca18f5d4",
+      "current_blob_sha": "21b5732994416d9ee6867eaf6bb39632f73acd53",
+      "read_complete": true,
+      "responsibility_reconciled": true,
+      "responsibility_delta": "Current 6fed→5b81 reconciliation: Session ambient screenshot-protection reason now binds to the owning window; active-chat protected-content state must not leak protection to unrelated windows."
+    },
+    {
+      "recursive_order": 6501,
+      "source_path": "Telegram/ThirdParty/range-v3",
+      "previous_blob_sha": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+      "current_blob_sha": "5ba39112d2eafbb3c851a16a537f29b445022998",
+      "read_complete": true,
+      "responsibility_reconciled": true,
+      "responsibility_delta": "Current 6fed→5b81 reconciliation: Pinned range-v3 gitlink advances 76 commits: direct component grows 667→677 entries with compiler/CMake/Bazel compatibility, contains_subrange algorithm and regression coverage; recursive source identities were reread/rebased without creating a product runtime owner."
+    },
+    {
+      "recursive_order": 6541,
+      "source_path": "Telegram/build/version",
+      "previous_blob_sha": "70a670e4f8e31cebfaae55d32955ee1eb0100c12",
+      "current_blob_sha": "d4ba8dcf4b570db34a4489a329fecc755a5d338b",
+      "read_complete": true,
+      "responsibility_reconciled": true,
+      "responsibility_delta": "Prior 28ac→6fed reconciliation: Build version metadata advanced to 7.3.1; responsibility remains deterministic release-version propagation."
+    },
+    {
+      "recursive_order": 6589,
+      "source_path": "Telegram/lib_ui",
+      "previous_blob_sha": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+      "current_blob_sha": "625d68a9156deb9bdb193a83e74629e9a32e2518",
+      "read_complete": true,
+      "responsibility_reconciled": true,
+      "responsibility_delta": "Current 6fed→5b81 reconciliation: Pinned lib_ui advances one commit: whole-text replacement marks inserted tags as replacing old block formats, preventing edit-cancel draft text from retaining quote formatting; map to canonical Composer/Draft formatting lifecycle."
+    },
+    {
+      "recursive_order": 6627,
+      "source_path": "changelog.txt",
+      "previous_blob_sha": "bf82383b02717265acac50035c2ce3000afdac7a",
+      "current_blob_sha": "0a15fcb270fe88cf5d607e2b60be50ca32eeaf72",
+      "read_complete": true,
+      "responsibility_reconciled": true,
+      "responsibility_delta": "Prior 28ac→6fed reconciliation: 7.3.1 release notes add wallet Windows Hello/passcode, copy-restricted downloads, theme date colors, and photo-editor Link fixes; these are provenance/regression cues and do not by themselves mark any Fabushi capability complete."
+    }
+  ]
+}
