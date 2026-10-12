@@ -7,7 +7,7 @@
   "coverage": {
     "source_entries_total": 16125,
     "unknown": 15845,
-    "unread": 3473,
+    "unread": 3409,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13491,9 +13491,9 @@
     "development_only_non_applicable": 206,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 12652,
-    "first_unread_order": 12653,
-    "first_unread_path": "Telegram/lib_crl::crl/common/crl_common_list.cpp",
+    "read_through": 12716,
+    "first_unread_order": 12717,
+    "first_unread_path": "Telegram/lib_lottie::lottie/details/lottie_instance.h",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
