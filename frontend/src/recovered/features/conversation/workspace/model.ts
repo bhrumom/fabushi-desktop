@@ -26,12 +26,31 @@ export interface DraftAttachment {
   mimeType?: string;
 }
 
+export interface ComposerDraftCursor {
+  position: number;
+  anchor: number;
+  scroll: number;
+}
+
+export interface ComposerDraftLinkPreview {
+  /** Opaque canonical Resource/Web preview identity. Use a string so 64-bit service ids remain lossless in JavaScript. */
+  id?: string;
+  url: string;
+  forceLargeMedia?: boolean;
+  forceSmallMedia?: boolean;
+  invert?: boolean;
+  manual?: boolean;
+  removed?: boolean;
+}
+
 export interface ComposerDraft {
   prompt: string;
   attachments: DraftAttachment[];
   richText?: string;
   replyToId?: string;
   isFork?: boolean;
+  cursor?: ComposerDraftCursor;
+  linkPreview?: ComposerDraftLinkPreview;
 }
 
 export const COMPOSER_DRAFT_METADATA = {
@@ -62,10 +81,30 @@ export function areComposerDraftContentsEqual(left: ComposerDraft, right: Compos
     });
 }
 
+function areComposerDraftCursorsEqual(left: ComposerDraftCursor | undefined, right: ComposerDraftCursor | undefined): boolean {
+  if (left == null || right == null) return left == null && right == null;
+  return left.position === right.position
+    && left.anchor === right.anchor
+    && left.scroll === right.scroll;
+}
+
+function areComposerDraftLinkPreviewsEqual(left: ComposerDraftLinkPreview | undefined, right: ComposerDraftLinkPreview | undefined): boolean {
+  if (left == null || right == null) return left == null && right == null;
+  return (left.id ?? null) === (right.id ?? null)
+    && left.url === right.url
+    && (left.forceLargeMedia ?? false) === (right.forceLargeMedia ?? false)
+    && (left.forceSmallMedia ?? false) === (right.forceSmallMedia ?? false)
+    && (left.invert ?? false) === (right.invert ?? false)
+    && (left.manual ?? false) === (right.manual ?? false)
+    && (left.removed ?? false) === (right.removed ?? false);
+}
+
 export function areComposerDraftsEqual(left: ComposerDraft, right: ComposerDraft): boolean {
   return areComposerDraftContentsEqual(left, right)
     && (left.replyToId ?? null) === (right.replyToId ?? null)
-    && (left.isFork ?? false) === (right.isFork ?? false);
+    && (left.isFork ?? false) === (right.isFork ?? false)
+    && areComposerDraftCursorsEqual(left.cursor, right.cursor)
+    && areComposerDraftLinkPreviewsEqual(left.linkPreview, right.linkPreview);
 }
 
 export function parseComposerDraft(value: unknown): ComposerDraft | null {
@@ -78,6 +117,46 @@ export function parseComposerDraft(value: unknown): ComposerDraft | null {
     || (candidate.isFork !== undefined && typeof candidate.isFork !== "boolean")
     || !Array.isArray(candidate.attachments)
   ) return null;
+
+  const cursor = candidate.cursor === undefined ? undefined : (() => {
+    if (typeof candidate.cursor !== "object" || candidate.cursor == null || Array.isArray(candidate.cursor)) return null;
+    const valueCursor = candidate.cursor as Record<string, unknown>;
+    if (
+      !Number.isSafeInteger(valueCursor.position)
+      || !Number.isSafeInteger(valueCursor.anchor)
+      || !Number.isSafeInteger(valueCursor.scroll)
+    ) return null;
+    return {
+      position: valueCursor.position as number,
+      anchor: valueCursor.anchor as number,
+      scroll: valueCursor.scroll as number,
+    };
+  })();
+  if (candidate.cursor !== undefined && cursor == null) return null;
+
+  const linkPreview = candidate.linkPreview === undefined ? undefined : (() => {
+    if (typeof candidate.linkPreview !== "object" || candidate.linkPreview == null || Array.isArray(candidate.linkPreview)) return null;
+    const valuePreview = candidate.linkPreview as Record<string, unknown>;
+    if (
+      typeof valuePreview.url !== "string"
+      || (valuePreview.id !== undefined && (typeof valuePreview.id !== "string" || valuePreview.id.length === 0))
+      || (valuePreview.forceLargeMedia !== undefined && typeof valuePreview.forceLargeMedia !== "boolean")
+      || (valuePreview.forceSmallMedia !== undefined && typeof valuePreview.forceSmallMedia !== "boolean")
+      || (valuePreview.invert !== undefined && typeof valuePreview.invert !== "boolean")
+      || (valuePreview.manual !== undefined && typeof valuePreview.manual !== "boolean")
+      || (valuePreview.removed !== undefined && typeof valuePreview.removed !== "boolean")
+    ) return null;
+    return {
+      url: valuePreview.url,
+      ...(valuePreview.id === undefined ? {} : { id: valuePreview.id as string }),
+      ...(valuePreview.forceLargeMedia === undefined ? {} : { forceLargeMedia: valuePreview.forceLargeMedia as boolean }),
+      ...(valuePreview.forceSmallMedia === undefined ? {} : { forceSmallMedia: valuePreview.forceSmallMedia as boolean }),
+      ...(valuePreview.invert === undefined ? {} : { invert: valuePreview.invert as boolean }),
+      ...(valuePreview.manual === undefined ? {} : { manual: valuePreview.manual as boolean }),
+      ...(valuePreview.removed === undefined ? {} : { removed: valuePreview.removed as boolean }),
+    };
+  })();
+  if (candidate.linkPreview !== undefined && linkPreview == null) return null;
 
   const attachments: DraftAttachment[] = [];
   for (const valueAttachment of candidate.attachments) {
@@ -102,7 +181,9 @@ export function parseComposerDraft(value: unknown): ComposerDraft | null {
     attachments,
     ...(candidate.richText === undefined ? {} : { richText: candidate.richText }),
     ...(candidate.replyToId === undefined ? {} : { replyToId: candidate.replyToId }),
-    ...(candidate.isFork === undefined ? {} : { isFork: candidate.isFork })
+    ...(candidate.isFork === undefined ? {} : { isFork: candidate.isFork }),
+    ...(cursor === undefined ? {} : { cursor }),
+    ...(linkPreview === undefined ? {} : { linkPreview })
   };
 }
 
