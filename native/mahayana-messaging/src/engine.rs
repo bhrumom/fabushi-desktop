@@ -5708,6 +5708,38 @@ mod recent_open_history_tests {
     }
 
     #[test]
+    fn destroyed_child_event_removes_only_exact_recent_open_destination() {
+        let actor_id = ActorId::new("human:recent-open-owner");
+        let other_actor_id = ActorId::new("human:recent-open-other");
+        let parent_id = ConversationId::new("conversation:recent-open-parent");
+        let destroyed = ConversationDestination::nested_conversation(
+            parent_id.clone(),
+            ConversationId::new("conversation:recent-open-destroyed"),
+        );
+        let sibling = ConversationDestination::nested_conversation(
+            parent_id,
+            ConversationId::new("conversation:recent-open-sibling"),
+        );
+        let mut engine = MessagingEngine::new();
+
+        engine.note_destination_opened(&actor_id, &destroyed);
+        engine.note_destination_opened(&actor_id, &sibling);
+        engine.note_destination_opened(&other_actor_id, &destroyed);
+
+        engine.apply(Event::ConversationChildDestroyed {
+            destination: destroyed.clone(),
+            actor_id: actor_id.clone(),
+        });
+
+        assert_eq!(engine.recent_open_destinations(&actor_id), &[sibling]);
+        assert_eq!(
+            engine.recent_open_destinations(&other_actor_id),
+            &[destroyed],
+            "destroying one account-scoped child must not prune another account's recent-open projection"
+        );
+    }
+
+    #[test]
     fn recent_open_history_is_runtime_only_across_state_restore() {
         let actor_id = ActorId::new("human:recent-open");
         let destination = ConversationDestination::nested_conversation(
