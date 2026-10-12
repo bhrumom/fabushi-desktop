@@ -9606,10 +9606,10 @@
         "content_matches_scope",
         "MediaCache",
         "ConversationChildDestroyed",
-        "ProductionSessionWorkers::sync_human_conversation",
-        "ProductionSessionWorkers::reconcile_saved_sublist_authority_from_transcript",
-        "MessagingService::reconcile_saved_sublist_parent_access",
-        "MessagingService::reconcile_saved_sublist_membership"
+        "sync_human_conversation",
+        "reconcile_saved_sublist_authority_from_transcript",
+        "reconcile_saved_sublist_parent_access",
+        "reconcile_saved_sublist_membership"
       ],
       "target_language": "Rust",
       "language_rationale": "Derived index/resource lifecycle is canonical Rust state.",
