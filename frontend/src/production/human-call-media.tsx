@@ -68,12 +68,19 @@ interface CallMediaSubscriptionResult {
   readonly publicationId: string;
   readonly status: "ready" | "failed";
 }
+interface SfuRemoteVideoSubscription {
+  readonly subscriptionId: string;
+  readonly publicationId: string;
+  readonly simulcastRids: readonly string[];
+  preferredRid: string | null;
+}
 interface SfuMediaRuntime {
   readonly generation: number;
   readonly publishSessionId: string;
   readonly subscribeSessionId: string;
   readonly publishedMids: Set<string>;
   readonly subscribedPublicationIds: Set<string>;
+  readonly remoteVideoSubscriptions: Map<string, SfuRemoteVideoSubscription>;
 }
 interface CallDisplaySource {
   readonly id: string;
@@ -439,6 +446,8 @@ export function HumanCallControls({
   const [mutePending, setMutePending] = useState(false);
   const [cameraPending, setCameraPending] = useState(false);
   const [screenPending, setScreenPending] = useState(false);
+  const [layerPending, setLayerPending] = useState(false);
+  const [remoteVideoLayer, setRemoteVideoLayer] = useState<{ readonly current: string | null; readonly available: readonly string[] } | null>(null);
   const [callToneState, setCallToneState] = useState<CallTonePlaybackState>("idle");
   const [callCommandFence] = useState(() => createInFlightCommandFence());
   const localStreamRef = useRef<MediaStream | null>(null);
@@ -718,6 +727,8 @@ export function HumanCallControls({
     subscribePcRef.current = null;
     sfuRuntimeRef.current = null;
     sfuSyncInFlightRef.current = false;
+    setRemoteVideoLayer(null);
+    setLayerPending(false);
     for (const pc of [publishPc, subscribePc]) {
       if (pc == null) continue;
       pc.onicecandidate = null;
@@ -797,6 +808,7 @@ export function HumanCallControls({
         subscriptionIntents.map((intent) => [intent.clientSubscriptionId, intent.publicationId] as const),
       );
       const successfulIds = new Set<string>();
+      const successfulSubscriptions = new Map<string, string>();
       const seenSubscriptionIds = new Set<string>();
       let failedSubscriptions = 0;
       if (!Array.isArray(response.results)) throw new Error("Host returned incomplete SFU subscription results.");
@@ -813,6 +825,7 @@ export function HumanCallControls({
         if (raw.status === "ready") {
           if (typeof raw.subscriptionId !== "string") throw new Error("Host returned SFU subscription without durable identity.");
           successfulIds.add(raw.publicationId);
+          successfulSubscriptions.set(raw.publicationId, raw.subscriptionId);
         } else {
           failedSubscriptions += 1;
         }
@@ -835,8 +848,23 @@ export function HumanCallControls({
         sessionDescription: { type: "answer", sdp: localAnswer.sdp },
       });
       for (const publication of pending) {
-        if (successfulIds.has(publication.publicationId)) runtime.subscribedPublicationIds.add(publication.publicationId);
+        if (!successfulIds.has(publication.publicationId)) continue;
+        runtime.subscribedPublicationIds.add(publication.publicationId);
+        const subscriptionId = successfulSubscriptions.get(publication.publicationId);
+        if (subscriptionId != null && publication.mediaKind === "video" && publication.simulcastRids.length > 0) {
+          runtime.remoteVideoSubscriptions.set(publication.publicationId, {
+            subscriptionId,
+            publicationId: publication.publicationId,
+            simulcastRids: publication.simulcastRids,
+            preferredRid: null,
+          });
+        }
       }
+      const layerCandidate = Array.from(runtime.remoteVideoSubscriptions.values())[0] ?? null;
+      setRemoteVideoLayer(layerCandidate == null ? null : {
+        current: layerCandidate.preferredRid,
+        available: layerCandidate.simulcastRids,
+      });
       if (failedSubscriptions > 0) {
         setError(`Some remote media could not be subscribed (${failedSubscriptions}/${subscriptionIntents.length}); the remaining tracks stay connected.`);
       }
@@ -844,6 +872,44 @@ export function HumanCallControls({
       sfuSyncInFlightRef.current = false;
     }
   }, [client]);
+
+  const cycleRemoteVideoLayer = useCallback(async () => {
+    const commandLease = callCommandFence.acquire("remote-video-layer");
+    if (commandLease == null) return;
+    setLayerPending(true);
+    try {
+      const current = callRef.current;
+      const runtime = sfuRuntimeRef.current;
+      if (current == null || runtime == null || runtime.generation !== current.generation) return;
+      const subscription = Array.from(runtime.remoteVideoSubscriptions.values())[0] ?? null;
+      if (subscription == null || subscription.simulcastRids.length === 0) return;
+      const currentIndex = subscription.preferredRid == null
+        ? -1
+        : subscription.simulcastRids.indexOf(subscription.preferredRid);
+      const nextRid = subscription.simulcastRids[(currentIndex + 1) % subscription.simulcastRids.length];
+      const response = await client.call("updateCallMediaSubscriptionLayer", {
+        callId: current.id,
+        mediaSessionId: runtime.subscribeSessionId,
+        subscriptionId: subscription.subscriptionId,
+        clientMutationId: callMediaNonce("layer"),
+        generation: current.generation,
+        simulcast: {
+          preferredRid: nextRid,
+          priorityOrdering: "none",
+          ridNotAvailable: "none",
+        },
+      });
+      if (!isRecord(response) || response.success !== true || !isRecord(response.result)
+        || response.result.status !== "applied" || response.result.preferredRid !== nextRid) {
+        throw new Error("Host returned an unconfirmed SFU layer mutation.");
+      }
+      subscription.preferredRid = nextRid;
+      setRemoteVideoLayer({ current: nextRid, available: subscription.simulcastRids });
+    } finally {
+      commandLease.release();
+      setLayerPending(false);
+    }
+  }, [callCommandFence, client]);
 
   const configurePeer = useCallback(async (nextCall: HumanCall, nextLease: CallLease, local: MediaStream) => {
     closePeer();
@@ -880,6 +946,7 @@ export function HumanCallControls({
       subscribeSessionId: subscribeSessionValue.mediaSessionId,
       publishedMids: new Set<string>(),
       subscribedPublicationIds: new Set<string>(),
+      remoteVideoSubscriptions: new Map<string, SfuRemoteVideoSubscription>(),
     };
     sfuRuntimeRef.current = runtime;
 
@@ -1372,6 +1439,7 @@ export function HumanCallControls({
       {cameraEnabled && cameraCapturePaused ? <span role="status">Camera paused</span> : null}
       <SandButton aria-pressed={cameraEnabled} onClick={() => void toggleCamera().catch((toggleError) => setError(mediaFailure(toggleError)))} pending={cameraPending} size="sm" variant="secondary">{cameraEnabled ? "Camera off" : "Camera on"}</SandButton>
       <SandButton aria-pressed={screenSharing} onClick={() => void toggleScreen().catch((toggleError) => setError(mediaFailure(toggleError)))} pending={screenPending} size="sm" variant="secondary">{screenSharing ? "Stop sharing" : "Share screen"}</SandButton>
+      {remoteVideoLayer != null && remoteVideoLayer.available.length > 0 ? <SandButton aria-label="Switch remote video quality" onClick={() => void cycleRemoteVideoLayer().catch((layerError) => setError(mediaFailure(layerError)))} pending={layerPending} size="sm" variant="secondary">Video quality{remoteVideoLayer.current == null ? "" : ` · ${remoteVideoLayer.current}`}</SandButton> : null}
       {screenSharing && screenCapturePaused ? <span role="status">Screen sharing paused</span> : null}
       {screenSharing ? <SandButton aria-label="Choose another display source" onClick={() => void openDisplayPicker().catch((pickerError) => setError(mediaFailure(pickerError)))} pending={screenPending} size="sm" variant="secondary">Change screen</SandButton> : null}
       <SandButton aria-label="End call" onClick={() => void hangup()} sentiment="danger" size="sm">End</SandButton>
