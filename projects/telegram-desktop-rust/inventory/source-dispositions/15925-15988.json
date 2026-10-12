@@ -21,7 +21,7 @@
   ],
   "exact_head_evidence": {
     "production_owner_audit_head": "d572d4dc3693f4a32aefc61795cc6ad7db57a063",
-    "status": "64 exact source objects individually audited; generated documentation closes only after per-entry type/consumer checks; dependency source remains mapped-open where reachability is unresolved. Fresh same-head Actions required after accounting write."
+    "status": "10 cppgir/expected-lite rows in this shard additionally closed by exact upstream consumer + current Fabushi reachability audit; fresh descendant Actions required."
   },
   "accounting": {
     "recursive_total": 16125,
@@ -2757,24 +2757,24 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "unknown_closed": false,
+      "unknown_closed": true,
       "omitted": false,
-      "disposition": "mapped-open-dependency-reachability-audit",
+      "disposition": "development-only-non-applicable",
       "existing_owner_candidates": [
         "projects/telegram-desktop-rust/inventory/source-dispositions.json",
         "projects/telegram-desktop-rust/upstream.lock.json"
       ],
       "chosen_owner": "Existing Build / Platform / dependency provenance owners",
       "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
-      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "fabushi_target": "No CppGir/expected-lite runtime in Fabushi; underlying Linux/platform integration remains with existing Rust/Electron platform owners.",
       "source_symbols": [
         "documentation/configuration/license or dependency input",
         ".clang-format"
       ],
       "upstream_owner": ".clang-format",
-      "responsibility": "Audit this exact dependency input for provenance, consumer/build reachability, policy and generated-input obligations; retain mapped-open until applicability is individually resolved.",
+      "responsibility": "Exact cppgir/expected-lite object audited as part of tdesktop C++ GLib wrapper-generation implementation. Accepted parent cmake_helpers invokes CppGir only from external/glib/generate_cppgir.cmake to generate C++ Gio wrappers; current Fabushi shipping composition has no CppGir/expected-lite consumer, so this implementation-specific build input is non-applicable without removing the underlying Linux/platform responsibility.",
       "responsibilities": [
-        "Audit this exact dependency input for provenance, consumer/build reachability, policy and generated-input obligations; retain mapped-open until applicability is individually resolved."
+        "Exact cppgir/expected-lite object audited as part of tdesktop C++ GLib wrapper-generation implementation. Accepted parent cmake_helpers invokes CppGir only from external/glib/generate_cppgir.cmake to generate C++ Gio wrappers; current Fabushi shipping composition has no CppGir/expected-lite consumer, so this implementation-specific build input is non-applicable without removing the underlying Linux/platform responsibility."
       ],
       "tests": [
         "GitHub Actions Source authority / recursive inventory",
@@ -2782,11 +2782,14 @@
       ],
       "current_head_evidence": [
         "direct-source-read:gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776:2c9e4a6cb5998eb7f2794ebe4e2725e3da0ce1c5",
-        "byte-audit: exact bytes read; recomputed Git blob SHA=2c9e4a6cb5998eb7f2794ebe4e2725e3da0ce1c5; byte_length=796"
+        "byte-audit: exact bytes read; recomputed Git blob SHA=2c9e4a6cb5998eb7f2794ebe4e2725e3da0ce1c5; byte_length=796",
+        "upstream-consumer-audit:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:external/glib/CMakeLists.txt@9b80f230ed6bfc04e496564be26ce41a0778d2e2",
+        "upstream-consumer-audit:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:external/glib/generate_cppgir.cmake@62a3b6d19797951407b13529c2427653754b883c",
+        "fabushi-reachability-audit:bd426b2c9c14fe05eb98e160e75f0a9beed6f318:no-shipping-CppGir-generate_cppgir-GioUnix-expected-lite-consumer"
       ],
-      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "evidence_gap": "No product implementation gap for this exact C++ wrapper-generation dependency object after exact-byte/source-role and two-sided consumer audit; global platform/release acceptance remains open.",
       "production_entrypoints": [
-        "pending exact consumer/reachability and canonical-owner audit"
+        "none: cppgir/expected-lite are not part of current Fabushi shipping runtime or build composition"
       ]
     },
     {
@@ -2807,24 +2810,24 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "unknown_closed": false,
+      "unknown_closed": true,
       "omitted": false,
-      "disposition": "mapped-open-dependency-reachability-audit",
+      "disposition": "development-only-non-applicable",
       "existing_owner_candidates": [
         "projects/telegram-desktop-rust/inventory/source-dispositions.json",
         "projects/telegram-desktop-rust/upstream.lock.json"
       ],
       "chosen_owner": "Existing Build / Platform / dependency provenance owners",
       "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
-      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "fabushi_target": "No CppGir/expected-lite runtime in Fabushi; underlying Linux/platform integration remains with existing Rust/Electron platform owners.",
       "source_symbols": [
         "build/test/tooling input",
         ".gitlab-ci.yml"
       ],
       "upstream_owner": ".gitlab-ci.yml",
-      "responsibility": "Audit this exact build/test/tooling input for accepted tdesktop acquisition, generator, platform, packaging and CI responsibility; retain mapped-open until shipping/build reachability and owner evidence are closed.",
+      "responsibility": "Exact cppgir/expected-lite object audited as part of tdesktop C++ GLib wrapper-generation implementation. Accepted parent cmake_helpers invokes CppGir only from external/glib/generate_cppgir.cmake to generate C++ Gio wrappers; current Fabushi shipping composition has no CppGir/expected-lite consumer, so this implementation-specific build input is non-applicable without removing the underlying Linux/platform responsibility.",
       "responsibilities": [
-        "Audit this exact build/test/tooling input for accepted tdesktop acquisition, generator, platform, packaging and CI responsibility; retain mapped-open until shipping/build reachability and owner evidence are closed."
+        "Exact cppgir/expected-lite object audited as part of tdesktop C++ GLib wrapper-generation implementation. Accepted parent cmake_helpers invokes CppGir only from external/glib/generate_cppgir.cmake to generate C++ Gio wrappers; current Fabushi shipping composition has no CppGir/expected-lite consumer, so this implementation-specific build input is non-applicable without removing the underlying Linux/platform responsibility."
       ],
       "tests": [
         "GitHub Actions Source authority / recursive inventory",
@@ -2832,11 +2835,14 @@
       ],
       "current_head_evidence": [
         "direct-source-read:gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776:e5515930063d12745f1996c3cbf77db4ef69e6d1",
-        "byte-audit: exact bytes read; recomputed Git blob SHA=e5515930063d12745f1996c3cbf77db4ef69e6d1; byte_length=912"
+        "byte-audit: exact bytes read; recomputed Git blob SHA=e5515930063d12745f1996c3cbf77db4ef69e6d1; byte_length=912",
+        "upstream-consumer-audit:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:external/glib/CMakeLists.txt@9b80f230ed6bfc04e496564be26ce41a0778d2e2",
+        "upstream-consumer-audit:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:external/glib/generate_cppgir.cmake@62a3b6d19797951407b13529c2427653754b883c",
+        "fabushi-reachability-audit:bd426b2c9c14fe05eb98e160e75f0a9beed6f318:no-shipping-CppGir-generate_cppgir-GioUnix-expected-lite-consumer"
       ],
-      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "evidence_gap": "No product implementation gap for this exact C++ wrapper-generation dependency object after exact-byte/source-role and two-sided consumer audit; global platform/release acceptance remains open.",
       "production_entrypoints": [
-        "pending exact consumer/reachability and canonical-owner audit"
+        "none: cppgir/expected-lite are not part of current Fabushi shipping runtime or build composition"
       ]
     },
     {
@@ -2857,24 +2863,24 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "unknown_closed": false,
+      "unknown_closed": true,
       "omitted": false,
-      "disposition": "mapped-open-dependency-reachability-audit",
+      "disposition": "development-only-non-applicable",
       "existing_owner_candidates": [
         "projects/telegram-desktop-rust/inventory/source-dispositions.json",
         "projects/telegram-desktop-rust/upstream.lock.json"
       ],
       "chosen_owner": "Existing Build / Platform / dependency provenance owners",
       "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
-      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "fabushi_target": "No CppGir/expected-lite runtime in Fabushi; underlying Linux/platform integration remains with existing Rust/Electron platform owners.",
       "source_symbols": [
         "build/test/tooling input",
         "Dockerfile"
       ],
       "upstream_owner": ".gitlab-ci/Dockerfile",
-      "responsibility": "Audit this exact build/test/tooling input for accepted tdesktop acquisition, generator, platform, packaging and CI responsibility; retain mapped-open until shipping/build reachability and owner evidence are closed.",
+      "responsibility": "Exact cppgir/expected-lite object audited as part of tdesktop C++ GLib wrapper-generation implementation. Accepted parent cmake_helpers invokes CppGir only from external/glib/generate_cppgir.cmake to generate C++ Gio wrappers; current Fabushi shipping composition has no CppGir/expected-lite consumer, so this implementation-specific build input is non-applicable without removing the underlying Linux/platform responsibility.",
       "responsibilities": [
-        "Audit this exact build/test/tooling input for accepted tdesktop acquisition, generator, platform, packaging and CI responsibility; retain mapped-open until shipping/build reachability and owner evidence are closed."
+        "Exact cppgir/expected-lite object audited as part of tdesktop C++ GLib wrapper-generation implementation. Accepted parent cmake_helpers invokes CppGir only from external/glib/generate_cppgir.cmake to generate C++ Gio wrappers; current Fabushi shipping composition has no CppGir/expected-lite consumer, so this implementation-specific build input is non-applicable without removing the underlying Linux/platform responsibility."
       ],
       "tests": [
         "GitHub Actions Source authority / recursive inventory",
@@ -2882,11 +2888,14 @@
       ],
       "current_head_evidence": [
         "direct-source-read:gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776:26510d18aa77d592d633ce09626ac65e936a44db",
-        "byte-audit: exact bytes read; recomputed Git blob SHA=26510d18aa77d592d633ce09626ac65e936a44db; byte_length=404"
+        "byte-audit: exact bytes read; recomputed Git blob SHA=26510d18aa77d592d633ce09626ac65e936a44db; byte_length=404",
+        "upstream-consumer-audit:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:external/glib/CMakeLists.txt@9b80f230ed6bfc04e496564be26ce41a0778d2e2",
+        "upstream-consumer-audit:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:external/glib/generate_cppgir.cmake@62a3b6d19797951407b13529c2427653754b883c",
+        "fabushi-reachability-audit:bd426b2c9c14fe05eb98e160e75f0a9beed6f318:no-shipping-CppGir-generate_cppgir-GioUnix-expected-lite-consumer"
       ],
-      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "evidence_gap": "No product implementation gap for this exact C++ wrapper-generation dependency object after exact-byte/source-role and two-sided consumer audit; global platform/release acceptance remains open.",
       "production_entrypoints": [
-        "pending exact consumer/reachability and canonical-owner audit"
+        "none: cppgir/expected-lite are not part of current Fabushi shipping runtime or build composition"
       ]
     },
     {
@@ -2907,24 +2916,24 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "unknown_closed": false,
+      "unknown_closed": true,
       "omitted": false,
-      "disposition": "mapped-open-dependency-reachability-audit",
+      "disposition": "development-only-non-applicable",
       "existing_owner_candidates": [
         "projects/telegram-desktop-rust/inventory/source-dispositions.json",
         "projects/telegram-desktop-rust/upstream.lock.json"
       ],
       "chosen_owner": "Existing Build / Platform / dependency provenance owners",
       "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
-      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "fabushi_target": "No CppGir/expected-lite runtime in Fabushi; underlying Linux/platform integration remains with existing Rust/Electron platform owners.",
       "source_symbols": [
         "build/test/tooling input",
         "run-docker.sh"
       ],
       "upstream_owner": ".gitlab-ci/run-docker.sh",
-      "responsibility": "Audit this exact build/test/tooling input for accepted tdesktop acquisition, generator, platform, packaging and CI responsibility; retain mapped-open until shipping/build reachability and owner evidence are closed.",
+      "responsibility": "Exact cppgir/expected-lite object audited as part of tdesktop C++ GLib wrapper-generation implementation. Accepted parent cmake_helpers invokes CppGir only from external/glib/generate_cppgir.cmake to generate C++ Gio wrappers; current Fabushi shipping composition has no CppGir/expected-lite consumer, so this implementation-specific build input is non-applicable without removing the underlying Linux/platform responsibility.",
       "responsibilities": [
-        "Audit this exact build/test/tooling input for accepted tdesktop acquisition, generator, platform, packaging and CI responsibility; retain mapped-open until shipping/build reachability and owner evidence are closed."
+        "Exact cppgir/expected-lite object audited as part of tdesktop C++ GLib wrapper-generation implementation. Accepted parent cmake_helpers invokes CppGir only from external/glib/generate_cppgir.cmake to generate C++ Gio wrappers; current Fabushi shipping composition has no CppGir/expected-lite consumer, so this implementation-specific build input is non-applicable without removing the underlying Linux/platform responsibility."
       ],
       "tests": [
         "GitHub Actions Source authority / recursive inventory",
@@ -2932,11 +2941,14 @@
       ],
       "current_head_evidence": [
         "direct-source-read:gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776:6dbfbe5dcaa0ffd28da18f13e5c4075d6cccfde5",
-        "byte-audit: exact bytes read; recomputed Git blob SHA=6dbfbe5dcaa0ffd28da18f13e5c4075d6cccfde5; byte_length=268"
+        "byte-audit: exact bytes read; recomputed Git blob SHA=6dbfbe5dcaa0ffd28da18f13e5c4075d6cccfde5; byte_length=268",
+        "upstream-consumer-audit:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:external/glib/CMakeLists.txt@9b80f230ed6bfc04e496564be26ce41a0778d2e2",
+        "upstream-consumer-audit:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:external/glib/generate_cppgir.cmake@62a3b6d19797951407b13529c2427653754b883c",
+        "fabushi-reachability-audit:bd426b2c9c14fe05eb98e160e75f0a9beed6f318:no-shipping-CppGir-generate_cppgir-GioUnix-expected-lite-consumer"
       ],
-      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "evidence_gap": "No product implementation gap for this exact C++ wrapper-generation dependency object after exact-byte/source-role and two-sided consumer audit; global platform/release acceptance remains open.",
       "production_entrypoints": [
-        "pending exact consumer/reachability and canonical-owner audit"
+        "none: cppgir/expected-lite are not part of current Fabushi shipping runtime or build composition"
       ]
     },
     {
@@ -2957,24 +2969,24 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "unknown_closed": false,
+      "unknown_closed": true,
       "omitted": false,
-      "disposition": "mapped-open-dependency-reachability-audit",
+      "disposition": "development-only-non-applicable",
       "existing_owner_candidates": [
         "projects/telegram-desktop-rust/inventory/source-dispositions.json",
         "projects/telegram-desktop-rust/upstream.lock.json"
       ],
       "chosen_owner": "Existing Build / Platform / dependency provenance owners",
       "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
-      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "fabushi_target": "No CppGir/expected-lite runtime in Fabushi; underlying Linux/platform integration remains with existing Rust/Electron platform owners.",
       "source_symbols": [
         "documentation/configuration/license or dependency input",
         ".gitmodules"
       ],
       "upstream_owner": ".gitmodules",
-      "responsibility": "Audit this exact dependency input for provenance, consumer/build reachability, policy and generated-input obligations; retain mapped-open until applicability is individually resolved.",
+      "responsibility": "Exact cppgir/expected-lite object audited as part of tdesktop C++ GLib wrapper-generation implementation. Accepted parent cmake_helpers invokes CppGir only from external/glib/generate_cppgir.cmake to generate C++ Gio wrappers; current Fabushi shipping composition has no CppGir/expected-lite consumer, so this implementation-specific build input is non-applicable without removing the underlying Linux/platform responsibility.",
       "responsibilities": [
-        "Audit this exact dependency input for provenance, consumer/build reachability, policy and generated-input obligations; retain mapped-open until applicability is individually resolved."
+        "Exact cppgir/expected-lite object audited as part of tdesktop C++ GLib wrapper-generation implementation. Accepted parent cmake_helpers invokes CppGir only from external/glib/generate_cppgir.cmake to generate C++ Gio wrappers; current Fabushi shipping composition has no CppGir/expected-lite consumer, so this implementation-specific build input is non-applicable without removing the underlying Linux/platform responsibility."
       ],
       "tests": [
         "GitHub Actions Source authority / recursive inventory",
@@ -2982,11 +2994,14 @@
       ],
       "current_head_evidence": [
         "direct-source-read:gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776:e0c91502bcb2798a8a57bd85e49c76e0ef7275a3",
-        "byte-audit: exact bytes read; recomputed Git blob SHA=e0c91502bcb2798a8a57bd85e49c76e0ef7275a3; byte_length=106"
+        "byte-audit: exact bytes read; recomputed Git blob SHA=e0c91502bcb2798a8a57bd85e49c76e0ef7275a3; byte_length=106",
+        "upstream-consumer-audit:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:external/glib/CMakeLists.txt@9b80f230ed6bfc04e496564be26ce41a0778d2e2",
+        "upstream-consumer-audit:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:external/glib/generate_cppgir.cmake@62a3b6d19797951407b13529c2427653754b883c",
+        "fabushi-reachability-audit:bd426b2c9c14fe05eb98e160e75f0a9beed6f318:no-shipping-CppGir-generate_cppgir-GioUnix-expected-lite-consumer"
       ],
-      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "evidence_gap": "No product implementation gap for this exact C++ wrapper-generation dependency object after exact-byte/source-role and two-sided consumer audit; global platform/release acceptance remains open.",
       "production_entrypoints": [
-        "pending exact consumer/reachability and canonical-owner audit"
+        "none: cppgir/expected-lite are not part of current Fabushi shipping runtime or build composition"
       ]
     },
     {
@@ -3007,24 +3022,24 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "unknown_closed": false,
+      "unknown_closed": true,
       "omitted": false,
-      "disposition": "mapped-open-dependency-reachability-audit",
+      "disposition": "development-only-non-applicable",
       "existing_owner_candidates": [
         "projects/telegram-desktop-rust/inventory/source-dispositions.json",
         "projects/telegram-desktop-rust/upstream.lock.json"
       ],
       "chosen_owner": "Existing Build / Platform / dependency provenance owners",
       "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
-      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "fabushi_target": "No CppGir/expected-lite runtime in Fabushi; underlying Linux/platform integration remains with existing Rust/Electron platform owners.",
       "source_symbols": [
         "build/test/tooling input",
         "CMakeLists.txt"
       ],
       "upstream_owner": "CMakeLists.txt",
-      "responsibility": "Audit this exact build/test/tooling input for accepted tdesktop acquisition, generator, platform, packaging and CI responsibility; retain mapped-open until shipping/build reachability and owner evidence are closed.",
+      "responsibility": "Exact cppgir/expected-lite object audited as part of tdesktop C++ GLib wrapper-generation implementation. Accepted parent cmake_helpers invokes CppGir only from external/glib/generate_cppgir.cmake to generate C++ Gio wrappers; current Fabushi shipping composition has no CppGir/expected-lite consumer, so this implementation-specific build input is non-applicable without removing the underlying Linux/platform responsibility.",
       "responsibilities": [
-        "Audit this exact build/test/tooling input for accepted tdesktop acquisition, generator, platform, packaging and CI responsibility; retain mapped-open until shipping/build reachability and owner evidence are closed."
+        "Exact cppgir/expected-lite object audited as part of tdesktop C++ GLib wrapper-generation implementation. Accepted parent cmake_helpers invokes CppGir only from external/glib/generate_cppgir.cmake to generate C++ Gio wrappers; current Fabushi shipping composition has no CppGir/expected-lite consumer, so this implementation-specific build input is non-applicable without removing the underlying Linux/platform responsibility."
       ],
       "tests": [
         "GitHub Actions Source authority / recursive inventory",
@@ -3032,11 +3047,14 @@
       ],
       "current_head_evidence": [
         "direct-source-read:gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776:7ecf3afc4fffab163fe1a8f2edfe8bc1c7c22bc2",
-        "byte-audit: exact bytes read; recomputed Git blob SHA=7ecf3afc4fffab163fe1a8f2edfe8bc1c7c22bc2; byte_length=21551"
+        "byte-audit: exact bytes read; recomputed Git blob SHA=7ecf3afc4fffab163fe1a8f2edfe8bc1c7c22bc2; byte_length=21551",
+        "upstream-consumer-audit:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:external/glib/CMakeLists.txt@9b80f230ed6bfc04e496564be26ce41a0778d2e2",
+        "upstream-consumer-audit:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:external/glib/generate_cppgir.cmake@62a3b6d19797951407b13529c2427653754b883c",
+        "fabushi-reachability-audit:bd426b2c9c14fe05eb98e160e75f0a9beed6f318:no-shipping-CppGir-generate_cppgir-GioUnix-expected-lite-consumer"
       ],
-      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "evidence_gap": "No product implementation gap for this exact C++ wrapper-generation dependency object after exact-byte/source-role and two-sided consumer audit; global platform/release acceptance remains open.",
       "production_entrypoints": [
-        "pending exact consumer/reachability and canonical-owner audit"
+        "none: cppgir/expected-lite are not part of current Fabushi shipping runtime or build composition"
       ]
     },
     {
@@ -3057,24 +3075,24 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "unknown_closed": false,
+      "unknown_closed": true,
       "omitted": false,
-      "disposition": "mapped-open-dependency-reachability-audit",
+      "disposition": "development-only-non-applicable",
       "existing_owner_candidates": [
         "projects/telegram-desktop-rust/inventory/source-dispositions.json",
         "projects/telegram-desktop-rust/upstream.lock.json"
       ],
       "chosen_owner": "Existing Build / Platform / dependency provenance owners",
       "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
-      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "fabushi_target": "No CppGir/expected-lite runtime in Fabushi; underlying Linux/platform integration remains with existing Rust/Electron platform owners.",
       "source_symbols": [
         "documentation/configuration/license or dependency input",
         "LICENSE"
       ],
       "upstream_owner": "LICENSE",
-      "responsibility": "Audit this exact dependency input for provenance, consumer/build reachability, policy and generated-input obligations; retain mapped-open until applicability is individually resolved.",
+      "responsibility": "Exact cppgir/expected-lite object audited as part of tdesktop C++ GLib wrapper-generation implementation. Accepted parent cmake_helpers invokes CppGir only from external/glib/generate_cppgir.cmake to generate C++ Gio wrappers; current Fabushi shipping composition has no CppGir/expected-lite consumer, so this implementation-specific build input is non-applicable without removing the underlying Linux/platform responsibility.",
       "responsibilities": [
-        "Audit this exact dependency input for provenance, consumer/build reachability, policy and generated-input obligations; retain mapped-open until applicability is individually resolved."
+        "Exact cppgir/expected-lite object audited as part of tdesktop C++ GLib wrapper-generation implementation. Accepted parent cmake_helpers invokes CppGir only from external/glib/generate_cppgir.cmake to generate C++ Gio wrappers; current Fabushi shipping composition has no CppGir/expected-lite consumer, so this implementation-specific build input is non-applicable without removing the underlying Linux/platform responsibility."
       ],
       "tests": [
         "GitHub Actions Source authority / recursive inventory",
@@ -3082,11 +3100,14 @@
       ],
       "current_head_evidence": [
         "direct-source-read:gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776:d113221e5489255cc4c27d8d4015f23aed0bf472",
-        "byte-audit: exact bytes read; recomputed Git blob SHA=d113221e5489255cc4c27d8d4015f23aed0bf472; byte_length=1073"
+        "byte-audit: exact bytes read; recomputed Git blob SHA=d113221e5489255cc4c27d8d4015f23aed0bf472; byte_length=1073",
+        "upstream-consumer-audit:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:external/glib/CMakeLists.txt@9b80f230ed6bfc04e496564be26ce41a0778d2e2",
+        "upstream-consumer-audit:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:external/glib/generate_cppgir.cmake@62a3b6d19797951407b13529c2427653754b883c",
+        "fabushi-reachability-audit:bd426b2c9c14fe05eb98e160e75f0a9beed6f318:no-shipping-CppGir-generate_cppgir-GioUnix-expected-lite-consumer"
       ],
-      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "evidence_gap": "No product implementation gap for this exact C++ wrapper-generation dependency object after exact-byte/source-role and two-sided consumer audit; global platform/release acceptance remains open.",
       "production_entrypoints": [
-        "pending exact consumer/reachability and canonical-owner audit"
+        "none: cppgir/expected-lite are not part of current Fabushi shipping runtime or build composition"
       ]
     },
     {
@@ -3107,24 +3128,24 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "unknown_closed": false,
+      "unknown_closed": true,
       "omitted": false,
-      "disposition": "mapped-open-dependency-reachability-audit",
+      "disposition": "development-only-non-applicable",
       "existing_owner_candidates": [
         "projects/telegram-desktop-rust/inventory/source-dispositions.json",
         "projects/telegram-desktop-rust/upstream.lock.json"
       ],
       "chosen_owner": "Existing Build / Platform / dependency provenance owners",
       "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
-      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "fabushi_target": "No CppGir/expected-lite runtime in Fabushi; underlying Linux/platform integration remains with existing Rust/Electron platform owners.",
       "source_symbols": [
         "documentation/configuration/license or dependency input",
         "README.md"
       ],
       "upstream_owner": "README.md",
-      "responsibility": "Audit this exact dependency input for provenance, consumer/build reachability, policy and generated-input obligations; retain mapped-open until applicability is individually resolved.",
+      "responsibility": "Exact cppgir/expected-lite object audited as part of tdesktop C++ GLib wrapper-generation implementation. Accepted parent cmake_helpers invokes CppGir only from external/glib/generate_cppgir.cmake to generate C++ Gio wrappers; current Fabushi shipping composition has no CppGir/expected-lite consumer, so this implementation-specific build input is non-applicable without removing the underlying Linux/platform responsibility.",
       "responsibilities": [
-        "Audit this exact dependency input for provenance, consumer/build reachability, policy and generated-input obligations; retain mapped-open until applicability is individually resolved."
+        "Exact cppgir/expected-lite object audited as part of tdesktop C++ GLib wrapper-generation implementation. Accepted parent cmake_helpers invokes CppGir only from external/glib/generate_cppgir.cmake to generate C++ Gio wrappers; current Fabushi shipping composition has no CppGir/expected-lite consumer, so this implementation-specific build input is non-applicable without removing the underlying Linux/platform responsibility."
       ],
       "tests": [
         "GitHub Actions Source authority / recursive inventory",
@@ -3132,11 +3153,14 @@
       ],
       "current_head_evidence": [
         "direct-source-read:gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776:7b6a57ff48f780829aa95f89f11a89552b930913",
-        "byte-audit: exact bytes read; recomputed Git blob SHA=7b6a57ff48f780829aa95f89f11a89552b930913; byte_length=10737"
+        "byte-audit: exact bytes read; recomputed Git blob SHA=7b6a57ff48f780829aa95f89f11a89552b930913; byte_length=10737",
+        "upstream-consumer-audit:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:external/glib/CMakeLists.txt@9b80f230ed6bfc04e496564be26ce41a0778d2e2",
+        "upstream-consumer-audit:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:external/glib/generate_cppgir.cmake@62a3b6d19797951407b13529c2427653754b883c",
+        "fabushi-reachability-audit:bd426b2c9c14fe05eb98e160e75f0a9beed6f318:no-shipping-CppGir-generate_cppgir-GioUnix-expected-lite-consumer"
       ],
-      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "evidence_gap": "No product implementation gap for this exact C++ wrapper-generation dependency object after exact-byte/source-role and two-sided consumer audit; global platform/release acceptance remains open.",
       "production_entrypoints": [
-        "pending exact consumer/reachability and canonical-owner audit"
+        "none: cppgir/expected-lite are not part of current Fabushi shipping runtime or build composition"
       ]
     },
     {
@@ -3157,24 +3181,24 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "unknown_closed": false,
+      "unknown_closed": true,
       "omitted": false,
-      "disposition": "mapped-open-dependency-reachability-audit",
+      "disposition": "development-only-non-applicable",
       "existing_owner_candidates": [
         "projects/telegram-desktop-rust/inventory/source-dispositions.json",
         "projects/telegram-desktop-rust/upstream.lock.json"
       ],
       "chosen_owner": "Existing Build / Platform / dependency provenance owners",
       "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
-      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "fabushi_target": "No CppGir/expected-lite runtime in Fabushi; underlying Linux/platform integration remains with existing Rust/Electron platform owners.",
       "source_symbols": [
         "build/test/tooling input",
         "cmake-uninstall.cmake.in"
       ],
       "upstream_owner": "cmake/cmake-uninstall.cmake.in",
-      "responsibility": "Audit this exact build/test/tooling input for accepted tdesktop acquisition, generator, platform, packaging and CI responsibility; retain mapped-open until shipping/build reachability and owner evidence are closed.",
+      "responsibility": "Exact cppgir/expected-lite object audited as part of tdesktop C++ GLib wrapper-generation implementation. Accepted parent cmake_helpers invokes CppGir only from external/glib/generate_cppgir.cmake to generate C++ Gio wrappers; current Fabushi shipping composition has no CppGir/expected-lite consumer, so this implementation-specific build input is non-applicable without removing the underlying Linux/platform responsibility.",
       "responsibilities": [
-        "Audit this exact build/test/tooling input for accepted tdesktop acquisition, generator, platform, packaging and CI responsibility; retain mapped-open until shipping/build reachability and owner evidence are closed."
+        "Exact cppgir/expected-lite object audited as part of tdesktop C++ GLib wrapper-generation implementation. Accepted parent cmake_helpers invokes CppGir only from external/glib/generate_cppgir.cmake to generate C++ Gio wrappers; current Fabushi shipping composition has no CppGir/expected-lite consumer, so this implementation-specific build input is non-applicable without removing the underlying Linux/platform responsibility."
       ],
       "tests": [
         "GitHub Actions Source authority / recursive inventory",
@@ -3182,11 +3206,14 @@
       ],
       "current_head_evidence": [
         "direct-source-read:gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776:632e56b6542048ab9dd7bb771e9d66f710869f4e",
-        "byte-audit: exact bytes read; recomputed Git blob SHA=632e56b6542048ab9dd7bb771e9d66f710869f4e; byte_length=977"
+        "byte-audit: exact bytes read; recomputed Git blob SHA=632e56b6542048ab9dd7bb771e9d66f710869f4e; byte_length=977",
+        "upstream-consumer-audit:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:external/glib/CMakeLists.txt@9b80f230ed6bfc04e496564be26ce41a0778d2e2",
+        "upstream-consumer-audit:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:external/glib/generate_cppgir.cmake@62a3b6d19797951407b13529c2427653754b883c",
+        "fabushi-reachability-audit:bd426b2c9c14fe05eb98e160e75f0a9beed6f318:no-shipping-CppGir-generate_cppgir-GioUnix-expected-lite-consumer"
       ],
-      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "evidence_gap": "No product implementation gap for this exact C++ wrapper-generation dependency object after exact-byte/source-role and two-sided consumer audit; global platform/release acceptance remains open.",
       "production_entrypoints": [
-        "pending exact consumer/reachability and canonical-owner audit"
+        "none: cppgir/expected-lite are not part of current Fabushi shipping runtime or build composition"
       ]
     },
     {
@@ -3207,16 +3234,16 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "unknown_closed": false,
+      "unknown_closed": true,
       "omitted": false,
-      "disposition": "mapped-open-dependency-reachability-audit",
+      "disposition": "development-only-non-applicable",
       "existing_owner_candidates": [
         "projects/telegram-desktop-rust/inventory/source-dispositions.json",
         "projects/telegram-desktop-rust/upstream.lock.json"
       ],
       "chosen_owner": "Existing Build / Platform / dependency provenance owners",
       "fabushi_canonical_owner": "Existing Build / Platform / dependency provenance owners",
-      "fabushi_target": "existing source-neutral Build/Platform/Quality owner after consumer audit",
+      "fabushi_target": "No CppGir/expected-lite runtime in Fabushi; underlying Linux/platform integration remains with existing Rust/Electron platform owners.",
       "source_symbols": [
         "promise",
         "coroutine",
@@ -3229,9 +3256,9 @@
         "main"
       ],
       "upstream_owner": "cmake/cpp20_coro.cpp",
-      "responsibility": "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability.",
+      "responsibility": "Exact cppgir/expected-lite object audited as part of tdesktop C++ GLib wrapper-generation implementation. Accepted parent cmake_helpers invokes CppGir only from external/glib/generate_cppgir.cmake to generate C++ Gio wrappers; current Fabushi shipping composition has no CppGir/expected-lite consumer, so this implementation-specific build input is non-applicable without removing the underlying Linux/platform responsibility.",
       "responsibilities": [
-        "Audit this exact cppgir/expected-lite source responsibility, symbols, callers and build reachability against existing Fabushi platform/build/runtime owners before production mapping or non-applicability."
+        "Exact cppgir/expected-lite object audited as part of tdesktop C++ GLib wrapper-generation implementation. Accepted parent cmake_helpers invokes CppGir only from external/glib/generate_cppgir.cmake to generate C++ Gio wrappers; current Fabushi shipping composition has no CppGir/expected-lite consumer, so this implementation-specific build input is non-applicable without removing the underlying Linux/platform responsibility."
       ],
       "tests": [
         "GitHub Actions Source authority / recursive inventory",
@@ -3239,11 +3266,14 @@
       ],
       "current_head_evidence": [
         "direct-source-read:gitlab.com/mnauw/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776:57f0fc0ba93c0389b08af8e6586c4ae6fcbcf8ee",
-        "byte-audit: exact bytes read; recomputed Git blob SHA=57f0fc0ba93c0389b08af8e6586c4ae6fcbcf8ee; byte_length=496"
+        "byte-audit: exact bytes read; recomputed Git blob SHA=57f0fc0ba93c0389b08af8e6586c4ae6fcbcf8ee; byte_length=496",
+        "upstream-consumer-audit:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:external/glib/CMakeLists.txt@9b80f230ed6bfc04e496564be26ce41a0778d2e2",
+        "upstream-consumer-audit:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:external/glib/generate_cppgir.cmake@62a3b6d19797951407b13529c2427653754b883c",
+        "fabushi-reachability-audit:bd426b2c9c14fe05eb98e160e75f0a9beed6f318:no-shipping-CppGir-generate_cppgir-GioUnix-expected-lite-consumer"
       ],
-      "evidence_gap": "Consumer/build/shipping reachability and existing-owner production evidence remain open; source reading alone grants no verified status.",
+      "evidence_gap": "No product implementation gap for this exact C++ wrapper-generation dependency object after exact-byte/source-role and two-sided consumer audit; global platform/release acceptance remains open.",
       "production_entrypoints": [
-        "pending exact consumer/reachability and canonical-owner audit"
+        "none: cppgir/expected-lite are not part of current Fabushi shipping runtime or build composition"
       ]
     }
   ]
