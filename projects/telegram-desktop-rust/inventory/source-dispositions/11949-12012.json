@@ -97,14 +97,23 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "xdg-desktop-portal documentation website presentation",
       "source_symbols": [],
-      "responsibility": "Documentation website presentation/navigation/brand asset carries no Fabushi shipping runtime responsibility.",
+      "responsibility": "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner.",
       "fabushi_canonical_owner": "Quality/governance boundary only",
-      "fabushi_target": "No production owner required; retain exact provenance/accounting only."
+      "fabushi_target": "No production owner required; retain exact provenance/accounting only.",
+      "responsibilities": [
+        "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:flatpak/xdg-desktop-portal@23a76c392170dbbd26230f85ef56c3a57e52b857:f8ad38a76f4def9e89325de26d761e11858140fd",
+        "byte-audit:recomputed-git-blob=f8ad38a76f4def9e89325de26d761e11858140fd;byte_length=798;format=bytes",
+        "accepted-build-audit:xdg-desktop-portal documentation is conditional build_documentation/Sphinx content; repository metadata has no runtime install role"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11952,
@@ -149,14 +158,23 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "xdg-desktop-portal documentation website presentation",
       "source_symbols": [],
-      "responsibility": "Documentation website presentation/navigation/brand asset carries no Fabushi shipping runtime responsibility.",
+      "responsibility": "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner.",
       "fabushi_canonical_owner": "Quality/governance boundary only",
-      "fabushi_target": "No production owner required; retain exact provenance/accounting only."
+      "fabushi_target": "No production owner required; retain exact provenance/accounting only.",
+      "responsibilities": [
+        "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:flatpak/xdg-desktop-portal@23a76c392170dbbd26230f85ef56c3a57e52b857:92c6a08adb6b28880d0e86449dd0b67c4ccaf51d",
+        "byte-audit:recomputed-git-blob=92c6a08adb6b28880d0e86449dd0b67c4ccaf51d;byte_length=451;format=bytes",
+        "accepted-build-audit:xdg-desktop-portal documentation is conditional build_documentation/Sphinx content; repository metadata has no runtime install role"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11954,
@@ -305,14 +323,23 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "xdg-desktop-portal documentation website presentation",
       "source_symbols": [],
-      "responsibility": "Documentation website presentation/navigation/brand asset carries no Fabushi shipping runtime responsibility.",
+      "responsibility": "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner.",
       "fabushi_canonical_owner": "Quality/governance boundary only",
-      "fabushi_target": "No production owner required; retain exact provenance/accounting only."
+      "fabushi_target": "No production owner required; retain exact provenance/accounting only.",
+      "responsibilities": [
+        "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:flatpak/xdg-desktop-portal@23a76c392170dbbd26230f85ef56c3a57e52b857:ebadb3b75a25377447bc0d89b7f93504c108142d",
+        "byte-audit:recomputed-git-blob=ebadb3b75a25377447bc0d89b7f93504c108142d;byte_length=357;format=bytes",
+        "accepted-build-audit:xdg-desktop-portal documentation is conditional build_documentation/Sphinx content; repository metadata has no runtime install role"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11960,
@@ -409,14 +436,23 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "xdg-desktop-portal documentation website presentation",
       "source_symbols": [],
-      "responsibility": "Documentation website presentation/navigation/brand asset carries no Fabushi shipping runtime responsibility.",
+      "responsibility": "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner.",
       "fabushi_canonical_owner": "Quality/governance boundary only",
-      "fabushi_target": "No production owner required; retain exact provenance/accounting only."
+      "fabushi_target": "No production owner required; retain exact provenance/accounting only.",
+      "responsibilities": [
+        "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:flatpak/xdg-desktop-portal@23a76c392170dbbd26230f85ef56c3a57e52b857:37b838fa725f0a3a10b9bd61aabe605c4b6362bf",
+        "byte-audit:recomputed-git-blob=37b838fa725f0a3a10b9bd61aabe605c4b6362bf;byte_length=297;format=bytes",
+        "accepted-build-audit:xdg-desktop-portal documentation is conditional build_documentation/Sphinx content; repository metadata has no runtime install role"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11964,
@@ -461,14 +497,23 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "xdg-desktop-portal documentation website presentation",
       "source_symbols": [],
-      "responsibility": "Documentation website presentation/navigation/brand asset carries no Fabushi shipping runtime responsibility.",
+      "responsibility": "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner.",
       "fabushi_canonical_owner": "Quality/governance boundary only",
-      "fabushi_target": "No production owner required; retain exact provenance/accounting only."
+      "fabushi_target": "No production owner required; retain exact provenance/accounting only.",
+      "responsibilities": [
+        "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:flatpak/xdg-desktop-portal@23a76c392170dbbd26230f85ef56c3a57e52b857:95cf1d1bdd4cb9bcdf954f90676ce789d60bcbf2",
+        "byte-audit:recomputed-git-blob=95cf1d1bdd4cb9bcdf954f90676ce789d60bcbf2;byte_length=143;format=bytes",
+        "accepted-build-audit:xdg-desktop-portal documentation is conditional build_documentation/Sphinx content; repository metadata has no runtime install role"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11966,
@@ -487,14 +532,23 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "xdg-desktop-portal documentation website presentation",
       "source_symbols": [],
-      "responsibility": "Documentation website presentation/navigation/brand asset carries no Fabushi shipping runtime responsibility.",
+      "responsibility": "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner.",
       "fabushi_canonical_owner": "Quality/governance boundary only",
-      "fabushi_target": "No production owner required; retain exact provenance/accounting only."
+      "fabushi_target": "No production owner required; retain exact provenance/accounting only.",
+      "responsibilities": [
+        "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:flatpak/xdg-desktop-portal@23a76c392170dbbd26230f85ef56c3a57e52b857:da6c9498b4214e7751d2400673ad3ae4990a8696",
+        "byte-audit:recomputed-git-blob=da6c9498b4214e7751d2400673ad3ae4990a8696;byte_length=1952;format=bytes",
+        "accepted-build-audit:xdg-desktop-portal documentation is conditional build_documentation/Sphinx content; repository metadata has no runtime install role"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11967,
@@ -513,14 +567,23 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "xdg-desktop-portal documentation website presentation",
       "source_symbols": [],
-      "responsibility": "Documentation website presentation/navigation/brand asset carries no Fabushi shipping runtime responsibility.",
+      "responsibility": "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner.",
       "fabushi_canonical_owner": "Quality/governance boundary only",
-      "fabushi_target": "No production owner required; retain exact provenance/accounting only."
+      "fabushi_target": "No production owner required; retain exact provenance/accounting only.",
+      "responsibilities": [
+        "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:flatpak/xdg-desktop-portal@23a76c392170dbbd26230f85ef56c3a57e52b857:4ff8aaa60af1dc81084a91b5d594833b219b6996",
+        "byte-audit:recomputed-git-blob=4ff8aaa60af1dc81084a91b5d594833b219b6996;byte_length=125;format=bytes",
+        "accepted-build-audit:xdg-desktop-portal documentation is conditional build_documentation/Sphinx content; repository metadata has no runtime install role"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11968,
@@ -539,14 +602,23 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "xdg-desktop-portal documentation website presentation",
       "source_symbols": [],
-      "responsibility": "Documentation website presentation/navigation/brand asset carries no Fabushi shipping runtime responsibility.",
+      "responsibility": "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner.",
       "fabushi_canonical_owner": "Quality/governance boundary only",
-      "fabushi_target": "No production owner required; retain exact provenance/accounting only."
+      "fabushi_target": "No production owner required; retain exact provenance/accounting only.",
+      "responsibilities": [
+        "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:flatpak/xdg-desktop-portal@23a76c392170dbbd26230f85ef56c3a57e52b857:672aa0cd589cbb0fde6269afce15ddcd60d524a0",
+        "byte-audit:recomputed-git-blob=672aa0cd589cbb0fde6269afce15ddcd60d524a0;byte_length=202;format=bytes",
+        "accepted-build-audit:xdg-desktop-portal documentation is conditional build_documentation/Sphinx content; repository metadata has no runtime install role"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11969,
@@ -565,14 +637,23 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "xdg-desktop-portal documentation website presentation",
       "source_symbols": [],
-      "responsibility": "Documentation website presentation/navigation/brand asset carries no Fabushi shipping runtime responsibility.",
+      "responsibility": "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner.",
       "fabushi_canonical_owner": "Quality/governance boundary only",
-      "fabushi_target": "No production owner required; retain exact provenance/accounting only."
+      "fabushi_target": "No production owner required; retain exact provenance/accounting only.",
+      "responsibilities": [
+        "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:flatpak/xdg-desktop-portal@23a76c392170dbbd26230f85ef56c3a57e52b857:c7d6e45cadb10a90f5c5a5da1ff87866bdbc559c",
+        "byte-audit:recomputed-git-blob=c7d6e45cadb10a90f5c5a5da1ff87866bdbc559c;byte_length=9350;format=png-complete",
+        "accepted-build-audit:xdg-desktop-portal documentation is conditional build_documentation/Sphinx content; repository metadata has no runtime install role"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11970,
@@ -591,14 +672,23 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "xdg-desktop-portal documentation website presentation",
       "source_symbols": [],
-      "responsibility": "Documentation website presentation/navigation/brand asset carries no Fabushi shipping runtime responsibility.",
+      "responsibility": "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner.",
       "fabushi_canonical_owner": "Quality/governance boundary only",
-      "fabushi_target": "No production owner required; retain exact provenance/accounting only."
+      "fabushi_target": "No production owner required; retain exact provenance/accounting only.",
+      "responsibilities": [
+        "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:flatpak/xdg-desktop-portal@23a76c392170dbbd26230f85ef56c3a57e52b857:d82c734b7b8a6bc38e8df8bfbcfc87330b9fe2dd",
+        "byte-audit:recomputed-git-blob=d82c734b7b8a6bc38e8df8bfbcfc87330b9fe2dd;byte_length=25409;format=png-complete",
+        "accepted-build-audit:xdg-desktop-portal documentation is conditional build_documentation/Sphinx content; repository metadata has no runtime install role"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11971,
@@ -617,14 +707,23 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "xdg-desktop-portal documentation website presentation",
       "source_symbols": [],
-      "responsibility": "Documentation website presentation/navigation/brand asset carries no Fabushi shipping runtime responsibility.",
+      "responsibility": "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner.",
       "fabushi_canonical_owner": "Quality/governance boundary only",
-      "fabushi_target": "No production owner required; retain exact provenance/accounting only."
+      "fabushi_target": "No production owner required; retain exact provenance/accounting only.",
+      "responsibilities": [
+        "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:flatpak/xdg-desktop-portal@23a76c392170dbbd26230f85ef56c3a57e52b857:829e065d485d2ccaf25ca3fb08e5b659546295f7",
+        "byte-audit:recomputed-git-blob=829e065d485d2ccaf25ca3fb08e5b659546295f7;byte_length=8463;format=png-complete",
+        "accepted-build-audit:xdg-desktop-portal documentation is conditional build_documentation/Sphinx content; repository metadata has no runtime install role"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11972,
@@ -643,14 +742,23 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "xdg-desktop-portal documentation website presentation",
       "source_symbols": [],
-      "responsibility": "Documentation website presentation/navigation/brand asset carries no Fabushi shipping runtime responsibility.",
+      "responsibility": "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner.",
       "fabushi_canonical_owner": "Quality/governance boundary only",
-      "fabushi_target": "No production owner required; retain exact provenance/accounting only."
+      "fabushi_target": "No production owner required; retain exact provenance/accounting only.",
+      "responsibilities": [
+        "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:flatpak/xdg-desktop-portal@23a76c392170dbbd26230f85ef56c3a57e52b857:3f59a495fabfdd218bdce0de689e36146385fd1d",
+        "byte-audit:recomputed-git-blob=3f59a495fabfdd218bdce0de689e36146385fd1d;byte_length=578;format=png-complete",
+        "accepted-build-audit:xdg-desktop-portal documentation is conditional build_documentation/Sphinx content; repository metadata has no runtime install role"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11973,
@@ -669,14 +777,23 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "xdg-desktop-portal documentation website presentation",
       "source_symbols": [],
-      "responsibility": "Documentation website presentation/navigation/brand asset carries no Fabushi shipping runtime responsibility.",
+      "responsibility": "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner.",
       "fabushi_canonical_owner": "Quality/governance boundary only",
-      "fabushi_target": "No production owner required; retain exact provenance/accounting only."
+      "fabushi_target": "No production owner required; retain exact provenance/accounting only.",
+      "responsibilities": [
+        "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:flatpak/xdg-desktop-portal@23a76c392170dbbd26230f85ef56c3a57e52b857:13747490f2925dd7ce6e87cf995a72c193bbdfd5",
+        "byte-audit:recomputed-git-blob=13747490f2925dd7ce6e87cf995a72c193bbdfd5;byte_length=38230;format=png-complete",
+        "accepted-build-audit:xdg-desktop-portal documentation is conditional build_documentation/Sphinx content; repository metadata has no runtime install role"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11974,
@@ -695,14 +812,23 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "xdg-desktop-portal documentation website presentation",
       "source_symbols": [],
-      "responsibility": "Documentation website presentation/navigation/brand asset carries no Fabushi shipping runtime responsibility.",
+      "responsibility": "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner.",
       "fabushi_canonical_owner": "Quality/governance boundary only",
-      "fabushi_target": "No production owner required; retain exact provenance/accounting only."
+      "fabushi_target": "No production owner required; retain exact provenance/accounting only.",
+      "responsibilities": [
+        "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:flatpak/xdg-desktop-portal@23a76c392170dbbd26230f85ef56c3a57e52b857:0730042b9acea14629a415cf0e6007c405f57c07",
+        "byte-audit:recomputed-git-blob=0730042b9acea14629a415cf0e6007c405f57c07;byte_length=14088;format=svg",
+        "accepted-build-audit:xdg-desktop-portal documentation is conditional build_documentation/Sphinx content; repository metadata has no runtime install role"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11975,
@@ -721,14 +847,23 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "xdg-desktop-portal documentation website presentation",
       "source_symbols": [],
-      "responsibility": "Documentation website presentation/navigation/brand asset carries no Fabushi shipping runtime responsibility.",
+      "responsibility": "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner.",
       "fabushi_canonical_owner": "Quality/governance boundary only",
-      "fabushi_target": "No production owner required; retain exact provenance/accounting only."
+      "fabushi_target": "No production owner required; retain exact provenance/accounting only.",
+      "responsibilities": [
+        "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:flatpak/xdg-desktop-portal@23a76c392170dbbd26230f85ef56c3a57e52b857:3eaa0fb9f43f434071b98ad492bd391ad68008b4",
+        "byte-audit:recomputed-git-blob=3eaa0fb9f43f434071b98ad492bd391ad68008b4;byte_length=3271;format=png-complete",
+        "accepted-build-audit:xdg-desktop-portal documentation is conditional build_documentation/Sphinx content; repository metadata has no runtime install role"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11976,
@@ -747,14 +882,23 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "xdg-desktop-portal documentation website presentation",
       "source_symbols": [],
-      "responsibility": "Documentation website presentation/navigation/brand asset carries no Fabushi shipping runtime responsibility.",
+      "responsibility": "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner.",
       "fabushi_canonical_owner": "Quality/governance boundary only",
-      "fabushi_target": "No production owner required; retain exact provenance/accounting only."
+      "fabushi_target": "No production owner required; retain exact provenance/accounting only.",
+      "responsibilities": [
+        "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:flatpak/xdg-desktop-portal@23a76c392170dbbd26230f85ef56c3a57e52b857:5c5136d7af1ae06162974a7dac9f44cfd1413ed8",
+        "byte-audit:recomputed-git-blob=5c5136d7af1ae06162974a7dac9f44cfd1413ed8;byte_length=3242;format=png-complete",
+        "accepted-build-audit:xdg-desktop-portal documentation is conditional build_documentation/Sphinx content; repository metadata has no runtime install role"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11977,
@@ -773,14 +917,23 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "xdg-desktop-portal documentation website presentation",
       "source_symbols": [],
-      "responsibility": "Documentation website presentation/navigation/brand asset carries no Fabushi shipping runtime responsibility.",
+      "responsibility": "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner.",
       "fabushi_canonical_owner": "Quality/governance boundary only",
-      "fabushi_target": "No production owner required; retain exact provenance/accounting only."
+      "fabushi_target": "No production owner required; retain exact provenance/accounting only.",
+      "responsibilities": [
+        "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:flatpak/xdg-desktop-portal@23a76c392170dbbd26230f85ef56c3a57e52b857:8ca4a2ab1a3e69878d5c40e0502c1f76e9d53e43",
+        "byte-audit:recomputed-git-blob=8ca4a2ab1a3e69878d5c40e0502c1f76e9d53e43;byte_length=10573;format=svg",
+        "accepted-build-audit:xdg-desktop-portal documentation is conditional build_documentation/Sphinx content; repository metadata has no runtime install role"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11978,
@@ -799,14 +952,23 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "xdg-desktop-portal documentation website presentation",
       "source_symbols": [],
-      "responsibility": "Documentation website presentation/navigation/brand asset carries no Fabushi shipping runtime responsibility.",
+      "responsibility": "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner.",
       "fabushi_canonical_owner": "Quality/governance boundary only",
-      "fabushi_target": "No production owner required; retain exact provenance/accounting only."
+      "fabushi_target": "No production owner required; retain exact provenance/accounting only.",
+      "responsibilities": [
+        "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:flatpak/xdg-desktop-portal@23a76c392170dbbd26230f85ef56c3a57e52b857:45285e96cf62d5135fecce4595daae842f078843",
+        "byte-audit:recomputed-git-blob=45285e96cf62d5135fecce4595daae842f078843;byte_length=10571;format=svg",
+        "accepted-build-audit:xdg-desktop-portal documentation is conditional build_documentation/Sphinx content; repository metadata has no runtime install role"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11979,
@@ -825,14 +987,23 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "xdg-desktop-portal documentation website presentation",
       "source_symbols": [],
-      "responsibility": "Documentation website presentation/navigation/brand asset carries no Fabushi shipping runtime responsibility.",
+      "responsibility": "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner.",
       "fabushi_canonical_owner": "Quality/governance boundary only",
-      "fabushi_target": "No production owner required; retain exact provenance/accounting only."
+      "fabushi_target": "No production owner required; retain exact provenance/accounting only.",
+      "responsibilities": [
+        "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:flatpak/xdg-desktop-portal@23a76c392170dbbd26230f85ef56c3a57e52b857:02405bb27b8d3c9bc26849e98df0a5f1bda4d6bc",
+        "byte-audit:recomputed-git-blob=02405bb27b8d3c9bc26849e98df0a5f1bda4d6bc;byte_length=14579;format=png-complete",
+        "accepted-build-audit:xdg-desktop-portal documentation is conditional build_documentation/Sphinx content; repository metadata has no runtime install role"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11980,
@@ -851,14 +1022,23 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "xdg-desktop-portal documentation website presentation",
       "source_symbols": [],
-      "responsibility": "Documentation website presentation/navigation/brand asset carries no Fabushi shipping runtime responsibility.",
+      "responsibility": "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner.",
       "fabushi_canonical_owner": "Quality/governance boundary only",
-      "fabushi_target": "No production owner required; retain exact provenance/accounting only."
+      "fabushi_target": "No production owner required; retain exact provenance/accounting only.",
+      "responsibilities": [
+        "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:flatpak/xdg-desktop-portal@23a76c392170dbbd26230f85ef56c3a57e52b857:29d781b389e86f956fb77bf585565bcd533e34c6",
+        "byte-audit:recomputed-git-blob=29d781b389e86f956fb77bf585565bcd533e34c6;byte_length=18735;format=png-complete",
+        "accepted-build-audit:xdg-desktop-portal documentation is conditional build_documentation/Sphinx content; repository metadata has no runtime install role"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11981,
@@ -877,14 +1057,23 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "xdg-desktop-portal documentation website presentation",
       "source_symbols": [],
-      "responsibility": "Documentation website presentation/navigation/brand asset carries no Fabushi shipping runtime responsibility.",
+      "responsibility": "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner.",
       "fabushi_canonical_owner": "Quality/governance boundary only",
-      "fabushi_target": "No production owner required; retain exact provenance/accounting only."
+      "fabushi_target": "No production owner required; retain exact provenance/accounting only.",
+      "responsibilities": [
+        "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:flatpak/xdg-desktop-portal@23a76c392170dbbd26230f85ef56c3a57e52b857:2fc8094a4606ab8733889ef291d671386c7a87e6",
+        "byte-audit:recomputed-git-blob=2fc8094a4606ab8733889ef291d671386c7a87e6;byte_length=10348;format=png-complete",
+        "accepted-build-audit:xdg-desktop-portal documentation is conditional build_documentation/Sphinx content; repository metadata has no runtime install role"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11982,
@@ -903,14 +1092,23 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "xdg-desktop-portal documentation website presentation",
       "source_symbols": [],
-      "responsibility": "Documentation website presentation/navigation/brand asset carries no Fabushi shipping runtime responsibility.",
+      "responsibility": "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner.",
       "fabushi_canonical_owner": "Quality/governance boundary only",
-      "fabushi_target": "No production owner required; retain exact provenance/accounting only."
+      "fabushi_target": "No production owner required; retain exact provenance/accounting only.",
+      "responsibilities": [
+        "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:flatpak/xdg-desktop-portal@23a76c392170dbbd26230f85ef56c3a57e52b857:caca24d3f0bc7ccf76c4f919c8de75d206d4712f",
+        "byte-audit:recomputed-git-blob=caca24d3f0bc7ccf76c4f919c8de75d206d4712f;byte_length=981;format=png-complete",
+        "accepted-build-audit:xdg-desktop-portal documentation is conditional build_documentation/Sphinx content; repository metadata has no runtime install role"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11983,
@@ -929,14 +1127,23 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "xdg-desktop-portal documentation website presentation",
       "source_symbols": [],
-      "responsibility": "Documentation website presentation/navigation/brand asset carries no Fabushi shipping runtime responsibility.",
+      "responsibility": "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner.",
       "fabushi_canonical_owner": "Quality/governance boundary only",
-      "fabushi_target": "No production owner required; retain exact provenance/accounting only."
+      "fabushi_target": "No production owner required; retain exact provenance/accounting only.",
+      "responsibilities": [
+        "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:flatpak/xdg-desktop-portal@23a76c392170dbbd26230f85ef56c3a57e52b857:556f8aac1462b6dbeb37b901f3ca68f849603033",
+        "byte-audit:recomputed-git-blob=556f8aac1462b6dbeb37b901f3ca68f849603033;byte_length=1544;format=png-complete",
+        "accepted-build-audit:xdg-desktop-portal documentation is conditional build_documentation/Sphinx content; repository metadata has no runtime install role"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11984,
@@ -955,14 +1162,23 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "xdg-desktop-portal documentation website presentation",
       "source_symbols": [],
-      "responsibility": "Documentation website presentation/navigation/brand asset carries no Fabushi shipping runtime responsibility.",
+      "responsibility": "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner.",
       "fabushi_canonical_owner": "Quality/governance boundary only",
-      "fabushi_target": "No production owner required; retain exact provenance/accounting only."
+      "fabushi_target": "No production owner required; retain exact provenance/accounting only.",
+      "responsibilities": [
+        "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:flatpak/xdg-desktop-portal@23a76c392170dbbd26230f85ef56c3a57e52b857:158a9640b28fdc42399e79665c381c27af4244af",
+        "byte-audit:recomputed-git-blob=158a9640b28fdc42399e79665c381c27af4244af;byte_length=15086;format=ico",
+        "accepted-build-audit:xdg-desktop-portal documentation is conditional build_documentation/Sphinx content; repository metadata has no runtime install role"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11985,
@@ -981,14 +1197,23 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "xdg-desktop-portal documentation website presentation",
       "source_symbols": [],
-      "responsibility": "Documentation website presentation/navigation/brand asset carries no Fabushi shipping runtime responsibility.",
+      "responsibility": "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner.",
       "fabushi_canonical_owner": "Quality/governance boundary only",
-      "fabushi_target": "No production owner required; retain exact provenance/accounting only."
+      "fabushi_target": "No production owner required; retain exact provenance/accounting only.",
+      "responsibilities": [
+        "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:flatpak/xdg-desktop-portal@23a76c392170dbbd26230f85ef56c3a57e52b857:3f65ec5d74b7fe47af42f350c93eaabd37d59abb",
+        "byte-audit:recomputed-git-blob=3f65ec5d74b7fe47af42f350c93eaabd37d59abb;byte_length=4476;format=svg",
+        "accepted-build-audit:xdg-desktop-portal documentation is conditional build_documentation/Sphinx content; repository metadata has no runtime install role"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11986,
@@ -1007,14 +1232,23 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "xdg-desktop-portal documentation website presentation",
       "source_symbols": [],
-      "responsibility": "Documentation website presentation/navigation/brand asset carries no Fabushi shipping runtime responsibility.",
+      "responsibility": "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner.",
       "fabushi_canonical_owner": "Quality/governance boundary only",
-      "fabushi_target": "No production owner required; retain exact provenance/accounting only."
+      "fabushi_target": "No production owner required; retain exact provenance/accounting only.",
+      "responsibilities": [
+        "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:flatpak/xdg-desktop-portal@23a76c392170dbbd26230f85ef56c3a57e52b857:365eedc50cd0f46ea35a3176335fc67b51123fb4",
+        "byte-audit:recomputed-git-blob=365eedc50cd0f46ea35a3176335fc67b51123fb4;byte_length=324864;format=woff2",
+        "accepted-build-audit:xdg-desktop-portal documentation is conditional build_documentation/Sphinx content; repository metadata has no runtime install role"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11987,
@@ -1059,14 +1293,23 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "xdg-desktop-portal documentation website presentation",
       "source_symbols": [],
-      "responsibility": "Documentation website presentation/navigation/brand asset carries no Fabushi shipping runtime responsibility.",
+      "responsibility": "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner.",
       "fabushi_canonical_owner": "Quality/governance boundary only",
-      "fabushi_target": "No production owner required; retain exact provenance/accounting only."
+      "fabushi_target": "No production owner required; retain exact provenance/accounting only.",
+      "responsibilities": [
+        "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:flatpak/xdg-desktop-portal@23a76c392170dbbd26230f85ef56c3a57e52b857:d3a4714d903a398265874b5b801b6073b22bd727",
+        "byte-audit:recomputed-git-blob=d3a4714d903a398265874b5b801b6073b22bd727;byte_length=3010;format=svg",
+        "accepted-build-audit:xdg-desktop-portal documentation is conditional build_documentation/Sphinx content; repository metadata has no runtime install role"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11989,
@@ -1085,14 +1328,23 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "xdg-desktop-portal documentation website presentation",
       "source_symbols": [],
-      "responsibility": "Documentation website presentation/navigation/brand asset carries no Fabushi shipping runtime responsibility.",
+      "responsibility": "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner.",
       "fabushi_canonical_owner": "Quality/governance boundary only",
-      "fabushi_target": "No production owner required; retain exact provenance/accounting only."
+      "fabushi_target": "No production owner required; retain exact provenance/accounting only.",
+      "responsibilities": [
+        "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:flatpak/xdg-desktop-portal@23a76c392170dbbd26230f85ef56c3a57e52b857:286e44f5b9c4bba3012c6e0f5a650383db27e508",
+        "byte-audit:recomputed-git-blob=286e44f5b9c4bba3012c6e0f5a650383db27e508;byte_length=430;format=bytes",
+        "accepted-build-audit:xdg-desktop-portal documentation is conditional build_documentation/Sphinx content; repository metadata has no runtime install role"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11990,
@@ -1111,14 +1363,23 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "xdg-desktop-portal documentation website presentation",
       "source_symbols": [],
-      "responsibility": "Documentation website presentation/navigation/brand asset carries no Fabushi shipping runtime responsibility.",
+      "responsibility": "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner.",
       "fabushi_canonical_owner": "Quality/governance boundary only",
-      "fabushi_target": "No production owner required; retain exact provenance/accounting only."
+      "fabushi_target": "No production owner required; retain exact provenance/accounting only.",
+      "responsibilities": [
+        "Exact xdg-desktop-portal repository/documentation presentation object audited as non-shipping input. Fabushi retains applicable Linux portal protocol/capability responsibilities in canonical platform owners; this doc/site/repository object is not a runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:flatpak/xdg-desktop-portal@23a76c392170dbbd26230f85ef56c3a57e52b857:77d36795e7cee58f4f18d56214a12af6c4c186c0",
+        "byte-audit:recomputed-git-blob=77d36795e7cee58f4f18d56214a12af6c4c186c0;byte_length=8785;format=bytes",
+        "accepted-build-audit:xdg-desktop-portal documentation is conditional build_documentation/Sphinx content; repository metadata has no runtime install role"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11991,

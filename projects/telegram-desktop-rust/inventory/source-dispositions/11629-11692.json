@@ -1454,16 +1454,25 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "tgcalls iOS audio-session/audio-device implementation",
       "source_symbols": [
         "RTCAudioSession configuration category"
       ],
-      "responsibility": "This file is iOS-specific AVAudioSession/AudioUnit/voice-processing or call-tone implementation and is not shipped by Fabushi Desktop. Its interruption, route-change, lock, retry, start/stop and teardown semantics are recorded individually without importing an iOS runtime.",
+      "responsibility": "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner.",
       "fabushi_canonical_owner": "Platform boundary evidence only",
-      "fabushi_target": "No Desktop iOS shipping owner; portable audio lifecycle maps to existing CallSession/platform audio contracts."
+      "fabushi_target": "No Desktop iOS shipping owner; portable audio lifecycle maps to existing CallSession/platform audio contracts.",
+      "responsibilities": [
+        "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:TelegramMessenger/tgcalls@1c236c09f8d8569fead14bd68000618a52051225:81b595db91d67c7dd55d7d9c47dc0ed9bb65719a",
+        "byte-audit:recomputed-git-blob=81b595db91d67c7dd55d7d9c47dc0ed9bb65719a;byte_length=6930;format=platform-source",
+        "platform-reachability-audit:path=tgcalls/platform/darwin/iOS/RTCAudioSession+Configuration.mm; target=Fabushi Desktop; platform-specific ios implementation excluded without excluding portable call responsibility"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11680,
@@ -1482,16 +1491,25 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "tgcalls iOS audio-session/audio-device implementation",
       "source_symbols": [
         "RTCAudioSession private contract"
       ],
-      "responsibility": "This file is iOS-specific AVAudioSession/AudioUnit/voice-processing or call-tone implementation and is not shipped by Fabushi Desktop. Its interruption, route-change, lock, retry, start/stop and teardown semantics are recorded individually without importing an iOS runtime.",
+      "responsibility": "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner.",
       "fabushi_canonical_owner": "Platform boundary evidence only",
-      "fabushi_target": "No Desktop iOS shipping owner; portable audio lifecycle maps to existing CallSession/platform audio contracts."
+      "fabushi_target": "No Desktop iOS shipping owner; portable audio lifecycle maps to existing CallSession/platform audio contracts.",
+      "responsibilities": [
+        "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:TelegramMessenger/tgcalls@1c236c09f8d8569fead14bd68000618a52051225:02578c3ce16b73e33c2002dd39c968789822b41c",
+        "byte-audit:recomputed-git-blob=02578c3ce16b73e33c2002dd39c968789822b41c;byte_length=3786;format=platform-source",
+        "platform-reachability-audit:path=tgcalls/platform/darwin/iOS/RTCAudioSession+Private.h; target=Fabushi Desktop; platform-specific ios implementation excluded without excluding portable call responsibility"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11681,
@@ -1510,16 +1528,25 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "tgcalls iOS audio-session/audio-device implementation",
       "source_symbols": [
         "RTCAudioSession"
       ],
-      "responsibility": "This file is iOS-specific AVAudioSession/AudioUnit/voice-processing or call-tone implementation and is not shipped by Fabushi Desktop. Its interruption, route-change, lock, retry, start/stop and teardown semantics are recorded individually without importing an iOS runtime.",
+      "responsibility": "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner.",
       "fabushi_canonical_owner": "Platform boundary evidence only",
-      "fabushi_target": "No Desktop iOS shipping owner; portable audio lifecycle maps to existing CallSession/platform audio contracts."
+      "fabushi_target": "No Desktop iOS shipping owner; portable audio lifecycle maps to existing CallSession/platform audio contracts.",
+      "responsibilities": [
+        "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:TelegramMessenger/tgcalls@1c236c09f8d8569fead14bd68000618a52051225:bcaecd639429d463d8e977acdad531acb444b9a1",
+        "byte-audit:recomputed-git-blob=bcaecd639429d463d8e977acdad531acb444b9a1;byte_length=11716;format=platform-source",
+        "platform-reachability-audit:path=tgcalls/platform/darwin/iOS/RTCAudioSession.h; target=Fabushi Desktop; platform-specific ios implementation excluded without excluding portable call responsibility"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11682,
@@ -1538,16 +1565,25 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "tgcalls iOS audio-session/audio-device implementation",
       "source_symbols": [
         "RTCAudioSession singleton/delegate/lock lifecycle"
       ],
-      "responsibility": "This file is iOS-specific AVAudioSession/AudioUnit/voice-processing or call-tone implementation and is not shipped by Fabushi Desktop. Its interruption, route-change, lock, retry, start/stop and teardown semantics are recorded individually without importing an iOS runtime.",
+      "responsibility": "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner.",
       "fabushi_canonical_owner": "Platform boundary evidence only",
-      "fabushi_target": "No Desktop iOS shipping owner; portable audio lifecycle maps to existing CallSession/platform audio contracts."
+      "fabushi_target": "No Desktop iOS shipping owner; portable audio lifecycle maps to existing CallSession/platform audio contracts.",
+      "responsibilities": [
+        "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:TelegramMessenger/tgcalls@1c236c09f8d8569fead14bd68000618a52051225:2528f71c844376ccd3ade0d98bdae495dae1466f",
+        "byte-audit:recomputed-git-blob=2528f71c844376ccd3ade0d98bdae495dae1466f;byte_length=32025;format=platform-source",
+        "platform-reachability-audit:path=tgcalls/platform/darwin/iOS/RTCAudioSession.mm; target=Fabushi Desktop; platform-specific ios implementation excluded without excluding portable call responsibility"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11683,
@@ -1566,16 +1602,25 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "tgcalls iOS audio-session/audio-device implementation",
       "source_symbols": [
         "RTCAudioSessionConfiguration"
       ],
-      "responsibility": "This file is iOS-specific AVAudioSession/AudioUnit/voice-processing or call-tone implementation and is not shipped by Fabushi Desktop. Its interruption, route-change, lock, retry, start/stop and teardown semantics are recorded individually without importing an iOS runtime.",
+      "responsibility": "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner.",
       "fabushi_canonical_owner": "Platform boundary evidence only",
-      "fabushi_target": "No Desktop iOS shipping owner; portable audio lifecycle maps to existing CallSession/platform audio contracts."
+      "fabushi_target": "No Desktop iOS shipping owner; portable audio lifecycle maps to existing CallSession/platform audio contracts.",
+      "responsibilities": [
+        "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:TelegramMessenger/tgcalls@1c236c09f8d8569fead14bd68000618a52051225:81826958742bb3d5040a1966f3d60c3c63e3eaad",
+        "byte-audit:recomputed-git-blob=81826958742bb3d5040a1966f3d60c3c63e3eaad;byte_length=1805;format=platform-source",
+        "platform-reachability-audit:path=tgcalls/platform/darwin/iOS/RTCAudioSessionConfiguration.h; target=Fabushi Desktop; platform-specific ios implementation excluded without excluding portable call responsibility"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11684,
@@ -1594,16 +1639,25 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "tgcalls iOS audio-session/audio-device implementation",
       "source_symbols": [
         "RTCAudioSessionConfiguration defaults"
       ],
-      "responsibility": "This file is iOS-specific AVAudioSession/AudioUnit/voice-processing or call-tone implementation and is not shipped by Fabushi Desktop. Its interruption, route-change, lock, retry, start/stop and teardown semantics are recorded individually without importing an iOS runtime.",
+      "responsibility": "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner.",
       "fabushi_canonical_owner": "Platform boundary evidence only",
-      "fabushi_target": "No Desktop iOS shipping owner; portable audio lifecycle maps to existing CallSession/platform audio contracts."
+      "fabushi_target": "No Desktop iOS shipping owner; portable audio lifecycle maps to existing CallSession/platform audio contracts.",
+      "responsibilities": [
+        "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:TelegramMessenger/tgcalls@1c236c09f8d8569fead14bd68000618a52051225:2389c3d3d28e794d74dc25f1c55ff7bff702ec30",
+        "byte-audit:recomputed-git-blob=2389c3d3d28e794d74dc25f1c55ff7bff702ec30;byte_length=6213;format=platform-source",
+        "platform-reachability-audit:path=tgcalls/platform/darwin/iOS/RTCAudioSessionConfiguration.mm; target=Fabushi Desktop; platform-specific ios implementation excluded without excluding portable call responsibility"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11685,
@@ -1622,16 +1676,25 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "tgcalls iOS audio-session/audio-device implementation",
       "source_symbols": [
         "RTCNativeAudioSessionDelegateAdapter"
       ],
-      "responsibility": "This file is iOS-specific AVAudioSession/AudioUnit/voice-processing or call-tone implementation and is not shipped by Fabushi Desktop. Its interruption, route-change, lock, retry, start/stop and teardown semantics are recorded individually without importing an iOS runtime.",
+      "responsibility": "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner.",
       "fabushi_canonical_owner": "Platform boundary evidence only",
-      "fabushi_target": "No Desktop iOS shipping owner; portable audio lifecycle maps to existing CallSession/platform audio contracts."
+      "fabushi_target": "No Desktop iOS shipping owner; portable audio lifecycle maps to existing CallSession/platform audio contracts.",
+      "responsibilities": [
+        "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:TelegramMessenger/tgcalls@1c236c09f8d8569fead14bd68000618a52051225:6a75f014790e0397bfbba28bbedb63e470e54bbc",
+        "byte-audit:recomputed-git-blob=6a75f014790e0397bfbba28bbedb63e470e54bbc;byte_length=997;format=platform-source",
+        "platform-reachability-audit:path=tgcalls/platform/darwin/iOS/RTCNativeAudioSessionDelegateAdapter.h; target=Fabushi Desktop; platform-specific ios implementation excluded without excluding portable call responsibility"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11686,
@@ -1650,16 +1713,25 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "tgcalls iOS audio-session/audio-device implementation",
       "source_symbols": [
         "RTCNativeAudioSessionDelegateAdapter implementation"
       ],
-      "responsibility": "This file is iOS-specific AVAudioSession/AudioUnit/voice-processing or call-tone implementation and is not shipped by Fabushi Desktop. Its interruption, route-change, lock, retry, start/stop and teardown semantics are recorded individually without importing an iOS runtime.",
+      "responsibility": "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner.",
       "fabushi_canonical_owner": "Platform boundary evidence only",
-      "fabushi_target": "No Desktop iOS shipping owner; portable audio lifecycle maps to existing CallSession/platform audio contracts."
+      "fabushi_target": "No Desktop iOS shipping owner; portable audio lifecycle maps to existing CallSession/platform audio contracts.",
+      "responsibilities": [
+        "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:TelegramMessenger/tgcalls@1c236c09f8d8569fead14bd68000618a52051225:daddf314a43c4f8af8c2d96299de02f01db7e8cf",
+        "byte-audit:recomputed-git-blob=daddf314a43c4f8af8c2d96299de02f01db7e8cf;byte_length=3273;format=platform-source",
+        "platform-reachability-audit:path=tgcalls/platform/darwin/iOS/RTCNativeAudioSessionDelegateAdapter.mm; target=Fabushi Desktop; platform-specific ios implementation excluded without excluding portable call responsibility"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11687,
@@ -1678,16 +1750,25 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "tgcalls iOS audio-session/audio-device implementation",
       "source_symbols": [
         "AudioDeviceIOS"
       ],
-      "responsibility": "This file is iOS-specific AVAudioSession/AudioUnit/voice-processing or call-tone implementation and is not shipped by Fabushi Desktop. Its interruption, route-change, lock, retry, start/stop and teardown semantics are recorded individually without importing an iOS runtime.",
+      "responsibility": "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner.",
       "fabushi_canonical_owner": "Platform boundary evidence only",
-      "fabushi_target": "No Desktop iOS shipping owner; portable audio lifecycle maps to existing CallSession/platform audio contracts."
+      "fabushi_target": "No Desktop iOS shipping owner; portable audio lifecycle maps to existing CallSession/platform audio contracts.",
+      "responsibilities": [
+        "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:TelegramMessenger/tgcalls@1c236c09f8d8569fead14bd68000618a52051225:cfb07f07673d3b8c5b0e9fe1480a3b3ba369107a",
+        "byte-audit:recomputed-git-blob=cfb07f07673d3b8c5b0e9fe1480a3b3ba369107a;byte_length=14250;format=platform-source",
+        "platform-reachability-audit:path=tgcalls/platform/darwin/iOS/tgcalls_audio_device_ios.h; target=Fabushi Desktop; platform-specific ios implementation excluded without excluding portable call responsibility"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11688,
@@ -1706,16 +1787,25 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "tgcalls iOS audio-session/audio-device implementation",
       "source_symbols": [
         "AudioDeviceIOS interruption/route/play-record lifecycle"
       ],
-      "responsibility": "This file is iOS-specific AVAudioSession/AudioUnit/voice-processing or call-tone implementation and is not shipped by Fabushi Desktop. Its interruption, route-change, lock, retry, start/stop and teardown semantics are recorded individually without importing an iOS runtime.",
+      "responsibility": "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner.",
       "fabushi_canonical_owner": "Platform boundary evidence only",
-      "fabushi_target": "No Desktop iOS shipping owner; portable audio lifecycle maps to existing CallSession/platform audio contracts."
+      "fabushi_target": "No Desktop iOS shipping owner; portable audio lifecycle maps to existing CallSession/platform audio contracts.",
+      "responsibilities": [
+        "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:TelegramMessenger/tgcalls@1c236c09f8d8569fead14bd68000618a52051225:8b74e01a863eb257cf3faa17e3c734e503928e9a",
+        "byte-audit:recomputed-git-blob=8b74e01a863eb257cf3faa17e3c734e503928e9a;byte_length=42983;format=platform-source",
+        "platform-reachability-audit:path=tgcalls/platform/darwin/iOS/tgcalls_audio_device_ios.mm; target=Fabushi Desktop; platform-specific ios implementation excluded without excluding portable call responsibility"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11689,
@@ -1734,16 +1824,25 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "tgcalls iOS audio-session/audio-device implementation",
       "source_symbols": [
         "AudioDeviceModuleIOS"
       ],
-      "responsibility": "This file is iOS-specific AVAudioSession/AudioUnit/voice-processing or call-tone implementation and is not shipped by Fabushi Desktop. Its interruption, route-change, lock, retry, start/stop and teardown semantics are recorded individually without importing an iOS runtime.",
+      "responsibility": "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner.",
       "fabushi_canonical_owner": "Platform boundary evidence only",
-      "fabushi_target": "No Desktop iOS shipping owner; portable audio lifecycle maps to existing CallSession/platform audio contracts."
+      "fabushi_target": "No Desktop iOS shipping owner; portable audio lifecycle maps to existing CallSession/platform audio contracts.",
+      "responsibilities": [
+        "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:TelegramMessenger/tgcalls@1c236c09f8d8569fead14bd68000618a52051225:4684193345cd80c36fa2f2f7f57f9ebf29e5839b",
+        "byte-audit:recomputed-git-blob=4684193345cd80c36fa2f2f7f57f9ebf29e5839b;byte_length=5901;format=platform-source",
+        "platform-reachability-audit:path=tgcalls/platform/darwin/iOS/tgcalls_audio_device_module_ios.h; target=Fabushi Desktop; platform-specific ios implementation excluded without excluding portable call responsibility"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11690,
@@ -1762,17 +1861,26 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "tgcalls iOS audio-session/audio-device implementation",
       "source_symbols": [
         "CreateAudioDeviceModule",
         "AudioDeviceModuleIOS"
       ],
-      "responsibility": "This file is iOS-specific AVAudioSession/AudioUnit/voice-processing or call-tone implementation and is not shipped by Fabushi Desktop. Its interruption, route-change, lock, retry, start/stop and teardown semantics are recorded individually without importing an iOS runtime.",
+      "responsibility": "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner.",
       "fabushi_canonical_owner": "Platform boundary evidence only",
-      "fabushi_target": "No Desktop iOS shipping owner; portable audio lifecycle maps to existing CallSession/platform audio contracts."
+      "fabushi_target": "No Desktop iOS shipping owner; portable audio lifecycle maps to existing CallSession/platform audio contracts.",
+      "responsibilities": [
+        "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:TelegramMessenger/tgcalls@1c236c09f8d8569fead14bd68000618a52051225:33c2a0f463050cfb9c1ccda098e5b93a3acdce5f",
+        "byte-audit:recomputed-git-blob=33c2a0f463050cfb9c1ccda098e5b93a3acdce5f;byte_length=23396;format=platform-source",
+        "platform-reachability-audit:path=tgcalls/platform/darwin/iOS/tgcalls_audio_device_module_ios.mm; target=Fabushi Desktop; platform-specific ios implementation excluded without excluding portable call responsibility"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11691,
@@ -1791,17 +1899,26 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "tgcalls iOS audio-session/audio-device implementation",
       "source_symbols": [
         "VoiceProcessingAudioUnit",
         "State"
       ],
-      "responsibility": "This file is iOS-specific AVAudioSession/AudioUnit/voice-processing or call-tone implementation and is not shipped by Fabushi Desktop. Its interruption, route-change, lock, retry, start/stop and teardown semantics are recorded individually without importing an iOS runtime.",
+      "responsibility": "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner.",
       "fabushi_canonical_owner": "Platform boundary evidence only",
-      "fabushi_target": "No Desktop iOS shipping owner; portable audio lifecycle maps to existing CallSession/platform audio contracts."
+      "fabushi_target": "No Desktop iOS shipping owner; portable audio lifecycle maps to existing CallSession/platform audio contracts.",
+      "responsibilities": [
+        "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:TelegramMessenger/tgcalls@1c236c09f8d8569fead14bd68000618a52051225:a647de6a6682c14bd7c9e884783dd9adf797c2f7",
+        "byte-audit:recomputed-git-blob=a647de6a6682c14bd7c9e884783dd9adf797c2f7;byte_length=6301;format=platform-source",
+        "platform-reachability-audit:path=tgcalls/platform/darwin/iOS/tgcalls_voice_processing_audio_unit.h; target=Fabushi Desktop; platform-specific ios implementation excluded without excluding portable call responsibility"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11692,
@@ -1820,16 +1937,25 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "tgcalls iOS audio-session/audio-device implementation",
       "source_symbols": [
         "VoiceProcessingAudioUnit initialize/start/stop/retry callbacks"
       ],
-      "responsibility": "This file is iOS-specific AVAudioSession/AudioUnit/voice-processing or call-tone implementation and is not shipped by Fabushi Desktop. Its interruption, route-change, lock, retry, start/stop and teardown semantics are recorded individually without importing an iOS runtime.",
+      "responsibility": "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner.",
       "fabushi_canonical_owner": "Platform boundary evidence only",
-      "fabushi_target": "No Desktop iOS shipping owner; portable audio lifecycle maps to existing CallSession/platform audio contracts."
+      "fabushi_target": "No Desktop iOS shipping owner; portable audio lifecycle maps to existing CallSession/platform audio contracts.",
+      "responsibilities": [
+        "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:TelegramMessenger/tgcalls@1c236c09f8d8569fead14bd68000618a52051225:3f05be9bffd368a12fa00016dd5bf83ea6dd36bc",
+        "byte-audit:recomputed-git-blob=3f05be9bffd368a12fa00016dd5bf83ea6dd36bc;byte_length=21193;format=platform-source",
+        "platform-reachability-audit:path=tgcalls/platform/darwin/iOS/tgcalls_voice_processing_audio_unit.mm; target=Fabushi Desktop; platform-specific ios implementation excluded without excluding portable call responsibility"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     }
   ]
 }

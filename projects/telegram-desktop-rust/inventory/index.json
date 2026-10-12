@@ -13,10 +13,10 @@
     "recursive_non_directory_entries": 16125,
     "semantic_read_complete": true,
     "responsibility_decomposition_complete": true,
-    "unknown_minimum": 12537,
+    "unknown_minimum": 12436,
     "unread_minimum": 0,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition complete through deterministic order 16,125; unknown 12,537; unread 0; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition complete through deterministic order 16,125; unknown 12,436; unread 0; omitted 0."
   },
   "latest_recursive_evidence": {
     "run_id": 38216855900,
@@ -56,16 +56,16 @@
     "current_source_read_through": 16125,
     "first_unread_order": 16126,
     "first_unread_path": "none",
-    "current_head_source_authority_evidence": "Hunspell tests closure is an accounting descendant of 233acbb0; fresh same-head Actions required.",
-    "source_read_reconciliation": "Accepted prefix 16,125/16,125; unread=0. 630 Hunspell tests/fixtures are additionally closed after exact byte identity plus accepted test-only consumer/install-role audit; applicable spellcheck UX remains canonical Fabushi product responsibility.",
+    "current_head_source_authority_evidence": "Development-only object closure descendant requires fresh same-head Actions.",
+    "source_read_reconciliation": "Accepted prefix 16,125/16,125; unread=0. Exact-object closure includes 630 Hunspell test inputs plus 74 xdg documentation/repository artifacts and 27 tgcalls mobile/fake platform-specific implementations; applicable spellcheck, portal and call responsibilities remain canonical and open where product evidence is incomplete.",
     "source_authority_evidence": "Fresh exact-head validation required after Hunspell test-only source closure."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "deterministic_prefix_closed": 57,
-    "development_only_non_applicable": 3514,
-    "unknown_closed": 3588,
+    "development_only_non_applicable": 3615,
+    "unknown_closed": 3689,
     "omitted": 0,
     "read_through": 16125,
     "first_unread_order": 16126,

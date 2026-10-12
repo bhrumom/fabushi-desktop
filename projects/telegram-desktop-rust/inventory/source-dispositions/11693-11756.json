@@ -332,14 +332,23 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "tgcalls fake platform interface",
       "source_symbols": [],
-      "responsibility": "Development fake has no shipping video source/capturer and must never be a Fabushi fallback.",
+      "responsibility": "Exact tgcalls fake platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner.",
       "fabushi_canonical_owner": "Quality/test boundary only",
-      "fabushi_target": "Existing canonical owner; production/package acceptance remains open where applicable."
+      "fabushi_target": "Existing canonical owner; production/package acceptance remains open where applicable.",
+      "responsibilities": [
+        "Exact tgcalls fake platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:TelegramMessenger/tgcalls@1c236c09f8d8569fead14bd68000618a52051225:ac4d157cbb473d7b8c125c903a75c5de651e2797",
+        "byte-audit:recomputed-git-blob=ac4d157cbb473d7b8c125c903a75c5de651e2797;byte_length=1789;format=platform-source",
+        "platform-reachability-audit:path=tgcalls/platform/fake/FakeInterface.cpp; target=Fabushi Desktop; platform-specific fake implementation excluded without excluding portable call responsibility"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11705,
@@ -358,14 +367,23 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "tgcalls fake platform interface",
       "source_symbols": [],
-      "responsibility": "Development fake has no shipping video source/capturer and must never be a Fabushi fallback.",
+      "responsibility": "Exact tgcalls fake platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner.",
       "fabushi_canonical_owner": "Quality/test boundary only",
-      "fabushi_target": "Existing canonical owner; production/package acceptance remains open where applicable."
+      "fabushi_target": "Existing canonical owner; production/package acceptance remains open where applicable.",
+      "responsibilities": [
+        "Exact tgcalls fake platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:TelegramMessenger/tgcalls@1c236c09f8d8569fead14bd68000618a52051225:97c484294f51ab8c3030a8db4c2b09a3e42fd010",
+        "byte-audit:recomputed-git-blob=97c484294f51ab8c3030a8db4c2b09a3e42fd010;byte_length=1218;format=platform-source",
+        "platform-reachability-audit:path=tgcalls/platform/fake/FakeInterface.h; target=Fabushi Desktop; platform-specific fake implementation excluded without excluding portable call responsibility"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11706,

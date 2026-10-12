@@ -1104,16 +1104,25 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "tgcalls Android capture implementation",
       "source_symbols": [
         "AndroidContext.cpp"
       ],
-      "responsibility": "Android JNI camera/context implementation is not shipped by Fabushi Desktop; portable lifecycle semantics are recorded individually without importing JNI/runtime.",
+      "responsibility": "Exact tgcalls android platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner.",
       "fabushi_canonical_owner": "Platform boundary evidence only",
-      "fabushi_target": "No Desktop shipping owner for Android JNI code; portable semantics map to CallSession/platform adapters."
+      "fabushi_target": "No Desktop shipping owner for Android JNI code; portable semantics map to CallSession/platform adapters.",
+      "responsibilities": [
+        "Exact tgcalls android platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:TelegramMessenger/tgcalls@1c236c09f8d8569fead14bd68000618a52051225:9a8e6b41a198242483166f6a373a476c8b5b64ed",
+        "byte-audit:recomputed-git-blob=9a8e6b41a198242483166f6a373a476c8b5b64ed;byte_length=1012;format=platform-source",
+        "platform-reachability-audit:path=tgcalls/platform/android/AndroidContext.cpp; target=Fabushi Desktop; platform-specific android implementation excluded without excluding portable call responsibility"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11604,
@@ -1132,16 +1141,25 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "tgcalls Android capture implementation",
       "source_symbols": [
         "AndroidContext.h"
       ],
-      "responsibility": "Android JNI camera/context implementation is not shipped by Fabushi Desktop; portable lifecycle semantics are recorded individually without importing JNI/runtime.",
+      "responsibility": "Exact tgcalls android platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner.",
       "fabushi_canonical_owner": "Platform boundary evidence only",
-      "fabushi_target": "No Desktop shipping owner for Android JNI code; portable semantics map to CallSession/platform adapters."
+      "fabushi_target": "No Desktop shipping owner for Android JNI code; portable semantics map to CallSession/platform adapters.",
+      "responsibilities": [
+        "Exact tgcalls android platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:TelegramMessenger/tgcalls@1c236c09f8d8569fead14bd68000618a52051225:5ee1bf8be801a449b8d2408ecb32e5e7e30e9805",
+        "byte-audit:recomputed-git-blob=5ee1bf8be801a449b8d2408ecb32e5e7e30e9805;byte_length=461;format=platform-source",
+        "platform-reachability-audit:path=tgcalls/platform/android/AndroidContext.h; target=Fabushi Desktop; platform-specific android implementation excluded without excluding portable call responsibility"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11605,
@@ -1160,16 +1178,25 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "tgcalls Android capture implementation",
       "source_symbols": [
         "AndroidInterface.cpp"
       ],
-      "responsibility": "Android JNI camera/context implementation is not shipped by Fabushi Desktop; portable lifecycle semantics are recorded individually without importing JNI/runtime.",
+      "responsibility": "Exact tgcalls android platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner.",
       "fabushi_canonical_owner": "Platform boundary evidence only",
-      "fabushi_target": "No Desktop shipping owner for Android JNI code; portable semantics map to CallSession/platform adapters."
+      "fabushi_target": "No Desktop shipping owner for Android JNI code; portable semantics map to CallSession/platform adapters.",
+      "responsibilities": [
+        "Exact tgcalls android platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:TelegramMessenger/tgcalls@1c236c09f8d8569fead14bd68000618a52051225:18502fb6bdf218c9a3431bbfbae8f38f7ce400ba",
+        "byte-audit:recomputed-git-blob=18502fb6bdf218c9a3431bbfbae8f38f7ce400ba;byte_length=4429;format=platform-source",
+        "platform-reachability-audit:path=tgcalls/platform/android/AndroidInterface.cpp; target=Fabushi Desktop; platform-specific android implementation excluded without excluding portable call responsibility"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11606,
@@ -1188,16 +1215,25 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "tgcalls Android capture implementation",
       "source_symbols": [
         "AndroidInterface.h"
       ],
-      "responsibility": "Android JNI camera/context implementation is not shipped by Fabushi Desktop; portable lifecycle semantics are recorded individually without importing JNI/runtime.",
+      "responsibility": "Exact tgcalls android platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner.",
       "fabushi_canonical_owner": "Platform boundary evidence only",
-      "fabushi_target": "No Desktop shipping owner for Android JNI code; portable semantics map to CallSession/platform adapters."
+      "fabushi_target": "No Desktop shipping owner for Android JNI code; portable semantics map to CallSession/platform adapters.",
+      "responsibilities": [
+        "Exact tgcalls android platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:TelegramMessenger/tgcalls@1c236c09f8d8569fead14bd68000618a52051225:52a5ed5a0fc4584e2281ec87362161fb291758a6",
+        "byte-audit:recomputed-git-blob=52a5ed5a0fc4584e2281ec87362161fb291758a6;byte_length=1379;format=platform-source",
+        "platform-reachability-audit:path=tgcalls/platform/android/AndroidInterface.h; target=Fabushi Desktop; platform-specific android implementation excluded without excluding portable call responsibility"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11607,
@@ -1216,16 +1252,25 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "tgcalls Android capture implementation",
       "source_symbols": [
         "VideoCameraCapturer.cpp"
       ],
-      "responsibility": "Android JNI camera/context implementation is not shipped by Fabushi Desktop; portable lifecycle semantics are recorded individually without importing JNI/runtime.",
+      "responsibility": "Exact tgcalls android platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner.",
       "fabushi_canonical_owner": "Platform boundary evidence only",
-      "fabushi_target": "No Desktop shipping owner for Android JNI code; portable semantics map to CallSession/platform adapters."
+      "fabushi_target": "No Desktop shipping owner for Android JNI code; portable semantics map to CallSession/platform adapters.",
+      "responsibilities": [
+        "Exact tgcalls android platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:TelegramMessenger/tgcalls@1c236c09f8d8569fead14bd68000618a52051225:b3f92b054897d7483479724751ef552e1890c873",
+        "byte-audit:recomputed-git-blob=b3f92b054897d7483479724751ef552e1890c873;byte_length=2726;format=platform-source",
+        "platform-reachability-audit:path=tgcalls/platform/android/VideoCameraCapturer.cpp; target=Fabushi Desktop; platform-specific android implementation excluded without excluding portable call responsibility"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11608,
@@ -1244,16 +1289,25 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "tgcalls Android capture implementation",
       "source_symbols": [
         "VideoCameraCapturer.h"
       ],
-      "responsibility": "Android JNI camera/context implementation is not shipped by Fabushi Desktop; portable lifecycle semantics are recorded individually without importing JNI/runtime.",
+      "responsibility": "Exact tgcalls android platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner.",
       "fabushi_canonical_owner": "Platform boundary evidence only",
-      "fabushi_target": "No Desktop shipping owner for Android JNI code; portable semantics map to CallSession/platform adapters."
+      "fabushi_target": "No Desktop shipping owner for Android JNI code; portable semantics map to CallSession/platform adapters.",
+      "responsibilities": [
+        "Exact tgcalls android platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:TelegramMessenger/tgcalls@1c236c09f8d8569fead14bd68000618a52051225:2615703c0913731707ea910977d993d9a75bcb6d",
+        "byte-audit:recomputed-git-blob=2615703c0913731707ea910977d993d9a75bcb6d;byte_length=1317;format=platform-source",
+        "platform-reachability-audit:path=tgcalls/platform/android/VideoCameraCapturer.h; target=Fabushi Desktop; platform-specific android implementation excluded without excluding portable call responsibility"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11609,
@@ -1272,16 +1326,25 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "tgcalls Android capture implementation",
       "source_symbols": [
         "VideoCapturerInterfaceImpl.cpp"
       ],
-      "responsibility": "Android JNI camera/context implementation is not shipped by Fabushi Desktop; portable lifecycle semantics are recorded individually without importing JNI/runtime.",
+      "responsibility": "Exact tgcalls android platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner.",
       "fabushi_canonical_owner": "Platform boundary evidence only",
-      "fabushi_target": "No Desktop shipping owner for Android JNI code; portable semantics map to CallSession/platform adapters."
+      "fabushi_target": "No Desktop shipping owner for Android JNI code; portable semantics map to CallSession/platform adapters.",
+      "responsibilities": [
+        "Exact tgcalls android platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:TelegramMessenger/tgcalls@1c236c09f8d8569fead14bd68000618a52051225:1c7889256592e70eecddd5efddfc94679a53aae0",
+        "byte-audit:recomputed-git-blob=1c7889256592e70eecddd5efddfc94679a53aae0;byte_length=887;format=platform-source",
+        "platform-reachability-audit:path=tgcalls/platform/android/VideoCapturerInterfaceImpl.cpp; target=Fabushi Desktop; platform-specific android implementation excluded without excluding portable call responsibility"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11610,
@@ -1300,16 +1363,25 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "tgcalls Android capture implementation",
       "source_symbols": [
         "VideoCapturerInterfaceImpl.h"
       ],
-      "responsibility": "Android JNI camera/context implementation is not shipped by Fabushi Desktop; portable lifecycle semantics are recorded individually without importing JNI/runtime.",
+      "responsibility": "Exact tgcalls android platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner.",
       "fabushi_canonical_owner": "Platform boundary evidence only",
-      "fabushi_target": "No Desktop shipping owner for Android JNI code; portable semantics map to CallSession/platform adapters."
+      "fabushi_target": "No Desktop shipping owner for Android JNI code; portable semantics map to CallSession/platform adapters.",
+      "responsibilities": [
+        "Exact tgcalls android platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:TelegramMessenger/tgcalls@1c236c09f8d8569fead14bd68000618a52051225:69e1c5177b87d62becc9f2f2608a9e26d2c89fe7",
+        "byte-audit:recomputed-git-blob=69e1c5177b87d62becc9f2f2608a9e26d2c89fe7;byte_length=829;format=platform-source",
+        "platform-reachability-audit:path=tgcalls/platform/android/VideoCapturerInterfaceImpl.h; target=Fabushi Desktop; platform-specific android implementation excluded without excluding portable call responsibility"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11611,
@@ -1328,16 +1400,25 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "tgcalls iOS audio device wrapper",
       "source_symbols": [
         "AudioDeviceModuleIOS.h"
       ],
-      "responsibility": "iOS-specific audio teardown wrapper is not shipped by Fabushi Desktop; deterministic stop/terminate lifetime is recorded but not copied.",
+      "responsibility": "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner.",
       "fabushi_canonical_owner": "Platform boundary evidence only",
-      "fabushi_target": "No Desktop iOS owner; generic audio lifecycle maps to CallSession/platform adapters."
+      "fabushi_target": "No Desktop iOS owner; generic audio lifecycle maps to CallSession/platform adapters.",
+      "responsibilities": [
+        "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:TelegramMessenger/tgcalls@1c236c09f8d8569fead14bd68000618a52051225:fef136e33ca5d8dab38e242f2d6c8ac9ad10972f",
+        "byte-audit:recomputed-git-blob=fef136e33ca5d8dab38e242f2d6c8ac9ad10972f;byte_length=810;format=platform-source",
+        "platform-reachability-audit:path=tgcalls/platform/darwin/AudioDeviceModuleIOS.h; target=Fabushi Desktop; platform-specific ios implementation excluded without excluding portable call responsibility"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11612,
@@ -1384,16 +1465,25 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "tgcalls Darwin external capturer bridge",
       "source_symbols": [
         "CustomExternalCapturer.h"
       ],
-      "responsibility": "External ObjC capturer bridge is mobile/custom-capture plumbing and is not a Fabushi Desktop shipping owner; generic frame/lifetime semantics are recorded.",
+      "responsibility": "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner.",
       "fabushi_canonical_owner": "Platform boundary evidence only",
-      "fabushi_target": "No separate Desktop external-capturer owner; generic capture maps to CallSession media."
+      "fabushi_target": "No separate Desktop external-capturer owner; generic capture maps to CallSession media.",
+      "responsibilities": [
+        "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:TelegramMessenger/tgcalls@1c236c09f8d8569fead14bd68000618a52051225:e539eb2ce1baf24f6bc3c0eec8e1c5e270a5e034",
+        "byte-audit:recomputed-git-blob=e539eb2ce1baf24f6bc3c0eec8e1c5e270a5e034;byte_length=799;format=platform-source",
+        "platform-reachability-audit:path=tgcalls/platform/darwin/CustomExternalCapturer.h; target=Fabushi Desktop; platform-specific ios implementation excluded without excluding portable call responsibility"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11614,
@@ -1412,16 +1502,25 @@
       },
       "read_complete": true,
       "responsibility_decomposition_complete": true,
-      "disposition": "development-only-non-applicable-to-shipping-product",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "upstream_owner": "tgcalls Darwin external capturer bridge",
       "source_symbols": [
         "CustomExternalCapturer.mm"
       ],
-      "responsibility": "External ObjC capturer bridge is mobile/custom-capture plumbing and is not a Fabushi Desktop shipping owner; generic frame/lifetime semantics are recorded.",
+      "responsibility": "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner.",
       "fabushi_canonical_owner": "Platform boundary evidence only",
-      "fabushi_target": "No separate Desktop external-capturer owner; generic capture maps to CallSession media."
+      "fabushi_target": "No separate Desktop external-capturer owner; generic capture maps to CallSession media.",
+      "responsibilities": [
+        "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:TelegramMessenger/tgcalls@1c236c09f8d8569fead14bd68000618a52051225:55682b42e7614fc23793c16bcf2370e872ba733e",
+        "byte-audit:recomputed-git-blob=55682b42e7614fc23793c16bcf2370e872ba733e;byte_length=3461;format=platform-source",
+        "platform-reachability-audit:path=tgcalls/platform/darwin/CustomExternalCapturer.mm; target=Fabushi Desktop; platform-specific ios implementation excluded without excluding portable call responsibility"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
     },
     {
       "recursive_order": 11615,
