@@ -10,11 +10,11 @@
     "artifact_id": 11576650430,
     "artifact_digest": "sha256:f300c0c9308470331da3b1bdadc5cef774757f04e95099d8e519bfaa1d6475e0",
     "candidate_file": "build-time-acquisition-candidates.txt",
-    "candidate_lines_total": 332,
+    "candidate_lines_total": 330,
     "immutable_commit_pin_occurrences_classified": 0,
     "candidate_lines_pending_classification": 0,
     "note": "Live 6fed91ff modifies ten existing root blobs outside build/acquisition workflow sources; the classified candidate set remains 330 and immutable Action/clone bindings remain source-identical. Fresh descendant resolver evidence is required.",
-    "candidate_lines_classified": 332,
+    "candidate_lines_classified": 330,
     "disposition_closure_status": "complete-current-330-candidate-classification",
     "recursive_authority_closure_status": "open",
     "recursive_child_input_occurrences_recorded": 11,
@@ -943,19 +943,6 @@
         "upstream_commit": "22b352e866d0402505c07fa4ed21d75d7e4fb3db"
       },
       "provenance_policy": "Each listed line is classified against this immutable accepted source blob. Inline 40-hex action/source pins or sha256 image digests remain immutable references; version tags, master refs, package-manager resolution and bare download/clone URLs remain provenance-open until separately resolved. Classification does not convert mutable third-party references into immutable evidence."
-    },
-    {
-      "source_path": ".oss-scanner/Dockerfile",
-      "source_lines": [
-        8,
-        17
-      ],
-      "disposition": "development-only-oss-scanner-environment",
-      "rationale": "Anthropic OSS Scanner build image/submodule bootstrap is upstream security-review infrastructure, not Telegram Desktop shipping product composition. The :latest image remains mutable development provenance and is not promoted into release evidence.",
-      "accepted_upstream_commit": "63a1831728147e941ad2dc8939879cf5afe419c7",
-      "accepted_upstream_tree": "c259b2d6982213b2231266508316cd23f99f5a47",
-      "source_blob_sha": "0ba260f72ad88b10a0d613ff5027b7a7640be7f2",
-      "provenance_policy": "Development-only classification does not make the mutable :latest image immutable and does not confer package provenance."
     }
   ],
   "resolved_short_ref_contexts": [
