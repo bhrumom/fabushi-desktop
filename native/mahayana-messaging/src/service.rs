@@ -3436,7 +3436,9 @@ mod recent_participant_suggestion_service_tests {
             service
                 .engine()
                 .state()
-                .child_state(&destination, &owner)
+                .conversation_child_states
+                .iter()
+                .find(|child| child.destination == destination && child.actor_id == owner)
                 .is_none(),
             "failed persistence must restore unknown SavedSublist membership"
         );
@@ -3454,7 +3456,9 @@ mod recent_participant_suggestion_service_tests {
             service
                 .engine()
                 .state()
-                .child_state(&destination, &owner)
+                .conversation_child_states
+                .iter()
+                .find(|child| child.destination == destination && child.actor_id == owner)
                 .is_some_and(|child| {
                     child.authoritative_membership_known
                         && child.has_authoritative_message(message_id.0.as_str())
@@ -3471,7 +3475,9 @@ mod recent_participant_suggestion_service_tests {
             restored
                 .engine()
                 .state()
-                .child_state(&destination, &owner)
+                .conversation_child_states
+                .iter()
+                .find(|child| child.destination == destination && child.actor_id == owner)
                 .is_some_and(|child| {
                     child.authoritative_membership_known
                         && child.has_authoritative_message(message_id.0.as_str())
