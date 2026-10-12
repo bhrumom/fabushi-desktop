@@ -179,7 +179,7 @@
         "owner": "bhrumom",
         "repo": "fabushi-desktop",
         "releaseType": "release",
-        "tagNamePrefix": "fabushi-rc-v"
+        "tagNamePrefix": "v"
       }
     ]
   }
