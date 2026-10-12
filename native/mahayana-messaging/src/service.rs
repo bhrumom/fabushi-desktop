@@ -1972,6 +1972,10 @@ impl<S: MessagingStateStore> MessagingService<S> {
                     .iter()
                     .filter_map(|id| state.messages.get(id))
                     .flat_map(|messages| messages.values())
+                    // Full snapshots are authoritative live state. Tombstones stay
+                    // durable in the canonical store/journal for replay fencing, but
+                    // must never be re-projected as message content after delete/expiry.
+                    .filter(|message| !message.deleted)
                     .take(max_items)
                     .map(|message| self.project_message_for_actor(actor_id, message))
                     .collect(),
