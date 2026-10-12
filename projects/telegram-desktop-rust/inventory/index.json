@@ -13,10 +13,10 @@
     "recursive_non_directory_entries": 16125,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 15224,
-    "unread_minimum": 2057,
+    "unknown_minimum": 15160,
+    "unread_minimum": 1993,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through deterministic order 14,068; unknown 15,224; unread 2,057; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition through deterministic order 14,132; unknown 15,160; unread 1,993; omitted 0."
   },
   "latest_recursive_evidence": {
     "run_id": 38210191386,
@@ -35,7 +35,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live baseline accepted; closure open. Read-through 14,068; unread_minimum is 2,057; unknown remains 15,224; omitted remains 0; first unread 14,069 is doc/gh-pages::istream_8hpp.js.",
+  "note": "Live baseline accepted; closure open. Read-through 14,132; unread_minimum is 1,993; unknown remains 15,160; omitted remains 0; first unread 14,133 is doc/gh-pages::navtreeindex2.js.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -53,23 +53,23 @@
       6541,
       6627
     ],
-    "current_source_read_through": 14068,
-    "first_unread_order": 14069,
-    "first_unread_path": "doc/gh-pages::istream_8hpp.js",
+    "current_source_read_through": 14132,
+    "first_unread_order": 14133,
+    "first_unread_path": "doc/gh-pages::navtreeindex2.js",
     "current_head_source_authority_evidence": "Parent 1d9ecd76 exact-head Rust desktop runtime 38210191386 and Desktop Chat Parity CI 38210191379 succeeded; this accounting descendant requires fresh same-head Actions.",
-    "source_read_reconciliation": "Accepted prefix 14,068/16,125; orders 14,005-14,068 directly exact-read and explicitly classified as Doxygen 1.9.4 generated HTML/JS documentation artifacts.",
-    "source_authority_evidence": "Parent 1d9ecd76 exact-head Rust desktop runtime 38210191386 and Desktop Chat Parity CI 38210191379 succeeded; this accounting descendant requires fresh same-head Actions."
+    "source_read_reconciliation": "Accepted prefix 14,132/16,125; orders 14,069-14,132 exact-read. jquery.js separately proven as the generated Doxygen site's jQuery 3.6.0/SmartMenus runtime; nav PNGs verified by exact base64 PNG bytes; navtree CSS/runtime/indexes separately audited.",
+    "source_authority_evidence": "Predecessor 1d9ecd76 exact-head runtime/parity green; c6c4ae56 includes MAS system-audio permission repair and had fresh exact-head Actions in progress when this accounting descendant was prepared."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "deterministic_prefix_closed": 57,
-    "development_only_non_applicable": 827,
-    "unknown_closed": 901,
+    "development_only_non_applicable": 891,
+    "unknown_closed": 965,
     "omitted": 0,
-    "read_through": 14068,
-    "first_unread_order": 14069,
-    "first_unread_path": "doc/gh-pages::istream_8hpp.js",
+    "read_through": 14132,
+    "first_unread_order": 14133,
+    "first_unread_path": "doc/gh-pages::navtreeindex2.js",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }
