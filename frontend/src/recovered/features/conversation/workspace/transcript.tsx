@@ -1,5 +1,5 @@
 import { getSchema, type JSONContent } from "@tiptap/core";
-import { projectTranscriptExternalLink } from "../cards/transcript-card/url-card";
+import { projectTranscriptExternalLink, projectTranscriptLink } from "../cards/transcript-card/url-card";
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import "./transcript-utility-parity.css";
@@ -368,7 +368,7 @@ function RetainedHorizontalScrollRegion({ children, className, label, ownerId, r
 
 function renderAssistantInlineText(text: string, openExternal?: TranscriptExternalLinkOpener): ReactNode[] {
   const nodes: ReactNode[] = [];
-  const assistantInlinePattern = /\\\(([^\\\n]*?)\\\)|\[([^\]\n]+)\]\(((?:https?:\/\/|mailto:)[^\s)]+)\)|(https?:\/\/[^\s<>"']+)|(\*\*|__)(?=\S)([^\n]*?\S)\5|(\*|_)(?=\S)([^\n]*?\S)\7|~~(?=\S)([^\n]*?\S)~~|`([^`\n]+)`/giu;
+  const assistantInlinePattern = /\\\(([^\\\n]*?)\\\)|\[([^\]\n]+)\]\(([^\s)]+)\)|(https?:\/\/[^\s<>"']+)|(\*\*|__)(?=\S)([^\n]*?\S)\5|(\*|_)(?=\S)([^\n]*?\S)\7|~~(?=\S)([^\n]*?\S)~~|`([^`\n]+)`/giu;
   let cursor = 0;
   let match: RegExpExecArray | null;
   while ((match = assistantInlinePattern.exec(text)) != null) {
@@ -389,13 +389,14 @@ function renderAssistantInlineText(text: string, openExternal?: TranscriptExtern
       } else {
         const trailing = markdownLabel == null ? rawUrl.match(/[),.!?;:\]}]+$/u)?.[0] ?? "" : "";
         const href = rawUrl.slice(0, rawUrl.length - trailing.length);
-        const external = projectTranscriptExternalLink(href, markdownLabel ?? undefined);
-        if (external == null) {
+        const projected = projectTranscriptLink(href, markdownLabel ?? undefined);
+        if (projected == null) {
           nodes.push(match[0]);
+        } else if (!projected.external || openExternal == null) {
+          nodes.push(<span data-transcript-copy-label={projected.copyLabel} data-transcript-copy-text={projected.copyText} data-transcript-link-kind={projected.kind} key={`assistant-link-${match.index}`} title={projected.tooltip ?? undefined}>{markdownLabel ?? projected.copyText}</span>);
+          if (trailing.length > 0) nodes.push(trailing);
         } else {
-          nodes.push(openExternal == null
-            ? (markdownLabel ?? external.copyText)
-            : <a className="sand-l1v4ol sand-krqix3 sand-1sur9pj" data-transcript-copy-label={external.copyLabel} data-transcript-copy-text={external.copyText} href={external.href} key={`assistant-link-${match.index}`} onClick={(event) => { event.preventDefault(); if (!transcriptSelectionBlocksActivation()) openExternal(external.href); }} rel="noopener noreferrer" title={external.tooltip ?? undefined}>{markdownLabel ?? external.copyText}</a>);
+          nodes.push(<a className="sand-l1v4ol sand-krqix3 sand-1sur9pj" data-transcript-copy-label={projected.copyLabel} data-transcript-copy-text={projected.copyText} data-transcript-link-kind={projected.kind} href={projected.href} key={`assistant-link-${match.index}`} onClick={(event) => { event.preventDefault(); if (!transcriptSelectionBlocksActivation()) openExternal(projected.href); }} rel="noopener noreferrer" title={projected.tooltip ?? undefined}>{markdownLabel ?? projected.copyText}</a>);
           if (trailing.length > 0) nodes.push(trailing);
         }
       }
@@ -673,8 +674,10 @@ function applyRichTextMarks(node: ProseMirrorNode, content: ReactNode, openExter
       case "underline": return <u key={key}>{current}</u>;
       case "code": return <code key={key}>{current}</code>;
       case "link": {
-        const external = projectTranscriptExternalLink(mark.attrs.href, node.text ?? undefined);
-        return external == null || openExternal == null ? current : <a data-transcript-copy-label={external.copyLabel} data-transcript-copy-text={external.copyText} href={external.href} key={key} onClick={(event) => { event.preventDefault(); if (!transcriptSelectionBlocksActivation()) openExternal(external.href); }} title={external.tooltip ?? undefined}>{current}</a>;
+        const projected = projectTranscriptLink(mark.attrs.href, node.text ?? undefined);
+        if (projected == null) return current;
+        if (!projected.external || openExternal == null) return <span data-transcript-copy-label={projected.copyLabel} data-transcript-copy-text={projected.copyText} data-transcript-link-kind={projected.kind} key={key} title={projected.tooltip ?? undefined}>{current}</span>;
+        return <a data-transcript-copy-label={projected.copyLabel} data-transcript-copy-text={projected.copyText} data-transcript-link-kind={projected.kind} href={projected.href} key={key} onClick={(event) => { event.preventDefault(); if (!transcriptSelectionBlocksActivation()) openExternal(projected.href); }} title={projected.tooltip ?? undefined}>{current}</a>;
       }
       default: return current;
     }

@@ -15,8 +15,9 @@ import {
   createTranscriptFeedFanout,
   type TranscriptClientEventSource,
 } from "./conversation/cards/transcript-card/transcript-feed-source.ts";
-import { projectRichMessageAction, projectRichMessageActionAffordance, projectTranscriptExternalLink } from "./conversation/cards/transcript-card/url-card.ts";
+import { projectRichMessageAction, projectRichMessageActionAffordance, projectTranscriptExternalLink, projectTranscriptLink } from "./conversation/cards/transcript-card/url-card.ts";
 import { createWidgetInteractionAdapter } from "./conversation/cards/transcript-card/widget-interactions.ts";
+import { MAX_WIDGET_OPTION_LABEL_CODE_UNITS, projectTranscriptCardEntry } from "./conversation/cards/transcript-card/protocol.ts";
 import { createAssistantMathMarkupCache, type KatexRuntime } from "./conversation/workspace/math-runtime.ts";
 import { resolveWithSingleRetry } from "./conversation/workspace/media-runtime.ts";
 import { accumulateWheelZoomSteps, normalizeWheelZoomDelta } from "./conversation/workspace/media-zoom.ts";
@@ -710,6 +711,27 @@ test("CONTRACT-TDRP-IV-PREPARED-LINK-EXTERNAL-COPY-001 transcript external links
   assert.match(transcript, /\(\(\?:https\?:\\\/\\\/\|mailto:\)\[\^\\s\)\]\+\)/);
   assert.match(actions, /"Copy Link" \| "Copy Email" \| "Copy Text"/);
   assert.match(actions, /label !== "Copy Link" && label !== "Copy Email" && label !== "Copy Text"/);
+});
+
+
+
+test("CONTRACT-TDRP-IV-TYPED-LINK-KINDS-001 rich text preserves non-external link kinds without granting navigation capability", () => {
+  assert.equal(projectTranscriptLink("https://example.com")?.kind, "web");
+  assert.equal(projectTranscriptLink("mailto:reader@example.com")?.kind, "email");
+  assert.deepEqual(projectTranscriptLink("#section-2", "Jump"), { kind: "anchor", href: "#section-2", copyText: "#section-2", copyLabel: "Copy Link", tooltip: "#section-2", external: false });
+  assert.equal(projectTranscriptLink("../local/article.md")?.kind, "local");
+  assert.equal(projectTranscriptLink("fabushi://conversation/42")?.kind, "custom");
+  assert.equal(projectTranscriptLink("not a link"), null);
+});
+
+test("CONTRACT-TDRP-IV-INLINE-BUTTON-FENCE-001 disabled and hostile widget options fail closed at the protocol boundary", () => {
+  const base = { kind: "send-message", id: "widget-contract", message: { type: "widget", widget: { prompt: "Choose", options: [{ label: "Disabled", disabled: true, action: { kind: "open-url", data: "https://example.com" } }] } } };
+  const projected = projectTranscriptCardEntry(base);
+  assert.equal(projected?.message.type, "widget");
+  if (projected?.message.type === "widget") assert.equal(projected.message.widget.options[0]?.disabled, true);
+  const hostile = "x".repeat(MAX_WIDGET_OPTION_LABEL_CODE_UNITS + 1);
+  assert.equal(projectTranscriptCardEntry({ kind: "send-message", id: "widget-hostile", message: { type: "widget", widget: { prompt: "Choose", options: [{ label: hostile }] } } }), null);
+  assert.equal(projectTranscriptCardEntry({ kind: "send-message", id: "widget-invalid-disabled", message: { type: "widget", widget: { prompt: "Choose", options: [{ label: "Nope", disabled: "yes" }] } } }), null);
 });
 
 test("widget action lifecycle fences duplicate and stale rich-button settlement", async () => {

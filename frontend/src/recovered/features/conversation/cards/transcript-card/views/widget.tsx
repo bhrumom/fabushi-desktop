@@ -59,7 +59,8 @@ function WidgetChoice({
     window.addEventListener("resize", measure);
     return () => window.removeEventListener("resize", measure);
   }, [option.label]);
-  const affordance = option.action == null
+  const optionCanAct = canAct && option.disabled !== true;
+  const affordance = !optionCanAct || option.action == null
     ? null
     : projectRichMessageActionAffordance(option.action, labelElided ? option.label : "");
   return <button
@@ -67,7 +68,7 @@ function WidgetChoice({
     className="sand-widget-option sand-78zum5 sand-1iyjqo2 sand-s83m0k sand-dt5ytf sand-1cy8zhl sand-euugli"
     data-transcript-copy-label={affordance?.copyLabel}
     data-transcript-copy-text={affordance?.copyText}
-    disabled={!canAct}
+    disabled={!optionCanAct}
     onClick={() => onActivate(option)}
     title={affordance?.tooltip}
     type="button"
@@ -102,7 +103,7 @@ function WidgetQuestion({ entry, isKeyboardTarget, isStale }: TranscriptCardLeaf
     void adapter.dismiss(entry.id);
   };
   const activateOption = (option: WidgetOption) => {
-    if (!canAct) return;
+    if (!canAct || option.disabled === true) return;
     const action = option.action;
     if (action?.kind === "open-url") {
       const affordance = projectRichMessageActionAffordance(action);
@@ -115,6 +116,7 @@ function WidgetQuestion({ entry, isKeyboardTarget, isStale }: TranscriptCardLeaf
       void navigator.clipboard.writeText(action.data).catch(() => undefined);
       return;
     }
+    if (action?.kind === "authorize-url") return;
     submit(optionValue(option));
   };
 
@@ -152,7 +154,14 @@ function WidgetQuestion({ entry, isKeyboardTarget, isStale }: TranscriptCardLeaf
       <SandIconButton aria-label="Dismiss question" className="sand-widget__dismiss" disabled={!canAct} icon="close" onClick={dismiss} size="sm" title="Dismiss without answering" type="button" variant="ghost" />
     </div>
     <div className="sand-widget__options sand-78zum5 sand-dt5ytf sand-h8yej3 sand-euugli sand-qjedn3 sand-1y0btm7 sand-q03nf1 sand-ur7f20 sand-b3r6kr sand-13l7odt">
-      {widget.options.map((option, index) => <WidgetChoice canAct={canAct} index={index} isKeyboardTarget={isKeyboardTarget} key={`${optionValue(option)}-${index}`} onActivate={activateOption} option={option} />)}
+      {widget.options.map((option, index) => {
+        const actionCanAct = option.action?.kind === "authorize-url"
+          ? false
+          : option.action?.kind === "open-url"
+            ? projectRichMessageActionAffordance(option.action).normalizedUrl != null && providers?.urlCards != null
+            : true;
+        return <WidgetChoice canAct={canAct && actionCanAct} index={index} isKeyboardTarget={isKeyboardTarget} key={`${optionValue(option)}-${index}`} onActivate={activateOption} option={option} />;
+      })}
     </div>
     {widget.allowCustom !== true ? null : <div className="sand-widget__custom-row sand-78zum5 sand-1cy8zhl sand-167g77z sand-h8yej3 sand-euugli">
       <div className="sand-widget__custom-field sand-1iyjqo2 sand-s83m0k sand-1r8uery sand-euugli sand-1lliihq sand-5f5z56 sand-9f619 sand-126k92a sand-j0a0fe sand-tt52l0 sand-10wlt62 sand-123j3cw sand-cicffo sand-s9asl8 sand-1lqa7cf sand-ng3xce sand-ur7f20 sand-jbqb8w sand-1wd3ewq sand-jb2p0i sand-if65rj sand-1fc57z9 sand-12oo3zp sand-1t137rt sand-1h7ufjq"><textarea aria-label="Custom answer" autoComplete="off" className="sand-widget__custom-input" disabled={!canAct} onChange={(event) => setCustomValue(event.currentTarget.value)} onKeyDown={handleCustomKeyDown} placeholder="Type your own answer" rows={1} spellCheck={false} value={customValue} /></div>

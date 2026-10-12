@@ -82,6 +82,17 @@ export function normalizeLinkUrl(value: unknown): string | null {
 }
 
 export type TranscriptExternalCopyLabel = "Copy Link" | "Copy Email";
+export type TranscriptLinkKind = "web" | "email" | "anchor" | "local" | "custom";
+
+export interface TranscriptLinkProjection {
+  readonly kind: TranscriptLinkKind;
+  readonly href: string;
+  readonly copyText: string;
+  readonly copyLabel: TranscriptExternalCopyLabel;
+  readonly tooltip: string | null;
+  readonly external: boolean;
+}
+
 
 export interface TranscriptExternalLinkProjection {
   readonly href: string;
@@ -126,6 +137,39 @@ export function projectTranscriptExternalLink(value: unknown, renderedText?: str
     copyLabel: "Copy Email",
     tooltip: rendered == null || rendered.length === 0 || rendered === email ? null : email,
   };
+}
+
+/** Preserves typed link identity while only web/email links can cross the desktop external-open boundary. */
+export function projectTranscriptLink(value: unknown, renderedText?: string): TranscriptLinkProjection | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (trimmed.length === 0) return null;
+  const external = projectTranscriptExternalLink(trimmed, renderedText);
+  if (external != null) {
+    return {
+      kind: /^mailto:/iu.test(trimmed) ? "email" : "web",
+      ...external,
+      external: true,
+    };
+  }
+  const rendered = renderedText?.trim();
+  const projection = (kind: Exclude<TranscriptLinkKind, "web" | "email">): TranscriptLinkProjection => ({
+    kind,
+    href: trimmed,
+    copyText: trimmed,
+    copyLabel: "Copy Link",
+    tooltip: rendered == null || rendered.length === 0 || rendered === trimmed ? null : trimmed,
+    external: false,
+  });
+  if (trimmed.startsWith("#") && trimmed.length > 1) return projection("anchor");
+  if (/^(?:\.\.?\/|\/)/u.test(trimmed)) return projection("local");
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.protocol.length > 1) return projection("custom");
+  } catch {
+    return null;
+  }
+  return null;
 }
 
 export type RichMessageActionKind = "open-url" | "authorize-url" | "copy-text";
