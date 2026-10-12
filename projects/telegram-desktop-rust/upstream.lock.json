@@ -265,10 +265,10 @@
   "coverage": {
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
-    "unknown_minimum": 14968,
-    "unread_minimum": 1801,
+    "unknown_minimum": 14904,
+    "unread_minimum": 1737,
     "omitted_known": 0,
-    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 14,324; unknown=14,968, unread=1,801, omitted=0."
+    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 14,388; unknown=14,904, unread=1,737, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -282,7 +282,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Closure open. Read-through 14,004/16,125; first unread 14,005 doc/gh-pages::group__integral.js; unknown remains 15,288; product/release closure remains open."
+    "note": "Closure open. Read-through 14,388/16,125; first unread 14,389 doc/gh-pages::search/functions_10.js; unknown remains 14,904; product/release closure remains open."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",
@@ -629,26 +629,26 @@
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "deterministic_prefix_closed": 57,
-    "development_only_non_applicable": 1083,
-    "unknown_closed": 1157,
+    "development_only_non_applicable": 1147,
+    "unknown_closed": 1221,
     "omitted": 0,
-    "read_through": 14324,
-    "first_unread_order": 14133,
-    "first_unread_path": "doc/gh-pages::navtreeindex2.js",
+    "read_through": 14388,
+    "first_unread_order": 14389,
+    "first_unread_path": "doc/gh-pages::search/functions_10.js",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
-    "status": "historical-only-after-descendant-accounting-commit",
-    "target_head": "46dfaf8102187cc46824362b143e9ac4f3d4b4b9",
+    "status": "parent-evidence-only-after-descendant-accounting-commit",
+    "target_head": "2b7525663fed3eceb22a062b816bdeff781b93e7",
     "runs": [
       {
-        "id": 38084031087,
+        "id": 38216855900,
         "workflow": "Rust desktop runtime",
         "attempt": 1,
         "conclusion": "success"
       },
       {
-        "id": 38084031095,
+        "id": 38216855977,
         "workflow": "Desktop Chat Parity CI",
         "attempt": 1,
         "conclusion": "success"
@@ -656,103 +656,67 @@
     ],
     "jobs": [
       {
-        "id": 114306715585,
-        "name": "rust-host",
-        "conclusion": "success"
-      },
-      {
-        "id": 114306715724,
-        "name": "Updater contract / ubuntu-24.04",
-        "conclusion": "success"
-      },
-      {
-        "id": 114306715738,
-        "name": "Updater contract / macos-15",
-        "conclusion": "success"
-      },
-      {
-        "id": 114306715755,
-        "name": "Pressure profiler / windows-2025",
-        "conclusion": "success"
-      },
-      {
-        "id": 114306715769,
-        "name": "renderer",
-        "conclusion": "success"
-      },
-      {
-        "id": 114306715771,
+        "id": 114704898380,
         "name": "Source authority / recursive inventory",
         "conclusion": "success"
       },
       {
-        "id": 114306715790,
-        "name": "Pressure profiler / ubuntu-24.04",
+        "id": 114704898266,
+        "name": "rust-host",
         "conclusion": "success"
       },
       {
-        "id": 114306715795,
+        "id": 114704898283,
+        "name": "Pressure profiler / windows-2025",
+        "conclusion": "success"
+      },
+      {
+        "id": 114704898255,
         "name": "Pressure profiler / macos-15",
         "conclusion": "success"
       },
       {
-        "id": 114306715852,
-        "name": "Updater contract / windows-2025",
-        "conclusion": "success"
-      },
-      {
-        "id": 114306715857,
-        "name": "platform-worker",
-        "conclusion": "success"
-      },
-      {
-        "id": 114306707677,
-        "name": "Renderer typecheck and build",
-        "conclusion": "success"
-      },
-      {
-        "id": 114306707712,
+        "id": 114703504093,
         "name": "Focused Electron chat E2E",
         "conclusion": "success"
       }
     ],
     "artifacts": [
       {
-        "id": 11681780325,
-        "name": "tdrp-revision9-authority-46dfaf8102187cc46824362b143e9ac4f3d4b4b9",
-        "digest": "sha256:92d496e33e3f5fdd523a0033ce41bcac995dd829643116fda6581650fb38ced8"
+        "id": 11732670599,
+        "name": "tdrp-revision9-authority-2b7525663fed3eceb22a062b816bdeff781b93e7",
+        "digest": "sha256:86d2d743d499b531d4ae72eeec0433603c9bc64285d73c02a324534a5ad13d05"
       },
       {
-        "id": 11681353908,
-        "name": "rust-messaging-responsibilities-46dfaf8102187cc46824362b143e9ac4f3d4b4b9",
-        "digest": "sha256:ea91bd8a97e0854dffb1cf74d79c9abc08587af1f99ba4779c3a49fac0edac73"
-      },
-      {
-        "id": 11682075159,
-        "name": "desktop-chat-parity-playwright-46dfaf8102187cc46824362b143e9ac4f3d4b4b9",
-        "digest": "sha256:ab4d05990ffaa90cb519b55559d0b0c5a53f2f52a581b08cc038fa08308726ec"
+        "id": 11732745413,
+        "name": "desktop-chat-parity-playwright-2b7525663fed3eceb22a062b816bdeff781b93e7",
+        "digest": "sha256:4146ef83234163a7d8616c33ebc091a1aaf2fb38057430dba85f188e86737260"
       }
     ],
-    "note": "Valid exact-head evidence for 46dfaf only; main reconciliation/accounting descendants require fresh Actions."
+    "note": "Valid for parent 2b752566 only; descendant requires fresh Actions."
   },
-  "note": "Accepted baseline; exact read-through 13,883; unknown=15,409, unread=2,242, omitted=0; first unread 13,884 doc/gh-pages::doxygen.css.",
+  "note": "Accepted baseline; exact read-through 14,388; unknown=14,904, unread=1,737, omitted=0; first unread 14,389 doc/gh-pages::search/functions_10.js.",
   "source_accounting": {
     "recursive_total": 16125,
-    "read_through": 14132,
-    "first_unread_order": 14133,
-    "first_unread_path": "doc/gh-pages::navtreeindex2.js",
-    "unread": 1993,
-    "unknown": 15160,
+    "read_through": 14388,
+    "first_unread_order": 14389,
+    "first_unread_path": "doc/gh-pages::search/functions_10.js",
+    "unread": 1737,
+    "unknown": 14904,
     "omitted": 0,
     "parent_exact_head_evidence": {
-      "head": "524c4ad20165941c6818be7adca7e48a7a30250c",
-      "rust_runtime_run": 38206733546,
-      "source_authority_job": 114671830543,
-      "chat_parity_run": 38206733517,
-      "focused_e2e_job": 114671822750,
-      "authority_artifact": 11728135401
+      "head": "2b7525663fed3eceb22a062b816bdeff781b93e7",
+      "rust_runtime_run": 38216855900,
+      "source_authority_job": 114704898380,
+      "rust_host_job": 114704898266,
+      "windows_pressure_profiler_job": 114704898283,
+      "macos_pressure_profiler_job": 114704898255,
+      "chat_parity_run": 38216855977,
+      "focused_e2e_job": 114703504093,
+      "authority_artifact": 11732670599,
+      "playwright_artifact": 11732745413
     },
-    "development_only_non_applicable": 891,
-    "unknown_closed": 965
+    "development_only_non_applicable": 1147,
+    "unknown_closed": 1221
   }
 }
