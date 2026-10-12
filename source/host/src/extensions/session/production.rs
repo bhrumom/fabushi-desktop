@@ -2426,6 +2426,7 @@ impl ProductionSessionWorkers {
             "silent": remote.silent,
             "scheduledAtMs": remote.scheduled_at_ms,
             "deliveredAt": remote.delivered_at,
+            "expiresAtMs": remote.expires_at_ms,
         });
         let object = entry
             .as_object_mut()
@@ -3015,6 +3016,63 @@ impl ProductionSessionWorkers {
             &entries,
         )?;
         Ok(entries)
+    }
+
+    pub fn get_human_conversation_retention(
+        &self,
+        conversation_id: &str,
+    ) -> Result<serde_json::Value, String> {
+        let owner = self.open_human_conversation_db_owner(conversation_id)?;
+        let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+        if !self.metadata_has_local_human(&metadata)? {
+            return Err("local Human identity is not a conversation participant".into());
+        }
+        let peer_human_id = self.peer_human_id_from_metadata(&metadata)?;
+        let client = self
+            .shipping_native_messaging()?
+            .ok_or_else(|| "Human message retention requires shipping native messaging".to_string())?;
+        let retention = client.get_direct_message_retention(&peer_human_id)?;
+        if retention.conversation_id != conversation_id {
+            return Err("Fabushi Human retention backend returned a mismatched conversation id".into());
+        }
+        Ok(serde_json::json!({
+            "conversationId": retention.conversation_id,
+            "retentionSeconds": retention.retention_seconds,
+            "revision": retention.revision,
+        }))
+    }
+
+    pub fn set_human_conversation_retention(
+        &self,
+        conversation_id: &str,
+        retention_seconds: Option<u32>,
+        expected_revision: u64,
+    ) -> Result<serde_json::Value, String> {
+        let owner = self.open_human_conversation_db_owner(conversation_id)?;
+        let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+        if !self.metadata_has_local_human(&metadata)? {
+            return Err("local Human identity is not a conversation participant".into());
+        }
+        let peer_human_id = self.peer_human_id_from_metadata(&metadata)?;
+        let client = self
+            .shipping_native_messaging()?
+            .ok_or_else(|| "Human message retention requires shipping native messaging".to_string())?;
+        let retention = client.set_direct_message_retention(
+            &peer_human_id,
+            retention_seconds,
+            expected_revision,
+        )?;
+        if retention.conversation_id != conversation_id
+            || retention.retention_seconds != retention_seconds
+            || retention.revision != expected_revision.saturating_add(1)
+        {
+            return Err("Fabushi Human retention backend returned mismatched canonical state".into());
+        }
+        Ok(serde_json::json!({
+            "conversationId": retention.conversation_id,
+            "retentionSeconds": retention.retention_seconds,
+            "revision": retention.revision,
+        }))
     }
 
     pub fn sync_human_conversations(&self) -> Result<Vec<serde_json::Value>, String> {
