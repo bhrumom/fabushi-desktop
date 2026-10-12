@@ -4480,26 +4480,41 @@
       ],
       "service_owner": "Existing Fabushi transcript/resource/account/platform/action owners",
       "deployment_evidence": [],
-      "implementation_status": "mapped",
+      "implementation_status": "implemented",
       "coverage_disposition": "fabushi-ui-replacement",
       "blockers": [
-        "Current PR implements shared AssistantMath cache/fallback and canonical HTTP(S) rich-link routing, but exact-head GitHub Actions evidence is still required.",
-        "Email/custom/local/anchor link-kind semantics, bounded hostile inline-button label behavior, packaged UI/a11y/performance evidence and independent acceptance remain open."
+        "Fresh exact-head GitHub Actions must pass after the strengthened authorize-url execution fence test and this evidence-ledger update.",
+        "Packaged UI/accessibility/performance evidence, same-release-candidate install/upgrade/restart acceptance, and independent release acceptance remain open; this responsibility is therefore not verified."
       ],
       "production_entrypoints": [
-        "ConversationTranscript -> rich-text URL/Math/Resource/TranscriptCard projection -> existing typed boundaries"
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx -> projectTranscriptLink -> typed transcript link projection",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/views/widget.tsx -> WidgetQuestion.activateOption / WidgetChoice",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/protocol.ts -> projectWidget protocol validation",
+        "frontend/src/recovered/features/conversation/workspace/math.tsx + math-runtime.ts -> bounded derived formula lifecycle",
+        "frontend/src/recovered/features/conversation/workspace/media-viewer.tsx + media-visibility.ts -> active-resource/visibility lifecycle"
       ],
       "production_evidence": [
-        "main:3bc92400826cc4ca7ac665b467708e22261edc61",
+        "commit:c85ee44a6b78658b31a3c9a388206f954f1741f6",
+        "path:frontend/src/recovered/features/conversation/cards/transcript-card/url-card.ts",
+        "path:frontend/src/recovered/features/conversation/cards/transcript-card/protocol.ts",
+        "path:frontend/src/recovered/features/conversation/cards/transcript-card/views/widget.tsx",
         "path:frontend/src/recovered/features/conversation/workspace/transcript.tsx",
         "path:frontend/src/recovered/features/conversation/workspace/math.tsx",
-        "path:frontend/src/recovered/features/conversation/cards/transcript-card/url-card.ts",
-        "path:frontend/src/recovered/features/conversation/workspace/media-viewer.tsx"
+        "path:frontend/src/recovered/features/conversation/workspace/math-runtime.ts",
+        "path:frontend/src/recovered/features/conversation/workspace/media-viewer.tsx",
+        "path:frontend/src/recovered/features/conversation/workspace/media-visibility.ts"
       ],
       "test_evidence": [
-        "path:frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts"
+        "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts::CONTRACT-TDRP-IV-PREPARED-LINK-EXTERNAL-COPY-001",
+        "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts::CONTRACT-TDRP-IV-TYPED-LINK-KINDS-001",
+        "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts::CONTRACT-TDRP-IV-INLINE-BUTTON-FENCE-001",
+        "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts::CONTRACT-TDRP-IV-ARTICLE-LIFECYCLE-A11Y-MOTION-001",
+        "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts::UNIT-TDRP-IV-ARTICLE-MEDIA-VISIBILITY-001",
+        "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts::CONTRACT-TDRP-IV-ARTICLE-MEDIA-LIFECYCLE-001",
+        "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts::UNIT-TDRP-MATH-RESOURCE-BOUND-001",
+        "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts::UNIT-TDRP-MATH-RESOURCE-BOUND-002"
       ],
-      "target_commit": "3bc92400826cc4ca7ac665b467708e22261edc61",
+      "target_commit": "c85ee44a6b78658b31a3c9a388206f954f1741f6",
       "workflow_run": null,
       "run_attempt": null,
       "job": null,
@@ -4621,19 +4636,42 @@
         "INV-TDRP-IV-MEDIA-LIFECYCLE-001",
         "INV-TDRP-IV-TEXT-DISABLED-001"
       ],
-      "unit_case_ids": [],
+      "unit_case_ids": [
+        "UNIT-TDRP-MATH-RESOURCE-BOUND-001",
+        "UNIT-TDRP-MATH-RESOURCE-BOUND-002",
+        "UNIT-TDRP-IV-ARTICLE-MEDIA-VISIBILITY-001"
+      ],
       "property_state_case_ids": [],
-      "contract_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-IV-PREPARED-LINK-EXTERNAL-COPY-001",
+        "CONTRACT-TDRP-IV-TYPED-LINK-KINDS-001",
+        "CONTRACT-TDRP-IV-INLINE-BUTTON-FENCE-001",
+        "CONTRACT-TDRP-IV-ARTICLE-LIFECYCLE-A11Y-MOTION-001",
+        "CONTRACT-TDRP-IV-ARTICLE-MEDIA-LIFECYCLE-001"
+      ],
       "integration_case_ids": [],
       "functional_e2e_case_ids": [],
-      "temporal_case_ids": [],
+      "temporal_case_ids": [
+        "CONTRACT-TDRP-IV-ARTICLE-LIFECYCLE-A11Y-MOTION-001",
+        "CONTRACT-TDRP-IV-ARTICLE-MEDIA-LIFECYCLE-001"
+      ],
       "fault_recovery_case_ids": [],
       "ui_functional_case_ids": [],
       "visual_case_ids": [],
-      "accessibility_case_ids": [],
-      "performance_case_ids": [],
+      "accessibility_case_ids": [
+        "CONTRACT-TDRP-IV-ARTICLE-LIFECYCLE-A11Y-MOTION-001"
+      ],
+      "performance_case_ids": [
+        "UNIT-TDRP-MATH-RESOURCE-BOUND-001",
+        "UNIT-TDRP-MATH-RESOURCE-BOUND-002",
+        "UNIT-TDRP-IV-ARTICLE-MEDIA-VISIBILITY-001"
+      ],
       "soak_case_ids": [],
-      "security_case_ids": [],
+      "security_case_ids": [
+        "CONTRACT-TDRP-IV-PREPARED-LINK-EXTERNAL-COPY-001",
+        "CONTRACT-TDRP-IV-TYPED-LINK-KINDS-001",
+        "CONTRACT-TDRP-IV-INLINE-BUTTON-FENCE-001"
+      ],
       "regression_ids": [],
       "exploratory_charter_ids": [],
       "release_gate_ids": [
@@ -4651,14 +4689,14 @@
       "test_environment_ids": [
         "GitHub Actions only"
       ],
-      "coverage_matrix_status": "pending",
-      "flake_status": "unknown",
+      "coverage_matrix_status": "implemented-focused-contracts-exact-head-execution-pending",
+      "flake_status": "fresh-exact-head-not-yet-terminal",
       "test_execution_evidence": [],
       "acceptance_reviewer": null,
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior mapped from accepted telegramdesktop/tdesktop d346 exact blobs; Qt/C++ presentation is not retained and legal/source provenance remains recorded.",
       "reviewer": null,
-      "notes": "Read-complete; current PR adds shared loader/expression/display-mode math render caching with loader isolation, invalidation and retry-after-load-failure, and routes HTTP(S) assistant Markdown plus persisted user rich-text links through the existing UrlCardProvider external-open boundary with provider-absence fail-closed behavior. The broader article-text responsibility intentionally remains mapped until remaining typed link kinds, hostile-label/media cases, exact-head execution and independent acceptance close.",
+      "notes": "Read-complete; current PR adds shared loader/expression/display-mode math render caching with loader isolation, invalidation and retry-after-load-failure, and routes HTTP(S) assistant Markdown plus persisted user rich-text links through the existing UrlCardProvider external-open boundary with provider-absence fail-closed behavior. The broader article-text responsibility intentionally remains mapped until remaining typed link kinds, hostile-label/media cases, exact-head execution and independent acceptance close. Current implementation now preserves web/email/anchor/local/custom identity; only web/email cross the external-open boundary; non-external links retain copy/tooltip semantics; widget labels are capped at exactly 4096 JS code units; non-boolean disabled values are rejected; disabled choices cannot activate; authorize-url choices are both non-actionable in affordance projection and hard-return in shipping activation; math/media async results are fenced on teardown, media visibility is bounded and releases observers/resources, keyboard/a11y status and reduced-motion semantics are contract-tested. Exact-head CI and packaged/independent release gates remain open, so implemented is the highest justified status.",
       "source_path": "Telegram/SourceFiles/iv/markdown/iv_markdown_article_text.h",
       "source_blob_sha": "82da919256c01a0fcd09765d9e22b0c2d0ded1f3",
       "source_kind": "header",
@@ -4766,26 +4804,41 @@
       ],
       "service_owner": "Existing Fabushi transcript/resource/account/platform/action owners",
       "deployment_evidence": [],
-      "implementation_status": "mapped",
+      "implementation_status": "implemented",
       "coverage_disposition": "fabushi-ui-replacement",
       "blockers": [
-        "Current PR implements shared AssistantMath cache/fallback and canonical HTTP(S) rich-link routing, but exact-head GitHub Actions evidence is still required.",
-        "Email/custom/local/anchor link-kind semantics, bounded hostile inline-button label behavior, packaged UI/a11y/performance evidence and independent acceptance remain open."
+        "Fresh exact-head GitHub Actions must pass after the strengthened authorize-url execution fence test and this evidence-ledger update.",
+        "Packaged UI/accessibility/performance evidence, same-release-candidate install/upgrade/restart acceptance, and independent release acceptance remain open; this responsibility is therefore not verified."
       ],
       "production_entrypoints": [
-        "ConversationTranscript -> rich-text URL/Math/Resource/TranscriptCard projection -> existing typed boundaries"
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx -> projectTranscriptLink -> typed transcript link projection",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/views/widget.tsx -> WidgetQuestion.activateOption / WidgetChoice",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/protocol.ts -> projectWidget protocol validation",
+        "frontend/src/recovered/features/conversation/workspace/math.tsx + math-runtime.ts -> bounded derived formula lifecycle",
+        "frontend/src/recovered/features/conversation/workspace/media-viewer.tsx + media-visibility.ts -> active-resource/visibility lifecycle"
       ],
       "production_evidence": [
-        "main:3bc92400826cc4ca7ac665b467708e22261edc61",
+        "commit:c85ee44a6b78658b31a3c9a388206f954f1741f6",
+        "path:frontend/src/recovered/features/conversation/cards/transcript-card/url-card.ts",
+        "path:frontend/src/recovered/features/conversation/cards/transcript-card/protocol.ts",
+        "path:frontend/src/recovered/features/conversation/cards/transcript-card/views/widget.tsx",
         "path:frontend/src/recovered/features/conversation/workspace/transcript.tsx",
         "path:frontend/src/recovered/features/conversation/workspace/math.tsx",
-        "path:frontend/src/recovered/features/conversation/cards/transcript-card/url-card.ts",
-        "path:frontend/src/recovered/features/conversation/workspace/media-viewer.tsx"
+        "path:frontend/src/recovered/features/conversation/workspace/math-runtime.ts",
+        "path:frontend/src/recovered/features/conversation/workspace/media-viewer.tsx",
+        "path:frontend/src/recovered/features/conversation/workspace/media-visibility.ts"
       ],
       "test_evidence": [
-        "path:frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts"
+        "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts::CONTRACT-TDRP-IV-PREPARED-LINK-EXTERNAL-COPY-001",
+        "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts::CONTRACT-TDRP-IV-TYPED-LINK-KINDS-001",
+        "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts::CONTRACT-TDRP-IV-INLINE-BUTTON-FENCE-001",
+        "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts::CONTRACT-TDRP-IV-ARTICLE-LIFECYCLE-A11Y-MOTION-001",
+        "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts::UNIT-TDRP-IV-ARTICLE-MEDIA-VISIBILITY-001",
+        "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts::CONTRACT-TDRP-IV-ARTICLE-MEDIA-LIFECYCLE-001",
+        "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts::UNIT-TDRP-MATH-RESOURCE-BOUND-001",
+        "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts::UNIT-TDRP-MATH-RESOURCE-BOUND-002"
       ],
-      "target_commit": "3bc92400826cc4ca7ac665b467708e22261edc61",
+      "target_commit": "c85ee44a6b78658b31a3c9a388206f954f1741f6",
       "workflow_run": null,
       "run_attempt": null,
       "job": null,
@@ -4907,19 +4960,42 @@
         "INV-TDRP-IV-MEDIA-LIFECYCLE-001",
         "INV-TDRP-IV-TEXT-DISABLED-001"
       ],
-      "unit_case_ids": [],
+      "unit_case_ids": [
+        "UNIT-TDRP-MATH-RESOURCE-BOUND-001",
+        "UNIT-TDRP-MATH-RESOURCE-BOUND-002",
+        "UNIT-TDRP-IV-ARTICLE-MEDIA-VISIBILITY-001"
+      ],
       "property_state_case_ids": [],
-      "contract_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-IV-PREPARED-LINK-EXTERNAL-COPY-001",
+        "CONTRACT-TDRP-IV-TYPED-LINK-KINDS-001",
+        "CONTRACT-TDRP-IV-INLINE-BUTTON-FENCE-001",
+        "CONTRACT-TDRP-IV-ARTICLE-LIFECYCLE-A11Y-MOTION-001",
+        "CONTRACT-TDRP-IV-ARTICLE-MEDIA-LIFECYCLE-001"
+      ],
       "integration_case_ids": [],
       "functional_e2e_case_ids": [],
-      "temporal_case_ids": [],
+      "temporal_case_ids": [
+        "CONTRACT-TDRP-IV-ARTICLE-LIFECYCLE-A11Y-MOTION-001",
+        "CONTRACT-TDRP-IV-ARTICLE-MEDIA-LIFECYCLE-001"
+      ],
       "fault_recovery_case_ids": [],
       "ui_functional_case_ids": [],
       "visual_case_ids": [],
-      "accessibility_case_ids": [],
-      "performance_case_ids": [],
+      "accessibility_case_ids": [
+        "CONTRACT-TDRP-IV-ARTICLE-LIFECYCLE-A11Y-MOTION-001"
+      ],
+      "performance_case_ids": [
+        "UNIT-TDRP-MATH-RESOURCE-BOUND-001",
+        "UNIT-TDRP-MATH-RESOURCE-BOUND-002",
+        "UNIT-TDRP-IV-ARTICLE-MEDIA-VISIBILITY-001"
+      ],
       "soak_case_ids": [],
-      "security_case_ids": [],
+      "security_case_ids": [
+        "CONTRACT-TDRP-IV-PREPARED-LINK-EXTERNAL-COPY-001",
+        "CONTRACT-TDRP-IV-TYPED-LINK-KINDS-001",
+        "CONTRACT-TDRP-IV-INLINE-BUTTON-FENCE-001"
+      ],
       "regression_ids": [],
       "exploratory_charter_ids": [],
       "release_gate_ids": [
@@ -4937,14 +5013,14 @@
       "test_environment_ids": [
         "GitHub Actions only"
       ],
-      "coverage_matrix_status": "pending",
-      "flake_status": "unknown",
+      "coverage_matrix_status": "implemented-focused-contracts-exact-head-execution-pending",
+      "flake_status": "fresh-exact-head-not-yet-terminal",
       "test_execution_evidence": [],
       "acceptance_reviewer": null,
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior mapped from accepted telegramdesktop/tdesktop d346 exact blobs; Qt/C++ presentation is not retained and legal/source provenance remains recorded.",
       "reviewer": null,
-      "notes": "Read-complete; current PR adds shared loader/expression/display-mode math render caching with loader isolation, invalidation and retry-after-load-failure, and routes HTTP(S) assistant Markdown plus persisted user rich-text links through the existing UrlCardProvider external-open boundary with provider-absence fail-closed behavior. The broader article-text responsibility intentionally remains mapped until remaining typed link kinds, hostile-label/media cases, exact-head execution and independent acceptance close.",
+      "notes": "Read-complete; current PR adds shared loader/expression/display-mode math render caching with loader isolation, invalidation and retry-after-load-failure, and routes HTTP(S) assistant Markdown plus persisted user rich-text links through the existing UrlCardProvider external-open boundary with provider-absence fail-closed behavior. The broader article-text responsibility intentionally remains mapped until remaining typed link kinds, hostile-label/media cases, exact-head execution and independent acceptance close. Current implementation now preserves web/email/anchor/local/custom identity; only web/email cross the external-open boundary; non-external links retain copy/tooltip semantics; widget labels are capped at exactly 4096 JS code units; non-boolean disabled values are rejected; disabled choices cannot activate; authorize-url choices are both non-actionable in affordance projection and hard-return in shipping activation; math/media async results are fenced on teardown, media visibility is bounded and releases observers/resources, keyboard/a11y status and reduced-motion semantics are contract-tested. Exact-head CI and packaged/independent release gates remain open, so implemented is the highest justified status.",
       "source_path": "Telegram/SourceFiles/iv/markdown/iv_markdown_article_text.cpp",
       "source_blob_sha": "2fcab1a3e549d320ca38266373d562238c13fe29",
       "source_kind": "source",
