@@ -40,7 +40,7 @@ import { normalizeSandCallMediaPreferences, normalizeSandUiPreferences, resolveS
 import { createDesktopCallMediaPort } from "./call-media.js";
 import { normalizeCommitStagedAttachmentsEdgeRequest, normalizeStageAttachmentEdgeRequest } from "./attachments/attachment-edge-wire.js";
 import { createAttachmentEdgePort, type AttachmentEdgeDeps } from "./attachments/attachments.js";
-import { readDesktopImageAttachment } from "./attachments/attachment-manager.js";
+import { readDesktopImageAttachment, resolveImageAttachment } from "./attachments/attachment-manager.js";
 import { readDesktopAccessibilityState, setDesktopAccessibilitySupportEnabled } from "./accessibility-support.js";
 import { readDesktopPlatformInputState } from "./platform-input.js";
 import { buildImageContextMenuTemplate, nativeSpellcheckSuggestions, type ImageContextMenuParams } from "./media/avatar-images.js";
@@ -120,6 +120,49 @@ test("desktop image preview fast path enforces the canonical byte cap before dec
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+test("SVG attachment previews are fail-closed and cannot bypass the canonical sanitizer", async () => {
+  let decodeCalls = 0;
+  let remoteCalls = 0;
+  let bytes = Buffer.from(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect x="0" y="0" width="10" height="10"/></svg>',
+    "utf8",
+  );
+  const deps = {
+    nativeImage: {
+      createFromBuffer() {
+        decodeCalls += 1;
+        return { isEmpty: () => false, getSize: () => ({ width: 10, height: 10 }) };
+      },
+    },
+    readPortableDimensions: () => null,
+    servableImageMimeFromPath: () => "image/svg+xml",
+    previewByteCap: 1024,
+    reanchorPath: (value: string) => value,
+    readFile: async () => bytes,
+  };
+
+  const safe = await readDesktopImageAttachment("/staging/preview.svg", deps);
+  assert.equal(safe?.dataUrl, `data:image/svg+xml;base64,${bytes.toString("base64")}`);
+  assert.deepEqual(safe == null ? null : { width: safe.width, height: safe.height }, { width: 10, height: 10 });
+  assert.equal(decodeCalls, 1);
+
+  bytes = Buffer.from('<svg><script>alert("x")</script></svg>', "utf8");
+  assert.equal(await readDesktopImageAttachment("/staging/preview.svg", deps), null);
+  assert.equal(decodeCalls, 1);
+
+  bytes = Buffer.from('<svg><image href="https://example.invalid/pixel.png"/></svg>', "utf8");
+  assert.equal(await resolveImageAttachment(
+    "/staging/preview.svg",
+    async () => {
+      remoteCalls += 1;
+      return { dataUrl: "data:image/svg+xml;base64,unsafe", width: 1, height: 1 };
+    },
+    deps,
+  ), null);
+  assert.equal(remoteCalls, 0);
+  assert.equal(decodeCalls, 1);
 });
 
 test("main edge accepts the shipping preload attachment wire contract", () => {
