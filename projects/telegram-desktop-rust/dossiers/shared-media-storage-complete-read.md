@@ -15,7 +15,7 @@ Authority: `telegramdesktop/tdesktop@d346b42a1d30ef60dc989b6e5191bb8e571f6bd5`.
 
 Traceability: `TDRP-R9-SHARED-MEDIA-STORAGE-CONTRACT-001`, `ORA-TDRP-R9-SHARED-MEDIA-STORAGE-CONTRACT-001`, `INV-TDRP-R9-SHARED-MEDIA-STORAGE-CONTRACT-001-CANONICAL`.
 
-Status: mapped/open. SavedSublist exact message membership is still service-blocked and therefore child-owned destructive cleanup cannot be inferred from a parent message or generic relation.
+Status: implemented/current-source, exact-head evidence pending. The shipping Host now consumes authenticated server-returned canonical `ConversationDestination` data after durable Human transcript materialization and reconciles SavedSublist parent access plus exact message membership through `MessagingService`; child-owned destructive cleanup still fails closed unless that authoritative state is present. Fresh exact-head GitHub Actions and same-release-candidate release acceptance remain required before verification.
 
 ## TDRP-R9-SHARED-MEDIA-STORAGE-LIFECYCLE-001
 
@@ -70,3 +70,11 @@ These four rows now bind every target symbol to its actual source-neutral owning
 Accepted `data_saved_messages.cpp` calls `SharedMediaUnloadThread(parentPeer, 0, sublistPeer)` after child destruction. Under Fabushi architecture this means: authoritative child-owned message deletion must remove those messages from canonical search/media projections, while resource bytes remain under their normal reference/cache lifecycle. The current child runtime destroy alone is insufficient evidence of this cross-owner composition.
 
 Accounting after these four full reads: unknown `15,788`, unread `15,740`, omitted `0`.
+
+
+## Shipping authority feed continuation
+
+- `source/host/src/extensions/session/production.rs::ProductionSessionWorkers::sync_human_conversation` persists authenticated server messages first, then invokes `reconcile_saved_sublist_authority_from_transcript`.
+- The reconciliation accepts only canonical `SavedSublist` destinations returned by the server feed, groups exact canonical transcript message IDs per destination, and calls `MessagingService::reconcile_saved_sublist_parent_access` plus `MessagingService::reconcile_saved_sublist_membership` under the single `_messaging` projection lock.
+- `MessagingService` retains transactional rollback semantics for failed persistence, and the focused shipping test `shipping_saved_sublist_server_authority_reconciles_durably_and_survives_restart` covers persisted parent access/membership across reload.
+- This source state is not release evidence until a fresh exact-head GitHub Actions run succeeds; package/install/upgrade/updater and independent release acceptance remain open.
