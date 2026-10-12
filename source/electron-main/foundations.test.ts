@@ -434,7 +434,7 @@ test("release updater preserves canonical Linux staged apply and restart semanti
     autoDownload: true,
     autoInstallOnAppQuit: true,
     allowPrerelease: false,
-    channel: undefined as string | undefined,
+    channel: undefined as string | null | undefined,
     async checkForUpdates() {
       return { updateInfo: { version: "9.9.9" } };
     },
@@ -474,7 +474,7 @@ test("release updater preserves canonical Linux staged apply and restart semanti
   const checked = await service.checkForUpdates({ trigger: "explicit" });
   assert.equal(checked.state.type, "ready");
   assert.equal(checked.state.version, "9.9.9");
-  assert.equal(releaseUpdater.channel, "latest");
+  assert.equal(releaseUpdater.channel, null);
   assert.equal(releaseUpdater.allowPrerelease, false);
   assert.equal(downloadCalls, 1);
   assert.deepEqual(markerEvents, ["staged:appimage:9.9.9"]);
@@ -489,6 +489,37 @@ test("release updater preserves canonical Linux staged apply and restart semanti
   assert.deepEqual(markerEvents, ["staged:appimage:9.9.9", "requested:appimage:9.9.9", "spawned"]);
   assert.equal(service.willRunStagedInstallerOnQuit(), false);
   assert.ok(statuses.length > 0);
+  service.dispose();
+});
+
+test("release updater prerelease access is acceptance-only and keeps stable default channel semantics", async () => {
+  const releaseUpdater = {
+    autoDownload: true,
+    autoInstallOnAppQuit: true,
+    allowPrerelease: false,
+    channel: undefined as string | null | undefined,
+    async checkForUpdates() {
+      return { updateInfo: { version: "9.9.9" } };
+    },
+    async downloadUpdate() {},
+    quitAndInstall() {},
+  };
+  const service = new SandUpdateService({
+    currentVersion: "1.0.0",
+    buildDefaultTrack: "stable",
+    releaseUpdater,
+    allowReleasePrerelease: true,
+    tempDir: tmpdir(),
+    machineId: "release-updater-rc-acceptance-test",
+    platform: "linux",
+    arch: "x64",
+    getTrackOverride: () => null,
+    persistTrackOverride: () => undefined,
+    onStatusChange: () => undefined,
+  });
+  await service.checkForUpdates({ trigger: "explicit" });
+  assert.equal(releaseUpdater.channel, null);
+  assert.equal(releaseUpdater.allowPrerelease, true);
   service.dispose();
 });
 
