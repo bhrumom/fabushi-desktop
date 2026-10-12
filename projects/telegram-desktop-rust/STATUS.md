@@ -175,7 +175,7 @@ All seven rows remain mapped-open with unknown_closed=false and omitted=false; r
 Current PR source-accounting continuation: exact-source HEAD `f8ef44c69b134ba5b0172a21bc563fce6c98138e` materialized and reviewed orders 12,333-12,396; formal accounting is now 12,396 read, 3,729 unread, 15,845 unknown, 0 omitted. The descendant containing these dispositions requires fresh same-head Actions; all f8ef runtime/chat jobs become predecessor evidence after this commit.
 
 Live Revision 9 authority (2026-10-12): telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 (tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6). Recursive non-directory=16,125; read-through=12,396; first unread=12,397 Telegram/codegen::codegen/style/parsed_file.h@cc45c9aa2bf109947329c1a7d62c528b97ce4545; unread=3,729; unknown=15,845; omitted=0. Exact-head f8ef44c69b134ba5b0172a21bc563fce6c98138e Source authority 38183407863/114600617044 succeeded and materialized artifact 11719100308 (sha256:452825df19243d3d425b9716b405782b708dab74f3655d56cdc1a7c0c6ccbe1d); orders 12,333-12,396 were formally reviewed from that materialization plus exact pinned blobs. This accounting descendant requires fresh same-head runtime/chat validation.
-<!-- TDRP_CURRENT_SUMMARY read-through=14004 unread=2121 unknown=15288 omitted=0 first-unread=14005 path=doc/gh-pages::group__integral.js -->
+<!-- TDRP_CURRENT_SUMMARY read-through=14132 unread=1993 unknown=15160 omitted=0 first-unread=14133 path=doc/gh-pages::navtreeindex2.js -->
 
 ### Revision 9 deterministic read-through — zxcvbn password strength + codegen emoji/lang/style 12,333–12,396
 

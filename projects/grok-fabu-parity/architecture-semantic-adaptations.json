@@ -1800,6 +1800,20 @@
         "scripts/check-grok-architecture.mjs"
       ],
       "rationale": "Preserves the frozen Grok editor-suggestion controller lifecycle while adapting its existing emoji provider seam to canonical EmojiCatalog autocomplete recovered from Telegram/lib_ui. The controller retains one suggestion state owner, query/generation fencing, keyboard selection and insertion behavior; no parallel Composer state or Telegram runtime is introduced."
+    },
+    {
+      "referencePath": "source/electron-preload/preload-browser-base.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "923c00eb352209c67280781cab7d2eb394f62bb8",
+      "behavioralEvidence": [
+        "source/electron-preload/preload-browser-base.ts"
+      ],
+      "testEvidence": [
+        "source/electron-preload/preload-boundaries.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves the frozen embedded-browser preload boundary while adapting native JavaScript dialogs to fail closed for the production WebView/mini-app isolation contract. alert remains non-interactive, prompt returns null, and confirm now returns false rather than auto-consenting to content-controlled native prompts. The adaptation stays inside the existing electron-preload owner, creates no second WebView runtime, and is covered by the focused preload-boundary contract plus the exact-head runtime architecture gate."
     }
   ]
 }
