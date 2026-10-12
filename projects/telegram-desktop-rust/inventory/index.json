@@ -14,9 +14,9 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 3153,
+    "unread_minimum": 3089,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through deterministic order 12,972; unread 3,153; unknown 15,845; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition through deterministic order 13,036; unread 3,089; unknown 15,845; omitted 0."
   },
   "latest_recursive_evidence": {
     "run_id": 38189544832,
@@ -37,7 +37,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live baseline accepted; closure open. Read-through 12,972; unread_minimum is 3,153; unknown remains 15,845; omitted remains 0; first unread order 12,973 is Telegram/lib_ui::ui/arc_angles.h.",
+  "note": "Live baseline accepted; closure open. Read-through 13,036; unread_minimum is 3,089; unknown remains 15,845; omitted remains 0; first unread order 13,037 is Telegram/lib_ui::ui/gl/gl_surface.h.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -55,12 +55,12 @@
       6541,
       6627
     ],
-    "current_source_read_through": 12972,
-    "first_unread_order": 12973,
-    "first_unread_path": "Telegram/lib_ui::ui/arc_angles.h",
-    "current_head_source_authority_evidence": "Predecessor e4e455cd Source authority artifact 11722021776 supplied the accepted recursive ordering before cancellation; 12,909-12,960 were independently refetched at desktop-app/lib_ui@91ff4463 and matched Git blob/size/PNG signature/dimensions, while 12,961-12,972 code/text blobs were refetched and read at the same exact commit. Current descendant Actions remain required.",
-    "source_read_reconciliation": "Accepted prefix 12,972/16,125; 12,909-12,960 complete round/slide/window/title raster semantics, 12,961-12,962 capture Windows GPU compatibility/resource packaging, 12,963-12,964 canonical button interaction semantics, 12,965-12,970 dynamic accessibility identity/action/selection/orientation, and 12,971-12,972 animated-resource lifecycle/timing. Unread 3,153; unknown 15,845; omitted 0; reading alone closes no unknown.",
-    "source_authority_evidence": "Current review uses predecessor recursive identity diagnostic e4e455cd/38192498288/114628073754/artifact 11722021776 plus direct exact accepted-gitlink content verification; no predecessor workflow result is accepted for the descendant and fresh same-head validation is required."
+    "current_source_read_through": 13036,
+    "first_unread_order": 13037,
+    "first_unread_path": "Telegram/lib_ui::ui/gl/gl_surface.h",
+    "current_head_source_authority_evidence": "Orders 12,973-13,036 were read directly from accepted desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd. Predecessor e4e455cd artifact 11722021776 is used only for accepted recursive ordering; no predecessor workflow result is accepted for the descendant.",
+    "source_read_reconciliation": "Accepted prefix 13,036/16,125. The window covers URL/click command security and pointer lifecycle, focus activation/restoration, drag-scroll selection, DPR/dynamic images, animation/reduced-motion/spoiler-cache lifecycle, emoji resource/cache integrity, and GPU/GL capability/fallback/resource/surface lifecycle. All remain mapped-open with unknown_closed=false. Unread 3,089; unknown 15,845; omitted 0.",
+    "source_authority_evidence": "Direct exact accepted-gitlink blob/content review for every 12,973-13,036 entry; predecessor artifact only preserves recursive order. Fresh same-head Actions remain required."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -69,9 +69,9 @@
     "development_only_non_applicable": 206,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 12972,
-    "first_unread_order": 12973,
-    "first_unread_path": "Telegram/lib_ui::ui/arc_angles.h",
+    "read_through": 13036,
+    "first_unread_order": 13037,
+    "first_unread_path": "Telegram/lib_ui::ui/gl/gl_surface.h",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }
