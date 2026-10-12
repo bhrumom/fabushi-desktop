@@ -10641,7 +10641,8 @@
         "ComposerDraft",
         "parseComposerDraft",
         "createComposerDraftStateStore",
-        "composerDraftPersistenceKey"
+        "composerDraftPersistenceKey",
+        "composerDraftScopeKey"
       ],
       "target_language": "Rust + TypeScript",
       "language_rationale": "Conversation-level authoritative state belongs to Rust; canonical renderer composer payload/persistence remains TypeScript at the UI boundary.",
@@ -10653,7 +10654,7 @@
       ],
       "state_owner": "MessagingState for authoritative Conversation/Topic/child draft state; canonical composer store for renderer recovery only",
       "lifecycle_owner": "Conversation owner with Composer projection",
-      "persistence_and_restart": "Existing Rust conversation drafts persist with MessagingState; existing Agent composer store persists account-scoped recovery. Missing typed draft-key namespaces and full Human/Topic/SavedSublist payload parity remain open.",
+      "persistence_and_restart": "Rust Conversation/Topic/child drafts remain authoritative in MessagingState. The canonical renderer composer store now persists schema-v2 typed Agent/Conversation/Topic/SavedSublist/conversation-child scopes, migrates schema-v1 raw Agent keys without losing Bot drafts, preserves richText/reply/attachment size+MIME across clone/restore, and fails closed on malformed legacy scope keys. Cross-device/cloud draft service settlement remains open.",
       "concurrency_and_cancellation": "Draft writes must be generation fenced; stale cloud/recovery writes cannot overwrite a newer local draft; child identity must be exact.",
       "security_boundary": "Draft scope must be authorized before read/write exposure; SavedSublist draft identity cannot be minted from renderer inference.",
       "network_service_dependencies": [
@@ -10664,15 +10665,27 @@
       "implementation_status": "mapped",
       "coverage_disposition": "rewritten",
       "blockers": [
-        "Typed draft-key namespaces are incomplete",
-        "WebPage/cursor/rich payload parity is incomplete outside Agent composer",
+        "WebPage/cursor payload parity remains incomplete outside the canonical Composer draft model",
         "Cross-device/cloud draft service parity not yet evidenced",
         "SavedSublist authoritative relation feed remains required for trusted child scope"
       ],
-      "production_entrypoints": [],
-      "production_evidence": [],
-      "test_evidence": [],
-      "target_commit": "a9b1159aa95165e5ddef522726e11c1828a4b1d1",
+      "production_entrypoints": [
+        "ProductShell -> ProductionRenderer -> canonical ConversationWorkspace Composer -> createComposerDraftStateStore -> composerDraftScopeKey",
+        "MessagingState -> SetDraft/SetTopicDraft/SetConversationChildDraft -> DraftChanged/TopicDraftChanged/ConversationChildDraftChanged"
+      ],
+      "production_evidence": [
+        "commit:bd891523b555133edbe7d4f8a56cc7739e5034e9",
+        "commit:d17becf28265ff908cb41426246a9cb49dac173f",
+        "commit:5eebab34f6bb4b078c5a93926802e936cb620b92",
+        "path:frontend/src/recovered/features/conversation/workspace/draft-state.ts#composerDraftScopeKey",
+        "path:frontend/src/recovered/features/conversation/workspace/model.ts#parseComposerDraft"
+      ],
+      "test_evidence": [
+        "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "target_commit": "5eebab34f6bb4b078c5a93926802e936cb620b92",
       "workflow_run": null,
       "run_attempt": null,
       "job": null,
@@ -10796,7 +10809,7 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Source-informed mapping from accepted telegramdesktop/tdesktop data_drafts.h blob f610d7ab604fade113d3311f7cc8b19daf946174.",
       "reviewer": null,
-      "notes": "Exact accepted 268-line header was read in full. The file is fully decomposed across cloud/local draft operations, draft payload, typed key namespaces, serialization compatibility, equality/null helpers, and chat-link draft mutation; mapping remains open where Fabushi lacks equivalent typed scopes/payload/service evidence.",
+      "notes": "Exact accepted 268-line header was read in full. Typed renderer scope identity now covers Agent/Conversation/Topic/SavedSublist/conversation-child keys with schema-v1 Agent migration, account-scoped recovery persistence, malformed-key fail-closed behavior, and richText/reply/attachment size+MIME retention. Mapping remains open for WebPage/cursor payload parity, cross-device/cloud draft service evidence, and production-authoritative SavedSublist relation settlement.",
       "fabushi_target_bindings": [
         {
           "path": "native/mahayana-messaging/src/conversation.rs",
@@ -10828,9 +10841,10 @@
           "path": "frontend/src/recovered/features/conversation/workspace/draft-state.ts",
           "symbols": [
             "createComposerDraftStateStore",
-            "composerDraftPersistenceKey"
+            "composerDraftPersistenceKey",
+            "composerDraftScopeKey"
           ],
-          "responsibility_scope": "account-scoped composer recovery persistence with stale-write fencing"
+          "responsibility_scope": "account-scoped typed Composer draft identity, legacy Agent-key migration, recovery persistence and stale-write fencing"
         }
       ]
     },
