@@ -2538,31 +2538,16 @@ impl MessagingEngine {
                 actor_id,
                 allowed,
             } => {
-                self.require_actor(&actor_id)?;
-                let conversation = self.require_conversation(&conversation_id)?;
-                if !matches!(conversation.kind, ConversationKind::Group | ConversationKind::Channel)
-                    || !self.state.communities.contains_key(&conversation_id)
-                {
+                // This command is reachable only from the trusted server/native
+                // reconciliation boundary. Parent access can arrive before the
+                // renderer-facing Conversation projection (fresh device/restart),
+                // so requiring a locally materialized actor/community here would
+                // turn ordering into authority. Keep the relation fail-closed at
+                // the client boundary instead: only validated identities may be
+                // persisted, and ordinary child commands still require their
+                // canonical Conversation/Actor projections before use.
+                if !conversation_id.is_valid() || !actor_id.is_valid() {
                     return Err(EngineError::InvalidConversationChildDestination);
-                }
-                if allowed {
-                    let community = self
-                        .state
-                        .communities
-                        .get(&conversation_id)
-                        .expect("community existence checked");
-                    let has_access = community_has_access(community, &actor_id)
-                        || conversation.owner_id.as_ref() == Some(&actor_id)
-                        || conversation
-                            .participants
-                            .iter()
-                            .any(|participant| participant.actor_id == actor_id);
-                    if !has_access {
-                        return Err(EngineError::CommunityAccessDenied {
-                            conversation_id,
-                            actor_id,
-                        });
-                    }
                 }
                 Ok(vec![Event::SavedSublistParentAccessReconciled {
                     conversation_id,
@@ -2575,26 +2560,29 @@ impl MessagingEngine {
                 actor_id,
                 message_ids,
             } => {
-                if !matches!(
-                    &destination.child,
-                    Some(ConversationChildIdentity::SavedSublist { .. })
-                ) {
+                if !destination.is_valid()
+                    || !actor_id.is_valid()
+                    || !matches!(
+                        &destination.child,
+                        Some(ConversationChildIdentity::SavedSublist { .. })
+                    )
+                {
                     return Err(EngineError::InvalidConversationChildDestination);
                 }
-                // Reuse the canonical parent/actor authorization contract without
-                // creating a renderer-visible draft mutation.
-                self.decide(Command::SetConversationChildDraft {
-                    destination: destination.clone(),
-                    actor_id: actor_id.clone(),
-                    text: String::new(),
-                    reply_to_message_id: None,
-                    updated_at_ms: 0,
-                })?;
-                for message_id in &message_ids {
-                    self.require_message(
-                        destination_message_conversation_id(&destination),
-                        message_id,
-                    )?;
+                // Native/server membership is the authority for this child and can
+                // precede the local parent Message projection. Requiring every
+                // authoritative id to already exist in the local message map made
+                // a fresh sync impossible and incorrectly promoted projection
+                // ordering into truth. The parent relation must already have been
+                // reconciled for this account; renderer/client commands cannot
+                // mint that relation.
+                let parent_authorized = self
+                    .state
+                    .saved_sublist_parent_access
+                    .get(&destination.conversation_id)
+                    .is_some_and(|actors| actors.contains(&actor_id));
+                if !parent_authorized {
+                    return Err(EngineError::InvalidConversationChildDestination);
                 }
                 let message_ids = message_ids
                     .into_iter()
