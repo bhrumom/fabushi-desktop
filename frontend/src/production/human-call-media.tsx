@@ -905,6 +905,8 @@ export function HumanCallControls({
         || response.result.status !== "applied" || response.result.preferredRid !== nextRid) {
         throw new Error("Host returned an unconfirmed SFU layer mutation.");
       }
+      if (sfuRuntimeRef.current !== runtime || callRef.current?.id !== current.id
+        || callRef.current?.generation !== current.generation) return;
       subscription.preferredRid = nextRid;
       setRemoteVideoLayer({ current: nextRid, available: subscription.simulcastRids });
     } finally {
