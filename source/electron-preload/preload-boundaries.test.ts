@@ -6,6 +6,7 @@ import {
   resolveHostToBoxSync,
 } from "./box-vnc-clipboard-paste.js";
 import { createViewerVisibilityGate } from "./box-vnc-visibility-gate.js";
+import { installDialogStubs } from "./preload-browser-base.js";
 import {
   EDGE_HANDLER_FAILED,
   EDGE_UNKNOWN_METHOD,
@@ -190,4 +191,21 @@ test("attachment preload bridge normalizes native staging and commit contracts",
     "/committed/2-plain.txt",
   ]), ["/committed/1-agent-notes.txt", "/committed/2-plain.txt"]);
   assert.equal(normalizeCommittedAttachmentNativeResult([{ name: "missing-path.txt" }]), null);
+});
+
+
+test("embedded browser dialog stubs fail closed instead of auto-consenting", () => {
+  const calls: string[] = [];
+  const windowPort = {
+    alert() { calls.push("alert-original"); },
+    confirm() { calls.push("confirm-original"); return true; },
+    prompt() { calls.push("prompt-original"); return "secret"; },
+    addEventListener() {},
+  };
+  installDialogStubs(windowPort);
+  assert.equal(windowPort.alert("blocked"), undefined);
+  assert.equal(windowPort.confirm("approve privileged action?"), false);
+  assert.equal(windowPort.prompt("enter secret"), null);
+  assert.deepEqual(calls, []);
+  assert.equal(windowPort.__sandDialogOverridesApplied, true);
 });
