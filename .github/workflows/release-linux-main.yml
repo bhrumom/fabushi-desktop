@@ -71,7 +71,7 @@ jobs:
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "short=$short" >> "$GITHUB_OUTPUT"
-          echo "tag=linux-main-v${version}-${short}" >> "$GITHUB_OUTPUT"
+          echo "tag=fabushi-rc-v${version}-${short}" >> "$GITHUB_OUTPUT"
 
       - name: Require Linux release signing and production account secrets
         shell: bash
@@ -346,14 +346,21 @@ jobs:
           if-no-files-found: error
           retention-days: 90
 
-      - name: Publish exact-source GitHub prerelease
+      - name: Publish exact-source shared GitHub prerelease
         if: ${{ (github.event_name == 'push' && startsWith(github.event.head_commit.message, 'release:')) || (github.event_name == 'workflow_dispatch' && inputs.publish_release) }}
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.source.outputs.tag }}
+          VERSION: ${{ steps.source.outputs.version }}
           SOURCE_SHA: ${{ steps.source.outputs.sha }}
         run: |
           set -euo pipefail
           git ls-remote origin refs/heads/main | grep -F "$SOURCE_SHA"
-          gh release create "$TAG" desktop/release/*.AppImage desktop/release/*.deb desktop/release/*.asc desktop/release/*.yml desktop/release/SHA256SUMS.txt desktop/release/provenance.json --repo "$GITHUB_REPOSITORY" --target "$SOURCE_SHA" --prerelease --title "Fabushi Linux ${TAG}" --notes "Exact-source signed Linux candidate: ${SOURCE_SHA}"
+          repo="$GITHUB_REPOSITORY"
+          if ! gh release view "$TAG" --repo "$repo" >/dev/null 2>&1; then
+            gh release create "$TAG" --repo "$repo" --target "$SOURCE_SHA" --prerelease --title "Fabushi release candidate $VERSION - ${SOURCE_SHA:0:12}" --notes "Exact-source three-platform Fabushi release candidate: $SOURCE_SHA" || gh release view "$TAG" --repo "$repo" >/dev/null
+          fi
+          remote_tag="$(git ls-remote origin "refs/tags/$TAG" | awk '{print $1}')"
+          test "$remote_tag" = "$SOURCE_SHA"
+          gh release upload "$TAG" desktop/release/*.AppImage desktop/release/*.deb desktop/release/*.asc desktop/release/*.yml desktop/release/SHA256SUMS.txt desktop/release/provenance.json --repo "$repo" --clobber
