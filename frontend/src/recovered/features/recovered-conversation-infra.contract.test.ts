@@ -589,6 +589,33 @@ test("composer draft schema v1 migrates legacy Agent keys into typed scope keys 
   store.dispose();
 });
 
+test("composer draft schema v1 fails closed on an empty legacy scope key", async () => {
+  let clears = 0;
+  const persistence: ComposerDraftPersistence = {
+    async read() {
+      return JSON.stringify({
+        schemaVersion: 1,
+        value: {
+          agents: {
+            "": {
+              draft: { prompt: "invalid legacy scope", attachments: [] },
+              draftId: "invalid-draft-id",
+              recovery: null,
+            },
+          },
+        },
+      });
+    },
+    async write() { assert.fail("invalid legacy scope must not be rewritten"); },
+    async clear() { clears += 1; },
+  };
+  const store = createComposerDraftStateStore(persistence);
+  await assert.doesNotReject(store.restore("account-1"));
+  await flush();
+  assert.equal(clears, 1, "invalid legacy scope must clear only the account draft slice");
+  store.dispose();
+});
+
 test("composer draft typed scopes isolate conversation children and preserve rich attachment metadata", async () => {
   const writes: unknown[] = [];
   const persistence: ComposerDraftPersistence = {
