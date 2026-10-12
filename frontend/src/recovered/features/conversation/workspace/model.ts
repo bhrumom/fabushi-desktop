@@ -36,7 +36,7 @@ export interface ComposerDraft {
 
 export const COMPOSER_DRAFT_METADATA = {
   slice: "composer-drafts",
-  schemaVersion: 1,
+  schemaVersion: 2,
   scope: "client-persisted",
   accountSensitive: true
 } as const;
@@ -55,7 +55,10 @@ export function areComposerDraftContentsEqual(left: ComposerDraft, right: Compos
     && left.attachments.length === right.attachments.length
     && left.attachments.every((attachment, index) => {
       const candidate = right.attachments[index];
-      return attachment.path === candidate?.path && attachment.name === candidate.name;
+      return attachment.path === candidate?.path
+        && attachment.name === candidate.name
+        && attachment.size === candidate.size
+        && attachment.mimeType === candidate.mimeType;
     });
 }
 
@@ -80,9 +83,18 @@ export function parseComposerDraft(value: unknown): ComposerDraft | null {
   for (const valueAttachment of candidate.attachments) {
     if (typeof valueAttachment !== "object" || valueAttachment == null) return null;
     const attachment = valueAttachment as Record<string, unknown>;
-    if (typeof attachment.path !== "string" || typeof attachment.name !== "string") return null;
+    if (
+      typeof attachment.path !== "string"
+      || typeof attachment.name !== "string"
+      || (attachment.mimeType !== undefined && typeof attachment.mimeType !== "string")
+    ) return null;
     const size = typeof attachment.size === "number" && Number.isFinite(attachment.size) ? attachment.size : undefined;
-    attachments.push({ path: attachment.path, name: attachment.name, ...(size === undefined ? {} : { size }) });
+    attachments.push({
+      path: attachment.path,
+      name: attachment.name,
+      ...(size === undefined ? {} : { size }),
+      ...(attachment.mimeType === undefined ? {} : { mimeType: attachment.mimeType }),
+    });
   }
 
   return {
