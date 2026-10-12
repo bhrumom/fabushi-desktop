@@ -183,3 +183,20 @@ test("SFU partial track results are identity-complete before runtime settlement"
   assert.ok(source.includes("Some local media could not be published"));
   assert.equal(source.includes("for (const publication of publications) runtime.publishedMids.add(publication.mid);"), false);
 });
+
+
+test("shipping SFU layer switching uses durable subscription identity and explicit applied settlement", () => {
+  assert.ok(source.includes("remoteVideoSubscriptions: Map<string, SfuRemoteVideoSubscription>"));
+  assert.ok(source.includes("successfulSubscriptions.set(raw.publicationId, raw.subscriptionId)"));
+  assert.ok(source.includes("runtime.remoteVideoSubscriptions.set(publication.publicationId"));
+  assert.ok(source.includes('callCommandFence.acquire("remote-video-layer")'));
+  assert.ok(source.includes('client.call("updateCallMediaSubscriptionLayer"'));
+  assert.ok(source.includes("subscriptionId: subscription.subscriptionId"));
+  assert.ok(source.includes("clientMutationId: callMediaNonce(\"layer\")"));
+  assert.ok(source.includes('priorityOrdering: "none"'));
+  assert.ok(source.includes('ridNotAvailable: "none"'));
+  assert.ok(source.includes('response.result.status !== "applied"'));
+  assert.ok(source.includes("subscription.preferredRid = nextRid"));
+  assert.ok(source.includes('aria-label="Switch remote video quality"'));
+  assert.ok(source.includes("pending={layerPending}"));
+});
