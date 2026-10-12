@@ -184,6 +184,10 @@ pub struct ProductionSessionWorkers {
     call_session_store: Option<Arc<CallSessionStore>>,
     call_session_store_error: Option<String>,
     remote_resource_resolver: Mutex<MediaResolveCoordinator>,
+    // Monotonic, runtime-only generation per shipping Human conversation.
+    // It fences late SavedSublist authority settlement without creating a second
+    // persistent message/child store; restart intentionally begins a fresh epoch.
+    saved_sublist_authority_generations: Mutex<BTreeMap<String, u64>>,
     busy_timeout_ms: u64,
 }
 
@@ -382,6 +386,7 @@ impl ProductionSessionWorkers {
                 MediaResolveCoordinator::new(REMOTE_RESOURCE_RESOLVE_MAX_IN_FLIGHT)
                     .expect("remote resource resolve budget is non-zero"),
             ),
+            saved_sublist_authority_generations: Mutex::new(BTreeMap::new()),
             busy_timeout_ms,
         }
     }
@@ -2568,10 +2573,29 @@ impl ProductionSessionWorkers {
         Ok(entry)
     }
 
+    fn begin_saved_sublist_authority_generation(
+        &self,
+        conversation_id: &str,
+    ) -> Result<u64, String> {
+        let mut generations = self
+            .saved_sublist_authority_generations
+            .lock()
+            .map_err(|_| "SavedSublist authority generation lock is poisoned".to_string())?;
+        let next = generations
+            .get(conversation_id)
+            .copied()
+            .unwrap_or(0)
+            .saturating_add(1);
+        generations.insert(conversation_id.to_string(), next);
+        Ok(next)
+    }
+
     fn reconcile_saved_sublist_authority_from_transcript(
         &self,
+        conversation_id: &str,
+        generation: u64,
         entries: &[serde_json::Value],
-    ) -> Result<(), String> {
+    ) -> Result<bool, String> {
         let actor_id = self.story_actor_id()?;
         let mut memberships: BTreeMap<
             String,
@@ -2634,13 +2658,23 @@ impl ProductionSessionWorkers {
         }
 
         if memberships.is_empty() {
-            return Ok(());
+            return Ok(true);
         }
 
         let _guard = MESSAGING_PROJECTION_IO_LOCK
             .get_or_init(|| Mutex::new(()))
             .lock()
             .map_err(|_| "canonical messaging projection storage lock is poisoned".to_string())?;
+        // Hold the generation guard across the durable canonical write. If a newer
+        // sync started before this settlement reached the lock, this response is
+        // stale and must retire without overwriting newer authority.
+        let generations = self
+            .saved_sublist_authority_generations
+            .lock()
+            .map_err(|_| "SavedSublist authority generation lock is poisoned".to_string())?;
+        if generations.get(conversation_id).copied() != Some(generation) {
+            return Ok(false);
+        }
         let root = self.agents_root.join("_messaging");
         let mut service = MessagingService::load_with_blob_store(
             MessagingJsonFileStateStore::new(root.join("snapshot.json")),
@@ -2675,7 +2709,7 @@ impl ProductionSessionWorkers {
                     format!("canonical SavedSublist membership reconciliation failed: {error}")
                 })?;
         }
-        Ok(())
+        Ok(true)
     }
 
     pub fn sync_human_conversation(
@@ -2701,6 +2735,8 @@ impl ProductionSessionWorkers {
                 identity.user_id, local_human_id
             ));
         }
+        let saved_sublist_authority_generation =
+            self.begin_saved_sublist_authority_generation(conversation_id)?;
         let pending = owner
             .get_transcript_entries()
             .map_err(|error| error.to_string())?
@@ -2810,7 +2846,11 @@ impl ProductionSessionWorkers {
         let entries = owner
             .get_transcript_entries()
             .map_err(|error| error.to_string())?;
-        self.reconcile_saved_sublist_authority_from_transcript(&entries)?;
+        let _ = self.reconcile_saved_sublist_authority_from_transcript(
+            conversation_id,
+            saved_sublist_authority_generation,
+            &entries,
+        )?;
         Ok(entries)
     }
 
@@ -4558,18 +4598,46 @@ mod sharebox_shipping_tests {
             }),
         ];
 
-        workers
-            .reconcile_saved_sublist_authority_from_transcript(&entries)
+        let first_generation = workers
+            .begin_saved_sublist_authority_generation("saved:self")
             .unwrap();
+        assert!(workers
+            .reconcile_saved_sublist_authority_from_transcript(
+                "saved:self",
+                first_generation,
+                &entries,
+            )
+            .unwrap());
+
+        let stale_only = vec![serde_json::json!({
+            "id": "human-server-message:9",
+            "kind": "message",
+            "remoteMessageId": "9",
+            "destination": serde_json::to_value(&destination).unwrap(),
+        })];
+        let current_generation = workers
+            .begin_saved_sublist_authority_generation("saved:self")
+            .unwrap();
+        assert!(!workers
+            .reconcile_saved_sublist_authority_from_transcript(
+                "saved:self",
+                first_generation,
+                &stale_only,
+            )
+            .unwrap());
 
         let untrusted_local_only = vec![serde_json::json!({
             "id": "pending-local-only",
             "kind": "message",
             "destination": serde_json::to_value(&destination).unwrap(),
         })];
-        workers
-            .reconcile_saved_sublist_authority_from_transcript(&untrusted_local_only)
-            .unwrap();
+        assert!(workers
+            .reconcile_saved_sublist_authority_from_transcript(
+                "saved:self",
+                current_generation,
+                &untrusted_local_only,
+            )
+            .unwrap());
 
         let actor_id = workers.story_actor_id().unwrap();
         let messaging_root = root.join("_messaging");

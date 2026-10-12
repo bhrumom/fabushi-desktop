@@ -7284,10 +7284,12 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
-        "native/mahayana-messaging/src/conversation.rs"
+        "source/host/src/extensions/session/production.rs"
       ],
       "fabushi_target_symbols": [
-        "reconcile"
+        "begin_saved_sublist_authority_generation",
+        "reconcile_saved_sublist_authority_from_transcript",
+        "sync_human_conversation"
       ],
       "target_language": "Rust",
       "language_rationale": "Non-UI product/state-machine responsibility belongs in the canonical Rust messaging domain.",
@@ -7304,14 +7306,23 @@
       ],
       "service_owner": "Fabushi canonical messaging/sync service",
       "deployment_evidence": [],
-      "implementation_status": "mapped",
+      "implementation_status": "implemented",
       "coverage_disposition": "rewritten",
       "blockers": [
-        "Authoritative server/native feed and full shipping composition remain open"
+        "Production Worker rollout and authenticated live SavedSublist E2E remain blocked by missing APNs Worker secrets.",
+        "Fresh exact-head GitHub Actions and independent acceptance remain open."
       ],
-      "production_entrypoints": [],
-      "production_evidence": [],
-      "test_evidence": [],
+      "production_entrypoints": [
+        "ProductionSessionWorkers::sync_human_conversation -> begin_saved_sublist_authority_generation -> reconcile_saved_sublist_authority_from_transcript -> canonical MessagingService"
+      ],
+      "production_evidence": [
+        "path:source/host/src/extensions/session/production.rs#begin_saved_sublist_authority_generation",
+        "path:source/host/src/extensions/session/production.rs#reconcile_saved_sublist_authority_from_transcript",
+        "path:source/host/src/extensions/session/production.rs#sync_human_conversation"
+      ],
+      "test_evidence": [
+        "source/host/src/extensions/session/production.rs#shipping_saved_sublist_server_authority_reconciles_durably_and_survives_restart"
+      ],
       "target_commit": "6e6744eb8716671f060251aacc986ef5fb483b0c",
       "workflow_run": null,
       "run_attempt": null,
@@ -7429,7 +7440,18 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Source-informed reimplementation mapping from accepted telegramdesktop/tdesktop authority; no retained Telegram C++ runtime.",
       "reviewer": null,
-      "notes": "Mapped from complete-read SavedMessages authority. This row does not claim shipping completion or verification; authoritative server/native feed and exact-head evidence remain open."
+      "notes": "Shipping Human sync coalesces duplicate SavedSublist transcript authority into one destination/BTreeSet projection and fences stale concurrent settlement with a per-conversation monotonic generation held across the durable canonical write. Implemented, not verified, until exact-head Actions plus production deployment/E2E and independent acceptance close.",
+      "fabushi_target_bindings": [
+        {
+          "path": "source/host/src/extensions/session/production.rs",
+          "symbols": [
+            "begin_saved_sublist_authority_generation",
+            "reconcile_saved_sublist_authority_from_transcript",
+            "sync_human_conversation"
+          ],
+          "responsibility_scope": "shipping Human sync coalesces SavedSublist authority per destination and fences late settlement by monotonic per-conversation generation"
+        }
+      ]
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
