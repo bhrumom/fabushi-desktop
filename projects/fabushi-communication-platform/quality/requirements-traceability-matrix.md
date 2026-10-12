@@ -658,3 +658,18 @@ Predecessor 4028b761 runs `38062398837/38062398841` and pressure jobs `114243173
 | TDRP-R9-LANGUAGE-CONSUMER-001 | translation/AI consumers treat low confidence as unknown and never expose unauthorized text | Translation-gateway contract + E2E once owner exists | BLOCKED-ON-PRODUCTION-OWNER |
 
 No row is VERIFIED. Current blocker is an absent shipping classifier/Translation gateway owner, not lack of source understanding.
+
+## Revision 9 release canary exact traceability
+
+The source-neutral order-58 release responsibility is tracked as `TDRP-R9-RELEASE-CANARY-SEMANTICS-001`. This binding is normative for Revision 9 traceability and does not assert release acceptance; Windows/Linux signed-package acceptance and one-release-candidate install/upgrade/restart/recovery remain open until same-head evidence exists.
+
+- requirement_ids: `TDRP-R9-RELEASE-CANARY-SEMANTICS-001`; `AC-47`; `AC-48`; `AC-49`; `AC-50`
+- oracle_ids: `ORA-TDRP-RELEASE-EXACT-SOURCE-001`; `ORA-TDRP-UPDATER-TRUST-001`
+- invariant_ids: `INV-TDRP-RELEASE-NO-STALE-TIP-001`; `INV-TDRP-RELEASE-MONOTONIC-001`; `INV-TDRP-RELEASE-SIGNED-PRODUCTION-001`
+- contract/integration: `CONTRACT-TDRP-UPDATER-MATRIX-001`; `INT-TDRP-RELEASE-PACKAGING-001`
+- e2e/temporal/fault: `E2E-TDRP-SIGNED-PACKAGE-UPGRADE-001`; `TEMP-TDRP-UPDATER-MONOTONIC-001`; `FAULT-TDRP-RELEASE-STALE-RERUN-001`
+- soak/security/regression: `SOAK-TDRP-UPDATER-RESTART-001`; `SEC-TDRP-RELEASE-LEAST-PRIVILEGE-001`; `SEC-TDRP-UPDATE-SIGNATURE-001`; `REG-TDRP-FABUSHI-BOT-PACKAGED-001`
+- evidence_ids: fresh exact-head GitHub Actions only; predecessor runs remain diagnostic and cannot satisfy current-head acceptance.
+- reviewer: pending-independent-review
+- verdict: MAPPED / RELEASE-ACCEPTANCE-OPEN
+

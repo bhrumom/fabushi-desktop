@@ -52,6 +52,19 @@ These prove the existing updater contract behavior at that predecessor SHA, not 
 
 No complete current-head source-neutral Windows/Linux signed package + real install/upgrade/restart/publication/provenance owner/evidence equivalent to the macOS release workflow was found in the workflow inventory. Those responsibilities remain mapped/open. A future implementation must extend canonical Fabushi release infrastructure rather than create a Telegram canary runtime.
 
+## Traceability binding
+
+This dossier is the source-analysis owner for `TDRP-R9-RELEASE-CANARY-SEMANTICS-001`. The ledger's exact traceability set is intentionally repeated here so the authority validator can fail closed when the release responsibility and its quality contracts drift.
+
+- requirement_ids: `TDRP-R9-RELEASE-CANARY-SEMANTICS-001`, `AC-47`, `AC-48`, `AC-49`, `AC-50`
+- oracle_ids: `ORA-TDRP-RELEASE-EXACT-SOURCE-001`, `ORA-TDRP-UPDATER-TRUST-001`
+- invariant_ids: `INV-TDRP-RELEASE-NO-STALE-TIP-001`, `INV-TDRP-RELEASE-MONOTONIC-001`, `INV-TDRP-RELEASE-SIGNED-PRODUCTION-001`
+- contract/integration: `CONTRACT-TDRP-UPDATER-MATRIX-001`, `INT-TDRP-RELEASE-PACKAGING-001`
+- e2e/temporal/fault: `E2E-TDRP-SIGNED-PACKAGE-UPGRADE-001`, `TEMP-TDRP-UPDATER-MONOTONIC-001`, `FAULT-TDRP-RELEASE-STALE-RERUN-001`
+- soak/security/regression: `SOAK-TDRP-UPDATER-RESTART-001`, `SEC-TDRP-RELEASE-LEAST-PRIVILEGE-001`, `SEC-TDRP-UPDATE-SIGNATURE-001`, `REG-TDRP-FABUSHI-BOT-PACKAGED-001`
+
+The existing macOS release owner and three-platform updater contract are partial owner/evidence bindings only. They do not satisfy `INV-TDRP-RELEASE-SIGNED-PRODUCTION-001` for Windows/Linux and do not turn `AC-50` into ACCEPT without same-candidate signed package install/upgrade/restart/recovery and independent release review.
+
 ## Security and provenance
 
 Fabushi must retain the transferable security properties: exact source binding, stale-tip refusal, monotonic ordering, least privilege, platform signature verification, signed updater trust, digest-pinned infrastructure and fail-closed publication. Telegram transport secrets/runtime are not adopted. Provenance remains tied to the exact upstream blob above and to same-head Fabushi GitHub Actions.
