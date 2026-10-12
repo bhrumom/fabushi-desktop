@@ -171,6 +171,14 @@ jobs:
           ELECTRON_ENABLE_LOGGING: "1"
           ELECTRON_ENABLE_STACK_DUMPING: "1"
         run: npx playwright test e2e/mahayana-agent-workbench.spec.ts --grep "Mahayana renders one Hermes-style assistant turn"
+      - name: Run canonical Human retention multi-device shipping E2E
+        env:
+          FABUSHI_FEATURE_HOST_MODE: test
+          MAHAYANA_APP_HOST_BIN: ${{ github.workspace }}/desktop/resources/bin/mahayana-app-host
+          DEBUG: pw:browser*
+          ELECTRON_ENABLE_LOGGING: "1"
+          ELECTRON_ENABLE_STACK_DUMPING: "1"
+        run: npx playwright test e2e/mahayana-agent-workbench.spec.ts --grep "retention policy through canonical remote sync" --workers=1
       - name: Run canonical media viewer window chrome acceptance
         env:
           FABUSHI_FEATURE_HOST_MODE: test

@@ -1,5 +1,6 @@
 import { _electron as electron, expect, test, type ElectronApplication, type Locator, type Page } from '@playwright/test';
 import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -94,10 +95,17 @@ type E2eHumanMessage = {
 
 type E2eHumanResource = E2eHumanAttachment & { bytes: Buffer };
 
+type E2eHumanRetention = {
+  conversationId: string;
+  retentionSeconds: number | null;
+  revision: number;
+};
+
 let e2eHumanMessages: E2eHumanMessage[] = [];
 let e2eHumanMessageSequence = 1;
 let e2eHumanResourceSequence = 1;
 let e2eHumanResources = new Map<string, E2eHumanResource>();
+let e2eHumanRetentions = new Map<string, E2eHumanRetention>();
 let e2eLoginDeviceSequence = 1;
 const e2eObservedSocialDeviceIds = new Set<string>();
 
@@ -109,6 +117,28 @@ function isE2eSocialDeviceId(value: unknown): value is string {
   if (typeof value !== 'string' || !/^fabushi-e2e-device(?:-\d+)?$/u.test(value)) return false;
   e2eObservedSocialDeviceIds.add(value);
   return true;
+}
+
+function canonicalE2eHumanConversationId(peerHumanId: string): string {
+  const participants = ['fabushi-e2e-account', peerHumanId].sort();
+  const digest = createHash('sha256');
+  for (const participant of participants) {
+    const bytes = Buffer.from(participant, 'utf8');
+    const length = Buffer.alloc(8);
+    length.writeBigUInt64BE(BigInt(bytes.length));
+    digest.update(length);
+    digest.update(bytes);
+  }
+  return `human-direct-${digest.digest('hex')}`;
+}
+
+function e2eHumanRetentionForPeer(peerHumanId: string): E2eHumanRetention {
+  const conversationId = canonicalE2eHumanConversationId(peerHumanId);
+  const existing = e2eHumanRetentions.get(conversationId);
+  if (existing != null) return existing;
+  const created: E2eHumanRetention = { conversationId, retentionSeconds: null, revision: 0 };
+  e2eHumanRetentions.set(conversationId, created);
+  return created;
 }
 
 function parseE2eMultipartFile(contentType: string | undefined, body: Buffer): { name: string; contentType: string; bytes: Buffer } | null {
@@ -302,6 +332,74 @@ async function ensureE2eAuthBackend(): Promise<string> {
         response.setHeader('content-length', String(resource.bytes.length));
         response.statusCode = 200;
         response.end(resource.bytes);
+        return;
+      }
+      if (requestUrl.pathname === '/api/social/message-retention' && request.method === 'GET') {
+        if (request.headers.authorization !== `Bearer ${token}`
+          || !isE2eSocialDeviceId(request.headers['x-fabushi-device-id'])) {
+          response.setHeader('content-type', 'application/json');
+          response.statusCode = 401;
+          response.end(JSON.stringify({ success: false, error: 'invalid-social-credential' }));
+          return;
+        }
+        const peerHumanId = requestUrl.searchParams.get('contactId')?.trim() ?? '';
+        if (peerHumanId.length === 0) {
+          response.setHeader('content-type', 'application/json');
+          response.statusCode = 400;
+          response.end(JSON.stringify({ success: false, error: 'missing-retention-contact' }));
+          return;
+        }
+        response.setHeader('content-type', 'application/json');
+        response.statusCode = 200;
+        response.end(JSON.stringify({ success: true, retention: e2eHumanRetentionForPeer(peerHumanId) }));
+        return;
+      }
+      if (requestUrl.pathname === '/api/social/message-retention' && request.method === 'PUT') {
+        if (request.headers.authorization !== `Bearer ${token}`
+          || !isE2eSocialDeviceId(request.headers['x-fabushi-device-id'])) {
+          response.setHeader('content-type', 'application/json');
+          response.statusCode = 401;
+          response.end(JSON.stringify({ success: false, error: 'invalid-social-credential' }));
+          return;
+        }
+        const body = JSON.parse((await readRequestBody(request)).toString('utf8')) as {
+          targetUserId?: unknown;
+          retentionSeconds?: unknown;
+          expectedRevision?: unknown;
+        };
+        const peerHumanId = typeof body.targetUserId === 'string' ? body.targetUserId.trim() : '';
+        const retentionSeconds = body.retentionSeconds;
+        const expectedRevision = body.expectedRevision;
+        if (peerHumanId.length === 0
+          || typeof expectedRevision !== 'number'
+          || !Number.isSafeInteger(expectedRevision)
+          || expectedRevision < 0
+          || (retentionSeconds !== null
+            && (typeof retentionSeconds !== 'number'
+              || !Number.isSafeInteger(retentionSeconds)
+              || retentionSeconds <= 0
+              || retentionSeconds > 0xffffffff))) {
+          response.setHeader('content-type', 'application/json');
+          response.statusCode = 400;
+          response.end(JSON.stringify({ success: false, error: 'invalid-retention-mutation' }));
+          return;
+        }
+        const current = e2eHumanRetentionForPeer(peerHumanId);
+        if (current.revision !== expectedRevision) {
+          response.setHeader('content-type', 'application/json');
+          response.statusCode = 409;
+          response.end(JSON.stringify({ success: false, error: '消息保留策略版本已过期', retention: current }));
+          return;
+        }
+        const next: E2eHumanRetention = {
+          conversationId: current.conversationId,
+          retentionSeconds: retentionSeconds == null ? null : retentionSeconds,
+          revision: current.revision + 1,
+        };
+        e2eHumanRetentions.set(next.conversationId, next);
+        response.setHeader('content-type', 'application/json');
+        response.statusCode = 200;
+        response.end(JSON.stringify({ success: true, retention: next }));
         return;
       }
       if (requestUrl.pathname === '/api/social/messages' && request.method === 'GET') {
@@ -1162,11 +1260,12 @@ test('shipping Human Forward uses the canonical picker and survives restart', as
   }
 });
 
-test('two shipping Electron device sessions converge one Human conversation through canonical remote sync', async () => {
+test('two shipping Electron device sessions converge one Human conversation and retention policy through canonical remote sync', async () => {
   e2eHumanMessages = [];
   e2eHumanMessageSequence = 1;
   e2eHumanResourceSequence = 1;
   e2eHumanResources = new Map<string, E2eHumanResource>();
+  e2eHumanRetentions = new Map<string, E2eHumanRetention>();
   e2eObservedSocialDeviceIds.clear();
 
   const appDataDirA = await mkdtemp(path.join(tmpdir(), 'fabushi-human-convergence-a-'));
@@ -1214,6 +1313,45 @@ test('two shipping Electron device sessions converge one Human conversation thro
     const convergenceTitle = 'Human Convergence Peer';
     await createHumanConversation(pageA, convergencePeerId, convergenceTitle);
     await createHumanConversation(pageB, convergencePeerId, convergenceTitle);
+
+    const openRetentionDialog = async (page: Page, expectedLabel: string): Promise<Locator> => {
+      const sendOptions = page.getByRole('button', { name: 'Send options' });
+      await expect(sendOptions).toBeEnabled();
+      await sendOptions.click();
+      const retentionItem = page.getByRole('menuitem', { name: `Message retention · ${expectedLabel}`, exact: true });
+      await expect(retentionItem).toBeVisible();
+      await retentionItem.click();
+      const dialog = page.getByRole('dialog', { name: 'Message retention' });
+      await expect(dialog).toBeVisible();
+      return dialog;
+    };
+
+    const initialRetentionB = await openRetentionDialog(pageB, 'Off');
+    await initialRetentionB.getByRole('button', { name: 'Cancel', exact: true }).click();
+    await expect(initialRetentionB).toBeHidden();
+
+    const retentionA = await openRetentionDialog(pageA, 'Off');
+    await retentionA.getByRole('button', { name: '1 day', exact: true }).click();
+    await expect(retentionA).toBeHidden();
+    await pageA.getByRole('button', { name: 'Send options' }).click();
+    await expect(pageA.getByRole('menuitem', { name: 'Message retention · 1 day', exact: true })).toBeVisible();
+    await pageA.keyboard.press('Escape');
+
+    const staleRetentionB = await openRetentionDialog(pageB, 'Off');
+    await staleRetentionB.getByRole('button', { name: '7 days', exact: true }).click();
+    await expect(staleRetentionB.getByRole('button', { name: '1 day', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    await staleRetentionB.getByRole('button', { name: '7 days', exact: true }).click();
+    await expect(staleRetentionB).toBeHidden();
+
+    await createHumanConversation(pageA, 'human-convergence-retention-switch-e2e', 'Human Retention Switch A');
+    await reopenConversation(pageA, convergenceTitle);
+    await pageA.getByRole('button', { name: 'Send options' }).click();
+    await expect(pageA.getByRole('menuitem', { name: 'Message retention · 7 days', exact: true })).toBeVisible();
+    await pageA.keyboard.press('Escape');
+
+    const canonicalRetention = e2eHumanRetentionForPeer(convergencePeerId);
+    expect(canonicalRetention.retentionSeconds).toBe(604_800);
+    expect(canonicalRetention.revision).toBe(2);
 
     const fromA = 'Dual-device Human convergence from Electron device A.';
     await sendHumanTurn(pageA, fromA);
