@@ -9805,6 +9805,22 @@
             "ConversationChildDestroyed"
           ],
           "responsibility_scope": "child-destruction lifecycle trigger for cross-owner cleanup after authoritative membership resolution"
+        },
+        {
+          "path": "source/host/src/extensions/session/production.rs",
+          "symbols": [
+            "sync_human_conversation",
+            "reconcile_saved_sublist_authority_from_transcript"
+          ],
+          "responsibility_scope": "shipping authenticated server/native Human message feed materialization followed by SavedSublist parent-access and exact membership reconciliation into the single canonical messaging service"
+        },
+        {
+          "path": "native/mahayana-messaging/src/service.rs",
+          "symbols": [
+            "reconcile_saved_sublist_parent_access",
+            "reconcile_saved_sublist_membership"
+          ],
+          "responsibility_scope": "transactional durable authoritative SavedSublist reconciliation with persistence rollback/fail-closed semantics"
         }
       ]
     },
