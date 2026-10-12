@@ -278,7 +278,10 @@ function emojiSuggestionWordsUsed(words: readonly string[], query: string): numb
     }
   };
 
-  match(0, 0);
+  // Upstream gives multi-word replacements a baseline tier before counting
+  // consumed words. This intentionally ranks a true one-word prefix ahead of
+  // a multi-word replacement that happens to consume only one of its words.
+  match(0, words.length < 2 ? 0 : 1);
   return Number.isFinite(best) ? best : null;
 }
 
