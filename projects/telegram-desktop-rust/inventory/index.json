@@ -13,10 +13,10 @@
     "recursive_non_directory_entries": 16125,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 15096,
-    "unread_minimum": 1929,
+    "unknown_minimum": 15032,
+    "unread_minimum": 1865,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through deterministic order 14,196; unknown 15,096; unread 1,929; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition through deterministic order 14,260; unknown 15,032; unread 1,865; omitted 0."
   },
   "latest_recursive_evidence": {
     "run_id": 38210191386,
@@ -35,7 +35,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live baseline accepted; closure open. Read-through 14,196; unread_minimum is 1,929; unknown remains 15,096; omitted remains 0; first unread 14,197 is doc/gh-pages::reference__wrapper_8hpp.js.",
+  "note": "Live baseline accepted; closure open. Read-through 14,260; unread_minimum is 1,865; unknown remains 15,032; omitted remains 0; first unread 14,261 is doc/gh-pages::search/all_b.html.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -53,23 +53,23 @@
       6541,
       6627
     ],
-    "current_source_read_through": 14196,
-    "first_unread_order": 14197,
-    "first_unread_path": "doc/gh-pages::reference__wrapper_8hpp.js",
-    "current_head_source_authority_evidence": "Predecessor ca7bf00 lineage repaired the live-summary authority drift; this 14,196 accounting descendant requires fresh same-head Actions.",
-    "source_read_reconciliation": "Accepted prefix 14,196/16,125; orders 14,133-14,196 exact-read. NAVTREEINDEX2-8 are generated navigation indexes; HTML/JS entries were inspected individually as Doxygen outputs/sidecars; open.png was verified as an exact 123-byte 9x9 PNG.",
-    "source_authority_evidence": "Predecessor ca7bf00 same-head Actions were in progress before the 14,196 accounting descendant; no predecessor green result is inherited."
+    "current_source_read_through": 14260,
+    "first_unread_order": 14261,
+    "first_unread_path": "doc/gh-pages::search/all_b.html",
+    "current_head_source_authority_evidence": "This 14,260 accounting descendant requires fresh same-head Actions; predecessor results are diagnostic only.",
+    "source_read_reconciliation": "Accepted prefix 14,260/16,125; orders 14,197-14,260 exact-read. resize.js was separately audited as Doxygen's MIT documentation-site resize runtime; search/all_* files are generated Doxygen search pages/searchData indexes.",
+    "source_authority_evidence": "Fresh exact-head validation required for the 14,260 descendant."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "deterministic_prefix_closed": 57,
-    "development_only_non_applicable": 955,
-    "unknown_closed": 1029,
+    "development_only_non_applicable": 1019,
+    "unknown_closed": 1093,
     "omitted": 0,
-    "read_through": 14196,
-    "first_unread_order": 14197,
-    "first_unread_path": "doc/gh-pages::reference__wrapper_8hpp.js",
+    "read_through": 14260,
+    "first_unread_order": 14261,
+    "first_unread_path": "doc/gh-pages::search/all_b.html",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }
