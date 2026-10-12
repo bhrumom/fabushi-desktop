@@ -185,9 +185,9 @@ impl<S: MessagingStateStore> MessagingService<S> {
         peer_id: ActorId,
         now_ms: i64,
     ) -> Result<(), MessagingServiceError> {
-        self.engine
-            .note_recent_participant_suggestion(&actor_id, &peer_id)?;
-        self.persist(now_ms)
+        self.persist_recent_projection_mutation(now_ms, |engine| {
+            engine.note_recent_participant_suggestion(&actor_id, &peer_id)
+        })
     }
 
     pub fn remove_recent_participant_suggestion(
@@ -196,9 +196,9 @@ impl<S: MessagingStateStore> MessagingService<S> {
         peer_id: ActorId,
         now_ms: i64,
     ) -> Result<(), MessagingServiceError> {
-        self.engine
-            .remove_recent_participant_suggestion(&actor_id, &peer_id)?;
-        self.persist(now_ms)
+        self.persist_recent_projection_mutation(now_ms, |engine| {
+            engine.remove_recent_participant_suggestion(&actor_id, &peer_id)
+        })
     }
 
     pub fn clear_recent_participant_suggestions(
@@ -206,8 +206,26 @@ impl<S: MessagingStateStore> MessagingService<S> {
         actor_id: ActorId,
         now_ms: i64,
     ) -> Result<(), MessagingServiceError> {
-        self.engine.clear_recent_participant_suggestions(&actor_id)?;
-        self.persist(now_ms)
+        self.persist_recent_projection_mutation(now_ms, |engine| {
+            engine.clear_recent_participant_suggestions(&actor_id)
+        })
+    }
+
+    fn persist_recent_projection_mutation<F>(
+        &mut self,
+        now_ms: i64,
+        mutate: F,
+    ) -> Result<(), MessagingServiceError>
+    where
+        F: FnOnce(&mut MessagingEngine) -> Result<(), EngineError>,
+    {
+        let previous_engine = self.engine.clone();
+        mutate(&mut self.engine)?;
+        if let Err(error) = self.persist(now_ms) {
+            self.engine = previous_engine;
+            return Err(error);
+        }
+        Ok(())
     }
 
     pub fn into_store(self) -> S {
@@ -3049,6 +3067,28 @@ mod recent_participant_suggestion_service_tests {
     use crate::actor::Actor;
     use crate::store::{MemoryStateStore, MessagingStateStore};
 
+    #[derive(Debug)]
+    struct FailOnceStateStore {
+        inner: MemoryStateStore,
+        fail_next_save: bool,
+    }
+
+    impl MessagingStateStore for FailOnceStateStore {
+        fn load(&self) -> Result<Option<MessagingSnapshot>, StoreError> {
+            self.inner.load()
+        }
+
+        fn save(&mut self, snapshot: &MessagingSnapshot) -> Result<(), StoreError> {
+            if self.fail_next_save {
+                self.fail_next_save = false;
+                return Err(StoreError::Io(std::io::Error::other(
+                    "injected recent-projection persistence failure",
+                )));
+            }
+            self.inner.save(snapshot)
+        }
+    }
+
     #[test]
     fn recent_participant_suggestions_persist_without_server_journal_cursor() {
         let owner = ActorId::new("human:recent-owner");
@@ -3079,5 +3119,112 @@ mod recent_participant_suggestion_service_tests {
         let restored = MessagingService::load(store).expect("restore service");
         assert_eq!(restored.cursor(), 41);
         assert_eq!(restored.engine().recent_participant_suggestions(&owner), &[peer]);
+
+    #[test]
+    fn recent_participant_persistence_failure_rolls_back_and_retry_commits_exactly_once() {
+        let owner = ActorId::new("human:recent-owner-retry");
+        let peer = ActorId::new("human:recent-peer-retry");
+        let mut state = crate::engine::MessagingState::default();
+        state.actors.insert(owner.clone(), Actor::human(owner.0.clone(), "Owner"));
+        state.actors.insert(peer.clone(), Actor::human(peer.0.clone(), "Peer"));
+
+        let mut inner = MemoryStateStore::default();
+        inner
+            .save(&MessagingSnapshot::new(state, 17, 100))
+            .expect("seed messaging snapshot");
+        let store = FailOnceStateStore {
+            inner,
+            fail_next_save: true,
+        };
+
+        let mut service = MessagingService::load(store).expect("load seeded service");
+        assert!(matches!(
+            service.note_recent_participant_suggestion(owner.clone(), peer.clone(), 110),
+            Err(MessagingServiceError::Store(StoreError::Io(_)))
+        ));
+        assert!(
+            service.engine().recent_participant_suggestions(&owner).is_empty(),
+            "failed persistence must restore the exact pre-mutation engine state"
+        );
+        assert_eq!(service.cursor(), 17);
+
+        service
+            .note_recent_participant_suggestion(owner.clone(), peer.clone(), 120)
+            .expect("retry recent suggestion");
+        assert_eq!(
+            service.engine().recent_participant_suggestions(&owner),
+            &[peer.clone()]
+        );
+        assert_eq!(service.cursor(), 17);
+
+        let store = service.into_store();
+        let persisted = store.inner.snapshot().expect("persisted retry snapshot");
+        assert_eq!(
+            persisted.state.recent_participant_suggestions.get(&owner),
+            Some(&vec![peer.clone()])
+        );
+        let restored =
+            MessagingService::load(store.inner).expect("restore service after retry");
+        assert_eq!(restored.engine().recent_participant_suggestions(&owner), &[peer]);
+    }
+
+    #[test]
+    fn recent_participant_remove_and_clear_persistence_failures_restore_account_scope() {
+        let owner = ActorId::new("human:recent-owner-rollback");
+        let other = ActorId::new("human:recent-owner-other");
+        let peer = ActorId::new("human:recent-peer-rollback");
+        let mut state = crate::engine::MessagingState::default();
+        for actor in [
+            Actor::human(owner.0.clone(), "Owner"),
+            Actor::human(other.0.clone(), "Other"),
+            Actor::human(peer.0.clone(), "Peer"),
+        ] {
+            state.actors.insert(actor.id.clone(), actor);
+        }
+        state
+            .recent_participant_suggestions
+            .insert(owner.clone(), vec![peer.clone()]);
+        state
+            .recent_participant_suggestions
+            .insert(other.clone(), vec![peer.clone()]);
+
+        let mut inner = MemoryStateStore::default();
+        inner
+            .save(&MessagingSnapshot::new(state, 23, 100))
+            .expect("seed messaging snapshot");
+        let store = FailOnceStateStore {
+            inner,
+            fail_next_save: true,
+        };
+        let mut service = MessagingService::load(store).expect("load seeded service");
+
+        assert!(matches!(
+            service.remove_recent_participant_suggestion(owner.clone(), peer.clone(), 110),
+            Err(MessagingServiceError::Store(StoreError::Io(_)))
+        ));
+        assert_eq!(
+            service.engine().recent_participant_suggestions(&owner),
+            &[peer.clone()]
+        );
+        assert_eq!(
+            service.engine().recent_participant_suggestions(&other),
+            &[peer.clone()]
+        );
+
+        service.store.fail_next_save = true;
+        assert!(matches!(
+            service.clear_recent_participant_suggestions(owner.clone(), 120),
+            Err(MessagingServiceError::Store(StoreError::Io(_)))
+        ));
+        assert_eq!(
+            service.engine().recent_participant_suggestions(&owner),
+            &[peer.clone()]
+        );
+        assert_eq!(
+            service.engine().recent_participant_suggestions(&other),
+            &[peer]
+        );
+        assert_eq!(service.cursor(), 23);
+    }
     }
 }
