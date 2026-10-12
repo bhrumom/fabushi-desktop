@@ -39,6 +39,29 @@ describe("canonical Human silent and scheduled transport", () => {
     expect(renderer).toContain("setComposerClearGeneration((current) => current + 1)");
   });
 
+  it("keeps retention on the canonical Composer -> Host -> server route with stale fencing", () => {
+    const composer = read("recovered/features/conversation/workspace/composer.tsx");
+    const renderer = read("production/ProductionRenderer.tsx");
+    const gateway = read("../host/src/extensions/session/gateway.rs");
+    const production = read("../host/src/extensions/session/production.rs");
+    const transport = read("../host/src/extensions/session/native_messaging.rs");
+    expect(composer).toContain("onConfigureRetention");
+    expect(composer).toContain("Message retention");
+    expect(renderer).toContain('client.call("getHumanConversationRetention"');
+    expect(renderer).toContain('client.call("setHumanConversationRetention"');
+    expect(renderer).toContain("expectedRevision");
+    expect(renderer).toContain("Refreshed the server policy");
+    expect(renderer).toContain("Scheduled messages start their retention period when they are due to send.");
+    expect(gateway).toContain('"getHumanConversationRetention"');
+    expect(gateway).toContain('"setHumanConversationRetention"');
+    expect(production).toContain("get_human_conversation_retention");
+    expect(production).toContain("set_human_conversation_retention");
+    expect(production).toContain("retention.revision != expected_revision.saturating_add(1)");
+    expect(transport).toContain("/api/social/message-retention");
+    expect(transport).toContain("expected_revision");
+    expect(transport).toContain("expires_at_ms");
+  });
+
   it("keeps Host durability and canonical server payload in one owner", () => {
     const gateway = read("../host/src/extensions/session/gateway.rs");
     const production = read("../host/src/extensions/session/production.rs");
