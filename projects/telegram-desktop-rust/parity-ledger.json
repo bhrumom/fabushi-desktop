@@ -13482,7 +13482,7 @@
     "source_authority_evidence": "Direct accepted lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd exact-blob/content review; predecessor recursive artifact only establishes order; current descendant same-head Actions required.",
     "current_source_read_through": 13346,
     "first_unread_order": 13347,
-    "first_unread_path": "Telegram/cmake_helpers::.gitmodules"
+    "first_unread_path": "cmake::.gitmodules"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -13493,7 +13493,7 @@
     "omitted": 0,
     "read_through": 13346,
     "first_unread_order": 13347,
-    "first_unread_path": "Telegram/cmake_helpers::.gitmodules",
+    "first_unread_path": "cmake::.gitmodules",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {

@@ -282,7 +282,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Closure open. Read-through 13,346/16,125; first unread 13,347 Telegram/cmake_helpers::.gitmodules@c92fbea3467f72e188cba4cbfe51c8c68a7e2e77; unknown remains 15,845; product/release closure remains open."
+    "note": "Closure open. Read-through 13,346/16,125; first unread 13,347 cmake::.gitmodules@c92fbea3467f72e188cba4cbfe51c8c68a7e2e77; unknown remains 15,845; product/release closure remains open."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",
@@ -634,7 +634,7 @@
     "omitted": 0,
     "read_through": 13346,
     "first_unread_order": 13347,
-    "first_unread_path": "Telegram/cmake_helpers::.gitmodules",
+    "first_unread_path": "cmake::.gitmodules",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
@@ -735,5 +735,5 @@
     ],
     "note": "Valid exact-head evidence for 46dfaf only; main reconciliation/accounting descendants require fresh Actions."
   },
-  "note": "Accepted baseline; exact read-through 13,346; unknown=15,845, unread=2,779, omitted=0; first unread=13,347 Telegram/cmake_helpers::.gitmodules@c92fbea3467f72e188cba4cbfe51c8c68a7e2e77 from desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422."
+  "note": "Accepted baseline; exact read-through 13,346; unknown=15,845, unread=2,779, omitted=0; first unread=13,347 cmake::.gitmodules@c92fbea3467f72e188cba4cbfe51c8c68a7e2e77 from desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422."
 }

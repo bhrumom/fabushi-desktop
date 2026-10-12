@@ -35,7 +35,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live baseline accepted; closure open. Read-through 13,346; unread_minimum is 2,779; unknown remains 15,845; omitted remains 0; first unread 13,347 is Telegram/cmake_helpers::.gitmodules.",
+  "note": "Live baseline accepted; closure open. Read-through 13,346; unread_minimum is 2,779; unknown remains 15,845; omitted remains 0; first unread 13,347 is cmake::.gitmodules.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -55,7 +55,7 @@
     ],
     "current_source_read_through": 13346,
     "first_unread_order": 13347,
-    "first_unread_path": "Telegram/cmake_helpers::.gitmodules",
+    "first_unread_path": "cmake::.gitmodules",
     "current_head_source_authority_evidence": "Parent b714e70a2adee840cb172ccfc076791a22a7ae79 passed Validate Revision 9 authority in 38195834460/114638198808. Direct source read/decomposition continued through lib_webrtc and lib_webview order 13,346; fresh descendant same-head Actions are required.",
     "source_read_reconciliation": "Accepted prefix 13,346/16,125. 13,275-13,314 cover Human Call media device/environment/system-audio/video-track responsibilities; 13,315-13,346 cover MiniApp/Web sandbox origin/storage/navigation/permission/resource/crash/dialog responsibilities. Missing system-audio/device-hotplug and strict sandbox production proof remain open/blocked. Unread 2,779; unknown 15,845; omitted 0.",
     "source_authority_evidence": "Exact accepted recursive inventory plus direct component blob reads through 13,346. Fresh descendant same-head Actions required."
@@ -69,7 +69,7 @@
     "omitted": 0,
     "read_through": 13346,
     "first_unread_order": 13347,
-    "first_unread_path": "Telegram/cmake_helpers::.gitmodules",
+    "first_unread_path": "cmake::.gitmodules",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }
