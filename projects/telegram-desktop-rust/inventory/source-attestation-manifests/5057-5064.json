@@ -1,0 +1,56 @@
+{
+  "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+  "start": 5057,
+  "end": 5064,
+  "entries": [
+    {
+      "order": 5057,
+      "path": "Telegram/SourceFiles/media/audio/media_audio_track.h",
+      "blob": "a4476a28eecb2b8b5ca4e2b16d8f1f77fbac03ec",
+      "consumer_symbol": "media_audio_track"
+    },
+    {
+      "order": 5058,
+      "path": "Telegram/SourceFiles/media/audio/media_child_ffmpeg_loader.cpp",
+      "blob": "96efc7c937cd52f611e2d6de97c9bce1d9204374",
+      "consumer_symbol": "media_child_ffmpeg_loader"
+    },
+    {
+      "order": 5059,
+      "path": "Telegram/SourceFiles/media/audio/media_child_ffmpeg_loader.h",
+      "blob": "65354d967ef06442759cef55236d8867fdbe3755",
+      "consumer_symbol": "media_child_ffmpeg_loader"
+    },
+    {
+      "order": 5060,
+      "path": "Telegram/SourceFiles/media/clip/media_clip_check_streaming.cpp",
+      "blob": "e60eed1d9264429c6753d68b905e8fd1ce13a0cb",
+      "consumer_symbol": "media_clip_check_streaming"
+    },
+    {
+      "order": 5061,
+      "path": "Telegram/SourceFiles/media/clip/media_clip_check_streaming.h",
+      "blob": "093a456cb436babc1aee4d53e49da01a0e7c0edf",
+      "consumer_symbol": "media_clip_check_streaming"
+    },
+    {
+      "order": 5062,
+      "path": "Telegram/SourceFiles/media/clip/media_clip_ffmpeg.cpp",
+      "blob": "643dc3194a1cd1a32662ae980a12979275466592",
+      "consumer_symbol": "media_clip_ffmpeg"
+    },
+    {
+      "order": 5063,
+      "path": "Telegram/SourceFiles/media/clip/media_clip_ffmpeg.h",
+      "blob": "96afcef89df98a77e2cc245cc3ba482fde754e4c",
+      "consumer_symbol": "media_clip_ffmpeg"
+    },
+    {
+      "order": 5064,
+      "path": "Telegram/SourceFiles/media/clip/media_clip_implementation.cpp",
+      "blob": "e9b1f25b29b43a1abd96a69f526af8e731d862ff",
+      "consumer_symbol": "media_clip_implementation"
+    }
+  ],
+  "accepted_tree": "4ddb5182fc1ae238e4dc62a396614614b5b35f97"
+}

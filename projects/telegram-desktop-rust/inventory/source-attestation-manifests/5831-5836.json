@@ -1,0 +1,45 @@
+{
+  "accepted_upstream": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
+  "accepted_tree": "6b616494f3465324e749a04dcd1c9d508657a998",
+  "deterministic_order_basis": "non-directory/blob rank in accepted recursive tree",
+  "start": 5831,
+  "end": 5836,
+  "entries": [
+    {
+      "order": 5831,
+      "path": "Telegram/SourceFiles/test/test_toast_capture.cpp",
+      "blob": "cc0660c808155b8d4d6194f2f92b9bda3344092a",
+      "consumer_symbol": "AppendToastSubtreeCaptureSelfTest"
+    },
+    {
+      "order": 5832,
+      "path": "Telegram/SourceFiles/test/test_toast_capture.h",
+      "blob": "2dd4af04d5f40e0a64f7135897181aecd99ef2cf",
+      "consumer_symbol": "ToastSubtreeReading"
+    },
+    {
+      "order": 5833,
+      "path": "Telegram/SourceFiles/test/test_transfer.cpp",
+      "blob": "b47cda03142a927011e227b4ca63c039ea3db23a",
+      "consumer_symbol": "DocumentTransfer"
+    },
+    {
+      "order": 5834,
+      "path": "Telegram/SourceFiles/test/test_transfer.h",
+      "blob": "ab4b048a4889bc6ff30e855701a985bb18f726b2",
+      "consumer_symbol": "DocumentTransfer"
+    },
+    {
+      "order": 5835,
+      "path": "Telegram/SourceFiles/test/test_via_window.cpp",
+      "blob": "804e98846d307179b9a36977714c14aa8e885065",
+      "consumer_symbol": "AppendCaptureViaWindowSelfTest"
+    },
+    {
+      "order": 5836,
+      "path": "Telegram/SourceFiles/test/test_via_window.h",
+      "blob": "50b0a1c55666b56225e06917266f90fd8d65dada",
+      "consumer_symbol": "AppendCaptureViaWindowSelfTest"
+    }
+  ]
+}

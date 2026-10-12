@@ -1,0 +1,81 @@
+{
+  "accepted_upstream": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
+  "accepted_tree": "6b616494f3465324e749a04dcd1c9d508657a998",
+  "deterministic_order_basis": "non-directory/blob rank in accepted recursive tree",
+  "start": 5837,
+  "end": 5848,
+  "entries": [
+    {
+      "order": 5837,
+      "path": "Telegram/SourceFiles/test/test_wallet_intercept.cpp",
+      "blob": "7a0885063d4f393de43cd05f368e6671dfd40b7d",
+      "consumer_symbol": "WalletIntercept"
+    },
+    {
+      "order": 5838,
+      "path": "Telegram/SourceFiles/test/test_wallet_intercept.h",
+      "blob": "03f1f07e095906dd478d9e0766006ae54c8af121",
+      "consumer_symbol": "WalletIntercept"
+    },
+    {
+      "order": 5839,
+      "path": "Telegram/SourceFiles/test/test_wallet_ready.cpp",
+      "blob": "711ce0fb27d9b0987f5daab4416bad3cef63d55d",
+      "consumer_symbol": "ReadWalletRefresh"
+    },
+    {
+      "order": 5840,
+      "path": "Telegram/SourceFiles/test/test_wallet_ready.h",
+      "blob": "bce5d3f141de3a71a33d0a149b0f37feaa67f837",
+      "consumer_symbol": "WalletRefreshVerdict"
+    },
+    {
+      "order": 5841,
+      "path": "Telegram/SourceFiles/test/test_web_cache.cpp",
+      "blob": "cb1a2de7167f34ec797425b87d0f26ad360e3179",
+      "consumer_symbol": "RemoveWebDocumentCache"
+    },
+    {
+      "order": 5842,
+      "path": "Telegram/SourceFiles/test/test_web_cache.h",
+      "blob": "694ec8aeaf949f7ae031b9b9e28a124392b8fd96",
+      "consumer_symbol": "WebCacheRemoval"
+    },
+    {
+      "order": 5843,
+      "path": "Telegram/SourceFiles/test/test_wheel.cpp",
+      "blob": "2eb1ac87340987706facda41db090a55f331d073",
+      "consumer_symbol": "AppendWheelSelfTest"
+    },
+    {
+      "order": 5844,
+      "path": "Telegram/SourceFiles/test/test_wheel.h",
+      "blob": "a6bfbc90ccf3934035f377919c92608360f91dcb",
+      "consumer_symbol": "AppendWheelSelfTest"
+    },
+    {
+      "order": 5845,
+      "path": "Telegram/SourceFiles/test/test_widgets.cpp",
+      "blob": "db262232f65ee5fbbb90d35144073ad7f8ff4f20",
+      "consumer_symbol": "Wheel"
+    },
+    {
+      "order": 5846,
+      "path": "Telegram/SourceFiles/test/test_widgets.h",
+      "blob": "c2d9817659db387c74355f91bc2948be02c8dcca",
+      "consumer_symbol": "LiveWidgetSnapshot"
+    },
+    {
+      "order": 5847,
+      "path": "Telegram/SourceFiles/test/test_window_exposure.cpp",
+      "blob": "7a96eb0df29c235a632993ed5ea51ddf00ef7fcf",
+      "consumer_symbol": "AppendKeepWindowExposedSelfTest"
+    },
+    {
+      "order": 5848,
+      "path": "Telegram/SourceFiles/test/test_window_exposure.h",
+      "blob": "2b0e70494d385241adc4d2c8f334201eff7bbe3c",
+      "consumer_symbol": "WindowExposure"
+    }
+  ]
+}

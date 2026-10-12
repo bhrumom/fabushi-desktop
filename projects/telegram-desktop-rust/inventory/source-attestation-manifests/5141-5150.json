@@ -1,0 +1,68 @@
+{
+  "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+  "start": 5141,
+  "end": 5150,
+  "entries": [
+    {
+      "order": 5141,
+      "path": "Telegram/SourceFiles/media/streaming/media_streaming_reader.cpp",
+      "blob": "9e529cf0eceecc49d65a3a3da1e1eab3ffacd7c8",
+      "consumer_symbol": "Media::Streaming::Reader"
+    },
+    {
+      "order": 5142,
+      "path": "Telegram/SourceFiles/media/streaming/media_streaming_reader.h",
+      "blob": "a86a55fcdfdd3c3d1d4f34a25f912cc15da2b3af",
+      "consumer_symbol": "Media::Streaming::Reader"
+    },
+    {
+      "order": 5143,
+      "path": "Telegram/SourceFiles/media/streaming/media_streaming_round_preview.cpp",
+      "blob": "56beb61eccf28f06672c4ec245bb2765f90798e9",
+      "consumer_symbol": "Media::Streaming::RoundPreview"
+    },
+    {
+      "order": 5144,
+      "path": "Telegram/SourceFiles/media/streaming/media_streaming_round_preview.h",
+      "blob": "64440bc4978a9b9842af0697122ae9d58bafd5ca",
+      "consumer_symbol": "Media::Streaming::RoundPreview"
+    },
+    {
+      "order": 5145,
+      "path": "Telegram/SourceFiles/media/streaming/media_streaming_utility.cpp",
+      "blob": "3f6d312dd2e9b964d8d294c921a0f1531256b14a",
+      "consumer_symbol": "Media::Streaming frame utility"
+    },
+    {
+      "order": 5146,
+      "path": "Telegram/SourceFiles/media/streaming/media_streaming_utility.h",
+      "blob": "cd32347746047e0587714b0eff39b68e7e96df84",
+      "consumer_symbol": "Media::Streaming::Stream/Frame utility"
+    },
+    {
+      "order": 5147,
+      "path": "Telegram/SourceFiles/media/streaming/media_streaming_video_track.cpp",
+      "blob": "587270eeb952d9de94f024909e9c314974001772",
+      "consumer_symbol": "Media::Streaming::VideoTrack"
+    },
+    {
+      "order": 5148,
+      "path": "Telegram/SourceFiles/media/streaming/media_streaming_video_track.h",
+      "blob": "91d45d7513900e987a4dd98f93c04de65d3d5158",
+      "consumer_symbol": "Media::Streaming::VideoTrack"
+    },
+    {
+      "order": 5149,
+      "path": "Telegram/SourceFiles/media/system_media_controls_manager.cpp",
+      "blob": "c24b52bf53b1b83d1160ee6672f9d32af9b19c51",
+      "consumer_symbol": "Media::SystemMediaControlsManager"
+    },
+    {
+      "order": 5150,
+      "path": "Telegram/SourceFiles/media/system_media_controls_manager.h",
+      "blob": "154f83d85ece7e39f462cb748cc395d031a7f966",
+      "consumer_symbol": "Media::SystemMediaControlsManager"
+    }
+  ],
+  "accepted_tree": "4ddb5182fc1ae238e4dc62a396614614b5b35f97"
+}

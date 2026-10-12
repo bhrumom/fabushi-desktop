@@ -1,0 +1,15 @@
+{
+  "accepted_upstream": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
+  "accepted_tree": "6b616494f3465324e749a04dcd1c9d508657a998",
+  "deterministic_order_basis": "non-directory/blob rank in accepted recursive tree",
+  "start": 5772,
+  "end": 5772,
+  "entries": [
+    {
+      "order": 5772,
+      "path": "Telegram/SourceFiles/test/test_console_lock.cpp",
+      "blob": "a03d89fe3e80128dae36b4d1c29df149fd10357b",
+      "consumer_symbol": "ReadConsoleLock / ConsoleLockGate"
+    }
+  ]
+}

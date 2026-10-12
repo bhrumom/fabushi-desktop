@@ -1,0 +1,1837 @@
+{
+  "format_version": 2,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+    "tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6"
+  },
+  "range": {
+    "first_order": 9709,
+    "last_order": 9772,
+    "entries": 64
+  },
+  "range_evidence": {
+    "source_evidence": {
+      "exact_head": "9ee0141a340df211836d139db8d7fe0a5e9ac657",
+      "workflow_run": 38114691755,
+      "artifact_id": 11693336517,
+      "artifact_digest": "sha256:372545e780f881f81a5043b5e5aa47b62ed40ab7c67e920633884cc8f72b75aa"
+    },
+    "reachability_status": "Pinned tdesktop recursively checks out this gitlink, but exact product CMake does not compose KDE KImageFormats; accepted prepare/release paths select Qt qtimageformats. Source availability is not direct shipping composition.",
+    "closure_rule": "Exact-read rows remain mapped-open/unknown_closed=false until applicable responsibilities are exact-head verified or evidence-backed non-applicable."
+  },
+  "rows": [
+    {
+      "recursive_order": 9709,
+      "source_path": "Telegram/ThirdParty/kimageformats::autotests/read/xcf/fruktpilot_icc.xcf",
+      "source_blob_sha": "c57c6548d7ddb8a3b0e9556a2df8323cde65be06",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "autotests/read/xcf/fruktpilot_icc.xcf",
+        "object": "c57c6548d7ddb8a3b0e9556a2df8323cde65be06",
+        "mode": "100644",
+        "type": "blob",
+        "size": 364438
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats XCF acceptance fixture",
+      "source_symbols": [
+        "source:autotests/read/xcf/fruktpilot_icc.xcf"
+      ],
+      "responsibility": "XCF acceptance covers grayscale/alpha/RGB/RGBA and ICC-bearing decode against exact references; preserve color, alpha and profile semantics if the format responsibility is applicable.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9710,
+      "source_path": "Telegram/ThirdParty/kimageformats::autotests/read/xcf/simple-bw-gimp-2.8.10.png",
+      "source_blob_sha": "e2d506bb3da276c09b8f9388dc8ad6b96f987f5e",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "autotests/read/xcf/simple-bw-gimp-2.8.10.png",
+        "object": "e2d506bb3da276c09b8f9388dc8ad6b96f987f5e",
+        "mode": "100644",
+        "type": "blob",
+        "size": 743
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats XCF acceptance fixture",
+      "source_symbols": [
+        "source:autotests/read/xcf/simple-bw-gimp-2.8.10.png"
+      ],
+      "responsibility": "XCF acceptance covers grayscale/alpha/RGB/RGBA and ICC-bearing decode against exact references; preserve color, alpha and profile semantics if the format responsibility is applicable.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9711,
+      "source_path": "Telegram/ThirdParty/kimageformats::autotests/read/xcf/simple-bw-gimp-2.8.10.xcf",
+      "source_blob_sha": "c3ff8d7a9f32c8995501845648434265d2283c1e",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "autotests/read/xcf/simple-bw-gimp-2.8.10.xcf",
+        "object": "c3ff8d7a9f32c8995501845648434265d2283c1e",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1844
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats XCF acceptance fixture",
+      "source_symbols": [
+        "source:autotests/read/xcf/simple-bw-gimp-2.8.10.xcf"
+      ],
+      "responsibility": "XCF acceptance covers grayscale/alpha/RGB/RGBA and ICC-bearing decode against exact references; preserve color, alpha and profile semantics if the format responsibility is applicable.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9712,
+      "source_path": "Telegram/ThirdParty/kimageformats::autotests/read/xcf/simple-bwa-gimp-2.8.10.png",
+      "source_blob_sha": "a75415012846b5eead134ac502aa740c0cf1cfa7",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "autotests/read/xcf/simple-bwa-gimp-2.8.10.png",
+        "object": "a75415012846b5eead134ac502aa740c0cf1cfa7",
+        "mode": "100644",
+        "type": "blob",
+        "size": 574
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats XCF acceptance fixture",
+      "source_symbols": [
+        "source:autotests/read/xcf/simple-bwa-gimp-2.8.10.png"
+      ],
+      "responsibility": "XCF acceptance covers grayscale/alpha/RGB/RGBA and ICC-bearing decode against exact references; preserve color, alpha and profile semantics if the format responsibility is applicable.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9713,
+      "source_path": "Telegram/ThirdParty/kimageformats::autotests/read/xcf/simple-bwa-gimp-2.8.10.xcf",
+      "source_blob_sha": "9418174eb28b1b4e33d0fb9de136c3b20a8c13df",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "autotests/read/xcf/simple-bwa-gimp-2.8.10.xcf",
+        "object": "9418174eb28b1b4e33d0fb9de136c3b20a8c13df",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1037
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats XCF acceptance fixture",
+      "source_symbols": [
+        "source:autotests/read/xcf/simple-bwa-gimp-2.8.10.xcf"
+      ],
+      "responsibility": "XCF acceptance covers grayscale/alpha/RGB/RGBA and ICC-bearing decode against exact references; preserve color, alpha and profile semantics if the format responsibility is applicable.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9714,
+      "source_path": "Telegram/ThirdParty/kimageformats::autotests/read/xcf/simple-rgb-gimp-2.8.10.png",
+      "source_blob_sha": "267d67841ad5f80e0f36cbf514c33d6e9cac146b",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "autotests/read/xcf/simple-rgb-gimp-2.8.10.png",
+        "object": "267d67841ad5f80e0f36cbf514c33d6e9cac146b",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1053
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats XCF acceptance fixture",
+      "source_symbols": [
+        "source:autotests/read/xcf/simple-rgb-gimp-2.8.10.png"
+      ],
+      "responsibility": "XCF acceptance covers grayscale/alpha/RGB/RGBA and ICC-bearing decode against exact references; preserve color, alpha and profile semantics if the format responsibility is applicable.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9715,
+      "source_path": "Telegram/ThirdParty/kimageformats::autotests/read/xcf/simple-rgb-gimp-2.8.10.xcf",
+      "source_blob_sha": "81fb0a1d2bed3cf909ebab87169f17a4a90e4d63",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "autotests/read/xcf/simple-rgb-gimp-2.8.10.xcf",
+        "object": "81fb0a1d2bed3cf909ebab87169f17a4a90e4d63",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1860
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats XCF acceptance fixture",
+      "source_symbols": [
+        "source:autotests/read/xcf/simple-rgb-gimp-2.8.10.xcf"
+      ],
+      "responsibility": "XCF acceptance covers grayscale/alpha/RGB/RGBA and ICC-bearing decode against exact references; preserve color, alpha and profile semantics if the format responsibility is applicable.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9716,
+      "source_path": "Telegram/ThirdParty/kimageformats::autotests/read/xcf/simple-rgba-gimp-2.8.10.png",
+      "source_blob_sha": "393ccee8ad78f5896b6611d2822c5bc84780e701",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "autotests/read/xcf/simple-rgba-gimp-2.8.10.png",
+        "object": "393ccee8ad78f5896b6611d2822c5bc84780e701",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1252
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats XCF acceptance fixture",
+      "source_symbols": [
+        "source:autotests/read/xcf/simple-rgba-gimp-2.8.10.png"
+      ],
+      "responsibility": "XCF acceptance covers grayscale/alpha/RGB/RGBA and ICC-bearing decode against exact references; preserve color, alpha and profile semantics if the format responsibility is applicable.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9717,
+      "source_path": "Telegram/ThirdParty/kimageformats::autotests/read/xcf/simple-rgba-gimp-2.8.10.xcf",
+      "source_blob_sha": "76f80d672cbe46a71d61b159f1578a966d8e9a1a",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "autotests/read/xcf/simple-rgba-gimp-2.8.10.xcf",
+        "object": "76f80d672cbe46a71d61b159f1578a966d8e9a1a",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2153
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats XCF acceptance fixture",
+      "source_symbols": [
+        "source:autotests/read/xcf/simple-rgba-gimp-2.8.10.xcf"
+      ],
+      "responsibility": "XCF acceptance covers grayscale/alpha/RGB/RGBA and ICC-bearing decode against exact references; preserve color, alpha and profile semantics if the format responsibility is applicable.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9718,
+      "source_path": "Telegram/ThirdParty/kimageformats::autotests/readtest.cpp",
+      "source_blob_sha": "77108444341a3e8a22eb4dd46f2ed7ccc6ef67e8",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "autotests/readtest.cpp",
+        "object": "77108444341a3e8a22eb4dd46f2ed7ccc6ef67e8",
+        "mode": "100644",
+        "type": "blob",
+        "size": 10012
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats read acceptance harness",
+      "source_symbols": [
+        "QImageReader",
+        "setAutoTransform",
+        "setDecideFormatFromContent"
+      ],
+      "responsibility": "Read acceptance exercises random-access and sequential devices, canRead, auto-transform, final dimensions, normalized formats and bounded fuzzy pixel comparison.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9719,
+      "source_path": "Telegram/ThirdParty/kimageformats::autotests/write/bw.eps",
+      "source_blob_sha": "3af28d5d28351a749cbcaf0e30e3652a159d830a",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "autotests/write/bw.eps",
+        "object": "3af28d5d28351a749cbcaf0e30e3652a159d830a",
+        "mode": "100644",
+        "type": "blob",
+        "size": 12575
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats write fixture",
+      "source_symbols": [
+        "source:autotests/write/bw.eps"
+      ],
+      "responsibility": "Write fixture constrains deterministic encoder bytes and/or lossless roundtrip fidelity, alpha preservation and format-specific output behavior.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9720,
+      "source_path": "Telegram/ThirdParty/kimageformats::autotests/write/bw.pcx",
+      "source_blob_sha": "3a7ccc27c36b5b28473cea65fc808a9ead649270",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "autotests/write/bw.pcx",
+        "object": "3a7ccc27c36b5b28473cea65fc808a9ead649270",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1649
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats write fixture",
+      "source_symbols": [
+        "source:autotests/write/bw.pcx"
+      ],
+      "responsibility": "Write fixture constrains deterministic encoder bytes and/or lossless roundtrip fidelity, alpha preservation and format-specific output behavior.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9721,
+      "source_path": "Telegram/ThirdParty/kimageformats::autotests/write/bw.png",
+      "source_blob_sha": "e2d506bb3da276c09b8f9388dc8ad6b96f987f5e",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "autotests/write/bw.png",
+        "object": "e2d506bb3da276c09b8f9388dc8ad6b96f987f5e",
+        "mode": "100644",
+        "type": "blob",
+        "size": 743
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats write fixture",
+      "source_symbols": [
+        "source:autotests/write/bw.png"
+      ],
+      "responsibility": "Write fixture constrains deterministic encoder bytes and/or lossless roundtrip fidelity, alpha preservation and format-specific output behavior.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9722,
+      "source_path": "Telegram/ThirdParty/kimageformats::autotests/write/bw.rgb",
+      "source_blob_sha": "b75e524c06060f3c40deb736d3ed82b7f3b7c492",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "autotests/write/bw.rgb",
+        "object": "b75e524c06060f3c40deb736d3ed82b7f3b7c492",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1174
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats write fixture",
+      "source_symbols": [
+        "source:autotests/write/bw.rgb"
+      ],
+      "responsibility": "Write fixture constrains deterministic encoder bytes and/or lossless roundtrip fidelity, alpha preservation and format-specific output behavior.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9723,
+      "source_path": "Telegram/ThirdParty/kimageformats::autotests/write/bw.tga",
+      "source_blob_sha": "0ae195a82cb03a65938966091140981f20d258b7",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "autotests/write/bw.tga",
+        "object": "0ae195a82cb03a65938966091140981f20d258b7",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3090
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats write fixture",
+      "source_symbols": [
+        "source:autotests/write/bw.tga"
+      ],
+      "responsibility": "Write fixture constrains deterministic encoder bytes and/or lossless roundtrip fidelity, alpha preservation and format-specific output behavior.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9724,
+      "source_path": "Telegram/ThirdParty/kimageformats::autotests/write/bw.xv",
+      "source_blob_sha": "b884b2e9aa6641a4be1498b9303923b7e406a2e0",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "autotests/write/bw.xv",
+        "object": "b884b2e9aa6641a4be1498b9303923b7e406a2e0",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1081
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats write fixture",
+      "source_symbols": [
+        "source:autotests/write/bw.xv"
+      ],
+      "responsibility": "Write fixture constrains deterministic encoder bytes and/or lossless roundtrip fidelity, alpha preservation and format-specific output behavior.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9725,
+      "source_path": "Telegram/ThirdParty/kimageformats::autotests/write/bwa.png",
+      "source_blob_sha": "a75415012846b5eead134ac502aa740c0cf1cfa7",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "autotests/write/bwa.png",
+        "object": "a75415012846b5eead134ac502aa740c0cf1cfa7",
+        "mode": "100644",
+        "type": "blob",
+        "size": 574
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats write fixture",
+      "source_symbols": [
+        "source:autotests/write/bwa.png"
+      ],
+      "responsibility": "Write fixture constrains deterministic encoder bytes and/or lossless roundtrip fidelity, alpha preservation and format-specific output behavior.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9726,
+      "source_path": "Telegram/ThirdParty/kimageformats::autotests/write/bwa.tga",
+      "source_blob_sha": "486aad47e663c3508bc0bfbb458b01332568b8f4",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "autotests/write/bwa.tga",
+        "object": "486aad47e663c3508bc0bfbb458b01332568b8f4",
+        "mode": "100644",
+        "type": "blob",
+        "size": 4114
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats write fixture",
+      "source_symbols": [
+        "source:autotests/write/bwa.tga"
+      ],
+      "responsibility": "Write fixture constrains deterministic encoder bytes and/or lossless roundtrip fidelity, alpha preservation and format-specific output behavior.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9727,
+      "source_path": "Telegram/ThirdParty/kimageformats::autotests/write/bwa.xv",
+      "source_blob_sha": "aef11f749a187ac6d6f29c029bcb8652b6a6ae40",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "autotests/write/bwa.xv",
+        "object": "aef11f749a187ac6d6f29c029bcb8652b6a6ae40",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1081
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats write fixture",
+      "source_symbols": [
+        "source:autotests/write/bwa.xv"
+      ],
+      "responsibility": "Write fixture constrains deterministic encoder bytes and/or lossless roundtrip fidelity, alpha preservation and format-specific output behavior.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9728,
+      "source_path": "Telegram/ThirdParty/kimageformats::autotests/write/rgb.eps",
+      "source_blob_sha": "5df1b48862fda2adc199687d0b83bb03ac88ec55",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "autotests/write/rgb.eps",
+        "object": "5df1b48862fda2adc199687d0b83bb03ac88ec55",
+        "mode": "100644",
+        "type": "blob",
+        "size": 12790
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats write fixture",
+      "source_symbols": [
+        "source:autotests/write/rgb.eps"
+      ],
+      "responsibility": "Write fixture constrains deterministic encoder bytes and/or lossless roundtrip fidelity, alpha preservation and format-specific output behavior.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9729,
+      "source_path": "Telegram/ThirdParty/kimageformats::autotests/write/rgb.pcx",
+      "source_blob_sha": "fdce66c9697cd303afeb9924c7c7bc5fbad1c300",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "autotests/write/rgb.pcx",
+        "object": "fdce66c9697cd303afeb9924c7c7bc5fbad1c300",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1825
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats write fixture",
+      "source_symbols": [
+        "source:autotests/write/rgb.pcx"
+      ],
+      "responsibility": "Write fixture constrains deterministic encoder bytes and/or lossless roundtrip fidelity, alpha preservation and format-specific output behavior.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9730,
+      "source_path": "Telegram/ThirdParty/kimageformats::autotests/write/rgb.png",
+      "source_blob_sha": "267d67841ad5f80e0f36cbf514c33d6e9cac146b",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "autotests/write/rgb.png",
+        "object": "267d67841ad5f80e0f36cbf514c33d6e9cac146b",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1053
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats write fixture",
+      "source_symbols": [
+        "source:autotests/write/rgb.png"
+      ],
+      "responsibility": "Write fixture constrains deterministic encoder bytes and/or lossless roundtrip fidelity, alpha preservation and format-specific output behavior.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9731,
+      "source_path": "Telegram/ThirdParty/kimageformats::autotests/write/rgb.qoi",
+      "source_blob_sha": "229070383c07f7d5c36760ffaa449fd8ffd60506",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "autotests/write/rgb.qoi",
+        "object": "229070383c07f7d5c36760ffaa449fd8ffd60506",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1096
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats write fixture",
+      "source_symbols": [
+        "source:autotests/write/rgb.qoi"
+      ],
+      "responsibility": "Write fixture constrains deterministic encoder bytes and/or lossless roundtrip fidelity, alpha preservation and format-specific output behavior.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9732,
+      "source_path": "Telegram/ThirdParty/kimageformats::autotests/write/rgb.rgb",
+      "source_blob_sha": "a334b2136edc1e9c6a6987639ef3bfd6c2d971af",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "autotests/write/rgb.rgb",
+        "object": "a334b2136edc1e9c6a6987639ef3bfd6c2d971af",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2642
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats write fixture",
+      "source_symbols": [
+        "source:autotests/write/rgb.rgb"
+      ],
+      "responsibility": "Write fixture constrains deterministic encoder bytes and/or lossless roundtrip fidelity, alpha preservation and format-specific output behavior.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9733,
+      "source_path": "Telegram/ThirdParty/kimageformats::autotests/write/rgb.tga",
+      "source_blob_sha": "be0fc052909f2a1b111e723634df0ecd6b1be8b1",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "autotests/write/rgb.tga",
+        "object": "be0fc052909f2a1b111e723634df0ecd6b1be8b1",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3090
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats write fixture",
+      "source_symbols": [
+        "source:autotests/write/rgb.tga"
+      ],
+      "responsibility": "Write fixture constrains deterministic encoder bytes and/or lossless roundtrip fidelity, alpha preservation and format-specific output behavior.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9734,
+      "source_path": "Telegram/ThirdParty/kimageformats::autotests/write/rgb.xv",
+      "source_blob_sha": "60cdbf37a19acb07a40b78b36e0aaf4b744e37d2",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "autotests/write/rgb.xv",
+        "object": "60cdbf37a19acb07a40b78b36e0aaf4b744e37d2",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1081
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats write fixture",
+      "source_symbols": [
+        "source:autotests/write/rgb.xv"
+      ],
+      "responsibility": "Write fixture constrains deterministic encoder bytes and/or lossless roundtrip fidelity, alpha preservation and format-specific output behavior.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9735,
+      "source_path": "Telegram/ThirdParty/kimageformats::autotests/write/rgba.png",
+      "source_blob_sha": "cb0cae071b4e59cd18f168bb93f824b93bab3aa8",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "autotests/write/rgba.png",
+        "object": "cb0cae071b4e59cd18f168bb93f824b93bab3aa8",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1234
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats write fixture",
+      "source_symbols": [
+        "source:autotests/write/rgba.png"
+      ],
+      "responsibility": "Write fixture constrains deterministic encoder bytes and/or lossless roundtrip fidelity, alpha preservation and format-specific output behavior.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9736,
+      "source_path": "Telegram/ThirdParty/kimageformats::autotests/write/rgba.qoi",
+      "source_blob_sha": "c0b525d4ddd56a5d904fb1a6bc17461671edd5d5",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "autotests/write/rgba.qoi",
+        "object": "c0b525d4ddd56a5d904fb1a6bc17461671edd5d5",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1390
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats write fixture",
+      "source_symbols": [
+        "source:autotests/write/rgba.qoi"
+      ],
+      "responsibility": "Write fixture constrains deterministic encoder bytes and/or lossless roundtrip fidelity, alpha preservation and format-specific output behavior.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9737,
+      "source_path": "Telegram/ThirdParty/kimageformats::autotests/write/rgba.tga",
+      "source_blob_sha": "ace80159e15c34b9b1f8cc6637a2e8bbe3564301",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "autotests/write/rgba.tga",
+        "object": "ace80159e15c34b9b1f8cc6637a2e8bbe3564301",
+        "mode": "100644",
+        "type": "blob",
+        "size": 4114
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats write fixture",
+      "source_symbols": [
+        "source:autotests/write/rgba.tga"
+      ],
+      "responsibility": "Write fixture constrains deterministic encoder bytes and/or lossless roundtrip fidelity, alpha preservation and format-specific output behavior.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9738,
+      "source_path": "Telegram/ThirdParty/kimageformats::autotests/write/rgba.xv",
+      "source_blob_sha": "7fe0441fe7e3625057e21bb26a52af718ff00bb0",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "autotests/write/rgba.xv",
+        "object": "7fe0441fe7e3625057e21bb26a52af718ff00bb0",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1081
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats write fixture",
+      "source_symbols": [
+        "source:autotests/write/rgba.xv"
+      ],
+      "responsibility": "Write fixture constrains deterministic encoder bytes and/or lossless roundtrip fidelity, alpha preservation and format-specific output behavior.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9739,
+      "source_path": "Telegram/ThirdParty/kimageformats::autotests/writetest.cpp",
+      "source_blob_sha": "011385f4ea15aecc537385e161253b14d4a7a64d",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "autotests/writetest.cpp",
+        "object": "011385f4ea15aecc537385e161253b14d4a7a64d",
+        "mode": "100644",
+        "type": "blob",
+        "size": 7035
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats write acceptance harness",
+      "source_symbols": [
+        "QImageWriter",
+        "QImageReader",
+        "--lossless",
+        "--no-data-check"
+      ],
+      "responsibility": "Write acceptance requires successful encode, exact bytes unless explicitly exempted, successful reread and pixel fidelity for lossless formats.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9740,
+      "source_path": "Telegram/ThirdParty/kimageformats::cmake/find-modules/FindLibRaw.cmake",
+      "source_blob_sha": "870f69023b1f26a51474dd59594feb02fb689ced",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "cmake/find-modules/FindLibRaw.cmake",
+        "object": "870f69023b1f26a51474dd59594feb02fb689ced",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3197
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats dependency discovery",
+      "source_symbols": [
+        "LibRaw::LibRaw",
+        "LIBRAW_VERSION_STRING"
+      ],
+      "responsibility": "Build discovery resolves LibRaw headers/library/version and exports an imported target; no RAW dependency is adopted merely from source presence.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "canonical build/dependency owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9741,
+      "source_path": "Telegram/ThirdParty/kimageformats::metainfo.yaml",
+      "source_blob_sha": "e977da5f0002240978c062e26d112f7709b23585",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "metainfo.yaml",
+        "object": "e977da5f0002240978c062e26d112f7709b23585",
+        "mode": "100644",
+        "type": "blob",
+        "size": 336
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats component metadata",
+      "source_symbols": [
+        "tier",
+        "platforms"
+      ],
+      "responsibility": "Component metadata records platform/tier/release applicability and the Windows EPS exception.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "canonical platform/release authority",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9742,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/CMakeLists.txt",
+      "source_blob_sha": "a20d1a602921e54c6039560f3d8d7bb318e1c424",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/CMakeLists.txt",
+        "object": "a20d1a602921e54c6039560f3d8d7bb318e1c424",
+        "mode": "100644",
+        "type": "blob",
+        "size": 174
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats build composition",
+      "source_symbols": [
+        "add_subdirectory(imageformats)"
+      ],
+      "responsibility": "Build composition delegates to the plugin registry; recursive checkout alone does not prove pinned tdesktop shipping composition.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "canonical build/packaging owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9743,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/AUTHORS",
+      "source_blob_sha": "81d18f8794df247ed084f55aa1428410bb40c3be",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/AUTHORS",
+        "object": "81d18f8794df247ed084f55aa1428410bb40c3be",
+        "mode": "100644",
+        "type": "blob",
+        "size": 983
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats provenance",
+      "source_symbols": [
+        "source:src/imageformats/AUTHORS"
+      ],
+      "responsibility": "Authorship/provenance remains traceable for any materially adapted behavior.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "canonical legal/provenance owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9744,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/CMakeLists.txt",
+      "source_blob_sha": "f5963c477959cc66798889ef8106d73232abfa56",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/CMakeLists.txt",
+        "object": "f5963c477959cc66798889ef8106d73232abfa56",
+        "mode": "100644",
+        "type": "blob",
+        "size": 6497
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats plugin registry",
+      "source_symbols": [
+        "kimageformats_add_plugin",
+        "find_package"
+      ],
+      "responsibility": "Conditional plugin registry composes ANI/AVIF/EPS/EXR/HDR/HEIF/JXL/RAW and other handlers from dependency availability; do not create a second Fabushi media registry.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "canonical Media/Resource plus build/packaging owners",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9745,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/ani.cpp",
+      "source_blob_sha": "a651e23e6f1d364e8c16cca81b858fea3fcc47e8",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/ani.cpp",
+        "object": "a651e23e6f1d364e8c16cca81b858fea3fcc47e8",
+        "mode": "100644",
+        "type": "blob",
+        "size": 16843
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats ANI handler",
+      "source_symbols": [
+        "ANIHandler::read",
+        "ANIHandler::jumpToImage",
+        "ANIHandler::nextImageDelay"
+      ],
+      "responsibility": "ANI handling constrains RIFF/ACON validation, chunk/frame/rate/sequence parsing, embedded CUR frames, random access and timing.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9746,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/ani.desktop",
+      "source_blob_sha": "122b71f864487f42b34ce30066518ff950632546",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/ani.desktop",
+        "object": "122b71f864487f42b34ce30066518ff950632546",
+        "mode": "100644",
+        "type": "blob",
+        "size": 164
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats source input",
+      "source_symbols": [
+        "source:src/imageformats/ani.desktop"
+      ],
+      "responsibility": "Exact source input contributes media format capability, metadata, interface or helper behavior; applicability remains mapped to existing source-neutral owners.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9747,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/ani.json",
+      "source_blob_sha": "b90356c11abf35275b898802d867b11e18434bba",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/ani.json",
+        "object": "b90356c11abf35275b898802d867b11e18434bba",
+        "mode": "100644",
+        "type": "blob",
+        "size": 79
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats source input",
+      "source_symbols": [
+        "source:src/imageformats/ani.json"
+      ],
+      "responsibility": "Exact source input contributes media format capability, metadata, interface or helper behavior; applicability remains mapped to existing source-neutral owners.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9748,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/ani_p.h",
+      "source_blob_sha": "e33eee427e85ea0ac7471549e36eadacd287c759",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/ani_p.h",
+        "object": "e33eee427e85ea0ac7471549e36eadacd287c759",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1737
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats source input",
+      "source_symbols": [
+        "source:src/imageformats/ani_p.h"
+      ],
+      "responsibility": "Exact source input contributes media format capability, metadata, interface or helper behavior; applicability remains mapped to existing source-neutral owners.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9749,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/avif.cpp",
+      "source_blob_sha": "eb470ed5d421eb6b54be036861d4e21693513f9b",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/avif.cpp",
+        "object": "eb470ed5d421eb6b54be036861d4e21693513f9b",
+        "mode": "100644",
+        "type": "blob",
+        "size": 38593
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats AVIF handler",
+      "source_symbols": [
+        "QAVIFHandler::ensureDecoder",
+        "QAVIFHandler::decode_one_frame",
+        "QAVIFHandler::write"
+      ],
+      "responsibility": "AVIF handling constrains bounded dimensions/pixels/threads, alpha/depth, ICC/CICP color, clean-aperture crop before rotation/mirror, animation and encode policy. The applicable Fabushi preview-dimension sub-responsibility is implemented in the existing BMFF owner.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "production_delta": "Existing BMFF preview parsing now applies a valid shrinking clap clean aperture before irot rotation; malformed or expanding clap is ignored. Full KDE AVIF codec ownership is not imported."
+    },
+    {
+      "recursive_order": 9750,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/avif.desktop",
+      "source_blob_sha": "fcda1770350323c6a887078e49cc66a19e51f504",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/avif.desktop",
+        "object": "fcda1770350323c6a887078e49cc66a19e51f504",
+        "mode": "100644",
+        "type": "blob",
+        "size": 146
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats source input",
+      "source_symbols": [
+        "source:src/imageformats/avif.desktop"
+      ],
+      "responsibility": "Exact source input contributes media format capability, metadata, interface or helper behavior; applicability remains mapped to existing source-neutral owners.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9751,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/avif.json",
+      "source_blob_sha": "c187ca6ced4cda4f3fd55b474d3f138a9bcdefed",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/avif.json",
+        "object": "c187ca6ced4cda4f3fd55b474d3f138a9bcdefed",
+        "mode": "100644",
+        "type": "blob",
+        "size": 85
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats source input",
+      "source_symbols": [
+        "source:src/imageformats/avif.json"
+      ],
+      "responsibility": "Exact source input contributes media format capability, metadata, interface or helper behavior; applicability remains mapped to existing source-neutral owners.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9752,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/avif_p.h",
+      "source_blob_sha": "46156bd9f53268916230cd4fd7246ca975e05e42",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/avif_p.h",
+        "object": "46156bd9f53268916230cd4fd7246ca975e05e42",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2166
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats source input",
+      "source_symbols": [
+        "source:src/imageformats/avif_p.h"
+      ],
+      "responsibility": "Exact source input contributes media format capability, metadata, interface or helper behavior; applicability remains mapped to existing source-neutral owners.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9753,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/dds-qt.desktop",
+      "source_blob_sha": "13b6ca3c254174fb4114c607d375dcc092b229df",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/dds-qt.desktop",
+        "object": "13b6ca3c254174fb4114c607d375dcc092b229df",
+        "mode": "100644",
+        "type": "blob",
+        "size": 146
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats source input",
+      "source_symbols": [
+        "source:src/imageformats/dds-qt.desktop"
+      ],
+      "responsibility": "Exact source input contributes media format capability, metadata, interface or helper behavior; applicability remains mapped to existing source-neutral owners.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9754,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/eps.cpp",
+      "source_blob_sha": "6c20c6e35d21b22758de0475ded16e161160e1f5",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/eps.cpp",
+        "object": "6c20c6e35d21b22758de0475ded16e161160e1f5",
+        "mode": "100644",
+        "type": "blob",
+        "size": 12460
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats EPS handler",
+      "source_symbols": [
+        "EPSHandler::read",
+        "EPSHandler::write"
+      ],
+      "responsibility": "EPS handling constrains PS/MS-DOS framing, bounding boxes, temporary files, safer external-process decode and write fallback lifecycle.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9755,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/eps.desktop",
+      "source_blob_sha": "4a4160ff8fa6223fe30e5c32271386dda4af7ea3",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/eps.desktop",
+        "object": "4a4160ff8fa6223fe30e5c32271386dda4af7ea3",
+        "mode": "100644",
+        "type": "blob",
+        "size": 156
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats source input",
+      "source_symbols": [
+        "source:src/imageformats/eps.desktop"
+      ],
+      "responsibility": "Exact source input contributes media format capability, metadata, interface or helper behavior; applicability remains mapped to existing source-neutral owners.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9756,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/eps.json",
+      "source_blob_sha": "62531ae725d53417892a2abb49a3e67a0755def3",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/eps.json",
+        "object": "62531ae725d53417892a2abb49a3e67a0755def3",
+        "mode": "100644",
+        "type": "blob",
+        "size": 108
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats source input",
+      "source_symbols": [
+        "source:src/imageformats/eps.json"
+      ],
+      "responsibility": "Exact source input contributes media format capability, metadata, interface or helper behavior; applicability remains mapped to existing source-neutral owners.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9757,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/eps_p.h",
+      "source_blob_sha": "307ad6fc70dc6a5d4c397bbc5f00b796d5015b35",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/eps_p.h",
+        "object": "307ad6fc70dc6a5d4c397bbc5f00b796d5015b35",
+        "mode": "100644",
+        "type": "blob",
+        "size": 942
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats source input",
+      "source_symbols": [
+        "source:src/imageformats/eps_p.h"
+      ],
+      "responsibility": "Exact source input contributes media format capability, metadata, interface or helper behavior; applicability remains mapped to existing source-neutral owners.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9758,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/exr.cpp",
+      "source_blob_sha": "c459bd081a98578cd7b4a19c8d50711cd0f89145",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/exr.cpp",
+        "object": "c459bd081a98578cd7b4a19c8d50711cd0f89145",
+        "mode": "100644",
+        "type": "blob",
+        "size": 10067
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats OpenEXR handler",
+      "source_symbols": [
+        "EXRHandler::read",
+        "EXRHandler::canRead"
+      ],
+      "responsibility": "OpenEXR handling constrains stream semantics, data-window dimensions, allocation limits, precision/alpha, metadata/color and fail-closed exceptions.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9759,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/exr.desktop",
+      "source_blob_sha": "6725314aeb14cd825a5f54a78941c3408cfa911b",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/exr.desktop",
+        "object": "6725314aeb14cd825a5f54a78941c3408cfa911b",
+        "mode": "100644",
+        "type": "blob",
+        "size": 147
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats source input",
+      "source_symbols": [
+        "source:src/imageformats/exr.desktop"
+      ],
+      "responsibility": "Exact source input contributes media format capability, metadata, interface or helper behavior; applicability remains mapped to existing source-neutral owners.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9760,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/exr.json",
+      "source_blob_sha": "f5ae1455efec4135ac4c29d80b3ce8e11b4a2850",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/exr.json",
+        "object": "f5ae1455efec4135ac4c29d80b3ce8e11b4a2850",
+        "mode": "100644",
+        "type": "blob",
+        "size": 62
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats source input",
+      "source_symbols": [
+        "source:src/imageformats/exr.json"
+      ],
+      "responsibility": "Exact source input contributes media format capability, metadata, interface or helper behavior; applicability remains mapped to existing source-neutral owners.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9761,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/exr_p.h",
+      "source_blob_sha": "5bce059a3ead63bfcf2d7ed8d1799759d5105e63",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/exr_p.h",
+        "object": "5bce059a3ead63bfcf2d7ed8d1799759d5105e63",
+        "mode": "100644",
+        "type": "blob",
+        "size": 881
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats source input",
+      "source_symbols": [
+        "source:src/imageformats/exr_p.h"
+      ],
+      "responsibility": "Exact source input contributes media format capability, metadata, interface or helper behavior; applicability remains mapped to existing source-neutral owners.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9762,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/fastmath_p.h",
+      "source_blob_sha": "17bd2dd18c1692fb3f2d16afabd525eb64c7ba47",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/fastmath_p.h",
+        "object": "17bd2dd18c1692fb3f2d16afabd525eb64c7ba47",
+        "mode": "100644",
+        "type": "blob",
+        "size": 791
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats source input",
+      "source_symbols": [
+        "source:src/imageformats/fastmath_p.h"
+      ],
+      "responsibility": "Exact source input contributes media format capability, metadata, interface or helper behavior; applicability remains mapped to existing source-neutral owners.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9763,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/gimp_p.h",
+      "source_blob_sha": "653266903214293489325db6bfcc8438a28a823f",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/gimp_p.h",
+        "object": "653266903214293489325db6bfcc8438a28a823f",
+        "mode": "100644",
+        "type": "blob",
+        "size": 7751
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats source input",
+      "source_symbols": [
+        "source:src/imageformats/gimp_p.h"
+      ],
+      "responsibility": "Exact source input contributes media format capability, metadata, interface or helper behavior; applicability remains mapped to existing source-neutral owners.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9764,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/hdr.cpp",
+      "source_blob_sha": "0f55f6d4b55952aee6b2051281f23584a70fe3c0",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/hdr.cpp",
+        "object": "0f55f6d4b55952aee6b2051281f23584a70fe3c0",
+        "mode": "100644",
+        "type": "blob",
+        "size": 9141
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats Radiance HDR handler",
+      "source_symbols": [
+        "HDRHandler::read",
+        "HDRHandler::canRead"
+      ],
+      "responsibility": "HDR handling constrains magic/format/resolution, supported orientation, legacy/new RLE, truncation checks, allocation and linear-sRGB output.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9765,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/hdr.desktop",
+      "source_blob_sha": "d355d5201662e2a5f2453d3eb8e4376a70741270",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/hdr.desktop",
+        "object": "d355d5201662e2a5f2453d3eb8e4376a70741270",
+        "mode": "100644",
+        "type": "blob",
+        "size": 147
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats source input",
+      "source_symbols": [
+        "source:src/imageformats/hdr.desktop"
+      ],
+      "responsibility": "Exact source input contributes media format capability, metadata, interface or helper behavior; applicability remains mapped to existing source-neutral owners.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9766,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/hdr.json",
+      "source_blob_sha": "000729e59ab3f75224a92b403b8074180714283a",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/hdr.json",
+        "object": "000729e59ab3f75224a92b403b8074180714283a",
+        "mode": "100644",
+        "type": "blob",
+        "size": 84
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats source input",
+      "source_symbols": [
+        "source:src/imageformats/hdr.json"
+      ],
+      "responsibility": "Exact source input contributes media format capability, metadata, interface or helper behavior; applicability remains mapped to existing source-neutral owners.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9767,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/hdr_p.h",
+      "source_blob_sha": "afd7089ba16185f3f9b1b8136f936e685eac2026",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/hdr_p.h",
+        "object": "afd7089ba16185f3f9b1b8136f936e685eac2026",
+        "mode": "100644",
+        "type": "blob",
+        "size": 818
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats source input",
+      "source_symbols": [
+        "source:src/imageformats/hdr_p.h"
+      ],
+      "responsibility": "Exact source input contributes media format capability, metadata, interface or helper behavior; applicability remains mapped to existing source-neutral owners.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9768,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/heif.cpp",
+      "source_blob_sha": "a0dfeda89c5b7aa2e3dd17674db55e5966c16e45",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/heif.cpp",
+        "object": "a0dfeda89c5b7aa2e3dd17674db55e5966c16e45",
+        "mode": "100644",
+        "type": "blob",
+        "size": 34069
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats HEIF handler",
+      "source_symbols": [
+        "HEIFHandler::ensureDecoder",
+        "HEIFHandler::write_helper",
+        "HEIFHandler::startHeifLib"
+      ],
+      "responsibility": "HEIF/HEJ2 handling constrains BMFF brands, primary image, dimensions/bit depth/stride/allocation, strict decode, ICC/NCLX color, encode policy and synchronized libheif lifecycle.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9769,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/heif.desktop",
+      "source_blob_sha": "049b5fdd428b0a37eb7f45d282835ea96ce3357e",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/heif.desktop",
+        "object": "049b5fdd428b0a37eb7f45d282835ea96ce3357e",
+        "mode": "100644",
+        "type": "blob",
+        "size": 146
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats source input",
+      "source_symbols": [
+        "source:src/imageformats/heif.desktop"
+      ],
+      "responsibility": "Exact source input contributes media format capability, metadata, interface or helper behavior; applicability remains mapped to existing source-neutral owners.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9770,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/heif.json",
+      "source_blob_sha": "fbc2cca109154b167b814c06531cc25b239e8334",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/heif.json",
+        "object": "fbc2cca109154b167b814c06531cc25b239e8334",
+        "mode": "100644",
+        "type": "blob",
+        "size": 107
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats source input",
+      "source_symbols": [
+        "source:src/imageformats/heif.json"
+      ],
+      "responsibility": "Exact source input contributes media format capability, metadata, interface or helper behavior; applicability remains mapped to existing source-neutral owners.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9771,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/heif_p.h",
+      "source_blob_sha": "8bfafffb78524ae441dc1af6b94d55de75c6ac70",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/heif_p.h",
+        "object": "8bfafffb78524ae441dc1af6b94d55de75c6ac70",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2036
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats source input",
+      "source_symbols": [
+        "source:src/imageformats/heif_p.h"
+      ],
+      "responsibility": "Exact source input contributes media format capability, metadata, interface or helper behavior; applicability remains mapped to existing source-neutral owners.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9772,
+      "source_path": "Telegram/ThirdParty/kimageformats::src/imageformats/jp2.desktop",
+      "source_blob_sha": "3d673c61edfe5624d0821697b5e9edc2d3468112",
+      "source_identity": {
+        "repository": "KDE/kimageformats",
+        "commit": "df82311a1081e576c4ac020204578bb8a81b21ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/kimageformats",
+        "path": "src/imageformats/jp2.desktop",
+        "object": "3d673c61edfe5624d0821697b5e9edc2d3468112",
+        "mode": "100644",
+        "type": "blob",
+        "size": 144
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "KDE/kimageformats source input",
+      "source_symbols": [
+        "source:src/imageformats/jp2.desktop"
+      ],
+      "responsibility": "Exact source input contributes media format capability, metadata, interface or helper behavior; applicability remains mapped to existing source-neutral owners.",
+      "fabushi_canonical_owner": "canonical Media/Resource decode owner",
+      "fabushi_target": "existing source-neutral canonical Media/Resource owner",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    }
+  ]
+}

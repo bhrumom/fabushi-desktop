@@ -1,0 +1,252 @@
+{
+  "format_version": 2,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+    "tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6"
+  },
+  "range": {
+    "first_order": 9829,
+    "last_order": 9836,
+    "entries": 8
+  },
+  "range_evidence": {
+    "source_evidence": {
+      "exact_head": "17af29979829565d5d7cc0d7ec81b6db78d03b82",
+      "workflow_run": 38115822404,
+      "job_id": 114400440327,
+      "artifact_id": 11692899297,
+      "artifact_digest": "sha256:95b4ca47e543b78d48f45a7bd3298655e187b8f9227e890e3265fdd3794abb9f"
+    },
+    "reachability_status": "Shipping-reachable: pinned Telegram/cmake/lib_fido2.cmake directly compiles libcbor C sources into the USB-HID CTAP2/WebAuthn security-key backend and pins CBOR_BUFFER_GROWTH=2, CBOR_MAX_STACK_SIZE=2048, version 0.11.0.",
+    "closure_rule": "These repository/CI rows remain mapped-open while the full libcbor + lib_fido2/WebAuthn responsibility is read and mapped into canonical Fabushi identity/security owners."
+  },
+  "rows": [
+    {
+      "recursive_order": 9829,
+      "source_path": "Telegram/ThirdParty/libcbor::.circleci/config.yml",
+      "source_blob_sha": "4391ad8d1e9c8477961a3876101ccda47620a9ac",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": ".circleci/config.yml",
+        "object": "4391ad8d1e9c8477961a3876101ccda47620a9ac",
+        "mode": "100644",
+        "type": "blob",
+        "size": 6453
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor CI matrix",
+      "source_symbols": [
+        "source:.circleci/config.yml"
+      ],
+      "responsibility": "Cross-platform CI exercises gcc/clang, debug/release, 32-bit, ARM, sanitizers, Valgrind/memcheck, tests and coverage; this is quality authority for the CBOR parser vendored into lib_fido2.",
+      "fabushi_canonical_owner": "Fabushi Node Agent Coordinator WebAuthn provider/signing boundary + canonical Account/Auth Passkeys + Build/Quality/Release",
+      "fabushi_target": "Extend current source-neutral WebAuthn/Account Auth/security owners first; no second WebAuthn/FIDO/libcbor runtime. Packaged signer-helper production evidence remains open.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9830,
+      "source_path": "Telegram/ThirdParty/libcbor::.cirrus.yml",
+      "source_blob_sha": "948ae23b4a9810d2dc15d41ed75712e8bb2d9a63",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": ".cirrus.yml",
+        "object": "948ae23b4a9810d2dc15d41ed75712e8bb2d9a63",
+        "mode": "100644",
+        "type": "blob",
+        "size": 742
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor platform CI",
+      "source_symbols": [
+        "source:.cirrus.yml"
+      ],
+      "responsibility": "Additional platform CI validates portable build/test behavior for the shipping CBOR dependency.",
+      "fabushi_canonical_owner": "Fabushi Node Agent Coordinator WebAuthn provider/signing boundary + canonical Account/Auth Passkeys + Build/Quality/Release",
+      "fabushi_target": "Extend current source-neutral WebAuthn/Account Auth/security owners first; no second WebAuthn/FIDO/libcbor runtime. Packaged signer-helper production evidence remains open.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9831,
+      "source_path": "Telegram/ThirdParty/libcbor::.clang-format",
+      "source_blob_sha": "de0dc5e7790733faa2cdd075872efc8f715cfaaa",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": ".clang-format",
+        "object": "de0dc5e7790733faa2cdd075872efc8f715cfaaa",
+        "mode": "100644",
+        "type": "blob",
+        "size": 4055
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor source style contract",
+      "source_symbols": [
+        "source:.clang-format"
+      ],
+      "responsibility": "Formatting configuration has no runtime behavior but is part of the accepted source/tooling surface.",
+      "fabushi_canonical_owner": "Fabushi Node Agent Coordinator WebAuthn provider/signing boundary + canonical Account/Auth Passkeys + Build/Quality/Release",
+      "fabushi_target": "Extend current source-neutral WebAuthn/Account Auth/security owners first; no second WebAuthn/FIDO/libcbor runtime. Packaged signer-helper production evidence remains open.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9832,
+      "source_path": "Telegram/ThirdParty/libcbor::.github/ISSUE_TEMPLATE/bug_report.md",
+      "source_blob_sha": "75997d8424ccd68cd42da07e90e11f2ed867eca1",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": ".github/ISSUE_TEMPLATE/bug_report.md",
+        "object": "75997d8424ccd68cd42da07e90e11f2ed867eca1",
+        "mode": "100644",
+        "type": "blob",
+        "size": 488
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor maintenance workflow",
+      "source_symbols": [
+        "source:.github/ISSUE_TEMPLATE/bug_report.md"
+      ],
+      "responsibility": "Maintenance template records reproducibility/testing expectations for parser changes; runtime ownership remains the WebAuthn/FIDO protocol boundary.",
+      "fabushi_canonical_owner": "Fabushi Node Agent Coordinator WebAuthn provider/signing boundary + canonical Account/Auth Passkeys + Build/Quality/Release",
+      "fabushi_target": "Extend current source-neutral WebAuthn/Account Auth/security owners first; no second WebAuthn/FIDO/libcbor runtime. Packaged signer-helper production evidence remains open.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9833,
+      "source_path": "Telegram/ThirdParty/libcbor::.github/PULL_REQUEST_TEMPLATE",
+      "source_blob_sha": "1174d56f9c7a27e7741fa2b27ca99094c62c18c2",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": ".github/PULL_REQUEST_TEMPLATE",
+        "object": "1174d56f9c7a27e7741fa2b27ca99094c62c18c2",
+        "mode": "100644",
+        "type": "blob",
+        "size": 642
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor maintenance workflow",
+      "source_symbols": [
+        "source:.github/PULL_REQUEST_TEMPLATE"
+      ],
+      "responsibility": "Maintenance template records reproducibility/testing expectations for parser changes; runtime ownership remains the WebAuthn/FIDO protocol boundary.",
+      "fabushi_canonical_owner": "Fabushi Node Agent Coordinator WebAuthn provider/signing boundary + canonical Account/Auth Passkeys + Build/Quality/Release",
+      "fabushi_target": "Extend current source-neutral WebAuthn/Account Auth/security owners first; no second WebAuthn/FIDO/libcbor runtime. Packaged signer-helper production evidence remains open.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9834,
+      "source_path": "Telegram/ThirdParty/libcbor::.github/workflows/fuzz-pr.yml",
+      "source_blob_sha": "0e3c4fde4e02d030ecf8fceae3a612b129aa93e6",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": ".github/workflows/fuzz-pr.yml",
+        "object": "0e3c4fde4e02d030ecf8fceae3a612b129aa93e6",
+        "mode": "100644",
+        "type": "blob",
+        "size": 759
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor fuzzing gate",
+      "source_symbols": [
+        "source:.github/workflows/fuzz-pr.yml"
+      ],
+      "responsibility": "Fuzz workflows continuously drive decoder inputs under sanitizer/fuzzer infrastructure and require malformed network-like data to fail without memory corruption or leaks.",
+      "fabushi_canonical_owner": "Fabushi Node Agent Coordinator WebAuthn provider/signing boundary + canonical Account/Auth Passkeys + Build/Quality/Release",
+      "fabushi_target": "Extend current source-neutral WebAuthn/Account Auth/security owners first; no second WebAuthn/FIDO/libcbor runtime. Packaged signer-helper production evidence remains open.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9835,
+      "source_path": "Telegram/ThirdParty/libcbor::.github/workflows/fuzz.yml",
+      "source_blob_sha": "8603cc2f338e1a96ba0a6bb7c971fe2198aa5d26",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": ".github/workflows/fuzz.yml",
+        "object": "8603cc2f338e1a96ba0a6bb7c971fe2198aa5d26",
+        "mode": "100644",
+        "type": "blob",
+        "size": 637
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor fuzzing gate",
+      "source_symbols": [
+        "source:.github/workflows/fuzz.yml"
+      ],
+      "responsibility": "Fuzz workflows continuously drive decoder inputs under sanitizer/fuzzer infrastructure and require malformed network-like data to fail without memory corruption or leaks.",
+      "fabushi_canonical_owner": "Fabushi Node Agent Coordinator WebAuthn provider/signing boundary + canonical Account/Auth Passkeys + Build/Quality/Release",
+      "fabushi_target": "Extend current source-neutral WebAuthn/Account Auth/security owners first; no second WebAuthn/FIDO/libcbor runtime. Packaged signer-helper production evidence remains open.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 9836,
+      "source_path": "Telegram/ThirdParty/libcbor::.gitignore",
+      "source_blob_sha": "61f88a8749657af39609ca3f4b1afdc89c182304",
+      "source_identity": {
+        "repository": "PJK/libcbor",
+        "commit": "170bee2b82cdb7b2ed25af301f62cb6efdd40ec1",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libcbor",
+        "path": ".gitignore",
+        "object": "61f88a8749657af39609ca3f4b1afdc89c182304",
+        "mode": "100644",
+        "type": "blob",
+        "size": 257
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libcbor repository tooling",
+      "source_symbols": [
+        "source:.gitignore"
+      ],
+      "responsibility": "Repository tooling input has no direct runtime behavior; the component itself is shipping-reachable through tdesktop lib_fido2.",
+      "fabushi_canonical_owner": "Fabushi Node Agent Coordinator WebAuthn provider/signing boundary + canonical Account/Auth Passkeys + Build/Quality/Release",
+      "fabushi_target": "Extend current source-neutral WebAuthn/Account Auth/security owners first; no second WebAuthn/FIDO/libcbor runtime. Packaged signer-helper production evidence remains open.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    }
+  ]
+}

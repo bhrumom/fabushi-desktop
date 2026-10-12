@@ -1,0 +1,67 @@
+{
+  "format_version": 3,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+    "tree": "9d8fa87ce68c832d2f4c99f372a5bb672463c3e1"
+  },
+  "range": {
+    "first_order": 6853,
+    "last_order": 6853,
+    "entries": 1
+  },
+  "rows": [
+    {
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "desktop-app/MicroTeX pinned third-party math rendering component",
+      "ui_disposition": "No source-branded UI/runtime is migrated; localized numeric parsing stays in the existing canonical ConversationWorkspace/Transcript math owner.",
+      "fabushi_canonical_owner": "existing canonical ConversationWorkspace/Transcript math input-normalization owner",
+      "platform_differences": "MicroTeX C++ parser code is source authority only; Fabushi keeps the shipped KaTeX renderer and performs equivalent deterministic localized-decimal normalization at the canonical input boundary.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "reachability_status": "accepted exact pinned component entry read/responsibility-decomposed; production normalization and focused test exist, descendant exact-head verification required",
+      "license_and_provenance": "telegramdesktop/tdesktop@28ac576967a1026ecc89a927360fa0e138d7c88c -> Telegram/ThirdParty/MicroTeX gitlink desktop-app/MicroTeX@61aaa7cc354de91d5898ffb0b2a6c62628d9a76f",
+      "notes": "Reading does not reduce unknown. The existing source-neutral KaTeX boundary absorbs the behavior; no MicroTeX parser, second transcript renderer or source-named runtime is introduced.",
+      "recursive_order": 6853,
+      "source_path": "Telegram/ThirdParty/MicroTeX::src/core/localized_num.cpp",
+      "source_blob_sha": "4f8e61fcc0f6f3c6d361cd835b4ceaa3a4ae5b83",
+      "source_identity": {
+        "repository": "desktop-app/MicroTeX",
+        "commit": "61aaa7cc354de91d5898ffb0b2a6c62628d9a76f",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/MicroTeX",
+        "path": "src/core/localized_num.cpp",
+        "object": "4f8e61fcc0f6f3c6d361cd835b4ceaa3a4ae5b83",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2108
+      },
+      "responsibility": "Localized numeric parsing maps U+066B to the ASCII decimal point and maps each digit in the twenty accepted Unicode decimal blocks to the corresponding ASCII digit before ordinary formula parsing, while leaving unrelated code points unchanged.",
+      "state_machine": "Untrusted formula -> existing expression-length gate -> deterministic localized-decimal normalization -> strict KaTeX render -> bounded recovery render on failure -> rendered-markup budget; strict and recovery attempts receive the same normalized expression and error projection retains the original source text.",
+      "side_effects": "Canonical transcript math markup projection only; no MicroTeX process, parser store, parallel transcript renderer or source-specific UI.",
+      "failure_cases": "localized digits bypass numeric parsing; Arabic decimal separator remains unrecognized; strict and recovery attempts see different input; non-target Unicode is corrupted; normalization mutates user-visible error source",
+      "fabushi_target": "Preserve equivalent deterministic localized numeric behavior through the existing canonical KaTeX input boundary and its current safety budgets; do not port the MicroTeX parser.",
+      "production_evidence": "frontend/src/recovered/features/conversation/workspace/math-runtime.ts#normalizeAssistantMathLocalizedDigits at parent 4071d6f451a1b1f35f036236d71cb28f26700b06; descendant exact-head Actions required.",
+      "test_evidence": "desktop/e2e/math-runtime-contract.spec.ts#canonical math renderer normalizes every accepted localized decimal block before strict and recovery renders; descendant Desktop Chat Parity exact-head Actions required.",
+      "consumer_evidence": [
+        "frontend/src/recovered/features/conversation/workspace/math-runtime.ts",
+        "frontend/src/recovered/features/conversation/workspace/math.tsx",
+        "desktop/e2e/math-runtime-contract.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "source_binary_evidence": {
+        "evidence_status": "accepted-exact-component-blob-read-current-descendant-actions-required",
+        "accepted_upstream": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+        "component_repository": "desktop-app/MicroTeX",
+        "component_commit": "61aaa7cc354de91d5898ffb0b2a6c62628d9a76f",
+        "verified_blob_sha": "4f8e61fcc0f6f3c6d361cd835b4ceaa3a4ae5b83",
+        "file_type": "blob",
+        "recursive_order": 6853
+      }
+    }
+  ]
+}

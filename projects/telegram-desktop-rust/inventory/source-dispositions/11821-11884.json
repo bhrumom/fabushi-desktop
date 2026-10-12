@@ -1,0 +1,1798 @@
+{
+  "format_version": 2,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+    "tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6"
+  },
+  "exact_head_evidence": {
+    "head_sha": "a72ea7a76c70e73877dda5eb555cbc4c1c4845f5",
+    "rust_desktop_runtime_run": 38175960216,
+    "desktop_chat_parity_run": 38175960319,
+    "source_authority_job": 114578287012,
+    "source_authority_artifact": 11715613245,
+    "source_authority_digest": "sha256:78ed351d966df9b61085313432e02702bf2f41edd4d28138b680afe6aa52df27",
+    "evidence_status": "exact-source-materialization-current-head-runtime-terminal-pending"
+  },
+  "accounting": {
+    "read_through": 11884,
+    "unread": 4241,
+    "unknown": 15845,
+    "omitted": 0
+  },
+  "range": {
+    "first_order": 11821,
+    "last_order": 11884,
+    "entries": 64
+  },
+  "rows": [
+    {
+      "recursive_order": 11821,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::.github/workflows/main.yml",
+      "source_blob_sha": "1ea5bf947ae71ab23e326860253d1e5fbd6bc62b",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": ".github/workflows/main.yml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "1ea5bf947ae71ab23e326860253d1e5fbd6bc62b",
+        "size": 749
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "third-party-linux-portal-ci-release-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "xdg-desktop-portal CI/release workflow",
+      "source_symbols": [],
+      "responsibility": "Preserve dependency CI composition, documentation build, release provenance and least-privilege workflow permissions for the Linux portal dependency.",
+      "fabushi_canonical_owner": "Existing Linux platform/dependency provenance + GitHub Actions/release owner",
+      "fabushi_target": "Equivalent pinned CI/release provenance remains required; upstream release automation does not ship."
+    },
+    {
+      "recursive_order": 11822,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::.github/workflows/pages.yml",
+      "source_blob_sha": "0faead0a0abe9835883ef022c3480a6b0c75f55c",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": ".github/workflows/pages.yml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "0faead0a0abe9835883ef022c3480a6b0c75f55c",
+        "size": 1558
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "third-party-linux-portal-ci-release-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "xdg-desktop-portal CI/release workflow",
+      "source_symbols": [],
+      "responsibility": "Preserve dependency CI composition, documentation build, release provenance and least-privilege workflow permissions for the Linux portal dependency.",
+      "fabushi_canonical_owner": "Existing Linux platform/dependency provenance + GitHub Actions/release owner",
+      "fabushi_target": "Equivalent pinned CI/release provenance remains required; upstream release automation does not ship."
+    },
+    {
+      "recursive_order": 11823,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::.github/workflows/release.yml",
+      "source_blob_sha": "f0a4cf994e711e187bbedf90f9694eb3d35a6dc0",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": ".github/workflows/release.yml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "f0a4cf994e711e187bbedf90f9694eb3d35a6dc0",
+        "size": 2028
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "third-party-linux-portal-ci-release-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "xdg-desktop-portal CI/release workflow",
+      "source_symbols": [],
+      "responsibility": "Preserve dependency CI composition, documentation build, release provenance and least-privilege workflow permissions for the Linux portal dependency.",
+      "fabushi_canonical_owner": "Existing Linux platform/dependency provenance + GitHub Actions/release owner",
+      "fabushi_target": "Equivalent pinned CI/release provenance remains required; upstream release automation does not ship."
+    },
+    {
+      "recursive_order": 11824,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::.gitignore",
+      "source_blob_sha": "bee8a64b79a99590d5303307144172cfe824fbf7",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": ".gitignore",
+        "mode": "100644",
+        "type": "blob",
+        "object": "bee8a64b79a99590d5303307144172cfe824fbf7",
+        "size": 12
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "development-only-non-applicable-to-shipping-product",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "xdg-desktop-portal repository ignore metadata",
+      "source_symbols": [],
+      "responsibility": "Repository-local ignored-path metadata has no runtime/product responsibility.",
+      "fabushi_canonical_owner": "Quality/governance boundary only",
+      "fabushi_target": "No production owner required."
+    },
+    {
+      "recursive_order": 11825,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::.mypy.ini",
+      "source_blob_sha": "7dfe78d99a69f840ed370167b6d95df1f45e9574",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": ".mypy.ini",
+        "mode": "100644",
+        "type": "blob",
+        "object": "7dfe78d99a69f840ed370167b6d95df1f45e9574",
+        "size": 192
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "third-party-linux-portal-development-quality-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "xdg-desktop-portal developer/static-analysis policy",
+      "source_symbols": [],
+      "responsibility": "Preserve formatting, typing, contribution and pre-commit quality expectations where equivalent platform adapter code is maintained.",
+      "fabushi_canonical_owner": "Existing Linux platform + quality owner",
+      "fabushi_target": "Map behavioral quality requirements into canonical lint/test gates; do not copy contributor tooling mechanically."
+    },
+    {
+      "recursive_order": 11826,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::.pre-commit-config.yaml",
+      "source_blob_sha": "b8796dcab78c12a62772ee53cb7d933b6d7c2729",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": ".pre-commit-config.yaml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "b8796dcab78c12a62772ee53cb7d933b6d7c2729",
+        "size": 346
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "third-party-linux-portal-development-quality-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "xdg-desktop-portal developer/static-analysis policy",
+      "source_symbols": [],
+      "responsibility": "Preserve formatting, typing, contribution and pre-commit quality expectations where equivalent platform adapter code is maintained.",
+      "fabushi_canonical_owner": "Existing Linux platform + quality owner",
+      "fabushi_target": "Map behavioral quality requirements into canonical lint/test gates; do not copy contributor tooling mechanically."
+    },
+    {
+      "recursive_order": 11827,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::CONTRIBUTING.md",
+      "source_blob_sha": "35cf777fb8769574b7e9a1e281c893c1e9a92597",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "CONTRIBUTING.md",
+        "mode": "100644",
+        "type": "blob",
+        "object": "35cf777fb8769574b7e9a1e281c893c1e9a92597",
+        "size": 188
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "third-party-linux-portal-development-quality-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "xdg-desktop-portal developer/static-analysis policy",
+      "source_symbols": [],
+      "responsibility": "Preserve formatting, typing, contribution and pre-commit quality expectations where equivalent platform adapter code is maintained.",
+      "fabushi_canonical_owner": "Existing Linux platform + quality owner",
+      "fabushi_target": "Map behavioral quality requirements into canonical lint/test gates; do not copy contributor tooling mechanically."
+    },
+    {
+      "recursive_order": 11828,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::COPYING",
+      "source_blob_sha": "4362b49151d7b34ef83b3067a8f9c9f877d72a0e",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "COPYING",
+        "mode": "100644",
+        "type": "blob",
+        "object": "4362b49151d7b34ef83b3067a8f9c9f877d72a0e",
+        "size": 26530
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "dependency-license-provenance-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "xdg-desktop-portal license",
+      "source_symbols": [],
+      "responsibility": "Track third-party license obligations for the Linux portal dependency and packaged distribution.",
+      "fabushi_canonical_owner": "Dependency provenance/license owner",
+      "fabushi_target": "License inventory and packaging notices remain required."
+    },
+    {
+      "recursive_order": 11829,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::NEWS.md",
+      "source_blob_sha": "c5c47d83a3ca2006722bdb7ce9e7312329e39955",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "NEWS.md",
+        "mode": "100644",
+        "type": "blob",
+        "object": "c5c47d83a3ca2006722bdb7ce9e7312329e39955",
+        "size": 25525
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "third-party-linux-portal-release-security-docs-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "xdg-desktop-portal product/release/security documentation",
+      "source_symbols": [],
+      "responsibility": "Carry supported interface scope, release process, security support and change-history implications into dependency review and platform acceptance.",
+      "fabushi_canonical_owner": "Linux platform/dependency provenance/security owner",
+      "fabushi_target": "Use upstream docs as authority context; no duplicate UI/runtime owner."
+    },
+    {
+      "recursive_order": 11830,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::README.md",
+      "source_blob_sha": "71b0c85b98cef7b99f319efd2aef98bc50d998b1",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "README.md",
+        "mode": "100644",
+        "type": "blob",
+        "object": "71b0c85b98cef7b99f319efd2aef98bc50d998b1",
+        "size": 753
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "third-party-linux-portal-release-security-docs-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "xdg-desktop-portal product/release/security documentation",
+      "source_symbols": [],
+      "responsibility": "Carry supported interface scope, release process, security support and change-history implications into dependency review and platform acceptance.",
+      "fabushi_canonical_owner": "Linux platform/dependency provenance/security owner",
+      "fabushi_target": "Use upstream docs as authority context; no duplicate UI/runtime owner."
+    },
+    {
+      "recursive_order": 11831,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::RELEASE_HOWTO.md",
+      "source_blob_sha": "5a536926dab49836e76368bea8f3a823a059877c",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "RELEASE_HOWTO.md",
+        "mode": "100644",
+        "type": "blob",
+        "object": "5a536926dab49836e76368bea8f3a823a059877c",
+        "size": 1265
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "third-party-linux-portal-release-security-docs-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "xdg-desktop-portal product/release/security documentation",
+      "source_symbols": [],
+      "responsibility": "Carry supported interface scope, release process, security support and change-history implications into dependency review and platform acceptance.",
+      "fabushi_canonical_owner": "Linux platform/dependency provenance/security owner",
+      "fabushi_target": "Use upstream docs as authority context; no duplicate UI/runtime owner."
+    },
+    {
+      "recursive_order": 11832,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::SECURITY.md",
+      "source_blob_sha": "bc5f66fdc93241327e69189e5590d685b3097573",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "SECURITY.md",
+        "mode": "100644",
+        "type": "blob",
+        "object": "bc5f66fdc93241327e69189e5590d685b3097573",
+        "size": 879
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "third-party-linux-portal-release-security-docs-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "xdg-desktop-portal product/release/security documentation",
+      "source_symbols": [],
+      "responsibility": "Carry supported interface scope, release process, security support and change-history implications into dependency review and platform acceptance.",
+      "fabushi_canonical_owner": "Linux platform/dependency provenance/security owner",
+      "fabushi_target": "Use upstream docs as authority context; no duplicate UI/runtime owner."
+    },
+    {
+      "recursive_order": 11833,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::data/meson.build",
+      "source_blob_sha": "9f2eaf131715c90fe65fb3283d691c8708e73036",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "data/meson.build",
+        "mode": "100644",
+        "type": "blob",
+        "object": "9f2eaf131715c90fe65fb3283d691c8708e73036",
+        "size": 3062
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-linux-portal-interface-build-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "xdg-desktop-portal Meson interface schema build",
+      "source_symbols": [],
+      "responsibility": "Install/generate the portal, host and backend D-Bus interface schemas used by Linux capability adapters and keep interface-version compatibility explicit.",
+      "fabushi_canonical_owner": "Existing Linux platform/dependency build owner",
+      "fabushi_target": "Thin platform adapter consumes OS portal contracts; no bundled alternate portal runtime."
+    },
+    {
+      "recursive_order": 11834,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.background.Monitor.xml",
+      "source_blob_sha": "6a0845752b994dc7e34ff9a04cea60718a1f589b",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "data/org.freedesktop.background.Monitor.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "6a0845752b994dc7e34ff9a04cea60718a1f589b",
+        "size": 1879
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-linux-portal-capability-contract-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "org.freedesktop.background.Monitor",
+      "source_symbols": [
+        "org.freedesktop.background.Monitor"
+      ],
+      "responsibility": "Preserve OS-mediated lifecycle/pressure/connectivity/realtime constraints and change signaling so platform state cannot silently bypass recovery or resource policies.",
+      "fabushi_canonical_owner": "Existing platform lifecycle/Resource/recovery owner",
+      "fabushi_target": "Map behavior into thin Linux adapters and canonical owners; do not create a second portal/product store."
+    },
+    {
+      "recursive_order": 11835,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.host.portal.Registry.xml",
+      "source_blob_sha": "7fcd3967bad7d71c993689ae0e50ea497acafbec",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "data/org.freedesktop.host.portal.Registry.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "7fcd3967bad7d71c993689ae0e50ea497acafbec",
+        "size": 2556
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-linux-portal-capability-contract-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "org.freedesktop.host.portal.Registry",
+      "source_symbols": [
+        "org.freedesktop.host.portal.Registry"
+      ],
+      "responsibility": "Preserve typed OS-mediated capability invocation, permission/user-consent boundary, request cancellation and version/failure semantics for this portal interface.",
+      "fabushi_canonical_owner": "Existing platform capability + Permissions/Resource owner",
+      "fabushi_target": "Map behavior into thin Linux adapters and canonical owners; do not create a second portal/product store."
+    },
+    {
+      "recursive_order": 11836,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.impl.portal.Access.xml",
+      "source_blob_sha": "695998006c3f695e1a4f274fea15780e265f3049",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "data/org.freedesktop.impl.portal.Access.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "695998006c3f695e1a4f274fea15780e265f3049",
+        "size": 3416
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-linux-portal-capability-contract-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "org.freedesktop.impl.portal.Access",
+      "source_symbols": [
+        "org.freedesktop.impl.portal.Access"
+      ],
+      "responsibility": "Preserve versioned D-Bus request/session lifecycle, typed method/result contracts, cancellation/close semantics, permission boundaries and failure propagation for this Linux portal capability.",
+      "fabushi_canonical_owner": "Existing Linux platform adapter + Permissions/Resource owner",
+      "fabushi_target": "Map behavior into thin Linux adapters and canonical owners; do not create a second portal/product store."
+    },
+    {
+      "recursive_order": 11837,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.impl.portal.Account.xml",
+      "source_blob_sha": "7d2d99a590e37081c4e32d0d68689cb286cbf1ee",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "data/org.freedesktop.impl.portal.Account.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "7d2d99a590e37081c4e32d0d68689cb286cbf1ee",
+        "size": 3048
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-linux-portal-capability-contract-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "org.freedesktop.impl.portal.Account",
+      "source_symbols": [
+        "org.freedesktop.impl.portal.Account"
+      ],
+      "responsibility": "Preserve versioned account/settings reads, change projection and privacy boundaries while canonical Fabushi Identity/Settings remains product truth.",
+      "fabushi_canonical_owner": "Existing Identity/Settings + Linux platform adapter",
+      "fabushi_target": "Map behavior into thin Linux adapters and canonical owners; do not create a second portal/product store."
+    },
+    {
+      "recursive_order": 11838,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.impl.portal.AppChooser.xml",
+      "source_blob_sha": "18eff7e6cd6cb493b29d1fcfae472137366f95a2",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "data/org.freedesktop.impl.portal.AppChooser.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "18eff7e6cd6cb493b29d1fcfae472137366f95a2",
+        "size": 4271
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-linux-portal-capability-contract-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "org.freedesktop.impl.portal.AppChooser",
+      "source_symbols": [
+        "org.freedesktop.impl.portal.AppChooser"
+      ],
+      "responsibility": "Preserve user-mediated application choice/launcher installation and launch authorization boundaries; never install/launch without explicit platform consent.",
+      "fabushi_canonical_owner": "Existing Resource/Permissions/platform launcher owner",
+      "fabushi_target": "Map behavior into thin Linux adapters and canonical owners; do not create a second portal/product store."
+    },
+    {
+      "recursive_order": 11839,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.impl.portal.Background.xml",
+      "source_blob_sha": "6ccfea6bf1c6db5faa5c70a58a3f80b1bda6c147",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "data/org.freedesktop.impl.portal.Background.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "6ccfea6bf1c6db5faa5c70a58a3f80b1bda6c147",
+        "size": 4012
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-linux-portal-capability-contract-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "org.freedesktop.impl.portal.Background",
+      "source_symbols": [
+        "org.freedesktop.impl.portal.Background"
+      ],
+      "responsibility": "Preserve OS-mediated lifecycle/pressure/connectivity/realtime constraints and change signaling so platform state cannot silently bypass recovery or resource policies.",
+      "fabushi_canonical_owner": "Existing platform lifecycle/Resource/recovery owner",
+      "fabushi_target": "Map behavior into thin Linux adapters and canonical owners; do not create a second portal/product store."
+    },
+    {
+      "recursive_order": 11840,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.impl.portal.Clipboard.xml",
+      "source_blob_sha": "ff22271eae79121d74a52705988b3fbfe1fec69a",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "data/org.freedesktop.impl.portal.Clipboard.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "ff22271eae79121d74a52705988b3fbfe1fec69a",
+        "size": 7711
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-linux-portal-capability-contract-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "org.freedesktop.impl.portal.Clipboard",
+      "source_symbols": [
+        "org.freedesktop.impl.portal.Clipboard"
+      ],
+      "responsibility": "Preserve permission-scoped clipboard ownership, read/write transfer lifecycle, owner-change signaling, bounded transfer completion and session teardown.",
+      "fabushi_canonical_owner": "Existing Computer clipboard + Permissions/Resource + Linux platform adapter",
+      "fabushi_target": "Map behavior into thin Linux adapters and canonical owners; do not create a second portal/product store."
+    },
+    {
+      "recursive_order": 11841,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.impl.portal.DynamicLauncher.xml",
+      "source_blob_sha": "e9c32e437092c6cf8ca88eda334d1119a4fa18a4",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "data/org.freedesktop.impl.portal.DynamicLauncher.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "e9c32e437092c6cf8ca88eda334d1119a4fa18a4",
+        "size": 5343
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-linux-portal-capability-contract-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "org.freedesktop.impl.portal.DynamicLauncher",
+      "source_symbols": [
+        "org.freedesktop.impl.portal.DynamicLauncher"
+      ],
+      "responsibility": "Preserve user-mediated application choice/launcher installation and launch authorization boundaries; never install/launch without explicit platform consent.",
+      "fabushi_canonical_owner": "Existing Resource/Permissions/platform launcher owner",
+      "fabushi_target": "Map behavior into thin Linux adapters and canonical owners; do not create a second portal/product store."
+    },
+    {
+      "recursive_order": 11842,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.impl.portal.Email.xml",
+      "source_blob_sha": "a9ee13af3f98f4c301694b139c73aa2a1dbf48c9",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "data/org.freedesktop.impl.portal.Email.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "a9ee13af3f98f4c301694b139c73aa2a1dbf48c9",
+        "size": 2808
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-linux-portal-capability-contract-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "org.freedesktop.impl.portal.Email",
+      "source_symbols": [
+        "org.freedesktop.impl.portal.Email"
+      ],
+      "responsibility": "Preserve typed OS-mediated capability invocation, permission/user-consent boundary, request cancellation and version/failure semantics for this portal interface.",
+      "fabushi_canonical_owner": "Existing platform capability + Permissions/Resource owner",
+      "fabushi_target": "Map behavior into thin Linux adapters and canonical owners; do not create a second portal/product store."
+    },
+    {
+      "recursive_order": 11843,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.impl.portal.FileChooser.xml",
+      "source_blob_sha": "c93041bb3ce094b60693514497203ecaaab7d338",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "data/org.freedesktop.impl.portal.FileChooser.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "c93041bb3ce094b60693514497203ecaaab7d338",
+        "size": 10048
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-linux-portal-capability-contract-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "org.freedesktop.impl.portal.FileChooser",
+      "source_symbols": [
+        "org.freedesktop.impl.portal.FileChooser"
+      ],
+      "responsibility": "Preserve user-mediated file/open/save/transfer/document grants, host-path exposure boundaries, revocation, request cancellation and resource lifetime.",
+      "fabushi_canonical_owner": "Existing Resource/attachments/artifacts + Permissions + Linux platform adapter",
+      "fabushi_target": "Map behavior into thin Linux adapters and canonical owners; do not create a second portal/product store."
+    },
+    {
+      "recursive_order": 11844,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.impl.portal.GlobalShortcuts.xml",
+      "source_blob_sha": "52d32923cf8457ef1e8c9524067ced638ef3c7e5",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "data/org.freedesktop.impl.portal.GlobalShortcuts.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "52d32923cf8457ef1e8c9524067ced638ef3c7e5",
+        "size": 7412
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-linux-portal-capability-contract-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "org.freedesktop.impl.portal.GlobalShortcuts",
+      "source_symbols": [
+        "org.freedesktop.impl.portal.GlobalShortcuts"
+      ],
+      "responsibility": "Preserve permissioned global-shortcut session creation/binding/listing, activation/deactivation events, conflict/change handling and teardown.",
+      "fabushi_canonical_owner": "Existing commands/shortcuts + Permissions + Linux platform adapter",
+      "fabushi_target": "Map behavior into thin Linux adapters and canonical owners; do not create a second portal/product store."
+    },
+    {
+      "recursive_order": 11845,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.impl.portal.Inhibit.xml",
+      "source_blob_sha": "1bb6c1348f23b4d151474ebb2995408515a59f22",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "data/org.freedesktop.impl.portal.Inhibit.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "1bb6c1348f23b4d151474ebb2995408515a59f22",
+        "size": 4997
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-linux-portal-capability-contract-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "org.freedesktop.impl.portal.Inhibit",
+      "source_symbols": [
+        "org.freedesktop.impl.portal.Inhibit"
+      ],
+      "responsibility": "Preserve OS-mediated lifecycle/pressure/connectivity/realtime constraints and change signaling so platform state cannot silently bypass recovery or resource policies.",
+      "fabushi_canonical_owner": "Existing platform lifecycle/Resource/recovery owner",
+      "fabushi_target": "Map behavior into thin Linux adapters and canonical owners; do not create a second portal/product store."
+    },
+    {
+      "recursive_order": 11846,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.impl.portal.InputCapture.xml",
+      "source_blob_sha": "bcaf7872a175d672f80b173f54840450eee12258",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "data/org.freedesktop.impl.portal.InputCapture.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "bcaf7872a175d672f80b173f54840450eee12258",
+        "size": 17199
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-linux-portal-capability-contract-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "org.freedesktop.impl.portal.InputCapture",
+      "source_symbols": [
+        "org.freedesktop.impl.portal.InputCapture"
+      ],
+      "responsibility": "Preserve explicit user-consented remote input session creation, device/capability selection, activation/deactivation, zones/barriers, EIS connection, restore/persistence constraints, cancellation and teardown.",
+      "fabushi_canonical_owner": "Existing Computer/Human Computer takeover + Permissions + Linux platform adapter",
+      "fabushi_target": "Map behavior into thin Linux adapters and canonical owners; do not create a second portal/product store."
+    },
+    {
+      "recursive_order": 11847,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.impl.portal.Lockdown.xml",
+      "source_blob_sha": "0b3dfdabdaa55655acb6e42bebb65874f2ab8e17",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "data/org.freedesktop.impl.portal.Lockdown.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "0b3dfdabdaa55655acb6e42bebb65874f2ab8e17",
+        "size": 1786
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-linux-portal-capability-contract-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "org.freedesktop.impl.portal.Lockdown",
+      "source_symbols": [
+        "org.freedesktop.impl.portal.Lockdown"
+      ],
+      "responsibility": "Preserve fail-closed permission lookup/set/revoke and administrator lockdown policy before capability exposure.",
+      "fabushi_canonical_owner": "Existing Permissions/policy + Linux platform adapter",
+      "fabushi_target": "Map behavior into thin Linux adapters and canonical owners; do not create a second portal/product store."
+    },
+    {
+      "recursive_order": 11848,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.impl.portal.Notification.xml",
+      "source_blob_sha": "a26fa68d551edf715f10c902d5b43b77e1765e89",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "data/org.freedesktop.impl.portal.Notification.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "a26fa68d551edf715f10c902d5b43b77e1765e89",
+        "size": 4158
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-linux-portal-capability-contract-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "org.freedesktop.impl.portal.Notification",
+      "source_symbols": [
+        "org.freedesktop.impl.portal.Notification"
+      ],
+      "responsibility": "Preserve notification add/remove/action lifecycle, supported options, permission gating and action routing without bypassing canonical notification owners.",
+      "fabushi_canonical_owner": "Existing Notifications + Permissions + Linux platform adapter",
+      "fabushi_target": "Map behavior into thin Linux adapters and canonical owners; do not create a second portal/product store."
+    },
+    {
+      "recursive_order": 11849,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.impl.portal.PermissionStore.xml",
+      "source_blob_sha": "6f6114472784ab395acd7fbf4f0508a652f4f485",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "data/org.freedesktop.impl.portal.PermissionStore.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "6f6114472784ab395acd7fbf4f0508a652f4f485",
+        "size": 7437
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-linux-portal-capability-contract-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "org.freedesktop.impl.portal.PermissionStore",
+      "source_symbols": [
+        "org.freedesktop.impl.portal.PermissionStore"
+      ],
+      "responsibility": "Preserve fail-closed permission lookup/set/revoke and administrator lockdown policy before capability exposure.",
+      "fabushi_canonical_owner": "Existing Permissions/policy + Linux platform adapter",
+      "fabushi_target": "Map behavior into thin Linux adapters and canonical owners; do not create a second portal/product store."
+    },
+    {
+      "recursive_order": 11850,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.impl.portal.Print.xml",
+      "source_blob_sha": "c0a4b5556d163c1117f7632ff5b8c8bf935487b7",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "data/org.freedesktop.impl.portal.Print.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "c0a4b5556d163c1117f7632ff5b8c8bf935487b7",
+        "size": 5458
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-linux-portal-capability-contract-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "org.freedesktop.impl.portal.Print",
+      "source_symbols": [
+        "org.freedesktop.impl.portal.Print"
+      ],
+      "responsibility": "Preserve typed OS-mediated capability invocation, permission/user-consent boundary, request cancellation and version/failure semantics for this portal interface.",
+      "fabushi_canonical_owner": "Existing platform capability + Permissions/Resource owner",
+      "fabushi_target": "Map behavior into thin Linux adapters and canonical owners; do not create a second portal/product store."
+    },
+    {
+      "recursive_order": 11851,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.impl.portal.RemoteDesktop.xml",
+      "source_blob_sha": "9f1a3b501dd64f2ce3b5dfcd810328c83bd10659",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "data/org.freedesktop.impl.portal.RemoteDesktop.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "9f1a3b501dd64f2ce3b5dfcd810328c83bd10659",
+        "size": 18236
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-linux-portal-capability-contract-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "org.freedesktop.impl.portal.RemoteDesktop",
+      "source_symbols": [
+        "org.freedesktop.impl.portal.RemoteDesktop"
+      ],
+      "responsibility": "Preserve explicit user-consented remote input session creation, device/capability selection, activation/deactivation, zones/barriers, EIS connection, restore/persistence constraints, cancellation and teardown.",
+      "fabushi_canonical_owner": "Existing Computer/Human Computer takeover + Permissions + Linux platform adapter",
+      "fabushi_target": "Map behavior into thin Linux adapters and canonical owners; do not create a second portal/product store."
+    },
+    {
+      "recursive_order": 11852,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.impl.portal.Request.xml",
+      "source_blob_sha": "fc474a7b8b613bda02387f726b6d2b405b2ff874",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "data/org.freedesktop.impl.portal.Request.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "fc474a7b8b613bda02387f726b6d2b405b2ff874",
+        "size": 1760
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-linux-portal-capability-contract-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "org.freedesktop.impl.portal.Request",
+      "source_symbols": [
+        "org.freedesktop.impl.portal.Request"
+      ],
+      "responsibility": "Preserve generic portal request/session identity, asynchronous response/cancellation, close signal and deterministic teardown used by all mediated Linux capabilities.",
+      "fabushi_canonical_owner": "Existing Linux platform lifecycle/Resource owner",
+      "fabushi_target": "Map behavior into thin Linux adapters and canonical owners; do not create a second portal/product store."
+    },
+    {
+      "recursive_order": 11853,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.impl.portal.ScreenCast.xml",
+      "source_blob_sha": "ce5a04cadb7821d0df1f42e8b30e4f0e804dd018",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "data/org.freedesktop.impl.portal.ScreenCast.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "ce5a04cadb7821d0df1f42e8b30e4f0e804dd018",
+        "size": 11216
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-linux-portal-capability-contract-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "org.freedesktop.impl.portal.ScreenCast",
+      "source_symbols": [
+        "org.freedesktop.impl.portal.ScreenCast"
+      ],
+      "responsibility": "Preserve user-consented capture session lifecycle, source/cursor selection, PipeWire handoff, one-shot request handles, restore/persistence token rules, close/failure semantics and media permission revocation.",
+      "fabushi_canonical_owner": "Existing Computer/screen-share/call capture + Permissions + Resource + Linux platform adapter",
+      "fabushi_target": "Map behavior into thin Linux adapters and canonical owners; do not create a second portal/product store."
+    },
+    {
+      "recursive_order": 11854,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.impl.portal.Screenshot.xml",
+      "source_blob_sha": "265ef2558e4ad94d09cc5760d1ab9c823672b4c0",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "data/org.freedesktop.impl.portal.Screenshot.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "265ef2558e4ad94d09cc5760d1ab9c823672b4c0",
+        "size": 4154
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-linux-portal-capability-contract-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "org.freedesktop.impl.portal.Screenshot",
+      "source_symbols": [
+        "org.freedesktop.impl.portal.Screenshot"
+      ],
+      "responsibility": "Preserve user-consented capture session lifecycle, source/cursor selection, PipeWire handoff, one-shot request handles, restore/persistence token rules, close/failure semantics and media permission revocation.",
+      "fabushi_canonical_owner": "Existing Computer/screen-share/call capture + Permissions + Resource + Linux platform adapter",
+      "fabushi_target": "Map behavior into thin Linux adapters and canonical owners; do not create a second portal/product store."
+    },
+    {
+      "recursive_order": 11855,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.impl.portal.Secret.xml",
+      "source_blob_sha": "8709522804f1492863f707b3d9695a94b042c798",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "data/org.freedesktop.impl.portal.Secret.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "8709522804f1492863f707b3d9695a94b042c798",
+        "size": 2514
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-linux-portal-capability-contract-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "org.freedesktop.impl.portal.Secret",
+      "source_symbols": [
+        "org.freedesktop.impl.portal.Secret"
+      ],
+      "responsibility": "Preserve user/session-scoped secret retrieval through OS mediation without renderer token exposure or duplicate secret storage.",
+      "fabushi_canonical_owner": "Existing credential/security + Permissions + Linux platform adapter",
+      "fabushi_target": "Map behavior into thin Linux adapters and canonical owners; do not create a second portal/product store."
+    },
+    {
+      "recursive_order": 11856,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.impl.portal.Session.xml",
+      "source_blob_sha": "da74658b81af35489e36ec841d3433d0eb66c62b",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "data/org.freedesktop.impl.portal.Session.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "da74658b81af35489e36ec841d3433d0eb66c62b",
+        "size": 1779
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-linux-portal-capability-contract-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "org.freedesktop.impl.portal.Session",
+      "source_symbols": [
+        "org.freedesktop.impl.portal.Session"
+      ],
+      "responsibility": "Preserve generic portal request/session identity, asynchronous response/cancellation, close signal and deterministic teardown used by all mediated Linux capabilities.",
+      "fabushi_canonical_owner": "Existing Linux platform lifecycle/Resource owner",
+      "fabushi_target": "Map behavior into thin Linux adapters and canonical owners; do not create a second portal/product store."
+    },
+    {
+      "recursive_order": 11857,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.impl.portal.Settings.xml",
+      "source_blob_sha": "4139ec523e03b171485455402ae5d7f6c5fae767",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "data/org.freedesktop.impl.portal.Settings.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "4139ec523e03b171485455402ae5d7f6c5fae767",
+        "size": 3948
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-linux-portal-capability-contract-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "org.freedesktop.impl.portal.Settings",
+      "source_symbols": [
+        "org.freedesktop.impl.portal.Settings"
+      ],
+      "responsibility": "Preserve versioned account/settings reads, change projection and privacy boundaries while canonical Fabushi Identity/Settings remains product truth.",
+      "fabushi_canonical_owner": "Existing Identity/Settings + Linux platform adapter",
+      "fabushi_target": "Map behavior into thin Linux adapters and canonical owners; do not create a second portal/product store."
+    },
+    {
+      "recursive_order": 11858,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.impl.portal.Usb.xml",
+      "source_blob_sha": "37168d8952bff3e14d407e0572609ab7df4008b8",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "data/org.freedesktop.impl.portal.Usb.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "37168d8952bff3e14d407e0572609ab7df4008b8",
+        "size": 3514
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-linux-portal-capability-contract-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "org.freedesktop.impl.portal.Usb",
+      "source_symbols": [
+        "org.freedesktop.impl.portal.Usb"
+      ],
+      "responsibility": "Preserve typed OS-mediated capability invocation, permission/user-consent boundary, request cancellation and version/failure semantics for this portal interface.",
+      "fabushi_canonical_owner": "Existing platform capability + Permissions/Resource owner",
+      "fabushi_target": "Map behavior into thin Linux adapters and canonical owners; do not create a second portal/product store."
+    },
+    {
+      "recursive_order": 11859,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.impl.portal.Wallpaper.xml",
+      "source_blob_sha": "da210dcc34f78dd9be190ac37dec75ea0c9d871f",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "data/org.freedesktop.impl.portal.Wallpaper.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "da210dcc34f78dd9be190ac37dec75ea0c9d871f",
+        "size": 2454
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-linux-portal-capability-contract-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "org.freedesktop.impl.portal.Wallpaper",
+      "source_symbols": [
+        "org.freedesktop.impl.portal.Wallpaper"
+      ],
+      "responsibility": "Preserve typed OS-mediated capability invocation, permission/user-consent boundary, request cancellation and version/failure semantics for this portal interface.",
+      "fabushi_canonical_owner": "Existing platform capability + Permissions/Resource owner",
+      "fabushi_target": "Map behavior into thin Linux adapters and canonical owners; do not create a second portal/product store."
+    },
+    {
+      "recursive_order": 11860,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.portal.Account.xml",
+      "source_blob_sha": "86bb76f5b202ba507b44510472c8c0b6f89924ae",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "data/org.freedesktop.portal.Account.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "86bb76f5b202ba507b44510472c8c0b6f89924ae",
+        "size": 2927
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-linux-portal-capability-contract-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "org.freedesktop.portal.Account",
+      "source_symbols": [
+        "org.freedesktop.portal.Account"
+      ],
+      "responsibility": "Preserve versioned account/settings reads, change projection and privacy boundaries while canonical Fabushi Identity/Settings remains product truth.",
+      "fabushi_canonical_owner": "Existing Identity/Settings + Linux platform adapter",
+      "fabushi_target": "Map behavior into thin Linux adapters and canonical owners; do not create a second portal/product store."
+    },
+    {
+      "recursive_order": 11861,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.portal.Background.xml",
+      "source_blob_sha": "1b83fcd1f65ac3e34ab6f869fd3bee8244cb9c3a",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "data/org.freedesktop.portal.Background.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "1b83fcd1f65ac3e34ab6f869fd3bee8244cb9c3a",
+        "size": 3909
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-linux-portal-capability-contract-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "org.freedesktop.portal.Background",
+      "source_symbols": [
+        "org.freedesktop.portal.Background"
+      ],
+      "responsibility": "Preserve OS-mediated lifecycle/pressure/connectivity/realtime constraints and change signaling so platform state cannot silently bypass recovery or resource policies.",
+      "fabushi_canonical_owner": "Existing platform lifecycle/Resource/recovery owner",
+      "fabushi_target": "Map behavior into thin Linux adapters and canonical owners; do not create a second portal/product store."
+    },
+    {
+      "recursive_order": 11862,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.portal.Camera.xml",
+      "source_blob_sha": "f0cf1d4c5b774851574a0a87e34ac73a957a0e0b",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "data/org.freedesktop.portal.Camera.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "f0cf1d4c5b774851574a0a87e34ac73a957a0e0b",
+        "size": 3265
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-linux-portal-capability-contract-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "org.freedesktop.portal.Camera",
+      "source_symbols": [
+        "org.freedesktop.portal.Camera"
+      ],
+      "responsibility": "Preserve user-consented capture session lifecycle, source/cursor selection, PipeWire handoff, one-shot request handles, restore/persistence token rules, close/failure semantics and media permission revocation.",
+      "fabushi_canonical_owner": "Existing Computer/screen-share/call capture + Permissions + Resource + Linux platform adapter",
+      "fabushi_target": "Map behavior into thin Linux adapters and canonical owners; do not create a second portal/product store."
+    },
+    {
+      "recursive_order": 11863,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.portal.Clipboard.xml",
+      "source_blob_sha": "9a85063b39d4adfd3884ab6f9c952fb4137afac7",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "data/org.freedesktop.portal.Clipboard.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "9a85063b39d4adfd3884ab6f9c952fb4137afac7",
+        "size": 7751
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-linux-portal-capability-contract-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "org.freedesktop.portal.Clipboard",
+      "source_symbols": [
+        "org.freedesktop.portal.Clipboard"
+      ],
+      "responsibility": "Preserve permission-scoped clipboard ownership, read/write transfer lifecycle, owner-change signaling, bounded transfer completion and session teardown.",
+      "fabushi_canonical_owner": "Existing Computer clipboard + Permissions/Resource + Linux platform adapter",
+      "fabushi_target": "Map behavior into thin Linux adapters and canonical owners; do not create a second portal/product store."
+    },
+    {
+      "recursive_order": 11864,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.portal.Documents.xml",
+      "source_blob_sha": "4e2b264615c46843843ed151047f6a075e46c2cf",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "data/org.freedesktop.portal.Documents.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "4e2b264615c46843843ed151047f6a075e46c2cf",
+        "size": 12777
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-linux-portal-capability-contract-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "org.freedesktop.portal.Documents",
+      "source_symbols": [
+        "org.freedesktop.portal.Documents"
+      ],
+      "responsibility": "Preserve user-mediated file/open/save/transfer/document grants, host-path exposure boundaries, revocation, request cancellation and resource lifetime.",
+      "fabushi_canonical_owner": "Existing Resource/attachments/artifacts + Permissions + Linux platform adapter",
+      "fabushi_target": "Map behavior into thin Linux adapters and canonical owners; do not create a second portal/product store."
+    },
+    {
+      "recursive_order": 11865,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.portal.DynamicLauncher.xml",
+      "source_blob_sha": "4f3a6e417cbb1f2bb893e542bfd5d5234144416d",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "data/org.freedesktop.portal.DynamicLauncher.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "4f3a6e417cbb1f2bb893e542bfd5d5234144416d",
+        "size": 14626
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-linux-portal-capability-contract-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "org.freedesktop.portal.DynamicLauncher",
+      "source_symbols": [
+        "org.freedesktop.portal.DynamicLauncher"
+      ],
+      "responsibility": "Preserve user-mediated application choice/launcher installation and launch authorization boundaries; never install/launch without explicit platform consent.",
+      "fabushi_canonical_owner": "Existing Resource/Permissions/platform launcher owner",
+      "fabushi_target": "Map behavior into thin Linux adapters and canonical owners; do not create a second portal/product store."
+    },
+    {
+      "recursive_order": 11866,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.portal.Email.xml",
+      "source_blob_sha": "51c78ecc31206cb1bf29ff70ca332d7710930e73",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "data/org.freedesktop.portal.Email.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "51c78ecc31206cb1bf29ff70ca332d7710930e73",
+        "size": 4338
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-linux-portal-capability-contract-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "org.freedesktop.portal.Email",
+      "source_symbols": [
+        "org.freedesktop.portal.Email"
+      ],
+      "responsibility": "Preserve typed OS-mediated capability invocation, permission/user-consent boundary, request cancellation and version/failure semantics for this portal interface.",
+      "fabushi_canonical_owner": "Existing platform capability + Permissions/Resource owner",
+      "fabushi_target": "Map behavior into thin Linux adapters and canonical owners; do not create a second portal/product store."
+    },
+    {
+      "recursive_order": 11867,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.portal.FileChooser.xml",
+      "source_blob_sha": "775b30f3bf5450cdda545025a9339aa3d5f86ea6",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "data/org.freedesktop.portal.FileChooser.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "775b30f3bf5450cdda545025a9339aa3d5f86ea6",
+        "size": 12359
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-linux-portal-capability-contract-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "org.freedesktop.portal.FileChooser",
+      "source_symbols": [
+        "org.freedesktop.portal.FileChooser"
+      ],
+      "responsibility": "Preserve user-mediated file/open/save/transfer/document grants, host-path exposure boundaries, revocation, request cancellation and resource lifetime.",
+      "fabushi_canonical_owner": "Existing Resource/attachments/artifacts + Permissions + Linux platform adapter",
+      "fabushi_target": "Map behavior into thin Linux adapters and canonical owners; do not create a second portal/product store."
+    },
+    {
+      "recursive_order": 11868,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.portal.FileTransfer.xml",
+      "source_blob_sha": "aefc4dfd9b0eda81dde1d1154ee61036ea6506eb",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "data/org.freedesktop.portal.FileTransfer.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "aefc4dfd9b0eda81dde1d1154ee61036ea6506eb",
+        "size": 6551
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-linux-portal-capability-contract-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "org.freedesktop.portal.FileTransfer",
+      "source_symbols": [
+        "org.freedesktop.portal.FileTransfer"
+      ],
+      "responsibility": "Preserve user-mediated file/open/save/transfer/document grants, host-path exposure boundaries, revocation, request cancellation and resource lifetime.",
+      "fabushi_canonical_owner": "Existing Resource/attachments/artifacts + Permissions + Linux platform adapter",
+      "fabushi_target": "Map behavior into thin Linux adapters and canonical owners; do not create a second portal/product store."
+    },
+    {
+      "recursive_order": 11869,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.portal.GameMode.xml",
+      "source_blob_sha": "e180d47b25034510757184ba710e149dce6375f5",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "data/org.freedesktop.portal.GameMode.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "e180d47b25034510757184ba710e149dce6375f5",
+        "size": 9519
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-linux-portal-capability-contract-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "org.freedesktop.portal.GameMode",
+      "source_symbols": [
+        "org.freedesktop.portal.GameMode"
+      ],
+      "responsibility": "Preserve typed OS-mediated capability invocation, permission/user-consent boundary, request cancellation and version/failure semantics for this portal interface.",
+      "fabushi_canonical_owner": "Existing platform capability + Permissions/Resource owner",
+      "fabushi_target": "Map behavior into thin Linux adapters and canonical owners; do not create a second portal/product store."
+    },
+    {
+      "recursive_order": 11870,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.portal.GlobalShortcuts.xml",
+      "source_blob_sha": "3d66c884890f97f8c0f5c50523adbd36721f0abe",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "data/org.freedesktop.portal.GlobalShortcuts.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "3d66c884890f97f8c0f5c50523adbd36721f0abe",
+        "size": 10216
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-linux-portal-capability-contract-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "org.freedesktop.portal.GlobalShortcuts",
+      "source_symbols": [
+        "org.freedesktop.portal.GlobalShortcuts"
+      ],
+      "responsibility": "Preserve permissioned global-shortcut session creation/binding/listing, activation/deactivation events, conflict/change handling and teardown.",
+      "fabushi_canonical_owner": "Existing commands/shortcuts + Permissions + Linux platform adapter",
+      "fabushi_target": "Map behavior into thin Linux adapters and canonical owners; do not create a second portal/product store."
+    },
+    {
+      "recursive_order": 11871,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.portal.Inhibit.xml",
+      "source_blob_sha": "1ae413e1859add1db2d6be9b121e4a08ebe9c084",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "data/org.freedesktop.portal.Inhibit.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "1ae413e1859add1db2d6be9b121e4a08ebe9c084",
+        "size": 6610
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-linux-portal-capability-contract-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "org.freedesktop.portal.Inhibit",
+      "source_symbols": [
+        "org.freedesktop.portal.Inhibit"
+      ],
+      "responsibility": "Preserve OS-mediated lifecycle/pressure/connectivity/realtime constraints and change signaling so platform state cannot silently bypass recovery or resource policies.",
+      "fabushi_canonical_owner": "Existing platform lifecycle/Resource/recovery owner",
+      "fabushi_target": "Map behavior into thin Linux adapters and canonical owners; do not create a second portal/product store."
+    },
+    {
+      "recursive_order": 11872,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.portal.InputCapture.xml",
+      "source_blob_sha": "767e5dd87bb88ef583fff0b97bef836bb03890c0",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "data/org.freedesktop.portal.InputCapture.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "767e5dd87bb88ef583fff0b97bef836bb03890c0",
+        "size": 24461
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-linux-portal-capability-contract-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "org.freedesktop.portal.InputCapture",
+      "source_symbols": [
+        "org.freedesktop.portal.InputCapture"
+      ],
+      "responsibility": "Preserve explicit user-consented remote input session creation, device/capability selection, activation/deactivation, zones/barriers, EIS connection, restore/persistence constraints, cancellation and teardown.",
+      "fabushi_canonical_owner": "Existing Computer/Human Computer takeover + Permissions + Linux platform adapter",
+      "fabushi_target": "Map behavior into thin Linux adapters and canonical owners; do not create a second portal/product store."
+    },
+    {
+      "recursive_order": 11873,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.portal.Location.xml",
+      "source_blob_sha": "b0be22a1cefa5bbb1040c7a1af6242c03348001b",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "data/org.freedesktop.portal.Location.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "b0be22a1cefa5bbb1040c7a1af6242c03348001b",
+        "size": 5238
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-linux-portal-capability-contract-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "org.freedesktop.portal.Location",
+      "source_symbols": [
+        "org.freedesktop.portal.Location"
+      ],
+      "responsibility": "Preserve typed OS-mediated capability invocation, permission/user-consent boundary, request cancellation and version/failure semantics for this portal interface.",
+      "fabushi_canonical_owner": "Existing platform capability + Permissions/Resource owner",
+      "fabushi_target": "Map behavior into thin Linux adapters and canonical owners; do not create a second portal/product store."
+    },
+    {
+      "recursive_order": 11874,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.portal.MemoryMonitor.xml",
+      "source_blob_sha": "fb53ea83cb71aae41c8fd93a30ee45ceb5980eb1",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "data/org.freedesktop.portal.MemoryMonitor.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "fb53ea83cb71aae41c8fd93a30ee45ceb5980eb1",
+        "size": 2099
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-linux-portal-capability-contract-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "org.freedesktop.portal.MemoryMonitor",
+      "source_symbols": [
+        "org.freedesktop.portal.MemoryMonitor"
+      ],
+      "responsibility": "Preserve OS-mediated lifecycle/pressure/connectivity/realtime constraints and change signaling so platform state cannot silently bypass recovery or resource policies.",
+      "fabushi_canonical_owner": "Existing platform lifecycle/Resource/recovery owner",
+      "fabushi_target": "Map behavior into thin Linux adapters and canonical owners; do not create a second portal/product store."
+    },
+    {
+      "recursive_order": 11875,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.portal.NetworkMonitor.xml",
+      "source_blob_sha": "8ab90526427927a782345de3dc79812de5e2e4ab",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "data/org.freedesktop.portal.NetworkMonitor.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "8ab90526427927a782345de3dc79812de5e2e4ab",
+        "size": 4532
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-linux-portal-capability-contract-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "org.freedesktop.portal.NetworkMonitor",
+      "source_symbols": [
+        "org.freedesktop.portal.NetworkMonitor"
+      ],
+      "responsibility": "Preserve OS-mediated lifecycle/pressure/connectivity/realtime constraints and change signaling so platform state cannot silently bypass recovery or resource policies.",
+      "fabushi_canonical_owner": "Existing platform lifecycle/Resource/recovery owner",
+      "fabushi_target": "Map behavior into thin Linux adapters and canonical owners; do not create a second portal/product store."
+    },
+    {
+      "recursive_order": 11876,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.portal.Notification.xml",
+      "source_blob_sha": "9ee91a5577365c51b4a33cd62829f62f22c783d3",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "data/org.freedesktop.portal.Notification.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "9ee91a5577365c51b4a33cd62829f62f22c783d3",
+        "size": 16179
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-linux-portal-capability-contract-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "org.freedesktop.portal.Notification",
+      "source_symbols": [
+        "org.freedesktop.portal.Notification"
+      ],
+      "responsibility": "Preserve notification add/remove/action lifecycle, supported options, permission gating and action routing without bypassing canonical notification owners.",
+      "fabushi_canonical_owner": "Existing Notifications + Permissions + Linux platform adapter",
+      "fabushi_target": "Map behavior into thin Linux adapters and canonical owners; do not create a second portal/product store."
+    },
+    {
+      "recursive_order": 11877,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.portal.OpenURI.xml",
+      "source_blob_sha": "49958cb2bba85cbc8cd3df3eee56e1fcebdcebaf",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "data/org.freedesktop.portal.OpenURI.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "49958cb2bba85cbc8cd3df3eee56e1fcebdcebaf",
+        "size": 7533
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-linux-portal-capability-contract-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "org.freedesktop.portal.OpenURI",
+      "source_symbols": [
+        "org.freedesktop.portal.OpenURI"
+      ],
+      "responsibility": "Preserve user-mediated file/open/save/transfer/document grants, host-path exposure boundaries, revocation, request cancellation and resource lifetime.",
+      "fabushi_canonical_owner": "Existing Resource/attachments/artifacts + Permissions + Linux platform adapter",
+      "fabushi_target": "Map behavior into thin Linux adapters and canonical owners; do not create a second portal/product store."
+    },
+    {
+      "recursive_order": 11878,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.portal.PowerProfileMonitor.xml",
+      "source_blob_sha": "ecd748ed9dc10b4a9a7f643822e242a55fe441e0",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "data/org.freedesktop.portal.PowerProfileMonitor.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "ecd748ed9dc10b4a9a7f643822e242a55fe441e0",
+        "size": 1756
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-linux-portal-capability-contract-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "org.freedesktop.portal.PowerProfileMonitor",
+      "source_symbols": [
+        "org.freedesktop.portal.PowerProfileMonitor"
+      ],
+      "responsibility": "Preserve versioned D-Bus request/session lifecycle, typed method/result contracts, cancellation/close semantics, permission boundaries and failure propagation for this Linux portal capability.",
+      "fabushi_canonical_owner": "Existing Linux platform adapter + Permissions/Resource owner",
+      "fabushi_target": "Map behavior into thin Linux adapters and canonical owners; do not create a second portal/product store."
+    },
+    {
+      "recursive_order": 11879,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.portal.Print.xml",
+      "source_blob_sha": "96d2fc841fb9135c3635f3b8b822381b057602a4",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "data/org.freedesktop.portal.Print.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "96d2fc841fb9135c3635f3b8b822381b057602a4",
+        "size": 10326
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-linux-portal-capability-contract-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "org.freedesktop.portal.Print",
+      "source_symbols": [
+        "org.freedesktop.portal.Print"
+      ],
+      "responsibility": "Preserve typed OS-mediated capability invocation, permission/user-consent boundary, request cancellation and version/failure semantics for this portal interface.",
+      "fabushi_canonical_owner": "Existing platform capability + Permissions/Resource owner",
+      "fabushi_target": "Map behavior into thin Linux adapters and canonical owners; do not create a second portal/product store."
+    },
+    {
+      "recursive_order": 11880,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.portal.ProxyResolver.xml",
+      "source_blob_sha": "070eb98df1e3e84ea1dabb1791283b637c9ce3dc",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "data/org.freedesktop.portal.ProxyResolver.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "070eb98df1e3e84ea1dabb1791283b637c9ce3dc",
+        "size": 2041
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-linux-portal-capability-contract-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "org.freedesktop.portal.ProxyResolver",
+      "source_symbols": [
+        "org.freedesktop.portal.ProxyResolver"
+      ],
+      "responsibility": "Preserve typed OS-mediated capability invocation, permission/user-consent boundary, request cancellation and version/failure semantics for this portal interface.",
+      "fabushi_canonical_owner": "Existing platform capability + Permissions/Resource owner",
+      "fabushi_target": "Map behavior into thin Linux adapters and canonical owners; do not create a second portal/product store."
+    },
+    {
+      "recursive_order": 11881,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.portal.Realtime.xml",
+      "source_blob_sha": "2b53c89d8d2ec2a973cc854fabd4dca39f140285",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "data/org.freedesktop.portal.Realtime.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "2b53c89d8d2ec2a973cc854fabd4dca39f140285",
+        "size": 2579
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-linux-portal-capability-contract-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "org.freedesktop.portal.Realtime",
+      "source_symbols": [
+        "org.freedesktop.portal.Realtime"
+      ],
+      "responsibility": "Preserve OS-mediated lifecycle/pressure/connectivity/realtime constraints and change signaling so platform state cannot silently bypass recovery or resource policies.",
+      "fabushi_canonical_owner": "Existing platform lifecycle/Resource/recovery owner",
+      "fabushi_target": "Map behavior into thin Linux adapters and canonical owners; do not create a second portal/product store."
+    },
+    {
+      "recursive_order": 11882,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.portal.RemoteDesktop.xml",
+      "source_blob_sha": "bd3b754a18b2f765338d2ed0a61836fb98ee34b0",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "data/org.freedesktop.portal.RemoteDesktop.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "bd3b754a18b2f765338d2ed0a61836fb98ee34b0",
+        "size": 20072
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-linux-portal-capability-contract-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "org.freedesktop.portal.RemoteDesktop",
+      "source_symbols": [
+        "org.freedesktop.portal.RemoteDesktop"
+      ],
+      "responsibility": "Preserve explicit user-consented remote input session creation, device/capability selection, activation/deactivation, zones/barriers, EIS connection, restore/persistence constraints, cancellation and teardown.",
+      "fabushi_canonical_owner": "Existing Computer/Human Computer takeover + Permissions + Linux platform adapter",
+      "fabushi_target": "Map behavior into thin Linux adapters and canonical owners; do not create a second portal/product store."
+    },
+    {
+      "recursive_order": 11883,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.portal.Request.xml",
+      "source_blob_sha": "e8a26484e23bc1bff98036c404238b824161e473",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "data/org.freedesktop.portal.Request.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "e8a26484e23bc1bff98036c404238b824161e473",
+        "size": 3590
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-linux-portal-capability-contract-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "org.freedesktop.portal.Request",
+      "source_symbols": [
+        "org.freedesktop.portal.Request"
+      ],
+      "responsibility": "Preserve generic portal request/session identity, asynchronous response/cancellation, close signal and deterministic teardown used by all mediated Linux capabilities.",
+      "fabushi_canonical_owner": "Existing Linux platform lifecycle/Resource owner",
+      "fabushi_target": "Map behavior into thin Linux adapters and canonical owners; do not create a second portal/product store."
+    },
+    {
+      "recursive_order": 11884,
+      "source_path": "Telegram/ThirdParty/xdg-desktop-portal::data/org.freedesktop.portal.ScreenCast.xml",
+      "source_blob_sha": "8233242d38af0a7042d903d648b5dfef74e51d0a",
+      "source_identity": {
+        "repository": "flatpak/xdg-desktop-portal",
+        "commit": "23a76c392170dbbd26230f85ef56c3a57e52b857",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/xdg-desktop-portal",
+        "path": "data/org.freedesktop.portal.ScreenCast.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "8233242d38af0a7042d903d648b5dfef74e51d0a",
+        "size": 12860
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-linux-portal-capability-contract-mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "org.freedesktop.portal.ScreenCast",
+      "source_symbols": [
+        "org.freedesktop.portal.ScreenCast"
+      ],
+      "responsibility": "Preserve user-consented capture session lifecycle, source/cursor selection, PipeWire handoff, one-shot request handles, restore/persistence token rules, close/failure semantics and media permission revocation.",
+      "fabushi_canonical_owner": "Existing Computer/screen-share/call capture + Permissions + Resource + Linux platform adapter",
+      "fabushi_target": "Map behavior into thin Linux adapters and canonical owners; do not create a second portal/product store."
+    }
+  ]
+}

@@ -1,0 +1,197 @@
+{
+  "format_version": 2,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+    "tree": "9d8fa87ce68c832d2f4c99f372a5bb672463c3e1"
+  },
+  "range": {
+    "first_order": 5038,
+    "last_order": 5042,
+    "entries": 5
+  },
+  "rows": [
+    {
+      "recursive_order": 5038,
+      "source_path": "Telegram/SourceFiles/mainwidget.h",
+      "source_blob_sha": "086a6992cb1cd6b0deb6e145b839b383c7538a6e",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Session conversation-shell orchestration contract and lifetime-owned UI composition state",
+      "upstream_owner": "Conversation shell / SessionController composition boundary",
+      "state_machine": "typed session controller -> conversation/search/send/navigation/media/call/export commands -> adaptive section state + stack -> focus/activation -> orderly owner destruction",
+      "side_effects": "declares the single shell boundary and lifetime-held section/player/call/export/background state used by the implementation",
+      "failure_cases": "API surface creates duplicate owner, weak/lifetime state outlives session, stale section/call/export pointer, layout state diverges from controller",
+      "ui_disposition": "Reuse canonical Fabushi ProductShell, ConversationList, ConversationWorkspace, Transcript, Composer, Toolbar, Dialog, AlertDialog, Toast, Menu, Popover, Tabs, SearchField, UniversalSearch, DetailPanel and canonical media/call/status surfaces as applicable; source-derived MainWidget/MainWindow names do not become shipping public component names.",
+      "fabushi_canonical_owner": "Canonical ProductShell + ConversationWorkspace/navigation + Search/send routing + Media/Call auxiliary surface owners",
+      "fabushi_target": "OPEN: bind declaration-side responsibilities to existing source-neutral Fabushi owners and ensure no second Conversation/Message/Search/Media owner is introduced.",
+      "platform_differences": "Qt class/member layout is not ported mechanically; only the public commands, state ownership, lifetime and UI behavior map to canonical React/Electron/Rust boundaries.",
+      "production_evidence": "projects/telegram-desktop-rust/dossiers/main-widget-window-5034-5037-complete-read.md; direct exact-source read only; implementation/verification remains open.",
+      "test_evidence": "Current-head Source authority attestation for 5034-5037 required after commit; production contract/integration/E2E evidence remains open.",
+      "disposition": "mapped-open-product-shell-orchestration",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "MainWidget",
+      "consumer_evidence": [
+        "Direct exact-source read covered the complete MainWidget public/private contract and owned state, including stack, sections, player/call/export top bars, resize areas, background task and lifetime owners."
+      ],
+      "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+        "verified_blob_sha": "086a6992cb1cd6b0deb6e145b839b383c7538a6e",
+        "byte_size": 10900,
+        "file_type": "blob",
+        "recursive_order": 5038
+      },
+      "notes": "Read-complete records source understanding only; implementation and release gates remain open."
+    },
+    {
+      "recursive_order": 5039,
+      "source_path": "Telegram/SourceFiles/mainwindow.cpp",
+      "source_blob_sha": "4c2279e4c9fa033d7845e93c6291b75b8da1be16",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Root desktop window lifecycle: work-mode/tray, lock/intro/main transitions, overlay/focus, media preview, read-eligibility, activation and close semantics",
+      "upstream_owner": "Canonical desktop ProductShell/window lifecycle owner",
+      "state_machine": "window bootstrap -> initial work mode/tray/minimize -> intro/main or passcode/email lock -> layer/media-preview/theme-warning arbitration -> activation/read eligibility -> close/hide/quit -> widget teardown",
+      "side_effects": "controls top-level focus, lock privacy, overlay pause state, startup-file routing, window geometry/state persistence and close-vs-quit behavior while delegating session truth to canonical owners",
+      "failure_cases": "content visible behind lock, stale layer steals focus, media preview survives inappropriate release, inactive/covered window marks read, close quits incorrectly, window state/position not persisted, locked startup file routed",
+      "ui_disposition": "Reuse canonical Fabushi ProductShell, ConversationList, ConversationWorkspace, Transcript, Composer, Toolbar, Dialog, AlertDialog, Toast, Menu, Popover, Tabs, SearchField, UniversalSearch, DetailPanel and canonical media/call/status surfaces as applicable; source-derived MainWidget/MainWindow names do not become shipping public component names.",
+      "fabushi_canonical_owner": "Canonical ProductShell/window lifecycle + Auth/Lock + Overlay/Dialog + Media preview owners",
+      "fabushi_target": "OPEN: bind each root-window lifecycle responsibility to current shipping Electron/ProductShell/Auth/Overlay/Media owners; close privacy, focus, accessibility, tray/close/read-state and packaged E2E gaps before promotion.",
+      "platform_differences": "Qt Platform::MainWindow/event filter/tray mechanics map to the thin Electron platform adapter plus source-neutral ProductShell; passcode/email lock, focus and overlay policy remain product responsibilities.",
+      "production_evidence": "projects/telegram-desktop-rust/dossiers/main-widget-window-5034-5037-complete-read.md; direct exact-source read only; implementation/verification remains open.",
+      "test_evidence": "Current-head Source authority attestation for 5034-5037 required after commit; packaged window/lock/focus/read-state integration evidence remains open.",
+      "disposition": "mapped-open-root-window-lifecycle",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "MainWindow",
+      "consumer_evidence": [
+        "Direct exact-source read covered initial work mode, passcode/setup-email locks, intro/main transitions, layer creation/destruction and focus restore, media preview, theme warnings, read eligibility, event filtering, close semantics, geometry and startup files."
+      ],
+      "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+        "verified_blob_sha": "4c2279e4c9fa033d7845e93c6291b75b8da1be16",
+        "byte_size": 19954,
+        "file_type": "blob",
+        "recursive_order": 5039
+      },
+      "notes": "Read-complete records source understanding only; privacy/window/platform behavior remains unverified until shipping owners and packaged evidence are closed."
+    },
+    {
+      "recursive_order": 5040,
+      "source_path": "Telegram/SourceFiles/mainwindow.h",
+      "source_blob_sha": "8f628c4797690ce5e88e61add25d27406110cc16",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Root desktop window lifecycle contract and owned lock/layer/media-preview composition state",
+      "upstream_owner": "Canonical desktop ProductShell/window lifecycle owner",
+      "state_machine": "platform window -> lock/intro/main/layer/media-preview owned slots -> focus/geometry/event/close routing -> teardown",
+      "side_effects": "declares one root window owner for privacy locks, overlays, session content and media preview",
+      "failure_cases": "duplicate root owner, lock/layer state outlives window, wrong focus precedence, unbounded preview/overlay lifetime",
+      "ui_disposition": "Reuse canonical Fabushi ProductShell, ConversationList, ConversationWorkspace, Transcript, Composer, Toolbar, Dialog, AlertDialog, Toast, Menu, Popover, Tabs, SearchField, UniversalSearch, DetailPanel and canonical media/call/status surfaces as applicable; source-derived MainWidget/MainWindow names do not become shipping public component names.",
+      "fabushi_canonical_owner": "Canonical ProductShell/window lifecycle + Auth/Lock + Overlay/Dialog + Media preview owners",
+      "fabushi_target": "OPEN: bind declaration-side root window responsibilities to the current shipping Electron/ProductShell composition with no parallel window shell.",
+      "platform_differences": "Qt member types are platform-specific; Fabushi preserves state/lifecycle/focus/privacy contracts with thin Electron adapters and canonical components.",
+      "production_evidence": "projects/telegram-desktop-rust/dossiers/main-widget-window-5034-5037-complete-read.md; direct exact-source read only; implementation/verification remains open.",
+      "test_evidence": "Current-head Source authority attestation for 5034-5037 required after commit; packaged window lifecycle evidence remains open.",
+      "disposition": "mapped-open-root-window-lifecycle",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "MainWindow",
+      "consumer_evidence": [
+        "Direct exact-source read covered the complete MainWindow contract and owned passcode/email lock, intro/main, layer, media preview and theme warning state."
+      ],
+      "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+        "verified_blob_sha": "8f628c4797690ce5e88e61add25d27406110cc16",
+        "byte_size": 3920,
+        "file_type": "blob",
+        "recursive_order": 5040
+      },
+      "notes": "Read-complete records source understanding only; implementation and release gates remain open."
+    },
+    {
+      "recursive_order": 5041,
+      "source_path": "Telegram/SourceFiles/media/audio/media_audio.cpp",
+      "source_blob_sha": "990938cc3d37d1ddc510f3b0e4f80781318c8c00",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Audio playback mixer, device, buffering, fade/suppression, speed/volume and derived waveform/metadata lifecycle",
+      "upstream_owner": "Canonical Media audio playback owner",
+      "state_machine": "play request -> attach/resolve playback device -> select typed track -> loader/buffer/preload -> starting/playing/pausing/resuming/stopping terminal states -> device detach/reattach or error -> cleanup",
+      "side_effects": "one audio mixer coordinates voice/song/video gain, song suppression, external stream synchronization, player updates and bounded device lifetime; waveform/metadata remain derived media data",
+      "failure_cases": "device open/disconnect failure, OpenAL error, stale track id, buffer starvation, loader error, invalid speed/volume, device change during playback, fade terminal-state drift, teardown race",
+      "ui_disposition": "Reuse canonical Fabushi Composer, TranscriptEntry, Toolbar, IconButton, Status, LoadingState, ErrorState, Toast and Media player/recording surfaces as applicable; audio engine/source names remain implementation evidence, not public UI components.",
+      "fabushi_canonical_owner": "Canonical Media playback/audio owner",
+      "fabushi_target": "OPEN: audit current shipping Canonical Media playback/audio owner and close missing device/buffer/state/cancellation/error/teardown semantics with platform adapters and canonical UI; production/integration/E2E evidence required before implementation or release promotion.",
+      "platform_differences": "OpenAL/Qt/FFmpeg details are behavioral/platform reference. Fabushi preserves state, resource lifetime, concurrency, cancellation, media metadata and failure semantics behind existing source-neutral media/composer owners and thin platform adapters.",
+      "production_evidence": "projects/telegram-desktop-rust/dossiers/audio-playback-capture-5038-5042-complete-read.md; direct exact-source read only; implementation/verification remains open.",
+      "test_evidence": "Current-head Source authority attestation for 5038-5042 is required after this commit; media device/recording/playback production evidence remains open.",
+      "disposition": "mapped-open-audio-playback",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "Media::Player::Mixer",
+      "consumer_evidence": [
+        "Direct exact-source read completed for Telegram/SourceFiles/media/audio/media_audio.cpp; state, device/resource ownership, concurrency, errors and teardown were decomposed into Canonical Media playback/audio owner."
+      ],
+      "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+        "verified_blob_sha": "990938cc3d37d1ddc510f3b0e4f80781318c8c00",
+        "byte_size": 45681,
+        "file_type": "blob",
+        "recursive_order": 5041
+      },
+      "notes": "Read-complete records source understanding only. It does not close unknown accounting, implementation_status, coverage_matrix_status or release_gate_status."
+    },
+    {
+      "recursive_order": 5042,
+      "source_path": "Telegram/SourceFiles/media/audio/media_audio.h",
+      "source_blob_sha": "488aec5cc5bdcc34d8b5f1dcc88404ef5d64ed39",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Audio playback mixer, device, buffering, fade/suppression, speed/volume and derived waveform/metadata lifecycle",
+      "upstream_owner": "Canonical Media audio playback owner",
+      "state_machine": "play request -> attach/resolve playback device -> select typed track -> loader/buffer/preload -> starting/playing/pausing/resuming/stopping terminal states -> device detach/reattach or error -> cleanup",
+      "side_effects": "one audio mixer coordinates voice/song/video gain, song suppression, external stream synchronization, player updates and bounded device lifetime; waveform/metadata remain derived media data",
+      "failure_cases": "device open/disconnect failure, OpenAL error, stale track id, buffer starvation, loader error, invalid speed/volume, device change during playback, fade terminal-state drift, teardown race",
+      "ui_disposition": "Reuse canonical Fabushi Composer, TranscriptEntry, Toolbar, IconButton, Status, LoadingState, ErrorState, Toast and Media player/recording surfaces as applicable; audio engine/source names remain implementation evidence, not public UI components.",
+      "fabushi_canonical_owner": "Canonical Media playback/audio owner",
+      "fabushi_target": "OPEN: audit current shipping Canonical Media playback/audio owner and close missing device/buffer/state/cancellation/error/teardown semantics with platform adapters and canonical UI; production/integration/E2E evidence required before implementation or release promotion.",
+      "platform_differences": "OpenAL/Qt/FFmpeg details are behavioral/platform reference. Fabushi preserves state, resource lifetime, concurrency, cancellation, media metadata and failure semantics behind existing source-neutral media/composer owners and thin platform adapters.",
+      "production_evidence": "projects/telegram-desktop-rust/dossiers/audio-playback-capture-5038-5042-complete-read.md; direct exact-source read only; implementation/verification remains open.",
+      "test_evidence": "Current-head Source authority attestation for 5038-5042 is required after this commit; media device/recording/playback production evidence remains open.",
+      "disposition": "mapped-open-audio-playback",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "Media::Player::Mixer",
+      "consumer_evidence": [
+        "Direct exact-source read completed for Telegram/SourceFiles/media/audio/media_audio.h; state, device/resource ownership, concurrency, errors and teardown were decomposed into Canonical Media playback/audio owner."
+      ],
+      "reachability_status": "accepted-tree-source-owner-proven; shipping product verification remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; responsibility is reimplemented rather than source-copied.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+        "verified_blob_sha": "488aec5cc5bdcc34d8b5f1dcc88404ef5d64ed39",
+        "byte_size": 10004,
+        "file_type": "blob",
+        "recursive_order": 5042
+      },
+      "notes": "Read-complete records source understanding only. It does not close unknown accounting, implementation_status, coverage_matrix_status or release_gate_status."
+    }
+  ]
+}

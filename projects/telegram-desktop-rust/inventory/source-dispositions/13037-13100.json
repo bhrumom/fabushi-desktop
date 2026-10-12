@@ -1,0 +1,3914 @@
+{
+  "format_version": 2,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+    "tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6"
+  },
+  "exact_head_evidence": {
+    "validation_head_sha": "8078202c06877edff2afbc04ede1052329b342f6",
+    "run_id": 38193879974,
+    "job_id": 114632283461,
+    "artifact_id": 11722831694,
+    "artifact_digest": "sha256:36d50ab536d7dda5507e4d722e19732f5cb8ed97199ea84832c82b153ad557d8",
+    "source_repository": "desktop-app/lib_ui",
+    "source_commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+    "status": "parent-source-materialization-reviewed; descendant-validation-required",
+    "evidence_status": "8078202c predecessor source-materialization/review evidence; 6caf5efc failed authority validation because source_path/source_blob_sha were omitted; corrected descendant requires fresh exact-head Actions"
+  },
+  "accounting": {
+    "recursive_total": 16125,
+    "read_through": 13100,
+    "unread": 3025,
+    "unknown": 15845,
+    "omitted": 0,
+    "unknown_closed": 280
+  },
+  "range": {
+    "first_order": 13037,
+    "last_order": 13100,
+    "entries": 64,
+    "next_order": 13101,
+    "next_path": "Telegram/lib_ui::ui/platform/win/ui_window_title_win.cpp"
+  },
+  "rows": [
+    {
+      "recursive_order": 13037,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/gl/gl_surface.h",
+        "type": "blob",
+        "object": "588120ae9081f14edf5ba6f7b93afcc7f581fc37",
+        "size": 1582,
+        "sha256": "f10f6b865346ea4b3ace8261247672287395e3411a34eca7b9d9c40afe3b7cd2",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Ui::GL::Renderer",
+        "Ui::GL::CreateSurface",
+        "Ui::GL::CreateSurfaceRhi",
+        "Ui::GL::EnsureWindowRhi"
+      ],
+      "responsibilities": [
+        "GL/RHI/raster surface and window backend lifecycle, resize/paint/deinit/fallback; no Qt/OpenGL product runtime."
+      ],
+      "existing_owner_candidates": [
+        "Existing Electron/Chromium renderer + canonical Window/Resource platform ownership"
+      ],
+      "chosen_owner": "Existing Electron/Chromium renderer + canonical Window/Resource platform ownership",
+      "production_path": [
+        "source/electron-main/window-chrome.ts",
+        "frontend/src/recovered/features/window-chrome/view.tsx"
+      ],
+      "production_symbol": [
+        "windowChromeOptions",
+        "attachWindowStateBroadcast",
+        "createWindowChromeEdgePort",
+        "WindowChrome"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/588120ae9081f14edf5ba6f7b93afcc7f581fc37",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/gl/gl_surface.h",
+      "source_blob_sha": "588120ae9081f14edf5ba6f7b93afcc7f581fc37",
+      "source_sha256": "f10f6b865346ea4b3ace8261247672287395e3411a34eca7b9d9c40afe3b7cd2",
+      "upstream_owner": "ui/gl/gl_surface.h",
+      "responsibility": "GL/RHI/raster surface and window backend lifecycle, resize/paint/deinit/fallback; no Qt/OpenGL product runtime.",
+      "fabushi_canonical_owner": "Existing Electron/Chromium renderer + canonical Window/Resource platform ownership",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing Electron/Chromium renderer + canonical Window/Resource platform ownership; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13038,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/gl/gl_window.cpp",
+        "type": "blob",
+        "object": "96e9c1e7d716424c14d9dd8bc577e9b0eb0045ea",
+        "size": 1704,
+        "sha256": "49cdddd68ab3ae0c08683a8a44d3ae05ff8f39622d687d20cbefbac0b2ae634a",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Ui::GL::Window::backend",
+        "Ui::GL::Window::widget"
+      ],
+      "responsibilities": [
+        "GL/RHI/raster surface and window backend lifecycle, resize/paint/deinit/fallback; no Qt/OpenGL product runtime."
+      ],
+      "existing_owner_candidates": [
+        "Existing Electron/Chromium renderer + canonical Window/Resource platform ownership"
+      ],
+      "chosen_owner": "Existing Electron/Chromium renderer + canonical Window/Resource platform ownership",
+      "production_path": [
+        "source/electron-main/window-chrome.ts",
+        "frontend/src/recovered/features/window-chrome/view.tsx"
+      ],
+      "production_symbol": [
+        "windowChromeOptions",
+        "attachWindowStateBroadcast",
+        "createWindowChromeEdgePort",
+        "WindowChrome"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/96e9c1e7d716424c14d9dd8bc577e9b0eb0045ea",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/gl/gl_window.cpp",
+      "source_blob_sha": "96e9c1e7d716424c14d9dd8bc577e9b0eb0045ea",
+      "source_sha256": "49cdddd68ab3ae0c08683a8a44d3ae05ff8f39622d687d20cbefbac0b2ae634a",
+      "upstream_owner": "ui/gl/gl_window.cpp",
+      "responsibility": "GL/RHI/raster surface and window backend lifecycle, resize/paint/deinit/fallback; no Qt/OpenGL product runtime.",
+      "fabushi_canonical_owner": "Existing Electron/Chromium renderer + canonical Window/Resource platform ownership",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing Electron/Chromium renderer + canonical Window/Resource platform ownership; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13039,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/gl/gl_window.h",
+        "type": "blob",
+        "object": "97be341b7c4a5d6620b20536f89b166767905c95",
+        "size": 1008,
+        "sha256": "e5971bbaafa6ea99db7327f2aed258a02c4028ed1a4ded8bba44be2f2f5d3c7d",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Ui::GL::Window"
+      ],
+      "responsibilities": [
+        "GL/RHI/raster surface and window backend lifecycle, resize/paint/deinit/fallback; no Qt/OpenGL product runtime."
+      ],
+      "existing_owner_candidates": [
+        "Existing Electron/Chromium renderer + canonical Window/Resource platform ownership"
+      ],
+      "chosen_owner": "Existing Electron/Chromium renderer + canonical Window/Resource platform ownership",
+      "production_path": [
+        "source/electron-main/window-chrome.ts",
+        "frontend/src/recovered/features/window-chrome/view.tsx"
+      ],
+      "production_symbol": [
+        "windowChromeOptions",
+        "attachWindowStateBroadcast",
+        "createWindowChromeEdgePort",
+        "WindowChrome"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/97be341b7c4a5d6620b20536f89b166767905c95",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/gl/gl_window.h",
+      "source_blob_sha": "97be341b7c4a5d6620b20536f89b166767905c95",
+      "source_sha256": "e5971bbaafa6ea99db7327f2aed258a02c4028ed1a4ded8bba44be2f2f5d3c7d",
+      "upstream_owner": "ui/gl/gl_window.h",
+      "responsibility": "GL/RHI/raster surface and window backend lifecycle, resize/paint/deinit/fallback; no Qt/OpenGL product runtime.",
+      "fabushi_canonical_owner": "Existing Electron/Chromium renderer + canonical Window/Resource platform ownership",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing Electron/Chromium renderer + canonical Window/Resource platform ownership; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13040,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/image/image_blur_simd.h",
+        "type": "blob",
+        "object": "3a40a947fa5ed6dee843e89e719ddf78a060687f",
+        "size": 1213,
+        "sha256": "7843e376ab0ad9bc9ea2a18e913cd86577dce1b883902b73d484211666f69647",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Images::StackBlur::Load4",
+        "Images::StackBlur::Store4KeepAlpha"
+      ],
+      "responsibilities": [
+        "Bounded image blur/SIMD dispatch and alpha-preserving image-processing behavior under the existing media pipeline."
+      ],
+      "existing_owner_candidates": [
+        "Existing Resource/media image projection + Chromium rendering owner"
+      ],
+      "chosen_owner": "Existing Resource/media image projection + Chromium rendering owner",
+      "production_path": [
+        "source/electron-main/attachments/attachment-manager.ts",
+        "frontend/src/recovered/features/conversation/workspace/media-runtime.ts"
+      ],
+      "production_symbol": [
+        "readDesktopImageAttachment",
+        "resolveImageAttachment"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/3a40a947fa5ed6dee843e89e719ddf78a060687f",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/image/image_blur_simd.h",
+      "source_blob_sha": "3a40a947fa5ed6dee843e89e719ddf78a060687f",
+      "source_sha256": "7843e376ab0ad9bc9ea2a18e913cd86577dce1b883902b73d484211666f69647",
+      "upstream_owner": "ui/image/image_blur_simd.h",
+      "responsibility": "Bounded image blur/SIMD dispatch and alpha-preserving image-processing behavior under the existing media pipeline.",
+      "fabushi_canonical_owner": "Existing Resource/media image projection + Chromium rendering owner",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing Resource/media image projection + Chromium rendering owner; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13041,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/image/image_blur_simd_generic.h",
+        "type": "blob",
+        "object": "7c0de486c3f98877069e3789d9dab76d5b38268e",
+        "size": 2134,
+        "sha256": "233d674c045f84823a20c154bad656913e1ac3401021e2135f18f4aa321d95dc",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Images::StackBlur::Load4",
+        "Images::StackBlur::Store4KeepAlpha"
+      ],
+      "responsibilities": [
+        "Bounded image blur/SIMD dispatch and alpha-preserving image-processing behavior under the existing media pipeline."
+      ],
+      "existing_owner_candidates": [
+        "Existing Resource/media image projection + Chromium rendering owner"
+      ],
+      "chosen_owner": "Existing Resource/media image projection + Chromium rendering owner",
+      "production_path": [
+        "source/electron-main/attachments/attachment-manager.ts",
+        "frontend/src/recovered/features/conversation/workspace/media-runtime.ts"
+      ],
+      "production_symbol": [
+        "readDesktopImageAttachment",
+        "resolveImageAttachment"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/7c0de486c3f98877069e3789d9dab76d5b38268e",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/image/image_blur_simd_generic.h",
+      "source_blob_sha": "7c0de486c3f98877069e3789d9dab76d5b38268e",
+      "source_sha256": "233d674c045f84823a20c154bad656913e1ac3401021e2135f18f4aa321d95dc",
+      "upstream_owner": "ui/image/image_blur_simd_generic.h",
+      "responsibility": "Bounded image blur/SIMD dispatch and alpha-preserving image-processing behavior under the existing media pipeline.",
+      "fabushi_canonical_owner": "Existing Resource/media image projection + Chromium rendering owner",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing Resource/media image projection + Chromium rendering owner; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13042,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/image/image_blur_simd_neon.h",
+        "type": "blob",
+        "object": "32cb0da4b8a1e0542ec915340588095d10415cec",
+        "size": 2399,
+        "sha256": "615ef58a92081ac558e20124c2cc103b4e43fe2a9fcfcd08ff9bc55503027054",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Images::StackBlur::Load4",
+        "Images::StackBlur::Store4KeepAlpha"
+      ],
+      "responsibilities": [
+        "Bounded image blur/SIMD dispatch and alpha-preserving image-processing behavior under the existing media pipeline."
+      ],
+      "existing_owner_candidates": [
+        "Existing Resource/media image projection + Chromium rendering owner"
+      ],
+      "chosen_owner": "Existing Resource/media image projection + Chromium rendering owner",
+      "production_path": [
+        "source/electron-main/attachments/attachment-manager.ts",
+        "frontend/src/recovered/features/conversation/workspace/media-runtime.ts"
+      ],
+      "production_symbol": [
+        "readDesktopImageAttachment",
+        "resolveImageAttachment"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/32cb0da4b8a1e0542ec915340588095d10415cec",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/image/image_blur_simd_neon.h",
+      "source_blob_sha": "32cb0da4b8a1e0542ec915340588095d10415cec",
+      "source_sha256": "615ef58a92081ac558e20124c2cc103b4e43fe2a9fcfcd08ff9bc55503027054",
+      "upstream_owner": "ui/image/image_blur_simd_neon.h",
+      "responsibility": "Bounded image blur/SIMD dispatch and alpha-preserving image-processing behavior under the existing media pipeline.",
+      "fabushi_canonical_owner": "Existing Resource/media image projection + Chromium rendering owner",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing Resource/media image projection + Chromium rendering owner; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13043,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/image/image_blur_simd_sse2.h",
+        "type": "blob",
+        "object": "d9a2f078a4cf363a4e0c00659250d4b56d084fc5",
+        "size": 3179,
+        "sha256": "3170d375a0e251769a43c3d0e342d2fee8ade25e4acc3c7b300e69d5566b8bb6",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Images::StackBlur::Load4",
+        "Images::StackBlur::Store4KeepAlpha"
+      ],
+      "responsibilities": [
+        "Bounded image blur/SIMD dispatch and alpha-preserving image-processing behavior under the existing media pipeline."
+      ],
+      "existing_owner_candidates": [
+        "Existing Resource/media image projection + Chromium rendering owner"
+      ],
+      "chosen_owner": "Existing Resource/media image projection + Chromium rendering owner",
+      "production_path": [
+        "source/electron-main/attachments/attachment-manager.ts",
+        "frontend/src/recovered/features/conversation/workspace/media-runtime.ts"
+      ],
+      "production_symbol": [
+        "readDesktopImageAttachment",
+        "resolveImageAttachment"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/d9a2f078a4cf363a4e0c00659250d4b56d084fc5",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/image/image_blur_simd_sse2.h",
+      "source_blob_sha": "d9a2f078a4cf363a4e0c00659250d4b56d084fc5",
+      "source_sha256": "3170d375a0e251769a43c3d0e342d2fee8ade25e4acc3c7b300e69d5566b8bb6",
+      "upstream_owner": "ui/image/image_blur_simd_sse2.h",
+      "responsibility": "Bounded image blur/SIMD dispatch and alpha-preserving image-processing behavior under the existing media pipeline.",
+      "fabushi_canonical_owner": "Existing Resource/media image projection + Chromium rendering owner",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing Resource/media image projection + Chromium rendering owner; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13044,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/image/image_prepare.cpp",
+        "type": "blob",
+        "object": "03d3de4fe6a39b2c25ae1a19fa8a9be4558edaa9",
+        "size": 46231,
+        "sha256": "5bca69c63fe59590edfddd75bda1b5818f9bb40e60baf2c0007579d6665745a3",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Images::Read",
+        "Images::ReadGzipSvg",
+        "Images::Prepare",
+        "Images::Blur"
+      ],
+      "responsibilities": [
+        "Bounded decode/area/orientation/resize/round/blur and gzip-SVG preparation under the single attachment/media owner."
+      ],
+      "existing_owner_candidates": [
+        "Existing Attachment/Resource media preview owner"
+      ],
+      "chosen_owner": "Existing Attachment/Resource media preview owner",
+      "production_path": [
+        "source/electron-main/attachments/attachment-manager.ts",
+        "source/shared/media/svg-preview-safety.ts",
+        "frontend/src/recovered/features/conversation/workspace/media-runtime.ts"
+      ],
+      "production_symbol": [
+        "readDesktopImageAttachment",
+        "readDesktopImageSize",
+        "resolveImageAttachment",
+        "sanitizeSvgPreviewBytes"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/03d3de4fe6a39b2c25ae1a19fa8a9be4558edaa9",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/image/image_prepare.cpp",
+      "source_blob_sha": "03d3de4fe6a39b2c25ae1a19fa8a9be4558edaa9",
+      "source_sha256": "5bca69c63fe59590edfddd75bda1b5818f9bb40e60baf2c0007579d6665745a3",
+      "upstream_owner": "ui/image/image_prepare.cpp",
+      "responsibility": "Bounded decode/area/orientation/resize/round/blur and gzip-SVG preparation under the single attachment/media owner.",
+      "fabushi_canonical_owner": "Existing Attachment/Resource media preview owner",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing Attachment/Resource media preview owner; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13045,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/image/image_prepare.h",
+        "type": "blob",
+        "object": "23555c3320f47021edf3d4fb4447b135b6f91e16",
+        "size": 5737,
+        "sha256": "0e60bb4cc872474b98c5bd91e1e591bdac162b63604aac50c5dc0ea889bab4e8",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Images::ReadArgs",
+        "Images::ReadResult",
+        "Images::Read",
+        "Images::Prepare"
+      ],
+      "responsibilities": [
+        "Bounded decode/area/orientation/resize/round/blur and gzip-SVG preparation under the single attachment/media owner."
+      ],
+      "existing_owner_candidates": [
+        "Existing Attachment/Resource media preview owner"
+      ],
+      "chosen_owner": "Existing Attachment/Resource media preview owner",
+      "production_path": [
+        "source/electron-main/attachments/attachment-manager.ts",
+        "source/shared/media/svg-preview-safety.ts",
+        "frontend/src/recovered/features/conversation/workspace/media-runtime.ts"
+      ],
+      "production_symbol": [
+        "readDesktopImageAttachment",
+        "readDesktopImageSize",
+        "resolveImageAttachment",
+        "sanitizeSvgPreviewBytes"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/23555c3320f47021edf3d4fb4447b135b6f91e16",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/image/image_prepare.h",
+      "source_blob_sha": "23555c3320f47021edf3d4fb4447b135b6f91e16",
+      "source_sha256": "0e60bb4cc872474b98c5bd91e1e591bdac162b63604aac50c5dc0ea889bab4e8",
+      "upstream_owner": "ui/image/image_prepare.h",
+      "responsibility": "Bounded decode/area/orientation/resize/round/blur and gzip-SVG preparation under the single attachment/media owner.",
+      "fabushi_canonical_owner": "Existing Attachment/Resource media preview owner",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing Attachment/Resource media preview owner; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13046,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/image/svg_safety.cpp",
+        "type": "blob",
+        "object": "cc25cf685167b7147a3de5cb9ca82d00c72f34a1",
+        "size": 12144,
+        "sha256": "af1d818bcbe978596de071e2b56045830540354d216f22eed70513422eb22020",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Images::SanitizeSvg"
+      ],
+      "responsibilities": [
+        "Fail-closed SVG preview safety. Reuse the narrower canonical sanitizer; reject href/reference graphs rather than introduce a second evaluator/runtime."
+      ],
+      "existing_owner_candidates": [
+        "Existing source-neutral attachment SVG preview sanitizer"
+      ],
+      "chosen_owner": "Existing source-neutral attachment SVG preview sanitizer",
+      "production_path": [
+        "source/shared/media/svg-preview-safety.ts",
+        "source/electron-main/attachments/attachment-manager.ts"
+      ],
+      "production_symbol": [
+        "sanitizeSvgPreviewBytes",
+        "readDesktopImageAttachment"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/cc25cf685167b7147a3de5cb9ca82d00c72f34a1",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/image/svg_safety.cpp",
+      "source_blob_sha": "cc25cf685167b7147a3de5cb9ca82d00c72f34a1",
+      "source_sha256": "af1d818bcbe978596de071e2b56045830540354d216f22eed70513422eb22020",
+      "upstream_owner": "ui/image/svg_safety.cpp",
+      "responsibility": "Fail-closed SVG preview safety. Reuse the narrower canonical sanitizer; reject href/reference graphs rather than introduce a second evaluator/runtime.",
+      "fabushi_canonical_owner": "Existing source-neutral attachment SVG preview sanitizer",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing source-neutral attachment SVG preview sanitizer; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13047,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/image/svg_safety.h",
+        "type": "blob",
+        "object": "79269a8134836a7e37c1bc970aafeccf20a49d53",
+        "size": 590,
+        "sha256": "1b7f89e5a6354f1f6a197a9596492167c647408a0ef804e401de08c4c7a9cf51",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Images::SanitizeSvg"
+      ],
+      "responsibilities": [
+        "Fail-closed SVG preview safety. Reuse the narrower canonical sanitizer; reject href/reference graphs rather than introduce a second evaluator/runtime."
+      ],
+      "existing_owner_candidates": [
+        "Existing source-neutral attachment SVG preview sanitizer"
+      ],
+      "chosen_owner": "Existing source-neutral attachment SVG preview sanitizer",
+      "production_path": [
+        "source/shared/media/svg-preview-safety.ts",
+        "source/electron-main/attachments/attachment-manager.ts"
+      ],
+      "production_symbol": [
+        "sanitizeSvgPreviewBytes",
+        "readDesktopImageAttachment"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/79269a8134836a7e37c1bc970aafeccf20a49d53",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/image/svg_safety.h",
+      "source_blob_sha": "79269a8134836a7e37c1bc970aafeccf20a49d53",
+      "source_sha256": "1b7f89e5a6354f1f6a197a9596492167c647408a0ef804e401de08c4c7a9cf51",
+      "upstream_owner": "ui/image/svg_safety.h",
+      "responsibility": "Fail-closed SVG preview safety. Reuse the narrower canonical sanitizer; reject href/reference graphs rather than introduce a second evaluator/runtime.",
+      "fabushi_canonical_owner": "Existing source-neutral attachment SVG preview sanitizer",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing source-neutral attachment SVG preview sanitizer; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13048,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/inactive_press.cpp",
+        "type": "blob",
+        "object": "b30bf05bbb45e49689d70a82506d2bfc634d27d3",
+        "size": 1231,
+        "sha256": "9a714ee164a920ba6da741b0736d5735fb2826ba6121e54e3552bbb35a4ca745",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Ui::MarkInactivePress",
+        "Ui::WasInactivePress"
+      ],
+      "responsibilities": [
+        "Inactive-window press fencing, bounded lifetime, destruction cleanup and activation arbitration."
+      ],
+      "existing_owner_candidates": [
+        "Existing canonical pointer/press + Window focus lifecycle"
+      ],
+      "chosen_owner": "Existing canonical pointer/press + Window focus lifecycle",
+      "production_path": [
+        "frontend/src/recovered/features/window-chrome/model.ts",
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx"
+      ],
+      "production_symbol": [
+        "canonical pointer state",
+        "floating dismissal/focus lifecycle"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/b30bf05bbb45e49689d70a82506d2bfc634d27d3",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/inactive_press.cpp",
+      "source_blob_sha": "b30bf05bbb45e49689d70a82506d2bfc634d27d3",
+      "source_sha256": "9a714ee164a920ba6da741b0736d5735fb2826ba6121e54e3552bbb35a4ca745",
+      "upstream_owner": "ui/inactive_press.cpp",
+      "responsibility": "Inactive-window press fencing, bounded lifetime, destruction cleanup and activation arbitration.",
+      "fabushi_canonical_owner": "Existing canonical pointer/press + Window focus lifecycle",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing canonical pointer/press + Window focus lifecycle; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13049,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/inactive_press.h",
+        "type": "blob",
+        "object": "d07e25b17c7c2ac65e23ce6326cd9d7b600906e5",
+        "size": 413,
+        "sha256": "ac147b64c01f6e3d8ada08d1db5521e6927b8a62eb9e82697a2d315eb1e9cff9",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Ui::MarkInactivePress",
+        "Ui::WasInactivePress"
+      ],
+      "responsibilities": [
+        "Inactive-window press fencing, bounded lifetime, destruction cleanup and activation arbitration."
+      ],
+      "existing_owner_candidates": [
+        "Existing canonical pointer/press + Window focus lifecycle"
+      ],
+      "chosen_owner": "Existing canonical pointer/press + Window focus lifecycle",
+      "production_path": [
+        "frontend/src/recovered/features/window-chrome/model.ts",
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx"
+      ],
+      "production_symbol": [
+        "canonical pointer state",
+        "floating dismissal/focus lifecycle"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/d07e25b17c7c2ac65e23ce6326cd9d7b600906e5",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/inactive_press.h",
+      "source_blob_sha": "d07e25b17c7c2ac65e23ce6326cd9d7b600906e5",
+      "source_sha256": "ac147b64c01f6e3d8ada08d1db5521e6927b8a62eb9e82697a2d315eb1e9cff9",
+      "upstream_owner": "ui/inactive_press.h",
+      "responsibility": "Inactive-window press fencing, bounded lifetime, destruction cleanup and activation arbitration.",
+      "fabushi_canonical_owner": "Existing canonical pointer/press + Window focus lifecycle",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing canonical pointer/press + Window focus lifecycle; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13050,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/integration.cpp",
+        "type": "blob",
+        "object": "29b59a4da75358fda6f1bee1a6259991c4153d90",
+        "size": 4609,
+        "sha256": "2d3ae1ffccf6112b4e7a1b297dbc6fa5197175ff39f008beda82becef08bcc22",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Ui::Integration::postponeCall",
+        "Ui::Integration::createLinkHandler",
+        "Ui::Integration::handleUrlClick"
+      ],
+      "responsibilities": [
+        "Deferred UI calls, activation/screen-lock queries, URL/copy/popup commands and localized phrases split across existing canonical owners."
+      ],
+      "existing_owner_candidates": [
+        "Existing source-neutral URL/action + localization + Window integration owners"
+      ],
+      "chosen_owner": "Existing source-neutral URL/action + localization + Window integration owners",
+      "production_path": [
+        "source/shared/external-url-policy.ts",
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/production/ProductionRenderer.tsx",
+        "source/electron-main/window-chrome.ts"
+      ],
+      "production_symbol": [
+        "normalizeExternalUrl",
+        "SandMenuRoot",
+        "ProductionRenderer",
+        "attachWindowFocusForwarding"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/29b59a4da75358fda6f1bee1a6259991c4153d90",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/integration.cpp",
+      "source_blob_sha": "29b59a4da75358fda6f1bee1a6259991c4153d90",
+      "source_sha256": "2d3ae1ffccf6112b4e7a1b297dbc6fa5197175ff39f008beda82becef08bcc22",
+      "upstream_owner": "ui/integration.cpp",
+      "responsibility": "Deferred UI calls, activation/screen-lock queries, URL/copy/popup commands and localized phrases split across existing canonical owners.",
+      "fabushi_canonical_owner": "Existing source-neutral URL/action + localization + Window integration owners",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing source-neutral URL/action + localization + Window integration owners; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13051,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/integration.h",
+        "type": "blob",
+        "object": "07b8779a3e7f1f2b31d8e56a114035a688832d45",
+        "size": 3960,
+        "sha256": "d5c29b40ab27b0e94ef22a9cf81b8ba1dff6b214599c3d46fcaaa2c14c742164",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Ui::Integration"
+      ],
+      "responsibilities": [
+        "Deferred UI calls, activation/screen-lock queries, URL/copy/popup commands and localized phrases split across existing canonical owners."
+      ],
+      "existing_owner_candidates": [
+        "Existing source-neutral URL/action + localization + Window integration owners"
+      ],
+      "chosen_owner": "Existing source-neutral URL/action + localization + Window integration owners",
+      "production_path": [
+        "source/shared/external-url-policy.ts",
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/production/ProductionRenderer.tsx",
+        "source/electron-main/window-chrome.ts"
+      ],
+      "production_symbol": [
+        "normalizeExternalUrl",
+        "SandMenuRoot",
+        "ProductionRenderer",
+        "attachWindowFocusForwarding"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/07b8779a3e7f1f2b31d8e56a114035a688832d45",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/integration.h",
+      "source_blob_sha": "07b8779a3e7f1f2b31d8e56a114035a688832d45",
+      "source_sha256": "d5c29b40ab27b0e94ef22a9cf81b8ba1dff6b214599c3d46fcaaa2c14c742164",
+      "upstream_owner": "ui/integration.h",
+      "responsibility": "Deferred UI calls, activation/screen-lock queries, URL/copy/popup commands and localized phrases split across existing canonical owners.",
+      "fabushi_canonical_owner": "Existing source-neutral URL/action + localization + Window integration owners",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing source-neutral URL/action + localization + Window integration owners; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13052,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/layers/box_content.cpp",
+        "type": "blob",
+        "object": "b255ca039aea5de1b277f63a555d8abe4df944bc",
+        "size": 11538,
+        "sha256": "901a3ebd9aa912b8b320801eecf8013630acb715c252d82fc252108991eee7c9",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Ui::BoxContent",
+        "Ui::BoxShow"
+      ],
+      "responsibilities": [
+        "Modal/layer stack, topmost arbitration, Escape/outside/back close, focus capture/restore, nested teardown, scroll/loading/animation lifecycle."
+      ],
+      "existing_owner_candidates": [
+        "Existing canonical OverlayDialog/SandPopover/SandMenu/ProductShell lifecycle"
+      ],
+      "chosen_owner": "Existing canonical OverlayDialog/SandPopover/SandMenu/ProductShell lifecycle",
+      "production_path": [
+        "frontend/src/recovered/ui/overlay-primitives.tsx",
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "production_symbol": [
+        "OverlayDialog",
+        "shouldOverlayHandleEscape",
+        "shouldOverlayDismissPointer",
+        "SandPopover",
+        "SandMenuRoot"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/b255ca039aea5de1b277f63a555d8abe4df944bc",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/layers/box_content.cpp",
+      "source_blob_sha": "b255ca039aea5de1b277f63a555d8abe4df944bc",
+      "source_sha256": "901a3ebd9aa912b8b320801eecf8013630acb715c252d82fc252108991eee7c9",
+      "upstream_owner": "ui/layers/box_content.cpp",
+      "responsibility": "Modal/layer stack, topmost arbitration, Escape/outside/back close, focus capture/restore, nested teardown, scroll/loading/animation lifecycle.",
+      "fabushi_canonical_owner": "Existing canonical OverlayDialog/SandPopover/SandMenu/ProductShell lifecycle",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing canonical OverlayDialog/SandPopover/SandMenu/ProductShell lifecycle; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13053,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/layers/box_content.h",
+        "type": "blob",
+        "object": "d2606785c3267bf7020725143ee00eebdae3f1c7",
+        "size": 10683,
+        "sha256": "cef61449f7fe398f011bc04cbc4d8865eda6bf8bd1159bca16b5298147ba5686",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Ui::BoxContentDelegate",
+        "Ui::BoxContent"
+      ],
+      "responsibilities": [
+        "Modal/layer stack, topmost arbitration, Escape/outside/back close, focus capture/restore, nested teardown, scroll/loading/animation lifecycle."
+      ],
+      "existing_owner_candidates": [
+        "Existing canonical OverlayDialog/SandPopover/SandMenu/ProductShell lifecycle"
+      ],
+      "chosen_owner": "Existing canonical OverlayDialog/SandPopover/SandMenu/ProductShell lifecycle",
+      "production_path": [
+        "frontend/src/recovered/ui/overlay-primitives.tsx",
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "production_symbol": [
+        "OverlayDialog",
+        "shouldOverlayHandleEscape",
+        "shouldOverlayDismissPointer",
+        "SandPopover",
+        "SandMenuRoot"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/d2606785c3267bf7020725143ee00eebdae3f1c7",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/layers/box_content.h",
+      "source_blob_sha": "d2606785c3267bf7020725143ee00eebdae3f1c7",
+      "source_sha256": "cef61449f7fe398f011bc04cbc4d8865eda6bf8bd1159bca16b5298147ba5686",
+      "upstream_owner": "ui/layers/box_content.h",
+      "responsibility": "Modal/layer stack, topmost arbitration, Escape/outside/back close, focus capture/restore, nested teardown, scroll/loading/animation lifecycle.",
+      "fabushi_canonical_owner": "Existing canonical OverlayDialog/SandPopover/SandMenu/ProductShell lifecycle",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing canonical OverlayDialog/SandPopover/SandMenu/ProductShell lifecycle; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13054,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/layers/box_layer_widget.cpp",
+        "type": "blob",
+        "object": "7a9c2b77e96e75b238d4c26334be371d380d185e",
+        "size": 13006,
+        "sha256": "8b141e6916098d71e2ba047504fc15543263b3cbf7e432ecf0e25a144252760b",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Ui::BoxLayerWidget"
+      ],
+      "responsibilities": [
+        "Modal/layer stack, topmost arbitration, Escape/outside/back close, focus capture/restore, nested teardown, scroll/loading/animation lifecycle."
+      ],
+      "existing_owner_candidates": [
+        "Existing canonical OverlayDialog/SandPopover/SandMenu/ProductShell lifecycle"
+      ],
+      "chosen_owner": "Existing canonical OverlayDialog/SandPopover/SandMenu/ProductShell lifecycle",
+      "production_path": [
+        "frontend/src/recovered/ui/overlay-primitives.tsx",
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "production_symbol": [
+        "OverlayDialog",
+        "shouldOverlayHandleEscape",
+        "shouldOverlayDismissPointer",
+        "SandPopover",
+        "SandMenuRoot"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/7a9c2b77e96e75b238d4c26334be371d380d185e",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/layers/box_layer_widget.cpp",
+      "source_blob_sha": "7a9c2b77e96e75b238d4c26334be371d380d185e",
+      "source_sha256": "8b141e6916098d71e2ba047504fc15543263b3cbf7e432ecf0e25a144252760b",
+      "upstream_owner": "ui/layers/box_layer_widget.cpp",
+      "responsibility": "Modal/layer stack, topmost arbitration, Escape/outside/back close, focus capture/restore, nested teardown, scroll/loading/animation lifecycle.",
+      "fabushi_canonical_owner": "Existing canonical OverlayDialog/SandPopover/SandMenu/ProductShell lifecycle",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing canonical OverlayDialog/SandPopover/SandMenu/ProductShell lifecycle; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13055,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/layers/box_layer_widget.h",
+        "type": "blob",
+        "object": "21d9237e6e240925ead9096532c5a22e44d6d9eb",
+        "size": 4403,
+        "sha256": "a4299d54f958902294463d48ddc14983a9b8db50168c7812edd00af8dfdb59df",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Ui::BoxLayerWidget"
+      ],
+      "responsibilities": [
+        "Modal/layer stack, topmost arbitration, Escape/outside/back close, focus capture/restore, nested teardown, scroll/loading/animation lifecycle."
+      ],
+      "existing_owner_candidates": [
+        "Existing canonical OverlayDialog/SandPopover/SandMenu/ProductShell lifecycle"
+      ],
+      "chosen_owner": "Existing canonical OverlayDialog/SandPopover/SandMenu/ProductShell lifecycle",
+      "production_path": [
+        "frontend/src/recovered/ui/overlay-primitives.tsx",
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "production_symbol": [
+        "OverlayDialog",
+        "shouldOverlayHandleEscape",
+        "shouldOverlayDismissPointer",
+        "SandPopover",
+        "SandMenuRoot"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/21d9237e6e240925ead9096532c5a22e44d6d9eb",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/layers/box_layer_widget.h",
+      "source_blob_sha": "21d9237e6e240925ead9096532c5a22e44d6d9eb",
+      "source_sha256": "a4299d54f958902294463d48ddc14983a9b8db50168c7812edd00af8dfdb59df",
+      "upstream_owner": "ui/layers/box_layer_widget.h",
+      "responsibility": "Modal/layer stack, topmost arbitration, Escape/outside/back close, focus capture/restore, nested teardown, scroll/loading/animation lifecycle.",
+      "fabushi_canonical_owner": "Existing canonical OverlayDialog/SandPopover/SandMenu/ProductShell lifecycle",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing canonical OverlayDialog/SandPopover/SandMenu/ProductShell lifecycle; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13056,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/layers/generic_box.cpp",
+        "type": "blob",
+        "object": "e0145a1eb86086633fd3763fbf289055c811f2a1",
+        "size": 3683,
+        "sha256": "bd4120ba4d4ff644f4b154c083e917f65ec3f8e4da64c3f5dd2ef24dd35d9478",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Ui::GenericBox"
+      ],
+      "responsibilities": [
+        "Modal/layer stack, topmost arbitration, Escape/outside/back close, focus capture/restore, nested teardown, scroll/loading/animation lifecycle."
+      ],
+      "existing_owner_candidates": [
+        "Existing canonical OverlayDialog/SandPopover/SandMenu/ProductShell lifecycle"
+      ],
+      "chosen_owner": "Existing canonical OverlayDialog/SandPopover/SandMenu/ProductShell lifecycle",
+      "production_path": [
+        "frontend/src/recovered/ui/overlay-primitives.tsx",
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "production_symbol": [
+        "OverlayDialog",
+        "shouldOverlayHandleEscape",
+        "shouldOverlayDismissPointer",
+        "SandPopover",
+        "SandMenuRoot"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/e0145a1eb86086633fd3763fbf289055c811f2a1",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/layers/generic_box.cpp",
+      "source_blob_sha": "e0145a1eb86086633fd3763fbf289055c811f2a1",
+      "source_sha256": "bd4120ba4d4ff644f4b154c083e917f65ec3f8e4da64c3f5dd2ef24dd35d9478",
+      "upstream_owner": "ui/layers/generic_box.cpp",
+      "responsibility": "Modal/layer stack, topmost arbitration, Escape/outside/back close, focus capture/restore, nested teardown, scroll/loading/animation lifecycle.",
+      "fabushi_canonical_owner": "Existing canonical OverlayDialog/SandPopover/SandMenu/ProductShell lifecycle",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing canonical OverlayDialog/SandPopover/SandMenu/ProductShell lifecycle; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13057,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/layers/generic_box.h",
+        "type": "blob",
+        "object": "cebc222a052ef21d184f82edf9fe2a58d1f70723",
+        "size": 6259,
+        "sha256": "1660fd0a4bebf249ead7836e4c76e505810708f2c43e3146299690735d476c31",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Ui::GenericBox"
+      ],
+      "responsibilities": [
+        "Modal/layer stack, topmost arbitration, Escape/outside/back close, focus capture/restore, nested teardown, scroll/loading/animation lifecycle."
+      ],
+      "existing_owner_candidates": [
+        "Existing canonical OverlayDialog/SandPopover/SandMenu/ProductShell lifecycle"
+      ],
+      "chosen_owner": "Existing canonical OverlayDialog/SandPopover/SandMenu/ProductShell lifecycle",
+      "production_path": [
+        "frontend/src/recovered/ui/overlay-primitives.tsx",
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "production_symbol": [
+        "OverlayDialog",
+        "shouldOverlayHandleEscape",
+        "shouldOverlayDismissPointer",
+        "SandPopover",
+        "SandMenuRoot"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/cebc222a052ef21d184f82edf9fe2a58d1f70723",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/layers/generic_box.h",
+      "source_blob_sha": "cebc222a052ef21d184f82edf9fe2a58d1f70723",
+      "source_sha256": "1660fd0a4bebf249ead7836e4c76e505810708f2c43e3146299690735d476c31",
+      "upstream_owner": "ui/layers/generic_box.h",
+      "responsibility": "Modal/layer stack, topmost arbitration, Escape/outside/back close, focus capture/restore, nested teardown, scroll/loading/animation lifecycle.",
+      "fabushi_canonical_owner": "Existing canonical OverlayDialog/SandPopover/SandMenu/ProductShell lifecycle",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing canonical OverlayDialog/SandPopover/SandMenu/ProductShell lifecycle; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13058,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/layers/layer_manager.cpp",
+        "type": "blob",
+        "object": "cbdf0d4dab1a23bc64e1b376248e2d7750c09323",
+        "size": 4399,
+        "sha256": "4031cef6f87a6245938d80cb826f45d615baa5b86ded948b0b9a0def8f418dc4",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Ui::LayerManager"
+      ],
+      "responsibilities": [
+        "Modal/layer stack, topmost arbitration, Escape/outside/back close, focus capture/restore, nested teardown, scroll/loading/animation lifecycle."
+      ],
+      "existing_owner_candidates": [
+        "Existing canonical OverlayDialog/SandPopover/SandMenu/ProductShell lifecycle"
+      ],
+      "chosen_owner": "Existing canonical OverlayDialog/SandPopover/SandMenu/ProductShell lifecycle",
+      "production_path": [
+        "frontend/src/recovered/ui/overlay-primitives.tsx",
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "production_symbol": [
+        "OverlayDialog",
+        "shouldOverlayHandleEscape",
+        "shouldOverlayDismissPointer",
+        "SandPopover",
+        "SandMenuRoot"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/cbdf0d4dab1a23bc64e1b376248e2d7750c09323",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/layers/layer_manager.cpp",
+      "source_blob_sha": "cbdf0d4dab1a23bc64e1b376248e2d7750c09323",
+      "source_sha256": "4031cef6f87a6245938d80cb826f45d615baa5b86ded948b0b9a0def8f418dc4",
+      "upstream_owner": "ui/layers/layer_manager.cpp",
+      "responsibility": "Modal/layer stack, topmost arbitration, Escape/outside/back close, focus capture/restore, nested teardown, scroll/loading/animation lifecycle.",
+      "fabushi_canonical_owner": "Existing canonical OverlayDialog/SandPopover/SandMenu/ProductShell lifecycle",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing canonical OverlayDialog/SandPopover/SandMenu/ProductShell lifecycle; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13059,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/layers/layer_manager.h",
+        "type": "blob",
+        "object": "b8ce72b9bc5bfde05cfaad0c4685d331b0328e57",
+        "size": 1741,
+        "sha256": "8ab48228c48d29ab231b5fc3a8b93bfdc9c8a98c47b1304593fc25e68eb4b442",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Ui::LayerManager"
+      ],
+      "responsibilities": [
+        "Modal/layer stack, topmost arbitration, Escape/outside/back close, focus capture/restore, nested teardown, scroll/loading/animation lifecycle."
+      ],
+      "existing_owner_candidates": [
+        "Existing canonical OverlayDialog/SandPopover/SandMenu/ProductShell lifecycle"
+      ],
+      "chosen_owner": "Existing canonical OverlayDialog/SandPopover/SandMenu/ProductShell lifecycle",
+      "production_path": [
+        "frontend/src/recovered/ui/overlay-primitives.tsx",
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "production_symbol": [
+        "OverlayDialog",
+        "shouldOverlayHandleEscape",
+        "shouldOverlayDismissPointer",
+        "SandPopover",
+        "SandMenuRoot"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/b8ce72b9bc5bfde05cfaad0c4685d331b0328e57",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/layers/layer_manager.h",
+      "source_blob_sha": "b8ce72b9bc5bfde05cfaad0c4685d331b0328e57",
+      "source_sha256": "8ab48228c48d29ab231b5fc3a8b93bfdc9c8a98c47b1304593fc25e68eb4b442",
+      "upstream_owner": "ui/layers/layer_manager.h",
+      "responsibility": "Modal/layer stack, topmost arbitration, Escape/outside/back close, focus capture/restore, nested teardown, scroll/loading/animation lifecycle.",
+      "fabushi_canonical_owner": "Existing canonical OverlayDialog/SandPopover/SandMenu/ProductShell lifecycle",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing canonical OverlayDialog/SandPopover/SandMenu/ProductShell lifecycle; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13060,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/layers/layer_widget.cpp",
+        "type": "blob",
+        "object": "ec3171e8758d919c1e421c2a5d31ce9019e93f61",
+        "size": 27470,
+        "sha256": "a2c0113f1f6adecb11c989e69cda7df8ed72df627f237e4cdda65476c8b51d44",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Ui::LayerStackWidget"
+      ],
+      "responsibilities": [
+        "Modal/layer stack, topmost arbitration, Escape/outside/back close, focus capture/restore, nested teardown, scroll/loading/animation lifecycle."
+      ],
+      "existing_owner_candidates": [
+        "Existing canonical OverlayDialog/SandPopover/SandMenu/ProductShell lifecycle"
+      ],
+      "chosen_owner": "Existing canonical OverlayDialog/SandPopover/SandMenu/ProductShell lifecycle",
+      "production_path": [
+        "frontend/src/recovered/ui/overlay-primitives.tsx",
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "production_symbol": [
+        "OverlayDialog",
+        "shouldOverlayHandleEscape",
+        "shouldOverlayDismissPointer",
+        "SandPopover",
+        "SandMenuRoot"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/ec3171e8758d919c1e421c2a5d31ce9019e93f61",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/layers/layer_widget.cpp",
+      "source_blob_sha": "ec3171e8758d919c1e421c2a5d31ce9019e93f61",
+      "source_sha256": "a2c0113f1f6adecb11c989e69cda7df8ed72df627f237e4cdda65476c8b51d44",
+      "upstream_owner": "ui/layers/layer_widget.cpp",
+      "responsibility": "Modal/layer stack, topmost arbitration, Escape/outside/back close, focus capture/restore, nested teardown, scroll/loading/animation lifecycle.",
+      "fabushi_canonical_owner": "Existing canonical OverlayDialog/SandPopover/SandMenu/ProductShell lifecycle",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing canonical OverlayDialog/SandPopover/SandMenu/ProductShell lifecycle; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13061,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/layers/layer_widget.h",
+        "type": "blob",
+        "object": "21ce8a78c4464b69f2621a2ca87c9ba0a2c31671",
+        "size": 8050,
+        "sha256": "73eba2371028160a7fd3a268460f6f513e92a59d943ed3e393e719772a40dd70",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Ui::LayerOption",
+        "Ui::LayerWidget",
+        "Ui::LayerStackWidget"
+      ],
+      "responsibilities": [
+        "Modal/layer stack, topmost arbitration, Escape/outside/back close, focus capture/restore, nested teardown, scroll/loading/animation lifecycle."
+      ],
+      "existing_owner_candidates": [
+        "Existing canonical OverlayDialog/SandPopover/SandMenu/ProductShell lifecycle"
+      ],
+      "chosen_owner": "Existing canonical OverlayDialog/SandPopover/SandMenu/ProductShell lifecycle",
+      "production_path": [
+        "frontend/src/recovered/ui/overlay-primitives.tsx",
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "production_symbol": [
+        "OverlayDialog",
+        "shouldOverlayHandleEscape",
+        "shouldOverlayDismissPointer",
+        "SandPopover",
+        "SandMenuRoot"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/21ce8a78c4464b69f2621a2ca87c9ba0a2c31671",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/layers/layer_widget.h",
+      "source_blob_sha": "21ce8a78c4464b69f2621a2ca87c9ba0a2c31671",
+      "source_sha256": "73eba2371028160a7fd3a268460f6f513e92a59d943ed3e393e719772a40dd70",
+      "upstream_owner": "ui/layers/layer_widget.h",
+      "responsibility": "Modal/layer stack, topmost arbitration, Escape/outside/back close, focus capture/restore, nested teardown, scroll/loading/animation lifecycle.",
+      "fabushi_canonical_owner": "Existing canonical OverlayDialog/SandPopover/SandMenu/ProductShell lifecycle",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing canonical OverlayDialog/SandPopover/SandMenu/ProductShell lifecycle; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13062,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/layers/layers.style",
+        "type": "blob",
+        "object": "ebb7796ec33c8aca7e119069318d2998d4dfefa4",
+        "size": 5872,
+        "sha256": "f155478a44116e65f40fbf17522494ac16cc7729db1c38c1439a4aaa010019bd",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Box",
+        "layerBox",
+        "separatePanelClose",
+        "fullScreenPanelClose"
+      ],
+      "responsibilities": [
+        "Modal/layer stack, topmost arbitration, Escape/outside/back close, focus capture/restore, nested teardown, scroll/loading/animation lifecycle."
+      ],
+      "existing_owner_candidates": [
+        "Existing canonical OverlayDialog/SandPopover/SandMenu/ProductShell lifecycle"
+      ],
+      "chosen_owner": "Existing canonical OverlayDialog/SandPopover/SandMenu/ProductShell lifecycle",
+      "production_path": [
+        "frontend/src/recovered/ui/overlay-primitives.tsx",
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "production_symbol": [
+        "OverlayDialog",
+        "shouldOverlayHandleEscape",
+        "shouldOverlayDismissPointer",
+        "SandPopover",
+        "SandMenuRoot"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/ebb7796ec33c8aca7e119069318d2998d4dfefa4",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/layers/layers.style",
+      "source_blob_sha": "ebb7796ec33c8aca7e119069318d2998d4dfefa4",
+      "source_sha256": "f155478a44116e65f40fbf17522494ac16cc7729db1c38c1439a4aaa010019bd",
+      "upstream_owner": "ui/layers/layers.style",
+      "responsibility": "Modal/layer stack, topmost arbitration, Escape/outside/back close, focus capture/restore, nested teardown, scroll/loading/animation lifecycle.",
+      "fabushi_canonical_owner": "Existing canonical OverlayDialog/SandPopover/SandMenu/ProductShell lifecycle",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing canonical OverlayDialog/SandPopover/SandMenu/ProductShell lifecycle; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13063,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/layers/show.cpp",
+        "type": "blob",
+        "object": "f28c64bfe394229eba672395c96996d44c4d6b42",
+        "size": 1489,
+        "sha256": "a39f6c745c445fbc932183574534d9893e2683ed87a916ed883271ea66225f4e",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Ui::Show"
+      ],
+      "responsibilities": [
+        "Modal/layer stack, topmost arbitration, Escape/outside/back close, focus capture/restore, nested teardown, scroll/loading/animation lifecycle."
+      ],
+      "existing_owner_candidates": [
+        "Existing canonical OverlayDialog/SandPopover/SandMenu/ProductShell lifecycle"
+      ],
+      "chosen_owner": "Existing canonical OverlayDialog/SandPopover/SandMenu/ProductShell lifecycle",
+      "production_path": [
+        "frontend/src/recovered/ui/overlay-primitives.tsx",
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "production_symbol": [
+        "OverlayDialog",
+        "shouldOverlayHandleEscape",
+        "shouldOverlayDismissPointer",
+        "SandPopover",
+        "SandMenuRoot"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/f28c64bfe394229eba672395c96996d44c4d6b42",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/layers/show.cpp",
+      "source_blob_sha": "f28c64bfe394229eba672395c96996d44c4d6b42",
+      "source_sha256": "a39f6c745c445fbc932183574534d9893e2683ed87a916ed883271ea66225f4e",
+      "upstream_owner": "ui/layers/show.cpp",
+      "responsibility": "Modal/layer stack, topmost arbitration, Escape/outside/back close, focus capture/restore, nested teardown, scroll/loading/animation lifecycle.",
+      "fabushi_canonical_owner": "Existing canonical OverlayDialog/SandPopover/SandMenu/ProductShell lifecycle",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing canonical OverlayDialog/SandPopover/SandMenu/ProductShell lifecycle; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13064,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/layers/show.h",
+        "type": "blob",
+        "object": "742483790d0d5a305bda13165dd3aefd9c4d0a4c",
+        "size": 2109,
+        "sha256": "19423550aa1f99b2de1fdf930006baf8a3ff88a66280dd15a306ab69d54975e0",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Ui::Show"
+      ],
+      "responsibilities": [
+        "Modal/layer stack, topmost arbitration, Escape/outside/back close, focus capture/restore, nested teardown, scroll/loading/animation lifecycle."
+      ],
+      "existing_owner_candidates": [
+        "Existing canonical OverlayDialog/SandPopover/SandMenu/ProductShell lifecycle"
+      ],
+      "chosen_owner": "Existing canonical OverlayDialog/SandPopover/SandMenu/ProductShell lifecycle",
+      "production_path": [
+        "frontend/src/recovered/ui/overlay-primitives.tsx",
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "production_symbol": [
+        "OverlayDialog",
+        "shouldOverlayHandleEscape",
+        "shouldOverlayDismissPointer",
+        "SandPopover",
+        "SandMenuRoot"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/742483790d0d5a305bda13165dd3aefd9c4d0a4c",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/layers/show.h",
+      "source_blob_sha": "742483790d0d5a305bda13165dd3aefd9c4d0a4c",
+      "source_sha256": "19423550aa1f99b2de1fdf930006baf8a3ff88a66280dd15a306ab69d54975e0",
+      "upstream_owner": "ui/layers/show.h",
+      "responsibility": "Modal/layer stack, topmost arbitration, Escape/outside/back close, focus capture/restore, nested teardown, scroll/loading/animation lifecycle.",
+      "fabushi_canonical_owner": "Existing canonical OverlayDialog/SandPopover/SandMenu/ProductShell lifecycle",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing canonical OverlayDialog/SandPopover/SandMenu/ProductShell lifecycle; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13065,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/main_queue_processor.cpp",
+        "type": "blob",
+        "object": "26285e6ef106d0de269d1cd2aa87db20eee6a322",
+        "size": 3158,
+        "sha256": "fd9e23ec69427f7edc0d657581169b45109a1f8bd5db9c4f8c124a228d86fb1a",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Ui::MainQueueProcessor",
+        "PushToMainQueueGeneric",
+        "DrainMainQueueGeneric"
+      ],
+      "responsibilities": [
+        "Single-main-queue handoff/drain/coalescing and teardown without a second Qt queue runtime."
+      ],
+      "existing_owner_candidates": [
+        "Existing Electron/Chromium/Node scheduling + MainEdge lifecycle"
+      ],
+      "chosen_owner": "Existing Electron/Chromium/Node scheduling + MainEdge lifecycle",
+      "production_path": [
+        "source/electron-main/main.ts",
+        "source/electron-main/main-edge.ts"
+      ],
+      "production_symbol": [
+        "Electron app lifecycle",
+        "MainEdge"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/26285e6ef106d0de269d1cd2aa87db20eee6a322",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/main_queue_processor.cpp",
+      "source_blob_sha": "26285e6ef106d0de269d1cd2aa87db20eee6a322",
+      "source_sha256": "fd9e23ec69427f7edc0d657581169b45109a1f8bd5db9c4f8c124a228d86fb1a",
+      "upstream_owner": "ui/main_queue_processor.cpp",
+      "responsibility": "Single-main-queue handoff/drain/coalescing and teardown without a second Qt queue runtime.",
+      "fabushi_canonical_owner": "Existing Electron/Chromium/Node scheduling + MainEdge lifecycle",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing Electron/Chromium/Node scheduling + MainEdge lifecycle; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13066,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/main_queue_processor.h",
+        "type": "blob",
+        "object": "cb0b3e5495de6f836906ab8ec280ba400aa7b311",
+        "size": 511,
+        "sha256": "f4796b7be2559f11e3336341364f66fca1422e8b3bd6d7bb5463183204e4461a",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Ui::MainQueueProcessor"
+      ],
+      "responsibilities": [
+        "Single-main-queue handoff/drain/coalescing and teardown without a second Qt queue runtime."
+      ],
+      "existing_owner_candidates": [
+        "Existing Electron/Chromium/Node scheduling + MainEdge lifecycle"
+      ],
+      "chosen_owner": "Existing Electron/Chromium/Node scheduling + MainEdge lifecycle",
+      "production_path": [
+        "source/electron-main/main.ts",
+        "source/electron-main/main-edge.ts"
+      ],
+      "production_symbol": [
+        "Electron app lifecycle",
+        "MainEdge"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/cb0b3e5495de6f836906ab8ec280ba400aa7b311",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/main_queue_processor.h",
+      "source_blob_sha": "cb0b3e5495de6f836906ab8ec280ba400aa7b311",
+      "source_sha256": "f4796b7be2559f11e3336341364f66fca1422e8b3bd6d7bb5463183204e4461a",
+      "upstream_owner": "ui/main_queue_processor.h",
+      "responsibility": "Single-main-queue handoff/drain/coalescing and teardown without a second Qt queue runtime.",
+      "fabushi_canonical_owner": "Existing Electron/Chromium/Node scheduling + MainEdge lifecycle",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing Electron/Chromium/Node scheduling + MainEdge lifecycle; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13067,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/paint/arcs.cpp",
+        "type": "blob",
+        "object": "2f346e417e197b8a2f06564c6b5411f55d4e55e5",
+        "size": 5430,
+        "sha256": "1118c0a121447f68e0d6cb4e8aa29f1b79acc0fbbb59ac10f242bc92507c9833",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Ui::Paint::ArcsAnimation"
+      ],
+      "responsibilities": [
+        "Presentation paint/motion semantics, bounded animation and RTL-aware rendering through Design System/Chromium."
+      ],
+      "existing_owner_candidates": [
+        "Existing Design System/motion + Chromium renderer"
+      ],
+      "chosen_owner": "Existing Design System/motion + Chromium renderer",
+      "production_path": [
+        "frontend/src/recovered/features/conversation/workspace/view.css",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "production_symbol": [
+        "CSS/DOM semantic motion projection",
+        "ProductionRenderer"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/2f346e417e197b8a2f06564c6b5411f55d4e55e5",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/paint/arcs.cpp",
+      "source_blob_sha": "2f346e417e197b8a2f06564c6b5411f55d4e55e5",
+      "source_sha256": "1118c0a121447f68e0d6cb4e8aa29f1b79acc0fbbb59ac10f242bc92507c9833",
+      "upstream_owner": "ui/paint/arcs.cpp",
+      "responsibility": "Presentation paint/motion semantics, bounded animation and RTL-aware rendering through Design System/Chromium.",
+      "fabushi_canonical_owner": "Existing Design System/motion + Chromium renderer",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing Design System/motion + Chromium renderer; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13068,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/paint/arcs.h",
+        "type": "blob",
+        "object": "27d98bd4ff9d9858e0b47b69afd3f8fcd8a9115b",
+        "size": 1628,
+        "sha256": "4368984345357f6512b7aa194994ce991fae777be4e24447f3abc696dff4b10c",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Ui::Paint::ArcsAnimation"
+      ],
+      "responsibilities": [
+        "Presentation paint/motion semantics, bounded animation and RTL-aware rendering through Design System/Chromium."
+      ],
+      "existing_owner_candidates": [
+        "Existing Design System/motion + Chromium renderer"
+      ],
+      "chosen_owner": "Existing Design System/motion + Chromium renderer",
+      "production_path": [
+        "frontend/src/recovered/features/conversation/workspace/view.css",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "production_symbol": [
+        "CSS/DOM semantic motion projection",
+        "ProductionRenderer"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/27d98bd4ff9d9858e0b47b69afd3f8fcd8a9115b",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/paint/arcs.h",
+      "source_blob_sha": "27d98bd4ff9d9858e0b47b69afd3f8fcd8a9115b",
+      "source_sha256": "4368984345357f6512b7aa194994ce991fae777be4e24447f3abc696dff4b10c",
+      "upstream_owner": "ui/paint/arcs.h",
+      "responsibility": "Presentation paint/motion semantics, bounded animation and RTL-aware rendering through Design System/Chromium.",
+      "fabushi_canonical_owner": "Existing Design System/motion + Chromium renderer",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing Design System/motion + Chromium renderer; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13069,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/paint/blob.cpp",
+        "type": "blob",
+        "object": "57226592b77493f02c95fc82fd47bafec0926aee",
+        "size": 5986,
+        "sha256": "e112b47113f15557f1c6e8d0d4ac9f053af68eb3d0e4f9f3e0138a328362ccbe",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Ui::Paint::Blob",
+        "Ui::Paint::RadialBlob",
+        "Ui::Paint::LinearBlob"
+      ],
+      "responsibilities": [
+        "Presentation paint/motion semantics, bounded animation and RTL-aware rendering through Design System/Chromium."
+      ],
+      "existing_owner_candidates": [
+        "Existing Design System/motion + Chromium renderer"
+      ],
+      "chosen_owner": "Existing Design System/motion + Chromium renderer",
+      "production_path": [
+        "frontend/src/recovered/features/conversation/workspace/view.css",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "production_symbol": [
+        "CSS/DOM semantic motion projection",
+        "ProductionRenderer"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/57226592b77493f02c95fc82fd47bafec0926aee",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/paint/blob.cpp",
+      "source_blob_sha": "57226592b77493f02c95fc82fd47bafec0926aee",
+      "source_sha256": "e112b47113f15557f1c6e8d0d4ac9f053af68eb3d0e4f9f3e0138a328362ccbe",
+      "upstream_owner": "ui/paint/blob.cpp",
+      "responsibility": "Presentation paint/motion semantics, bounded animation and RTL-aware rendering through Design System/Chromium.",
+      "fabushi_canonical_owner": "Existing Design System/motion + Chromium renderer",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing Design System/motion + Chromium renderer; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13070,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/paint/blob.h",
+        "type": "blob",
+        "object": "4006d2545bf776cbbe7114dbe8cdbffd6a0ac849",
+        "size": 2183,
+        "sha256": "d0b226add30eaca706aea0ce8b49587c20a753a1458a0a1503d11e0e3a1e9e4b",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Ui::Paint::Blob",
+        "Ui::Paint::RadialBlob",
+        "Ui::Paint::LinearBlob"
+      ],
+      "responsibilities": [
+        "Presentation paint/motion semantics, bounded animation and RTL-aware rendering through Design System/Chromium."
+      ],
+      "existing_owner_candidates": [
+        "Existing Design System/motion + Chromium renderer"
+      ],
+      "chosen_owner": "Existing Design System/motion + Chromium renderer",
+      "production_path": [
+        "frontend/src/recovered/features/conversation/workspace/view.css",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "production_symbol": [
+        "CSS/DOM semantic motion projection",
+        "ProductionRenderer"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/4006d2545bf776cbbe7114dbe8cdbffd6a0ac849",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/paint/blob.h",
+      "source_blob_sha": "4006d2545bf776cbbe7114dbe8cdbffd6a0ac849",
+      "source_sha256": "d0b226add30eaca706aea0ce8b49587c20a753a1458a0a1503d11e0e3a1e9e4b",
+      "upstream_owner": "ui/paint/blob.h",
+      "responsibility": "Presentation paint/motion semantics, bounded animation and RTL-aware rendering through Design System/Chromium.",
+      "fabushi_canonical_owner": "Existing Design System/motion + Chromium renderer",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing Design System/motion + Chromium renderer; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13071,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/paint/blobs.cpp",
+        "type": "blob",
+        "object": "f97e041022a8b847107200c7daccb8a9615a9b27",
+        "size": 2519,
+        "sha256": "ff97a65322845ad61f736913ec038281917385ffad8ab1e26d72af4de7d1cf2b",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Ui::Paint::Blobs"
+      ],
+      "responsibilities": [
+        "Presentation paint/motion semantics, bounded animation and RTL-aware rendering through Design System/Chromium."
+      ],
+      "existing_owner_candidates": [
+        "Existing Design System/motion + Chromium renderer"
+      ],
+      "chosen_owner": "Existing Design System/motion + Chromium renderer",
+      "production_path": [
+        "frontend/src/recovered/features/conversation/workspace/view.css",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "production_symbol": [
+        "CSS/DOM semantic motion projection",
+        "ProductionRenderer"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/f97e041022a8b847107200c7daccb8a9615a9b27",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/paint/blobs.cpp",
+      "source_blob_sha": "f97e041022a8b847107200c7daccb8a9615a9b27",
+      "source_sha256": "ff97a65322845ad61f736913ec038281917385ffad8ab1e26d72af4de7d1cf2b",
+      "upstream_owner": "ui/paint/blobs.cpp",
+      "responsibility": "Presentation paint/motion semantics, bounded animation and RTL-aware rendering through Design System/Chromium.",
+      "fabushi_canonical_owner": "Existing Design System/motion + Chromium renderer",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing Design System/motion + Chromium renderer; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13072,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/paint/blobs.h",
+        "type": "blob",
+        "object": "2dc446ca305443f382ac32ceb427d897a4b429ac",
+        "size": 1332,
+        "sha256": "650cba83ba20d3d32f13e7bac6d66ffdd650d6e873048c18f69883ffaf7c33fa",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Ui::Paint::Blobs"
+      ],
+      "responsibilities": [
+        "Presentation paint/motion semantics, bounded animation and RTL-aware rendering through Design System/Chromium."
+      ],
+      "existing_owner_candidates": [
+        "Existing Design System/motion + Chromium renderer"
+      ],
+      "chosen_owner": "Existing Design System/motion + Chromium renderer",
+      "production_path": [
+        "frontend/src/recovered/features/conversation/workspace/view.css",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "production_symbol": [
+        "CSS/DOM semantic motion projection",
+        "ProductionRenderer"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/2dc446ca305443f382ac32ceb427d897a4b429ac",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/paint/blobs.h",
+      "source_blob_sha": "2dc446ca305443f382ac32ceb427d897a4b429ac",
+      "source_sha256": "650cba83ba20d3d32f13e7bac6d66ffdd650d6e873048c18f69883ffaf7c33fa",
+      "upstream_owner": "ui/paint/blobs.h",
+      "responsibility": "Presentation paint/motion semantics, bounded animation and RTL-aware rendering through Design System/Chromium.",
+      "fabushi_canonical_owner": "Existing Design System/motion + Chromium renderer",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing Design System/motion + Chromium renderer; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13073,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/paint/blobs_linear.cpp",
+        "type": "blob",
+        "object": "c1e8f9368c27d4e94d5273a54e354396b03badc7",
+        "size": 2817,
+        "sha256": "372be977165537df9ca4fe79c6df9d8dafa2dd9d57ae9afaa0c3e130ad1d46ba",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Ui::Paint::LinearBlobs"
+      ],
+      "responsibilities": [
+        "Presentation paint/motion semantics, bounded animation and RTL-aware rendering through Design System/Chromium."
+      ],
+      "existing_owner_candidates": [
+        "Existing Design System/motion + Chromium renderer"
+      ],
+      "chosen_owner": "Existing Design System/motion + Chromium renderer",
+      "production_path": [
+        "frontend/src/recovered/features/conversation/workspace/view.css",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "production_symbol": [
+        "CSS/DOM semantic motion projection",
+        "ProductionRenderer"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/c1e8f9368c27d4e94d5273a54e354396b03badc7",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/paint/blobs_linear.cpp",
+      "source_blob_sha": "c1e8f9368c27d4e94d5273a54e354396b03badc7",
+      "source_sha256": "372be977165537df9ca4fe79c6df9d8dafa2dd9d57ae9afaa0c3e130ad1d46ba",
+      "upstream_owner": "ui/paint/blobs_linear.cpp",
+      "responsibility": "Presentation paint/motion semantics, bounded animation and RTL-aware rendering through Design System/Chromium.",
+      "fabushi_canonical_owner": "Existing Design System/motion + Chromium renderer",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing Design System/motion + Chromium renderer; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13074,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/paint/blobs_linear.h",
+        "type": "blob",
+        "object": "ea85f0e724928ee1bee646de953f0b992b0bdac1",
+        "size": 1374,
+        "sha256": "5bf1246f91605fc5fc015e70b1cbeff2eaf48076fcabb443d2eea5c8b812e796",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Ui::Paint::LinearBlobs"
+      ],
+      "responsibilities": [
+        "Presentation paint/motion semantics, bounded animation and RTL-aware rendering through Design System/Chromium."
+      ],
+      "existing_owner_candidates": [
+        "Existing Design System/motion + Chromium renderer"
+      ],
+      "chosen_owner": "Existing Design System/motion + Chromium renderer",
+      "production_path": [
+        "frontend/src/recovered/features/conversation/workspace/view.css",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "production_symbol": [
+        "CSS/DOM semantic motion projection",
+        "ProductionRenderer"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/ea85f0e724928ee1bee646de953f0b992b0bdac1",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/paint/blobs_linear.h",
+      "source_blob_sha": "ea85f0e724928ee1bee646de953f0b992b0bdac1",
+      "source_sha256": "5bf1246f91605fc5fc015e70b1cbeff2eaf48076fcabb443d2eea5c8b812e796",
+      "upstream_owner": "ui/paint/blobs_linear.h",
+      "responsibility": "Presentation paint/motion semantics, bounded animation and RTL-aware rendering through Design System/Chromium.",
+      "fabushi_canonical_owner": "Existing Design System/motion + Chromium renderer",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing Design System/motion + Chromium renderer; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13075,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/painter.h",
+        "type": "blob",
+        "object": "f9e630a66715e2a601198bb419faaf26172de310",
+        "size": 5530,
+        "sha256": "c8eb4223b20e5d1d9ee0024f59d14926ac492251f2731e3737109511986bdc1c",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Ui::Painter",
+        "Ui::PainterHighQualityEnabler",
+        "Ui::ScopedPainterOpacity"
+      ],
+      "responsibilities": [
+        "Presentation paint/motion semantics, bounded animation and RTL-aware rendering through Design System/Chromium."
+      ],
+      "existing_owner_candidates": [
+        "Existing Design System/motion + Chromium renderer"
+      ],
+      "chosen_owner": "Existing Design System/motion + Chromium renderer",
+      "production_path": [
+        "frontend/src/recovered/features/conversation/workspace/view.css",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "production_symbol": [
+        "CSS/DOM semantic motion projection",
+        "ProductionRenderer"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/f9e630a66715e2a601198bb419faaf26172de310",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/painter.h",
+      "source_blob_sha": "f9e630a66715e2a601198bb419faaf26172de310",
+      "source_sha256": "c8eb4223b20e5d1d9ee0024f59d14926ac492251f2731e3737109511986bdc1c",
+      "upstream_owner": "ui/painter.h",
+      "responsibility": "Presentation paint/motion semantics, bounded animation and RTL-aware rendering through Design System/Chromium.",
+      "fabushi_canonical_owner": "Existing Design System/motion + Chromium renderer",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing Design System/motion + Chromium renderer; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13076,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/ph.cpp",
+        "type": "blob",
+        "object": "620db9325cefc6df03a08138fdbb7778924193df",
+        "size": 770,
+        "sha256": "ac6925cb9041723380853c8b4797ffdb12d870210c8a7993fc0ddce1823f5854",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "ph::phrase"
+      ],
+      "responsibilities": [
+        "Typed phrase substitution/translation plumbing under canonical localization."
+      ],
+      "existing_owner_candidates": [
+        "Existing Fabushi localization/presentation text owner"
+      ],
+      "chosen_owner": "Existing Fabushi localization/presentation text owner",
+      "production_path": [
+        "frontend/src/recovered/features/settings/overlay/localization.ts",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "production_symbol": [
+        "canonical localized presentation strings"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/620db9325cefc6df03a08138fdbb7778924193df",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/ph.cpp",
+      "source_blob_sha": "620db9325cefc6df03a08138fdbb7778924193df",
+      "source_sha256": "ac6925cb9041723380853c8b4797ffdb12d870210c8a7993fc0ddce1823f5854",
+      "upstream_owner": "ui/ph.cpp",
+      "responsibility": "Typed phrase substitution/translation plumbing under canonical localization.",
+      "fabushi_canonical_owner": "Existing Fabushi localization/presentation text owner",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing Fabushi localization/presentation text owner; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13077,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/ph.h",
+        "type": "blob",
+        "object": "14ab1d2d21fe263ebb6ba9fa4ef78ba92add196c",
+        "size": 1436,
+        "sha256": "d07afa2a8c49ec9456d5f0adb47899218caf900c6120a2b2108aa9bc5e7f1724",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "ph::phrase",
+        "ph::details::set_values"
+      ],
+      "responsibilities": [
+        "Typed phrase substitution/translation plumbing under canonical localization."
+      ],
+      "existing_owner_candidates": [
+        "Existing Fabushi localization/presentation text owner"
+      ],
+      "chosen_owner": "Existing Fabushi localization/presentation text owner",
+      "production_path": [
+        "frontend/src/recovered/features/settings/overlay/localization.ts",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "production_symbol": [
+        "canonical localized presentation strings"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/14ab1d2d21fe263ebb6ba9fa4ef78ba92add196c",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/ph.h",
+      "source_blob_sha": "14ab1d2d21fe263ebb6ba9fa4ef78ba92add196c",
+      "source_sha256": "d07afa2a8c49ec9456d5f0adb47899218caf900c6120a2b2108aa9bc5e7f1724",
+      "upstream_owner": "ui/ph.h",
+      "responsibility": "Typed phrase substitution/translation plumbing under canonical localization.",
+      "fabushi_canonical_owner": "Existing Fabushi localization/presentation text owner",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing Fabushi localization/presentation text owner; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13078,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/platform/linux/ui_font_settings_linux.cpp",
+        "type": "blob",
+        "object": "bebc50892f00294960e87cc0a2b56d2d5baf3ded",
+        "size": 7231,
+        "sha256": "7c3b6cda570b70d0ae9f0edbab181abf7cbdb2f3f66005d25e769dfe20aa64fe",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Ui::Platform::FontSettings",
+        "Ui::Platform::FontSettingsChanges"
+      ],
+      "responsibilities": [
+        "Desktop font antialias/hint/subpixel observation without replacing Chromium/platform font rendering."
+      ],
+      "existing_owner_candidates": [
+        "Existing Chromium platform-font + canonical typography/settings ownership"
+      ],
+      "chosen_owner": "Existing Chromium platform-font + canonical typography/settings ownership",
+      "production_path": [
+        "source/electron-main/main-edge.ts",
+        "frontend/src/recovered/features/settings/overlay/desktop-surface.tsx"
+      ],
+      "production_symbol": [
+        "MainEdge",
+        "canonical UI preferences"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/bebc50892f00294960e87cc0a2b56d2d5baf3ded",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/platform/linux/ui_font_settings_linux.cpp",
+      "source_blob_sha": "bebc50892f00294960e87cc0a2b56d2d5baf3ded",
+      "source_sha256": "7c3b6cda570b70d0ae9f0edbab181abf7cbdb2f3f66005d25e769dfe20aa64fe",
+      "upstream_owner": "ui/platform/linux/ui_font_settings_linux.cpp",
+      "responsibility": "Desktop font antialias/hint/subpixel observation without replacing Chromium/platform font rendering.",
+      "fabushi_canonical_owner": "Existing Chromium platform-font + canonical typography/settings ownership",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing Chromium platform-font + canonical typography/settings ownership; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13079,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/platform/linux/ui_font_settings_linux.h",
+        "type": "blob",
+        "object": "0e78883d0d80bdc969e8a33c2d5931ed73828c4b",
+        "size": 1192,
+        "sha256": "e9467f94fd41561ce9f4223a25e49f47e213dbe382440ac7bb9d98804e115684",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Ui::Platform::FontRenderSettings",
+        "Ui::Platform::FontSettings"
+      ],
+      "responsibilities": [
+        "Desktop font antialias/hint/subpixel observation without replacing Chromium/platform font rendering."
+      ],
+      "existing_owner_candidates": [
+        "Existing Chromium platform-font + canonical typography/settings ownership"
+      ],
+      "chosen_owner": "Existing Chromium platform-font + canonical typography/settings ownership",
+      "production_path": [
+        "source/electron-main/main-edge.ts",
+        "frontend/src/recovered/features/settings/overlay/desktop-surface.tsx"
+      ],
+      "production_symbol": [
+        "MainEdge",
+        "canonical UI preferences"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/0e78883d0d80bdc969e8a33c2d5931ed73828c4b",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/platform/linux/ui_font_settings_linux.h",
+      "source_blob_sha": "0e78883d0d80bdc969e8a33c2d5931ed73828c4b",
+      "source_sha256": "e9467f94fd41561ce9f4223a25e49f47e213dbe382440ac7bb9d98804e115684",
+      "upstream_owner": "ui/platform/linux/ui_font_settings_linux.h",
+      "responsibility": "Desktop font antialias/hint/subpixel observation without replacing Chromium/platform font rendering.",
+      "fabushi_canonical_owner": "Existing Chromium platform-font + canonical typography/settings ownership",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing Chromium platform-font + canonical typography/settings ownership; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13080,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/platform/linux/ui_utility_linux.cpp",
+        "type": "blob",
+        "object": "e4d40ed9fbe2a5e43586969172d1ab97e5b5d3c1",
+        "size": 18586,
+        "sha256": "05cf8eb2d79500f3b53933daaa84567ad1cbaa2ac6e0d9da634070abcc88ffd9",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Ui::Platform::SetForeignTransientParent",
+        "Ui::Platform::ShowWindowMenu"
+      ],
+      "responsibilities": [
+        "Cross-platform activation/frame/title/control/hit-test/geometry/fullscreen/drag/resize/transient-parent/system-menu/shadow semantics through thin adapters."
+      ],
+      "existing_owner_candidates": [
+        "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters"
+      ],
+      "chosen_owner": "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters",
+      "production_path": [
+        "source/electron-main/window-chrome.ts",
+        "source/shared/window-chrome.ts",
+        "frontend/src/recovered/features/window-chrome/view.tsx",
+        "source/electron-main/platform-input.ts"
+      ],
+      "production_symbol": [
+        "windowChromeOptions",
+        "createWindowChromeEdgePort",
+        "attachWindowStateBroadcast",
+        "attachWindowFocusForwarding",
+        "WindowChrome"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/e4d40ed9fbe2a5e43586969172d1ab97e5b5d3c1",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/platform/linux/ui_utility_linux.cpp",
+      "source_blob_sha": "e4d40ed9fbe2a5e43586969172d1ab97e5b5d3c1",
+      "source_sha256": "05cf8eb2d79500f3b53933daaa84567ad1cbaa2ac6e0d9da634070abcc88ffd9",
+      "upstream_owner": "ui/platform/linux/ui_utility_linux.cpp",
+      "responsibility": "Cross-platform activation/frame/title/control/hit-test/geometry/fullscreen/drag/resize/transient-parent/system-menu/shadow semantics through thin adapters.",
+      "fabushi_canonical_owner": "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing Electron BrowserWindow + canonical Window Chrome/platform adapters; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13081,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/platform/linux/ui_utility_linux.h",
+        "type": "blob",
+        "object": "8fcb6a3ecce17d0f67f676c693b286ca6b8b7444",
+        "size": 1096,
+        "sha256": "52996db535f62a8df12cc3bc889c1cdfd3c6357520741bb303f90d1a462839d4",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Ui::Platform::UseMainQueueGeneric"
+      ],
+      "responsibilities": [
+        "Cross-platform activation/frame/title/control/hit-test/geometry/fullscreen/drag/resize/transient-parent/system-menu/shadow semantics through thin adapters."
+      ],
+      "existing_owner_candidates": [
+        "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters"
+      ],
+      "chosen_owner": "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters",
+      "production_path": [
+        "source/electron-main/window-chrome.ts",
+        "source/shared/window-chrome.ts",
+        "frontend/src/recovered/features/window-chrome/view.tsx",
+        "source/electron-main/platform-input.ts"
+      ],
+      "production_symbol": [
+        "windowChromeOptions",
+        "createWindowChromeEdgePort",
+        "attachWindowStateBroadcast",
+        "attachWindowFocusForwarding",
+        "WindowChrome"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/8fcb6a3ecce17d0f67f676c693b286ca6b8b7444",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/platform/linux/ui_utility_linux.h",
+      "source_blob_sha": "8fcb6a3ecce17d0f67f676c693b286ca6b8b7444",
+      "source_sha256": "52996db535f62a8df12cc3bc889c1cdfd3c6357520741bb303f90d1a462839d4",
+      "upstream_owner": "ui/platform/linux/ui_utility_linux.h",
+      "responsibility": "Cross-platform activation/frame/title/control/hit-test/geometry/fullscreen/drag/resize/transient-parent/system-menu/shadow semantics through thin adapters.",
+      "fabushi_canonical_owner": "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing Electron BrowserWindow + canonical Window Chrome/platform adapters; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13082,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/platform/linux/ui_window_linux.cpp",
+        "type": "blob",
+        "object": "dd1a4639be199695a4e58f725b29ae9929d2df82",
+        "size": 631,
+        "sha256": "299e31facb0df19d5d54ded97dc2419d3f3899007ab96ab3ea1763f99c521e02",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Ui::Platform::CreateSpecialWindowHelper",
+        "Ui::Platform::NativeWindowFrameSupported",
+        "Ui::Platform::FullScreenEvents"
+      ],
+      "responsibilities": [
+        "Cross-platform activation/frame/title/control/hit-test/geometry/fullscreen/drag/resize/transient-parent/system-menu/shadow semantics through thin adapters."
+      ],
+      "existing_owner_candidates": [
+        "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters"
+      ],
+      "chosen_owner": "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters",
+      "production_path": [
+        "source/electron-main/window-chrome.ts",
+        "source/shared/window-chrome.ts",
+        "frontend/src/recovered/features/window-chrome/view.tsx",
+        "source/electron-main/platform-input.ts"
+      ],
+      "production_symbol": [
+        "windowChromeOptions",
+        "createWindowChromeEdgePort",
+        "attachWindowStateBroadcast",
+        "attachWindowFocusForwarding",
+        "WindowChrome"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/dd1a4639be199695a4e58f725b29ae9929d2df82",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/platform/linux/ui_window_linux.cpp",
+      "source_blob_sha": "dd1a4639be199695a4e58f725b29ae9929d2df82",
+      "source_sha256": "299e31facb0df19d5d54ded97dc2419d3f3899007ab96ab3ea1763f99c521e02",
+      "upstream_owner": "ui/platform/linux/ui_window_linux.cpp",
+      "responsibility": "Cross-platform activation/frame/title/control/hit-test/geometry/fullscreen/drag/resize/transient-parent/system-menu/shadow semantics through thin adapters.",
+      "fabushi_canonical_owner": "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing Electron BrowserWindow + canonical Window Chrome/platform adapters; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13083,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/platform/linux/ui_window_linux.h",
+        "type": "blob",
+        "object": "b4f4fe2bfc480fc5a3e35f90ee67f8a8a69adba4",
+        "size": 297,
+        "sha256": "ff368fbc2eef9a5f9435e3cec72867c89a0929867161ec25c91351e5de08fb83",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Ui::Platform::WindowHelper"
+      ],
+      "responsibilities": [
+        "Cross-platform activation/frame/title/control/hit-test/geometry/fullscreen/drag/resize/transient-parent/system-menu/shadow semantics through thin adapters."
+      ],
+      "existing_owner_candidates": [
+        "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters"
+      ],
+      "chosen_owner": "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters",
+      "production_path": [
+        "source/electron-main/window-chrome.ts",
+        "source/shared/window-chrome.ts",
+        "frontend/src/recovered/features/window-chrome/view.tsx",
+        "source/electron-main/platform-input.ts"
+      ],
+      "production_symbol": [
+        "windowChromeOptions",
+        "createWindowChromeEdgePort",
+        "attachWindowStateBroadcast",
+        "attachWindowFocusForwarding",
+        "WindowChrome"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/b4f4fe2bfc480fc5a3e35f90ee67f8a8a69adba4",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/platform/linux/ui_window_linux.h",
+      "source_blob_sha": "b4f4fe2bfc480fc5a3e35f90ee67f8a8a69adba4",
+      "source_sha256": "ff368fbc2eef9a5f9435e3cec72867c89a0929867161ec25c91351e5de08fb83",
+      "upstream_owner": "ui/platform/linux/ui_window_linux.h",
+      "responsibility": "Cross-platform activation/frame/title/control/hit-test/geometry/fullscreen/drag/resize/transient-parent/system-menu/shadow semantics through thin adapters.",
+      "fabushi_canonical_owner": "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing Electron BrowserWindow + canonical Window Chrome/platform adapters; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13084,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/platform/linux/ui_window_title_linux.cpp",
+        "type": "blob",
+        "object": "687cc39ca76c1542458fb58866ef26c63ae7c35e",
+        "size": 3434,
+        "sha256": "9e0e54c4eaa4607703b00692a596cfef00ad2b69f77a713eaa9a8e99444af268",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Ui::Platform::TitleControlsLayout::Create"
+      ],
+      "responsibilities": [
+        "Cross-platform activation/frame/title/control/hit-test/geometry/fullscreen/drag/resize/transient-parent/system-menu/shadow semantics through thin adapters."
+      ],
+      "existing_owner_candidates": [
+        "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters"
+      ],
+      "chosen_owner": "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters",
+      "production_path": [
+        "source/electron-main/window-chrome.ts",
+        "source/shared/window-chrome.ts",
+        "frontend/src/recovered/features/window-chrome/view.tsx",
+        "source/electron-main/platform-input.ts"
+      ],
+      "production_symbol": [
+        "windowChromeOptions",
+        "createWindowChromeEdgePort",
+        "attachWindowStateBroadcast",
+        "attachWindowFocusForwarding",
+        "WindowChrome"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/687cc39ca76c1542458fb58866ef26c63ae7c35e",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/platform/linux/ui_window_title_linux.cpp",
+      "source_blob_sha": "687cc39ca76c1542458fb58866ef26c63ae7c35e",
+      "source_sha256": "9e0e54c4eaa4607703b00692a596cfef00ad2b69f77a713eaa9a8e99444af268",
+      "upstream_owner": "ui/platform/linux/ui_window_title_linux.cpp",
+      "responsibility": "Cross-platform activation/frame/title/control/hit-test/geometry/fullscreen/drag/resize/transient-parent/system-menu/shadow semantics through thin adapters.",
+      "fabushi_canonical_owner": "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing Electron BrowserWindow + canonical Window Chrome/platform adapters; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13085,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/platform/linux/ui_window_title_linux.h",
+        "type": "blob",
+        "object": "0aa287b940f72ef0c032d5e07f469d3b2f46c8d9",
+        "size": 303,
+        "sha256": "39625fb829b78f9c0801d3ba3319b982d6de059fa3656d9f507699d5e6ca334c",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Ui::Platform::TitleWidget"
+      ],
+      "responsibilities": [
+        "Cross-platform activation/frame/title/control/hit-test/geometry/fullscreen/drag/resize/transient-parent/system-menu/shadow semantics through thin adapters."
+      ],
+      "existing_owner_candidates": [
+        "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters"
+      ],
+      "chosen_owner": "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters",
+      "production_path": [
+        "source/electron-main/window-chrome.ts",
+        "source/shared/window-chrome.ts",
+        "frontend/src/recovered/features/window-chrome/view.tsx",
+        "source/electron-main/platform-input.ts"
+      ],
+      "production_symbol": [
+        "windowChromeOptions",
+        "createWindowChromeEdgePort",
+        "attachWindowStateBroadcast",
+        "attachWindowFocusForwarding",
+        "WindowChrome"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/0aa287b940f72ef0c032d5e07f469d3b2f46c8d9",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/platform/linux/ui_window_title_linux.h",
+      "source_blob_sha": "0aa287b940f72ef0c032d5e07f469d3b2f46c8d9",
+      "source_sha256": "39625fb829b78f9c0801d3ba3319b982d6de059fa3656d9f507699d5e6ca334c",
+      "upstream_owner": "ui/platform/linux/ui_window_title_linux.h",
+      "responsibility": "Cross-platform activation/frame/title/control/hit-test/geometry/fullscreen/drag/resize/transient-parent/system-menu/shadow semantics through thin adapters.",
+      "fabushi_canonical_owner": "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing Electron BrowserWindow + canonical Window Chrome/platform adapters; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13086,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/platform/mac/ui_utility_mac.h",
+        "type": "blob",
+        "object": "6b0e1a44861eac6d100efef46da13a56bbe2bb8e",
+        "size": 1063,
+        "sha256": "9663d6eda3bb4a91f18481cb7ec0ed935fc8ab14da5a1bca6e3f1f0d0235d460",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Ui::Platform::IsApplicationActive"
+      ],
+      "responsibilities": [
+        "Cross-platform activation/frame/title/control/hit-test/geometry/fullscreen/drag/resize/transient-parent/system-menu/shadow semantics through thin adapters."
+      ],
+      "existing_owner_candidates": [
+        "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters"
+      ],
+      "chosen_owner": "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters",
+      "production_path": [
+        "source/electron-main/window-chrome.ts",
+        "source/shared/window-chrome.ts",
+        "frontend/src/recovered/features/window-chrome/view.tsx",
+        "source/electron-main/platform-input.ts"
+      ],
+      "production_symbol": [
+        "windowChromeOptions",
+        "createWindowChromeEdgePort",
+        "attachWindowStateBroadcast",
+        "attachWindowFocusForwarding",
+        "WindowChrome"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/6b0e1a44861eac6d100efef46da13a56bbe2bb8e",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/platform/mac/ui_utility_mac.h",
+      "source_blob_sha": "6b0e1a44861eac6d100efef46da13a56bbe2bb8e",
+      "source_sha256": "9663d6eda3bb4a91f18481cb7ec0ed935fc8ab14da5a1bca6e3f1f0d0235d460",
+      "upstream_owner": "ui/platform/mac/ui_utility_mac.h",
+      "responsibility": "Cross-platform activation/frame/title/control/hit-test/geometry/fullscreen/drag/resize/transient-parent/system-menu/shadow semantics through thin adapters.",
+      "fabushi_canonical_owner": "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing Electron BrowserWindow + canonical Window Chrome/platform adapters; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13087,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/platform/mac/ui_utility_mac.mm",
+        "type": "blob",
+        "object": "0f226cce898636eccd8b450597a00cfa37e00d14",
+        "size": 5714,
+        "sha256": "cfa00e55e5e0e8b3c93d5b67097e6add649800c0b6c341adb17486fd0337cbc3",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Ui::Platform::IsApplicationActive",
+        "Ui::Platform::DrainMainQueue",
+        "Ui::Platform::FindSystemTextReplace"
+      ],
+      "responsibilities": [
+        "Cross-platform activation/frame/title/control/hit-test/geometry/fullscreen/drag/resize/transient-parent/system-menu/shadow semantics through thin adapters."
+      ],
+      "existing_owner_candidates": [
+        "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters"
+      ],
+      "chosen_owner": "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters",
+      "production_path": [
+        "source/electron-main/window-chrome.ts",
+        "source/shared/window-chrome.ts",
+        "frontend/src/recovered/features/window-chrome/view.tsx",
+        "source/electron-main/platform-input.ts"
+      ],
+      "production_symbol": [
+        "windowChromeOptions",
+        "createWindowChromeEdgePort",
+        "attachWindowStateBroadcast",
+        "attachWindowFocusForwarding",
+        "WindowChrome"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/0f226cce898636eccd8b450597a00cfa37e00d14",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/platform/mac/ui_utility_mac.mm",
+      "source_blob_sha": "0f226cce898636eccd8b450597a00cfa37e00d14",
+      "source_sha256": "cfa00e55e5e0e8b3c93d5b67097e6add649800c0b6c341adb17486fd0337cbc3",
+      "upstream_owner": "ui/platform/mac/ui_utility_mac.mm",
+      "responsibility": "Cross-platform activation/frame/title/control/hit-test/geometry/fullscreen/drag/resize/transient-parent/system-menu/shadow semantics through thin adapters.",
+      "fabushi_canonical_owner": "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing Electron BrowserWindow + canonical Window Chrome/platform adapters; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13088,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/platform/mac/ui_window_mac.h",
+        "type": "blob",
+        "object": "59be4ad728391bb5ba263e1ef216fff06c96c0bb",
+        "size": 1282,
+        "sha256": "77461dca486c550c7367e74f27a49173bb370f43707f687a7124c6018c0276ed",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Ui::Platform::WindowHelper"
+      ],
+      "responsibilities": [
+        "Cross-platform activation/frame/title/control/hit-test/geometry/fullscreen/drag/resize/transient-parent/system-menu/shadow semantics through thin adapters."
+      ],
+      "existing_owner_candidates": [
+        "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters"
+      ],
+      "chosen_owner": "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters",
+      "production_path": [
+        "source/electron-main/window-chrome.ts",
+        "source/shared/window-chrome.ts",
+        "frontend/src/recovered/features/window-chrome/view.tsx",
+        "source/electron-main/platform-input.ts"
+      ],
+      "production_symbol": [
+        "windowChromeOptions",
+        "createWindowChromeEdgePort",
+        "attachWindowStateBroadcast",
+        "attachWindowFocusForwarding",
+        "WindowChrome"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/59be4ad728391bb5ba263e1ef216fff06c96c0bb",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/platform/mac/ui_window_mac.h",
+      "source_blob_sha": "59be4ad728391bb5ba263e1ef216fff06c96c0bb",
+      "source_sha256": "77461dca486c550c7367e74f27a49173bb370f43707f687a7124c6018c0276ed",
+      "upstream_owner": "ui/platform/mac/ui_window_mac.h",
+      "responsibility": "Cross-platform activation/frame/title/control/hit-test/geometry/fullscreen/drag/resize/transient-parent/system-menu/shadow semantics through thin adapters.",
+      "fabushi_canonical_owner": "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing Electron BrowserWindow + canonical Window Chrome/platform adapters; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13089,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/platform/mac/ui_window_mac.mm",
+        "type": "blob",
+        "object": "d9f700e9d4314281156d3f42057ac9724741cc94",
+        "size": 17601,
+        "sha256": "071622d0fb2783a334c547e295a4849119015e8974bab298c9f0ab499b643644",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Ui::Platform::WindowHelper",
+        "WindowObserver"
+      ],
+      "responsibilities": [
+        "Cross-platform activation/frame/title/control/hit-test/geometry/fullscreen/drag/resize/transient-parent/system-menu/shadow semantics through thin adapters."
+      ],
+      "existing_owner_candidates": [
+        "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters"
+      ],
+      "chosen_owner": "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters",
+      "production_path": [
+        "source/electron-main/window-chrome.ts",
+        "source/shared/window-chrome.ts",
+        "frontend/src/recovered/features/window-chrome/view.tsx",
+        "source/electron-main/platform-input.ts"
+      ],
+      "production_symbol": [
+        "windowChromeOptions",
+        "createWindowChromeEdgePort",
+        "attachWindowStateBroadcast",
+        "attachWindowFocusForwarding",
+        "WindowChrome"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/d9f700e9d4314281156d3f42057ac9724741cc94",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/platform/mac/ui_window_mac.mm",
+      "source_blob_sha": "d9f700e9d4314281156d3f42057ac9724741cc94",
+      "source_sha256": "071622d0fb2783a334c547e295a4849119015e8974bab298c9f0ab499b643644",
+      "upstream_owner": "ui/platform/mac/ui_window_mac.mm",
+      "responsibility": "Cross-platform activation/frame/title/control/hit-test/geometry/fullscreen/drag/resize/transient-parent/system-menu/shadow semantics through thin adapters.",
+      "fabushi_canonical_owner": "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing Electron BrowserWindow + canonical Window Chrome/platform adapters; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13090,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/platform/mac/ui_window_title_mac.h",
+        "type": "blob",
+        "object": "9b1b097f6a333ec5f0ce781574f348aea55972e0",
+        "size": 1371,
+        "sha256": "c071fe682e4e7019e49b4e699967cc01c2319e9c299f89afab06e9d4082136e8",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Ui::Platform::TitleWidget"
+      ],
+      "responsibilities": [
+        "Cross-platform activation/frame/title/control/hit-test/geometry/fullscreen/drag/resize/transient-parent/system-menu/shadow semantics through thin adapters."
+      ],
+      "existing_owner_candidates": [
+        "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters"
+      ],
+      "chosen_owner": "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters",
+      "production_path": [
+        "source/electron-main/window-chrome.ts",
+        "source/shared/window-chrome.ts",
+        "frontend/src/recovered/features/window-chrome/view.tsx",
+        "source/electron-main/platform-input.ts"
+      ],
+      "production_symbol": [
+        "windowChromeOptions",
+        "createWindowChromeEdgePort",
+        "attachWindowStateBroadcast",
+        "attachWindowFocusForwarding",
+        "WindowChrome"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/9b1b097f6a333ec5f0ce781574f348aea55972e0",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/platform/mac/ui_window_title_mac.h",
+      "source_blob_sha": "9b1b097f6a333ec5f0ce781574f348aea55972e0",
+      "source_sha256": "c071fe682e4e7019e49b4e699967cc01c2319e9c299f89afab06e9d4082136e8",
+      "upstream_owner": "ui/platform/mac/ui_window_title_mac.h",
+      "responsibility": "Cross-platform activation/frame/title/control/hit-test/geometry/fullscreen/drag/resize/transient-parent/system-menu/shadow semantics through thin adapters.",
+      "fabushi_canonical_owner": "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing Electron BrowserWindow + canonical Window Chrome/platform adapters; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13091,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/platform/mac/ui_window_title_mac.mm",
+        "type": "blob",
+        "object": "1e919f52b64b5f7deb6cfb8f1e81b8db42ea5a2a",
+        "size": 3808,
+        "sha256": "29c0355d239e84899c3ed8c417daab36cdb2e416e64b79feffc0ad13697e15e9",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Ui::Platform::TitleWidget",
+        "Ui::Platform::TitleControlsLayout::Create"
+      ],
+      "responsibilities": [
+        "Cross-platform activation/frame/title/control/hit-test/geometry/fullscreen/drag/resize/transient-parent/system-menu/shadow semantics through thin adapters."
+      ],
+      "existing_owner_candidates": [
+        "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters"
+      ],
+      "chosen_owner": "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters",
+      "production_path": [
+        "source/electron-main/window-chrome.ts",
+        "source/shared/window-chrome.ts",
+        "frontend/src/recovered/features/window-chrome/view.tsx",
+        "source/electron-main/platform-input.ts"
+      ],
+      "production_symbol": [
+        "windowChromeOptions",
+        "createWindowChromeEdgePort",
+        "attachWindowStateBroadcast",
+        "attachWindowFocusForwarding",
+        "WindowChrome"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/1e919f52b64b5f7deb6cfb8f1e81b8db42ea5a2a",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/platform/mac/ui_window_title_mac.mm",
+      "source_blob_sha": "1e919f52b64b5f7deb6cfb8f1e81b8db42ea5a2a",
+      "source_sha256": "29c0355d239e84899c3ed8c417daab36cdb2e416e64b79feffc0ad13697e15e9",
+      "upstream_owner": "ui/platform/mac/ui_window_title_mac.mm",
+      "responsibility": "Cross-platform activation/frame/title/control/hit-test/geometry/fullscreen/drag/resize/transient-parent/system-menu/shadow semantics through thin adapters.",
+      "fabushi_canonical_owner": "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing Electron BrowserWindow + canonical Window Chrome/platform adapters; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13092,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/platform/ui_platform_utility.h",
+        "type": "blob",
+        "object": "1b64291a560c0f7c1d7771fced780547e91863e1",
+        "size": 2419,
+        "sha256": "7662311d2f187e1a801ffe4db89d7c0198616117d1549e6a3ceafa186599f8fd",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Ui::Platform::IsApplicationActive",
+        "Ui::Platform::SetForeignTransientParent",
+        "Ui::Platform::ShowWindowMenu"
+      ],
+      "responsibilities": [
+        "Cross-platform activation/frame/title/control/hit-test/geometry/fullscreen/drag/resize/transient-parent/system-menu/shadow semantics through thin adapters."
+      ],
+      "existing_owner_candidates": [
+        "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters"
+      ],
+      "chosen_owner": "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters",
+      "production_path": [
+        "source/electron-main/window-chrome.ts",
+        "source/shared/window-chrome.ts",
+        "frontend/src/recovered/features/window-chrome/view.tsx",
+        "source/electron-main/platform-input.ts"
+      ],
+      "production_symbol": [
+        "windowChromeOptions",
+        "createWindowChromeEdgePort",
+        "attachWindowStateBroadcast",
+        "attachWindowFocusForwarding",
+        "WindowChrome"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/1b64291a560c0f7c1d7771fced780547e91863e1",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/platform/ui_platform_utility.h",
+      "source_blob_sha": "1b64291a560c0f7c1d7771fced780547e91863e1",
+      "source_sha256": "7662311d2f187e1a801ffe4db89d7c0198616117d1549e6a3ceafa186599f8fd",
+      "upstream_owner": "ui/platform/ui_platform_utility.h",
+      "responsibility": "Cross-platform activation/frame/title/control/hit-test/geometry/fullscreen/drag/resize/transient-parent/system-menu/shadow semantics through thin adapters.",
+      "fabushi_canonical_owner": "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing Electron BrowserWindow + canonical Window Chrome/platform adapters; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13093,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/platform/ui_platform_window.cpp",
+        "type": "blob",
+        "object": "6f9bc5aa20d2c1e6c59196d0332919c62bbee004",
+        "size": 19629,
+        "sha256": "c3348760368c6e819563956a109630f6139ba86c9bf7befae48f462e649d98fb",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Ui::Platform::BasicWindowHelper",
+        "Ui::Platform::DefaultWindowHelper"
+      ],
+      "responsibilities": [
+        "Cross-platform activation/frame/title/control/hit-test/geometry/fullscreen/drag/resize/transient-parent/system-menu/shadow semantics through thin adapters."
+      ],
+      "existing_owner_candidates": [
+        "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters"
+      ],
+      "chosen_owner": "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters",
+      "production_path": [
+        "source/electron-main/window-chrome.ts",
+        "source/shared/window-chrome.ts",
+        "frontend/src/recovered/features/window-chrome/view.tsx",
+        "source/electron-main/platform-input.ts"
+      ],
+      "production_symbol": [
+        "windowChromeOptions",
+        "createWindowChromeEdgePort",
+        "attachWindowStateBroadcast",
+        "attachWindowFocusForwarding",
+        "WindowChrome"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/6f9bc5aa20d2c1e6c59196d0332919c62bbee004",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/platform/ui_platform_window.cpp",
+      "source_blob_sha": "6f9bc5aa20d2c1e6c59196d0332919c62bbee004",
+      "source_sha256": "c3348760368c6e819563956a109630f6139ba86c9bf7befae48f462e649d98fb",
+      "upstream_owner": "ui/platform/ui_platform_window.cpp",
+      "responsibility": "Cross-platform activation/frame/title/control/hit-test/geometry/fullscreen/drag/resize/transient-parent/system-menu/shadow semantics through thin adapters.",
+      "fabushi_canonical_owner": "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing Electron BrowserWindow + canonical Window Chrome/platform adapters; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13094,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/platform/ui_platform_window.h",
+        "type": "blob",
+        "object": "b150ef1aded6b930dd4ffd1b2f227cb9b40a911d",
+        "size": 4814,
+        "sha256": "d851f0703359365f14bf6eb1bfa2e66451143dc3ff65ddb9cde38d8e4a8bebe4",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Ui::Platform::BasicWindowHelper",
+        "Ui::Platform::DefaultWindowHelper",
+        "Ui::Platform::FullScreenEvent"
+      ],
+      "responsibilities": [
+        "Cross-platform activation/frame/title/control/hit-test/geometry/fullscreen/drag/resize/transient-parent/system-menu/shadow semantics through thin adapters."
+      ],
+      "existing_owner_candidates": [
+        "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters"
+      ],
+      "chosen_owner": "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters",
+      "production_path": [
+        "source/electron-main/window-chrome.ts",
+        "source/shared/window-chrome.ts",
+        "frontend/src/recovered/features/window-chrome/view.tsx",
+        "source/electron-main/platform-input.ts"
+      ],
+      "production_symbol": [
+        "windowChromeOptions",
+        "createWindowChromeEdgePort",
+        "attachWindowStateBroadcast",
+        "attachWindowFocusForwarding",
+        "WindowChrome"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/b150ef1aded6b930dd4ffd1b2f227cb9b40a911d",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/platform/ui_platform_window.h",
+      "source_blob_sha": "b150ef1aded6b930dd4ffd1b2f227cb9b40a911d",
+      "source_sha256": "d851f0703359365f14bf6eb1bfa2e66451143dc3ff65ddb9cde38d8e4a8bebe4",
+      "upstream_owner": "ui/platform/ui_platform_window.h",
+      "responsibility": "Cross-platform activation/frame/title/control/hit-test/geometry/fullscreen/drag/resize/transient-parent/system-menu/shadow semantics through thin adapters.",
+      "fabushi_canonical_owner": "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing Electron BrowserWindow + canonical Window Chrome/platform adapters; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13095,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/platform/ui_platform_window_title.cpp",
+        "type": "blob",
+        "object": "a54b60cbd907856ac2fef7e400c6488d52be37a0",
+        "size": 14860,
+        "sha256": "8e8db5dcdbd2fb51b3eeb8c5558db05a6c49df3514bc20d294c4f6aab52b8b14",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Ui::Platform::TitleControls",
+        "Ui::Platform::DefaultTitleWidget"
+      ],
+      "responsibilities": [
+        "Cross-platform activation/frame/title/control/hit-test/geometry/fullscreen/drag/resize/transient-parent/system-menu/shadow semantics through thin adapters."
+      ],
+      "existing_owner_candidates": [
+        "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters"
+      ],
+      "chosen_owner": "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters",
+      "production_path": [
+        "source/electron-main/window-chrome.ts",
+        "source/shared/window-chrome.ts",
+        "frontend/src/recovered/features/window-chrome/view.tsx",
+        "source/electron-main/platform-input.ts"
+      ],
+      "production_symbol": [
+        "windowChromeOptions",
+        "createWindowChromeEdgePort",
+        "attachWindowStateBroadcast",
+        "attachWindowFocusForwarding",
+        "WindowChrome"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/a54b60cbd907856ac2fef7e400c6488d52be37a0",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/platform/ui_platform_window_title.cpp",
+      "source_blob_sha": "a54b60cbd907856ac2fef7e400c6488d52be37a0",
+      "source_sha256": "8e8db5dcdbd2fb51b3eeb8c5558db05a6c49df3514bc20d294c4f6aab52b8b14",
+      "upstream_owner": "ui/platform/ui_platform_window_title.cpp",
+      "responsibility": "Cross-platform activation/frame/title/control/hit-test/geometry/fullscreen/drag/resize/transient-parent/system-menu/shadow semantics through thin adapters.",
+      "fabushi_canonical_owner": "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing Electron BrowserWindow + canonical Window Chrome/platform adapters; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13096,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/platform/ui_platform_window_title.h",
+        "type": "blob",
+        "object": "616e568b2da21c17f7a10bd4f79f35fe181445a3",
+        "size": 6175,
+        "sha256": "34749670f33d5851941183f437b4496a69e64ae71622aa14cb109d08fc6f086e",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Ui::Platform::TitleControls",
+        "Ui::Platform::TitleControlsLayout",
+        "Ui::Platform::DefaultTitleWidget"
+      ],
+      "responsibilities": [
+        "Cross-platform activation/frame/title/control/hit-test/geometry/fullscreen/drag/resize/transient-parent/system-menu/shadow semantics through thin adapters."
+      ],
+      "existing_owner_candidates": [
+        "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters"
+      ],
+      "chosen_owner": "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters",
+      "production_path": [
+        "source/electron-main/window-chrome.ts",
+        "source/shared/window-chrome.ts",
+        "frontend/src/recovered/features/window-chrome/view.tsx",
+        "source/electron-main/platform-input.ts"
+      ],
+      "production_symbol": [
+        "windowChromeOptions",
+        "createWindowChromeEdgePort",
+        "attachWindowStateBroadcast",
+        "attachWindowFocusForwarding",
+        "WindowChrome"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/616e568b2da21c17f7a10bd4f79f35fe181445a3",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/platform/ui_platform_window_title.h",
+      "source_blob_sha": "616e568b2da21c17f7a10bd4f79f35fe181445a3",
+      "source_sha256": "34749670f33d5851941183f437b4496a69e64ae71622aa14cb109d08fc6f086e",
+      "upstream_owner": "ui/platform/ui_platform_window_title.h",
+      "responsibility": "Cross-platform activation/frame/title/control/hit-test/geometry/fullscreen/drag/resize/transient-parent/system-menu/shadow semantics through thin adapters.",
+      "fabushi_canonical_owner": "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing Electron BrowserWindow + canonical Window Chrome/platform adapters; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13097,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/platform/win/ui_utility_win.cpp",
+        "type": "blob",
+        "object": "769f74b4b712577b8a368d4520f438a01526664e",
+        "size": 3251,
+        "sha256": "047a285b0e80bc31e17b5e61ad755d9e9e1a51af0c9c3b712b736cad0ed0afa4",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Ui::Platform::IsApplicationActive",
+        "Ui::Platform::IgnoreAllActivation",
+        "Ui::Platform::ShowWindowMenu"
+      ],
+      "responsibilities": [
+        "Cross-platform activation/frame/title/control/hit-test/geometry/fullscreen/drag/resize/transient-parent/system-menu/shadow semantics through thin adapters."
+      ],
+      "existing_owner_candidates": [
+        "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters"
+      ],
+      "chosen_owner": "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters",
+      "production_path": [
+        "source/electron-main/window-chrome.ts",
+        "source/shared/window-chrome.ts",
+        "frontend/src/recovered/features/window-chrome/view.tsx",
+        "source/electron-main/platform-input.ts"
+      ],
+      "production_symbol": [
+        "windowChromeOptions",
+        "createWindowChromeEdgePort",
+        "attachWindowStateBroadcast",
+        "attachWindowFocusForwarding",
+        "WindowChrome"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/769f74b4b712577b8a368d4520f438a01526664e",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/platform/win/ui_utility_win.cpp",
+      "source_blob_sha": "769f74b4b712577b8a368d4520f438a01526664e",
+      "source_sha256": "047a285b0e80bc31e17b5e61ad755d9e9e1a51af0c9c3b712b736cad0ed0afa4",
+      "upstream_owner": "ui/platform/win/ui_utility_win.cpp",
+      "responsibility": "Cross-platform activation/frame/title/control/hit-test/geometry/fullscreen/drag/resize/transient-parent/system-menu/shadow semantics through thin adapters.",
+      "fabushi_canonical_owner": "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing Electron BrowserWindow + canonical Window Chrome/platform adapters; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13098,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/platform/win/ui_utility_win.h",
+        "type": "blob",
+        "object": "748e863308a3a87c798d76c64f75eec92e6a07e5",
+        "size": 1422,
+        "sha256": "8488dc45bab7933e44ce0620dcb745617bcfaa4194181d981b549a93432273e1",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Ui::Platform::NativeEventFilter"
+      ],
+      "responsibilities": [
+        "Cross-platform activation/frame/title/control/hit-test/geometry/fullscreen/drag/resize/transient-parent/system-menu/shadow semantics through thin adapters."
+      ],
+      "existing_owner_candidates": [
+        "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters"
+      ],
+      "chosen_owner": "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters",
+      "production_path": [
+        "source/electron-main/window-chrome.ts",
+        "source/shared/window-chrome.ts",
+        "frontend/src/recovered/features/window-chrome/view.tsx",
+        "source/electron-main/platform-input.ts"
+      ],
+      "production_symbol": [
+        "windowChromeOptions",
+        "createWindowChromeEdgePort",
+        "attachWindowStateBroadcast",
+        "attachWindowFocusForwarding",
+        "WindowChrome"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/748e863308a3a87c798d76c64f75eec92e6a07e5",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/platform/win/ui_utility_win.h",
+      "source_blob_sha": "748e863308a3a87c798d76c64f75eec92e6a07e5",
+      "source_sha256": "8488dc45bab7933e44ce0620dcb745617bcfaa4194181d981b549a93432273e1",
+      "upstream_owner": "ui/platform/win/ui_utility_win.h",
+      "responsibility": "Cross-platform activation/frame/title/control/hit-test/geometry/fullscreen/drag/resize/transient-parent/system-menu/shadow semantics through thin adapters.",
+      "fabushi_canonical_owner": "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing Electron BrowserWindow + canonical Window Chrome/platform adapters; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13099,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/platform/win/ui_window_shadow_win.cpp",
+        "type": "blob",
+        "object": "fe561f71135620677c2ae209eec5c329fbc7c48e",
+        "size": 17831,
+        "sha256": "88ae39dc6ecd4dc94dd56d487939a467be981c624d28e4ad567bf43ebf75f147",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Ui::Platform::WindowShadow"
+      ],
+      "responsibilities": [
+        "Cross-platform activation/frame/title/control/hit-test/geometry/fullscreen/drag/resize/transient-parent/system-menu/shadow semantics through thin adapters."
+      ],
+      "existing_owner_candidates": [
+        "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters"
+      ],
+      "chosen_owner": "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters",
+      "production_path": [
+        "source/electron-main/window-chrome.ts",
+        "source/shared/window-chrome.ts",
+        "frontend/src/recovered/features/window-chrome/view.tsx",
+        "source/electron-main/platform-input.ts"
+      ],
+      "production_symbol": [
+        "windowChromeOptions",
+        "createWindowChromeEdgePort",
+        "attachWindowStateBroadcast",
+        "attachWindowFocusForwarding",
+        "WindowChrome"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/fe561f71135620677c2ae209eec5c329fbc7c48e",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/platform/win/ui_window_shadow_win.cpp",
+      "source_blob_sha": "fe561f71135620677c2ae209eec5c329fbc7c48e",
+      "source_sha256": "88ae39dc6ecd4dc94dd56d487939a467be981c624d28e4ad567bf43ebf75f147",
+      "upstream_owner": "ui/platform/win/ui_window_shadow_win.cpp",
+      "responsibility": "Cross-platform activation/frame/title/control/hit-test/geometry/fullscreen/drag/resize/transient-parent/system-menu/shadow semantics through thin adapters.",
+      "fabushi_canonical_owner": "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing Electron BrowserWindow + canonical Window Chrome/platform adapters; read/decomposition complete, unknown_closed=false."
+    },
+    {
+      "recursive_order": 13100,
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/platform/win/ui_window_shadow_win.h",
+        "type": "blob",
+        "object": "5ae4fbcd0c10eb91a32dda166e25409e168915fe",
+        "size": 2581,
+        "sha256": "ac3e7d5bf1dd920bf1798df8b1f5cd753980dbd265bfe81bef1cec074fee98e0",
+        "scope": "direct-gitlink",
+        "mode": "100644"
+      },
+      "source_symbols": [
+        "Ui::Platform::WindowShadow"
+      ],
+      "responsibilities": [
+        "Cross-platform activation/frame/title/control/hit-test/geometry/fullscreen/drag/resize/transient-parent/system-menu/shadow semantics through thin adapters."
+      ],
+      "existing_owner_candidates": [
+        "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters"
+      ],
+      "chosen_owner": "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters",
+      "production_path": [
+        "source/electron-main/window-chrome.ts",
+        "source/shared/window-chrome.ts",
+        "frontend/src/recovered/features/window-chrome/view.tsx",
+        "source/electron-main/platform-input.ts"
+      ],
+      "production_symbol": [
+        "windowChromeOptions",
+        "createWindowChromeEdgePort",
+        "attachWindowStateBroadcast",
+        "attachWindowFocusForwarding",
+        "WindowChrome"
+      ],
+      "tests": [
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "Desktop Chat Parity 38193879944",
+        "Rust desktop runtime 38193879974"
+      ],
+      "current_head_evidence": [
+        "8078202c/5ae4fbcd0c10eb91a32dda166e25409e168915fe",
+        "38193879974/114632283461/artifact-11722831694",
+        "38193879974/114632282963=success",
+        "38193879944/114632257554=success"
+      ],
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "disposition": "mapped-open",
+      "source_path": "Telegram/lib_ui::ui/platform/win/ui_window_shadow_win.h",
+      "source_blob_sha": "5ae4fbcd0c10eb91a32dda166e25409e168915fe",
+      "source_sha256": "ac3e7d5bf1dd920bf1798df8b1f5cd753980dbd265bfe81bef1cec074fee98e0",
+      "upstream_owner": "ui/platform/win/ui_window_shadow_win.h",
+      "responsibility": "Cross-platform activation/frame/title/control/hit-test/geometry/fullscreen/drag/resize/transient-parent/system-menu/shadow semantics through thin adapters.",
+      "fabushi_canonical_owner": "Existing Electron BrowserWindow + canonical Window Chrome/platform adapters",
+      "fabushi_target": "Existing-owner-first mapped-open to Existing Electron BrowserWindow + canonical Window Chrome/platform adapters; read/decomposition complete, unknown_closed=false."
+    }
+  ]
+}

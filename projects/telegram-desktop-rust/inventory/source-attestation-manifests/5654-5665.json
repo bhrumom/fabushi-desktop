@@ -1,0 +1,81 @@
+{
+  "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+  "accepted_tree": "4ddb5182fc1ae238e4dc62a396614614b5b35f97",
+  "deterministic_order_basis": "non-directory/blob rank in accepted recursive tree",
+  "start": 5654,
+  "end": 5665,
+  "entries": [
+    {
+      "order": 5654,
+      "path": "Telegram/SourceFiles/statistics/chart_lines_filter_controller.cpp",
+      "blob": "40c3b6129b19233da1dc4b17162f8b92b581a225",
+      "consumer_symbol": "chart_lines_filter_controller.cpp"
+    },
+    {
+      "order": 5655,
+      "path": "Telegram/SourceFiles/statistics/chart_lines_filter_controller.h",
+      "blob": "417cb23f357fb23ed483aeb82828fe5412e44cb6",
+      "consumer_symbol": "chart_lines_filter_controller.h"
+    },
+    {
+      "order": 5656,
+      "path": "Telegram/SourceFiles/statistics/chart_rulers_data.cpp",
+      "blob": "c559a23684fbf24d25933aa928b28416dbe5de86",
+      "consumer_symbol": "chart_rulers_data.cpp"
+    },
+    {
+      "order": 5657,
+      "path": "Telegram/SourceFiles/statistics/chart_rulers_data.h",
+      "blob": "fef960c350b47312abae37e562100e1737fbe094",
+      "consumer_symbol": "chart_rulers_data.h"
+    },
+    {
+      "order": 5658,
+      "path": "Telegram/SourceFiles/statistics/chart_widget.cpp",
+      "blob": "600299e1683fbd100299835dd7ef107ba841205d",
+      "consumer_symbol": "chart_widget.cpp"
+    },
+    {
+      "order": 5659,
+      "path": "Telegram/SourceFiles/statistics/chart_widget.h",
+      "blob": "488628a584f90576a0be5f480b4655c059140a54",
+      "consumer_symbol": "chart_widget.h"
+    },
+    {
+      "order": 5660,
+      "path": "Telegram/SourceFiles/statistics/segment_tree.cpp",
+      "blob": "51c2082ed608c209eadeb833648571221bcc22e1",
+      "consumer_symbol": "segment_tree.cpp"
+    },
+    {
+      "order": 5661,
+      "path": "Telegram/SourceFiles/statistics/segment_tree.h",
+      "blob": "f83b16dd4f129d176af56284ec9543da9cbb7f73",
+      "consumer_symbol": "segment_tree.h"
+    },
+    {
+      "order": 5662,
+      "path": "Telegram/SourceFiles/statistics/statistics.style",
+      "blob": "97b2180d27617d3fc64985ab9db520b4c8899778",
+      "consumer_symbol": "statistics.style"
+    },
+    {
+      "order": 5663,
+      "path": "Telegram/SourceFiles/statistics/statistics_common.h",
+      "blob": "68e50d8d81176a20d75ce6af02309bdca88686fa",
+      "consumer_symbol": "statistics_common.h"
+    },
+    {
+      "order": 5664,
+      "path": "Telegram/SourceFiles/statistics/statistics_data_deserialize.cpp",
+      "blob": "3eb91bbef791d7b4edbf21dbc6234dacd2f38f5c",
+      "consumer_symbol": "statistics_data_deserialize.cpp"
+    },
+    {
+      "order": 5665,
+      "path": "Telegram/SourceFiles/statistics/statistics_data_deserialize.h",
+      "blob": "8e04b70a7f877478b24936b1c8930fb98cd8791c",
+      "consumer_symbol": "statistics_data_deserialize.h"
+    }
+  ]
+}

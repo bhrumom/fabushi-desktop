@@ -1,0 +1,45 @@
+{
+  "accepted_upstream": "b0d1fe5e08c963402b8b71648c70a2bf68e6fab2",
+  "accepted_tree": "e279373aec283ebfcc6e3bb7385e51205acd84a2",
+  "deterministic_order_basis": "non-directory/blob rank in accepted recursive tree",
+  "start": 5825,
+  "end": 5830,
+  "entries": [
+    {
+      "order": 5825,
+      "path": "Telegram/SourceFiles/test/test_style.cpp",
+      "blob": "9fe31e6e846bb3546ee5d1a8c9a4afeab8c26bdd",
+      "consumer_symbol": "StyleSettled"
+    },
+    {
+      "order": 5826,
+      "path": "Telegram/SourceFiles/test/test_style.h",
+      "blob": "f91c2d37fc724ea0510ad8076895df7f0d129e8d",
+      "consumer_symbol": "StyleBaseline"
+    },
+    {
+      "order": 5827,
+      "path": "Telegram/SourceFiles/test/test_text_drop.cpp",
+      "blob": "2a2e7b3203c1abe1974a3a028e25cfd789b53aca",
+      "consumer_symbol": "AppendTextDropSelfTest"
+    },
+    {
+      "order": 5828,
+      "path": "Telegram/SourceFiles/test/test_text_drop.h",
+      "blob": "cfaf2583c013471bf86cbcfe5429b69119699d73",
+      "consumer_symbol": "AppendTextDropSelfTest"
+    },
+    {
+      "order": 5829,
+      "path": "Telegram/SourceFiles/test/test_text_reads.cpp",
+      "blob": "ad5922e3e84af6a92c6628f7eb342e6054a0b5df",
+      "consumer_symbol": "CheckTextReads"
+    },
+    {
+      "order": 5830,
+      "path": "Telegram/SourceFiles/test/test_text_reads.h",
+      "blob": "417a9478fa2a00bcf76b2662be4da87dc6515d28",
+      "consumer_symbol": "NormalizeSpaces"
+    }
+  ]
+}

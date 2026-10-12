@@ -1,0 +1,68 @@
+{
+  "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+  "start": 5331,
+  "end": 5340,
+  "entries": [
+    {
+      "order": 5331,
+      "path": "Telegram/SourceFiles/passport/ui/passport_form_row.cpp",
+      "blob": "ca76b4095675bfcda7e5a4cf15f39bca263fe68f",
+      "consumer_symbol": "Passport::Ui::FormRow"
+    },
+    {
+      "order": 5332,
+      "path": "Telegram/SourceFiles/passport/ui/passport_form_row.h",
+      "blob": "2778df2048e3a01a1fd696b30d914c26d51a7163",
+      "consumer_symbol": "Passport::Ui::FormRow contract"
+    },
+    {
+      "order": 5333,
+      "path": "Telegram/SourceFiles/payments/payments_checkout_process.cpp",
+      "blob": "cfa02cf756fe35be4e17a3545780fcd1a59e7d98",
+      "consumer_symbol": "Payments::CheckoutProcess"
+    },
+    {
+      "order": 5334,
+      "path": "Telegram/SourceFiles/payments/payments_checkout_process.h",
+      "blob": "fe10b2c0fab4d91dd70195d57da6602f4bd6e1ee",
+      "consumer_symbol": "Payments::CheckoutProcess contract"
+    },
+    {
+      "order": 5335,
+      "path": "Telegram/SourceFiles/payments/payments_form.cpp",
+      "blob": "50b22888d6a4c7f92a5158d9bcf1922528690d41",
+      "consumer_symbol": "Payments::Form"
+    },
+    {
+      "order": 5336,
+      "path": "Telegram/SourceFiles/payments/payments_form.h",
+      "blob": "1fc35c61a7734291c59c5b1e503a8591ed59e582",
+      "consumer_symbol": "Payments::Form contract"
+    },
+    {
+      "order": 5337,
+      "path": "Telegram/SourceFiles/payments/payments_non_panel_process.cpp",
+      "blob": "e9c8cf62562e68ae8574acff63060b3056551baf",
+      "consumer_symbol": "Payments::ProcessCreditsPayment / ProcessCreditsReceipt"
+    },
+    {
+      "order": 5338,
+      "path": "Telegram/SourceFiles/payments/payments_non_panel_process.h",
+      "blob": "3b323d37e976524b73320af11cccbf4adee74b97",
+      "consumer_symbol": "Payments non-panel contract"
+    },
+    {
+      "order": 5339,
+      "path": "Telegram/SourceFiles/payments/payments_reaction_process.cpp",
+      "blob": "d9a2cd5408dac1521af44601e9a0807d7e6fcc2b",
+      "consumer_symbol": "Payments::TryAddingPaidReaction / ShowPaidReactionDetails"
+    },
+    {
+      "order": 5340,
+      "path": "Telegram/SourceFiles/payments/payments_reaction_process.h",
+      "blob": "1071b0dfbbba814266c31527a8296fdaaa051b43",
+      "consumer_symbol": "Payments paid-reaction contract"
+    }
+  ],
+  "accepted_tree": "4ddb5182fc1ae238e4dc62a396614614b5b35f97"
+}

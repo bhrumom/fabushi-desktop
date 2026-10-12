@@ -1,0 +1,4076 @@
+{
+  "format_version": 2,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+    "tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6"
+  },
+  "exact_head_evidence": {
+    "source_repository": "desktop-app/lib_ui",
+    "source_commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+    "production_owner_audit_head": "7d1fcf83444040521a01d97a3e1bd2570522d222",
+    "parent_source_authority_run": 38195100566,
+    "parent_source_authority_job": 114635964356,
+    "evidence_status": "direct source read/decomposition complete; accounting descendant exact-head Actions required before this shard can validate current-head closure"
+  },
+  "accounting": {
+    "recursive_total": 16125,
+    "read_through": 13228,
+    "unread": 2897,
+    "unknown": 15845,
+    "omitted": 0,
+    "unknown_closed": 280
+  },
+  "range": {
+    "first_order": 13165,
+    "last_order": 13228,
+    "entries": 64,
+    "next_order": 13229
+  },
+  "rows": [
+    {
+      "recursive_order": 13165,
+      "source_path": "Telegram/lib_ui::ui/text/text_isolated_emoji.h",
+      "source_blob_sha": "54707e74b02abe39d5ef0df68a7cb6186c86404a",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/text/text_isolated_emoji.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "54707e74b02abe39d5ef0df68a7cb6186c86404a",
+        "size": 1554
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::Text::IsolatedEmoji"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/text/text_isolated_emoji.h",
+      "responsibility": "Unicode/bidi/shaping/entity/link/selection/quote/spoiler/custom-emoji/copy and safe rich-text behavior in the canonical Message/Transcript/Composer model.",
+      "responsibilities": [
+        "Unicode/bidi/shaping/entity/link/selection/quote/spoiler/custom-emoji/copy and safe rich-text behavior in the canonical Message/Transcript/Composer model."
+      ],
+      "existing_owner_candidates": [
+        "Message/Transcript rich-text projection",
+        "Composer rich editor",
+        "external URL policy",
+        "emoji/resource owner"
+      ],
+      "chosen_owner": "Existing canonical Message/Transcript/Composer rich-text + URL/Resource owners",
+      "fabushi_canonical_owner": "Existing canonical Message/Transcript/Composer rich-text + URL/Resource owners",
+      "fabushi_target": "frontend/src/recovered/features/conversation/workspace/transcript.tsx, frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx, source/shared/external-url-policy.ts, frontend/src/recovered/features/conversation/cards/transcript-card/emoji-catalog.ts",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "source/shared/external-url-policy.ts",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/emoji-catalog.ts"
+      ],
+      "fabushi_target_symbols": [
+        "Transcript",
+        "RichTextEditor",
+        "normalizeExternalUrl",
+        "EMOJI_CATALOG"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "source/shared/external-url-policy.ts",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/emoji-catalog.ts"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:54707e74b02abe39d5ef0df68a7cb6186c86404a",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13166,
+      "source_path": "Telegram/lib_ui::ui/text/text_renderer.cpp",
+      "source_blob_sha": "a577612109be962fdba45a24f24fbbd7d501e249",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/text/text_renderer.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "a577612109be962fdba45a24f24fbbd7d501e249",
+        "size": 55212
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::Text::Renderer"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/text/text_renderer.cpp",
+      "responsibility": "Unicode/bidi/shaping/entity/link/selection/quote/spoiler/custom-emoji/copy and safe rich-text behavior in the canonical Message/Transcript/Composer model.",
+      "responsibilities": [
+        "Unicode/bidi/shaping/entity/link/selection/quote/spoiler/custom-emoji/copy and safe rich-text behavior in the canonical Message/Transcript/Composer model."
+      ],
+      "existing_owner_candidates": [
+        "Message/Transcript rich-text projection",
+        "Composer rich editor",
+        "external URL policy",
+        "emoji/resource owner"
+      ],
+      "chosen_owner": "Existing canonical Message/Transcript/Composer rich-text + URL/Resource owners",
+      "fabushi_canonical_owner": "Existing canonical Message/Transcript/Composer rich-text + URL/Resource owners",
+      "fabushi_target": "frontend/src/recovered/features/conversation/workspace/transcript.tsx, frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx, source/shared/external-url-policy.ts, frontend/src/recovered/features/conversation/cards/transcript-card/emoji-catalog.ts",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "source/shared/external-url-policy.ts",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/emoji-catalog.ts"
+      ],
+      "fabushi_target_symbols": [
+        "Transcript",
+        "RichTextEditor",
+        "normalizeExternalUrl",
+        "EMOJI_CATALOG"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "source/shared/external-url-policy.ts",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/emoji-catalog.ts"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:a577612109be962fdba45a24f24fbbd7d501e249",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13167,
+      "source_path": "Telegram/lib_ui::ui/text/text_renderer.h",
+      "source_blob_sha": "6243d02cdd7ee37363944c683550d5f1efcbb997",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/text/text_renderer.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "6243d02cdd7ee37363944c683550d5f1efcbb997",
+        "size": 6112
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::Text::Renderer"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/text/text_renderer.h",
+      "responsibility": "Unicode/bidi/shaping/entity/link/selection/quote/spoiler/custom-emoji/copy and safe rich-text behavior in the canonical Message/Transcript/Composer model.",
+      "responsibilities": [
+        "Unicode/bidi/shaping/entity/link/selection/quote/spoiler/custom-emoji/copy and safe rich-text behavior in the canonical Message/Transcript/Composer model."
+      ],
+      "existing_owner_candidates": [
+        "Message/Transcript rich-text projection",
+        "Composer rich editor",
+        "external URL policy",
+        "emoji/resource owner"
+      ],
+      "chosen_owner": "Existing canonical Message/Transcript/Composer rich-text + URL/Resource owners",
+      "fabushi_canonical_owner": "Existing canonical Message/Transcript/Composer rich-text + URL/Resource owners",
+      "fabushi_target": "frontend/src/recovered/features/conversation/workspace/transcript.tsx, frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx, source/shared/external-url-policy.ts, frontend/src/recovered/features/conversation/cards/transcript-card/emoji-catalog.ts",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "source/shared/external-url-policy.ts",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/emoji-catalog.ts"
+      ],
+      "fabushi_target_symbols": [
+        "Transcript",
+        "RichTextEditor",
+        "normalizeExternalUrl",
+        "EMOJI_CATALOG"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "source/shared/external-url-policy.ts",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/emoji-catalog.ts"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:6243d02cdd7ee37363944c683550d5f1efcbb997",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13168,
+      "source_path": "Telegram/lib_ui::ui/text/text_shaper.h",
+      "source_blob_sha": "5ac3c1901cf2518be4554cedc19c6f3628a8490f",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/text/text_shaper.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "5ac3c1901cf2518be4554cedc19c6f3628a8490f",
+        "size": 5895
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::Text::Shape"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/text/text_shaper.h",
+      "responsibility": "Unicode/bidi/shaping/entity/link/selection/quote/spoiler/custom-emoji/copy and safe rich-text behavior in the canonical Message/Transcript/Composer model.",
+      "responsibilities": [
+        "Unicode/bidi/shaping/entity/link/selection/quote/spoiler/custom-emoji/copy and safe rich-text behavior in the canonical Message/Transcript/Composer model."
+      ],
+      "existing_owner_candidates": [
+        "Message/Transcript rich-text projection",
+        "Composer rich editor",
+        "external URL policy",
+        "emoji/resource owner"
+      ],
+      "chosen_owner": "Existing canonical Message/Transcript/Composer rich-text + URL/Resource owners",
+      "fabushi_canonical_owner": "Existing canonical Message/Transcript/Composer rich-text + URL/Resource owners",
+      "fabushi_target": "frontend/src/recovered/features/conversation/workspace/transcript.tsx, frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx, source/shared/external-url-policy.ts, frontend/src/recovered/features/conversation/cards/transcript-card/emoji-catalog.ts",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "source/shared/external-url-policy.ts",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/emoji-catalog.ts"
+      ],
+      "fabushi_target_symbols": [
+        "Transcript",
+        "RichTextEditor",
+        "normalizeExternalUrl",
+        "EMOJI_CATALOG"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "source/shared/external-url-policy.ts",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/emoji-catalog.ts"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:5ac3c1901cf2518be4554cedc19c6f3628a8490f",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13169,
+      "source_path": "Telegram/lib_ui::ui/text/text_shaper_pango.cpp",
+      "source_blob_sha": "734f87020c47330f5c3d90bffb250effc77bf269",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/text/text_shaper_pango.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "734f87020c47330f5c3d90bffb250effc77bf269",
+        "size": 82617
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::Text::Shape"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/text/text_shaper_pango.cpp",
+      "responsibility": "Unicode/bidi/shaping/entity/link/selection/quote/spoiler/custom-emoji/copy and safe rich-text behavior in the canonical Message/Transcript/Composer model.",
+      "responsibilities": [
+        "Unicode/bidi/shaping/entity/link/selection/quote/spoiler/custom-emoji/copy and safe rich-text behavior in the canonical Message/Transcript/Composer model."
+      ],
+      "existing_owner_candidates": [
+        "Message/Transcript rich-text projection",
+        "Composer rich editor",
+        "external URL policy",
+        "emoji/resource owner"
+      ],
+      "chosen_owner": "Existing canonical Message/Transcript/Composer rich-text + URL/Resource owners",
+      "fabushi_canonical_owner": "Existing canonical Message/Transcript/Composer rich-text + URL/Resource owners",
+      "fabushi_target": "frontend/src/recovered/features/conversation/workspace/transcript.tsx, frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx, source/shared/external-url-policy.ts, frontend/src/recovered/features/conversation/cards/transcript-card/emoji-catalog.ts",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "source/shared/external-url-policy.ts",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/emoji-catalog.ts"
+      ],
+      "fabushi_target_symbols": [
+        "Transcript",
+        "RichTextEditor",
+        "normalizeExternalUrl",
+        "EMOJI_CATALOG"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "source/shared/external-url-policy.ts",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/emoji-catalog.ts"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:734f87020c47330f5c3d90bffb250effc77bf269",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13170,
+      "source_path": "Telegram/lib_ui::ui/text/text_shaper_qt.cpp",
+      "source_blob_sha": "d61e798d8662272e4817a54aa5e92204f3a6af4f",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/text/text_shaper_qt.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "d61e798d8662272e4817a54aa5e92204f3a6af4f",
+        "size": 15086
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::Text::Shape"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/text/text_shaper_qt.cpp",
+      "responsibility": "Unicode/bidi/shaping/entity/link/selection/quote/spoiler/custom-emoji/copy and safe rich-text behavior in the canonical Message/Transcript/Composer model.",
+      "responsibilities": [
+        "Unicode/bidi/shaping/entity/link/selection/quote/spoiler/custom-emoji/copy and safe rich-text behavior in the canonical Message/Transcript/Composer model."
+      ],
+      "existing_owner_candidates": [
+        "Message/Transcript rich-text projection",
+        "Composer rich editor",
+        "external URL policy",
+        "emoji/resource owner"
+      ],
+      "chosen_owner": "Existing canonical Message/Transcript/Composer rich-text + URL/Resource owners",
+      "fabushi_canonical_owner": "Existing canonical Message/Transcript/Composer rich-text + URL/Resource owners",
+      "fabushi_target": "frontend/src/recovered/features/conversation/workspace/transcript.tsx, frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx, source/shared/external-url-policy.ts, frontend/src/recovered/features/conversation/cards/transcript-card/emoji-catalog.ts",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "source/shared/external-url-policy.ts",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/emoji-catalog.ts"
+      ],
+      "fabushi_target_symbols": [
+        "Transcript",
+        "RichTextEditor",
+        "normalizeExternalUrl",
+        "EMOJI_CATALOG"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "source/shared/external-url-policy.ts",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/emoji-catalog.ts"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:d61e798d8662272e4817a54aa5e92204f3a6af4f",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13171,
+      "source_path": "Telegram/lib_ui::ui/text/text_stack_engine.cpp",
+      "source_blob_sha": "e50527163697ccf0a0e0899a5f51934da9e87622",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/text/text_stack_engine.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "e50527163697ccf0a0e0899a5f51934da9e87622",
+        "size": 7927
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::Text::StackEngine"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/text/text_stack_engine.cpp",
+      "responsibility": "Unicode/bidi/shaping/entity/link/selection/quote/spoiler/custom-emoji/copy and safe rich-text behavior in the canonical Message/Transcript/Composer model.",
+      "responsibilities": [
+        "Unicode/bidi/shaping/entity/link/selection/quote/spoiler/custom-emoji/copy and safe rich-text behavior in the canonical Message/Transcript/Composer model."
+      ],
+      "existing_owner_candidates": [
+        "Message/Transcript rich-text projection",
+        "Composer rich editor",
+        "external URL policy",
+        "emoji/resource owner"
+      ],
+      "chosen_owner": "Existing canonical Message/Transcript/Composer rich-text + URL/Resource owners",
+      "fabushi_canonical_owner": "Existing canonical Message/Transcript/Composer rich-text + URL/Resource owners",
+      "fabushi_target": "frontend/src/recovered/features/conversation/workspace/transcript.tsx, frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx, source/shared/external-url-policy.ts, frontend/src/recovered/features/conversation/cards/transcript-card/emoji-catalog.ts",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "source/shared/external-url-policy.ts",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/emoji-catalog.ts"
+      ],
+      "fabushi_target_symbols": [
+        "Transcript",
+        "RichTextEditor",
+        "normalizeExternalUrl",
+        "EMOJI_CATALOG"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "source/shared/external-url-policy.ts",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/emoji-catalog.ts"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:e50527163697ccf0a0e0899a5f51934da9e87622",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13172,
+      "source_path": "Telegram/lib_ui::ui/text/text_stack_engine.h",
+      "source_blob_sha": "778a9ea14bb7b80244b4291387ff4c28d0e17e2d",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/text/text_stack_engine.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "778a9ea14bb7b80244b4291387ff4c28d0e17e2d",
+        "size": 1609
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::Text::StackEngine"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/text/text_stack_engine.h",
+      "responsibility": "Unicode/bidi/shaping/entity/link/selection/quote/spoiler/custom-emoji/copy and safe rich-text behavior in the canonical Message/Transcript/Composer model.",
+      "responsibilities": [
+        "Unicode/bidi/shaping/entity/link/selection/quote/spoiler/custom-emoji/copy and safe rich-text behavior in the canonical Message/Transcript/Composer model."
+      ],
+      "existing_owner_candidates": [
+        "Message/Transcript rich-text projection",
+        "Composer rich editor",
+        "external URL policy",
+        "emoji/resource owner"
+      ],
+      "chosen_owner": "Existing canonical Message/Transcript/Composer rich-text + URL/Resource owners",
+      "fabushi_canonical_owner": "Existing canonical Message/Transcript/Composer rich-text + URL/Resource owners",
+      "fabushi_target": "frontend/src/recovered/features/conversation/workspace/transcript.tsx, frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx, source/shared/external-url-policy.ts, frontend/src/recovered/features/conversation/cards/transcript-card/emoji-catalog.ts",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "source/shared/external-url-policy.ts",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/emoji-catalog.ts"
+      ],
+      "fabushi_target_symbols": [
+        "Transcript",
+        "RichTextEditor",
+        "normalizeExternalUrl",
+        "EMOJI_CATALOG"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "source/shared/external-url-policy.ts",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/emoji-catalog.ts"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:778a9ea14bb7b80244b4291387ff4c28d0e17e2d",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13173,
+      "source_path": "Telegram/lib_ui::ui/text/text_utilities.cpp",
+      "source_blob_sha": "da33345d0ac8ebee94b97e1034b51af54dd10e89",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/text/text_utilities.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "da33345d0ac8ebee94b97e1034b51af54dd10e89",
+        "size": 8328
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::Text::Utilities"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/text/text_utilities.cpp",
+      "responsibility": "Unicode/bidi/shaping/entity/link/selection/quote/spoiler/custom-emoji/copy and safe rich-text behavior in the canonical Message/Transcript/Composer model.",
+      "responsibilities": [
+        "Unicode/bidi/shaping/entity/link/selection/quote/spoiler/custom-emoji/copy and safe rich-text behavior in the canonical Message/Transcript/Composer model."
+      ],
+      "existing_owner_candidates": [
+        "Message/Transcript rich-text projection",
+        "Composer rich editor",
+        "external URL policy",
+        "emoji/resource owner"
+      ],
+      "chosen_owner": "Existing canonical Message/Transcript/Composer rich-text + URL/Resource owners",
+      "fabushi_canonical_owner": "Existing canonical Message/Transcript/Composer rich-text + URL/Resource owners",
+      "fabushi_target": "frontend/src/recovered/features/conversation/workspace/transcript.tsx, frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx, source/shared/external-url-policy.ts, frontend/src/recovered/features/conversation/cards/transcript-card/emoji-catalog.ts",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "source/shared/external-url-policy.ts",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/emoji-catalog.ts"
+      ],
+      "fabushi_target_symbols": [
+        "Transcript",
+        "RichTextEditor",
+        "normalizeExternalUrl",
+        "EMOJI_CATALOG"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "source/shared/external-url-policy.ts",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/emoji-catalog.ts"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:da33345d0ac8ebee94b97e1034b51af54dd10e89",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13174,
+      "source_path": "Telegram/lib_ui::ui/text/text_utilities.h",
+      "source_blob_sha": "ce0777baf579845b4ea8cef72994e49ce32bb781",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/text/text_utilities.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "ce0777baf579845b4ea8cef72994e49ce32bb781",
+        "size": 2312
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::Text::Utilities"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/text/text_utilities.h",
+      "responsibility": "Unicode/bidi/shaping/entity/link/selection/quote/spoiler/custom-emoji/copy and safe rich-text behavior in the canonical Message/Transcript/Composer model.",
+      "responsibilities": [
+        "Unicode/bidi/shaping/entity/link/selection/quote/spoiler/custom-emoji/copy and safe rich-text behavior in the canonical Message/Transcript/Composer model."
+      ],
+      "existing_owner_candidates": [
+        "Message/Transcript rich-text projection",
+        "Composer rich editor",
+        "external URL policy",
+        "emoji/resource owner"
+      ],
+      "chosen_owner": "Existing canonical Message/Transcript/Composer rich-text + URL/Resource owners",
+      "fabushi_canonical_owner": "Existing canonical Message/Transcript/Composer rich-text + URL/Resource owners",
+      "fabushi_target": "frontend/src/recovered/features/conversation/workspace/transcript.tsx, frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx, source/shared/external-url-policy.ts, frontend/src/recovered/features/conversation/cards/transcript-card/emoji-catalog.ts",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "source/shared/external-url-policy.ts",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/emoji-catalog.ts"
+      ],
+      "fabushi_target_symbols": [
+        "Transcript",
+        "RichTextEditor",
+        "normalizeExternalUrl",
+        "EMOJI_CATALOG"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "source/shared/external-url-policy.ts",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/emoji-catalog.ts"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:ce0777baf579845b4ea8cef72994e49ce32bb781",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13175,
+      "source_path": "Telegram/lib_ui::ui/text/text_variant.cpp",
+      "source_blob_sha": "5a71950e09676d345069c3e97bde7ff036bee37a",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/text/text_variant.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "5a71950e09676d345069c3e97bde7ff036bee37a",
+        "size": 1900
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::Text::Variant"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/text/text_variant.cpp",
+      "responsibility": "Unicode/bidi/shaping/entity/link/selection/quote/spoiler/custom-emoji/copy and safe rich-text behavior in the canonical Message/Transcript/Composer model.",
+      "responsibilities": [
+        "Unicode/bidi/shaping/entity/link/selection/quote/spoiler/custom-emoji/copy and safe rich-text behavior in the canonical Message/Transcript/Composer model."
+      ],
+      "existing_owner_candidates": [
+        "Message/Transcript rich-text projection",
+        "Composer rich editor",
+        "external URL policy",
+        "emoji/resource owner"
+      ],
+      "chosen_owner": "Existing canonical Message/Transcript/Composer rich-text + URL/Resource owners",
+      "fabushi_canonical_owner": "Existing canonical Message/Transcript/Composer rich-text + URL/Resource owners",
+      "fabushi_target": "frontend/src/recovered/features/conversation/workspace/transcript.tsx, frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx, source/shared/external-url-policy.ts, frontend/src/recovered/features/conversation/cards/transcript-card/emoji-catalog.ts",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "source/shared/external-url-policy.ts",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/emoji-catalog.ts"
+      ],
+      "fabushi_target_symbols": [
+        "Transcript",
+        "RichTextEditor",
+        "normalizeExternalUrl",
+        "EMOJI_CATALOG"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "source/shared/external-url-policy.ts",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/emoji-catalog.ts"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:5a71950e09676d345069c3e97bde7ff036bee37a",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13176,
+      "source_path": "Telegram/lib_ui::ui/text/text_variant.h",
+      "source_blob_sha": "048d34bfe5f5fe11cfd4da1d0aabe494092da805",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/text/text_variant.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "048d34bfe5f5fe11cfd4da1d0aabe494092da805",
+        "size": 822
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::Text::Variant"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/text/text_variant.h",
+      "responsibility": "Unicode/bidi/shaping/entity/link/selection/quote/spoiler/custom-emoji/copy and safe rich-text behavior in the canonical Message/Transcript/Composer model.",
+      "responsibilities": [
+        "Unicode/bidi/shaping/entity/link/selection/quote/spoiler/custom-emoji/copy and safe rich-text behavior in the canonical Message/Transcript/Composer model."
+      ],
+      "existing_owner_candidates": [
+        "Message/Transcript rich-text projection",
+        "Composer rich editor",
+        "external URL policy",
+        "emoji/resource owner"
+      ],
+      "chosen_owner": "Existing canonical Message/Transcript/Composer rich-text + URL/Resource owners",
+      "fabushi_canonical_owner": "Existing canonical Message/Transcript/Composer rich-text + URL/Resource owners",
+      "fabushi_target": "frontend/src/recovered/features/conversation/workspace/transcript.tsx, frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx, source/shared/external-url-policy.ts, frontend/src/recovered/features/conversation/cards/transcript-card/emoji-catalog.ts",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "source/shared/external-url-policy.ts",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/emoji-catalog.ts"
+      ],
+      "fabushi_target_symbols": [
+        "Transcript",
+        "RichTextEditor",
+        "normalizeExternalUrl",
+        "EMOJI_CATALOG"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "source/shared/external-url-policy.ts",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/emoji-catalog.ts"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:048d34bfe5f5fe11cfd4da1d0aabe494092da805",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13177,
+      "source_path": "Telegram/lib_ui::ui/text/text_word.h",
+      "source_blob_sha": "f11940bb3b148028aa9f0b96da637d041db89b2c",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/text/text_word.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "f11940bb3b148028aa9f0b96da637d041db89b2c",
+        "size": 2219
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::Text::Word"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/text/text_word.h",
+      "responsibility": "Unicode/bidi/shaping/entity/link/selection/quote/spoiler/custom-emoji/copy and safe rich-text behavior in the canonical Message/Transcript/Composer model.",
+      "responsibilities": [
+        "Unicode/bidi/shaping/entity/link/selection/quote/spoiler/custom-emoji/copy and safe rich-text behavior in the canonical Message/Transcript/Composer model."
+      ],
+      "existing_owner_candidates": [
+        "Message/Transcript rich-text projection",
+        "Composer rich editor",
+        "external URL policy",
+        "emoji/resource owner"
+      ],
+      "chosen_owner": "Existing canonical Message/Transcript/Composer rich-text + URL/Resource owners",
+      "fabushi_canonical_owner": "Existing canonical Message/Transcript/Composer rich-text + URL/Resource owners",
+      "fabushi_target": "frontend/src/recovered/features/conversation/workspace/transcript.tsx, frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx, source/shared/external-url-policy.ts, frontend/src/recovered/features/conversation/cards/transcript-card/emoji-catalog.ts",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "source/shared/external-url-policy.ts",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/emoji-catalog.ts"
+      ],
+      "fabushi_target_symbols": [
+        "Transcript",
+        "RichTextEditor",
+        "normalizeExternalUrl",
+        "EMOJI_CATALOG"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "source/shared/external-url-policy.ts",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/emoji-catalog.ts"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:f11940bb3b148028aa9f0b96da637d041db89b2c",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13178,
+      "source_path": "Telegram/lib_ui::ui/text/text_word_parser.cpp",
+      "source_blob_sha": "0295a9c9fc4303ec23abf94a83c0fc50c5bb44ce",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/text/text_word_parser.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "0295a9c9fc4303ec23abf94a83c0fc50c5bb44ce",
+        "size": 8350
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::Text::WordParser"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/text/text_word_parser.cpp",
+      "responsibility": "Unicode/bidi/shaping/entity/link/selection/quote/spoiler/custom-emoji/copy and safe rich-text behavior in the canonical Message/Transcript/Composer model.",
+      "responsibilities": [
+        "Unicode/bidi/shaping/entity/link/selection/quote/spoiler/custom-emoji/copy and safe rich-text behavior in the canonical Message/Transcript/Composer model."
+      ],
+      "existing_owner_candidates": [
+        "Message/Transcript rich-text projection",
+        "Composer rich editor",
+        "external URL policy",
+        "emoji/resource owner"
+      ],
+      "chosen_owner": "Existing canonical Message/Transcript/Composer rich-text + URL/Resource owners",
+      "fabushi_canonical_owner": "Existing canonical Message/Transcript/Composer rich-text + URL/Resource owners",
+      "fabushi_target": "frontend/src/recovered/features/conversation/workspace/transcript.tsx, frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx, source/shared/external-url-policy.ts, frontend/src/recovered/features/conversation/cards/transcript-card/emoji-catalog.ts",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "source/shared/external-url-policy.ts",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/emoji-catalog.ts"
+      ],
+      "fabushi_target_symbols": [
+        "Transcript",
+        "RichTextEditor",
+        "normalizeExternalUrl",
+        "EMOJI_CATALOG"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "source/shared/external-url-policy.ts",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/emoji-catalog.ts"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:0295a9c9fc4303ec23abf94a83c0fc50c5bb44ce",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13179,
+      "source_path": "Telegram/lib_ui::ui/text/text_word_parser.h",
+      "source_blob_sha": "5932c4c8680f29fecc45edffb024231d38f11aeb",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/text/text_word_parser.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "5932c4c8680f29fecc45edffb024231d38f11aeb",
+        "size": 2500
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::Text::WordParser"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/text/text_word_parser.h",
+      "responsibility": "Unicode/bidi/shaping/entity/link/selection/quote/spoiler/custom-emoji/copy and safe rich-text behavior in the canonical Message/Transcript/Composer model.",
+      "responsibilities": [
+        "Unicode/bidi/shaping/entity/link/selection/quote/spoiler/custom-emoji/copy and safe rich-text behavior in the canonical Message/Transcript/Composer model."
+      ],
+      "existing_owner_candidates": [
+        "Message/Transcript rich-text projection",
+        "Composer rich editor",
+        "external URL policy",
+        "emoji/resource owner"
+      ],
+      "chosen_owner": "Existing canonical Message/Transcript/Composer rich-text + URL/Resource owners",
+      "fabushi_canonical_owner": "Existing canonical Message/Transcript/Composer rich-text + URL/Resource owners",
+      "fabushi_target": "frontend/src/recovered/features/conversation/workspace/transcript.tsx, frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx, source/shared/external-url-policy.ts, frontend/src/recovered/features/conversation/cards/transcript-card/emoji-catalog.ts",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "source/shared/external-url-policy.ts",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/emoji-catalog.ts"
+      ],
+      "fabushi_target_symbols": [
+        "Transcript",
+        "RichTextEditor",
+        "normalizeExternalUrl",
+        "EMOJI_CATALOG"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "source/shared/external-url-policy.ts",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/emoji-catalog.ts"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:5932c4c8680f29fecc45edffb024231d38f11aeb",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13180,
+      "source_path": "Telegram/lib_ui::ui/toast/toast.cpp",
+      "source_blob_sha": "35684705f6c1d8414f4ac98723d9b30e5d94643c",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/toast/toast.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "35684705f6c1d8414f4ac98723d9b30e5d94643c",
+        "size": 2807
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::Toast::Show",
+        "Ui::Toast::Instance"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/toast/toast.cpp",
+      "responsibility": "Transient status/tooltip timing, visibility, positioning, dismissal, focus and accessibility lifecycle.",
+      "responsibilities": [
+        "Transient status/tooltip timing, visibility, positioning, dismissal, focus and accessibility lifecycle."
+      ],
+      "existing_owner_candidates": [
+        "canonical Toast",
+        "SandTooltip",
+        "floating surface lifecycle"
+      ],
+      "chosen_owner": "Existing canonical Toast/Tooltip/floating-surface owner",
+      "fabushi_canonical_owner": "Existing canonical Toast/Tooltip/floating-surface owner",
+      "fabushi_target": "frontend/src/recovered/ui/sand-floating-primitives.tsx, frontend/src/recovered/ui/sand-status-primitives.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-status-primitives.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "SandTooltip",
+        "FloatingRoot",
+        "canonical status surfaces"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-status-primitives.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:35684705f6c1d8414f4ac98723d9b30e5d94643c",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13181,
+      "source_path": "Telegram/lib_ui::ui/toast/toast.h",
+      "source_blob_sha": "3defb066f308409fa61405358a1161ad0638c356",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/toast/toast.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "3defb066f308409fa61405358a1161ad0638c356",
+        "size": 3393
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::Toast::Show",
+        "Ui::Toast::Instance"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/toast/toast.h",
+      "responsibility": "Transient status/tooltip timing, visibility, positioning, dismissal, focus and accessibility lifecycle.",
+      "responsibilities": [
+        "Transient status/tooltip timing, visibility, positioning, dismissal, focus and accessibility lifecycle."
+      ],
+      "existing_owner_candidates": [
+        "canonical Toast",
+        "SandTooltip",
+        "floating surface lifecycle"
+      ],
+      "chosen_owner": "Existing canonical Toast/Tooltip/floating-surface owner",
+      "fabushi_canonical_owner": "Existing canonical Toast/Tooltip/floating-surface owner",
+      "fabushi_target": "frontend/src/recovered/ui/sand-floating-primitives.tsx, frontend/src/recovered/ui/sand-status-primitives.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-status-primitives.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "SandTooltip",
+        "FloatingRoot",
+        "canonical status surfaces"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-status-primitives.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:3defb066f308409fa61405358a1161ad0638c356",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13182,
+      "source_path": "Telegram/lib_ui::ui/toast/toast_manager.cpp",
+      "source_blob_sha": "11302ab676677741408f57ff19a41a28db83e19e",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/toast/toast_manager.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "11302ab676677741408f57ff19a41a28db83e19e",
+        "size": 3448
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::Toast::Manager"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/toast/toast_manager.cpp",
+      "responsibility": "Transient status/tooltip timing, visibility, positioning, dismissal, focus and accessibility lifecycle.",
+      "responsibilities": [
+        "Transient status/tooltip timing, visibility, positioning, dismissal, focus and accessibility lifecycle."
+      ],
+      "existing_owner_candidates": [
+        "canonical Toast",
+        "SandTooltip",
+        "floating surface lifecycle"
+      ],
+      "chosen_owner": "Existing canonical Toast/Tooltip/floating-surface owner",
+      "fabushi_canonical_owner": "Existing canonical Toast/Tooltip/floating-surface owner",
+      "fabushi_target": "frontend/src/recovered/ui/sand-floating-primitives.tsx, frontend/src/recovered/ui/sand-status-primitives.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-status-primitives.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "SandTooltip",
+        "FloatingRoot",
+        "canonical status surfaces"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-status-primitives.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:11302ab676677741408f57ff19a41a28db83e19e",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13183,
+      "source_path": "Telegram/lib_ui::ui/toast/toast_manager.h",
+      "source_blob_sha": "f60f22be0283cb14688da5f80b9a08bcd9b59ed9",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/toast/toast_manager.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "f60f22be0283cb14688da5f80b9a08bcd9b59ed9",
+        "size": 1239
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::Toast::Manager"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/toast/toast_manager.h",
+      "responsibility": "Transient status/tooltip timing, visibility, positioning, dismissal, focus and accessibility lifecycle.",
+      "responsibilities": [
+        "Transient status/tooltip timing, visibility, positioning, dismissal, focus and accessibility lifecycle."
+      ],
+      "existing_owner_candidates": [
+        "canonical Toast",
+        "SandTooltip",
+        "floating surface lifecycle"
+      ],
+      "chosen_owner": "Existing canonical Toast/Tooltip/floating-surface owner",
+      "fabushi_canonical_owner": "Existing canonical Toast/Tooltip/floating-surface owner",
+      "fabushi_target": "frontend/src/recovered/ui/sand-floating-primitives.tsx, frontend/src/recovered/ui/sand-status-primitives.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-status-primitives.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "SandTooltip",
+        "FloatingRoot",
+        "canonical status surfaces"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-status-primitives.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:f60f22be0283cb14688da5f80b9a08bcd9b59ed9",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13184,
+      "source_path": "Telegram/lib_ui::ui/toast/toast_widget.cpp",
+      "source_blob_sha": "3c6123b18b3e18d014da5120ca92d10f819b36c2",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/toast/toast_widget.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "3c6123b18b3e18d014da5120ca92d10f819b36c2",
+        "size": 15508
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::Toast::Widget"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/toast/toast_widget.cpp",
+      "responsibility": "Transient status/tooltip timing, visibility, positioning, dismissal, focus and accessibility lifecycle.",
+      "responsibilities": [
+        "Transient status/tooltip timing, visibility, positioning, dismissal, focus and accessibility lifecycle."
+      ],
+      "existing_owner_candidates": [
+        "canonical Toast",
+        "SandTooltip",
+        "floating surface lifecycle"
+      ],
+      "chosen_owner": "Existing canonical Toast/Tooltip/floating-surface owner",
+      "fabushi_canonical_owner": "Existing canonical Toast/Tooltip/floating-surface owner",
+      "fabushi_target": "frontend/src/recovered/ui/sand-floating-primitives.tsx, frontend/src/recovered/ui/sand-status-primitives.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-status-primitives.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "SandTooltip",
+        "FloatingRoot",
+        "canonical status surfaces"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-status-primitives.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:3c6123b18b3e18d014da5120ca92d10f819b36c2",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13185,
+      "source_path": "Telegram/lib_ui::ui/toast/toast_widget.h",
+      "source_blob_sha": "7a877d58d76c88b3bd1b25aed78fd947485a53f8",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/toast/toast_widget.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "7a877d58d76c88b3bd1b25aed78fd947485a53f8",
+        "size": 1289
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::Toast::Widget"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/toast/toast_widget.h",
+      "responsibility": "Transient status/tooltip timing, visibility, positioning, dismissal, focus and accessibility lifecycle.",
+      "responsibilities": [
+        "Transient status/tooltip timing, visibility, positioning, dismissal, focus and accessibility lifecycle."
+      ],
+      "existing_owner_candidates": [
+        "canonical Toast",
+        "SandTooltip",
+        "floating surface lifecycle"
+      ],
+      "chosen_owner": "Existing canonical Toast/Tooltip/floating-surface owner",
+      "fabushi_canonical_owner": "Existing canonical Toast/Tooltip/floating-surface owner",
+      "fabushi_target": "frontend/src/recovered/ui/sand-floating-primitives.tsx, frontend/src/recovered/ui/sand-status-primitives.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-status-primitives.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "SandTooltip",
+        "FloatingRoot",
+        "canonical status surfaces"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-status-primitives.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:7a877d58d76c88b3bd1b25aed78fd947485a53f8",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13186,
+      "source_path": "Telegram/lib_ui::ui/ui_fixed.h",
+      "source_blob_sha": "c90cd2bebf37819e14583b6951ba830b28cfcacf",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/ui_fixed.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "c90cd2bebf37819e14583b6951ba830b28cfcacf",
+        "size": 3017
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "ui/ui_fixed"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/ui_fixed.h",
+      "responsibility": "Source-neutral UI/platform behavior retained through the existing canonical owner.",
+      "responsibilities": [
+        "Source-neutral UI/platform behavior retained through the existing canonical owner."
+      ],
+      "existing_owner_candidates": [
+        "canonical Design System/component owner"
+      ],
+      "chosen_owner": "Existing canonical UI/platform owner",
+      "fabushi_canonical_owner": "Existing canonical UI/platform owner",
+      "fabushi_target": "frontend/src/production/ProductionRenderer.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "ProductionRenderer"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:c90cd2bebf37819e14583b6951ba830b28cfcacf",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13187,
+      "source_path": "Telegram/lib_ui::ui/ui_pch.h",
+      "source_blob_sha": "84e395b2f9302297ce48955f9315aae849d647f8",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/ui_pch.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "84e395b2f9302297ce48955f9315aae849d647f8",
+        "size": 839
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "ui/ui_pch"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/ui_pch.h",
+      "responsibility": "Source-neutral UI/platform behavior retained through the existing canonical owner.",
+      "responsibilities": [
+        "Source-neutral UI/platform behavior retained through the existing canonical owner."
+      ],
+      "existing_owner_candidates": [
+        "canonical Design System/component owner"
+      ],
+      "chosen_owner": "Existing canonical UI/platform owner",
+      "fabushi_canonical_owner": "Existing canonical UI/platform owner",
+      "fabushi_target": "frontend/src/production/ProductionRenderer.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "ProductionRenderer"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:84e395b2f9302297ce48955f9315aae849d647f8",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13188,
+      "source_path": "Telegram/lib_ui::ui/ui_rpl_filter.h",
+      "source_blob_sha": "5ede530016d7b34259cfec07d3ddaf7707025b3b",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/ui_rpl_filter.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "5ede530016d7b34259cfec07d3ddaf7707025b3b",
+        "size": 1147
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "ui/ui_rpl_filter"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/ui_rpl_filter.h",
+      "responsibility": "Source-neutral UI/platform behavior retained through the existing canonical owner.",
+      "responsibilities": [
+        "Source-neutral UI/platform behavior retained through the existing canonical owner."
+      ],
+      "existing_owner_candidates": [
+        "canonical Design System/component owner"
+      ],
+      "chosen_owner": "Existing canonical UI/platform owner",
+      "fabushi_canonical_owner": "Existing canonical UI/platform owner",
+      "fabushi_target": "frontend/src/production/ProductionRenderer.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "ProductionRenderer"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:5ede530016d7b34259cfec07d3ddaf7707025b3b",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13189,
+      "source_path": "Telegram/lib_ui::ui/ui_touch_forward.cpp",
+      "source_blob_sha": "0e07a89396f65eba08148fbcae66c702685100d0",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/ui_touch_forward.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "0e07a89396f65eba08148fbcae66c702685100d0",
+        "size": 4409
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::TouchForward"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/ui_touch_forward.cpp",
+      "responsibility": "Source-neutral UI/platform behavior retained through the existing canonical owner.",
+      "responsibilities": [
+        "Source-neutral UI/platform behavior retained through the existing canonical owner."
+      ],
+      "existing_owner_candidates": [
+        "canonical Design System/component owner"
+      ],
+      "chosen_owner": "Existing canonical UI/platform owner",
+      "fabushi_canonical_owner": "Existing canonical UI/platform owner",
+      "fabushi_target": "frontend/src/production/ProductionRenderer.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "ProductionRenderer"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:0e07a89396f65eba08148fbcae66c702685100d0",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13190,
+      "source_path": "Telegram/lib_ui::ui/ui_touch_forward.h",
+      "source_blob_sha": "c8f718171106b482da3dc96c16477e7862635e8e",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/ui_touch_forward.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "c8f718171106b482da3dc96c16477e7862635e8e",
+        "size": 1299
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::TouchForward"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/ui_touch_forward.h",
+      "responsibility": "Source-neutral UI/platform behavior retained through the existing canonical owner.",
+      "responsibilities": [
+        "Source-neutral UI/platform behavior retained through the existing canonical owner."
+      ],
+      "existing_owner_candidates": [
+        "canonical Design System/component owner"
+      ],
+      "chosen_owner": "Existing canonical UI/platform owner",
+      "fabushi_canonical_owner": "Existing canonical UI/platform owner",
+      "fabushi_target": "frontend/src/production/ProductionRenderer.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "ProductionRenderer"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:c8f718171106b482da3dc96c16477e7862635e8e",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13191,
+      "source_path": "Telegram/lib_ui::ui/ui_utility.cpp",
+      "source_blob_sha": "b067d4d99871740133bf3db3b99a2b7615644059",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/ui_utility.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "b067d4d99871740133bf3db3b99a2b7615644059",
+        "size": 9333
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::WheelDirection",
+        "Ui::SendPendingMoveResizeEvents"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/ui_utility.cpp",
+      "responsibility": "Source-neutral UI/platform behavior retained through the existing canonical owner.",
+      "responsibilities": [
+        "Source-neutral UI/platform behavior retained through the existing canonical owner."
+      ],
+      "existing_owner_candidates": [
+        "canonical Design System/component owner"
+      ],
+      "chosen_owner": "Existing canonical UI/platform owner",
+      "fabushi_canonical_owner": "Existing canonical UI/platform owner",
+      "fabushi_target": "frontend/src/production/ProductionRenderer.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "ProductionRenderer"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:b067d4d99871740133bf3db3b99a2b7615644059",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13192,
+      "source_path": "Telegram/lib_ui::ui/ui_utility.h",
+      "source_blob_sha": "b21d5c12804b8d541599a4e9d41d13784d83b616",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/ui_utility.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "b21d5c12804b8d541599a4e9d41d13784d83b616",
+        "size": 4119
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::WheelDirection",
+        "Ui::SendPendingMoveResizeEvents"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/ui_utility.h",
+      "responsibility": "Source-neutral UI/platform behavior retained through the existing canonical owner.",
+      "responsibilities": [
+        "Source-neutral UI/platform behavior retained through the existing canonical owner."
+      ],
+      "existing_owner_candidates": [
+        "canonical Design System/component owner"
+      ],
+      "chosen_owner": "Existing canonical UI/platform owner",
+      "fabushi_canonical_owner": "Existing canonical UI/platform owner",
+      "fabushi_target": "frontend/src/production/ProductionRenderer.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "ProductionRenderer"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:b21d5c12804b8d541599a4e9d41d13784d83b616",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13193,
+      "source_path": "Telegram/lib_ui::ui/widgets/box_content_divider.cpp",
+      "source_blob_sha": "948271f2889aa84a6623542ce0627915ef52ebcb",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/box_content_divider.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "948271f2889aa84a6623542ce0627915ef52ebcb",
+        "size": 1350
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::BoxContentDivider"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/box_content_divider.cpp",
+      "responsibility": "Source-neutral UI/platform behavior retained through the existing canonical owner.",
+      "responsibilities": [
+        "Source-neutral UI/platform behavior retained through the existing canonical owner."
+      ],
+      "existing_owner_candidates": [
+        "canonical Design System/component owner"
+      ],
+      "chosen_owner": "Existing canonical UI/platform owner",
+      "fabushi_canonical_owner": "Existing canonical UI/platform owner",
+      "fabushi_target": "frontend/src/production/ProductionRenderer.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "ProductionRenderer"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:948271f2889aa84a6623542ce0627915ef52ebcb",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13194,
+      "source_path": "Telegram/lib_ui::ui/widgets/box_content_divider.h",
+      "source_blob_sha": "8b58ac7027e41561b76710dbc838bc2f4e9b3681",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/box_content_divider.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "8b58ac7027e41561b76710dbc838bc2f4e9b3681",
+        "size": 1122
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::BoxContentDivider"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/box_content_divider.h",
+      "responsibility": "Source-neutral UI/platform behavior retained through the existing canonical owner.",
+      "responsibilities": [
+        "Source-neutral UI/platform behavior retained through the existing canonical owner."
+      ],
+      "existing_owner_candidates": [
+        "canonical Design System/component owner"
+      ],
+      "chosen_owner": "Existing canonical UI/platform owner",
+      "fabushi_canonical_owner": "Existing canonical UI/platform owner",
+      "fabushi_target": "frontend/src/production/ProductionRenderer.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "ProductionRenderer"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:8b58ac7027e41561b76710dbc838bc2f4e9b3681",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13195,
+      "source_path": "Telegram/lib_ui::ui/widgets/buttons.cpp",
+      "source_blob_sha": "690ba6f5e440f25215f6cc9f34d2bcc4c3a1b848",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/buttons.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "690ba6f5e440f25215f6cc9f34d2bcc4c3a1b848",
+        "size": 27915
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::AbstractButton",
+        "Ui::RippleButton",
+        "Ui::IconButton"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/buttons.cpp",
+      "responsibility": "Press/hover/disabled/pending/toggle/radio/keyboard/ripple/accessibility interaction semantics through canonical controls.",
+      "responsibilities": [
+        "Press/hover/disabled/pending/toggle/radio/keyboard/ripple/accessibility interaction semantics through canonical controls."
+      ],
+      "existing_owner_candidates": [
+        "SandCheckbox/SandSwitch",
+        "canonical button-state",
+        "Design System"
+      ],
+      "chosen_owner": "Existing canonical Button/Checkbox/Switch interaction owners",
+      "fabushi_canonical_owner": "Existing canonical Button/Checkbox/Switch interaction owners",
+      "fabushi_target": "frontend/src/recovered/ui/sand-form-primitives.tsx, frontend/src/recovered/ui/button-state.ts",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/ui/button-state.ts"
+      ],
+      "fabushi_target_symbols": [
+        "SandCheckbox",
+        "SandSwitch",
+        "resolveButtonInteractionState"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/ui/button-state.ts"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:690ba6f5e440f25215f6cc9f34d2bcc4c3a1b848",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13196,
+      "source_path": "Telegram/lib_ui::ui/widgets/buttons.h",
+      "source_blob_sha": "0801610e5f9f98dbab7894aa7c0bc34d72599aba",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/buttons.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "0801610e5f9f98dbab7894aa7c0bc34d72599aba",
+        "size": 9789
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::AbstractButton",
+        "Ui::RippleButton",
+        "Ui::IconButton"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/buttons.h",
+      "responsibility": "Press/hover/disabled/pending/toggle/radio/keyboard/ripple/accessibility interaction semantics through canonical controls.",
+      "responsibilities": [
+        "Press/hover/disabled/pending/toggle/radio/keyboard/ripple/accessibility interaction semantics through canonical controls."
+      ],
+      "existing_owner_candidates": [
+        "SandCheckbox/SandSwitch",
+        "canonical button-state",
+        "Design System"
+      ],
+      "chosen_owner": "Existing canonical Button/Checkbox/Switch interaction owners",
+      "fabushi_canonical_owner": "Existing canonical Button/Checkbox/Switch interaction owners",
+      "fabushi_target": "frontend/src/recovered/ui/sand-form-primitives.tsx, frontend/src/recovered/ui/button-state.ts",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/ui/button-state.ts"
+      ],
+      "fabushi_target_symbols": [
+        "SandCheckbox",
+        "SandSwitch",
+        "resolveButtonInteractionState"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/ui/button-state.ts"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:0801610e5f9f98dbab7894aa7c0bc34d72599aba",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13197,
+      "source_path": "Telegram/lib_ui::ui/widgets/checkbox.cpp",
+      "source_blob_sha": "df0dc58fa6525aa733a9ee6978ec7ac7d44596f9",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/checkbox.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "df0dc58fa6525aa733a9ee6978ec7ac7d44596f9",
+        "size": 30830
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::Checkbox",
+        "Ui::ToggleView",
+        "Ui::Radiobutton"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/checkbox.cpp",
+      "responsibility": "Press/hover/disabled/pending/toggle/radio/keyboard/ripple/accessibility interaction semantics through canonical controls.",
+      "responsibilities": [
+        "Press/hover/disabled/pending/toggle/radio/keyboard/ripple/accessibility interaction semantics through canonical controls."
+      ],
+      "existing_owner_candidates": [
+        "SandCheckbox/SandSwitch",
+        "canonical button-state",
+        "Design System"
+      ],
+      "chosen_owner": "Existing canonical Button/Checkbox/Switch interaction owners",
+      "fabushi_canonical_owner": "Existing canonical Button/Checkbox/Switch interaction owners",
+      "fabushi_target": "frontend/src/recovered/ui/sand-form-primitives.tsx, frontend/src/recovered/ui/button-state.ts",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/ui/button-state.ts"
+      ],
+      "fabushi_target_symbols": [
+        "SandCheckbox",
+        "SandSwitch",
+        "resolveButtonInteractionState"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/ui/button-state.ts"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:df0dc58fa6525aa733a9ee6978ec7ac7d44596f9",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13198,
+      "source_path": "Telegram/lib_ui::ui/widgets/checkbox.h",
+      "source_blob_sha": "d3516297f4e9c7ada746344722f5440a5298f1c9",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/checkbox.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "d3516297f4e9c7ada746344722f5440a5298f1c9",
+        "size": 11514
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::Checkbox",
+        "Ui::ToggleView",
+        "Ui::Radiobutton"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/checkbox.h",
+      "responsibility": "Press/hover/disabled/pending/toggle/radio/keyboard/ripple/accessibility interaction semantics through canonical controls.",
+      "responsibilities": [
+        "Press/hover/disabled/pending/toggle/radio/keyboard/ripple/accessibility interaction semantics through canonical controls."
+      ],
+      "existing_owner_candidates": [
+        "SandCheckbox/SandSwitch",
+        "canonical button-state",
+        "Design System"
+      ],
+      "chosen_owner": "Existing canonical Button/Checkbox/Switch interaction owners",
+      "fabushi_canonical_owner": "Existing canonical Button/Checkbox/Switch interaction owners",
+      "fabushi_target": "frontend/src/recovered/ui/sand-form-primitives.tsx, frontend/src/recovered/ui/button-state.ts",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/ui/button-state.ts"
+      ],
+      "fabushi_target_symbols": [
+        "SandCheckbox",
+        "SandSwitch",
+        "resolveButtonInteractionState"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/ui/button-state.ts"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:d3516297f4e9c7ada746344722f5440a5298f1c9",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13199,
+      "source_path": "Telegram/lib_ui::ui/widgets/dropdown_menu.cpp",
+      "source_blob_sha": "996536ec7a99b70b132e33a3cb0a1927cf795ec8",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/dropdown_menu.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "996536ec7a99b70b132e33a3cb0a1927cf795ec8",
+        "size": 7844
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::DropdownMenu"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/dropdown_menu.cpp",
+      "responsibility": "Menu/dropdown action selection, keyboard navigation, submenu/dismissal/focus-return/outside-click/disabled/a11y/lifetime semantics.",
+      "responsibilities": [
+        "Menu/dropdown action selection, keyboard navigation, submenu/dismissal/focus-return/outside-click/disabled/a11y/lifetime semantics."
+      ],
+      "existing_owner_candidates": [
+        "SandMenu",
+        "SandPopover",
+        "SandContextMenu",
+        "SandMenuItem"
+      ],
+      "chosen_owner": "Existing canonical SandMenu/SandPopover/MenuItem floating-surface owners",
+      "fabushi_canonical_owner": "Existing canonical SandMenu/SandPopover/MenuItem floating-surface owners",
+      "fabushi_target": "frontend/src/recovered/ui/sand-floating-primitives.tsx, frontend/src/recovered/ui/sand-menu-item.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-menu-item.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "SandMenuContent",
+        "SandMenuItem",
+        "SandContextMenu",
+        "FloatingRoot"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-menu-item.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:996536ec7a99b70b132e33a3cb0a1927cf795ec8",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13200,
+      "source_path": "Telegram/lib_ui::ui/widgets/dropdown_menu.h",
+      "source_blob_sha": "2a891ef18bfdfc9f06ff233d34350774ce627f62",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/dropdown_menu.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "2a891ef18bfdfc9f06ff233d34350774ce627f62",
+        "size": 3149
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::DropdownMenu"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/dropdown_menu.h",
+      "responsibility": "Menu/dropdown action selection, keyboard navigation, submenu/dismissal/focus-return/outside-click/disabled/a11y/lifetime semantics.",
+      "responsibilities": [
+        "Menu/dropdown action selection, keyboard navigation, submenu/dismissal/focus-return/outside-click/disabled/a11y/lifetime semantics."
+      ],
+      "existing_owner_candidates": [
+        "SandMenu",
+        "SandPopover",
+        "SandContextMenu",
+        "SandMenuItem"
+      ],
+      "chosen_owner": "Existing canonical SandMenu/SandPopover/MenuItem floating-surface owners",
+      "fabushi_canonical_owner": "Existing canonical SandMenu/SandPopover/MenuItem floating-surface owners",
+      "fabushi_target": "frontend/src/recovered/ui/sand-floating-primitives.tsx, frontend/src/recovered/ui/sand-menu-item.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-menu-item.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "SandMenuContent",
+        "SandMenuItem",
+        "SandContextMenu",
+        "FloatingRoot"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-menu-item.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:2a891ef18bfdfc9f06ff233d34350774ce627f62",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13201,
+      "source_path": "Telegram/lib_ui::ui/widgets/elastic_scroll.cpp",
+      "source_blob_sha": "667a233eea2d8c1b4904d80f587e89d9d214b4ff",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/elastic_scroll.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "667a233eea2d8c1b4904d80f587e89d9d214b4ff",
+        "size": 55443
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::ElasticScroll",
+        "Ui::ElasticScrollBar"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/elastic_scroll.cpp",
+      "responsibility": "Scroll bounds, axis-lock, wheel/touch/kinetic/elastic temporal semantics, scrollbar visibility and scroll-to behavior.",
+      "responsibilities": [
+        "Scroll bounds, axis-lock, wheel/touch/kinetic/elastic temporal semantics, scrollbar visibility and scroll-to behavior."
+      ],
+      "existing_owner_candidates": [
+        "Chromium native scroll",
+        "horizontal-scroll-state",
+        "canonical list/transcript scroll"
+      ],
+      "chosen_owner": "Existing canonical scroll/input state + Chromium scrolling owner",
+      "fabushi_canonical_owner": "Existing canonical scroll/input state + Chromium scrolling owner",
+      "fabushi_target": "frontend/src/recovered/features/conversation/workspace/horizontal-scroll-state.ts, frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/features/conversation/workspace/horizontal-scroll-state.ts",
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "updateHorizontalScrollWheelLock",
+        "normalizeHorizontalScrollWheelDelta",
+        "Transcript"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/horizontal-scroll-state.ts",
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:667a233eea2d8c1b4904d80f587e89d9d214b4ff",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13202,
+      "source_path": "Telegram/lib_ui::ui/widgets/elastic_scroll.h",
+      "source_blob_sha": "7909e165ec68e52dad0c2c6697baf95858c6a0e4",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/elastic_scroll.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "7909e165ec68e52dad0c2c6697baf95858c6a0e4",
+        "size": 12898
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::ElasticScroll",
+        "Ui::ElasticScrollBar"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/elastic_scroll.h",
+      "responsibility": "Scroll bounds, axis-lock, wheel/touch/kinetic/elastic temporal semantics, scrollbar visibility and scroll-to behavior.",
+      "responsibilities": [
+        "Scroll bounds, axis-lock, wheel/touch/kinetic/elastic temporal semantics, scrollbar visibility and scroll-to behavior."
+      ],
+      "existing_owner_candidates": [
+        "Chromium native scroll",
+        "horizontal-scroll-state",
+        "canonical list/transcript scroll"
+      ],
+      "chosen_owner": "Existing canonical scroll/input state + Chromium scrolling owner",
+      "fabushi_canonical_owner": "Existing canonical scroll/input state + Chromium scrolling owner",
+      "fabushi_target": "frontend/src/recovered/features/conversation/workspace/horizontal-scroll-state.ts, frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/features/conversation/workspace/horizontal-scroll-state.ts",
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "updateHorizontalScrollWheelLock",
+        "normalizeHorizontalScrollWheelDelta",
+        "Transcript"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/horizontal-scroll-state.ts",
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:7909e165ec68e52dad0c2c6697baf95858c6a0e4",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13203,
+      "source_path": "Telegram/lib_ui::ui/widgets/fields/custom_field_object.cpp",
+      "source_blob_sha": "b072726075be2f497c77d9a626888816bcf45226",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/fields/custom_field_object.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "b072726075be2f497c77d9a626888816bcf45226",
+        "size": 9314
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::CustomFieldObject"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/fields/custom_field_object.cpp",
+      "responsibility": "Editable input value/focus/error/submit/IME/clipboard/format/link/selection/accessibility/typed validation semantics under canonical field/composer owners.",
+      "responsibilities": [
+        "Editable input value/focus/error/submit/IME/clipboard/format/link/selection/accessibility/typed validation semantics under canonical field/composer owners."
+      ],
+      "existing_owner_candidates": [
+        "SandTextField/SandTextarea",
+        "RichTextEditor",
+        "platform input composition state",
+        "Composer"
+      ],
+      "chosen_owner": "Existing canonical TextField/Composer/input-composition owners",
+      "fabushi_canonical_owner": "Existing canonical TextField/Composer/input-composition owners",
+      "fabushi_target": "frontend/src/recovered/ui/sand-form-primitives.tsx, frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx, frontend/src/recovered/features/conversation/workspace/input-composition-state.ts",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "frontend/src/recovered/features/conversation/workspace/input-composition-state.ts"
+      ],
+      "fabushi_target_symbols": [
+        "SandTextField",
+        "SandTextarea",
+        "RichTextEditor",
+        "promptEditorKeyAction"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "frontend/src/recovered/features/conversation/workspace/input-composition-state.ts"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:b072726075be2f497c77d9a626888816bcf45226",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13204,
+      "source_path": "Telegram/lib_ui::ui/widgets/fields/custom_field_object.h",
+      "source_blob_sha": "157d9faf1598dc7dd0bd436be6ff269f50398228",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/fields/custom_field_object.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "157d9faf1598dc7dd0bd436be6ff269f50398228",
+        "size": 2035
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::CustomFieldObject"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/fields/custom_field_object.h",
+      "responsibility": "Editable input value/focus/error/submit/IME/clipboard/format/link/selection/accessibility/typed validation semantics under canonical field/composer owners.",
+      "responsibilities": [
+        "Editable input value/focus/error/submit/IME/clipboard/format/link/selection/accessibility/typed validation semantics under canonical field/composer owners."
+      ],
+      "existing_owner_candidates": [
+        "SandTextField/SandTextarea",
+        "RichTextEditor",
+        "platform input composition state",
+        "Composer"
+      ],
+      "chosen_owner": "Existing canonical TextField/Composer/input-composition owners",
+      "fabushi_canonical_owner": "Existing canonical TextField/Composer/input-composition owners",
+      "fabushi_target": "frontend/src/recovered/ui/sand-form-primitives.tsx, frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx, frontend/src/recovered/features/conversation/workspace/input-composition-state.ts",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "frontend/src/recovered/features/conversation/workspace/input-composition-state.ts"
+      ],
+      "fabushi_target_symbols": [
+        "SandTextField",
+        "SandTextarea",
+        "RichTextEditor",
+        "promptEditorKeyAction"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "frontend/src/recovered/features/conversation/workspace/input-composition-state.ts"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:157d9faf1598dc7dd0bd436be6ff269f50398228",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13205,
+      "source_path": "Telegram/lib_ui::ui/widgets/fields/input_field.cpp",
+      "source_blob_sha": "beeec90d6425d42e445199f446e02238f69507af",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/fields/input_field.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "beeec90d6425d42e445199f446e02238f69507af",
+        "size": 188394
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::InputField",
+        "Ui::InputSubmitSettings"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/fields/input_field.cpp",
+      "responsibility": "Editable input value/focus/error/submit/IME/clipboard/format/link/selection/accessibility/typed validation semantics under canonical field/composer owners.",
+      "responsibilities": [
+        "Editable input value/focus/error/submit/IME/clipboard/format/link/selection/accessibility/typed validation semantics under canonical field/composer owners."
+      ],
+      "existing_owner_candidates": [
+        "SandTextField/SandTextarea",
+        "RichTextEditor",
+        "platform input composition state",
+        "Composer"
+      ],
+      "chosen_owner": "Existing canonical TextField/Composer/input-composition owners",
+      "fabushi_canonical_owner": "Existing canonical TextField/Composer/input-composition owners",
+      "fabushi_target": "frontend/src/recovered/ui/sand-form-primitives.tsx, frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx, frontend/src/recovered/features/conversation/workspace/input-composition-state.ts",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "frontend/src/recovered/features/conversation/workspace/input-composition-state.ts"
+      ],
+      "fabushi_target_symbols": [
+        "SandTextField",
+        "SandTextarea",
+        "RichTextEditor",
+        "promptEditorKeyAction"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "frontend/src/recovered/features/conversation/workspace/input-composition-state.ts"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:beeec90d6425d42e445199f446e02238f69507af",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13206,
+      "source_path": "Telegram/lib_ui::ui/widgets/fields/input_field.h",
+      "source_blob_sha": "24f98a3a827592b8e717fdabe2f8fc1635aff3f9",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/fields/input_field.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "24f98a3a827592b8e717fdabe2f8fc1635aff3f9",
+        "size": 23357
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::InputField",
+        "Ui::InputSubmitSettings"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/fields/input_field.h",
+      "responsibility": "Editable input value/focus/error/submit/IME/clipboard/format/link/selection/accessibility/typed validation semantics under canonical field/composer owners.",
+      "responsibilities": [
+        "Editable input value/focus/error/submit/IME/clipboard/format/link/selection/accessibility/typed validation semantics under canonical field/composer owners."
+      ],
+      "existing_owner_candidates": [
+        "SandTextField/SandTextarea",
+        "RichTextEditor",
+        "platform input composition state",
+        "Composer"
+      ],
+      "chosen_owner": "Existing canonical TextField/Composer/input-composition owners",
+      "fabushi_canonical_owner": "Existing canonical TextField/Composer/input-composition owners",
+      "fabushi_target": "frontend/src/recovered/ui/sand-form-primitives.tsx, frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx, frontend/src/recovered/features/conversation/workspace/input-composition-state.ts",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "frontend/src/recovered/features/conversation/workspace/input-composition-state.ts"
+      ],
+      "fabushi_target_symbols": [
+        "SandTextField",
+        "SandTextarea",
+        "RichTextEditor",
+        "promptEditorKeyAction"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "frontend/src/recovered/features/conversation/workspace/input-composition-state.ts"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:24f98a3a827592b8e717fdabe2f8fc1635aff3f9",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13207,
+      "source_path": "Telegram/lib_ui::ui/widgets/fields/masked_input_field.cpp",
+      "source_blob_sha": "ef9630988c477de58bbfb3228665b425fc2715e4",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/fields/masked_input_field.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "ef9630988c477de58bbfb3228665b425fc2715e4",
+        "size": 13200
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::InputField",
+        "Ui::InputSubmitSettings"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/fields/masked_input_field.cpp",
+      "responsibility": "Editable input value/focus/error/submit/IME/clipboard/format/link/selection/accessibility/typed validation semantics under canonical field/composer owners.",
+      "responsibilities": [
+        "Editable input value/focus/error/submit/IME/clipboard/format/link/selection/accessibility/typed validation semantics under canonical field/composer owners."
+      ],
+      "existing_owner_candidates": [
+        "SandTextField/SandTextarea",
+        "RichTextEditor",
+        "platform input composition state",
+        "Composer"
+      ],
+      "chosen_owner": "Existing canonical TextField/Composer/input-composition owners",
+      "fabushi_canonical_owner": "Existing canonical TextField/Composer/input-composition owners",
+      "fabushi_target": "frontend/src/recovered/ui/sand-form-primitives.tsx, frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx, frontend/src/recovered/features/conversation/workspace/input-composition-state.ts",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "frontend/src/recovered/features/conversation/workspace/input-composition-state.ts"
+      ],
+      "fabushi_target_symbols": [
+        "SandTextField",
+        "SandTextarea",
+        "RichTextEditor",
+        "promptEditorKeyAction"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "frontend/src/recovered/features/conversation/workspace/input-composition-state.ts"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:ef9630988c477de58bbfb3228665b425fc2715e4",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13208,
+      "source_path": "Telegram/lib_ui::ui/widgets/fields/masked_input_field.h",
+      "source_blob_sha": "d938e30b59d17554f3af46f0df6baf799910c5e3",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/fields/masked_input_field.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "d938e30b59d17554f3af46f0df6baf799910c5e3",
+        "size": 3473
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::InputField",
+        "Ui::InputSubmitSettings"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/fields/masked_input_field.h",
+      "responsibility": "Editable input value/focus/error/submit/IME/clipboard/format/link/selection/accessibility/typed validation semantics under canonical field/composer owners.",
+      "responsibilities": [
+        "Editable input value/focus/error/submit/IME/clipboard/format/link/selection/accessibility/typed validation semantics under canonical field/composer owners."
+      ],
+      "existing_owner_candidates": [
+        "SandTextField/SandTextarea",
+        "RichTextEditor",
+        "platform input composition state",
+        "Composer"
+      ],
+      "chosen_owner": "Existing canonical TextField/Composer/input-composition owners",
+      "fabushi_canonical_owner": "Existing canonical TextField/Composer/input-composition owners",
+      "fabushi_target": "frontend/src/recovered/ui/sand-form-primitives.tsx, frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx, frontend/src/recovered/features/conversation/workspace/input-composition-state.ts",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "frontend/src/recovered/features/conversation/workspace/input-composition-state.ts"
+      ],
+      "fabushi_target_symbols": [
+        "SandTextField",
+        "SandTextarea",
+        "RichTextEditor",
+        "promptEditorKeyAction"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "frontend/src/recovered/features/conversation/workspace/input-composition-state.ts"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:d938e30b59d17554f3af46f0df6baf799910c5e3",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13209,
+      "source_path": "Telegram/lib_ui::ui/widgets/fields/number_input.cpp",
+      "source_blob_sha": "ad5b0580f2e27b433e6dcd077bfe43e96b8bead2",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/fields/number_input.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "ad5b0580f2e27b433e6dcd077bfe43e96b8bead2",
+        "size": 1321
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::NumberInput"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/fields/number_input.cpp",
+      "responsibility": "Editable input value/focus/error/submit/IME/clipboard/format/link/selection/accessibility/typed validation semantics under canonical field/composer owners.",
+      "responsibilities": [
+        "Editable input value/focus/error/submit/IME/clipboard/format/link/selection/accessibility/typed validation semantics under canonical field/composer owners."
+      ],
+      "existing_owner_candidates": [
+        "SandTextField/SandTextarea",
+        "RichTextEditor",
+        "platform input composition state",
+        "Composer"
+      ],
+      "chosen_owner": "Existing canonical TextField/Composer/input-composition owners",
+      "fabushi_canonical_owner": "Existing canonical TextField/Composer/input-composition owners",
+      "fabushi_target": "frontend/src/recovered/ui/sand-form-primitives.tsx, frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx, frontend/src/recovered/features/conversation/workspace/input-composition-state.ts",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "frontend/src/recovered/features/conversation/workspace/input-composition-state.ts"
+      ],
+      "fabushi_target_symbols": [
+        "SandTextField",
+        "SandTextarea",
+        "RichTextEditor",
+        "promptEditorKeyAction"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "frontend/src/recovered/features/conversation/workspace/input-composition-state.ts"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:ad5b0580f2e27b433e6dcd077bfe43e96b8bead2",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13210,
+      "source_path": "Telegram/lib_ui::ui/widgets/fields/number_input.h",
+      "source_blob_sha": "84d1dc8ede077d5b8913b7262c27508c9d175545",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/fields/number_input.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "84d1dc8ede077d5b8913b7262c27508c9d175545",
+        "size": 775
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::NumberInput"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/fields/number_input.h",
+      "responsibility": "Editable input value/focus/error/submit/IME/clipboard/format/link/selection/accessibility/typed validation semantics under canonical field/composer owners.",
+      "responsibilities": [
+        "Editable input value/focus/error/submit/IME/clipboard/format/link/selection/accessibility/typed validation semantics under canonical field/composer owners."
+      ],
+      "existing_owner_candidates": [
+        "SandTextField/SandTextarea",
+        "RichTextEditor",
+        "platform input composition state",
+        "Composer"
+      ],
+      "chosen_owner": "Existing canonical TextField/Composer/input-composition owners",
+      "fabushi_canonical_owner": "Existing canonical TextField/Composer/input-composition owners",
+      "fabushi_target": "frontend/src/recovered/ui/sand-form-primitives.tsx, frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx, frontend/src/recovered/features/conversation/workspace/input-composition-state.ts",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "frontend/src/recovered/features/conversation/workspace/input-composition-state.ts"
+      ],
+      "fabushi_target_symbols": [
+        "SandTextField",
+        "SandTextarea",
+        "RichTextEditor",
+        "promptEditorKeyAction"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "frontend/src/recovered/features/conversation/workspace/input-composition-state.ts"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:84d1dc8ede077d5b8913b7262c27508c9d175545",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13211,
+      "source_path": "Telegram/lib_ui::ui/widgets/fields/password_input.cpp",
+      "source_blob_sha": "b0cbd708166c8ff97debddc30865ef4f66905a91",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/fields/password_input.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "b0cbd708166c8ff97debddc30865ef4f66905a91",
+        "size": 567
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::PasswordInput"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/fields/password_input.cpp",
+      "responsibility": "Editable input value/focus/error/submit/IME/clipboard/format/link/selection/accessibility/typed validation semantics under canonical field/composer owners.",
+      "responsibilities": [
+        "Editable input value/focus/error/submit/IME/clipboard/format/link/selection/accessibility/typed validation semantics under canonical field/composer owners."
+      ],
+      "existing_owner_candidates": [
+        "SandTextField/SandTextarea",
+        "RichTextEditor",
+        "platform input composition state",
+        "Composer"
+      ],
+      "chosen_owner": "Existing canonical TextField/Composer/input-composition owners",
+      "fabushi_canonical_owner": "Existing canonical TextField/Composer/input-composition owners",
+      "fabushi_target": "frontend/src/recovered/ui/sand-form-primitives.tsx, frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx, frontend/src/recovered/features/conversation/workspace/input-composition-state.ts",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "frontend/src/recovered/features/conversation/workspace/input-composition-state.ts"
+      ],
+      "fabushi_target_symbols": [
+        "SandTextField",
+        "SandTextarea",
+        "RichTextEditor",
+        "promptEditorKeyAction"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "frontend/src/recovered/features/conversation/workspace/input-composition-state.ts"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:b0cbd708166c8ff97debddc30865ef4f66905a91",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13212,
+      "source_path": "Telegram/lib_ui::ui/widgets/fields/password_input.h",
+      "source_blob_sha": "2ed6e6cc9111fa70be93213aa4be50021315f81a",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/fields/password_input.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "2ed6e6cc9111fa70be93213aa4be50021315f81a",
+        "size": 613
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::PasswordInput"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/fields/password_input.h",
+      "responsibility": "Editable input value/focus/error/submit/IME/clipboard/format/link/selection/accessibility/typed validation semantics under canonical field/composer owners.",
+      "responsibilities": [
+        "Editable input value/focus/error/submit/IME/clipboard/format/link/selection/accessibility/typed validation semantics under canonical field/composer owners."
+      ],
+      "existing_owner_candidates": [
+        "SandTextField/SandTextarea",
+        "RichTextEditor",
+        "platform input composition state",
+        "Composer"
+      ],
+      "chosen_owner": "Existing canonical TextField/Composer/input-composition owners",
+      "fabushi_canonical_owner": "Existing canonical TextField/Composer/input-composition owners",
+      "fabushi_target": "frontend/src/recovered/ui/sand-form-primitives.tsx, frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx, frontend/src/recovered/features/conversation/workspace/input-composition-state.ts",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "frontend/src/recovered/features/conversation/workspace/input-composition-state.ts"
+      ],
+      "fabushi_target_symbols": [
+        "SandTextField",
+        "SandTextarea",
+        "RichTextEditor",
+        "promptEditorKeyAction"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "frontend/src/recovered/features/conversation/workspace/input-composition-state.ts"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:2ed6e6cc9111fa70be93213aa4be50021315f81a",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13213,
+      "source_path": "Telegram/lib_ui::ui/widgets/fields/time_part_input.cpp",
+      "source_blob_sha": "68a627cb3dd7434e8b5106a7c10202cc5b611a16",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/fields/time_part_input.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "68a627cb3dd7434e8b5106a7c10202cc5b611a16",
+        "size": 3490
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::TimePart"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/fields/time_part_input.cpp",
+      "responsibility": "Editable input value/focus/error/submit/IME/clipboard/format/link/selection/accessibility/typed validation semantics under canonical field/composer owners.",
+      "responsibilities": [
+        "Editable input value/focus/error/submit/IME/clipboard/format/link/selection/accessibility/typed validation semantics under canonical field/composer owners."
+      ],
+      "existing_owner_candidates": [
+        "SandTextField/SandTextarea",
+        "RichTextEditor",
+        "platform input composition state",
+        "Composer"
+      ],
+      "chosen_owner": "Existing canonical TextField/Composer/input-composition owners",
+      "fabushi_canonical_owner": "Existing canonical TextField/Composer/input-composition owners",
+      "fabushi_target": "frontend/src/recovered/ui/sand-form-primitives.tsx, frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx, frontend/src/recovered/features/conversation/workspace/input-composition-state.ts",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "frontend/src/recovered/features/conversation/workspace/input-composition-state.ts"
+      ],
+      "fabushi_target_symbols": [
+        "SandTextField",
+        "SandTextarea",
+        "RichTextEditor",
+        "promptEditorKeyAction"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "frontend/src/recovered/features/conversation/workspace/input-composition-state.ts"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:68a627cb3dd7434e8b5106a7c10202cc5b611a16",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13214,
+      "source_path": "Telegram/lib_ui::ui/widgets/fields/time_part_input.h",
+      "source_blob_sha": "1801922720ddc0a7027abbda287d86c9cc1c0e58",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/fields/time_part_input.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "1801922720ddc0a7027abbda287d86c9cc1c0e58",
+        "size": 1194
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::TimePart"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/fields/time_part_input.h",
+      "responsibility": "Editable input value/focus/error/submit/IME/clipboard/format/link/selection/accessibility/typed validation semantics under canonical field/composer owners.",
+      "responsibilities": [
+        "Editable input value/focus/error/submit/IME/clipboard/format/link/selection/accessibility/typed validation semantics under canonical field/composer owners."
+      ],
+      "existing_owner_candidates": [
+        "SandTextField/SandTextarea",
+        "RichTextEditor",
+        "platform input composition state",
+        "Composer"
+      ],
+      "chosen_owner": "Existing canonical TextField/Composer/input-composition owners",
+      "fabushi_canonical_owner": "Existing canonical TextField/Composer/input-composition owners",
+      "fabushi_target": "frontend/src/recovered/ui/sand-form-primitives.tsx, frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx, frontend/src/recovered/features/conversation/workspace/input-composition-state.ts",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "frontend/src/recovered/features/conversation/workspace/input-composition-state.ts"
+      ],
+      "fabushi_target_symbols": [
+        "SandTextField",
+        "SandTextarea",
+        "RichTextEditor",
+        "promptEditorKeyAction"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "frontend/src/recovered/features/conversation/workspace/input-composition-state.ts"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:1801922720ddc0a7027abbda287d86c9cc1c0e58",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13215,
+      "source_path": "Telegram/lib_ui::ui/widgets/icon_button_with_text.cpp",
+      "source_blob_sha": "0d16f4f71d2741d320dbba55ecb93343a9ca62bc",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/icon_button_with_text.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "0d16f4f71d2741d320dbba55ecb93343a9ca62bc",
+        "size": 1119
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::IconButtonWithText"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/icon_button_with_text.cpp",
+      "responsibility": "Press/hover/disabled/pending/toggle/radio/keyboard/ripple/accessibility interaction semantics through canonical controls.",
+      "responsibilities": [
+        "Press/hover/disabled/pending/toggle/radio/keyboard/ripple/accessibility interaction semantics through canonical controls."
+      ],
+      "existing_owner_candidates": [
+        "SandCheckbox/SandSwitch",
+        "canonical button-state",
+        "Design System"
+      ],
+      "chosen_owner": "Existing canonical Button/Checkbox/Switch interaction owners",
+      "fabushi_canonical_owner": "Existing canonical Button/Checkbox/Switch interaction owners",
+      "fabushi_target": "frontend/src/recovered/ui/sand-form-primitives.tsx, frontend/src/recovered/ui/button-state.ts",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/ui/button-state.ts"
+      ],
+      "fabushi_target_symbols": [
+        "SandCheckbox",
+        "SandSwitch",
+        "resolveButtonInteractionState"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/ui/button-state.ts"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:0d16f4f71d2741d320dbba55ecb93343a9ca62bc",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13216,
+      "source_path": "Telegram/lib_ui::ui/widgets/icon_button_with_text.h",
+      "source_blob_sha": "04e2b8ce33976435da3345b95c7d902d165fdebf",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/icon_button_with_text.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "04e2b8ce33976435da3345b95c7d902d165fdebf",
+        "size": 698
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::IconButtonWithText"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/icon_button_with_text.h",
+      "responsibility": "Press/hover/disabled/pending/toggle/radio/keyboard/ripple/accessibility interaction semantics through canonical controls.",
+      "responsibilities": [
+        "Press/hover/disabled/pending/toggle/radio/keyboard/ripple/accessibility interaction semantics through canonical controls."
+      ],
+      "existing_owner_candidates": [
+        "SandCheckbox/SandSwitch",
+        "canonical button-state",
+        "Design System"
+      ],
+      "chosen_owner": "Existing canonical Button/Checkbox/Switch interaction owners",
+      "fabushi_canonical_owner": "Existing canonical Button/Checkbox/Switch interaction owners",
+      "fabushi_target": "frontend/src/recovered/ui/sand-form-primitives.tsx, frontend/src/recovered/ui/button-state.ts",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/ui/button-state.ts"
+      ],
+      "fabushi_target_symbols": [
+        "SandCheckbox",
+        "SandSwitch",
+        "resolveButtonInteractionState"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/ui/button-state.ts"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:04e2b8ce33976435da3345b95c7d902d165fdebf",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13217,
+      "source_path": "Telegram/lib_ui::ui/widgets/inner_dropdown.cpp",
+      "source_blob_sha": "447664205d733b3e4ace767ccf3dbe41e6c401c2",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/inner_dropdown.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "447664205d733b3e4ace767ccf3dbe41e6c401c2",
+        "size": 11316
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::InnerDropdown"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/inner_dropdown.cpp",
+      "responsibility": "Menu/dropdown action selection, keyboard navigation, submenu/dismissal/focus-return/outside-click/disabled/a11y/lifetime semantics.",
+      "responsibilities": [
+        "Menu/dropdown action selection, keyboard navigation, submenu/dismissal/focus-return/outside-click/disabled/a11y/lifetime semantics."
+      ],
+      "existing_owner_candidates": [
+        "SandMenu",
+        "SandPopover",
+        "SandContextMenu",
+        "SandMenuItem"
+      ],
+      "chosen_owner": "Existing canonical SandMenu/SandPopover/MenuItem floating-surface owners",
+      "fabushi_canonical_owner": "Existing canonical SandMenu/SandPopover/MenuItem floating-surface owners",
+      "fabushi_target": "frontend/src/recovered/ui/sand-floating-primitives.tsx, frontend/src/recovered/ui/sand-menu-item.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-menu-item.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "SandMenuContent",
+        "SandMenuItem",
+        "SandContextMenu",
+        "FloatingRoot"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-menu-item.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:447664205d733b3e4ace767ccf3dbe41e6c401c2",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13218,
+      "source_path": "Telegram/lib_ui::ui/widgets/inner_dropdown.h",
+      "source_blob_sha": "ef4298f1b715782fde543e6ed0125f801787dd61",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/inner_dropdown.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "ef4298f1b715782fde543e6ed0125f801787dd61",
+        "size": 3759
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::InnerDropdown"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/inner_dropdown.h",
+      "responsibility": "Menu/dropdown action selection, keyboard navigation, submenu/dismissal/focus-return/outside-click/disabled/a11y/lifetime semantics.",
+      "responsibilities": [
+        "Menu/dropdown action selection, keyboard navigation, submenu/dismissal/focus-return/outside-click/disabled/a11y/lifetime semantics."
+      ],
+      "existing_owner_candidates": [
+        "SandMenu",
+        "SandPopover",
+        "SandContextMenu",
+        "SandMenuItem"
+      ],
+      "chosen_owner": "Existing canonical SandMenu/SandPopover/MenuItem floating-surface owners",
+      "fabushi_canonical_owner": "Existing canonical SandMenu/SandPopover/MenuItem floating-surface owners",
+      "fabushi_target": "frontend/src/recovered/ui/sand-floating-primitives.tsx, frontend/src/recovered/ui/sand-menu-item.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-menu-item.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "SandMenuContent",
+        "SandMenuItem",
+        "SandContextMenu",
+        "FloatingRoot"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-menu-item.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:ef4298f1b715782fde543e6ed0125f801787dd61",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13219,
+      "source_path": "Telegram/lib_ui::ui/widgets/kinetic_scroller.cpp",
+      "source_blob_sha": "c7b19924e111312e3ad34aca2474eccadde10aca",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/kinetic_scroller.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "c7b19924e111312e3ad34aca2474eccadde10aca",
+        "size": 13179
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::KineticScroller",
+        "Ui::InstallKineticScroller"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/kinetic_scroller.cpp",
+      "responsibility": "Scroll bounds, axis-lock, wheel/touch/kinetic/elastic temporal semantics, scrollbar visibility and scroll-to behavior.",
+      "responsibilities": [
+        "Scroll bounds, axis-lock, wheel/touch/kinetic/elastic temporal semantics, scrollbar visibility and scroll-to behavior."
+      ],
+      "existing_owner_candidates": [
+        "Chromium native scroll",
+        "horizontal-scroll-state",
+        "canonical list/transcript scroll"
+      ],
+      "chosen_owner": "Existing canonical scroll/input state + Chromium scrolling owner",
+      "fabushi_canonical_owner": "Existing canonical scroll/input state + Chromium scrolling owner",
+      "fabushi_target": "frontend/src/recovered/features/conversation/workspace/horizontal-scroll-state.ts, frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/features/conversation/workspace/horizontal-scroll-state.ts",
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "updateHorizontalScrollWheelLock",
+        "normalizeHorizontalScrollWheelDelta",
+        "Transcript"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/horizontal-scroll-state.ts",
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:c7b19924e111312e3ad34aca2474eccadde10aca",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13220,
+      "source_path": "Telegram/lib_ui::ui/widgets/kinetic_scroller.h",
+      "source_blob_sha": "577af1a496a0658f44fdc65bc126022936d90c9c",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/kinetic_scroller.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "577af1a496a0658f44fdc65bc126022936d90c9c",
+        "size": 411
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::KineticScroller",
+        "Ui::InstallKineticScroller"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/kinetic_scroller.h",
+      "responsibility": "Scroll bounds, axis-lock, wheel/touch/kinetic/elastic temporal semantics, scrollbar visibility and scroll-to behavior.",
+      "responsibilities": [
+        "Scroll bounds, axis-lock, wheel/touch/kinetic/elastic temporal semantics, scrollbar visibility and scroll-to behavior."
+      ],
+      "existing_owner_candidates": [
+        "Chromium native scroll",
+        "horizontal-scroll-state",
+        "canonical list/transcript scroll"
+      ],
+      "chosen_owner": "Existing canonical scroll/input state + Chromium scrolling owner",
+      "fabushi_canonical_owner": "Existing canonical scroll/input state + Chromium scrolling owner",
+      "fabushi_target": "frontend/src/recovered/features/conversation/workspace/horizontal-scroll-state.ts, frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/features/conversation/workspace/horizontal-scroll-state.ts",
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "updateHorizontalScrollWheelLock",
+        "normalizeHorizontalScrollWheelDelta",
+        "Transcript"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/horizontal-scroll-state.ts",
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:577af1a496a0658f44fdc65bc126022936d90c9c",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13221,
+      "source_path": "Telegram/lib_ui::ui/widgets/labels.cpp",
+      "source_blob_sha": "ceed27c4f5525a2924648561e63a57446b698141",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/labels.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "ceed27c4f5525a2924648561e63a57446b698141",
+        "size": 31640
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::FlatLabel",
+        "Ui::LabelSimple"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/labels.cpp",
+      "responsibility": "Unicode/bidi/shaping/entity/link/selection/quote/spoiler/custom-emoji/copy and safe rich-text behavior in the canonical Message/Transcript/Composer model.",
+      "responsibilities": [
+        "Unicode/bidi/shaping/entity/link/selection/quote/spoiler/custom-emoji/copy and safe rich-text behavior in the canonical Message/Transcript/Composer model."
+      ],
+      "existing_owner_candidates": [
+        "Message/Transcript rich-text projection",
+        "Composer rich editor",
+        "external URL policy",
+        "emoji/resource owner"
+      ],
+      "chosen_owner": "Existing canonical Message/Transcript/Composer rich-text + URL/Resource owners",
+      "fabushi_canonical_owner": "Existing canonical Message/Transcript/Composer rich-text + URL/Resource owners",
+      "fabushi_target": "frontend/src/recovered/features/conversation/workspace/transcript.tsx, frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx, source/shared/external-url-policy.ts, frontend/src/recovered/features/conversation/cards/transcript-card/emoji-catalog.ts",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "source/shared/external-url-policy.ts",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/emoji-catalog.ts"
+      ],
+      "fabushi_target_symbols": [
+        "Transcript",
+        "RichTextEditor",
+        "normalizeExternalUrl",
+        "EMOJI_CATALOG"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "source/shared/external-url-policy.ts",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/emoji-catalog.ts"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:ceed27c4f5525a2924648561e63a57446b698141",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13222,
+      "source_path": "Telegram/lib_ui::ui/widgets/labels.h",
+      "source_blob_sha": "5204b84f8ecae327af8a9f1f463ae69fa154bd75",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/labels.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "5204b84f8ecae327af8a9f1f463ae69fa154bd75",
+        "size": 8891
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::FlatLabel",
+        "Ui::LabelSimple"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/labels.h",
+      "responsibility": "Unicode/bidi/shaping/entity/link/selection/quote/spoiler/custom-emoji/copy and safe rich-text behavior in the canonical Message/Transcript/Composer model.",
+      "responsibilities": [
+        "Unicode/bidi/shaping/entity/link/selection/quote/spoiler/custom-emoji/copy and safe rich-text behavior in the canonical Message/Transcript/Composer model."
+      ],
+      "existing_owner_candidates": [
+        "Message/Transcript rich-text projection",
+        "Composer rich editor",
+        "external URL policy",
+        "emoji/resource owner"
+      ],
+      "chosen_owner": "Existing canonical Message/Transcript/Composer rich-text + URL/Resource owners",
+      "fabushi_canonical_owner": "Existing canonical Message/Transcript/Composer rich-text + URL/Resource owners",
+      "fabushi_target": "frontend/src/recovered/features/conversation/workspace/transcript.tsx, frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx, source/shared/external-url-policy.ts, frontend/src/recovered/features/conversation/cards/transcript-card/emoji-catalog.ts",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "source/shared/external-url-policy.ts",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/emoji-catalog.ts"
+      ],
+      "fabushi_target_symbols": [
+        "Transcript",
+        "RichTextEditor",
+        "normalizeExternalUrl",
+        "EMOJI_CATALOG"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "source/shared/external-url-policy.ts",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/emoji-catalog.ts"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:5204b84f8ecae327af8a9f1f463ae69fa154bd75",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13223,
+      "source_path": "Telegram/lib_ui::ui/widgets/menu/menu.cpp",
+      "source_blob_sha": "54211348a739dc6d2fc2c0dda760bd7a032d77f5",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/menu/menu.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "54211348a739dc6d2fc2c0dda760bd7a032d77f5",
+        "size": 14347
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::Menu::Menu"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/menu/menu.cpp",
+      "responsibility": "Menu/dropdown action selection, keyboard navigation, submenu/dismissal/focus-return/outside-click/disabled/a11y/lifetime semantics.",
+      "responsibilities": [
+        "Menu/dropdown action selection, keyboard navigation, submenu/dismissal/focus-return/outside-click/disabled/a11y/lifetime semantics."
+      ],
+      "existing_owner_candidates": [
+        "SandMenu",
+        "SandPopover",
+        "SandContextMenu",
+        "SandMenuItem"
+      ],
+      "chosen_owner": "Existing canonical SandMenu/SandPopover/MenuItem floating-surface owners",
+      "fabushi_canonical_owner": "Existing canonical SandMenu/SandPopover/MenuItem floating-surface owners",
+      "fabushi_target": "frontend/src/recovered/ui/sand-floating-primitives.tsx, frontend/src/recovered/ui/sand-menu-item.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-menu-item.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "SandMenuContent",
+        "SandMenuItem",
+        "SandContextMenu",
+        "FloatingRoot"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-menu-item.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:54211348a739dc6d2fc2c0dda760bd7a032d77f5",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13224,
+      "source_path": "Telegram/lib_ui::ui/widgets/menu/menu.h",
+      "source_blob_sha": "4fa82b70f341ffa02ba72e2522f6cb76c9513e05",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/menu/menu.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "4fa82b70f341ffa02ba72e2522f6cb76c9513e05",
+        "size": 5393
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::Menu::Menu"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/menu/menu.h",
+      "responsibility": "Menu/dropdown action selection, keyboard navigation, submenu/dismissal/focus-return/outside-click/disabled/a11y/lifetime semantics.",
+      "responsibilities": [
+        "Menu/dropdown action selection, keyboard navigation, submenu/dismissal/focus-return/outside-click/disabled/a11y/lifetime semantics."
+      ],
+      "existing_owner_candidates": [
+        "SandMenu",
+        "SandPopover",
+        "SandContextMenu",
+        "SandMenuItem"
+      ],
+      "chosen_owner": "Existing canonical SandMenu/SandPopover/MenuItem floating-surface owners",
+      "fabushi_canonical_owner": "Existing canonical SandMenu/SandPopover/MenuItem floating-surface owners",
+      "fabushi_target": "frontend/src/recovered/ui/sand-floating-primitives.tsx, frontend/src/recovered/ui/sand-menu-item.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-menu-item.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "SandMenuContent",
+        "SandMenuItem",
+        "SandContextMenu",
+        "FloatingRoot"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-menu-item.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:4fa82b70f341ffa02ba72e2522f6cb76c9513e05",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13225,
+      "source_path": "Telegram/lib_ui::ui/widgets/menu/menu_action.cpp",
+      "source_blob_sha": "4c16b6721e10b4afc268686ee1cd197076816a66",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/menu/menu_action.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "4c16b6721e10b4afc268686ee1cd197076816a66",
+        "size": 5523
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::Menu::Action"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/menu/menu_action.cpp",
+      "responsibility": "Menu/dropdown action selection, keyboard navigation, submenu/dismissal/focus-return/outside-click/disabled/a11y/lifetime semantics.",
+      "responsibilities": [
+        "Menu/dropdown action selection, keyboard navigation, submenu/dismissal/focus-return/outside-click/disabled/a11y/lifetime semantics."
+      ],
+      "existing_owner_candidates": [
+        "SandMenu",
+        "SandPopover",
+        "SandContextMenu",
+        "SandMenuItem"
+      ],
+      "chosen_owner": "Existing canonical SandMenu/SandPopover/MenuItem floating-surface owners",
+      "fabushi_canonical_owner": "Existing canonical SandMenu/SandPopover/MenuItem floating-surface owners",
+      "fabushi_target": "frontend/src/recovered/ui/sand-floating-primitives.tsx, frontend/src/recovered/ui/sand-menu-item.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-menu-item.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "SandMenuContent",
+        "SandMenuItem",
+        "SandContextMenu",
+        "FloatingRoot"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-menu-item.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:4c16b6721e10b4afc268686ee1cd197076816a66",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13226,
+      "source_path": "Telegram/lib_ui::ui/widgets/menu/menu_action.h",
+      "source_blob_sha": "2a2e6890f5a87cbbcef37057beea29116794fb12",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/menu/menu_action.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "2a2e6890f5a87cbbcef37057beea29116794fb12",
+        "size": 1923
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::Menu::Action"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/menu/menu_action.h",
+      "responsibility": "Menu/dropdown action selection, keyboard navigation, submenu/dismissal/focus-return/outside-click/disabled/a11y/lifetime semantics.",
+      "responsibilities": [
+        "Menu/dropdown action selection, keyboard navigation, submenu/dismissal/focus-return/outside-click/disabled/a11y/lifetime semantics."
+      ],
+      "existing_owner_candidates": [
+        "SandMenu",
+        "SandPopover",
+        "SandContextMenu",
+        "SandMenuItem"
+      ],
+      "chosen_owner": "Existing canonical SandMenu/SandPopover/MenuItem floating-surface owners",
+      "fabushi_canonical_owner": "Existing canonical SandMenu/SandPopover/MenuItem floating-surface owners",
+      "fabushi_target": "frontend/src/recovered/ui/sand-floating-primitives.tsx, frontend/src/recovered/ui/sand-menu-item.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-menu-item.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "SandMenuContent",
+        "SandMenuItem",
+        "SandContextMenu",
+        "FloatingRoot"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-menu-item.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:2a2e6890f5a87cbbcef37057beea29116794fb12",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13227,
+      "source_path": "Telegram/lib_ui::ui/widgets/menu/menu_add_action_callback.cpp",
+      "source_blob_sha": "feb67024768edf03d4cc7009aa7910163eb3de95",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/menu/menu_add_action_callback.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "feb67024768edf03d4cc7009aa7910163eb3de95",
+        "size": 748
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::Menu::MenuCallback"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/menu/menu_add_action_callback.cpp",
+      "responsibility": "Menu/dropdown action selection, keyboard navigation, submenu/dismissal/focus-return/outside-click/disabled/a11y/lifetime semantics.",
+      "responsibilities": [
+        "Menu/dropdown action selection, keyboard navigation, submenu/dismissal/focus-return/outside-click/disabled/a11y/lifetime semantics."
+      ],
+      "existing_owner_candidates": [
+        "SandMenu",
+        "SandPopover",
+        "SandContextMenu",
+        "SandMenuItem"
+      ],
+      "chosen_owner": "Existing canonical SandMenu/SandPopover/MenuItem floating-surface owners",
+      "fabushi_canonical_owner": "Existing canonical SandMenu/SandPopover/MenuItem floating-surface owners",
+      "fabushi_target": "frontend/src/recovered/ui/sand-floating-primitives.tsx, frontend/src/recovered/ui/sand-menu-item.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-menu-item.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "SandMenuContent",
+        "SandMenuItem",
+        "SandContextMenu",
+        "FloatingRoot"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-menu-item.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:feb67024768edf03d4cc7009aa7910163eb3de95",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13228,
+      "source_path": "Telegram/lib_ui::ui/widgets/menu/menu_add_action_callback.h",
+      "source_blob_sha": "73524d4770158d1a5583352a3b64e8f4448923c8",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/menu/menu_add_action_callback.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "73524d4770158d1a5583352a3b64e8f4448923c8",
+        "size": 1359
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::Menu::MenuCallback"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/menu/menu_add_action_callback.h",
+      "responsibility": "Menu/dropdown action selection, keyboard navigation, submenu/dismissal/focus-return/outside-click/disabled/a11y/lifetime semantics.",
+      "responsibilities": [
+        "Menu/dropdown action selection, keyboard navigation, submenu/dismissal/focus-return/outside-click/disabled/a11y/lifetime semantics."
+      ],
+      "existing_owner_candidates": [
+        "SandMenu",
+        "SandPopover",
+        "SandContextMenu",
+        "SandMenuItem"
+      ],
+      "chosen_owner": "Existing canonical SandMenu/SandPopover/MenuItem floating-surface owners",
+      "fabushi_canonical_owner": "Existing canonical SandMenu/SandPopover/MenuItem floating-surface owners",
+      "fabushi_target": "frontend/src/recovered/ui/sand-floating-primitives.tsx, frontend/src/recovered/ui/sand-menu-item.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-menu-item.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "SandMenuContent",
+        "SandMenuItem",
+        "SandContextMenu",
+        "FloatingRoot"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-menu-item.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:73524d4770158d1a5583352a3b64e8f4448923c8",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    }
+  ]
+}

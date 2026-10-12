@@ -1,0 +1,436 @@
+{
+  "accepted_upstream": "6fed91ffab9861771a75f29df65031b3c80b6941",
+  "accepted_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
+  "deterministic_order_basis": "non-directory/blob rank in accepted recursive tree",
+  "start": 5910,
+  "end": 5980,
+  "entries": [
+    {
+      "order": 5910,
+      "path": "Telegram/SourceFiles/ui/cached_round_corners.cpp",
+      "blob": "7da69a2299a1fc5d67f8392fe45ee82672b33440",
+      "consumer_symbol": "cached_round_corners.cpp"
+    },
+    {
+      "order": 5911,
+      "path": "Telegram/SourceFiles/ui/cached_round_corners.h",
+      "blob": "f20a06a112f9a0564afc20cb70f22777cdaf1189",
+      "consumer_symbol": "cached_round_corners.h"
+    },
+    {
+      "order": 5912,
+      "path": "Telegram/SourceFiles/ui/chat/attach/attach_abstract_single_file_preview.cpp",
+      "blob": "1fe46e5871d96d75c8f9d7b728e66facc9bb61a0",
+      "consumer_symbol": "attach_abstract_single_file_preview.cpp"
+    },
+    {
+      "order": 5913,
+      "path": "Telegram/SourceFiles/ui/chat/attach/attach_abstract_single_file_preview.h",
+      "blob": "11b7356f0f9372ff1d047c323e7c5506f7ecff77",
+      "consumer_symbol": "attach_abstract_single_file_preview.h"
+    },
+    {
+      "order": 5914,
+      "path": "Telegram/SourceFiles/ui/chat/attach/attach_abstract_single_media_preview.cpp",
+      "blob": "a50f10af5cebcc1ec09fabb1b114d2c164b3a10e",
+      "consumer_symbol": "attach_abstract_single_media_preview.cpp"
+    },
+    {
+      "order": 5915,
+      "path": "Telegram/SourceFiles/ui/chat/attach/attach_abstract_single_media_preview.h",
+      "blob": "9fcfe9ded8a4d9c8ecb6bcd8f52e59b37930bc76",
+      "consumer_symbol": "attach_abstract_single_media_preview.h"
+    },
+    {
+      "order": 5916,
+      "path": "Telegram/SourceFiles/ui/chat/attach/attach_abstract_single_preview.h",
+      "blob": "75442ccecfba34f32c1ad673a24c0168785e4f6f",
+      "consumer_symbol": "attach_abstract_single_preview.h"
+    },
+    {
+      "order": 5917,
+      "path": "Telegram/SourceFiles/ui/chat/attach/attach_album_preview.cpp",
+      "blob": "4db1725555f1467b8ab008db026b4c1ee19f8f66",
+      "consumer_symbol": "attach_album_preview.cpp"
+    },
+    {
+      "order": 5918,
+      "path": "Telegram/SourceFiles/ui/chat/attach/attach_album_preview.h",
+      "blob": "e8950c0126393fac4c92a5356ce8f7acef414acc",
+      "consumer_symbol": "attach_album_preview.h"
+    },
+    {
+      "order": 5919,
+      "path": "Telegram/SourceFiles/ui/chat/attach/attach_album_thumbnail.cpp",
+      "blob": "e36a3f249d38bc77504c7372780606147752cb60",
+      "consumer_symbol": "attach_album_thumbnail.cpp"
+    },
+    {
+      "order": 5920,
+      "path": "Telegram/SourceFiles/ui/chat/attach/attach_album_thumbnail.h",
+      "blob": "daacecb6137a7bfc9c0dd7ba1592c33c7a22d32c",
+      "consumer_symbol": "attach_album_thumbnail.h"
+    },
+    {
+      "order": 5921,
+      "path": "Telegram/SourceFiles/ui/chat/attach/attach_bot_downloads.cpp",
+      "blob": "037b3a4c911d9b3a83affc865c4b1bd9856c2207",
+      "consumer_symbol": "attach_bot_downloads.cpp"
+    },
+    {
+      "order": 5922,
+      "path": "Telegram/SourceFiles/ui/chat/attach/attach_bot_downloads.h",
+      "blob": "4e85e5e16866b1ab5f95ebdb3d5f92156ef8748d",
+      "consumer_symbol": "attach_bot_downloads.h"
+    },
+    {
+      "order": 5923,
+      "path": "Telegram/SourceFiles/ui/chat/attach/attach_bot_webview.cpp",
+      "blob": "540dc2afe3845ca8a0e8db34104f0654e7c522d0",
+      "consumer_symbol": "attach_bot_webview.cpp"
+    },
+    {
+      "order": 5924,
+      "path": "Telegram/SourceFiles/ui/chat/attach/attach_bot_webview.h",
+      "blob": "ca7fde6aa39e5075e12af3d345b2634c434bbeb5",
+      "consumer_symbol": "attach_bot_webview.h"
+    },
+    {
+      "order": 5925,
+      "path": "Telegram/SourceFiles/ui/chat/attach/attach_bot_webview_linux_shell.cpp",
+      "blob": "7dcc697c5830834997a9cb8f524150536cd19af4",
+      "consumer_symbol": "attach_bot_webview_linux_shell.cpp"
+    },
+    {
+      "order": 5926,
+      "path": "Telegram/SourceFiles/ui/chat/attach/attach_bot_webview_linux_shell.h",
+      "blob": "26316dcd75320c27f42805960781dc6fc9080739",
+      "consumer_symbol": "attach_bot_webview_linux_shell.h"
+    },
+    {
+      "order": 5927,
+      "path": "Telegram/SourceFiles/ui/chat/attach/attach_controls.cpp",
+      "blob": "bf29895e9aa380d5c97968d704e314a8f587529c",
+      "consumer_symbol": "attach_controls.cpp"
+    },
+    {
+      "order": 5928,
+      "path": "Telegram/SourceFiles/ui/chat/attach/attach_controls.h",
+      "blob": "3f3d2c31088b7fb89bffa0d48d48a6b110cfd09a",
+      "consumer_symbol": "attach_controls.h"
+    },
+    {
+      "order": 5929,
+      "path": "Telegram/SourceFiles/ui/chat/attach/attach_extensions.cpp",
+      "blob": "d88b31ca0e1bcf0639585c57f5004dc829d827f1",
+      "consumer_symbol": "attach_extensions.cpp"
+    },
+    {
+      "order": 5930,
+      "path": "Telegram/SourceFiles/ui/chat/attach/attach_extensions.h",
+      "blob": "a28ff7c7872ee4c31ce35b45e067753d68c7d905",
+      "consumer_symbol": "attach_extensions.h"
+    },
+    {
+      "order": 5931,
+      "path": "Telegram/SourceFiles/ui/chat/attach/attach_item_single_file_preview.cpp",
+      "blob": "8e60e74bfe4eaae551280b90fb8e88c335e75041",
+      "consumer_symbol": "attach_item_single_file_preview.cpp"
+    },
+    {
+      "order": 5932,
+      "path": "Telegram/SourceFiles/ui/chat/attach/attach_item_single_file_preview.h",
+      "blob": "3e8baafcde9f9808dc71c3af4fac84a2802024f5",
+      "consumer_symbol": "attach_item_single_file_preview.h"
+    },
+    {
+      "order": 5933,
+      "path": "Telegram/SourceFiles/ui/chat/attach/attach_item_single_media_preview.cpp",
+      "blob": "5ba4f683597192c8136abda6318e15e53d08147a",
+      "consumer_symbol": "attach_item_single_media_preview.cpp"
+    },
+    {
+      "order": 5934,
+      "path": "Telegram/SourceFiles/ui/chat/attach/attach_item_single_media_preview.h",
+      "blob": "69c6604a453836ea10268fadc54eba9038711345",
+      "consumer_symbol": "attach_item_single_media_preview.h"
+    },
+    {
+      "order": 5935,
+      "path": "Telegram/SourceFiles/ui/chat/attach/attach_prepare.cpp",
+      "blob": "218382b8cbc93ca58f47d83bc7babc8b4914fccd",
+      "consumer_symbol": "attach_prepare.cpp"
+    },
+    {
+      "order": 5936,
+      "path": "Telegram/SourceFiles/ui/chat/attach/attach_prepare.h",
+      "blob": "30f80af7c939f6e31264402ea8b79a2d404aae92",
+      "consumer_symbol": "attach_prepare.h"
+    },
+    {
+      "order": 5937,
+      "path": "Telegram/SourceFiles/ui/chat/attach/attach_send_files_way.cpp",
+      "blob": "abd8a36ed2afa4a3e0266c01d7cd20a21b87457c",
+      "consumer_symbol": "attach_send_files_way.cpp"
+    },
+    {
+      "order": 5938,
+      "path": "Telegram/SourceFiles/ui/chat/attach/attach_send_files_way.h",
+      "blob": "ba758ae69b21a9eef53109e1564137185ccb923c",
+      "consumer_symbol": "attach_send_files_way.h"
+    },
+    {
+      "order": 5939,
+      "path": "Telegram/SourceFiles/ui/chat/attach/attach_single_file_preview.cpp",
+      "blob": "c4d1ba383d596d882aa8b996b514cd06490dd5a3",
+      "consumer_symbol": "attach_single_file_preview.cpp"
+    },
+    {
+      "order": 5940,
+      "path": "Telegram/SourceFiles/ui/chat/attach/attach_single_file_preview.h",
+      "blob": "a388c0473e95e98b48f05d44446eb303e147b884",
+      "consumer_symbol": "attach_single_file_preview.h"
+    },
+    {
+      "order": 5941,
+      "path": "Telegram/SourceFiles/ui/chat/attach/attach_single_media_preview.cpp",
+      "blob": "01b5659bcae8fb404e36ef36ecacd27c1fd9baec",
+      "consumer_symbol": "attach_single_media_preview.cpp"
+    },
+    {
+      "order": 5942,
+      "path": "Telegram/SourceFiles/ui/chat/attach/attach_single_media_preview.h",
+      "blob": "ac5d4f84f447e991db7bd032e904a562c8c81635",
+      "consumer_symbol": "attach_single_media_preview.h"
+    },
+    {
+      "order": 5943,
+      "path": "Telegram/SourceFiles/ui/chat/chat.style",
+      "blob": "3f7770b717542a5a7764f4633b3c687156ddbb02",
+      "consumer_symbol": "chat.style",
+      "rebaseline_note": "Re-attested after 28ac5769→6fed91ff upstream modification; exact current blob and responsibility delta were re-read before updating this manifest."
+    },
+    {
+      "order": 5944,
+      "path": "Telegram/SourceFiles/ui/chat/chat_style.cpp",
+      "blob": "dd7e6816bc3ae21c7f1551e8ba8d669c923f79a1",
+      "consumer_symbol": "chat_style.cpp"
+    },
+    {
+      "order": 5945,
+      "path": "Telegram/SourceFiles/ui/chat/chat_style.h",
+      "blob": "6970744f9257e36abe1619fca5a564e600dff64b",
+      "consumer_symbol": "chat_style.h"
+    },
+    {
+      "order": 5946,
+      "path": "Telegram/SourceFiles/ui/chat/chat_style.style",
+      "blob": "1bc3cf58aee61bc79304973c5d5d2c3736ffac2d",
+      "consumer_symbol": "chat_style.style"
+    },
+    {
+      "order": 5947,
+      "path": "Telegram/SourceFiles/ui/chat/chat_style_radius.cpp",
+      "blob": "c3976270c7f841d553c261286c1d7fd1dfc6ef7b",
+      "consumer_symbol": "chat_style_radius.cpp"
+    },
+    {
+      "order": 5948,
+      "path": "Telegram/SourceFiles/ui/chat/chat_style_radius.h",
+      "blob": "408f3a6d7d4582f0ed6369b587c2ec1bba0d4a26",
+      "consumer_symbol": "chat_style_radius.h"
+    },
+    {
+      "order": 5949,
+      "path": "Telegram/SourceFiles/ui/chat/chat_theme.cpp",
+      "blob": "b2be18242425aa4ca9bcbd4357ef54ae1d554619",
+      "consumer_symbol": "chat_theme.cpp"
+    },
+    {
+      "order": 5950,
+      "path": "Telegram/SourceFiles/ui/chat/chat_theme.h",
+      "blob": "f867b23f2ee983740d3d9359dd4e5c482056c3f0",
+      "consumer_symbol": "chat_theme.h"
+    },
+    {
+      "order": 5951,
+      "path": "Telegram/SourceFiles/ui/chat/chat_theme_readability.cpp",
+      "blob": "11c736768ea553afdcebfb88df106a9eb1fde1db",
+      "consumer_symbol": "chat_theme_readability.cpp"
+    },
+    {
+      "order": 5952,
+      "path": "Telegram/SourceFiles/ui/chat/chat_theme_readability.h",
+      "blob": "3ba7c6fd89a40711345c8406f7c2131a4e571983",
+      "consumer_symbol": "chat_theme_readability.h"
+    },
+    {
+      "order": 5953,
+      "path": "Telegram/SourceFiles/ui/chat/chats_filter_tag.cpp",
+      "blob": "737b642d467c264cf8acec08eb32c60ecea039c9",
+      "consumer_symbol": "chats_filter_tag.cpp"
+    },
+    {
+      "order": 5954,
+      "path": "Telegram/SourceFiles/ui/chat/chats_filter_tag.h",
+      "blob": "8291b5e335e2d0a8d84af5faed9f27c4f6d0cbe1",
+      "consumer_symbol": "chats_filter_tag.h"
+    },
+    {
+      "order": 5955,
+      "path": "Telegram/SourceFiles/ui/chat/choose_send_as.cpp",
+      "blob": "4b3069916fa54de9ce421ef1355282cda55216a3",
+      "consumer_symbol": "choose_send_as.cpp"
+    },
+    {
+      "order": 5956,
+      "path": "Telegram/SourceFiles/ui/chat/choose_send_as.h",
+      "blob": "cce11a1c94076820a20bc0c1d30975efca1be501",
+      "consumer_symbol": "choose_send_as.h"
+    },
+    {
+      "order": 5957,
+      "path": "Telegram/SourceFiles/ui/chat/choose_theme_controller.cpp",
+      "blob": "a31e79e5e6441700fc5955f78f732841023a2eb1",
+      "consumer_symbol": "choose_theme_controller.cpp"
+    },
+    {
+      "order": 5958,
+      "path": "Telegram/SourceFiles/ui/chat/choose_theme_controller.h",
+      "blob": "8d09314a195a2afef3fd5486d5bd54702fc6a3b7",
+      "consumer_symbol": "choose_theme_controller.h"
+    },
+    {
+      "order": 5959,
+      "path": "Telegram/SourceFiles/ui/chat/forward_options_box.cpp",
+      "blob": "708ae65e92dc435bf798f8c0220b0547f35ab2bf",
+      "consumer_symbol": "forward_options_box.cpp"
+    },
+    {
+      "order": 5960,
+      "path": "Telegram/SourceFiles/ui/chat/forward_options_box.h",
+      "blob": "65db5fbe067e340e0259a23ae57cda59096ccda0",
+      "consumer_symbol": "forward_options_box.h"
+    },
+    {
+      "order": 5961,
+      "path": "Telegram/SourceFiles/ui/chat/group_call_bar.cpp",
+      "blob": "5870107971cc199e95d34040568fb2732f096f43",
+      "consumer_symbol": "group_call_bar.cpp"
+    },
+    {
+      "order": 5962,
+      "path": "Telegram/SourceFiles/ui/chat/group_call_bar.h",
+      "blob": "a31042cb4c1ae6c9c96fcdda2735bf86240004c0",
+      "consumer_symbol": "group_call_bar.h"
+    },
+    {
+      "order": 5963,
+      "path": "Telegram/SourceFiles/ui/chat/group_call_userpics.cpp",
+      "blob": "24ca26169704bdabfbdede4573431e7a28635b34",
+      "consumer_symbol": "group_call_userpics.cpp"
+    },
+    {
+      "order": 5964,
+      "path": "Telegram/SourceFiles/ui/chat/group_call_userpics.h",
+      "blob": "d9be41fd4d04e7c11977ca2de0d9c1ceeec693c8",
+      "consumer_symbol": "group_call_userpics.h"
+    },
+    {
+      "order": 5965,
+      "path": "Telegram/SourceFiles/ui/chat/message_bar.cpp",
+      "blob": "653aeabd0d5758f7a597da349f34aa65c04d9839",
+      "consumer_symbol": "message_bar.cpp"
+    },
+    {
+      "order": 5966,
+      "path": "Telegram/SourceFiles/ui/chat/message_bar.h",
+      "blob": "e0f6d912788fefb0df9aabd79560109095ee0b86",
+      "consumer_symbol": "message_bar.h"
+    },
+    {
+      "order": 5967,
+      "path": "Telegram/SourceFiles/ui/chat/message_bubble.cpp",
+      "blob": "e043dd5ae13269b4a8ae7fdaa1451c17d2c0bccc",
+      "consumer_symbol": "message_bubble.cpp"
+    },
+    {
+      "order": 5968,
+      "path": "Telegram/SourceFiles/ui/chat/message_bubble.h",
+      "blob": "40d466d046db70d98783ae1666779c1968400218",
+      "consumer_symbol": "message_bubble.h"
+    },
+    {
+      "order": 5969,
+      "path": "Telegram/SourceFiles/ui/chat/more_chats_bar.cpp",
+      "blob": "be658165bee559ee33e7318421fac0f93a88acfb",
+      "consumer_symbol": "more_chats_bar.cpp"
+    },
+    {
+      "order": 5970,
+      "path": "Telegram/SourceFiles/ui/chat/more_chats_bar.h",
+      "blob": "f920e4832ecf9d2201e0bca0ee0da4644f7b1660",
+      "consumer_symbol": "more_chats_bar.h"
+    },
+    {
+      "order": 5971,
+      "path": "Telegram/SourceFiles/ui/chat/pinned_bar.cpp",
+      "blob": "cc6e5f621ea7315eb46a1d949c0f7e9d218a3e06",
+      "consumer_symbol": "pinned_bar.cpp"
+    },
+    {
+      "order": 5972,
+      "path": "Telegram/SourceFiles/ui/chat/pinned_bar.h",
+      "blob": "6505d181117f54cc58651d602a280c2ba0a924bc",
+      "consumer_symbol": "pinned_bar.h"
+    },
+    {
+      "order": 5973,
+      "path": "Telegram/SourceFiles/ui/chat/requests_bar.cpp",
+      "blob": "930bd7a3c31e057732aa2d2aab7e19328eb57a56",
+      "consumer_symbol": "requests_bar.cpp"
+    },
+    {
+      "order": 5974,
+      "path": "Telegram/SourceFiles/ui/chat/requests_bar.h",
+      "blob": "047d64a6db326984f1dbe7518aeb5bae93b80213",
+      "consumer_symbol": "requests_bar.h"
+    },
+    {
+      "order": 5975,
+      "path": "Telegram/SourceFiles/ui/chat/sponsored_message_bar.cpp",
+      "blob": "4218ae0063fcd504283a0be129cd1ec8bad78a49",
+      "consumer_symbol": "sponsored_message_bar.cpp"
+    },
+    {
+      "order": 5976,
+      "path": "Telegram/SourceFiles/ui/chat/sponsored_message_bar.h",
+      "blob": "e127fb1e4eab145697849fe52380704239474344",
+      "consumer_symbol": "sponsored_message_bar.h"
+    },
+    {
+      "order": 5977,
+      "path": "Telegram/SourceFiles/ui/chat/torn_edge.cpp",
+      "blob": "3f9c76a0f895b73820a55f395b8b1584c5d530b1",
+      "consumer_symbol": "torn_edge.cpp"
+    },
+    {
+      "order": 5978,
+      "path": "Telegram/SourceFiles/ui/chat/torn_edge.h",
+      "blob": "b386f88cdb27328a5958c0868674c712c1a455fd",
+      "consumer_symbol": "torn_edge.h"
+    },
+    {
+      "order": 5979,
+      "path": "Telegram/SourceFiles/ui/chat/unsupported_notice.cpp",
+      "blob": "d6219db6299cc3e85df9a40cdc25b73aaab91df4",
+      "consumer_symbol": "unsupported_notice.cpp"
+    },
+    {
+      "order": 5980,
+      "path": "Telegram/SourceFiles/ui/chat/unsupported_notice.h",
+      "blob": "6210874350a5ff9fe81bf2c16a90abad795fb6a3",
+      "consumer_symbol": "unsupported_notice.h"
+    }
+  ]
+}

@@ -1,0 +1,3 @@
+# Hime input-context and IMdkit protocol semantics — orders 8,061–8,076
+
+Exact source reading preserves mature source-neutral responsibilities: per-editable input-context identity/focus/preedit/status lifecycle; typed capabilities and attributes; connect/auth/open/close, context create/destroy, focus/event/sync/commit/reset/preedit/status state machines; endian-aware length/count/padding/nested framing; exactly-one transport selection with fail-closed teardown; distinct event/commit/preedit/sync dispatch; and async/sync callback settlement. Hime/XIM/X11 is not retained. Applicable semantics map to existing canonical platform-input, PromptRichTextEditor, networking/serialization, Settings and recovery owners. All rows remain mapped-open; reading closes no unknown.

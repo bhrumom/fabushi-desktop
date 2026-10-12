@@ -1,0 +1,27 @@
+{
+  "accepted_upstream": "b0d1fe5e08c963402b8b71648c70a2bf68e6fab2",
+  "accepted_tree": "e279373aec283ebfcc6e3bb7385e51205acd84a2",
+  "deterministic_order_basis": "non-directory/blob rank in accepted recursive tree",
+  "start": 5822,
+  "end": 5824,
+  "entries": [
+    {
+      "order": 5822,
+      "path": "Telegram/SourceFiles/test/test_scenario.cpp",
+      "blob": "3ac20516865c5c4f2e1be557c3a5104ad4465b6a",
+      "consumer_symbol": "SetupScenario"
+    },
+    {
+      "order": 5823,
+      "path": "Telegram/SourceFiles/test/test_secrecy_scan.cpp",
+      "blob": "5d7a64b6150d8a6c309d37b922c9440af24d29b6",
+      "consumer_symbol": "CheckSecrecy"
+    },
+    {
+      "order": 5824,
+      "path": "Telegram/SourceFiles/test/test_secrecy_scan.h",
+      "blob": "f579c1cdf823a961fc2e9114af870ba9b462d92e",
+      "consumer_symbol": "SecrecyScanArgs"
+    }
+  ]
+}

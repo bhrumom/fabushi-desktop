@@ -1,0 +1,1817 @@
+{
+  "format_version": 2,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+    "tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6"
+  },
+  "range": {
+    "first_order": 11117,
+    "last_order": 11180,
+    "entries": 64
+  },
+  "range_evidence": {
+    "head_sha": "e2f2ca67fad222cf5631b858a13719a7cbad29b3",
+    "workflow_run": 38143537190,
+    "job_id": 114482083927,
+    "artifact_id": 11704176427,
+    "artifact_digest": "sha256:aacf80e5efad0eda199b16cd5aa8d3112f69aca2d36d4ed77dc3324b134390d1",
+    "note": "Exact-head GitHub Actions validated Revision 9 and materialized orders 11,117-11,180; the helper verified each exact Git blob SHA before artifact upload. Rows remain mapped-open."
+  },
+  "rows": [
+    {
+      "recursive_order": 11117,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/utility/concepts.hpp",
+      "source_blob_sha": "b8a1c91fc37b8dffa08b465722f8ec7baab46656",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/utility/concepts.hpp",
+        "object": "b8a1c91fc37b8dffa08b465722f8ec7baab46656",
+        "mode": "100644",
+        "type": "blob",
+        "size": 709
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 utility/value/lifetime compatibility layer",
+      "source_symbols": [
+        "concepts"
+      ],
+      "responsibility": "Generic utility semantics for concepts, copy/move/value access, iterator traits, memory/lifetime fencing, optional/variant/value storage, random generation, scope-exit cleanup, semiregular wrappers, tuple/tag helpers and swap/unreachable contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11118,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/utility/copy.hpp",
+      "source_blob_sha": "20b95a302e7eb16a88d135c39f340616eeb676d1",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/utility/copy.hpp",
+        "object": "20b95a302e7eb16a88d135c39f340616eeb676d1",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1537
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 utility/value/lifetime compatibility layer",
+      "source_symbols": [
+        "copy"
+      ],
+      "responsibility": "Generic utility semantics for concepts, copy/move/value access, iterator traits, memory/lifetime fencing, optional/variant/value storage, random generation, scope-exit cleanup, semiregular wrappers, tuple/tag helpers and swap/unreachable contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11119,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/utility/counted_iterator.hpp",
+      "source_blob_sha": "1564e2774018c7c6eab69f4405622f41fcfa237a",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/utility/counted_iterator.hpp",
+        "object": "1564e2774018c7c6eab69f4405622f41fcfa237a",
+        "mode": "100644",
+        "type": "blob",
+        "size": 648
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 utility/value/lifetime compatibility layer",
+      "source_symbols": [
+        "counted_iterator"
+      ],
+      "responsibility": "Generic utility semantics for concepts, copy/move/value access, iterator traits, memory/lifetime fencing, optional/variant/value storage, random generation, scope-exit cleanup, semiregular wrappers, tuple/tag helpers and swap/unreachable contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11120,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/utility/dangling.hpp",
+      "source_blob_sha": "60eed25dc0a904861a760947aff2510e12825ac4",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/utility/dangling.hpp",
+        "object": "60eed25dc0a904861a760947aff2510e12825ac4",
+        "mode": "100644",
+        "type": "blob",
+        "size": 604
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 utility/value/lifetime compatibility layer",
+      "source_symbols": [
+        "dangling"
+      ],
+      "responsibility": "Generic utility semantics for concepts, copy/move/value access, iterator traits, memory/lifetime fencing, optional/variant/value storage, random generation, scope-exit cleanup, semiregular wrappers, tuple/tag helpers and swap/unreachable contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11121,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/utility/functional.hpp",
+      "source_blob_sha": "641883fa8f20c77d92c5f473c53177bfd37fed88",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/utility/functional.hpp",
+        "object": "641883fa8f20c77d92c5f473c53177bfd37fed88",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1386
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 utility/value/lifetime compatibility layer",
+      "source_symbols": [
+        "functional"
+      ],
+      "responsibility": "Generic utility semantics for concepts, copy/move/value access, iterator traits, memory/lifetime fencing, optional/variant/value storage, random generation, scope-exit cleanup, semiregular wrappers, tuple/tag helpers and swap/unreachable contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11122,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/utility/get.hpp",
+      "source_blob_sha": "fc4247864bb30303b98db17d2ff75d0052b766ef",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/utility/get.hpp",
+        "object": "fc4247864bb30303b98db17d2ff75d0052b766ef",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1715
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 utility/value/lifetime compatibility layer",
+      "source_symbols": [
+        "get"
+      ],
+      "responsibility": "Generic utility semantics for concepts, copy/move/value access, iterator traits, memory/lifetime fencing, optional/variant/value storage, random generation, scope-exit cleanup, semiregular wrappers, tuple/tag helpers and swap/unreachable contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11123,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/utility/in_place.hpp",
+      "source_blob_sha": "061ee343ab1affc8a397bf90b668e4cb4d3781a7",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/utility/in_place.hpp",
+        "object": "061ee343ab1affc8a397bf90b668e4cb4d3781a7",
+        "mode": "100644",
+        "type": "blob",
+        "size": 735
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 utility/value/lifetime compatibility layer",
+      "source_symbols": [
+        "in_place"
+      ],
+      "responsibility": "Generic utility semantics for concepts, copy/move/value access, iterator traits, memory/lifetime fencing, optional/variant/value storage, random generation, scope-exit cleanup, semiregular wrappers, tuple/tag helpers and swap/unreachable contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11124,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/utility/infinity.hpp",
+      "source_blob_sha": "d7f60c7ded21247c8ff85a9e6a7a822de61946df",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/utility/infinity.hpp",
+        "object": "d7f60c7ded21247c8ff85a9e6a7a822de61946df",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1944
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 utility/value/lifetime compatibility layer",
+      "source_symbols": [
+        "infinity"
+      ],
+      "responsibility": "Generic utility semantics for concepts, copy/move/value access, iterator traits, memory/lifetime fencing, optional/variant/value storage, random generation, scope-exit cleanup, semiregular wrappers, tuple/tag helpers and swap/unreachable contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11125,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/utility/invoke.hpp",
+      "source_blob_sha": "a88f4210aa1784dd1eec159dfc800d897ec37090",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/utility/invoke.hpp",
+        "object": "a88f4210aa1784dd1eec159dfc800d897ec37090",
+        "mode": "100644",
+        "type": "blob",
+        "size": 648
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 utility/value/lifetime compatibility layer",
+      "source_symbols": [
+        "invoke"
+      ],
+      "responsibility": "Generic utility semantics for concepts, copy/move/value access, iterator traits, memory/lifetime fencing, optional/variant/value storage, random generation, scope-exit cleanup, semiregular wrappers, tuple/tag helpers and swap/unreachable contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11126,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/utility/iterator.hpp",
+      "source_blob_sha": "b9848e26b4b564ebb3a4bd08a522c632d5efec65",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/utility/iterator.hpp",
+        "object": "b9848e26b4b564ebb3a4bd08a522c632d5efec65",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1036
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 utility/value/lifetime compatibility layer",
+      "source_symbols": [
+        "iterator"
+      ],
+      "responsibility": "Generic utility semantics for concepts, copy/move/value access, iterator traits, memory/lifetime fencing, optional/variant/value storage, random generation, scope-exit cleanup, semiregular wrappers, tuple/tag helpers and swap/unreachable contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11127,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/utility/iterator_concepts.hpp",
+      "source_blob_sha": "619d0d536763b6465cc37ccd7bbc733b080f7336",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/utility/iterator_concepts.hpp",
+        "object": "619d0d536763b6465cc37ccd7bbc733b080f7336",
+        "mode": "100644",
+        "type": "blob",
+        "size": 678
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 utility/value/lifetime compatibility layer",
+      "source_symbols": [
+        "iterator_concepts"
+      ],
+      "responsibility": "Generic utility semantics for concepts, copy/move/value access, iterator traits, memory/lifetime fencing, optional/variant/value storage, random generation, scope-exit cleanup, semiregular wrappers, tuple/tag helpers and swap/unreachable contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11128,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/utility/iterator_traits.hpp",
+      "source_blob_sha": "feaf30e636198e346bcf1de0412a42c94552e03d",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/utility/iterator_traits.hpp",
+        "object": "feaf30e636198e346bcf1de0412a42c94552e03d",
+        "mode": "100644",
+        "type": "blob",
+        "size": 661
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 utility/value/lifetime compatibility layer",
+      "source_symbols": [
+        "iterator_traits"
+      ],
+      "responsibility": "Generic utility semantics for concepts, copy/move/value access, iterator traits, memory/lifetime fencing, optional/variant/value storage, random generation, scope-exit cleanup, semiregular wrappers, tuple/tag helpers and swap/unreachable contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11129,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/utility/memory.hpp",
+      "source_blob_sha": "fe7da97da28b4fc1b1c877bf0581b4ce90878968",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/utility/memory.hpp",
+        "object": "fe7da97da28b4fc1b1c877bf0581b4ce90878968",
+        "mode": "100644",
+        "type": "blob",
+        "size": 7253
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 utility/value/lifetime compatibility layer",
+      "source_symbols": [
+        "memory"
+      ],
+      "responsibility": "Generic utility semantics for concepts, copy/move/value access, iterator traits, memory/lifetime fencing, optional/variant/value storage, random generation, scope-exit cleanup, semiregular wrappers, tuple/tag helpers and swap/unreachable contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11130,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/utility/move.hpp",
+      "source_blob_sha": "7af9be121b85bccaf2ef3c38f0dbc6171ea2ed3c",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/utility/move.hpp",
+        "object": "7af9be121b85bccaf2ef3c38f0dbc6171ea2ed3c",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1661
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 utility/value/lifetime compatibility layer",
+      "source_symbols": [
+        "move"
+      ],
+      "responsibility": "Generic utility semantics for concepts, copy/move/value access, iterator traits, memory/lifetime fencing, optional/variant/value storage, random generation, scope-exit cleanup, semiregular wrappers, tuple/tag helpers and swap/unreachable contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11131,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/utility/nullptr_v.hpp",
+      "source_blob_sha": "b8338b042227f910f0e88f545f19cf6600f0a4ad",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/utility/nullptr_v.hpp",
+        "object": "b8338b042227f910f0e88f545f19cf6600f0a4ad",
+        "mode": "100644",
+        "type": "blob",
+        "size": 947
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 utility/value/lifetime compatibility layer",
+      "source_symbols": [
+        "nullptr_v"
+      ],
+      "responsibility": "Generic utility semantics for concepts, copy/move/value access, iterator traits, memory/lifetime fencing, optional/variant/value storage, random generation, scope-exit cleanup, semiregular wrappers, tuple/tag helpers and swap/unreachable contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11132,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/utility/optional.hpp",
+      "source_blob_sha": "29895b3ebb943844868ae5288383a96ccb01aaff",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/utility/optional.hpp",
+        "object": "29895b3ebb943844868ae5288383a96ccb01aaff",
+        "mode": "100644",
+        "type": "blob",
+        "size": 37884
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 utility/value/lifetime compatibility layer",
+      "source_symbols": [
+        "optional"
+      ],
+      "responsibility": "Generic utility semantics for concepts, copy/move/value access, iterator traits, memory/lifetime fencing, optional/variant/value storage, random generation, scope-exit cleanup, semiregular wrappers, tuple/tag helpers and swap/unreachable contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11133,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/utility/polymorphic_cast.hpp",
+      "source_blob_sha": "e0949ab178cd53dfe3b7e26dac5684ca5590615c",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/utility/polymorphic_cast.hpp",
+        "object": "e0949ab178cd53dfe3b7e26dac5684ca5590615c",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1558
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 utility/value/lifetime compatibility layer",
+      "source_symbols": [
+        "polymorphic_cast"
+      ],
+      "responsibility": "Generic utility semantics for concepts, copy/move/value access, iterator traits, memory/lifetime fencing, optional/variant/value storage, random generation, scope-exit cleanup, semiregular wrappers, tuple/tag helpers and swap/unreachable contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11134,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/utility/random.hpp",
+      "source_blob_sha": "04c8c5d002a4e95c5169ad7febc4a9583e9208e4",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/utility/random.hpp",
+        "object": "04c8c5d002a4e95c5169ad7febc4a9583e9208e4",
+        "mode": "100644",
+        "type": "blob",
+        "size": 20444
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 utility/value/lifetime compatibility layer",
+      "source_symbols": [
+        "random"
+      ],
+      "responsibility": "Generic utility semantics for concepts, copy/move/value access, iterator traits, memory/lifetime fencing, optional/variant/value storage, random generation, scope-exit cleanup, semiregular wrappers, tuple/tag helpers and swap/unreachable contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11135,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/utility/scope_exit.hpp",
+      "source_blob_sha": "243e23a1f3c7fee010e7e96fbd0a07ceba5f2609",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/utility/scope_exit.hpp",
+        "object": "243e23a1f3c7fee010e7e96fbd0a07ceba5f2609",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2532
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 utility/value/lifetime compatibility layer",
+      "source_symbols": [
+        "scope_exit"
+      ],
+      "responsibility": "Generic utility semantics for concepts, copy/move/value access, iterator traits, memory/lifetime fencing, optional/variant/value storage, random generation, scope-exit cleanup, semiregular wrappers, tuple/tag helpers and swap/unreachable contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11136,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/utility/semiregular.hpp",
+      "source_blob_sha": "8f481fc1f2b3cf4c8b6bac8386b4227231630b2b",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/utility/semiregular.hpp",
+        "object": "8f481fc1f2b3cf4c8b6bac8386b4227231630b2b",
+        "mode": "100644",
+        "type": "blob",
+        "size": 645
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 utility/value/lifetime compatibility layer",
+      "source_symbols": [
+        "semiregular"
+      ],
+      "responsibility": "Generic utility semantics for concepts, copy/move/value access, iterator traits, memory/lifetime fencing, optional/variant/value storage, random generation, scope-exit cleanup, semiregular wrappers, tuple/tag helpers and swap/unreachable contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11137,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/utility/semiregular_box.hpp",
+      "source_blob_sha": "cfa371df50c93033b96661203ecaf04cc179375a",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/utility/semiregular_box.hpp",
+        "object": "cfa371df50c93033b96661203ecaf04cc179375a",
+        "mode": "100644",
+        "type": "blob",
+        "size": 11242
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 utility/value/lifetime compatibility layer",
+      "source_symbols": [
+        "semiregular_box"
+      ],
+      "responsibility": "Generic utility semantics for concepts, copy/move/value access, iterator traits, memory/lifetime fencing, optional/variant/value storage, random generation, scope-exit cleanup, semiregular wrappers, tuple/tag helpers and swap/unreachable contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11138,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/utility/static_const.hpp",
+      "source_blob_sha": "690a142851893ddf5435bef71c35989046459a1e",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/utility/static_const.hpp",
+        "object": "690a142851893ddf5435bef71c35989046459a1e",
+        "mode": "100644",
+        "type": "blob",
+        "size": 714
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 utility/value/lifetime compatibility layer",
+      "source_symbols": [
+        "static_const"
+      ],
+      "responsibility": "Generic utility semantics for concepts, copy/move/value access, iterator traits, memory/lifetime fencing, optional/variant/value storage, random generation, scope-exit cleanup, semiregular wrappers, tuple/tag helpers and swap/unreachable contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11139,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/utility/swap.hpp",
+      "source_blob_sha": "3a492a45d11f87d7f713bdb79554fb1ef71a9b9d",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/utility/swap.hpp",
+        "object": "3a492a45d11f87d7f713bdb79554fb1ef71a9b9d",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1381
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 utility/value/lifetime compatibility layer",
+      "source_symbols": [
+        "swap"
+      ],
+      "responsibility": "Generic utility semantics for concepts, copy/move/value access, iterator traits, memory/lifetime fencing, optional/variant/value storage, random generation, scope-exit cleanup, semiregular wrappers, tuple/tag helpers and swap/unreachable contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11140,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/utility/tagged_pair.hpp",
+      "source_blob_sha": "7669ecf4ee6eb9c3969ceaed599d31103fd47a17",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/utility/tagged_pair.hpp",
+        "object": "7669ecf4ee6eb9c3969ceaed599d31103fd47a17",
+        "mode": "100644",
+        "type": "blob",
+        "size": 9523
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 utility/value/lifetime compatibility layer",
+      "source_symbols": [
+        "tagged_pair"
+      ],
+      "responsibility": "Generic utility semantics for concepts, copy/move/value access, iterator traits, memory/lifetime fencing, optional/variant/value storage, random generation, scope-exit cleanup, semiregular wrappers, tuple/tag helpers and swap/unreachable contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11141,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/utility/tagged_tuple.hpp",
+      "source_blob_sha": "4efe07d47b67960cc0d7ebd883582a768ecb5828",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/utility/tagged_tuple.hpp",
+        "object": "4efe07d47b67960cc0d7ebd883582a768ecb5828",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1230
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 utility/value/lifetime compatibility layer",
+      "source_symbols": [
+        "tagged_tuple"
+      ],
+      "responsibility": "Generic utility semantics for concepts, copy/move/value access, iterator traits, memory/lifetime fencing, optional/variant/value storage, random generation, scope-exit cleanup, semiregular wrappers, tuple/tag helpers and swap/unreachable contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11142,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/utility/tuple_algorithm.hpp",
+      "source_blob_sha": "dcaedb41eb622487fb9df9996f39ce515d800530",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/utility/tuple_algorithm.hpp",
+        "object": "dcaedb41eb622487fb9df9996f39ce515d800530",
+        "mode": "100644",
+        "type": "blob",
+        "size": 6680
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 utility/value/lifetime compatibility layer",
+      "source_symbols": [
+        "tuple_algorithm"
+      ],
+      "responsibility": "Generic utility semantics for concepts, copy/move/value access, iterator traits, memory/lifetime fencing, optional/variant/value storage, random generation, scope-exit cleanup, semiregular wrappers, tuple/tag helpers and swap/unreachable contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11143,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/utility/unreachable.hpp",
+      "source_blob_sha": "f01aa358f2d865d59c04c1d114d3e16d87b57cf5",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/utility/unreachable.hpp",
+        "object": "f01aa358f2d865d59c04c1d114d3e16d87b57cf5",
+        "mode": "100644",
+        "type": "blob",
+        "size": 646
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 utility/value/lifetime compatibility layer",
+      "source_symbols": [
+        "unreachable"
+      ],
+      "responsibility": "Generic utility semantics for concepts, copy/move/value access, iterator traits, memory/lifetime fencing, optional/variant/value storage, random generation, scope-exit cleanup, semiregular wrappers, tuple/tag helpers and swap/unreachable contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11144,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/utility/variant.hpp",
+      "source_blob_sha": "438e58d88380a3cd294121282bda085d6e562a48",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/utility/variant.hpp",
+        "object": "438e58d88380a3cd294121282bda085d6e562a48",
+        "mode": "100644",
+        "type": "blob",
+        "size": 4472
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 utility/value/lifetime compatibility layer",
+      "source_symbols": [
+        "variant"
+      ],
+      "responsibility": "Generic utility semantics for concepts, copy/move/value access, iterator traits, memory/lifetime fencing, optional/variant/value storage, random generation, scope-exit cleanup, semiregular wrappers, tuple/tag helpers and swap/unreachable contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11145,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/version.hpp",
+      "source_blob_sha": "511e6872c3cca2097af0f870e5cfa2005f2a3c85",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/version.hpp",
+        "object": "511e6872c3cca2097af0f870e5cfa2005f2a3c85",
+        "mode": "100644",
+        "type": "blob",
+        "size": 586
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 utility/value/lifetime compatibility layer",
+      "source_symbols": [
+        "version"
+      ],
+      "responsibility": "Generic utility semantics for concepts, copy/move/value access, iterator traits, memory/lifetime fencing, optional/variant/value storage, random generation, scope-exit cleanup, semiregular wrappers, tuple/tag helpers and swap/unreachable contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11146,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/view.hpp",
+      "source_blob_sha": "10d4aeee3dc8e356b5f7c9d324edce1c8bd89819",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/view.hpp",
+        "object": "10d4aeee3dc8e356b5f7c9d324edce1c8bd89819",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3103
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 lazy view/adaptor infrastructure",
+      "source_symbols": [
+        "view"
+      ],
+      "responsibility": "Generic lazy range-view/adaptor semantics including ownership and dangling fences, iterator/category propagation, caching, bounds, predicate/generator lifetime, composition, chunk/drop/filter/group/scan/enumeration behavior and non-owning traversal contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11147,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/view/adaptor.hpp",
+      "source_blob_sha": "0d0ddf6b65c708b713cab613beaa83ee35f6b7b0",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/view/adaptor.hpp",
+        "object": "0d0ddf6b65c708b713cab613beaa83ee35f6b7b0",
+        "mode": "100644",
+        "type": "blob",
+        "size": 22597
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 lazy view/adaptor infrastructure",
+      "source_symbols": [
+        "adaptor"
+      ],
+      "responsibility": "Generic lazy range-view/adaptor semantics including ownership and dangling fences, iterator/category propagation, caching, bounds, predicate/generator lifetime, composition, chunk/drop/filter/group/scan/enumeration behavior and non-owning traversal contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11148,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/view/addressof.hpp",
+      "source_blob_sha": "44e9b65cc707aba4274b7fc6cc95cef1657d5c11",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/view/addressof.hpp",
+        "object": "44e9b65cc707aba4274b7fc6cc95cef1657d5c11",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1700
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 lazy view/adaptor infrastructure",
+      "source_symbols": [
+        "addressof"
+      ],
+      "responsibility": "Generic lazy range-view/adaptor semantics including ownership and dangling fences, iterator/category propagation, caching, bounds, predicate/generator lifetime, composition, chunk/drop/filter/group/scan/enumeration behavior and non-owning traversal contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11149,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/view/adjacent_filter.hpp",
+      "source_blob_sha": "6b3be82505d983b3b4b720ed58b5bfc15250e46e",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/view/adjacent_filter.hpp",
+        "object": "6b3be82505d983b3b4b720ed58b5bfc15250e46e",
+        "mode": "100644",
+        "type": "blob",
+        "size": 6177
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 lazy view/adaptor infrastructure",
+      "source_symbols": [
+        "adjacent_filter"
+      ],
+      "responsibility": "Generic lazy range-view/adaptor semantics including ownership and dangling fences, iterator/category propagation, caching, bounds, predicate/generator lifetime, composition, chunk/drop/filter/group/scan/enumeration behavior and non-owning traversal contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11150,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/view/adjacent_remove_if.hpp",
+      "source_blob_sha": "9f92015b7d2512ce00ac23d6feddf83927c53474",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/view/adjacent_remove_if.hpp",
+        "object": "9f92015b7d2512ce00ac23d6feddf83927c53474",
+        "mode": "100644",
+        "type": "blob",
+        "size": 5811
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 lazy view/adaptor infrastructure",
+      "source_symbols": [
+        "adjacent_remove_if"
+      ],
+      "responsibility": "Generic lazy range-view/adaptor semantics including ownership and dangling fences, iterator/category propagation, caching, bounds, predicate/generator lifetime, composition, chunk/drop/filter/group/scan/enumeration behavior and non-owning traversal contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11151,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/view/all.hpp",
+      "source_blob_sha": "c723d63f7a763d3320e49345093b259725cc9dc0",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/view/all.hpp",
+        "object": "c723d63f7a763d3320e49345093b259725cc9dc0",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3884
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 lazy view/adaptor infrastructure",
+      "source_symbols": [
+        "all"
+      ],
+      "responsibility": "Generic lazy range-view/adaptor semantics including ownership and dangling fences, iterator/category propagation, caching, bounds, predicate/generator lifetime, composition, chunk/drop/filter/group/scan/enumeration behavior and non-owning traversal contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11152,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/view/any_view.hpp",
+      "source_blob_sha": "3899a2e90b365da97dd8c4ae4015888c2d3f7db5",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/view/any_view.hpp",
+        "object": "3899a2e90b365da97dd8c4ae4015888c2d3f7db5",
+        "mode": "100644",
+        "type": "blob",
+        "size": 23587
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 lazy view/adaptor infrastructure",
+      "source_symbols": [
+        "any_view"
+      ],
+      "responsibility": "Generic lazy range-view/adaptor semantics including ownership and dangling fences, iterator/category propagation, caching, bounds, predicate/generator lifetime, composition, chunk/drop/filter/group/scan/enumeration behavior and non-owning traversal contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11153,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/view/bounded.hpp",
+      "source_blob_sha": "75932323e80c65b0fe847d6fe1fb4adf882004a1",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/view/bounded.hpp",
+        "object": "75932323e80c65b0fe847d6fe1fb4adf882004a1",
+        "mode": "100644",
+        "type": "blob",
+        "size": 599
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 lazy view/adaptor infrastructure",
+      "source_symbols": [
+        "bounded"
+      ],
+      "responsibility": "Generic lazy range-view/adaptor semantics including ownership and dangling fences, iterator/category propagation, caching, bounds, predicate/generator lifetime, composition, chunk/drop/filter/group/scan/enumeration behavior and non-owning traversal contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11154,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/view/c_str.hpp",
+      "source_blob_sha": "e36a3c566d17b50e2e57bddc6878faf8a49c3f4e",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/view/c_str.hpp",
+        "object": "e36a3c566d17b50e2e57bddc6878faf8a49c3f4e",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2507
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 lazy view/adaptor infrastructure",
+      "source_symbols": [
+        "c_str"
+      ],
+      "responsibility": "Generic lazy range-view/adaptor semantics including ownership and dangling fences, iterator/category propagation, caching, bounds, predicate/generator lifetime, composition, chunk/drop/filter/group/scan/enumeration behavior and non-owning traversal contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11155,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/view/cache1.hpp",
+      "source_blob_sha": "12c5850cd621372249099fd1ba6cc3db932e4551",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/view/cache1.hpp",
+        "object": "12c5850cd621372249099fd1ba6cc3db932e4551",
+        "mode": "100644",
+        "type": "blob",
+        "size": 6237
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 lazy view/adaptor infrastructure",
+      "source_symbols": [
+        "cache1"
+      ],
+      "responsibility": "Generic lazy range-view/adaptor semantics including ownership and dangling fences, iterator/category propagation, caching, bounds, predicate/generator lifetime, composition, chunk/drop/filter/group/scan/enumeration behavior and non-owning traversal contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11156,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/view/cartesian_product.hpp",
+      "source_blob_sha": "a702490688c1d046a45993d931686468b52b246e",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/view/cartesian_product.hpp",
+        "object": "a702490688c1d046a45993d931686468b52b246e",
+        "mode": "100644",
+        "type": "blob",
+        "size": 20196
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 lazy view/adaptor infrastructure",
+      "source_symbols": [
+        "cartesian_product"
+      ],
+      "responsibility": "Generic lazy range-view/adaptor semantics including ownership and dangling fences, iterator/category propagation, caching, bounds, predicate/generator lifetime, composition, chunk/drop/filter/group/scan/enumeration behavior and non-owning traversal contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11157,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/view/chunk.hpp",
+      "source_blob_sha": "5ea830625feae17d21d4fa5a617c63d96ee3b5f5",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/view/chunk.hpp",
+        "object": "5ea830625feae17d21d4fa5a617c63d96ee3b5f5",
+        "mode": "100644",
+        "type": "blob",
+        "size": 15413
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 lazy view/adaptor infrastructure",
+      "source_symbols": [
+        "chunk"
+      ],
+      "responsibility": "Generic lazy range-view/adaptor semantics including ownership and dangling fences, iterator/category propagation, caching, bounds, predicate/generator lifetime, composition, chunk/drop/filter/group/scan/enumeration behavior and non-owning traversal contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11158,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/view/chunk_by.hpp",
+      "source_blob_sha": "50b0d0d7688e5a43f6043b286a7f0788ba1341f8",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/view/chunk_by.hpp",
+        "object": "50b0d0d7688e5a43f6043b286a7f0788ba1341f8",
+        "mode": "100644",
+        "type": "blob",
+        "size": 5076
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 lazy view/adaptor infrastructure",
+      "source_symbols": [
+        "chunk_by"
+      ],
+      "responsibility": "Generic lazy range-view/adaptor semantics including ownership and dangling fences, iterator/category propagation, caching, bounds, predicate/generator lifetime, composition, chunk/drop/filter/group/scan/enumeration behavior and non-owning traversal contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11159,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/view/common.hpp",
+      "source_blob_sha": "11a6d9533193f98585aa92e58caf8621c78466cb",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/view/common.hpp",
+        "object": "11a6d9533193f98585aa92e58caf8621c78466cb",
+        "mode": "100644",
+        "type": "blob",
+        "size": 7255
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 lazy view/adaptor infrastructure",
+      "source_symbols": [
+        "common"
+      ],
+      "responsibility": "Generic lazy range-view/adaptor semantics including ownership and dangling fences, iterator/category propagation, caching, bounds, predicate/generator lifetime, composition, chunk/drop/filter/group/scan/enumeration behavior and non-owning traversal contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11160,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/view/concat.hpp",
+      "source_blob_sha": "3a7ca25dda96930b59a4378173b581e046e3efaf",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/view/concat.hpp",
+        "object": "3a7ca25dda96930b59a4378173b581e046e3efaf",
+        "mode": "100644",
+        "type": "blob",
+        "size": 17548
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 lazy view/adaptor infrastructure",
+      "source_symbols": [
+        "concat"
+      ],
+      "responsibility": "Generic lazy range-view/adaptor semantics including ownership and dangling fences, iterator/category propagation, caching, bounds, predicate/generator lifetime, composition, chunk/drop/filter/group/scan/enumeration behavior and non-owning traversal contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11161,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/view/const.hpp",
+      "source_blob_sha": "ed920e55adda75b4e77b926cf1f5784fb51b8fe5",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/view/const.hpp",
+        "object": "ed920e55adda75b4e77b926cf1f5784fb51b8fe5",
+        "mode": "100644",
+        "type": "blob",
+        "size": 4064
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 lazy view/adaptor infrastructure",
+      "source_symbols": [
+        "const"
+      ],
+      "responsibility": "Generic lazy range-view/adaptor semantics including ownership and dangling fences, iterator/category propagation, caching, bounds, predicate/generator lifetime, composition, chunk/drop/filter/group/scan/enumeration behavior and non-owning traversal contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11162,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/view/counted.hpp",
+      "source_blob_sha": "62293689b9f135503db64b1191df9af59162b3a9",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/view/counted.hpp",
+        "object": "62293689b9f135503db64b1191df9af59162b3a9",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3535
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 lazy view/adaptor infrastructure",
+      "source_symbols": [
+        "counted"
+      ],
+      "responsibility": "Generic lazy range-view/adaptor semantics including ownership and dangling fences, iterator/category propagation, caching, bounds, predicate/generator lifetime, composition, chunk/drop/filter/group/scan/enumeration behavior and non-owning traversal contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11163,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/view/cycle.hpp",
+      "source_blob_sha": "3b73d4e2cecd3068ef5276255dd85c1a511452ac",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/view/cycle.hpp",
+        "object": "3b73d4e2cecd3068ef5276255dd85c1a511452ac",
+        "mode": "100644",
+        "type": "blob",
+        "size": 8078
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 lazy view/adaptor infrastructure",
+      "source_symbols": [
+        "cycle"
+      ],
+      "responsibility": "Generic lazy range-view/adaptor semantics including ownership and dangling fences, iterator/category propagation, caching, bounds, predicate/generator lifetime, composition, chunk/drop/filter/group/scan/enumeration behavior and non-owning traversal contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11164,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/view/delimit.hpp",
+      "source_blob_sha": "882be276859aa7503cdec0a4b3f12d587729389a",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/view/delimit.hpp",
+        "object": "882be276859aa7503cdec0a4b3f12d587729389a",
+        "mode": "100644",
+        "type": "blob",
+        "size": 4176
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 lazy view/adaptor infrastructure",
+      "source_symbols": [
+        "delimit"
+      ],
+      "responsibility": "Generic lazy range-view/adaptor semantics including ownership and dangling fences, iterator/category propagation, caching, bounds, predicate/generator lifetime, composition, chunk/drop/filter/group/scan/enumeration behavior and non-owning traversal contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11165,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/view/drop.hpp",
+      "source_blob_sha": "079d633f7f001573aaeb2ac0f272d71bf5c1ff53",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/view/drop.hpp",
+        "object": "079d633f7f001573aaeb2ac0f272d71bf5c1ff53",
+        "mode": "100644",
+        "type": "blob",
+        "size": 6471
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 lazy view/adaptor infrastructure",
+      "source_symbols": [
+        "drop"
+      ],
+      "responsibility": "Generic lazy range-view/adaptor semantics including ownership and dangling fences, iterator/category propagation, caching, bounds, predicate/generator lifetime, composition, chunk/drop/filter/group/scan/enumeration behavior and non-owning traversal contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11166,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/view/drop_exactly.hpp",
+      "source_blob_sha": "f6921dd0607625bfa95a7ea930ee94430d64df05",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/view/drop_exactly.hpp",
+        "object": "f6921dd0607625bfa95a7ea930ee94430d64df05",
+        "mode": "100644",
+        "type": "blob",
+        "size": 5883
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 lazy view/adaptor infrastructure",
+      "source_symbols": [
+        "drop_exactly"
+      ],
+      "responsibility": "Generic lazy range-view/adaptor semantics including ownership and dangling fences, iterator/category propagation, caching, bounds, predicate/generator lifetime, composition, chunk/drop/filter/group/scan/enumeration behavior and non-owning traversal contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11167,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/view/drop_last.hpp",
+      "source_blob_sha": "c182620e14250a1f1ed2195cab0079d336865dc6",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/view/drop_last.hpp",
+        "object": "c182620e14250a1f1ed2195cab0079d336865dc6",
+        "mode": "100644",
+        "type": "blob",
+        "size": 11771
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 lazy view/adaptor infrastructure",
+      "source_symbols": [
+        "drop_last"
+      ],
+      "responsibility": "Generic lazy range-view/adaptor semantics including ownership and dangling fences, iterator/category propagation, caching, bounds, predicate/generator lifetime, composition, chunk/drop/filter/group/scan/enumeration behavior and non-owning traversal contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11168,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/view/drop_while.hpp",
+      "source_blob_sha": "bb2eee749d9d2c1628cb77cfa129c1ba88a53d83",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/view/drop_while.hpp",
+        "object": "bb2eee749d9d2c1628cb77cfa129c1ba88a53d83",
+        "mode": "100644",
+        "type": "blob",
+        "size": 5286
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 lazy view/adaptor infrastructure",
+      "source_symbols": [
+        "drop_while"
+      ],
+      "responsibility": "Generic lazy range-view/adaptor semantics including ownership and dangling fences, iterator/category propagation, caching, bounds, predicate/generator lifetime, composition, chunk/drop/filter/group/scan/enumeration behavior and non-owning traversal contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11169,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/view/empty.hpp",
+      "source_blob_sha": "52f49c11042752167fd6741f2593905cdc0ff28a",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/view/empty.hpp",
+        "object": "52f49c11042752167fd6741f2593905cdc0ff28a",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2131
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 lazy view/adaptor infrastructure",
+      "source_symbols": [
+        "empty"
+      ],
+      "responsibility": "Generic lazy range-view/adaptor semantics including ownership and dangling fences, iterator/category propagation, caching, bounds, predicate/generator lifetime, composition, chunk/drop/filter/group/scan/enumeration behavior and non-owning traversal contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11170,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/view/enumerate.hpp",
+      "source_blob_sha": "03f956f0cb81c1b41ca7e76fd26baf0c2388d711",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/view/enumerate.hpp",
+        "object": "03f956f0cb81c1b41ca7e76fd26baf0c2388d711",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3378
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 lazy view/adaptor infrastructure",
+      "source_symbols": [
+        "enumerate"
+      ],
+      "responsibility": "Generic lazy range-view/adaptor semantics including ownership and dangling fences, iterator/category propagation, caching, bounds, predicate/generator lifetime, composition, chunk/drop/filter/group/scan/enumeration behavior and non-owning traversal contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11171,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/view/exclusive_scan.hpp",
+      "source_blob_sha": "6a49cd8cf379e4a59fdc9c1678bbe35bf9683960",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/view/exclusive_scan.hpp",
+        "object": "6a49cd8cf379e4a59fdc9c1678bbe35bf9683960",
+        "mode": "100644",
+        "type": "blob",
+        "size": 6557
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 lazy view/adaptor infrastructure",
+      "source_symbols": [
+        "exclusive_scan"
+      ],
+      "responsibility": "Generic lazy range-view/adaptor semantics including ownership and dangling fences, iterator/category propagation, caching, bounds, predicate/generator lifetime, composition, chunk/drop/filter/group/scan/enumeration behavior and non-owning traversal contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11172,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/view/facade.hpp",
+      "source_blob_sha": "bd5e15edf98961ac486a4aeb301a47da24879e4c",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/view/facade.hpp",
+        "object": "bd5e15edf98961ac486a4aeb301a47da24879e4c",
+        "mode": "100644",
+        "type": "blob",
+        "size": 4763
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 lazy view/adaptor infrastructure",
+      "source_symbols": [
+        "facade"
+      ],
+      "responsibility": "Generic lazy range-view/adaptor semantics including ownership and dangling fences, iterator/category propagation, caching, bounds, predicate/generator lifetime, composition, chunk/drop/filter/group/scan/enumeration behavior and non-owning traversal contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11173,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/view/filter.hpp",
+      "source_blob_sha": "582a71b2f3bb1c01becb58b01471da10d55ad890",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/view/filter.hpp",
+        "object": "582a71b2f3bb1c01becb58b01471da10d55ad890",
+        "mode": "100644",
+        "type": "blob",
+        "size": 6034
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 lazy view/adaptor infrastructure",
+      "source_symbols": [
+        "filter"
+      ],
+      "responsibility": "Generic lazy range-view/adaptor semantics including ownership and dangling fences, iterator/category propagation, caching, bounds, predicate/generator lifetime, composition, chunk/drop/filter/group/scan/enumeration behavior and non-owning traversal contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11174,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/view/for_each.hpp",
+      "source_blob_sha": "a248fade1a86b58895474c143ed88790f6847ff2",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/view/for_each.hpp",
+        "object": "a248fade1a86b58895474c143ed88790f6847ff2",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3684
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 lazy view/adaptor infrastructure",
+      "source_symbols": [
+        "for_each"
+      ],
+      "responsibility": "Generic lazy range-view/adaptor semantics including ownership and dangling fences, iterator/category propagation, caching, bounds, predicate/generator lifetime, composition, chunk/drop/filter/group/scan/enumeration behavior and non-owning traversal contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11175,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/view/generate.hpp",
+      "source_blob_sha": "890393654e5209480d1f1b27c646e8c909d2490d",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/view/generate.hpp",
+        "object": "890393654e5209480d1f1b27c646e8c909d2490d",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3343
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 lazy view/adaptor infrastructure",
+      "source_symbols": [
+        "generate"
+      ],
+      "responsibility": "Generic lazy range-view/adaptor semantics including ownership and dangling fences, iterator/category propagation, caching, bounds, predicate/generator lifetime, composition, chunk/drop/filter/group/scan/enumeration behavior and non-owning traversal contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11176,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/view/generate_n.hpp",
+      "source_blob_sha": "89482b2ac2647b6e09d6adcc89b5c937d07df135",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/view/generate_n.hpp",
+        "object": "89482b2ac2647b6e09d6adcc89b5c937d07df135",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3562
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 lazy view/adaptor infrastructure",
+      "source_symbols": [
+        "generate_n"
+      ],
+      "responsibility": "Generic lazy range-view/adaptor semantics including ownership and dangling fences, iterator/category propagation, caching, bounds, predicate/generator lifetime, composition, chunk/drop/filter/group/scan/enumeration behavior and non-owning traversal contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11177,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/view/getlines.hpp",
+      "source_blob_sha": "7f0c10f5647f8d79d3af7ac07a4b1e43ae874e5e",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/view/getlines.hpp",
+        "object": "7f0c10f5647f8d79d3af7ac07a4b1e43ae874e5e",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2661
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 lazy view/adaptor infrastructure",
+      "source_symbols": [
+        "getlines"
+      ],
+      "responsibility": "Generic lazy range-view/adaptor semantics including ownership and dangling fences, iterator/category propagation, caching, bounds, predicate/generator lifetime, composition, chunk/drop/filter/group/scan/enumeration behavior and non-owning traversal contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11178,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/view/group_by.hpp",
+      "source_blob_sha": "592e87f1ba85582ac76c382a63c3f13b064beab6",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/view/group_by.hpp",
+        "object": "592e87f1ba85582ac76c382a63c3f13b064beab6",
+        "mode": "100644",
+        "type": "blob",
+        "size": 6635
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 lazy view/adaptor infrastructure",
+      "source_symbols": [
+        "group_by"
+      ],
+      "responsibility": "Generic lazy range-view/adaptor semantics including ownership and dangling fences, iterator/category propagation, caching, bounds, predicate/generator lifetime, composition, chunk/drop/filter/group/scan/enumeration behavior and non-owning traversal contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11179,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/view/indices.hpp",
+      "source_blob_sha": "ae216b3511d2b21952c6db066241f6d3c8e3d2e8",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/view/indices.hpp",
+        "object": "ae216b3511d2b21952c6db066241f6d3c8e3d2e8",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2169
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 lazy view/adaptor infrastructure",
+      "source_symbols": [
+        "indices"
+      ],
+      "responsibility": "Generic lazy range-view/adaptor semantics including ownership and dangling fences, iterator/category propagation, caching, bounds, predicate/generator lifetime, composition, chunk/drop/filter/group/scan/enumeration behavior and non-owning traversal contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    },
+    {
+      "recursive_order": 11180,
+      "source_path": "Telegram/ThirdParty/range-v3::include/range/v3/view/indirect.hpp",
+      "source_blob_sha": "460dd031344af1319c75ad241d79eabe226a6365",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/range-v3",
+        "path": "include/range/v3/view/indirect.hpp",
+        "object": "460dd031344af1319c75ad241d79eabe226a6365",
+        "mode": "100644",
+        "type": "blob",
+        "size": 4480
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "range-v3 lazy view/adaptor infrastructure",
+      "source_symbols": [
+        "indirect"
+      ],
+      "responsibility": "Generic lazy range-view/adaptor semantics including ownership and dangling fences, iterator/category propagation, caching, bounds, predicate/generator lifetime, composition, chunk/drop/filter/group/scan/enumeration behavior and non-owning traversal contracts.",
+      "fabushi_canonical_owner": "Build / Quality / Dependency Provenance / License",
+      "fabushi_target": "Existing Rust/TypeScript standard-library/runtime owners plus Revision 9 source/dependency authority; no shipping range-v3 consumer"
+    }
+  ]
+}

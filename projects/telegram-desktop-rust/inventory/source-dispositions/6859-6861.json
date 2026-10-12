@@ -1,0 +1,167 @@
+{
+  "format_version": 3,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+    "tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6"
+  },
+  "range": {
+    "first_order": 6859,
+    "last_order": 6861,
+    "entries": 3
+  },
+  "rows": [
+    {
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "desktop-app/MicroTeX pinned third-party math rendering component",
+      "ui_disposition": "No MicroTeX UI/runtime is migrated; applicable parser/build safety stays in the existing canonical ConversationWorkspace/Transcript math and Build/Release owners.",
+      "fabushi_canonical_owner": "existing Build/Release provenance plus canonical math dependency owner",
+      "platform_differences": "MicroTeX C++ is source authority only; Fabushi uses the shipped KaTeX runtime behind source-neutral canonical guards.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "reachability_status": "accepted exact pinned component entry read/responsibility-decomposed; cited production slice requires descendant exact-head GitHub Actions verification",
+      "license_and_provenance": "telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 -> Telegram/ThirdParty/MicroTeX gitlink desktop-app/MicroTeX@61aaa7cc354de91d5898ffb0b2a6c62628d9a76f",
+      "recursive_order": 6859,
+      "source_path": "Telegram/ThirdParty/MicroTeX::src/core/meson.build",
+      "source_blob_sha": "cc27940abefd2104210237e003418f54c88079f0",
+      "source_identity": {
+        "repository": "desktop-app/MicroTeX",
+        "commit": "61aaa7cc354de91d5898ffb0b2a6c62628d9a76f",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/MicroTeX",
+        "path": "src/core/meson.build",
+        "object": "cc27940abefd2104210237e003418f54c88079f0",
+        "mode": "100644",
+        "type": "blob",
+        "size": 372
+      },
+      "responsibility": "Core build composition pins the parser/macro source/header closure so supported-platform builds cannot silently omit safety-critical parser pieces.",
+      "state_machine": "untrusted formula -> canonical preflight/resource guards -> strict runtime attempt -> independent bounded recovery attempt -> escaped error or canonical markup; attempt-local mutable state is discarded",
+      "side_effects": "Canonical transcript math markup/build projection only; no second parser/store/process.",
+      "failure_cases": "stack exhaustion; runaway expansion; stale parser/macro state; malformed grouping/arguments; build-source provenance drift",
+      "fabushi_target": "Keep dependency provenance/build closure in the existing release owner; no MicroTeX build is introduced into Fabushi.",
+      "production_evidence": "Existing shipped KaTeX asset/build provenance remains the target composition; exact dependency provenance is release-gated.",
+      "test_evidence": "GitHub Actions renderer/build and packaged provenance remain required.",
+      "consumer_evidence": [
+        "frontend/src/recovered/features/conversation/workspace/math-runtime.ts",
+        "frontend/src/recovered/features/conversation/workspace/math.tsx",
+        "desktop/e2e/math-runtime-contract.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "notes": "Reading does not reduce global unknown. Brace-group depth is production-hardened; MicroTeX's grammar-dependent brace-less recursive command-chain guard and exact parser grammar remain mapped-open.",
+      "source_binary_evidence": {
+        "evidence_status": "accepted-exact-component-blob-read-current-descendant-actions-required",
+        "accepted_upstream": "6fed91ffab9861771a75f29df65031b3c80b6941",
+        "component_repository": "desktop-app/MicroTeX",
+        "component_commit": "61aaa7cc354de91d5898ffb0b2a6c62628d9a76f",
+        "verified_blob_sha": "cc27940abefd2104210237e003418f54c88079f0",
+        "file_type": "blob",
+        "recursive_order": 6859
+      }
+    },
+    {
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "desktop-app/MicroTeX pinned third-party math rendering component",
+      "ui_disposition": "No MicroTeX UI/runtime is migrated; applicable parser/build safety stays in the existing canonical ConversationWorkspace/Transcript math and Build/Release owners.",
+      "fabushi_canonical_owner": "existing canonical math parser safety owner",
+      "platform_differences": "MicroTeX C++ is source authority only; Fabushi uses the shipped KaTeX runtime behind source-neutral canonical guards.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "reachability_status": "accepted exact pinned component entry read/responsibility-decomposed; cited production slice requires descendant exact-head GitHub Actions verification",
+      "license_and_provenance": "telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 -> Telegram/ThirdParty/MicroTeX gitlink desktop-app/MicroTeX@61aaa7cc354de91d5898ffb0b2a6c62628d9a76f",
+      "recursive_order": 6860,
+      "source_path": "Telegram/ThirdParty/MicroTeX::src/core/parser.cpp",
+      "source_blob_sha": "b20e0bc1bf2604f7cd67868d8bb131fef525c09c",
+      "source_identity": {
+        "repository": "desktop-app/MicroTeX",
+        "commit": "61aaa7cc354de91d5898ffb0b2a6c62628d9a76f",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/MicroTeX",
+        "path": "src/core/parser.cpp",
+        "object": "b20e0bc1bf2604f7cd67868d8bb131fef525c09c",
+        "mode": "100644",
+        "type": "blob",
+        "size": 37694
+      },
+      "responsibility": "Parser work is explicitly bounded by 48 combined recursive depth plus expansion count/expanded-length/work budgets; parser/formula pointers and array mode are restored on exceptions so failed parses cannot poison later formulas.",
+      "state_machine": "untrusted formula -> canonical preflight/resource guards -> strict runtime attempt -> independent bounded recovery attempt -> escaped error or canonical markup; attempt-local mutable state is discarded",
+      "side_effects": "Canonical transcript math markup/build projection only; no second parser/store/process.",
+      "failure_cases": "stack exhaustion; runaway expansion; stale parser/macro state; malformed grouping/arguments; build-source provenance drift",
+      "fabushi_target": "Fabushi now enforces a 48-level source-neutral brace-group preflight plus existing expression/maxExpand/maxSize/output budgets and per-attempt macro isolation; brace-less command-chain and exact expansion-work equivalence remain open.",
+      "production_evidence": "frontend/src/recovered/features/conversation/workspace/math-runtime.ts implements MAX_ASSISTANT_MATH_GROUP_DEPTH=48 and preflight before runtime invocation.",
+      "test_evidence": "desktop/e2e/math-runtime-contract.spec.ts proves depth 48 acceptance, depth 49 pre-runtime rejection, escaped/comment braces, and existing macro/resource isolation.",
+      "consumer_evidence": [
+        "frontend/src/recovered/features/conversation/workspace/math-runtime.ts",
+        "frontend/src/recovered/features/conversation/workspace/math.tsx",
+        "desktop/e2e/math-runtime-contract.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "notes": "Reading does not reduce global unknown. Brace-group depth is production-hardened; MicroTeX's grammar-dependent brace-less recursive command-chain guard and exact parser grammar remain mapped-open.",
+      "source_binary_evidence": {
+        "evidence_status": "accepted-exact-component-blob-read-current-descendant-actions-required",
+        "accepted_upstream": "6fed91ffab9861771a75f29df65031b3c80b6941",
+        "component_repository": "desktop-app/MicroTeX",
+        "component_commit": "61aaa7cc354de91d5898ffb0b2a6c62628d9a76f",
+        "verified_blob_sha": "b20e0bc1bf2604f7cd67868d8bb131fef525c09c",
+        "file_type": "blob",
+        "recursive_order": 6860
+      }
+    },
+    {
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "desktop-app/MicroTeX pinned third-party math rendering component",
+      "ui_disposition": "No MicroTeX UI/runtime is migrated; applicable parser/build safety stays in the existing canonical ConversationWorkspace/Transcript math and Build/Release owners.",
+      "fabushi_canonical_owner": "existing canonical math parser lifecycle owner",
+      "platform_differences": "MicroTeX C++ is source authority only; Fabushi uses the shipped KaTeX runtime behind source-neutral canonical guards.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "reachability_status": "accepted exact pinned component entry read/responsibility-decomposed; cited production slice requires descendant exact-head GitHub Actions verification",
+      "license_and_provenance": "telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 -> Telegram/ThirdParty/MicroTeX gitlink desktop-app/MicroTeX@61aaa7cc354de91d5898ffb0b2a6c62628d9a76f",
+      "recursive_order": 6861,
+      "source_path": "Telegram/ThirdParty/MicroTeX::src/core/parser.h",
+      "source_blob_sha": "91ab3b7e31aff7dda04fb7569fe96c79b8c2edca",
+      "source_identity": {
+        "repository": "desktop-app/MicroTeX",
+        "commit": "61aaa7cc354de91d5898ffb0b2a6c62628d9a76f",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/MicroTeX",
+        "path": "src/core/parser.h",
+        "object": "91ab3b7e31aff7dda04fb7569fe96c79b8c2edca",
+        "mode": "100644",
+        "type": "blob",
+        "size": 10820
+      },
+      "responsibility": "Parser API exposes reset/preprocess/group/command/argument lifecycle; reset must clear per-formula parse state and all recursive work must remain bounded and isolated across concurrent renders.",
+      "state_machine": "untrusted formula -> canonical preflight/resource guards -> strict runtime attempt -> independent bounded recovery attempt -> escaped error or canonical markup; attempt-local mutable state is discarded",
+      "side_effects": "Canonical transcript math markup/build projection only; no second parser/store/process.",
+      "failure_cases": "stack exhaustion; runaway expansion; stale parser/macro state; malformed grouping/arguments; build-source provenance drift",
+      "fabushi_target": "Keep parser lifecycle inside the shipped runtime wrapper; current guard closes structural group-depth and macro-state leakage, while command-chain/parser-reset parity remains mapped-open.",
+      "production_evidence": "frontend/src/recovered/features/conversation/workspace/math-runtime.ts isolates each runtime invocation with fresh options/macro state and structural preflight.",
+      "test_evidence": "desktop/e2e/math-runtime-contract.spec.ts covers current isolated attempts and nesting/resource boundaries; broader parser lifecycle cases remain open.",
+      "consumer_evidence": [
+        "frontend/src/recovered/features/conversation/workspace/math-runtime.ts",
+        "frontend/src/recovered/features/conversation/workspace/math.tsx",
+        "desktop/e2e/math-runtime-contract.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "notes": "Reading does not reduce global unknown. Brace-group depth is production-hardened; MicroTeX's grammar-dependent brace-less recursive command-chain guard and exact parser grammar remain mapped-open.",
+      "source_binary_evidence": {
+        "evidence_status": "accepted-exact-component-blob-read-current-descendant-actions-required",
+        "accepted_upstream": "6fed91ffab9861771a75f29df65031b3c80b6941",
+        "component_repository": "desktop-app/MicroTeX",
+        "component_commit": "61aaa7cc354de91d5898ffb0b2a6c62628d9a76f",
+        "verified_blob_sha": "91ab3b7e31aff7dda04fb7569fe96c79b8c2edca",
+        "file_type": "blob",
+        "recursive_order": 6861
+      }
+    }
+  ]
+}

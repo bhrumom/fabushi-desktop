@@ -1,0 +1,159 @@
+{
+  "format_version": 3,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+    "tree": "9d8fa87ce68c832d2f4c99f372a5bb672463c3e1"
+  },
+  "range": {
+    "first_order": 6354,
+    "last_order": 6357,
+    "entries": 4
+  },
+  "rows": [
+    {
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "tdesktop Wallet/TonConnect source authority",
+      "ui_disposition": "UI behavior maps into the existing Fabushi Wallet/ConnectedApp projection and canonical design-system components; no Telegram-derived UI root/runtime is introduced.",
+      "fabushi_canonical_owner": "native/mahayana-messaging canonical ConnectedApp/Wallet owners plus existing engine/service/storage/security/UI owners",
+      "platform_differences": "Qt/MTProto/wallet_engine bindings are source authority only; Fabushi preserves product/state/security/recovery semantics in source-neutral Rust and existing UI/service adapters.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "reachability_status": "accepted-tree exact blob read/responsibility-decomposed; partial canonical production implementation exists; full shipping/service/UI/release closure remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained at accepted commit 28ac576967a1026ecc89a927360fa0e138d7c88c; rewrite remains source-neutral.",
+      "notes": "Reading advances deterministic read-through only. unknown remains open until all production/service/UI/current-head evidence closes the responsibility.",
+      "recursive_order": 6354,
+      "source_path": "Telegram/SourceFiles/wallet/wallet_ton_connect_request.cpp",
+      "source_blob_sha": "496881cf773f9bd024975e5ed7bb495313139599",
+      "responsibility": "Connected-app request orchestration across local service-notification arrival/edit, explicit open and remote pending lookup, closed-session pending recovery, silent disconnect, chosen/oldest scheduling, durable claim recovery, request fetch/decrypt, wallet/custody resolve with bounded polling, interactive/silent key authorization, transfer/sign-data validation, fee/emulation preview, signing, claim, send handoff, response publish, deadline and terminal lifecycle.",
+      "state_machine": "Arrived/Edited/Open/OpenPending/SessionClosed feed one request scheduler; Flow Loading -> Locked/Restore/Confirm/Notice/Unhandled with silent and recovery variants; claim is durable before network claim; operationId then signed payload are persisted before handoff; final answer is persisted before publish; RetryLater retains claim; deadlines fence late work and terminal teardown is idempotent.",
+      "side_effects": "Remote session/request/connect service calls, wallet polling, vault authorization, decrypt/encrypt/sign/preview/send/publish operations, confirmation UI projection, notifications and durable claim persistence.",
+      "failure_cases": "Duplicate/claimed/stale request, closed session, wallet unresolved, custody unknown, key locked/blocked/other-key, request disappearance/expiry, signing unavailable, previous unresolved/already-sending, challenge invalid, session inactive/gone, publish RetryLater, late/dismissed/edited-elsewhere races.",
+      "fabushi_target": "Canonical ConnectedAppState/engine now owns transport message identity, active/silent/waiting scheduling, durable staged claim recovery, runtime recovery rebuild/polling/submissions, flow-completion ownership fencing and Recovery::Offer fallback submission through 089fa961. Remote pending service adapter, closed-session late context, Recovery::Answer re-encryption, wallet resolve/polling, preview/sign/send/publish integration and UI remain mapped-open.",
+      "production_evidence": "Current PR descendant production code is present where named; no row is promoted to verified and fresh exact-head GitHub Actions are required.",
+      "test_evidence": "Focused canonical Rust tests cover implemented slices where named; full shipping/UI/service/release acceptance remains open.",
+      "consumer_evidence": [
+        "native/mahayana-messaging/src/connected_app.rs",
+        "native/mahayana-messaging/src/engine.rs",
+        "native/mahayana-messaging/src/wallet.rs"
+      ],
+      "source_binary_evidence": {
+        "evidence_status": "accepted-exact-blob-read-current-descendant-actions-required",
+        "accepted_upstream": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+        "verified_blob_sha": "496881cf773f9bd024975e5ed7bb495313139599",
+        "file_type": "blob",
+        "recursive_order": 6354
+      }
+    },
+    {
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "tdesktop Wallet/TonConnect source authority",
+      "ui_disposition": "UI behavior maps into the existing Fabushi Wallet/ConnectedApp projection and canonical design-system components; no Telegram-derived UI root/runtime is introduced.",
+      "fabushi_canonical_owner": "native/mahayana-messaging canonical ConnectedApp/Wallet owners plus existing engine/service/storage/security/UI owners",
+      "platform_differences": "Qt/MTProto/wallet_engine bindings are source authority only; Fabushi preserves product/state/security/recovery semantics in source-neutral Rust and existing UI/service adapters.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "reachability_status": "accepted-tree exact blob read/responsibility-decomposed; partial canonical production implementation exists; full shipping/service/UI/release closure remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained at accepted commit 28ac576967a1026ecc89a927360fa0e138d7c88c; rewrite remains source-neutral.",
+      "notes": "Reading advances deterministic read-through only. unknown remains open until all production/service/UI/current-head evidence closes the responsibility.",
+      "recursive_order": 6355,
+      "source_path": "Telegram/SourceFiles/wallet/wallet_ton_connect_request.h",
+      "source_blob_sha": "0c14b353f065d3ce05ad5bf88f1aeb24c843df4e",
+      "responsibility": "Typed request-owner contract for pending Entry identity/topic/expiry/order/chosen/recovery, active and silent Flow ownership, waiting/claimed/recovery-held sets, durable claim store, remote pending request lifecycle and stop/teardown.",
+      "state_machine": "One owner arbitrates active vs silent vs waiting; recovered Offer/Answer entries have distinct expiry/claim behavior; session close and stop converge runtime ownership without creating a second request truth.",
+      "side_effects": "Defines the capability seam consumed by ConnectedApp service adapters, durable recovery, Wallet cryptographic flow and canonical request UI.",
+      "failure_cases": "Parallel request owners, message-id reuse, duplicate scheduling, recovered-flow expiry mistakes, stale remote pending completion, teardown leaks and claim/runtime divergence.",
+      "fabushi_target": "Existing ConnectedAppRequestRuntime/ConnectedAppState are the canonical owner. Remaining 6354 service/crypto/UI responsibilities must extend this owner rather than introducing a TonConnect runtime.",
+      "production_evidence": "Current PR descendant production code is present where named; no row is promoted to verified and fresh exact-head GitHub Actions are required.",
+      "test_evidence": "Focused canonical Rust tests cover implemented slices where named; full shipping/UI/service/release acceptance remains open.",
+      "consumer_evidence": [
+        "native/mahayana-messaging/src/connected_app.rs",
+        "native/mahayana-messaging/src/engine.rs"
+      ],
+      "source_binary_evidence": {
+        "evidence_status": "accepted-exact-blob-read-current-descendant-actions-required",
+        "accepted_upstream": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+        "verified_blob_sha": "0c14b353f065d3ce05ad5bf88f1aeb24c843df4e",
+        "file_type": "blob",
+        "recursive_order": 6355
+      }
+    },
+    {
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "tdesktop Wallet/TonConnect source authority",
+      "ui_disposition": "UI behavior maps into the existing Fabushi Wallet/ConnectedApp projection and canonical design-system components; no Telegram-derived UI root/runtime is introduced.",
+      "fabushi_canonical_owner": "native/mahayana-messaging canonical ConnectedApp/Wallet owners plus existing engine/service/storage/security/UI owners",
+      "platform_differences": "Qt/MTProto/wallet_engine bindings are source authority only; Fabushi preserves product/state/security/recovery semantics in source-neutral Rust and existing UI/service adapters.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "reachability_status": "accepted-tree exact blob read/responsibility-decomposed; partial canonical production implementation exists; full shipping/service/UI/release closure remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained at accepted commit 28ac576967a1026ecc89a927360fa0e138d7c88c; rewrite remains source-neutral.",
+      "notes": "Reading advances deterministic read-through only. unknown remains open until all production/service/UI/current-head evidence closes the responsibility.",
+      "recursive_order": 6356,
+      "source_path": "Telegram/SourceFiles/wallet/wallet_ton_connect_request_box.cpp",
+      "source_blob_sha": "3904a4b136e2e6942050eea9a1383e02ad22e808",
+      "responsibility": "Request confirmation UI business semantics: phase-specific content/actions, canonical address normalization and duplicate grouping, bounded payload display (1024 chars) and nested-field depth (8), transfer/fee/fiat projection, emulation action classification, sign-data type projection, detail expansion, busy/confirmable/declining fences and exactly-once callbacks/dismissal.",
+      "state_machine": "Loading/Locked/Restore/Confirm/Notice/Unhandled select one projection; Confirm derives transfer or sign-data sections plus emulation/fee state; busy and confirmable gate destructive/confirm actions; details toggles bounded secondary data; callbacks drive unlock/restore/confirm/decline and dismissal.",
+      "side_effects": "UI rendering, fiat lookup, icon/address/resource projection, fee/emulation/sign-data detail presentation, button callbacks and accessibility-facing state.",
+      "failure_cases": "Malformed/duplicate addresses, oversized/deep payloads, unresolved fiat/fee, emulation warnings, unsupported sign-data, repeated clicks, state changes while busy, stale details and dismissal races.",
+      "fabushi_target": "Map into the existing Fabushi Wallet/ConnectedApp projection using canonical Dialog/ListRow/Button/Loading/Error/Detail components. Rust request state supplies typed phases; shipping React projection, a11y, visual and interaction evidence remain open.",
+      "production_evidence": "Current PR descendant production code is present where named; no row is promoted to verified and fresh exact-head GitHub Actions are required.",
+      "test_evidence": "Focused canonical Rust tests cover implemented slices where named; full shipping/UI/service/release acceptance remains open.",
+      "consumer_evidence": [
+        "native/mahayana-messaging/src/connected_app.rs",
+        "native/mahayana-messaging/src/engine.rs",
+        "frontend canonical design-system/request projection owner (shipping path still to be wired)"
+      ],
+      "source_binary_evidence": {
+        "evidence_status": "accepted-exact-blob-read-current-descendant-actions-required",
+        "accepted_upstream": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+        "verified_blob_sha": "3904a4b136e2e6942050eea9a1383e02ad22e808",
+        "file_type": "blob",
+        "recursive_order": 6356
+      }
+    },
+    {
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "tdesktop Wallet/TonConnect source authority",
+      "ui_disposition": "UI behavior maps into the existing Fabushi Wallet/ConnectedApp projection and canonical design-system components; no Telegram-derived UI root/runtime is introduced.",
+      "fabushi_canonical_owner": "native/mahayana-messaging canonical ConnectedApp/Wallet owners plus existing engine/service/storage/security/UI owners",
+      "platform_differences": "Qt/MTProto/wallet_engine bindings are source authority only; Fabushi preserves product/state/security/recovery semantics in source-neutral Rust and existing UI/service adapters.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "reachability_status": "accepted-tree exact blob read/responsibility-decomposed; partial canonical production implementation exists; full shipping/service/UI/release closure remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained at accepted commit 28ac576967a1026ecc89a927360fa0e138d7c88c; rewrite remains source-neutral.",
+      "notes": "Reading advances deterministic read-through only. unknown remains open until all production/service/UI/current-head evidence closes the responsibility.",
+      "recursive_order": 6357,
+      "source_path": "Telegram/SourceFiles/wallet/wallet_ton_connect_request_box.h",
+      "source_blob_sha": "862e8b9f57efb7d50a51822da998d89f234bd803",
+      "responsibility": "Typed request-box projection contract: Loading/Locked/Restore/Confirm/Notice/Unhandled phases; name/domain/icon/topic; transfer/fee/emulation/signData/notice/error; feeLoading/confirmable/busy/declining state and unlock/restore/confirm/decline/dismiss callbacks.",
+      "state_machine": "State is immutable typed projection input; callback ownership remains outside presentation and phase/action booleans fence valid UI transitions.",
+      "side_effects": "Defines the UI boundary shared by request orchestration and canonical Fabushi components.",
+      "failure_cases": "Untyped phase branching, stale callback ownership, UI-local business truth, missing busy/confirmable fences, accessibility drift and duplicate dismissal.",
+      "fabushi_target": "Represent this contract through source-neutral ConnectedApp request projection types and canonical Fabushi UI slots; no Telegram-specific dialog root is allowed. Full shipping projection remains mapped-open.",
+      "production_evidence": "Current PR descendant production code is present where named; no row is promoted to verified and fresh exact-head GitHub Actions are required.",
+      "test_evidence": "Focused canonical Rust tests cover implemented slices where named; full shipping/UI/service/release acceptance remains open.",
+      "consumer_evidence": [
+        "native/mahayana-messaging/src/connected_app.rs",
+        "native/mahayana-messaging/src/engine.rs"
+      ],
+      "source_binary_evidence": {
+        "evidence_status": "accepted-exact-blob-read-current-descendant-actions-required",
+        "accepted_upstream": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+        "verified_blob_sha": "862e8b9f57efb7d50a51822da998d89f234bd803",
+        "file_type": "blob",
+        "recursive_order": 6357
+      }
+    }
+  ]
+}
