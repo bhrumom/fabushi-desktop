@@ -962,3 +962,112 @@ fn recent_participant_selection_projection_is_durable_bounded_account_scoped_and
         &[repeated]
     );
 }
+
+
+#[test]
+fn shared_media_projection_uses_canonical_message_and_child_state_only() {
+    let actor_id = ActorId::new("human:shared-media-contract-owner");
+    let parent = ConversationId::new("conversation:shared-media-contract");
+    let saved = ConversationDestination::saved_sublist(
+        parent.clone(),
+        ActorId::new("human:shared-media-contract-peer"),
+    );
+    let media_id = MessageId::new("message:shared-media-contract");
+    let text_id = MessageId::new("message:shared-media-contract-text");
+
+    let mut child =
+        ConversationChildRuntimeState::new(saved.clone(), actor_id.clone()).unwrap();
+    assert!(child.reconcile_authoritative_message_ids(vec![media_id.0.clone()]));
+
+    let media = Message {
+        id: media_id.clone(),
+        conversation_id: parent.clone(),
+        sender_id: ActorId::new("human:peer"),
+        content: MessageContent::Photo {
+            media: MediaRef {
+                id: "media:shared-media-contract".into(),
+                file_name: Some("shared.jpg".into()),
+                mime_type: Some("image/jpeg".into()),
+                size_bytes: Some(256),
+                width: Some(32),
+                height: Some(32),
+                duration_ms: None,
+                thumbnail_id: None,
+                local_path: None,
+                remote_url: None,
+                content_hash: None,
+            },
+            caption: FormattedText::plain(""),
+            spoiler: false,
+        },
+        reply_to_message_id: None,
+        thread_root_message_id: None,
+        forward_origin: None,
+        reply_markup: None,
+        reactions: Vec::new(),
+        delivery_state: DeliveryState::Delivered,
+        created_at_ms: 10,
+        edited_at_ms: None,
+        scheduled_at_ms: None,
+        silent: false,
+        protected_content: false,
+        pinned: false,
+        deleted: false,
+    };
+    let text = Message {
+        id: text_id,
+        conversation_id: parent.clone(),
+        sender_id: ActorId::new("human:peer"),
+        content: MessageContent::Text {
+            text: FormattedText::plain("not shared media"),
+        },
+        reply_to_message_id: None,
+        thread_root_message_id: None,
+        forward_origin: None,
+        reply_markup: None,
+        reactions: Vec::new(),
+        delivery_state: DeliveryState::Delivered,
+        created_at_ms: 11,
+        edited_at_ms: None,
+        scheduled_at_ms: None,
+        silent: false,
+        protected_content: false,
+        pinned: false,
+        deleted: false,
+    };
+
+    let mut state = MessagingState::default();
+    state.actors.insert(
+        actor_id.clone(),
+        Actor::human(actor_id.0.clone(), "Shared Media Contract Owner"),
+    );
+    state.conversation_child_states.push(child);
+    state
+        .messages
+        .entry(parent.clone())
+        .or_default()
+        .insert(media.id.clone(), media);
+    state
+        .messages
+        .entry(parent.clone())
+        .or_default()
+        .insert(text.id.clone(), text);
+
+    let mut engine = MessagingEngine::from_state(state);
+    assert_eq!(
+        engine.shared_media_message_ids(&saved, &actor_id).unwrap(),
+        vec![media_id.clone()]
+    );
+
+    engine.apply(Event::MessagesDeleted {
+        conversation_id: parent,
+        message_ids: vec![media_id],
+    });
+    assert!(
+        engine
+            .shared_media_message_ids(&saved, &actor_id)
+            .unwrap()
+            .is_empty(),
+        "canonical deletion must invalidate the derived shared-media projection without a second cache"
+    );
+}
