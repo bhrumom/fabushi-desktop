@@ -196,6 +196,8 @@ test("shipping SFU layer switching uses durable subscription identity and explic
   assert.ok(source.includes('priorityOrdering: "none"'));
   assert.ok(source.includes('ridNotAvailable: "none"'));
   assert.ok(source.includes('response.result.status !== "applied"'));
+  assert.ok(source.includes("sfuRuntimeRef.current !== runtime"));
+  assert.ok(source.includes("callRef.current?.generation !== current.generation"));
   assert.ok(source.includes("subscription.preferredRid = nextRid"));
   assert.ok(source.includes('aria-label="Switch remote video quality"'));
   assert.ok(source.includes("pending={layerPending}"));
