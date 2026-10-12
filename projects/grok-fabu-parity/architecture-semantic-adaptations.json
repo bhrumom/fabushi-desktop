@@ -1766,6 +1766,39 @@
         "frontend/src/recovered/features/recovered-owner-utilities.contract.test.ts",
         "scripts/check-grok-architecture.mjs"
       ]
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/conversation/cards/transcript-card/emoji-catalog.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "d62b59f433ec3a31d834969fa83a002542eb58d0",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/conversation/cards/transcript-card/emoji-catalog.ts",
+        "frontend/src/recovered/features/conversation/workspace/editor-suggestion-provider.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml",
+        "scripts/check-grok-architecture.mjs"
+      ],
+      "rationale": "Preserves the frozen Grok emoji catalog/picker contract while extending the existing canonical EmojiCatalog owner with TDRP Revision 9 Composer autocomplete semantics recovered from desktop-app/lib_ui emoji suggestions. The adaptation adds source-neutral prefix matching, stable source-order/recency ranking, multi-word words-used tiering, and an explicit .ts runtime-assets import so the same production module is executable under the Node contract gate. It does not create a second emoji store or suggestion owner; Composer still consumes the existing EditorSuggestionController and catalog."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/conversation/workspace/editor-suggestion-provider.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "a0ecee4b30d455988d27ae3644f11dac6787d6bf",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/conversation/workspace/editor-suggestion-provider.ts",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/emoji-catalog.ts",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml",
+        "scripts/check-grok-architecture.mjs"
+      ],
+      "rationale": "Preserves the frozen Grok editor-suggestion controller lifecycle while adapting its existing emoji provider seam to canonical EmojiCatalog autocomplete recovered from Telegram/lib_ui. The controller retains one suggestion state owner, query/generation fencing, keyboard selection and insertion behavior; no parallel Composer state or Telegram runtime is introduced."
     }
   ]
 }
