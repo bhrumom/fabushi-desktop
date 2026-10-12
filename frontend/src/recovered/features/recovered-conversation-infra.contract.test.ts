@@ -49,6 +49,11 @@ import {
   type ComposerDraftPersistence,
 } from "./conversation/workspace/draft-state.ts";
 import { createTranscriptAcknowledgementController } from "./conversation/workspace/acknowledgement.ts";
+import {
+  searchEmoji,
+  searchEmojiSuggestions,
+  type EmojiCatalog,
+} from "./conversation/cards/transcript-card/emoji-catalog.ts";
 import { isCurrentPlatformInputSample, mergeNativePlatformInputStatus, promptEditorKeyAction, shouldHoldScopeFenceDuringComposition, compositionOnlyInputStatus } from "./conversation/workspace/input-composition-state.ts";
 import {
   isForwardRecipientNavigationKey,
@@ -61,6 +66,47 @@ const flush = async (): Promise<void> => {
   await Promise.resolve();
   await Promise.resolve();
 };
+
+
+const TDRP_EMOJI_SUGGESTION_CATALOG: EmojiCatalog = {
+  categories: [{
+    id: "symbols",
+    label: "Symbols",
+    emojis: [
+      { id: "redheart", name: "Joined Redheart", native: "🟥", shortcodes: ["redheart"], search: "redheart joined block" },
+      { id: "heart", name: "Red Heart", native: "❤️", shortcodes: ["heart"], search: "red heart love" },
+      { id: "heartred", name: "Heart Red Marker", native: "♦️", shortcodes: ["heartred"], search: "heart red marker" },
+      { id: "plus_one", name: "Plus One", native: "👍", shortcodes: ["+1", "thumbsup"], search: "+1 plus one thumbs up" },
+      { id: "smile", name: "Smile", native: "🙂", shortcodes: ["smile"], search: "smile happy face" },
+      { id: "happy_smile", name: "Happy Smile", native: "🙂", shortcodes: ["happy_smile"], search: "happy smile face" },
+    ],
+  }],
+  skinTones: [],
+  subgroups: [],
+};
+
+test("UNIT-TDRP-EMOJI-AUTOCOMPLETE-001 Composer emoji suggestions preserve mature normalization, word-prefix ranking, and native dedupe", () => {
+  assert.equal(searchEmojiSuggestions(TDRP_EMOJI_SUGGESTION_CATALOG, "red-heart")[0]?.id, "redheart");
+  assert.deepEqual(
+    searchEmojiSuggestions(TDRP_EMOJI_SUGGESTION_CATALOG, "redhea").map((entry) => entry.id),
+    ["redheart", "heart"],
+  );
+  assert.equal(searchEmojiSuggestions(TDRP_EMOJI_SUGGESTION_CATALOG, "heartred")[0]?.id, "heartred");
+  assert.equal(searchEmojiSuggestions(TDRP_EMOJI_SUGGESTION_CATALOG, "+1")[0]?.id, "plus_one");
+  assert.equal(searchEmojiSuggestions(TDRP_EMOJI_SUGGESTION_CATALOG, "mile").length, 0);
+  assert.equal(searchEmojiSuggestions(TDRP_EMOJI_SUGGESTION_CATALOG, "smile").filter((entry) => entry.native === "🙂").length, 1);
+  assert.equal(searchEmoji(TDRP_EMOJI_SUGGESTION_CATALOG, "mile")[0]?.id, "smile", "picker substring search remains independent from Composer colon completion");
+});
+
+test("CONTRACT-TDRP-EMOJI-AUTOCOMPLETE-001 shipping EditorSuggestionController uses the canonical EmojiCatalog autocomplete owner", () => {
+  const catalogSource = readFileSync(new URL("./conversation/cards/transcript-card/emoji-catalog.ts", import.meta.url), "utf8");
+  const providerSource = readFileSync(new URL("./conversation/workspace/editor-suggestion-provider.ts", import.meta.url), "utf8");
+  assert.match(catalogSource, /export function searchEmojiSuggestions/);
+  assert.match(catalogSource, /emojiSuggestionWordsUsed/);
+  assert.match(catalogSource, /byNative = new Map<string, EmojiSuggestionCandidate>/);
+  assert.match(providerSource, /return searchEmojiSuggestions\(catalog, query, limit, recentEntries\);/);
+  assert.doesNotMatch(providerSource, /TelegramEmoji|Telegram.*SuggestionStore/);
+});
 
 
 

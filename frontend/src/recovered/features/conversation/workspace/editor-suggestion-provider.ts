@@ -1,6 +1,7 @@
 import type { RawPortCoordinatorSource } from "../../../runtime/coordinator-source";
 import {
   searchEmoji,
+  searchEmojiSuggestions,
   type EmojiCatalog,
   type EmojiEntry,
 } from "../cards/transcript-card/emoji-catalog";
@@ -405,7 +406,7 @@ export function createEditorSuggestionController(source: EditorSuggestionSource)
     emojiRows(catalog, query, limit = 96) {
       if (catalog == null) return [];
       const recentEntries = emojiRecents.flatMap((id) => catalog.categories.flatMap((category) => category.emojis.filter((emoji) => emoji.id === id)));
-      return searchEmoji(catalog, query, limit, recentEntries);
+      return searchEmojiSuggestions(catalog, query, limit, recentEntries);
     },
     recordMentionRecent(entry) {
       if (disposed) return;

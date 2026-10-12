@@ -266,9 +266,9 @@
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
     "unknown_minimum": 15845,
-    "unread_minimum": 3281,
+    "unread_minimum": 3217,
     "omitted_known": 0,
-    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 12,844; unknown=15,845, unread=3,281, omitted=0."
+    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 12,908; unknown=15,845, unread=3,217, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -282,7 +282,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Closure open. Read-through 12,844/16,125; first unread 12,845 Telegram/lib_ui::cmake/generate_palette.cmake@e3f70430fc073eb1558340af9568755f150581d7; unknown remains 15,845; product/release closure remains open."
+    "note": "Closure open. Read-through 12,908/16,125; first unread 12,909 Telegram/lib_ui::icons/round_shadow_box_left@3x.png@f52dac8931eb6ee42e01ba3a736d6de981668ffe; unknown remains 15,845; product/release closure remains open."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",
@@ -299,19 +299,19 @@
     "superseded_by_upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941"
   },
   "recursive_inventory_evidence": {
-    "status": "authoritative-predecessor-inventory-current-descendant-validation-pending",
+    "status": "authoritative-current-parent-inventory-descendant-validation-pending",
     "runner": "github-actions",
-    "run_id": 38187773453,
+    "run_id": 38189544832,
     "run_attempt": 1,
-    "job_id": 114614699733,
-    "validation_head_sha": "c1affdc7c11a03bd471cf290b43f7eebd9ac8006",
-    "artifact_id": 11720595473,
-    "artifact_name": "tdrp-revision9-authority-c1affdc7c11a03bd471cf290b43f7eebd9ac8006",
-    "artifact_digest": "sha256:d53c4936ad4a4f3b3dd483211f67f3ff10a4cc0c2ffcd9ccf28c0c010f7448f8",
+    "job_id": 114619149670,
+    "validation_head_sha": "d5e700722a392de1f74a338649ce124f73b21f8b",
+    "artifact_id": 11721111016,
+    "artifact_name": "tdrp-revision9-authority-d5e700722a392de1f74a338649ce124f73b21f8b",
+    "artifact_digest": "sha256:2b82a4517bf5c8849bb2965d0cf0ab9ea2ba6a6e16639f34a11a48a425711248",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "recursive_non_directory_entries": 16125,
     "source_closure_ready": false,
-    "note": "12,781-12,844 exact gitlink blobs matched the authoritative recursive inventory; current accounting descendant requires fresh exact-head Actions."
+    "note": "12,845-12,908 exact materialization matched byte length, SHA-256 and accepted lib_ui Git blob identities; TTF/PNG binary inputs were inspected by type/dimensions. Current descendant requires fresh exact-head Actions."
   },
   "build_time_acquisition_inventory": {
     "path": "projects/telegram-desktop-rust/inventory/build-time-acquisitions.json",
@@ -635,9 +635,9 @@
     "development_only_non_applicable": 206,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 12844,
-    "first_unread_order": 12845,
-    "first_unread_path": "Telegram/lib_ui::cmake/generate_palette.cmake",
+    "read_through": 12908,
+    "first_unread_order": 12909,
+    "first_unread_path": "Telegram/lib_ui::icons/round_shadow_box_left@3x.png",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
@@ -738,5 +738,5 @@
     ],
     "note": "Valid exact-head evidence for 46dfaf only; main reconciliation/accounting descendants require fresh Actions."
   },
-  "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 12,844; unknown=15,845, unread=3,281, omitted=0; first unread=12,845 Telegram/lib_ui::cmake/generate_palette.cmake@e3f70430fc073eb1558340af9568755f150581d7."
+  "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 12,908; unknown=15,845, unread=3,217, omitted=0; first unread=12,909 Telegram/lib_ui::icons/round_shadow_box_left@3x.png@f52dac8931eb6ee42e01ba3a736d6de981668ffe."
 }

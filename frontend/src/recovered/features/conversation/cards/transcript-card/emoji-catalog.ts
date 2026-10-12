@@ -217,6 +217,143 @@ export function searchEmoji(
   return [...exact, ...secondary].slice(0, Math.max(0, limit));
 }
 
+
+function normalizeEmojiSuggestionQuery(value: string): string {
+  const normalized = value.normalize("NFKD").replace(/\p{M}+/gu, "").toLowerCase();
+  const chars = [...normalized];
+  let result = "";
+  for (let index = 0; index < chars.length; index += 1) {
+    const character = chars[index]!;
+    if (/[\p{L}\p{N}]/u.test(character)) {
+      result += character;
+      continue;
+    }
+    if ((character === "-" || character === "+")
+      && (index + 1 === chars.length || /\p{N}/u.test(chars[index + 1]!))) {
+      result += character;
+    }
+  }
+  return result;
+}
+
+function emojiSuggestionWords(entry: EmojiEntry): string[] {
+  const result: string[] = [];
+  const seen = new Set<string>();
+  for (const value of [entry.id, entry.name, ...entry.shortcodes, entry.search]) {
+    for (const raw of value.normalize("NFKD").replace(/\p{M}+/gu, "").toLowerCase().split(/[^\p{L}\p{N}+-]+/u)) {
+      const word = normalizeEmojiSuggestionQuery(raw);
+      if (word.length === 0 || seen.has(word)) continue;
+      seen.add(word);
+      result.push(word);
+    }
+  }
+  return result;
+}
+
+function emojiSuggestionWordsUsed(words: readonly string[], query: string): number | null {
+  if (query.length === 0) return 0;
+  const candidates = words.filter((word) => word.length > 0 && query.includes(word[0]!));
+  const used = new Array<boolean>(candidates.length).fill(false);
+  let best = Number.POSITIVE_INFINITY;
+
+  const match = (position: number, wordsUsed: number): void => {
+    if (position === query.length) {
+      best = Math.min(best, wordsUsed);
+      return;
+    }
+    if (wordsUsed >= best) return;
+    const first = query[position]!;
+    for (let index = 0; index < candidates.length; index += 1) {
+      if (used[index]) continue;
+      const word = candidates[index]!;
+      if (word[0] !== first) continue;
+      const remaining = query.length - position;
+      const possible = Math.min(word.length, remaining);
+      let equal = 0;
+      while (equal < possible && word[equal] === query[position + equal]) equal += 1;
+      if (equal === 0) continue;
+      used[index] = true;
+      for (let take = equal; take >= 1; take -= 1) match(position + take, wordsUsed + 1);
+      used[index] = false;
+    }
+  };
+
+  match(0, 0);
+  return Number.isFinite(best) ? best : null;
+}
+
+interface EmojiSuggestionCandidate {
+  readonly entry: EmojiEntry;
+  readonly wordsUsed: number;
+  readonly exact: boolean;
+  readonly primaryStartsWithQuery: boolean;
+  readonly recentIndex: number;
+  readonly sourceOrder: number;
+}
+
+function compareEmojiSuggestionCandidates(left: EmojiSuggestionCandidate, right: EmojiSuggestionCandidate): number {
+  if (left.exact !== right.exact) return left.exact ? -1 : 1;
+  const leftWords = Math.min(left.wordsUsed, 3);
+  const rightWords = Math.min(right.wordsUsed, 3);
+  if (leftWords !== rightWords) return leftWords - rightWords;
+  if (left.primaryStartsWithQuery !== right.primaryStartsWithQuery) return left.primaryStartsWithQuery ? -1 : 1;
+  if (left.recentIndex !== right.recentIndex) return left.recentIndex - right.recentIndex;
+  return left.sourceOrder - right.sourceOrder;
+}
+
+/**
+ * Source-neutral Composer colon completion. Unlike picker search, this preserves
+ * mature autocomplete behavior: punctuation normalization, query segments that
+ * can consume distinct word prefixes in any order, duplicate emoji collapse,
+ * and stable exact / word-count / primary-code ranking.
+ */
+export function searchEmojiSuggestions(
+  catalog: EmojiCatalog,
+  query: string,
+  limit = EMOJI_SEARCH_LIMIT,
+  recents: readonly EmojiEntry[] = [],
+): readonly EmojiEntry[] {
+  const normalizedQuery = normalizeEmojiSuggestionQuery(query);
+  if (normalizedQuery.length === 0) return searchEmoji(catalog, query, limit, recents);
+
+  const recentOrder = new Map<string, number>();
+  recents.forEach((entry, index) => {
+    if (!recentOrder.has(entry.id)) recentOrder.set(entry.id, index);
+  });
+
+  const byNative = new Map<string, EmojiSuggestionCandidate>();
+  let sourceOrder = 0;
+  for (const category of catalog.categories) {
+    for (const entry of category.emojis) {
+      const wordsUsed = emojiSuggestionWordsUsed(emojiSuggestionWords(entry), normalizedQuery);
+      if (wordsUsed == null) {
+        sourceOrder += 1;
+        continue;
+      }
+      const primary = normalizeEmojiSuggestionQuery(entry.id);
+      const aliases = entry.shortcodes.map(normalizeEmojiSuggestionQuery);
+      const candidate: EmojiSuggestionCandidate = {
+        entry,
+        wordsUsed,
+        exact: primary === normalizedQuery || aliases.includes(normalizedQuery),
+        primaryStartsWithQuery: primary[0] === normalizedQuery[0],
+        recentIndex: recentOrder.get(entry.id) ?? Number.POSITIVE_INFINITY,
+        sourceOrder,
+      };
+      const previous = byNative.get(entry.native);
+      if (previous == null || compareEmojiSuggestionCandidates(candidate, previous) < 0) {
+        byNative.set(entry.native, candidate);
+      }
+      sourceOrder += 1;
+    }
+  }
+
+  return [...byNative.values()]
+    .sort(compareEmojiSuggestionCandidates)
+    .slice(0, Math.max(0, limit))
+    .map((candidate) => candidate.entry);
+}
+
 async function importEmojiAsset(file: string): Promise<unknown> {
   return import(/* @vite-ignore */ rendererRuntimeAssetUrl(file));
 }

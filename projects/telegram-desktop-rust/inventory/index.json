@@ -14,20 +14,20 @@
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
     "unknown_minimum": 15845,
-    "unread_minimum": 3281,
+    "unread_minimum": 3217,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through deterministic order 12,844; unread 3,281; unknown 15,845; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition through deterministic order 12,908; unread 3,217; unknown 15,845; omitted 0."
   },
   "latest_recursive_evidence": {
-    "run_id": 38187773453,
+    "run_id": 38189544832,
     "run_attempt": 1,
-    "job_id": 114614699733,
-    "head_sha": "c1affdc7c11a03bd471cf290b43f7eebd9ac8006",
-    "artifact_id": 11720595473,
-    "artifact_digest": "sha256:d53c4936ad4a4f3b3dd483211f67f3ff10a4cc0c2ffcd9ccf28c0c010f7448f8",
-    "evidence_status": "authoritative-recursive-identities-plus-exact-gitlink-review-descendant-validation-required",
+    "job_id": 114619149670,
+    "head_sha": "d5e700722a392de1f74a338649ce124f73b21f8b",
+    "artifact_id": 11721111016,
+    "artifact_digest": "sha256:2b82a4517bf5c8849bb2965d0cf0ab9ea2ba6a6e16639f34a11a48a425711248",
+    "evidence_status": "authoritative-recursive-identities-plus-current-window-artifact-verified-descendant-validation-required",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
-    "note": "Orders 12,781-12,844 were checked against the authoritative recursive inventory and re-fetched from accepted gitlink commits. A stale handoff summary with incorrect lib_storage blob SHA values was rejected; artifact identities matched exact gitlink blobs."
+    "note": "Orders 12,845-12,908 were materialized from the current-head Source authority artifact and independently verified against byte length, SHA-256, Git blob identity and accepted lib_ui exact-ref; binary font/PNG inputs were inspected without UTF-8 assumptions."
   },
   "closure_rules": {
     "executable_runner": "github-actions",
@@ -37,7 +37,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live baseline accepted; closure open. Read-through 12,844; unread_minimum is 3,281; unknown remains 15,845; omitted remains 0; first unread order 12,845 is Telegram/lib_ui::cmake/generate_palette.cmake.",
+  "note": "Live baseline accepted; closure open. Read-through 12,908; unread_minimum is 3,217; unknown remains 15,845; omitted remains 0; first unread order 12,909 is Telegram/lib_ui::icons/round_shadow_box_left@3x.png.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -55,12 +55,12 @@
       6541,
       6627
     ],
-    "current_source_read_through": 12844,
-    "first_unread_order": 12845,
-    "first_unread_path": "Telegram/lib_ui::cmake/generate_palette.cmake",
-    "current_head_source_authority_evidence": "Recursive identities from c1affdc7 Source authority artifact 11720595473 were independently matched to accepted submodule exact-ref blobs for 12,781-12,844; current descendant requires fresh same-head Actions.",
-    "source_read_reconciliation": "Accepted prefix 12,844/16,125; orders 12,781-12,844 exact-read/decomposed across spellcheck, storage, TL/schema, local translation and lib_ui build/codegen entry; unread 3,281; unknown 15,845; omitted 0; reading alone closes no unknown.",
-    "source_authority_evidence": "Exact-head c1affdc7 Rust desktop runtime 38187773453 / source-authority job 114614699733 succeeded with artifact 11720595473 (sha256:d53c4936ad4a4f3b3dd483211f67f3ff10a4cc0c2ffcd9ccf28c0c010f7448f8), materializing 12,717-12,780. The accounting descendant must obtain fresh same-head validation."
+    "current_source_read_through": 12908,
+    "first_unread_order": 12909,
+    "first_unread_path": "Telegram/lib_ui::icons/round_shadow_box_left@3x.png",
+    "current_head_source_authority_evidence": "d5e70072 Rust desktop runtime 38189544832 / source-authority 114619149670 / artifact 11721111016 verified recursive identities and materialized 12,845-12,908; this descendant requires fresh same-head Actions.",
+    "source_read_reconciliation": "Accepted prefix 12,908/16,125; 12,845-12,846 palette/style codegen, 12,847-12,853 current/historical emoji generation data, 12,854-12,857 Composer emoji autocomplete behavior, 12,858-12,864 font resource packaging, and 12,865-12,908 box/call/checkbox/elevation raster semantics. Unread 3,217; unknown 15,845; omitted 0; reading alone closes no unknown.",
+    "source_authority_evidence": "Exact-head d5e70072 Rust desktop runtime 38189544832 / source-authority 114619149670 succeeded with artifact 11721111016 (sha256:2b82a4517bf5c8849bb2965d0cf0ab9ea2ba6a6e16639f34a11a48a425711248), materializing 12,845-12,908; the accounting descendant must obtain fresh same-head validation."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
@@ -69,9 +69,9 @@
     "development_only_non_applicable": 206,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 12844,
-    "first_unread_order": 12845,
-    "first_unread_path": "Telegram/lib_ui::cmake/generate_palette.cmake",
+    "read_through": 12908,
+    "first_unread_order": 12909,
+    "first_unread_path": "Telegram/lib_ui::icons/round_shadow_box_left@3x.png",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }
