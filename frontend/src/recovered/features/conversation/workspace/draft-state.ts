@@ -154,6 +154,7 @@ function parsePersistedValue(
   if (!isRecord(rawScopes)) return null;
   const result = new Map<string, { draft: ComposerDraft | null; draftId: string | null; recovery: ComposerDraft | null }>();
   for (const [persistedKey, raw] of Object.entries(rawScopes)) {
+    if (persistedKey.trim().length === 0) return null;
     const scopeKey = schemaVersion === 1
       ? composerDraftScopeKey(persistedKey)
       : isPersistedComposerDraftScopeKey(persistedKey) ? persistedKey : null;
