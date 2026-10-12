@@ -19,6 +19,36 @@ const userDataDir = process.env.FABUSHI_UPDATER_USER_DATA_DIR?.trim()
   || path.join(tmpdir(), `fabushi-updater-user-data-${Date.now()}`);
 const timeoutMs = Number(process.env.FABUSHI_UPDATER_TIMEOUT_MS || 15 * 60_000);
 
+function parseSemver(value) {
+  const match = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/u.exec(value);
+  if (!match) throw new Error(`invalid semantic version: ${value}`);
+  return { core: [Number(match[1]), Number(match[2]), Number(match[3])], prerelease: match[4]?.split(".") ?? [] };
+}
+
+function compareSemver(left, right) {
+  const a = parseSemver(left);
+  const b = parseSemver(right);
+  for (let index = 0; index < 3; index += 1) {
+    if (a.core[index] !== b.core[index]) return a.core[index] < b.core[index] ? -1 : 1;
+  }
+  if (a.prerelease.length === 0 || b.prerelease.length === 0) {
+    if (a.prerelease.length === b.prerelease.length) return 0;
+    return a.prerelease.length === 0 ? 1 : -1;
+  }
+  const length = Math.max(a.prerelease.length, b.prerelease.length);
+  for (let index = 0; index < length; index += 1) {
+    const av = a.prerelease[index], bv = b.prerelease[index];
+    if (av === undefined) return -1;
+    if (bv === undefined) return 1;
+    if (av === bv) continue;
+    const an = /^\d+$/u.test(av), bn = /^\d+$/u.test(bv);
+    if (an && bn) return Number(av) < Number(bv) ? -1 : 1;
+    if (an !== bn) return an ? -1 : 1;
+    return av < bv ? -1 : 1;
+  }
+  return 0;
+}
+
 function shippingRenderer(url) {
   if (url.startsWith("app://bundle/")) return true;
   try {
@@ -71,8 +101,8 @@ async function updaterStatus(page) {
 }
 
 async function main() {
-  if (baselineVersion === targetVersion) {
-    throw new Error("baseline and target versions must differ");
+  if (compareSemver(baselineVersion, targetVersion) >= 0) {
+    throw new Error(`baseline version ${baselineVersion} must be strictly older than target ${targetVersion}`);
   }
   await rm(evidenceDir, { recursive: true, force: true });
   await rm(userDataDir, { recursive: true, force: true });
