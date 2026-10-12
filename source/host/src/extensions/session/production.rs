@@ -2582,24 +2582,6 @@ impl ProductionSessionWorkers {
         > = BTreeMap::new();
 
         for entry in entries {
-            let Some(remote_message_id) = entry
-                .get("remoteMessageId")
-                .and_then(serde_json::Value::as_str)
-                .map(str::trim)
-                .filter(|value| !value.is_empty())
-            else {
-                // Renderer/local pending state is never SavedSublist authority.
-                continue;
-            };
-            let expected_entry_id = format!("human-server-message:{remote_message_id}");
-            if entry.get("id").and_then(serde_json::Value::as_str)
-                != Some(expected_entry_id.as_str())
-            {
-                return Err(
-                    "server-authoritative SavedSublist transcript identity did not match remote message id"
-                        .into(),
-                );
-            }
             let Some(destination_value) = entry.get("destination") else {
                 continue;
             };
@@ -2622,15 +2604,25 @@ impl ProductionSessionWorkers {
                         .into(),
                 );
             }
-            let message_id = entry
-                .get("id")
+            let Some(remote_message_id) = entry
+                .get("remoteMessageId")
                 .and_then(serde_json::Value::as_str)
                 .map(str::trim)
                 .filter(|value| !value.is_empty())
-                .ok_or_else(|| {
-                    "server-authoritative SavedSublist transcript entry omitted canonical message id"
-                        .to_string()
-                })?;
+            else {
+                // Renderer/local pending state is never SavedSublist authority.
+                continue;
+            };
+            let expected_entry_id = format!("human-server-message:{remote_message_id}");
+            if entry.get("id").and_then(serde_json::Value::as_str)
+                != Some(expected_entry_id.as_str())
+            {
+                return Err(
+                    "server-authoritative SavedSublist transcript identity did not match remote message id"
+                        .into(),
+                );
+            }
+            let message_id = expected_entry_id.as_str();
             let key = serde_json::to_string(&destination).map_err(|error| {
                 format!("SavedSublist authority destination could not be keyed: {error}")
             })?;
