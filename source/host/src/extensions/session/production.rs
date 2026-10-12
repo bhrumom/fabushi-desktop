@@ -2568,6 +2568,106 @@ impl ProductionSessionWorkers {
         Ok(entry)
     }
 
+    fn reconcile_saved_sublist_authority_from_transcript(
+        &self,
+        entries: &[serde_json::Value],
+    ) -> Result<(), String> {
+        let actor_id = self.story_actor_id()?;
+        let mut memberships: BTreeMap<
+            String,
+            (
+                fabushi_messaging_core::ConversationDestination,
+                BTreeSet<fabushi_messaging_core::MessageId>,
+            ),
+        > = BTreeMap::new();
+
+        for entry in entries {
+            let Some(destination_value) = entry.get("destination") else {
+                continue;
+            };
+            let destination =
+                serde_json::from_value::<fabushi_messaging_core::ConversationDestination>(
+                    destination_value.clone(),
+                )
+                .map_err(|error| {
+                    format!("server-authoritative SavedSublist destination was invalid: {error}")
+                })?;
+            if !matches!(
+                destination.child.as_ref(),
+                Some(fabushi_messaging_core::ConversationChildIdentity::SavedSublist { .. })
+            ) {
+                continue;
+            }
+            if !destination.is_valid() {
+                return Err(
+                    "server-authoritative SavedSublist destination failed canonical validation"
+                        .into(),
+                );
+            }
+            let message_id = entry
+                .get("id")
+                .and_then(serde_json::Value::as_str)
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .ok_or_else(|| {
+                    "server-authoritative SavedSublist transcript entry omitted canonical message id"
+                        .to_string()
+                })?;
+            let key = serde_json::to_string(&destination).map_err(|error| {
+                format!("SavedSublist authority destination could not be keyed: {error}")
+            })?;
+            memberships
+                .entry(key)
+                .or_insert_with(|| (destination, BTreeSet::new()))
+                .1
+                .insert(fabushi_messaging_core::MessageId::new(message_id));
+        }
+
+        if memberships.is_empty() {
+            return Ok(());
+        }
+
+        let _guard = MESSAGING_PROJECTION_IO_LOCK
+            .get_or_init(|| Mutex::new(()))
+            .lock()
+            .map_err(|_| "canonical messaging projection storage lock is poisoned".to_string())?;
+        let root = self.agents_root.join("_messaging");
+        let mut service = MessagingService::load_with_blob_store(
+            MessagingJsonFileStateStore::new(root.join("snapshot.json")),
+            MessagingFileBlobStore::new(root.join("blobs")),
+        )
+        .map_err(|error| {
+            format!("canonical SavedSublist authority service could not load: {error}")
+        })?;
+        let server_time_ms = Self::story_server_time_ms();
+
+        for (_, (destination, message_ids)) in memberships {
+            service
+                .reconcile_saved_sublist_parent_access(
+                    destination.conversation_id.clone(),
+                    actor_id.clone(),
+                    true,
+                    server_time_ms,
+                )
+                .map_err(|error| {
+                    format!(
+                        "canonical SavedSublist parent-access reconciliation failed: {error}"
+                    )
+                })?;
+            service
+                .reconcile_saved_sublist_membership(
+                    destination,
+                    actor_id.clone(),
+                    message_ids.into_iter().collect(),
+                    server_time_ms,
+                )
+                .map_err(|error| {
+                    format!("canonical SavedSublist membership reconciliation failed: {error}")
+                })?;
+        }
+        Ok(())
+    }
+
     pub fn sync_human_conversation(
         &self,
         conversation_id: &str,
@@ -2690,7 +2790,11 @@ impl ProductionSessionWorkers {
                 self.materialize_remote_human_message(&owner, &remote)?;
             }
         }
-        owner.get_transcript_entries().map_err(|error| error.to_string())
+        let entries = owner
+            .get_transcript_entries()
+            .map_err(|error| error.to_string())?;
+        self.reconcile_saved_sublist_authority_from_transcript(&entries)?;
+        Ok(entries)
     }
 
     pub fn sync_human_conversations(&self) -> Result<Vec<serde_json::Value>, String> {
