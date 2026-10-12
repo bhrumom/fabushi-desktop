@@ -6,7 +6,7 @@ import {
   resolveHostToBoxSync,
 } from "./box-vnc-clipboard-paste.js";
 import { createViewerVisibilityGate } from "./box-vnc-visibility-gate.js";
-import { installDialogStubs } from "./preload-browser-base.js";
+import { installDialogStubs, type BrowserWindowPort } from "./preload-browser-base.js";
 import {
   EDGE_HANDLER_FAILED,
   EDGE_UNKNOWN_METHOD,
@@ -196,10 +196,10 @@ test("attachment preload bridge normalizes native staging and commit contracts",
 
 test("embedded browser dialog stubs fail closed instead of auto-consenting", () => {
   const calls: string[] = [];
-  const windowPort = {
-    alert() { calls.push("alert-original"); },
-    confirm() { calls.push("confirm-original"); return true; },
-    prompt() { calls.push("prompt-original"); return "secret"; },
+  const windowPort: BrowserWindowPort = {
+    alert(..._values: unknown[]) { calls.push("alert-original"); },
+    confirm(..._values: unknown[]) { calls.push("confirm-original"); return true; },
+    prompt(..._values: unknown[]) { calls.push("prompt-original"); return "secret"; },
     addEventListener() {},
   };
   installDialogStubs(windowPort);
