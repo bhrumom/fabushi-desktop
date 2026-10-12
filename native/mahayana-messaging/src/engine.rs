@@ -1357,24 +1357,24 @@ fn message_has_shared_link(message: &Message) -> bool {
 
 fn message_matches_shared_media_kind(message: &Message, kind: SharedMediaKind) -> bool {
     match kind {
-        SharedMediaKind::Photo => matches!(message.content, MessageContent::Photo { .. }),
-        SharedMediaKind::Video => matches!(message.content, MessageContent::Video { .. }),
+        SharedMediaKind::Photo => matches!(&message.content, MessageContent::Photo { .. }),
+        SharedMediaKind::Video => matches!(&message.content, MessageContent::Video { .. }),
         SharedMediaKind::PhotoVideo => matches!(
-            message.content,
+            &message.content,
             MessageContent::Photo { .. } | MessageContent::Video { .. }
         ),
-        SharedMediaKind::MusicFile => matches!(message.content, MessageContent::Audio { .. }),
-        SharedMediaKind::File => matches!(message.content, MessageContent::Document { .. }),
-        SharedMediaKind::VoiceFile => matches!(message.content, MessageContent::Voice { .. }),
+        SharedMediaKind::MusicFile => matches!(&message.content, MessageContent::Audio { .. }),
+        SharedMediaKind::File => matches!(&message.content, MessageContent::Document { .. }),
+        SharedMediaKind::VoiceFile => matches!(&message.content, MessageContent::Voice { .. }),
         SharedMediaKind::Link => message_has_shared_link(message),
-        SharedMediaKind::Gif => matches!(message.content, MessageContent::Animation { .. }),
+        SharedMediaKind::Gif => matches!(&message.content, MessageContent::Animation { .. }),
         SharedMediaKind::RoundVoiceFile => matches!(
-            message.content,
+            &message.content,
             MessageContent::Voice { .. } | MessageContent::VideoNote { .. }
         ),
-        SharedMediaKind::RoundFile => matches!(message.content, MessageContent::VideoNote { .. }),
+        SharedMediaKind::RoundFile => matches!(&message.content, MessageContent::VideoNote { .. }),
         SharedMediaKind::Pinned => message.pinned,
-        SharedMediaKind::Poll => matches!(message.content, MessageContent::Poll { .. }),
+        SharedMediaKind::Poll => matches!(&message.content, MessageContent::Poll { .. }),
     }
 }
 
@@ -1445,7 +1445,7 @@ impl MessagingEngine {
     ) -> Result<Vec<MessageId>, EngineError> {
         self.shared_media_message_ids_matching(destination, actor_id, |message| {
             matches!(
-                message.content,
+                &message.content,
                 MessageContent::Photo { .. }
                     | MessageContent::Video { .. }
                     | MessageContent::Animation { .. }
