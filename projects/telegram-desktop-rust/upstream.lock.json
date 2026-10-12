@@ -735,5 +735,22 @@
     ],
     "note": "Valid exact-head evidence for 46dfaf only; main reconciliation/accounting descendants require fresh Actions."
   },
-  "note": "Accepted baseline; exact read-through 13,883; unknown=15,409, unread=2,242, omitted=0; first unread 13,884 doc/gh-pages::doxygen.css."
+  "note": "Accepted baseline; exact read-through 13,883; unknown=15,409, unread=2,242, omitted=0; first unread 13,884 doc/gh-pages::doxygen.css.",
+  "source_accounting": {
+    "recursive_total": 16125,
+    "read_through": 14004,
+    "first_unread_order": 14005,
+    "first_unread_path": "doc/gh-pages::group__integral.js",
+    "unread": 2121,
+    "unknown": 15288,
+    "omitted": 0,
+    "parent_exact_head_evidence": {
+      "head": "524c4ad20165941c6818be7adca7e48a7a30250c",
+      "rust_runtime_run": 38206733546,
+      "source_authority_job": 114671830543,
+      "chat_parity_run": 38206733517,
+      "focused_e2e_job": 114671822750,
+      "authority_artifact": 11728135401
+    }
+  }
 }

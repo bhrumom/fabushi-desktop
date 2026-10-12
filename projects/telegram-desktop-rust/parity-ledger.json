@@ -6,8 +6,8 @@
   "target_commit": "371b72f1cd20de03dc4dff9a15ed761054968093",
   "coverage": {
     "source_entries_total": 16125,
-    "unknown": 15352,
-    "unread": 2185,
+    "unknown": 15288,
+    "unread": 2121,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
