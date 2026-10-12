@@ -47,7 +47,7 @@ pub use community::*;
 pub use connected_app::*;
 pub use conversation::*;
 pub use device::*;
-pub use engine::{Command, EngineError, Event, MessagingEngine, MessagingState};
+pub use engine::{Command, EngineError, Event, MessagingEngine, MessagingState, SharedMediaKind};
 pub use gateway::*;
 pub use media::*;
 pub use media_cache::*;
