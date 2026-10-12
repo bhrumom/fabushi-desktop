@@ -992,6 +992,9 @@ pub struct MessagingState {
     /// SavedSublist children. This is the source-neutral replacement for the
     /// upstream account-scoped parent/admin relation.
     pub saved_sublist_parent_access: BTreeMap<ConversationId, BTreeSet<ActorId>>,
+    /// Account-scoped ordinary recent participant suggestions. Unlike
+    /// recent_open_destinations these are durable local projection state.
+    pub recent_participant_suggestions: BTreeMap<ActorId, Vec<ActorId>>,
     pub pending_presence_sends: BTreeMap<ClientMessageId, PendingPresenceSend>,
     pub invoices: BTreeMap<String, Invoice>,
     pub orders: BTreeMap<String, PaymentOrder>,
@@ -1195,6 +1198,7 @@ pub enum EngineError {
     MiniAppHostActionRequired,
 }
 
+const MAX_RECENT_PARTICIPANT_SUGGESTIONS: usize = 48;
 const MAX_RECENT_OPEN_DESTINATIONS: usize = 32;
 
 #[derive(Debug, Clone, Default)]
@@ -1347,7 +1351,18 @@ impl MessagingEngine {
     pub fn new() -> Self {
         Self::default()
     }
-    pub fn from_state(state: MessagingState) -> Self {
+    pub fn from_state(mut state: MessagingState) -> Self {
+        let known_actors = state.actors.keys().cloned().collect::<BTreeSet<_>>();
+        state.recent_participant_suggestions.retain(|owner, recent| {
+            if !known_actors.contains(owner)
+                || recent.len() > MAX_RECENT_PARTICIPANT_SUGGESTIONS
+                || recent.iter().any(|peer| peer == owner || !known_actors.contains(peer))
+            {
+                return false;
+            }
+            let unique = recent.iter().cloned().collect::<BTreeSet<_>>();
+            unique.len() == recent.len()
+        });
         Self {
             state,
             recent_open_destinations: BTreeMap::new(),
@@ -1356,6 +1371,64 @@ impl MessagingEngine {
     pub fn state(&self) -> &MessagingState {
         &self.state
     }
+    pub fn recent_participant_suggestions(&self, actor_id: &ActorId) -> &[ActorId] {
+        self.state
+            .recent_participant_suggestions
+            .get(actor_id)
+            .map(Vec::as_slice)
+            .unwrap_or(&[])
+    }
+
+    pub fn note_recent_participant_suggestion(
+        &mut self,
+        actor_id: &ActorId,
+        peer_id: &ActorId,
+    ) -> Result<(), EngineError> {
+        self.require_actor(actor_id)?;
+        self.require_actor(peer_id)?;
+        if actor_id == peer_id {
+            return Err(EngineError::InvalidActor);
+        }
+        let recent = self
+            .state
+            .recent_participant_suggestions
+            .entry(actor_id.clone())
+            .or_default();
+        recent.retain(|item| item != peer_id);
+        recent.insert(0, peer_id.clone());
+        recent.truncate(MAX_RECENT_PARTICIPANT_SUGGESTIONS);
+        Ok(())
+    }
+
+    pub fn remove_recent_participant_suggestion(
+        &mut self,
+        actor_id: &ActorId,
+        peer_id: &ActorId,
+    ) -> Result<(), EngineError> {
+        self.require_actor(actor_id)?;
+        let remove_owner = self
+            .state
+            .recent_participant_suggestions
+            .get_mut(actor_id)
+            .is_some_and(|recent| {
+                recent.retain(|item| item != peer_id);
+                recent.is_empty()
+            });
+        if remove_owner {
+            self.state.recent_participant_suggestions.remove(actor_id);
+        }
+        Ok(())
+    }
+
+    pub fn clear_recent_participant_suggestions(
+        &mut self,
+        actor_id: &ActorId,
+    ) -> Result<(), EngineError> {
+        self.require_actor(actor_id)?;
+        self.state.recent_participant_suggestions.remove(actor_id);
+        Ok(())
+    }
+
     pub fn recent_open_destinations(
         &self,
         actor_id: &ActorId,
@@ -5435,6 +5508,63 @@ impl MessagingEngine {
 #[cfg(test)]
 mod recent_open_history_tests {
     use super::*;
+
+    #[test]
+    fn recent_participant_suggestions_are_durable_bounded_deduped_and_fail_closed() {
+        let owner = ActorId::new("human:recent-owner");
+        let mut engine = MessagingEngine::new();
+        engine.execute(Command::UpsertActor {
+            actor: Actor::human(owner.0.clone(), "Owner"),
+        }).unwrap();
+        for index in 0..=MAX_RECENT_PARTICIPANT_SUGGESTIONS {
+            let peer = ActorId::new(format!("human:recent-peer:{index}"));
+            engine.execute(Command::UpsertActor {
+                actor: Actor::human(peer.0.clone(), format!("Peer {index}")),
+            }).unwrap();
+            engine.note_recent_participant_suggestion(&owner, &peer).unwrap();
+        }
+        let recent = engine.recent_participant_suggestions(&owner);
+        assert_eq!(recent.len(), MAX_RECENT_PARTICIPANT_SUGGESTIONS);
+        let repeated = ActorId::new("human:recent-peer:5");
+        engine.note_recent_participant_suggestion(&owner, &repeated).unwrap();
+        let recent = engine.recent_participant_suggestions(&owner);
+        assert_eq!(recent.first(), Some(&repeated));
+        assert_eq!(recent.iter().filter(|item| *item == &repeated).count(), 1);
+
+        let restored = MessagingEngine::from_state(engine.state().clone());
+        assert_eq!(restored.recent_participant_suggestions(&owner), recent);
+
+        let mut corrupt = restored.state().clone();
+        corrupt
+            .recent_participant_suggestions
+            .entry(owner.clone())
+            .or_default()
+            .push(ActorId::new("human:missing"));
+        let recovered = MessagingEngine::from_state(corrupt);
+        assert!(recovered.recent_participant_suggestions(&owner).is_empty());
+    }
+
+    #[test]
+    fn recent_participant_remove_and_clear_are_exact_and_account_scoped() {
+        let owner = ActorId::new("human:recent-owner-a");
+        let other = ActorId::new("human:recent-owner-b");
+        let peer = ActorId::new("human:recent-peer");
+        let mut engine = MessagingEngine::new();
+        for actor in [
+            Actor::human(owner.0.clone(), "Owner A"),
+            Actor::human(other.0.clone(), "Owner B"),
+            Actor::human(peer.0.clone(), "Peer"),
+        ] {
+            engine.execute(Command::UpsertActor { actor }).unwrap();
+        }
+        engine.note_recent_participant_suggestion(&owner, &peer).unwrap();
+        engine.note_recent_participant_suggestion(&other, &peer).unwrap();
+        engine.remove_recent_participant_suggestion(&owner, &peer).unwrap();
+        assert!(engine.recent_participant_suggestions(&owner).is_empty());
+        assert_eq!(engine.recent_participant_suggestions(&other), &[peer.clone()]);
+        engine.clear_recent_participant_suggestions(&other).unwrap();
+        assert!(engine.recent_participant_suggestions(&other).is_empty());
+    }
 
     #[test]
     fn recent_open_history_is_bounded_deduped_and_move_front() {

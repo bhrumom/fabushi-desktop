@@ -176,6 +176,40 @@ impl<S: MessagingStateStore> MessagingService<S> {
         self.persist(server_time_ms)
     }
 
+    /// Persist one account-scoped ordinary recent participant suggestion.
+    /// This is local durable projection state, not a server-authoritative event,
+    /// so it intentionally does not advance the event cursor or journal.
+    pub fn note_recent_participant_suggestion(
+        &mut self,
+        actor_id: ActorId,
+        peer_id: ActorId,
+        now_ms: i64,
+    ) -> Result<(), MessagingServiceError> {
+        self.engine
+            .note_recent_participant_suggestion(&actor_id, &peer_id)?;
+        self.persist(now_ms)
+    }
+
+    pub fn remove_recent_participant_suggestion(
+        &mut self,
+        actor_id: ActorId,
+        peer_id: ActorId,
+        now_ms: i64,
+    ) -> Result<(), MessagingServiceError> {
+        self.engine
+            .remove_recent_participant_suggestion(&actor_id, &peer_id)?;
+        self.persist(now_ms)
+    }
+
+    pub fn clear_recent_participant_suggestions(
+        &mut self,
+        actor_id: ActorId,
+        now_ms: i64,
+    ) -> Result<(), MessagingServiceError> {
+        self.engine.clear_recent_participant_suggestions(&actor_id)?;
+        self.persist(now_ms)
+    }
+
     pub fn into_store(self) -> S {
         self.store
     }
