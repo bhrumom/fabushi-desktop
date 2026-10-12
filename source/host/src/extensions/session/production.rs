@@ -4401,6 +4401,29 @@ mod sharebox_shipping_tests {
         value.get("id").and_then(serde_json::Value::as_str).unwrap().to_string()
     }
 
+    fn seed_forward_child_authorities(
+        workers: &ProductionSessionWorkers,
+        destinations: &[(fabushi_messaging_core::ConversationDestination, bool)],
+    ) {
+        let actor_id = workers.story_actor_id().unwrap();
+        let mut state = fabushi_messaging_core::MessagingState::default();
+        for (destination, membership_known) in destinations {
+            let mut child = fabushi_messaging_core::ConversationChildRuntimeState::new(
+                destination.clone(),
+                actor_id.clone(),
+            )
+            .unwrap();
+            if *membership_known {
+                assert!(child.reconcile_authoritative_message_ids(Vec::new()));
+            }
+            state.conversation_child_states.push(child);
+        }
+        let snapshot = fabushi_messaging_core::MessagingSnapshot::new(state, 0, 1);
+        let snapshot_path = workers.agents_root.join("_messaging").join("snapshot.json");
+        fs::create_dir_all(snapshot_path.parent().unwrap()).unwrap();
+        fs::write(snapshot_path, serde_json::to_vec(&snapshot).unwrap()).unwrap();
+    }
+
     #[test]
     fn human_reply_target_aliases_follow_durable_settlement_identity() {
         let entries = vec![serde_json::json!({
@@ -4502,7 +4525,7 @@ mod sharebox_shipping_tests {
             Some("topic"),
         );
         assert!(child_blocked.pointer("/destinations/0/error").and_then(serde_json::Value::as_str)
-            .is_some_and(|error| error.contains("does not yet support Topic")));
+            .is_some_and(|error| error.contains("no authoritative child state")));
 
         let alpha_entries = workers.read_human_conversation_transcript(&alpha).unwrap();
         assert_eq!(alpha_entries.len(), 1);
@@ -4557,6 +4580,116 @@ mod sharebox_shipping_tests {
         );
         assert_eq!(restarted.read_human_conversation_transcript(&alpha).unwrap().len(), 1);
         restarted.shutdown();
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn shipping_human_forward_accepts_authoritative_typed_children_and_fails_closed_when_stale() {
+        let root = std::env::temp_dir().join(format!("fabushi-forward-children-{}", Uuid::new_v4()));
+        let workers = test_workers(&root);
+        let source = conversation_id(&workers.create_human_conversation("human-source", "Source").unwrap());
+        let alpha = conversation_id(&workers.create_human_conversation("human-alpha", "Alpha").unwrap());
+        let beta = conversation_id(&workers.create_human_conversation("human-beta", "Beta").unwrap());
+        let source_entry = workers
+            .append_human_message(&source, "typed forward", "typed-source", Some(10.0), None, &[], false, None)
+            .unwrap();
+        let source_entry_id = source_entry.get("id").and_then(serde_json::Value::as_str).unwrap();
+
+        let topic = fabushi_messaging_core::ConversationDestination::topic(
+            fabushi_messaging_core::ConversationId::new(alpha.clone()),
+            "message:topic-root",
+        );
+        let saved = fabushi_messaging_core::ConversationDestination::saved_sublist(
+            fabushi_messaging_core::ConversationId::new(alpha.clone()),
+            fabushi_messaging_core::ActorId::new("human-alpha"),
+        );
+        let nested = fabushi_messaging_core::ConversationDestination::nested_conversation(
+            fabushi_messaging_core::ConversationId::new(alpha.clone()),
+            fabushi_messaging_core::ConversationId::new(beta.clone()),
+        );
+        seed_forward_child_authorities(
+            &workers,
+            &[
+                (topic.clone(), false),
+                (saved.clone(), true),
+                (nested.clone(), false),
+            ],
+        );
+
+        let result = workers
+            .forward_human_message(
+                &source,
+                source_entry_id,
+                &[
+                    serde_json::to_value(&topic).unwrap(),
+                    serde_json::to_value(&saved).unwrap(),
+                    serde_json::to_value(&nested).unwrap(),
+                ],
+                "typed-children-success",
+                false,
+                false,
+            )
+            .unwrap();
+        let settlements = result.get("destinations").and_then(serde_json::Value::as_array).unwrap();
+        assert_eq!(settlements.len(), 3);
+        assert!(settlements.iter().all(|item| {
+            item.get("status").and_then(serde_json::Value::as_str) == Some("sent")
+        }));
+
+        let alpha_entries = workers.read_human_conversation_transcript(&alpha).unwrap();
+        assert_eq!(alpha_entries.len(), 2);
+        assert_eq!(
+            alpha_entries[0].pointer("/destination/child/kind").and_then(serde_json::Value::as_str),
+            Some("topic"),
+        );
+        assert_eq!(
+            alpha_entries[1].pointer("/destination/child/kind").and_then(serde_json::Value::as_str),
+            Some("savedSublist"),
+        );
+        let beta_entries = workers.read_human_conversation_transcript(&beta).unwrap();
+        assert_eq!(beta_entries.len(), 1);
+        assert_eq!(
+            beta_entries[0].pointer("/destination/child/kind").and_then(serde_json::Value::as_str),
+            Some("conversation"),
+        );
+
+        seed_forward_child_authorities(&workers, &[(saved.clone(), true), (nested.clone(), false)]);
+        let stale = workers
+            .forward_human_message(
+                &source,
+                source_entry_id,
+                &[serde_json::to_value(&topic).unwrap()],
+                "typed-child-stale",
+                false,
+                false,
+            )
+            .unwrap();
+        assert_eq!(
+            stale.pointer("/destinations/0/status").and_then(serde_json::Value::as_str),
+            Some("failed"),
+        );
+        assert!(stale.pointer("/destinations/0/error").and_then(serde_json::Value::as_str)
+            .is_some_and(|error| error.contains("no authoritative child state")));
+
+        seed_forward_child_authorities(&workers, &[(saved.clone(), false)]);
+        let missing_membership = workers
+            .forward_human_message(
+                &source,
+                source_entry_id,
+                &[serde_json::to_value(&saved).unwrap()],
+                "typed-saved-no-membership",
+                false,
+                false,
+            )
+            .unwrap();
+        assert_eq!(
+            missing_membership.pointer("/destinations/0/status").and_then(serde_json::Value::as_str),
+            Some("failed"),
+        );
+        assert!(missing_membership.pointer("/destinations/0/error").and_then(serde_json::Value::as_str)
+            .is_some_and(|error| error.contains("authoritative child membership")));
+
+        workers.shutdown();
         let _ = fs::remove_dir_all(root);
     }
 
