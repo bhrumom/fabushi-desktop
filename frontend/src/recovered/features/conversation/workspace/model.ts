@@ -99,6 +99,23 @@ function areComposerDraftLinkPreviewsEqual(left: ComposerDraftLinkPreview | unde
     && (left.removed ?? false) === (right.removed ?? false);
 }
 
+export function composerDraftLinkPreviewUrl(prompt: string): string | null {
+  const match = /https?:\/\/[^\s<>"']+/iu.exec(prompt)?.[0] ?? null;
+  if (match == null) return null;
+  const normalized = match.replace(/[),.!?;:\]}]+$/u, "");
+  return normalized.length > 0 ? normalized : null;
+}
+
+export function reconcileComposerDraftLinkPreview(
+  current: ComposerDraftLinkPreview | undefined,
+  prompt: string,
+): ComposerDraftLinkPreview | undefined {
+  const url = composerDraftLinkPreviewUrl(prompt);
+  if (url == null) return current?.manual === true ? current : undefined;
+  if (current?.url === url) return current;
+  return { url };
+}
+
 export function areComposerDraftsEqual(left: ComposerDraft, right: ComposerDraft): boolean {
   return areComposerDraftContentsEqual(left, right)
     && (left.replyToId ?? null) === (right.replyToId ?? null)
@@ -126,6 +143,9 @@ export function parseComposerDraft(value: unknown): ComposerDraft | null {
       !Number.isSafeInteger(valueCursor.position)
       || !Number.isSafeInteger(valueCursor.anchor)
       || !Number.isSafeInteger(valueCursor.scroll)
+      || (valueCursor.position as number) < 0
+      || (valueCursor.anchor as number) < 0
+      || (valueCursor.scroll as number) < 0
     ) return null;
     cursor = {
       position: valueCursor.position as number,

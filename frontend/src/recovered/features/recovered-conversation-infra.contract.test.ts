@@ -53,7 +53,9 @@ import {
 } from "./conversation/workspace/draft-state.ts";
 import {
   areComposerDraftsEqual,
+  composerDraftLinkPreviewUrl,
   parseComposerDraft,
+  reconcileComposerDraftLinkPreview,
 } from "./conversation/workspace/model.ts";
 import { createTranscriptAcknowledgementController } from "./conversation/workspace/acknowledgement.ts";
 import {
@@ -647,7 +649,19 @@ test("composer draft payload preserves cursor and canonical link-preview metadat
   }), false);
 
   assert.equal(parseComposerDraft({ ...draft, cursor: { ...draft.cursor, position: 1.5 } }), null);
+  assert.equal(parseComposerDraft({ ...draft, cursor: { ...draft.cursor, scroll: -1 } }), null);
   assert.equal(parseComposerDraft({ ...draft, linkPreview: { ...draft.linkPreview, id: "" } }), null);
+  assert.equal(composerDraftLinkPreviewUrl("read https://example.com/path)."), "https://example.com/path");
+  assert.deepEqual(reconcileComposerDraftLinkPreview(undefined, "open https://example.com/page"), { url: "https://example.com/page" });
+  assert.deepEqual(
+    reconcileComposerDraftLinkPreview({ id: "9223372036854775808", url: "https://example.com/page", manual: true, invert: true }, "open https://example.com/page"),
+    { id: "9223372036854775808", url: "https://example.com/page", manual: true, invert: true },
+  );
+  assert.deepEqual(
+    reconcileComposerDraftLinkPreview({ id: "18446744073709551615", url: "https://example.com/old", manual: true }, "open https://example.com/new"),
+    { url: "https://example.com/new" },
+    "a new canonical URL must not inherit stale 64-bit preview identity or policy",
+  );
 });
 
 test("composer draft typed scopes isolate conversation children and preserve cursor/link-preview metadata", async () => {
@@ -1787,4 +1801,71 @@ test("UNIT-TDRP-INPUT-NATIVE-FENCE-001 native platform samples are accepted only
   assert.match(source, /isCurrentPlatformInputSample\(request, current\)/);
   assert.match(source, /dom\.generation !== request\.generation/);
   assert.doesNotMatch(source, /navigator\.language|navigator\.languages/);
+});
+
+
+test("TDRP-R9-DRAFT-IDENTITY editor-shaped draft persists, restores, consumes and fences stale completion in the canonical store", async () => {
+  let persisted: string | null = null;
+  const persistence: ComposerDraftPersistence = {
+    async read() { return persisted; },
+    async write(_accountSlot, value) { persisted = JSON.stringify({ schemaVersion: COMPOSER_DRAFT_SLICE.schemaVersion, value }); },
+    async clear() { persisted = null; },
+  };
+  const scope = { kind: "conversation", conversationId: "human:runtime" } as const;
+  const draft = {
+    prompt: "Read https://example.com/runtime",
+    richText: "{\"type\":\"doc\",\"content\":[]}",
+    attachments: [],
+    cursor: { position: 7, anchor: 3, scroll: 88 },
+    linkPreview: {
+      id: "9223372036854775808",
+      url: "https://example.com/runtime",
+      forceSmallMedia: true,
+      invert: true,
+      manual: true,
+      removed: false,
+    },
+  };
+  const writer = createComposerDraftStateStore(persistence);
+  await writer.restore("account-runtime");
+  writer.setDraft(scope, draft);
+  await flush();
+  writer.dispose();
+
+  const reader = createComposerDraftStateStore(persistence);
+  await reader.restore("account-runtime");
+  const restored = reader.snapshotsFor(scope).get().draft;
+  assert.deepEqual(restored, draft);
+  assert.equal(restored?.linkPreview?.id, "9223372036854775808");
+  const identity = reader.identifyScopedDraft({ scope, draft: restored! });
+  assert.ok(identity);
+
+  const newer = {
+    ...draft,
+    prompt: "newer local edit",
+    cursor: { position: 5, anchor: 5, scroll: 12 },
+    linkPreview: { id: "18446744073709551615", url: "https://example.com/new", manual: true },
+  };
+  reader.setDraft(scope, newer);
+  reader.recoverDraft(scope, draft);
+  assert.equal(reader.clearScopedDraftIfCurrent(identity!), false, "stale send identity cannot clear a newer editor draft");
+  assert.deepEqual(reader.snapshotsFor(scope).get().draft, newer);
+  assert.deepEqual(reader.snapshotsFor(scope).get().recovery, draft, "failed-send recovery retains full cursor/preview payload without overwriting newer local state");
+  reader.dispose();
+});
+
+test("TDRP-R9-DRAFT-IDENTITY shipping composition writes and restores cursor/preview through typed Conversation scope", async () => {
+  const composer = await readFile(new URL("./conversation/workspace/composer.tsx", import.meta.url), "utf8");
+  const editor = await readFile(new URL("./conversation/workspace/rich-text-editor.tsx", import.meta.url), "utf8");
+  const renderer = await readFile(new URL("../../production/ProductionRenderer.tsx", import.meta.url), "utf8");
+  assert.match(composer, /cursor=\{draft\.cursor\}/);
+  assert.match(composer, /reconcileComposerDraftLinkPreview\(current\.linkPreview, change\.prompt\)/);
+  assert.match(composer, /data-testid="composer-link-preview"/);
+  assert.match(editor, /onSelectionUpdate:/);
+  assert.match(editor, /addEventListener\("scroll"/);
+  assert.match(editor, /restorePromptEditorCursor\(current, value\)/);
+  assert.match(renderer, /kind: "conversation", conversationId: activeAgentId/);
+  assert.match(renderer, /identifyScopedDraft/);
+  assert.match(renderer, /clearScopedDraftIfCurrent/);
+  assert.match(renderer, /submissionDraftRecoveryRef/);
 });

@@ -5,7 +5,7 @@ import computerEntrypoint from "../recovered/features/computer/overlay/entrypoin
 import { ConversationComposer } from "../recovered/features/conversation/workspace/composer";
 import { commitComposerAttachments, stageComposerFiles } from "../recovered/features/conversation/workspace/desktop";
 import { COMPOSER_ATTACHMENT_LIMIT, type ComposerDraft, type ConversationTranscriptEntry, type DraftAttachment, type TranscriptMessage } from "../recovered/features/conversation/workspace/model";
-import { createComposerDraftPersistence, createComposerDraftStateStore } from "../recovered/features/conversation/workspace/draft-state";
+import { composerDraftScopeKey, createComposerDraftPersistence, createComposerDraftStateStore, type ComposerDraftScopeInput } from "../recovered/features/conversation/workspace/draft-state";
 import { createComposerSubmissionQueue, type ComposerSubmission, type ComposerSubmissionQueue } from "../recovered/features/conversation/workspace/submission";
 import { createSendJournalApprovalLifecycle } from "../recovered/features/conversation/workspace/send-journal-approval-lifecycle";
 import { createTranscriptAcknowledgementController } from "../recovered/features/conversation/workspace/acknowledgement";
@@ -890,6 +890,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     selectAgent: (agentId) => { void openAgentRef.current(agentId); }
   }));
   const [composerDraftStore] = useState(() => createComposerDraftStateStore(createComposerDraftPersistence(bridge.agent.clientPersistence)));
+  const submissionDraftRecoveryRef = useRef(new Map<string, { scope: ComposerDraftScopeInput; draft: ComposerDraft }>());
   const [acknowledgementController] = useState(() => createTranscriptAcknowledgementController());
   const [replySelection, setReplySelection] = useState<ReplySelection | null>(null);
   const [replyThreadController] = useState(() => createReplyThreadController({
@@ -1410,6 +1411,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       if (submission.phase === "sent") acknowledgementController.markAcceptedAwaitingEcho(scope.accountSlot, submission.nonce);
       if (submission.phase === "failed") acknowledgementController.markFailed(scope.accountSlot, submission.nonce, Date.now());
       if (submission.phase === "cancelled") acknowledgementController.removeOptimistic({ accountSlot: scope.accountSlot, nonce: submission.nonce });
+      if (submission.phase === "sent") submissionDraftRecoveryRef.current.delete(submission.nonce);
       setEntriesByAgent((current) => {
         if (submission.phase === "cancelled") {
           return {
@@ -1432,13 +1434,18 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     },
     onFailure: (submission, error) => {
       if (submission.draftOrigin !== "stash") {
-        composerDraftStore.recoverDraft(submission.agentId, {
+        const captured = submissionDraftRecoveryRef.current.get(submission.nonce);
+        const recoveryScope: ComposerDraftScopeInput = captured?.scope ?? (humanConversationsRef.current.some((conversation) => conversation.id === submission.agentId)
+          ? { kind: "conversation", conversationId: submission.agentId }
+          : { kind: "agent", agentId: submission.agentId });
+        composerDraftStore.recoverDraft(recoveryScope, captured?.draft ?? {
           prompt: submission.prompt,
           attachments: [...submission.attachments],
           ...(submission.richText == null ? {} : { richText: submission.richText }),
           ...(submission.replyToId == null ? {} : { replyToId: submission.replyToId }),
           ...(submission.isFork === undefined ? {} : { isFork: submission.isFork })
         });
+        submissionDraftRecoveryRef.current.delete(submission.nonce);
       }
       setNotice(error instanceof Error ? error.message : String(error));
       }
@@ -1737,14 +1744,21 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   }, [uiLayoutStore]);
   const renderedSidebarLayout = sidebarResizePreview ?? sidebarLayout;
   const renderedSidebarWidth = renderedSidebarLayout.isCollapsed ? SIDEBAR_LAYOUT_BOUNDS.collapsedWidth : renderedSidebarLayout.expandedWidth;
+  const activeComposerDraftScope = useMemo<ComposerDraftScopeInput | null>(() => {
+    if (activeAgentId.length === 0) return null;
+    return activeIsHuman
+      ? { kind: "conversation", conversationId: activeAgentId }
+      : { kind: "agent", agentId: activeAgentId };
+  }, [activeAgentId, activeIsHuman]);
+  const activeComposerDraftScopeKey = activeComposerDraftScope == null ? null : composerDraftScopeKey(activeComposerDraftScope);
   const activeDraftSnapshotStore = useMemo(
-    () => composerDraftStore.snapshotsFor(activeAgentId),
-    [activeAgentId, composerDraftStore]
+    () => activeComposerDraftScope == null ? null : composerDraftStore.snapshotsFor(activeComposerDraftScope),
+    [activeComposerDraftScopeKey, composerDraftStore]
   );
   const activeDraftSnapshot = useSyncExternalStore(
-    activeAgentId.length > 0 ? activeDraftSnapshotStore.subscribe : emptyDraftSubscribe,
-    activeAgentId.length > 0 ? activeDraftSnapshotStore.get : readEmptyDraftSnapshot,
-    activeAgentId.length > 0 ? activeDraftSnapshotStore.get : readEmptyDraftSnapshot
+    activeDraftSnapshotStore?.subscribe ?? emptyDraftSubscribe,
+    activeDraftSnapshotStore?.get ?? readEmptyDraftSnapshot,
+    activeDraftSnapshotStore?.get ?? readEmptyDraftSnapshot
   );
   const transcriptPaginationSnapshot = useSyncExternalStore(
     transcriptPaginationController.subscribe,
@@ -2408,24 +2422,23 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   }, [linkMetadataProvider, paletteLinks]);
   const baseDraft = activeDraftSnapshot.draft ?? activeDraftSnapshot.recovery ?? EMPTY_DRAFT;
   const draft = replyThreadController.applyReplyToDraft(baseDraft);
-  const canExchangeComposerStash = activeAgentId.length > 0 && composerDraftStore.canExchangeDraft(activeAgentId);
+  const canExchangeComposerStash = activeComposerDraftScope != null && composerDraftStore.canExchangeDraft(activeComposerDraftScope);
   const exchangeComposerStash = useCallback(() => {
-    const agentId = activeAgentIdRef.current;
-    if (agentId.length === 0) return;
-    const exchanged = composerDraftStore.exchangeDraft(agentId, (candidate) => candidate.attachments.length <= COMPOSER_ATTACHMENT_LIMIT);
+    if (activeComposerDraftScope == null) return;
+    const exchanged = composerDraftStore.exchangeDraft(activeComposerDraftScope, (candidate) => candidate.attachments.length <= COMPOSER_ATTACHMENT_LIMIT);
     if (!exchanged) {
       setNotice("That saved draft cannot be restored because its attachments no longer satisfy composer limits.");
       return;
     }
     replyThreadController.clearReply();
     setNotice(null);
-  }, [composerDraftStore, replyThreadController]);
+  }, [activeComposerDraftScopeKey, composerDraftStore, replyThreadController]);
   const clearReplyTarget = useCallback(() => {
     replyThreadController.clearReply();
-    if (activeAgentId.length > 0 && activeDraftSnapshot.draft != null) {
-      composerDraftStore.setDraft(activeAgentId, replyThreadController.clearReplyFromDraft(activeDraftSnapshot.draft));
+    if (activeComposerDraftScope != null && activeDraftSnapshot.draft != null) {
+      composerDraftStore.setDraft(activeComposerDraftScope, replyThreadController.clearReplyFromDraft(activeDraftSnapshot.draft));
     }
-  }, [activeAgentId, activeDraftSnapshot.draft, composerDraftStore, replyThreadController]);
+  }, [activeComposerDraftScopeKey, activeDraftSnapshot.draft, composerDraftStore, replyThreadController]);
   const replyTarget: ComposerReplyTarget | undefined = replySelection == null
     ? undefined
     : { targetId: replySelection.targetId, preview: replySelection.preview };
@@ -3674,20 +3687,29 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   }, [account?.kind, asyncTasksAgentId, closeAsyncTasks, closeFindInChat, commandPaletteOpen, findInChatController, findInChatOpen, globalShortcutController, overlay]);
 
   const stageFiles = async (files: File[]) => {
-    if (activeAgent == null || bridge == null) return;
+    if (activeAgent == null || bridge == null || activeComposerDraftScope == null) return;
     const stagingAgentId = activeAgent.id;
+    const stagingDraftScope = activeComposerDraftScope;
+    const stagingDraftScopeKey = composerDraftScopeKey(stagingDraftScope);
     const stagingAccountSlot = acknowledgementScopeRef.current.accountSlot;
     setBusy(true);
     try {
       const result = await stageComposerFiles(bridge, files);
-      if (activeAgentIdRef.current !== stagingAgentId || acknowledgementScopeRef.current.accountSlot !== stagingAccountSlot) {
+      const currentDraftScope: ComposerDraftScopeInput = humanConversationsRef.current.some((conversation) => conversation.id === stagingAgentId)
+        ? { kind: "conversation", conversationId: stagingAgentId }
+        : { kind: "agent", agentId: stagingAgentId };
+      if (
+        activeAgentIdRef.current !== stagingAgentId
+        || acknowledgementScopeRef.current.accountSlot !== stagingAccountSlot
+        || composerDraftScopeKey(currentDraftScope) !== stagingDraftScopeKey
+      ) {
         await Promise.all(result.attachments.map(({ path }) => bridge.discardStagedAttachment(path).catch(() => {})));
         return;
       }
       for (const attachment of result.attachments) stagedPaths.current.add(attachment.path);
       const currentSnapshot = activeDraftSnapshotStore.get();
       const currentBaseDraft = currentSnapshot.draft ?? currentSnapshot.recovery ?? EMPTY_DRAFT;
-      composerDraftStore.setDraft(stagingAgentId, { ...currentBaseDraft, attachments: [...currentBaseDraft.attachments, ...result.attachments] });
+      composerDraftStore.setDraft(stagingDraftScope, { ...currentBaseDraft, attachments: [...currentBaseDraft.attachments, ...result.attachments] });
       setNotice(result.notice);
     } catch (error) { setNotice(error instanceof Error ? error.message : String(error)); }
     finally { setBusy(false); }
@@ -3701,7 +3723,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   };
 
   const submit = (options: { readonly silent?: boolean; readonly scheduledAtMs?: number } = {}) => {
-    if (activeAgent == null || client == null) return;
+    if (activeAgent == null || client == null || activeComposerDraftScope == null) return;
     if ((options.silent === true || options.scheduledAtMs != null) && !activeIsHuman) return;
     const liveDraftSnapshot = activeDraftSnapshotStore.get();
     const liveBaseDraft = liveDraftSnapshot.draft ?? liveDraftSnapshot.recovery ?? EMPTY_DRAFT;
@@ -3723,7 +3745,9 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       ...(options.scheduledAtMs == null ? {} : { scheduledAtMs: options.scheduledAtMs })
     });
     const submissionAccountSlot = acknowledgementScopeRef.current.accountSlot;
-    const draftIdentity = composerDraftStore.identifyDraft({ agentId: activeAgent.id, draft: liveBaseDraft });
+    const submissionDraftScope = activeComposerDraftScope;
+    const draftIdentity = composerDraftStore.identifyScopedDraft({ scope: submissionDraftScope, draft: liveBaseDraft });
+    submissionDraftRecoveryRef.current.set(clientNonce, { scope: submissionDraftScope, draft: liveBaseDraft });
     replyThreadController.clearReply();
     acknowledgementController.insertOptimistic({
       accountSlot: acknowledgementScopeRef.current.accountSlot,
@@ -3739,14 +3763,15 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     const queuedSubmission = composerSubmissionQueue.submit(submission);
     void queuedSubmission.completion.then((phase) => {
       if (phase !== "sent") return;
-      if (activeAgentIdRef.current !== submission.agentId || acknowledgementScopeRef.current.accountSlot !== submissionAccountSlot) return;
+      submissionDraftRecoveryRef.current.delete(submission.nonce);
+      if (acknowledgementScopeRef.current.accountSlot !== submissionAccountSlot) return;
       const cleared = draftIdentity == null
-        ? composerDraftStore.clearDraftIfMatches({ agentId: submission.agentId, draft: liveBaseDraft })
-        : composerDraftStore.clearDraftIfCurrent(draftIdentity)
-          || composerDraftStore.clearDraftIfMatches({ agentId: submission.agentId, draft: liveBaseDraft });
+        ? composerDraftStore.clearScopedDraftIfMatches({ scope: submissionDraftScope, draft: liveBaseDraft })
+        : composerDraftStore.clearScopedDraftIfCurrent(draftIdentity)
+          || composerDraftStore.clearScopedDraftIfMatches({ scope: submissionDraftScope, draft: liveBaseDraft });
       if (!cleared) return;
-      composerDraftStore.clearRecovery(submission.agentId);
-      setComposerClearGeneration((current) => current + 1);
+      composerDraftStore.clearRecovery(submissionDraftScope);
+      if (activeAgentIdRef.current === submission.agentId) setComposerClearGeneration((current) => current + 1);
     });
     setNotice(null);
   };
@@ -3771,7 +3796,8 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   };
 
   const sendComposerStash = () => {
-    if (activeAgent == null || client == null) return;
+    if (activeAgent == null || client == null || activeComposerDraftScope == null || activeDraftSnapshotStore == null) return;
+    const stashDraftScope = activeComposerDraftScope;
     const stashed = activeDraftSnapshotStore.get().stash;
     if (stashed == null) return;
     const clientNonce = makeClientNonce();
@@ -3805,16 +3831,17 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     const queuedSubmission = composerSubmissionQueue.submit(submission);
     void queuedSubmission.completion.then((phase) => {
       if (phase !== "sent" || acknowledgementScopeRef.current.accountSlot !== submissionAccountSlot) return;
-      composerDraftStore.removeStashIfMatches(submission.agentId, stashed);
+      composerDraftStore.removeStashIfMatches(stashDraftScope, stashed);
     });
     setNotice(null);
   };
 
   const removeComposerStash = async () => {
     const agentId = activeAgentIdRef.current;
-    if (agentId.length === 0) return;
-    const stashed = composerDraftStore.snapshotsFor(agentId).get().stash;
-    if (stashed == null || !composerDraftStore.removeStashIfMatches(agentId, stashed)) return;
+    if (agentId.length === 0 || activeComposerDraftScope == null) return;
+    const draftScope = activeComposerDraftScope;
+    const stashed = composerDraftStore.snapshotsFor(draftScope).get().stash;
+    if (stashed == null || !composerDraftStore.removeStashIfMatches(draftScope, stashed)) return;
     const queuedPaths = new Set(
       composerSubmissionQueue.snapshot()
         .filter((submission) => submission.agentId === agentId && submission.draftOrigin === "stash")
@@ -3877,18 +3904,28 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     void journaledRetry.then((phase) => {
       if (phase !== "sent") return;
       if (activeAgentIdRef.current !== retrySubmission.agentId || acknowledgementScopeRef.current.accountSlot !== retryAccountSlot) return;
-      composerDraftStore.clearRecovery(retrySubmission.agentId);
+      const retryDraftScope: ComposerDraftScopeInput = humanConversationsRef.current.some((conversation) => conversation.id === retrySubmission.agentId)
+        ? { kind: "conversation", conversationId: retrySubmission.agentId }
+        : { kind: "agent", agentId: retrySubmission.agentId };
+      composerDraftStore.clearRecovery(retryDraftScope);
     });
   }, [client, composerDraftStore, composerSubmissionQueue, sendJournalApprovalLifecycle]);
 
   const cancelQueuedSend = useCallback((entry: TranscriptMessage) => {
+    const captured = entry.clientNonce == null ? null : submissionDraftRecoveryRef.current.get(entry.clientNonce) ?? null;
     if (entry.clientNonce != null && composerSubmissionQueue.cancelQueued(entry.clientNonce)) {
       const agentId = activeAgentIdRef.current;
       acknowledgementController.removeOptimistic({ accountSlot: acknowledgementScopeRef.current.accountSlot, nonce: entry.clientNonce });
-      if (agentId.length > 0) composerDraftStore.recoverDraft(agentId, {
-        prompt: entry.text.trim(),
-        attachments: (entry.attachments ?? []).map(({ path, name }) => ({ path, name }))
-      });
+      if (agentId.length > 0) {
+        const cancelledDraftScope: ComposerDraftScopeInput = captured?.scope ?? (humanConversationsRef.current.some((conversation) => conversation.id === agentId)
+          ? { kind: "conversation", conversationId: agentId }
+          : { kind: "agent", agentId });
+        composerDraftStore.recoverDraft(cancelledDraftScope, captured?.draft ?? {
+          prompt: entry.text.trim(),
+          attachments: (entry.attachments ?? []).map(({ path, name }) => ({ path, name }))
+        });
+        if (entry.clientNonce != null) submissionDraftRecoveryRef.current.delete(entry.clientNonce);
+      }
       return;
     }
     removeTranscriptMessage(entry);
@@ -4441,7 +4478,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
           </main>
           <div className="sand-chat-input-dock">
             {activeIsHuman ? null : localToolPermissionDock}
-            <ConversationComposer acceptedSendGeneration={composerClearGeneration} canExchangeStash={canExchangeComposerStash} disabled={busy || client == null} draft={draft} editorProviders={activeIsHuman ? undefined : editorProviders} hasStash={activeDraftSnapshot.stash != null} notice={notice} onChange={(value) => composerDraftStore.setDraft(activeAgent.id, value)} onClearReplyTarget={clearReplyTarget} onExchangeStash={exchangeComposerStash} onRemoveAttachment={removeAttachment} onRemoveStash={removeComposerStash} onScheduleSend={activeIsHuman ? openScheduleComposer : undefined} onSendSilently={activeIsHuman ? () => submit({ silent: true }) : undefined} onSendStash={sendComposerStash} onStageFiles={stageFiles} onSubmit={submit} placeholder={`Message ${activeAgent.name}`} platformInput={bridge.platformInput} replyTarget={replyTarget} scopeKey={`${transcriptAccountSlot ?? "signed-out"}:${activeAgent.id}`} transcribeAudio={transcribeAudio} />
+            <ConversationComposer acceptedSendGeneration={composerClearGeneration} canExchangeStash={canExchangeComposerStash} disabled={busy || client == null} draft={draft} editorProviders={activeIsHuman ? undefined : editorProviders} hasStash={activeDraftSnapshot.stash != null} notice={notice} onChange={(value) => { if (activeComposerDraftScope != null) composerDraftStore.setDraft(activeComposerDraftScope, value); }} onClearReplyTarget={clearReplyTarget} onExchangeStash={exchangeComposerStash} onRemoveAttachment={removeAttachment} onRemoveStash={removeComposerStash} onScheduleSend={activeIsHuman ? openScheduleComposer : undefined} onSendSilently={activeIsHuman ? () => submit({ silent: true }) : undefined} onSendStash={sendComposerStash} onStageFiles={stageFiles} onSubmit={submit} placeholder={`Message ${activeAgent.name}`} platformInput={bridge.platformInput} replyTarget={replyTarget} scopeKey={`${transcriptAccountSlot ?? "signed-out"}:${activeComposerDraftScopeKey ?? activeAgent.id}`} transcribeAudio={transcribeAudio} />
           </div>
         </div>}
         </div>

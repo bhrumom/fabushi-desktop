@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type DragEvent, type FormEvent } from "react";
-import { COMPOSER_ATTACHMENT_LIMIT, attachmentBasename, formatAttachmentBytes, inferAttachmentKind, isComposerDraftEmpty, type ComposerDraft, type DraftAttachment } from "./model";
+import { COMPOSER_ATTACHMENT_LIMIT, attachmentBasename, formatAttachmentBytes, inferAttachmentKind, isComposerDraftEmpty, reconcileComposerDraftLinkPreview, type ComposerDraft, type ComposerDraftLinkPreview, type DraftAttachment } from "./model";
 import { useVoiceSession, VoiceWaveform, type VoiceTranscriber } from "./voice";
 import { ComposerReplyPill, replyComposerPlaceholder, type ComposerReplyTarget } from "./reply-preview";
-import { PromptRichTextEditor, type PromptEditorControls, type PromptEditorProviders } from "./rich-text-editor";
+import { PromptRichTextEditor, type PromptEditorChange, type PromptEditorControls, type PromptEditorProviders } from "./rich-text-editor";
 import { compositionOnlyInputStatus, platformInputStatusText, type NativePlatformInputStatusSnapshot, type PlatformInputStatusSnapshot } from "./input-composition-state";
 import { SandIcon, SandIconButton } from "../../../ui/sand-kit-primitives";
 import { SandMenuContent, SandMenuItem, SandMenuRoot, SandMenuTrigger } from "../../../ui/sand-floating-primitives";
@@ -125,11 +125,23 @@ export function ConversationComposer({ acceptedSendGeneration = 0, canExchangeSt
     editorControls.current = controls;
   }, []);
 
-  const onEditorChange = useCallback((change: { readonly prompt: string; readonly richText?: string }) => {
+  const onEditorChange = useCallback((change: PromptEditorChange) => {
+    const current = draftRef.current;
     onChange({
-      ...draftRef.current,
+      ...current,
       prompt: change.prompt,
-      richText: change.richText
+      richText: change.richText,
+      cursor: change.cursor,
+      linkPreview: reconcileComposerDraftLinkPreview(current.linkPreview, change.prompt),
+    });
+  }, [onChange]);
+
+  const updateLinkPreview = useCallback((patch: Partial<ComposerDraftLinkPreview>) => {
+    const current = draftRef.current;
+    if (current.linkPreview == null) return;
+    onChange({
+      ...current,
+      linkPreview: { ...current.linkPreview, ...patch, manual: true },
     });
   }, [onChange]);
 
@@ -180,6 +192,21 @@ export function ConversationComposer({ acceptedSendGeneration = 0, canExchangeSt
         {isDragOver ? <div aria-hidden="true" className="sand-chat-drop-overlay"><div className="sand-chat-drop-overlay__badge">Drop files to add to chat</div></div> : null}
         {notice ? <p aria-live="polite" className="sand-prompt-attachment-notice" role="status">{notice}</p> : null}
         {replyTarget == null || onClearReplyTarget == null ? null : <ComposerReplyPill onClear={onClearReplyTarget} target={replyTarget} />}
+        {draft.linkPreview == null ? null : (
+          <div className="sand-prompt-link-preview" data-removed={draft.linkPreview.removed || undefined} data-testid="composer-link-preview">
+            <span><strong>{draft.linkPreview.removed ? "Link preview hidden" : "Link preview"}</strong><small>{draft.linkPreview.url}</small></span>
+            <SandMenuRoot placement="top-start">
+              <SandMenuTrigger><SandIconButton aria-label="Link preview options" icon="more" shape="circle" size="lg" type="button" variant="default" /></SandMenuTrigger>
+              <SandMenuContent ariaLabel="Link preview options">
+                <SandMenuItem index={0} onSelect={() => updateLinkPreview({ forceLargeMedia: true, forceSmallMedia: false, removed: false })}>Large media</SandMenuItem>
+                <SandMenuItem index={1} onSelect={() => updateLinkPreview({ forceLargeMedia: false, forceSmallMedia: true, removed: false })}>Small media</SandMenuItem>
+                <SandMenuItem index={2} onSelect={() => updateLinkPreview({ invert: true, removed: false })}>Show above text</SandMenuItem>
+                <SandMenuItem index={3} onSelect={() => updateLinkPreview({ invert: false, removed: false })}>Show below text</SandMenuItem>
+                <SandMenuItem index={4} onSelect={() => updateLinkPreview({ removed: !draft.linkPreview?.removed })}>{draft.linkPreview.removed ? "Restore preview" : "Hide preview"}</SandMenuItem>
+              </SandMenuContent>
+            </SandMenuRoot>
+          </div>
+        )}
         {draft.attachments.length > 0 ? (
           <div aria-label="Attachments" className="sand-prompt-attachments" role="list">
             {draft.attachments.map((attachment, index) => {
@@ -197,6 +224,7 @@ export function ConversationComposer({ acceptedSendGeneration = 0, canExchangeSt
         <PromptRichTextEditor
           canSubmit={canSend}
           clearGeneration={acceptedSendGeneration}
+          cursor={draft.cursor}
           disabled={disabled}
           onChange={onEditorChange}
           onControls={receiveEditorControls}

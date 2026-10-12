@@ -51,6 +51,9 @@ export interface ComposerDraftEnvelope {
 export interface ComposerDraftStateStore {
   snapshotsFor(scope: ComposerDraftScopeInput): ComposerDraftSnapshotStore;
   setDraft(scope: ComposerDraftScopeInput, draft: ComposerDraft): void;
+  identifyScopedDraft(input: { scope: ComposerDraftScopeInput; draft: ComposerDraft }): { scope: ComposerDraftScopeInput; draftId: string } | null;
+  clearScopedDraftIfCurrent(input: { scope: ComposerDraftScopeInput; draftId: string }): boolean;
+  clearScopedDraftIfMatches(input: { scope: ComposerDraftScopeInput; draft: ComposerDraft }): boolean;
   identifyDraft(input: { agentId: string; draft: ComposerDraft }): { agentId: string; draftId: string } | null;
   clearDraftIfCurrent(input: { agentId: string; draftId: string }): boolean;
   clearDraftIfMatches(input: { agentId: string; draft: ComposerDraft }): boolean;
@@ -264,6 +267,30 @@ export function createComposerDraftStateStore(persistence: ComposerDraftPersiste
       }
       if (current.draft != null && areComposerDraftsEqual(current.draft, draft)) return;
       replace(scopeKey, { draft, draftId: draftId(), recovery: current.recovery });
+    },
+    identifyScopedDraft({ scope, draft }) {
+      if (disposed) return null;
+      const scopeKey = composerDraftScopeKey(scope);
+      const current = currentRecord(scopeKey);
+      return current.draft != null && current.draftId != null && areComposerDraftsEqual(current.draft, draft)
+        ? { scope, draftId: current.draftId }
+        : null;
+    },
+    clearScopedDraftIfCurrent({ scope, draftId: currentDraftId }) {
+      if (disposed) return false;
+      const scopeKey = composerDraftScopeKey(scope);
+      const current = currentRecord(scopeKey);
+      if (current.draft == null || current.draftId !== currentDraftId) return false;
+      replace(scopeKey, { draft: null, draftId: null, recovery: current.recovery });
+      return true;
+    },
+    clearScopedDraftIfMatches({ scope, draft }) {
+      if (disposed) return false;
+      const scopeKey = composerDraftScopeKey(scope);
+      const current = currentRecord(scopeKey);
+      if (current.draft == null || !areComposerDraftsEqual(current.draft, draft)) return false;
+      replace(scopeKey, { draft: null, draftId: null, recovery: current.recovery });
+      return true;
     },
     identifyDraft({ agentId, draft }) {
       if (disposed || agentId.length === 0) return null;
