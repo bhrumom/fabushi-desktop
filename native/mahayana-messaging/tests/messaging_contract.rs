@@ -1058,6 +1058,13 @@ fn shared_media_projection_uses_canonical_message_and_child_state_only() {
         engine.shared_media_message_ids(&saved, &actor_id).unwrap(),
         vec![media_id.clone()]
     );
+    assert_eq!(
+        engine
+            .shared_media_message_ids_for_kind(&saved, &actor_id, SharedMediaKind::Photo)
+            .unwrap(),
+        vec![media_id.clone()],
+        "the public contract must expose the upstream-equivalent typed media projection"
+    );
 
     engine.apply(Event::MessagesDeleted {
         conversation_id: parent,
