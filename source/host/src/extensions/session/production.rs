@@ -2582,6 +2582,24 @@ impl ProductionSessionWorkers {
         > = BTreeMap::new();
 
         for entry in entries {
+            let Some(remote_message_id) = entry
+                .get("remoteMessageId")
+                .and_then(serde_json::Value::as_str)
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+            else {
+                // Renderer/local pending state is never SavedSublist authority.
+                continue;
+            };
+            let expected_entry_id = format!("human-server-message:{remote_message_id}");
+            if entry.get("id").and_then(serde_json::Value::as_str)
+                != Some(expected_entry_id.as_str())
+            {
+                return Err(
+                    "server-authoritative SavedSublist transcript identity did not match remote message id"
+                        .into(),
+                );
+            }
             let Some(destination_value) = entry.get("destination") else {
                 continue;
             };
@@ -2684,6 +2702,13 @@ impl ProductionSessionWorkers {
             return owner.get_transcript_entries().map_err(|error| error.to_string());
         };
         let local_human_id = self.local_human_id()?.to_string();
+        let identity = client.identity()?;
+        if identity.user_id != local_human_id {
+            return Err(format!(
+                "Fabushi native messaging credential user {} does not match active Human identity {}",
+                identity.user_id, local_human_id
+            ));
+        }
         let pending = owner
             .get_transcript_entries()
             .map_err(|error| error.to_string())?
@@ -4530,17 +4555,28 @@ mod sharebox_shipping_tests {
             serde_json::json!({
                 "id": "human-server-message:7",
                 "kind": "message",
+                "remoteMessageId": "7",
                 "destination": serde_json::to_value(&destination).unwrap(),
             }),
             serde_json::json!({
                 "id": "human-server-message:8",
                 "kind": "message",
+                "remoteMessageId": "8",
                 "destination": serde_json::to_value(&destination).unwrap(),
             }),
         ];
 
         workers
             .reconcile_saved_sublist_authority_from_transcript(&entries)
+            .unwrap();
+
+        let untrusted_local_only = vec![serde_json::json!({
+            "id": "pending-local-only",
+            "kind": "message",
+            "destination": serde_json::to_value(&destination).unwrap(),
+        })];
+        workers
+            .reconcile_saved_sublist_authority_from_transcript(&untrusted_local_only)
             .unwrap();
 
         let actor_id = workers.story_actor_id().unwrap();
