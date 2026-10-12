@@ -265,10 +265,10 @@
   "coverage": {
     "root_source_entries_total": 6655,
     "recursive_source_entries_total": 16137,
-    "unknown_minimum": 12018,
+    "unknown_minimum": 12011,
     "unread_minimum": 0,
     "omitted_known": 0,
-    "note": "Accepted 63a1831728147e941ad2dc8939879cf5afe419c7 tree c259b2d6982213b2231266508316cd23f99f5a47; exact read-through 16,137; unknown=12,018, unread=0, omitted=0."
+    "note": "Accepted 63a1831728147e941ad2dc8939879cf5afe419c7 tree c259b2d6982213b2231266508316cd23f99f5a47; exact read-through 16,137; unknown=12,011, unread=0, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -631,7 +631,7 @@
     "upstream_commit": "63a1831728147e941ad2dc8939879cf5afe419c7",
     "deterministic_prefix_closed": 57,
     "development_only_non_applicable": 3617,
-    "unknown_closed": 4119,
+    "unknown_closed": 4126,
     "omitted": 0,
     "read_through": 16137,
     "first_unread_order": 16138,
