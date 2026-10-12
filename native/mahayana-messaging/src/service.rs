@@ -3383,6 +3383,11 @@ mod recent_participant_suggestion_service_tests {
             .conversations
             .insert(conversation_id.clone(), conversation);
         state
+            .saved_sublist_parent_access
+            .entry(conversation_id.clone())
+            .or_default()
+            .insert(owner.clone());
+        state
             .messages
             .entry(conversation_id.clone())
             .or_default()
