@@ -3208,6 +3208,67 @@ mod recent_participant_suggestion_service_tests {
     }
 
     #[test]
+    fn atomic_recent_selection_rolls_back_actor_projection_on_mutation_and_persistence_failure() {
+        let owner = Actor::human("human:atomic-owner", "Atomic Owner");
+        let peer = Actor::human("human:atomic-peer", "Atomic Peer");
+        let owner_id = owner.id.clone();
+        let peer_id = peer.id.clone();
+
+        let store = FailOnceStateStore {
+            inner: MemoryStateStore::default(),
+            fail_next_save: true,
+        };
+        let mut service = MessagingService::load(store).expect("load empty service");
+
+        assert!(matches!(
+            service.note_recent_participant_selection(owner.clone(), peer.clone(), 10),
+            Err(MessagingServiceError::Store(StoreError::Io(_)))
+        ));
+        assert!(!service.engine().state().actors.contains_key(&owner_id));
+        assert!(!service.engine().state().actors.contains_key(&peer_id));
+        assert!(
+            service
+                .engine()
+                .recent_participant_suggestions(&owner_id)
+                .is_empty()
+        );
+        assert_eq!(service.cursor(), 0);
+
+        service
+            .note_recent_participant_selection(owner.clone(), peer.clone(), 20)
+            .expect("retry atomic recent selection");
+        assert!(service.engine().state().actors.contains_key(&owner_id));
+        assert!(service.engine().state().actors.contains_key(&peer_id));
+        assert_eq!(
+            service.engine().recent_participant_suggestions(&owner_id),
+            &[peer_id.clone()]
+        );
+        assert_eq!(service.cursor(), 0);
+
+        let mut mutation_service =
+            MessagingService::load(MemoryStateStore::default()).expect("load mutation service");
+        let self_actor = Actor::human("human:atomic-self", "Atomic Self");
+        let self_id = self_actor.id.clone();
+        assert!(matches!(
+            mutation_service.note_recent_participant_selection(
+                self_actor.clone(),
+                self_actor,
+                30,
+            ),
+            Err(MessagingServiceError::Engine(EngineError::SelfRecentSuggestion))
+        ));
+        assert!(
+            !mutation_service
+                .engine()
+                .state()
+                .actors
+                .contains_key(&self_id),
+            "mutation failure must restore actor projection as well as recent ordering"
+        );
+        assert_eq!(mutation_service.cursor(), 0);
+    }
+
+    #[test]
     fn recent_participant_interleaved_accounts_remain_isolated_across_restart() {
         let owner_a = ActorId::new("human:recent-owner-a");
         let owner_b = ActorId::new("human:recent-owner-b");
