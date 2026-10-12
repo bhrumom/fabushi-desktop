@@ -117,11 +117,10 @@ pub enum Command {
     ForwardMessage {
         source_conversation_id: ConversationId,
         message_id: MessageId,
-        destination_conversation_id: ConversationId,
+        destination: ConversationDestination,
         local_message_id: MessageId,
         client_message_id: ClientMessageId,
         sender_id: ActorId,
-        thread_root_message_id: Option<MessageId>,
         created_at_ms: i64,
         scheduled_at_ms: Option<i64>,
         silent: bool,
@@ -1268,10 +1267,7 @@ fn community_has_access(community: &CommunityState, actor_id: &ActorId) -> bool 
 fn destination_message_conversation_id(
     destination: &ConversationDestination,
 ) -> &ConversationId {
-    match destination.child.as_ref() {
-        Some(ConversationChildIdentity::Conversation { conversation_id }) => conversation_id,
-        _ => &destination.conversation_id,
-    }
+    destination.message_conversation_id()
 }
 
 fn append_community_audit(
@@ -2114,18 +2110,43 @@ impl MessagingEngine {
             Command::ForwardMessage {
                 source_conversation_id,
                 message_id,
-                destination_conversation_id,
+                destination,
                 local_message_id,
                 client_message_id,
                 sender_id,
-                thread_root_message_id,
                 created_at_ms,
                 scheduled_at_ms,
                 silent,
                 privacy,
             } => {
-                let conversation = self.require_conversation(&destination_conversation_id)?;
+                if !destination.is_valid() {
+                    return Err(EngineError::InvalidConversationChildDestination);
+                }
                 self.require_actor(&sender_id)?;
+                if destination.child.is_some() {
+                    self.decide(Command::SetConversationChildDraft {
+                        destination: destination.clone(),
+                        actor_id: sender_id.clone(),
+                        text: String::new(),
+                        reply_to_message_id: None,
+                        updated_at_ms: 0,
+                    })?;
+                    let child = self
+                        .state
+                        .child_state(&destination, &sender_id)
+                        .ok_or(EngineError::InvalidConversationChildDestination)?;
+                    if matches!(
+                        destination.child,
+                        Some(ConversationChildIdentity::SavedSublist { .. })
+                    ) && !child.authoritative_membership_known
+                    {
+                        return Err(EngineError::ConversationChildMessageMismatch);
+                    }
+                }
+                let destination_conversation_id = destination.message_conversation_id().clone();
+                let thread_root_message_id =
+                    destination.topic_root_message_id().map(MessageId::new);
+                let conversation = self.require_conversation(&destination_conversation_id)?;
                 let original = self
                     .require_message(&source_conversation_id, &message_id)?
                     .clone();
@@ -2317,10 +2338,26 @@ impl MessagingEngine {
                 if privacy.drop_captions {
                     content.clear_caption();
                 }
+                let saved_membership = if matches!(
+                    destination.child,
+                    Some(ConversationChildIdentity::SavedSublist { .. })
+                ) {
+                    let child = self
+                        .state
+                        .child_state(&destination, &sender_id)
+                        .ok_or(EngineError::InvalidConversationChildDestination)?;
+                    let mut message_ids = child.authoritative_message_ids.clone();
+                    if !message_ids.iter().any(|id| id == &local_message_id.0) {
+                        message_ids.push(local_message_id.0.clone());
+                    }
+                    Some(message_ids)
+                } else {
+                    None
+                };
                 let message = Message {
                     id: local_message_id,
                     conversation_id: destination_conversation_id,
-                    sender_id,
+                    sender_id: sender_id.clone(),
                     content,
                     reply_to_message_id: None,
                     thread_root_message_id,
@@ -2336,7 +2373,15 @@ impl MessagingEngine {
                     pinned: false,
                     deleted: false,
                 };
-                Ok(vec![Event::MessageQueued { message }])
+                let mut events = vec![Event::MessageQueued { message }];
+                if let Some(message_ids) = saved_membership {
+                    events.push(Event::SavedSublistMembershipReconciled {
+                        destination,
+                        actor_id: sender_id,
+                        message_ids,
+                    });
+                }
+                Ok(events)
             }
             Command::AcknowledgeMessage {
                 conversation_id,

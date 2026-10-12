@@ -266,6 +266,20 @@ impl ConversationDestination {
         }
     }
 
+    pub fn message_conversation_id(&self) -> &ConversationId {
+        match self.child.as_ref() {
+            Some(ConversationChildIdentity::Conversation { conversation_id }) => conversation_id,
+            _ => &self.conversation_id,
+        }
+    }
+
+    pub fn topic_root_message_id(&self) -> Option<&str> {
+        match self.child.as_ref() {
+            Some(ConversationChildIdentity::Topic { root_message_id }) => Some(root_message_id),
+            _ => None,
+        }
+    }
+
     pub fn is_valid(&self) -> bool {
         self.conversation_id.is_valid()
             && self.child.as_ref().map_or(true, ConversationChildIdentity::is_valid)
@@ -457,6 +471,8 @@ pub struct ConversationChildRuntimeState {
     /// membership.
     #[serde(default)]
     pub authoritative_message_ids: Vec<String>,
+    #[serde(default)]
+    pub authoritative_membership_known: bool,
     pub draft_text: String,
     pub draft_reply_to_message_id: Option<String>,
     pub draft_updated_at_ms: Option<i64>,
@@ -482,6 +498,7 @@ impl ConversationChildRuntimeState {
             unread_things: ConversationChildUnreadThings::default(),
             pending_incoming_notification_message_ids: Vec::new(),
             authoritative_message_ids: Vec::new(),
+            authoritative_membership_known: false,
             draft_text: String::new(),
             draft_reply_to_message_id: None,
             draft_updated_at_ms: None,
@@ -552,6 +569,7 @@ impl ConversationChildRuntimeState {
         if unique.len() != message_ids.len() {
             return false;
         }
+        self.authoritative_membership_known = true;
         self.authoritative_message_ids = message_ids;
         self.pagination
             .message_ids

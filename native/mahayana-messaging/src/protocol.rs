@@ -146,10 +146,8 @@ pub enum ClientCommand {
     ForwardMessage {
         source_conversation_id: ConversationId,
         message_id: MessageId,
-        destination_conversation_id: ConversationId,
+        destination: ConversationDestination,
         client_message_id: ClientMessageId,
-        #[serde(default)]
-        thread_root_message_id: Option<MessageId>,
         #[serde(default)]
         scheduled_at_ms: Option<i64>,
         #[serde(default)]

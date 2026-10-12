@@ -430,11 +430,10 @@ fn forwarding_preserves_origin_and_rejects_protected_content() {
         .execute(Command::ForwardMessage {
             source_conversation_id: ConversationId::new("chat:source"),
             message_id: MessageId::new("source:1"),
-            destination_conversation_id: ConversationId::new("chat:destination"),
+            destination: ConversationDestination::root(ConversationId::new("chat:destination")),
             local_message_id: MessageId::new("forward:1"),
             client_message_id: ClientMessageId("client:forward".into()),
             sender_id: ActorId::new("human:forwarder"),
-            thread_root_message_id: Some(MessageId::new("topic:destination")),
             created_at_ms: 3,
             scheduled_at_ms: Some(30),
             silent: true,
@@ -448,10 +447,7 @@ fn forwarding_preserves_origin_and_rejects_protected_content() {
         Some("chat:source:source:1")
     );
     assert!(matches!(forwarded.content, MessageContent::Text { .. }));
-    assert_eq!(
-        forwarded.thread_root_message_id.as_ref(),
-        Some(&MessageId::new("topic:destination"))
-    );
+    assert_eq!(forwarded.thread_root_message_id, None);
     assert_eq!(forwarded.scheduled_at_ms, Some(30));
     assert!(forwarded.silent);
 
@@ -490,11 +486,10 @@ fn forwarding_preserves_origin_and_rejects_protected_content() {
         .execute(Command::ForwardMessage {
             source_conversation_id: ConversationId::new("chat:source"),
             message_id: MessageId::new("source:captioned"),
-            destination_conversation_id: ConversationId::new("chat:destination"),
+            destination: ConversationDestination::root(ConversationId::new("chat:destination")),
             local_message_id: MessageId::new("forward:privacy"),
             client_message_id: ClientMessageId("client:forward-privacy".into()),
             sender_id: ActorId::new("human:forwarder"),
-            thread_root_message_id: None,
             created_at_ms: 4,
             scheduled_at_ms: None,
             silent: false,
@@ -531,11 +526,10 @@ fn forwarding_preserves_origin_and_rejects_protected_content() {
         .execute(Command::ForwardMessage {
             source_conversation_id: ConversationId::new("chat:source"),
             message_id: MessageId::new("source:1"),
-            destination_conversation_id: ConversationId::new("chat:blocked-forward"),
+            destination: ConversationDestination::root(ConversationId::new("chat:blocked-forward")),
             local_message_id: MessageId::new("forward:blocked"),
             client_message_id: ClientMessageId("client:forward-blocked".into()),
             sender_id: ActorId::new("human:forwarder"),
-            thread_root_message_id: None,
             created_at_ms: 3,
             scheduled_at_ms: None,
             silent: false,
@@ -563,11 +557,10 @@ fn forwarding_preserves_origin_and_rejects_protected_content() {
         .execute(Command::ForwardMessage {
             source_conversation_id: ConversationId::new("chat:source"),
             message_id: MessageId::new("source:1"),
-            destination_conversation_id: ConversationId::new("channel:read-only-forward"),
+            destination: ConversationDestination::root(ConversationId::new("channel:read-only-forward")),
             local_message_id: MessageId::new("forward:channel-blocked"),
             client_message_id: ClientMessageId("client:forward-channel-blocked".into()),
             sender_id: ActorId::new("human:forwarder"),
-            thread_root_message_id: None,
             created_at_ms: 3,
             scheduled_at_ms: None,
             silent: false,
@@ -600,11 +593,10 @@ fn forwarding_preserves_origin_and_rejects_protected_content() {
         .execute(Command::ForwardMessage {
             source_conversation_id: ConversationId::new("chat:source"),
             message_id: MessageId::new("source:protected"),
-            destination_conversation_id: ConversationId::new("chat:destination"),
+            destination: ConversationDestination::root(ConversationId::new("chat:destination")),
             local_message_id: MessageId::new("forward:protected"),
             client_message_id: ClientMessageId("client:forward-protected".into()),
             sender_id: ActorId::new("human:forwarder"),
-            thread_root_message_id: None,
             created_at_ms: 5,
             scheduled_at_ms: None,
             silent: false,
@@ -612,6 +604,173 @@ fn forwarding_preserves_origin_and_rejects_protected_content() {
         })
         .unwrap_err();
     assert_eq!(error, EngineError::ProtectedContent);
+}
+
+#[test]
+fn forwarding_uses_canonical_typed_child_destinations_and_fails_closed_after_destroy() {
+    let owner = ActorId::new("human:typed-forward-owner");
+    let peer = ActorId::new("human:typed-forward-peer");
+    let mut engine = MessagingEngine::new();
+    for actor in [
+        Actor::human(owner.0.clone(), "Owner"),
+        Actor::human(peer.0.clone(), "Peer"),
+    ] {
+        engine.execute(Command::UpsertActor { actor }).unwrap();
+    }
+
+    let owner_participant = Participant {
+        actor_id: owner.clone(),
+        role: ParticipantRole::Owner,
+        joined_at_ms: 1,
+        muted_until_ms: None,
+    };
+    for (id, title) in [
+        ("chat:typed-forward-source", "Source"),
+        ("saved:typed-forward", "Saved"),
+        ("parent:typed-forward", "Parent"),
+        ("child:typed-forward", "Child"),
+    ] {
+        let mut conversation =
+            Conversation::direct(id, title, vec![owner_participant.clone()], 1);
+        if id == "saved:typed-forward" {
+            conversation.kind = ConversationKind::SavedMessages;
+            conversation.owner_id = Some(owner.clone());
+        }
+        engine.execute(Command::UpsertConversation { conversation }).unwrap();
+    }
+
+    engine
+        .execute(Command::QueueMessage {
+            conversation_id: ConversationId::new("chat:typed-forward-source"),
+            local_message_id: MessageId::new("typed-forward:source"),
+            client_message_id: ClientMessageId("client:typed-forward-source".into()),
+            sender_id: owner.clone(),
+            content: MessageContent::Text {
+                text: FormattedText::plain("typed destination"),
+            },
+            reply_to_message_id: None,
+            thread_root_message_id: None,
+            created_at_ms: 2,
+            scheduled_at_ms: None,
+            silent: false,
+            protected_content: false,
+        })
+        .unwrap();
+
+    let saved = ConversationDestination::saved_sublist(
+        ConversationId::new("saved:typed-forward"),
+        peer,
+    );
+    engine
+        .execute(Command::SetConversationChildActive {
+            destination: saved.clone(),
+            actor_id: owner.clone(),
+            active: true,
+        })
+        .unwrap();
+    assert_eq!(
+        engine
+            .execute(Command::ForwardMessage {
+                source_conversation_id: ConversationId::new("chat:typed-forward-source"),
+                message_id: MessageId::new("typed-forward:source"),
+                destination: saved.clone(),
+                local_message_id: MessageId::new("typed-forward:saved-before-authority"),
+                client_message_id: ClientMessageId(
+                    "client:typed-forward-saved-before-authority".into(),
+                ),
+                sender_id: owner.clone(),
+                created_at_ms: 3,
+                scheduled_at_ms: None,
+                silent: false,
+                privacy: ForwardPrivacy::default(),
+            })
+            .unwrap_err(),
+        EngineError::ConversationChildMessageMismatch
+    );
+
+    engine
+        .execute(Command::ReconcileSavedSublistMembership {
+            destination: saved.clone(),
+            actor_id: owner.clone(),
+            message_ids: Vec::new(),
+        })
+        .unwrap();
+    engine
+        .execute(Command::ForwardMessage {
+            source_conversation_id: ConversationId::new("chat:typed-forward-source"),
+            message_id: MessageId::new("typed-forward:source"),
+            destination: saved.clone(),
+            local_message_id: MessageId::new("typed-forward:saved"),
+            client_message_id: ClientMessageId("client:typed-forward-saved".into()),
+            sender_id: owner.clone(),
+            created_at_ms: 4,
+            scheduled_at_ms: None,
+            silent: true,
+            privacy: ForwardPrivacy::default(),
+        })
+        .unwrap();
+    let saved_state = engine
+        .state()
+        .conversation_child_states
+        .iter()
+        .find(|child| child.destination == saved && child.actor_id == owner)
+        .expect("saved child state");
+    assert!(saved_state.authoritative_membership_known);
+    assert!(saved_state.has_authoritative_message("typed-forward:saved"));
+
+    engine
+        .execute(Command::DestroyConversationChild {
+            destination: saved.clone(),
+            actor_id: owner.clone(),
+        })
+        .unwrap();
+    assert_eq!(
+        engine
+            .execute(Command::ForwardMessage {
+                source_conversation_id: ConversationId::new("chat:typed-forward-source"),
+                message_id: MessageId::new("typed-forward:source"),
+                destination: saved,
+                local_message_id: MessageId::new("typed-forward:saved-stale"),
+                client_message_id: ClientMessageId("client:typed-forward-saved-stale".into()),
+                sender_id: owner.clone(),
+                created_at_ms: 5,
+                scheduled_at_ms: None,
+                silent: false,
+                privacy: ForwardPrivacy::default(),
+            })
+            .unwrap_err(),
+        EngineError::InvalidConversationChildDestination
+    );
+
+    let nested = ConversationDestination::nested_conversation(
+        ConversationId::new("parent:typed-forward"),
+        ConversationId::new("child:typed-forward"),
+    );
+    engine
+        .execute(Command::SetConversationChildActive {
+            destination: nested.clone(),
+            actor_id: owner.clone(),
+            active: true,
+        })
+        .unwrap();
+    engine
+        .execute(Command::ForwardMessage {
+            source_conversation_id: ConversationId::new("chat:typed-forward-source"),
+            message_id: MessageId::new("typed-forward:source"),
+            destination: nested,
+            local_message_id: MessageId::new("typed-forward:nested"),
+            client_message_id: ClientMessageId("client:typed-forward-nested".into()),
+            sender_id: owner,
+            created_at_ms: 6,
+            scheduled_at_ms: None,
+            silent: false,
+            privacy: ForwardPrivacy::default(),
+        })
+        .unwrap();
+    assert!(
+        engine.state().messages[&ConversationId::new("child:typed-forward")]
+            .contains_key(&MessageId::new("typed-forward:nested"))
+    );
 }
 
 #[test]
@@ -696,11 +855,10 @@ fn secret_conversations_reject_plaintext_and_protect_encrypted_messages() {
         .execute(Command::ForwardMessage {
             source_conversation_id: ConversationId::new("secret:contract"),
             message_id: MessageId::new("secret:cipher"),
-            destination_conversation_id: ConversationId::new("secret:contract"),
+            destination: ConversationDestination::root(ConversationId::new("secret:contract")),
             local_message_id: MessageId::new("secret:forward"),
             client_message_id: ClientMessageId("client:forward-secret".into()),
             sender_id: ActorId::new("human:alice"),
-            thread_root_message_id: None,
             created_at_ms: 4,
             scheduled_at_ms: None,
             silent: false,

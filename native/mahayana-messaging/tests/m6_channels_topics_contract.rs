@@ -339,6 +339,21 @@ fn channel_subscription_broadcast_pagination_and_topic_state_are_actor_scoped() 
         })
         .expect("topic message");
 
+    let topic_destination =
+        ConversationDestination::topic(ConversationId::new("channel:m6"), "topic:study");
+    service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "topic-forward-activate"),
+                ClientCommand::SetConversationChildActive {
+                    destination: topic_destination.clone(),
+                    active: true,
+                },
+            ),
+            13,
+        )
+        .unwrap();
+
     let forwarded_topic = service
         .handle(
             ClientEnvelope::new(
@@ -346,9 +361,8 @@ fn channel_subscription_broadcast_pagination_and_topic_state_are_actor_scoped() 
                 ClientCommand::ForwardMessage {
                     source_conversation_id: ConversationId::new("channel:m6"),
                     message_id: topic_message.clone(),
-                    destination_conversation_id: ConversationId::new("channel:m6"),
+                    destination: topic_destination.clone(),
                     client_message_id: ClientMessageId("client:topic-forward".into()),
-                    thread_root_message_id: Some(MessageId::new("topic:study")),
                     scheduled_at_ms: None,
                     silent: false,
                     privacy: ForwardPrivacy::default(),
@@ -375,9 +389,11 @@ fn channel_subscription_broadcast_pagination_and_topic_state_are_actor_scoped() 
                 ClientCommand::ForwardMessage {
                     source_conversation_id: ConversationId::new("channel:m6"),
                     message_id: topic_message.clone(),
-                    destination_conversation_id: ConversationId::new("channel:m6"),
+                    destination: ConversationDestination::topic(
+                        ConversationId::new("channel:m6"),
+                        "topic:missing",
+                    ),
                     client_message_id: ClientMessageId("client:topic-forward-missing".into()),
-                    thread_root_message_id: Some(MessageId::new("topic:missing")),
                     scheduled_at_ms: None,
                     silent: false,
                     privacy: ForwardPrivacy::default(),
@@ -388,8 +404,7 @@ fn channel_subscription_broadcast_pagination_and_topic_state_are_actor_scoped() 
         .unwrap_err();
     assert!(matches!(
         missing_topic,
-        MessagingServiceError::Engine(EngineError::ForumTopicNotFound { topic_id, .. })
-            if topic_id == "missing"
+        MessagingServiceError::Engine(EngineError::InvalidConversationChildDestination)
     ));
 
     for (request_suffix, closed, hidden) in [
@@ -426,11 +441,10 @@ fn channel_subscription_broadcast_pagination_and_topic_state_are_actor_scoped() 
                     ClientCommand::ForwardMessage {
                         source_conversation_id: ConversationId::new("channel:m6"),
                         message_id: topic_message.clone(),
-                        destination_conversation_id: ConversationId::new("channel:m6"),
+                        destination: topic_destination.clone(),
                         client_message_id: ClientMessageId(
                             format!("client:topic-forward-{request_suffix}"),
                         ),
-                        thread_root_message_id: Some(MessageId::new("topic:study")),
                         scheduled_at_ms: None,
                         silent: false,
                         privacy: ForwardPrivacy::default(),

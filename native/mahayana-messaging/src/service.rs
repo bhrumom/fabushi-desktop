@@ -948,13 +948,15 @@ impl<S: MessagingStateStore> MessagingService<S> {
             ClientCommand::ForwardMessage {
                 source_conversation_id,
                 message_id,
-                destination_conversation_id,
+                destination,
                 client_message_id,
-                thread_root_message_id,
                 scheduled_at_ms,
                 silent,
                 privacy,
             } => {
+                let destination_conversation_id = destination.message_conversation_id();
+                let thread_root_message_id =
+                    destination.topic_root_message_id().map(MessageId::new);
                 let stable_id = stable_message_id(actor_id, client_message_id);
                 let legacy_id = MessageId::new(format!("local:{}", client_message_id.0));
                 let existing = self
@@ -1000,7 +1002,7 @@ impl<S: MessagingStateStore> MessagingService<S> {
                     || expected_content
                         .as_ref()
                         .is_some_and(|content| &existing.content != content)
-                    || &existing.thread_root_message_id != thread_root_message_id
+                    || existing.thread_root_message_id != thread_root_message_id
                     || &existing.scheduled_at_ms != scheduled_at_ms
                     || &existing.silent != silent
                 {
@@ -2188,20 +2190,18 @@ impl<S: MessagingStateStore> MessagingService<S> {
             ClientCommand::ForwardMessage {
                 source_conversation_id,
                 message_id,
-                destination_conversation_id,
+                destination,
                 client_message_id,
-                thread_root_message_id,
                 scheduled_at_ms,
                 silent,
                 privacy,
             } => vec![Command::ForwardMessage {
                 source_conversation_id,
                 message_id,
-                destination_conversation_id,
+                destination,
                 local_message_id: stable_message_id(actor_id, &client_message_id),
                 client_message_id,
                 sender_id: actor_id.clone(),
-                thread_root_message_id,
                 created_at_ms: now_ms,
                 scheduled_at_ms,
                 silent,
