@@ -1,4 +1,4 @@
-import { extractSendMessageTextLink, type LinkMetadataResource } from "./url-card";
+import { extractSendMessageTextLink, type LinkMetadataResource } from "./url-card.ts";
 
 // @evidence src/app/dist/renderer/assets/view-BuhxMXKm.js#byteOffset=0 (send-message:text projector consumer)
 // @evidence src/app/dist/renderer/assets/view-BuhxMXKm.js#byteOffset=267 (content/images/streaming guards)
