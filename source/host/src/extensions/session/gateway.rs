@@ -370,6 +370,31 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
                 .map(Value::Array)
                 .map_err(SessionGatewayError::internal)
         }),
+        "getHumanConversationRetention" => required_string(args, "conversationId").and_then(|conversation_id| {
+            session
+                .get_human_conversation_retention(conversation_id)
+                .map_err(SessionGatewayError::internal)
+        }),
+        "setHumanConversationRetention" => required_string(args, "conversationId").and_then(|conversation_id| {
+            let retention_seconds = match args.get("retentionSeconds") {
+                None | Some(Value::Null) => None,
+                Some(value) => Some(
+                    value
+                        .as_u64()
+                        .and_then(|value| u32::try_from(value).ok())
+                        .filter(|value| *value > 0)
+                        .ok_or_else(|| SessionGatewayError::bad("retentionSeconds must be null or a positive u32"))?,
+                ),
+            };
+            let expected_revision = required_u64(args, "expectedRevision")?;
+            session
+                .set_human_conversation_retention(
+                    conversation_id,
+                    retention_seconds,
+                    expected_revision,
+                )
+                .map_err(SessionGatewayError::internal)
+        }),
         "createHumanConversation" => required_string(args, "peerHumanId").and_then(|peer_human_id| {
             let local_human_id = session.local_human_id().map_err(SessionGatewayError::internal)?;
             if let Some(requested) = optional_string(args, "localHumanId")? {
