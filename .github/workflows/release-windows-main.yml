@@ -209,6 +209,39 @@ jobs:
           "setup=$($setup.FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
           "portable=$($portable.FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
+      - name: Verify Windows updater publication metadata
+        shell: pwsh
+        env:
+          VERSION: ${{ steps.source.outputs.version }}
+        run: |
+          $metadata = "desktop/release/latest.yml"
+          if (-not (Test-Path $metadata -PathType Leaf)) { throw "latest.yml updater metadata missing" }
+          if ((Get-Item $metadata).Length -le 0) { throw "latest.yml updater metadata is empty" }
+          $content = Get-Content $metadata -Raw
+          if ($content -notmatch [regex]::Escape("fabushi-$env:VERSION-setup.exe")) {
+            throw "latest.yml does not bind the exact NSIS candidate"
+          }
+          $blockmap = Get-ChildItem desktop/release -File -Filter *.blockmap | Where-Object { $_.Name -match "setup" } | Select-Object -First 1
+          if (-not $blockmap -or $blockmap.Length -le 0) { throw "Windows updater blockmap missing" }
+
+      - name: Verify portable artifact boot and restart
+        shell: pwsh
+        env:
+          PORTABLE: ${{ steps.artifacts.outputs.portable }}
+        run: |
+          if (-not $env:PORTABLE) { throw "Portable executable binding missing" }
+          $env:FABUSHI_E2E = "1"
+          $env:FABUSHI_FEATURE_HOST_MODE = "production"
+          foreach ($attempt in 1..2) {
+            $process = Start-Process -FilePath $env:PORTABLE -PassThru
+            Start-Sleep -Seconds 10
+            if ($process.HasExited) {
+              throw "Portable candidate exited during boot/restart smoke attempt $attempt with code $($process.ExitCode)"
+            }
+            Stop-Process -Id $process.Id -Force
+            Wait-Process -Id $process.Id -ErrorAction SilentlyContinue
+          }
+
       - name: Install exact signed candidate
         id: candidate
         shell: pwsh
