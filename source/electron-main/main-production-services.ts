@@ -65,6 +65,7 @@ export interface ElectronPackageMetadata {
   readonly version: string;
   readonly sandLab: boolean;
   readonly sandTrack?: string;
+  readonly sourceSha?: string;
 }
 
 export interface ElectronProductionApp extends ElectronMainApp {
@@ -143,7 +144,8 @@ export function readElectronPackageMetadata(moduleDir: string, readText: (path: 
   if (typeof record.version !== "string" || record.version.trim().length === 0) throw new Error("Electron production metadata requires a version.");
   if (record.sandLab !== undefined && typeof record.sandLab !== "boolean") throw new Error("Electron production metadata sandLab must be boolean when present.");
   if (record.sandTrack !== undefined && typeof record.sandTrack !== "string") throw new Error("Electron production metadata sandTrack must be a string when present.");
-  return { version: record.version, sandLab: record.sandLab === true, ...(typeof record.sandTrack === "string" ? { sandTrack: record.sandTrack } : {}) };
+  if (record.fabushiSourceSha !== undefined && (typeof record.fabushiSourceSha !== "string" || !/^[0-9a-f]{40}$/u.test(record.fabushiSourceSha))) throw new Error("Electron production metadata fabushiSourceSha must be a lowercase 40-character commit SHA when present.");
+  return { version: record.version, sandLab: record.sandLab === true, ...(typeof record.sandTrack === "string" ? { sandTrack: record.sandTrack } : {}), ...(typeof record.fabushiSourceSha === "string" ? { sourceSha: record.fabushiSourceSha } : {}) };
 }
 
 export function resolveElectronProductionResources(args: {
