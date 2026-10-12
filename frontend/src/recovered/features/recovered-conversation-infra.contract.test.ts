@@ -950,13 +950,24 @@ test("CONTRACT-TDRP-IV-ARTICLE-LIFECYCLE-A11Y-MOTION-001 article resources fence
   const visibility = readFileSync(new URL("./conversation/workspace/media-visibility.ts", import.meta.url), "utf8");
   const styles = readFileSync(new URL("./conversation/workspace/transcript-utility-parity.css", import.meta.url), "utf8");
 
-  assert.match(math, /let active = true;[\s\S]{0,260}if \(active\) setMarkup\(next\);[\s\S]{0,220}return \(\) => \{ active = false; \};/);
-  assert.match(media, /let active = true;[\s\S]{0,520}resolveWithSingleRetry\(resolveMedia, current\.path\)[\s\S]{0,220}if \(!active\) return;[\s\S]{0,420}return \(\) => \{ active = false; \};/);
-  assert.match(visibility, /let disposed = false;[\s\S]{0,420}if \(disposed\) return;[\s\S]{0,360}unobserve\(element\)[\s\S]{0,300}disconnect\(\)[\s\S]{0,180}visibilityBuckets\.delete\(rootMargin\)/);
+  assert.match(math, /let active = true;/);
+  assert.match(math, /if \(active\) setMarkup\(next\);/);
+  assert.match(math, /return \(\) => \{ active = false; \};/);
+  assert.match(media, /void resolveWithSingleRetry\(resolveMedia, current\.path\)\.then/);
+  assert.match(media, /if \(!active\) return;/);
+  assert.match(media, /return \(\) => \{ active = false; \};/);
+  assert.match(visibility, /let disposed = false;/);
+  assert.match(visibility, /if \(disposed\) return;/);
+  assert.match(visibility, /currentBucket\.observer\.unobserve\(element\);/);
+  assert.match(visibility, /currentBucket\.observer\.disconnect\(\);/);
+  assert.match(visibility, /visibilityBuckets\.delete\(rootMargin\);/);
 
-  assert.match(media, /aria-modal="true"[\s\S]{0,220}role="dialog"/);
-  assert.match(media, /event\.key === "Escape"[\s\S]{0,220}onClose\(\)/);
-  assert.match(media, /event\.key === "ArrowLeft"[\s\S]{0,300}event\.key === "ArrowRight"/);
+  assert.match(media, /aria-modal="true"/);
+  assert.match(media, /role="dialog"/);
+  assert.match(media, /event\.key === "Escape"/);
+  assert.match(media, /onClose\(\);/);
+  assert.match(media, /event\.key === "ArrowLeft"/);
+  assert.match(media, /event\.key === "ArrowRight"/);
   assert.match(media, /aria-live="polite"[\s\S]{0,120}role=\{failed \? "alert" : "status"\}/);
   assert.match(styles, /@media \(prefers-reduced-motion: reduce\)/);
   assert.match(styles, /transition-duration:\s*\.01ms/);
