@@ -3352,9 +3352,9 @@ impl ProductionSessionWorkers {
         let requirements = Self::human_share_requirements(&source_entry);
         let local_human_id = self.local_human_id()?;
         let normalized_query = query.trim().to_lowercase();
-        let mut recipients = self
-            .list_human_conversations()?
-            .into_iter()
+        let conversations = self.list_human_conversations()?;
+        let mut recipients = conversations
+            .iter()
             .filter(|conversation| {
                 let sender_is_participant = conversation
                     .get("participantIds")
@@ -3388,7 +3388,103 @@ impl ProductionSessionWorkers {
                     });
                 title_matches || participant_matches
             })
+            .cloned()
             .collect::<Vec<_>>();
+
+        for recipient in &mut recipients {
+            let Some(conversation_id) = recipient
+                .get("id")
+                .and_then(serde_json::Value::as_str)
+                .map(str::to_owned)
+            else {
+                continue;
+            };
+            let label = recipient
+                .get("title")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or("Human conversation")
+                .to_string();
+            if let Some(object) = recipient.as_object_mut() {
+                object.insert(
+                    "forwardDestination".into(),
+                    serde_json::json!({ "conversationId": conversation_id, "child": null }),
+                );
+                object.insert("forwardLabel".into(), serde_json::Value::String(label));
+            }
+        }
+
+        // Typed children already belong to the canonical Messaging owner. Snapshot
+        // them under the shared projection lock, then apply the exact send-time
+        // authorization guard before exposing them to renderer search.
+        let actor_id = self.story_actor_id()?;
+        let child_destinations = {
+            let _guard = MESSAGING_PROJECTION_IO_LOCK
+                .get_or_init(|| Mutex::new(()))
+                .lock()
+                .map_err(|_| "canonical messaging projection storage lock is poisoned".to_string())?;
+            let root = self.agents_root.join("_messaging");
+            let service = MessagingService::load_with_blob_store(
+                MessagingJsonFileStateStore::new(root.join("snapshot.json")),
+                MessagingFileBlobStore::new(root.join("blobs")),
+            )
+            .map_err(|error| format!("canonical forward recipient authority could not load: {error}"))?;
+            service
+                .engine()
+                .state()
+                .conversation_child_states
+                .iter()
+                .filter(|state| state.actor_id == actor_id && state.destination.child.is_some())
+                .map(|state| state.destination.clone())
+                .collect::<Vec<_>>()
+        };
+
+        for destination in child_destinations {
+            if self
+                .authorize_canonical_forward_destination(&destination, requirements)
+                .is_err()
+            {
+                continue;
+            }
+            let transport_conversation_id = destination.message_conversation_id().0.as_str();
+            let Some(base) = conversations.iter().find(|conversation| {
+                conversation.get("id").and_then(serde_json::Value::as_str)
+                    == Some(transport_conversation_id)
+            }) else {
+                continue;
+            };
+            let base_title = base
+                .get("title")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or("Human conversation");
+            let label = match destination.child.as_ref() {
+                Some(fabushi_messaging_core::ConversationChildIdentity::Topic {
+                    root_message_id,
+                }) => format!("{base_title} · Topic {root_message_id}"),
+                Some(fabushi_messaging_core::ConversationChildIdentity::SavedSublist {
+                    participant_id,
+                }) => format!("{base_title} · Saved {}", participant_id.0),
+                Some(fabushi_messaging_core::ConversationChildIdentity::Conversation {
+                    conversation_id,
+                }) => format!("{base_title} · Conversation {}", conversation_id.0),
+                None => base_title.to_string(),
+            };
+            if !normalized_query.is_empty()
+                && !label.to_lowercase().contains(&normalized_query)
+            {
+                continue;
+            }
+            let mut recipient = base.clone();
+            if let Some(object) = recipient.as_object_mut() {
+                object.insert(
+                    "forwardDestination".into(),
+                    serde_json::to_value(&destination).map_err(|error| {
+                        format!("canonical forward destination could not be encoded: {error}")
+                    })?,
+                );
+                object.insert("forwardLabel".into(), serde_json::Value::String(label));
+            }
+            recipients.push(recipient);
+        }
 
         recipients.sort_by(|left, right| {
             let left_updated = left
@@ -3403,9 +3499,15 @@ impl ProductionSessionWorkers {
                 .partial_cmp(&left_updated)
                 .unwrap_or(std::cmp::Ordering::Equal)
                 .then_with(|| {
-                    left.get("title")
+                    left.get("forwardLabel")
                         .and_then(serde_json::Value::as_str)
-                        .cmp(&right.get("title").and_then(serde_json::Value::as_str))
+                        .or_else(|| left.get("title").and_then(serde_json::Value::as_str))
+                        .cmp(
+                            &right
+                                .get("forwardLabel")
+                                .and_then(serde_json::Value::as_str)
+                                .or_else(|| right.get("title").and_then(serde_json::Value::as_str)),
+                        )
                 })
                 .then_with(|| {
                     left.get("id")
