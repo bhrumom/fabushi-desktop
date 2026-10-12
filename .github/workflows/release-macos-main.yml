@@ -414,9 +414,9 @@ jobs:
         run: |
           set -euo pipefail
           cd desktop/release
-          find . -maxdepth 1 -type f \( -name '*.dmg' -o -name '*.zip' -o -name '*.blockmap' -o -name 'latest-mac.yml' \) -print0 | sort -z | xargs -0 shasum -a 256 > SHA256SUMS.txt
-          node -e 'const fs=require("fs"); fs.writeFileSync("provenance.json", JSON.stringify({source:process.env.SOURCE_SHA,runId:process.env.GITHUB_RUN_ID,runAttempt:process.env.GITHUB_RUN_ATTEMPT,platform:"macos"},null,2))'
-          cat SHA256SUMS.txt
+          find . -maxdepth 1 -type f \( -name '*.dmg' -o -name '*.zip' -o -name '*.blockmap' -o -name 'latest-mac.yml' \) -print0 | sort -z | xargs -0 shasum -a 256 > SHA256SUMS-macos.txt
+          node -e 'const fs=require("fs"); fs.writeFileSync("provenance-macos.json", JSON.stringify({source:process.env.SOURCE_SHA,runId:process.env.GITHUB_RUN_ID,runAttempt:process.env.GITHUB_RUN_ATTEMPT,platform:"macos"},null,2))'
+          cat SHA256SUMS-macos.txt
 
       - name: Upload workflow artifacts
         if: always()
@@ -428,8 +428,8 @@ jobs:
             desktop/release/*.zip
             desktop/release/*.blockmap
             desktop/release/latest-mac.yml
-            desktop/release/SHA256SUMS.txt
-            desktop/release/provenance.json
+            desktop/release/SHA256SUMS-macos.txt
+            desktop/release/provenance-macos.json
           if-no-files-found: error
           retention-days: 90
           compression-level: 0
@@ -450,7 +450,7 @@ jobs:
           fi
           remote_tag="$(git ls-remote origin "refs/tags/$TAG" | awk '{print $1}')"
           test "$remote_tag" = "$SOURCE_SHA"
-          gh release upload "$TAG" desktop/release/*.dmg desktop/release/*.zip desktop/release/*.blockmap desktop/release/latest-mac.yml desktop/release/SHA256SUMS.txt desktop/release/provenance.json --repo "$repo" --clobber
+          gh release upload "$TAG" desktop/release/*.dmg desktop/release/*.zip desktop/release/*.blockmap desktop/release/latest-mac.yml desktop/release/SHA256SUMS-macos.txt desktop/release/provenance-macos.json --repo "$repo" --clobber
           url="$(gh release view "$TAG" --repo "$repo" --json url -q .url)"
           echo "### Published" >> "$GITHUB_STEP_SUMMARY"
           echo "- Shared release: $url" >> "$GITHUB_STEP_SUMMARY"
