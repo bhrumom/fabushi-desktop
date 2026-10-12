@@ -40,7 +40,7 @@ jobs:
     timeout-minutes: 180
     env:
       SUPPORT_REPO: bhrumom/fabushi
-      SUPPORT_SHA: 5d75920308fa17f5000308df1a0153309eb8e9ab
+      SUPPORT_SHA: 072a49752659b30cd098e14a37234107403d1fcb
     steps:
       - name: Checkout exact source
         uses: actions/checkout@v6
