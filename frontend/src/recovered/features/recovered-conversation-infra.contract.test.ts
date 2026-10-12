@@ -702,10 +702,12 @@ test("CONTRACT-TDRP-IV-PREPARED-LINK-EXTERNAL-COPY-001 transcript external links
   const transcript = readFileSync(new URL("./conversation/workspace/transcript.tsx", import.meta.url), "utf8");
   const actions = readFileSync(new URL("./conversation/cards/transcript-card/message-actions.tsx", import.meta.url), "utf8");
   assert.doesNotMatch(transcript, /dangerouslySetInnerHTML/, "transcript text and link rendering must stay React-node escaped");
-  assert.match(transcript, /projectTranscriptExternalLink\(mark\.attrs\.href, node\.text \?\? undefined\)/);
-  assert.match(transcript, /data-transcript-copy-label=\{external\.copyLabel\}/);
-  assert.match(transcript, /data-transcript-copy-text=\{external\.copyText\}/);
-  assert.match(transcript, /title=\{external\.tooltip \?\? undefined\}/);
+  assert.match(transcript, /projectTranscriptLink\(mark\.attrs\.href, node\.text \?\? undefined\)/);
+  assert.match(transcript, /!projected\.external \|\| openExternal == null/);
+  assert.match(transcript, /data-transcript-copy-label=\{projected\.copyLabel\}/);
+  assert.match(transcript, /data-transcript-copy-text=\{projected\.copyText\}/);
+  assert.match(transcript, /data-transcript-link-kind=\{projected\.kind\}/);
+  assert.match(transcript, /title=\{projected\.tooltip \?\? undefined\}/);
   assert.match(transcript, /projectTranscriptInlineCopyTarget\(event\.target\)/);
   assert.match(transcript, /inlineCopy\?\.label \?\? "Copy"/);
   assert.match(transcript, /\(\(\?:https\?:\\\/\\\/\|mailto:\)\[\^\\s\)\]\+\)/);
@@ -870,7 +872,8 @@ test("transcript rich links remain behind the canonical URL owner", () => {
   assert.match(source, /event\.preventDefault\(\); if \(!transcriptSelectionBlocksActivation\(\)\) openExternal\(projected\.href\);/);
   assert.match(source, /messageUrlCards\.openExternal\(url\)/);
   assert.doesNotMatch(source, /assistant-link-[\s\S]{0,700}target="_blank"/);
-  assert.match(source, /external == null \|\| openExternal == null \? current/);
+  assert.match(source, /if \(projected == null\) return current/);
+  assert.match(source, /if \(!projected\.external \|\| openExternal == null\) return <span/);
   assert.match(source, /selection != null && !selection\.isCollapsed && selection\.toString\(\)\.length > 0/);
 });
 
