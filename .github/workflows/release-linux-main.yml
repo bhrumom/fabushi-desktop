@@ -1,6 +1,17 @@
 name: Package Linux installer from exact source
 
 on:
+  workflow_call:
+    inputs:
+      source_sha:
+        description: Exact source commit to package. Empty means main.
+        required: false
+        type: string
+      publish_release:
+        description: Publish signed artifacts only after packaged acceptance passes.
+        required: false
+        default: false
+        type: boolean
   workflow_dispatch:
     inputs:
       source_sha:

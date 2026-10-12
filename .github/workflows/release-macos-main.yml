@@ -454,3 +454,22 @@ jobs:
           url="$(gh release view "$TAG" --repo "$repo" --json url -q .url)"
           echo "### Published" >> "$GITHUB_STEP_SUMMARY"
           echo "- Shared release: $url" >> "$GITHUB_STEP_SUMMARY"
+
+  windows-release-candidate:
+    name: Windows exact-source release candidate
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    uses: ./.github/workflows/release-windows-main.yml
+    with:
+      source_sha: ${{ inputs.source_sha }}
+      publish_release: ${{ inputs.publish_release }}
+    secrets: inherit
+
+  linux-release-candidate:
+    name: Linux exact-source release candidate
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    uses: ./.github/workflows/release-linux-main.yml
+    with:
+      source_sha: ${{ inputs.source_sha }}
+      publish_release: ${{ inputs.publish_release }}
+    secrets: inherit
+
