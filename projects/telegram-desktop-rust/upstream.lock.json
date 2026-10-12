@@ -265,10 +265,10 @@
   "coverage": {
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
-    "unknown_minimum": 15409,
-    "unread_minimum": 2242,
+    "unknown_minimum": 15352,
+    "unread_minimum": 2185,
     "omitted_known": 0,
-    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 13,883; unknown=15,409, unread=2,242, omitted=0."
+    "note": "Accepted 6fed91ff tree 4cf9e0e1; exact read-through 13,940; unknown=15,352, unread=2,185, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -282,7 +282,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Closure open. Read-through 13,883/16,125; first unread 13,884 doc/gh-pages::doxygen.css; unknown remains 15,409; product/release closure remains open."
+    "note": "Closure open. Read-through 13,940/16,125; first unread 13,941 doc/gh-pages::functions_e.html; unknown remains 15,352; product/release closure remains open."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",
@@ -629,12 +629,12 @@
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "deterministic_prefix_closed": 57,
-    "development_only_non_applicable": 642,
-    "unknown_closed": 716,
+    "development_only_non_applicable": 699,
+    "unknown_closed": 773,
     "omitted": 0,
-    "read_through": 13883,
-    "first_unread_order": 13884,
-    "first_unread_path": "doc/gh-pages::doxygen.css",
+    "read_through": 13940,
+    "first_unread_order": 13941,
+    "first_unread_path": "doc/gh-pages::functions_e.html",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {

@@ -223,3 +223,24 @@ test("shipping SFU layer switching uses durable subscription identity and explic
   assert.ok(source.includes('aria-label="Switch remote video quality"'));
   assert.ok(source.includes("pending={layerPending}"));
 });
+
+
+test("mediaDevices devicechange re-resolves preferred/default inputs with call and device fencing", () => {
+  assert.ok(source.includes("resolveCallInputDeviceId"));
+  assert.ok(source.includes('candidates.find((device) => device.deviceId === "default")'));
+  assert.ok(source.includes("navigator.mediaDevices.enumerateDevices()"));
+  assert.ok(source.includes('mediaDevices.addEventListener("devicechange", onDeviceChange)'));
+  assert.ok(source.includes('mediaDevices.removeEventListener("devicechange", onDeviceChange)'));
+  assert.ok(source.includes("deviceReconcileGenerationRef.current === reconciliationGeneration"));
+  assert.ok(source.includes("callRef.current?.id === ownedCallId"));
+  assert.ok(source.includes("callRef.current?.generation === ownedCallGeneration"));
+  assert.ok(source.includes("callRef.current?.scopeId === ownedScopeId"));
+  assert.ok(source.includes("leaseRef.current?.deviceId === ownedDeviceId"));
+  assert.ok(source.includes("leaseRef.current?.generation === ownedLeaseGeneration"));
+  assert.ok(source.includes("await track.applyConstraints({ deviceId: { exact: targetId } })"));
+  assert.ok(source.includes("Microphone recovery did not provide an audio track."));
+  assert.ok(source.includes("Camera recovery did not provide a video track."));
+  assert.ok(source.includes("bindMicrophoneTrackLifecycle(stream, replacement)"));
+  assert.ok(source.includes("await sender.replaceTrack(replacement)"));
+  assert.ok(source.includes("deviceReconciledAtMs: Date.now()"));
+});

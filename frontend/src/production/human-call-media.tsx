@@ -410,6 +410,33 @@ function callMediaConstraint(deviceId: string | null, enabled: boolean): boolean
   return deviceId == null ? true : { deviceId: { exact: deviceId } };
 }
 
+export function resolveCallInputDeviceId(
+  devices: readonly Pick<MediaDeviceInfo, "deviceId" | "kind">[],
+  kind: "audioinput" | "videoinput",
+  preferredId: string | null,
+): string | null {
+  const candidates = devices.filter((device) => device.kind === kind && device.deviceId.length > 0);
+  if (preferredId != null && candidates.some((device) => device.deviceId === preferredId)) return preferredId;
+  return candidates.find((device) => device.deviceId === "default")?.deviceId
+    ?? candidates[0]?.deviceId
+    ?? null;
+}
+
+async function applyResolvedInputDevice(
+  track: MediaStreamTrack,
+  kind: "audioinput" | "videoinput",
+  targetId: string,
+): Promise<void> {
+  try {
+    await track.applyConstraints({ deviceId: { exact: targetId } });
+  } catch (error) {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const fallbackId = resolveCallInputDeviceId(devices, kind, null);
+    if (fallbackId == null || fallbackId === targetId) throw error;
+    await track.applyConstraints({ deviceId: { exact: fallbackId } });
+  }
+}
+
 async function getPreferredUserMedia(bridge: DesktopBridge, input: { audio: boolean; video: boolean }): Promise<MediaStream> {
   const preferences=await bridge.callMedia.getPreferences().catch(()=>({ microphoneId:null, cameraId:null }));
   const preferred: MediaStreamConstraints = {
@@ -464,6 +491,10 @@ export function HumanCallControls({
   const screenStreamRef = useRef<MediaStream | null>(null);
   const cameraCaptureGenerationRef = useRef(0);
   const cameraRecoveryInFlightRef = useRef(false);
+  const deviceReconcileGenerationRef = useRef(0);
+  const deviceReconcileInFlightRef = useRef(false);
+  const deviceReconcileQueuedRef = useRef(false);
+  const reconcileLocalMediaDevicesRef = useRef<() => Promise<void>>(async () => {});
   const bindCameraTrackLifecycleRef = useRef<(stream: MediaStream, track: MediaStreamTrack) => void>(() => {});
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const subscribePcRef = useRef<RTCPeerConnection | null>(null);
@@ -584,6 +615,16 @@ export function HumanCallControls({
     cameraRecoveryInFlightRef.current = false;
   }, []);
 
+  const bindMicrophoneTrackLifecycle = useCallback((stream: MediaStream, track: MediaStreamTrack) => {
+    track.onended = () => {
+      if (disposedRef.current || localStreamRef.current !== stream || stream.getAudioTracks()[0] !== track) return;
+      deviceReconcileQueuedRef.current = true;
+      void reconcileLocalMediaDevicesRef.current().catch((reconcileError) => {
+        if (!disposedRef.current) setError(mediaFailure(reconcileError));
+      });
+    };
+  }, []);
+
   const bindCameraTrackLifecycle = useCallback((stream: MediaStream, track: MediaStreamTrack) => {
     const generation = ++cameraCaptureGenerationRef.current;
     cameraRecoveryInFlightRef.current = false;
@@ -696,13 +737,152 @@ export function HumanCallControls({
     stopStream(localStreamRef.current);
     localStreamRef.current = stream;
     setMuted(false);
+    const microphoneTrack = stream.getAudioTracks()[0] ?? null;
+    if (microphoneTrack != null) bindMicrophoneTrackLifecycle(stream, microphoneTrack);
     const cameraTrack = stream.getVideoTracks()[0] ?? null;
     setCameraEnabled(video && cameraTrack != null);
     setCameraCapturePaused(cameraTrack?.muted === true);
     if (cameraTrack != null) bindCameraTrackLifecycle(stream, cameraTrack);
     if (localVideoRef.current != null) localVideoRef.current.srcObject = stream;
     return stream;
-  }, [bindCameraTrackLifecycle, bridge.callMedia, invalidateCameraCapture]);
+  }, [bindCameraTrackLifecycle, bindMicrophoneTrackLifecycle, bridge.callMedia, invalidateCameraCapture]);
+
+  const reconcileLocalMediaDevices = useCallback(async () => {
+    deviceReconcileQueuedRef.current = true;
+    if (deviceReconcileInFlightRef.current) return;
+    deviceReconcileInFlightRef.current = true;
+    try {
+      while (deviceReconcileQueuedRef.current) {
+        deviceReconcileQueuedRef.current = false;
+        const current = callRef.current;
+        const currentLease = leaseRef.current;
+        const stream = localStreamRef.current;
+        if (current == null || currentLease == null || stream == null || current.state === "ended" || current.state === "failed") continue;
+
+        const reconciliationGeneration = ++deviceReconcileGenerationRef.current;
+        const ownedCallId = current.id;
+        const ownedCallGeneration = current.generation;
+        const ownedScopeId = current.scopeId;
+        const ownedDeviceId = currentLease.deviceId;
+        const ownedLeaseGeneration = currentLease.generation;
+        const isOwned = () => !disposedRef.current
+          && deviceReconcileGenerationRef.current === reconciliationGeneration
+          && localStreamRef.current === stream
+          && callRef.current?.id === ownedCallId
+          && callRef.current?.generation === ownedCallGeneration
+          && callRef.current?.scopeId === ownedScopeId
+          && leaseRef.current?.deviceId === ownedDeviceId
+          && leaseRef.current?.generation === ownedLeaseGeneration;
+
+        const [devices, preferences] = await Promise.all([
+          navigator.mediaDevices.enumerateDevices(),
+          bridge.callMedia.getPreferences().catch(() => ({ microphoneId: null, cameraId: null })),
+        ]);
+        if (!isOwned()) continue;
+
+        const oldAudio = stream.getAudioTracks()[0] ?? null;
+        const oldVideo = stream.getVideoTracks()[0] ?? null;
+        const microphoneId = resolveCallInputDeviceId(devices, "audioinput", preferences.microphoneId);
+        const cameraId = oldVideo == null ? null : resolveCallInputDeviceId(devices, "videoinput", preferences.cameraId);
+
+        if (oldAudio != null) {
+          if (microphoneId == null) throw new Error("The active call lost its microphone and no fallback input is available.");
+          if (oldAudio.readyState === "live") {
+            await applyResolvedInputDevice(oldAudio, "audioinput", microphoneId);
+          } else {
+            const recovered = await navigator.mediaDevices.getUserMedia({
+              audio: { deviceId: { exact: microphoneId } },
+              video: false,
+            }).catch(() => navigator.mediaDevices.getUserMedia({ audio: true, video: false }));
+            const replacement = recovered.getAudioTracks()[0] ?? null;
+            if (replacement == null) {
+              stopStream(recovered);
+              throw new Error("Microphone recovery did not provide an audio track.");
+            }
+            if (!isOwned()) {
+              stopStream(recovered);
+              continue;
+            }
+            replacement.enabled = oldAudio.enabled;
+            const sender = pcRef.current?.getSenders().find((candidate) => candidate.track === oldAudio || candidate.track?.kind === "audio") ?? null;
+            if (sender != null) await sender.replaceTrack(replacement);
+            if (!isOwned()) {
+              if (sender != null) await sender.replaceTrack(oldAudio).catch(() => undefined);
+              stopStream(recovered);
+              continue;
+            }
+            stream.removeTrack(oldAudio);
+            recovered.removeTrack(replacement);
+            stream.addTrack(replacement);
+            oldAudio.stop();
+            bindMicrophoneTrackLifecycle(stream, replacement);
+          }
+        }
+
+        if (oldVideo != null) {
+          if (cameraId == null) throw new Error("The active call lost its camera and no fallback input is available.");
+          if (oldVideo.readyState === "live") {
+            await applyResolvedInputDevice(oldVideo, "videoinput", cameraId);
+          } else {
+            const recovered = await navigator.mediaDevices.getUserMedia({
+              audio: false,
+              video: { deviceId: { exact: cameraId } },
+            }).catch(() => navigator.mediaDevices.getUserMedia({ audio: false, video: true }));
+            const replacement = recovered.getVideoTracks()[0] ?? null;
+            if (replacement == null) {
+              stopStream(recovered);
+              throw new Error("Camera recovery did not provide a video track.");
+            }
+            if (!isOwned()) {
+              stopStream(recovered);
+              continue;
+            }
+            replacement.enabled = oldVideo.enabled;
+            const sender = screenStreamRef.current == null
+              ? pcRef.current?.getSenders().find((candidate) => candidate.track === oldVideo || candidate.track?.kind === "video") ?? null
+              : null;
+            if (sender != null) await sender.replaceTrack(replacement);
+            if (!isOwned()) {
+              if (sender != null) await sender.replaceTrack(oldVideo).catch(() => undefined);
+              stopStream(recovered);
+              continue;
+            }
+            invalidateCameraCapture();
+            stream.removeTrack(oldVideo);
+            recovered.removeTrack(replacement);
+            stream.addTrack(replacement);
+            oldVideo.stop();
+            bindCameraTrackLifecycle(stream, replacement);
+            setCameraCapturePaused(replacement.muted);
+            if (localVideoRef.current != null) localVideoRef.current.srcObject = stream;
+          }
+        }
+
+        if (!isOwned()) continue;
+        await updateMediaStateRef.current(current, { deviceReconciledAtMs: Date.now() });
+      }
+    } finally {
+      deviceReconcileInFlightRef.current = false;
+    }
+  }, [bindCameraTrackLifecycle, bindMicrophoneTrackLifecycle, bridge.callMedia, invalidateCameraCapture]);
+  reconcileLocalMediaDevicesRef.current = reconcileLocalMediaDevices;
+
+  useEffect(() => {
+    const mediaDevices = navigator.mediaDevices;
+    if (mediaDevices?.addEventListener == null) return;
+    const onDeviceChange = () => {
+      deviceReconcileQueuedRef.current = true;
+      void reconcileLocalMediaDevices().catch((reconcileError) => {
+        if (!disposedRef.current) setError(mediaFailure(reconcileError));
+      });
+    };
+    mediaDevices.addEventListener("devicechange", onDeviceChange);
+    return () => {
+      deviceReconcileGenerationRef.current += 1;
+      deviceReconcileQueuedRef.current = false;
+      mediaDevices.removeEventListener("devicechange", onDeviceChange);
+    };
+  }, [conversation.id, reconcileLocalMediaDevices]);
 
   const stopDiagnostics = useCallback(() => {
     diagnosticsGenerationRef.current += 1;
@@ -1456,6 +1636,8 @@ export function HumanCallControls({
       stopCallTone(false, true);
       closePeer();
       invalidateCameraCapture();
+      deviceReconcileGenerationRef.current += 1;
+      deviceReconcileQueuedRef.current = false;
       stopStream(localStreamRef.current);
       localStreamRef.current = null;
       stopStream(screenStreamRef.current);

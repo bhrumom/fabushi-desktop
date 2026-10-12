@@ -750,3 +750,14 @@ Exact parent `2dc42962d59f46d0742cbd602357f0de2200914c` passed fresh Source auth
 Order 13,883 `doc.png@973a030e1e0dadee7b174cb0907ee039dc104794` was read through GitHub's base64 file path rather than UTF-8 blob decoding. Decoded length is exactly 752 bytes, PNG signature is `89504e470d0a1a0a`, IHDR dimensions are 24×22, and the file ends with a complete IEND chunk. It belongs to the standard Doxygen documentation-site asset cohort alongside the exact `doxygen.css`/navigation assets; no canonical Fabushi runtime, package, resource owner, or shipping entrypoint consumes this site output. It is therefore explicitly `development-only-non-applicable`, not directory-inferred N/A.
 
 Accounting: **13,883/16,125 read; 2,242 unread; 15,409 unknown; 0 omitted; 716 unknown_closed; 642 development-only-non-applicable**. First unread is 13,884 `doc/gh-pages::doxygen.css`. Fresh same-head Rust desktop runtime and Desktop Chat Parity CI are required after this descendant.
+
+
+## Revision 9 deterministic read-through — Doxygen generated site + formula cache 13,884–13,940
+
+Orders 13,884–13,940 are exact-bound to `ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae` under nested mount `doc/gh-pages`. HTML/JS/CSS/SVG/PNG rows are explicit Doxygen-generated documentation site output/assets/index metadata and are individually `development-only-non-applicable`, `unknown_closed=true`; no directory-level N/A is used.
+
+Order 13,933 `formula.repository@b81873daff29d943c28bbda3b48aea2ce8fedbac` received a separate generated-input audit. Doxygen `Release_1_9_4/src/formula.cpp` reads `formula.repository` to recover formula text and image dimensions and writes/updates it after formula image generation to avoid unnecessary regeneration. range-v3 `doc/CMakeLists.txt` runs Doxygen into `html` and copies the output into the nested gh-pages checkout; `cmake/ranges_options.cmake` gates `RANGE_V3_DOCS` to standalone builds, and accepted tdesktop `.github/workflows/canary.yml` explicitly excludes the range-v3 gh-pages nested submodule as documentation-only. Thus this file is a generated documentation cache/input with no shipping Fabushi responsibility.
+
+Human Call existing-owner production work in the same descendant adds `navigator.mediaDevices.devicechange` reconciliation, preferred/default input resolution, live-track constraint fallback, ended microphone/camera replacement, and call-generation/device-lease/stream teardown fencing. Cross-platform system-audio/loopback capture remains mapped-open and is not claimed complete.
+
+Accounting: **13,940/16,125 read; 2,185 unread; 15,352 unknown; 0 omitted; 773 unknown_closed; 699 development-only-non-applicable**. First unread is 13,941 `doc/gh-pages::functions_e.html`. Parent `fa3b27b4d802fee09b3f6898be3d248b0f6fa87b` evidence does not transfer to this descendant; fresh exact-head Rust desktop runtime and Desktop Chat Parity CI are mandatory.
