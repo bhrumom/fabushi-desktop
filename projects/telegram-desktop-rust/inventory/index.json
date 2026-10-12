@@ -13,10 +13,10 @@
     "recursive_non_directory_entries": 16137,
     "semantic_read_complete": true,
     "responsibility_decomposition_complete": true,
-    "unknown_minimum": 12417,
+    "unknown_minimum": 12337,
     "unread_minimum": 0,
     "omitted_known": 0,
-    "note": "Recursive 16,137; exact read/decomposition complete through deterministic order 16,137; unknown 12,417; unread 0; omitted 0."
+    "note": "Recursive 16,137; exact read/decomposition complete through deterministic order 16,137; unknown 12,337; unread 0; omitted 0."
   },
   "latest_recursive_evidence": {
     "status": "fresh-exact-head-actions-required",
@@ -31,7 +31,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live baseline 63a1831728147e941ad2dc8939879cf5afe419c7 accepted for source accounting; read-through 16,137; unread_minimum is 0; unknown remains 12,417; omitted remains 0; first unread 16,138 is none.",
+  "note": "Live baseline 63a1831728147e941ad2dc8939879cf5afe419c7 accepted for source accounting; read-through 16,137; unread_minimum is 0; unknown remains 12,337; omitted remains 0; first unread 16,138 is none.",
   "rebaseline": {
     "from_commit": "5b81fa35aaa8d24e14ec9603e5929d324850d9c9",
     "to_commit": "63a1831728147e941ad2dc8939879cf5afe419c7",
@@ -50,7 +50,7 @@
     "upstream_commit": "63a1831728147e941ad2dc8939879cf5afe419c7",
     "deterministic_prefix_closed": 57,
     "development_only_non_applicable": 3617,
-    "unknown_closed": 3720,
+    "unknown_closed": 3800,
     "omitted": 0,
     "read_through": 16137,
     "first_unread_order": 16138,
