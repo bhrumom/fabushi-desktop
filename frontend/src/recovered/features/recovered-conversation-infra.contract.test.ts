@@ -710,7 +710,7 @@ test("CONTRACT-TDRP-IV-PREPARED-LINK-EXTERNAL-COPY-001 transcript external links
   assert.match(transcript, /title=\{projected\.tooltip \?\? undefined\}/);
   assert.match(transcript, /projectTranscriptInlineCopyTarget\(event\.target\)/);
   assert.match(transcript, /inlineCopy\?\.label \?\? "Copy"/);
-  assert.match(transcript, /\(\(\?:https\?:\\\/\\\/\|mailto:\)\[\^\\s\)\]\+\)/);
+  assert.match(transcript, /const projected = projectTranscriptLink\(href, markdownLabel \?\? undefined\);/);
   assert.match(actions, /"Copy Link" \| "Copy Email" \| "Copy Text"/);
   assert.match(actions, /label !== "Copy Link" && label !== "Copy Email" && label !== "Copy Text"/);
 });
