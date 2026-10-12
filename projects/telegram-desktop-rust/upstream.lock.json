@@ -265,10 +265,10 @@
   "coverage": {
     "root_source_entries_total": 6655,
     "recursive_source_entries_total": 16137,
-    "unknown_minimum": 12425,
+    "unknown_minimum": 12417,
     "unread_minimum": 0,
     "omitted_known": 0,
-    "note": "Accepted 63a1831728147e941ad2dc8939879cf5afe419c7 tree c259b2d6982213b2231266508316cd23f99f5a47; exact read-through 16,137; unknown=12,425, unread=0, omitted=0."
+    "note": "Accepted 63a1831728147e941ad2dc8939879cf5afe419c7 tree c259b2d6982213b2231266508316cd23f99f5a47; exact read-through 16,137; unknown=12,417, unread=0, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -631,7 +631,7 @@
     "upstream_commit": "63a1831728147e941ad2dc8939879cf5afe419c7",
     "deterministic_prefix_closed": 57,
     "development_only_non_applicable": 3617,
-    "unknown_closed": 3712,
+    "unknown_closed": 3720,
     "omitted": 0,
     "read_through": 16137,
     "first_unread_order": 16138,
@@ -669,20 +669,20 @@
     "note": "Parent Source authority succeeded; full workflows still running when descendant accounting was written.",
     "superseded_by_upstream_commit": "63a1831728147e941ad2dc8939879cf5afe419c7"
   },
-  "note": "Accepted live upstream 63a1831728147e941ad2dc8939879cf5afe419c7; exact source read-through 16,137 with unread=0, unknown=12,425, omitted=0; product/release closure remains open.",
+  "note": "Accepted live upstream 63a1831728147e941ad2dc8939879cf5afe419c7; exact source read-through 16,137 with unread=0, unknown=12,417, omitted=0; product/release closure remains open.",
   "source_accounting": {
     "recursive_total": 16137,
     "read_through": 16137,
     "first_unread_order": 16138,
     "first_unread_path": "none",
     "unread": 0,
-    "unknown": 12425,
+    "unknown": 12417,
     "omitted": 0,
     "parent_exact_head_evidence": {
       "head": "8292a1883cb5d7418c4bcce6bda31c240318cdce",
       "note": "Orders 15,669-15,732 individually direct exact-blob audited from accepted nested commit; fresh same-head Actions required for descendant."
     },
     "development_only_non_applicable": 3617,
-    "unknown_closed": 3712
+    "unknown_closed": 3720
   }
 }
