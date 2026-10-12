@@ -13928,7 +13928,9 @@
         "predecessor-evidence:github-actions:38273831359:success@92944016319539f8115607f05aeeff0c7fb7de4f"
       ],
       "acceptance_reviewer": null,
-      "release_gate_status": "pending"
+      "release_gate_status": "pending",
+      "license_and_provenance": "Source-informed release-semantics mapping from telegramdesktop/tdesktop .github/workflows/canary.yml at accepted blob cff0a8cd8bb0008ddd1dc833c37005c8890e6a8c. No Telegram canary runtime, Bot API publication transport, signing material, or source-specific infrastructure is retained; Fabushi reuses its source-neutral GitHub Actions, platform signing, packaging, updater trust, and provenance owners.",
+      "notes": "Schema-complete canary decomposition records the accepted upstream exact blob, existing-owner audit, source-neutral production entrypoints, tests, security boundary, licensing and provenance. Windows/Linux signed package acceptance and independent release acceptance remain open."
     }
   ],
   "rebaseline": {
