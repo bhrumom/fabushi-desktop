@@ -37,7 +37,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live baseline accepted; closure open. Read-through 13,274; unread_minimum 2,851; unknown remains 15,845; omitted remains 0; first unread 13,275 is Telegram/lib_webrtc::CMakeLists.txt.",
+  "note": "Live baseline accepted; closure open. Read-through 13,274; unread_minimum is 2,851; unknown remains 15,845; omitted remains 0; first unread 13,275 is Telegram/lib_webrtc::CMakeLists.txt.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
