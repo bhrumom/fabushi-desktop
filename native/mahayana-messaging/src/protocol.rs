@@ -117,6 +117,11 @@ pub enum ClientCommand {
         conversation_id: ConversationId,
         settings: NotificationSettings,
     },
+    SetConversationMessageRetention {
+        conversation_id: ConversationId,
+        retention_seconds: Option<u32>,
+        expected_revision: u64,
+    },
     UpsertFolder {
         folder: ConversationFolder,
     },
@@ -419,6 +424,11 @@ pub enum ServerEvent {
     },
     ConversationChanged {
         conversation: Conversation,
+    },
+    ConversationMessageRetentionChanged {
+        conversation_id: ConversationId,
+        retention_seconds: Option<u32>,
+        revision: u64,
     },
     ConversationParticipantChanged {
         conversation: Conversation,
