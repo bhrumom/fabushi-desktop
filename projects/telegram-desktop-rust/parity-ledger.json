@@ -6,8 +6,8 @@
   "target_commit": "371b72f1cd20de03dc4dff9a15ed761054968093",
   "coverage": {
     "source_entries_total": 16125,
-    "unknown": 14840,
-    "unread": 1673,
+    "unknown": 14776,
+    "unread": 1609,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,90 +13478,63 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Accepted prefix 14,452/16,125; orders 14,389-14,452 exact-read as Doxygen generated search HTML/searchData outputs plus search/mag_sel.svg consumer-reachability audit.",
-    "source_authority_evidence": "Current 14,452 accounting descendant requires fresh same-head Actions.",
-    "current_source_read_through": 14452,
-    "first_unread_order": 14453,
-    "first_unread_path": "doc/gh-pages::search/namespaces_1.html"
+    "source_read_reconciliation": "Accepted prefix 14,516/16,125; orders 14,453-14,516 exact-read as Doxygen search HTML/searchData/runtime assets, with search_l/m/r PNG byte-level verification.",
+    "source_authority_evidence": "Parent f0c4965 exact-head Source authority 38221698605/114719528020 succeeded; descendant requires fresh same-head Actions.",
+    "current_source_read_through": 14516,
+    "first_unread_order": 14517,
+    "first_unread_path": "doc/gh-pages::search/variables_0.js"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "deterministic_prefix_closed": 57,
-    "development_only_non_applicable": 1211,
-    "unknown_closed": 1285,
+    "development_only_non_applicable": 1275,
+    "unknown_closed": 1349,
     "omitted": 0,
-    "read_through": 14452,
-    "first_unread_order": 14453,
-    "first_unread_path": "doc/gh-pages::search/namespaces_1.html",
+    "read_through": 14516,
+    "first_unread_order": 14517,
+    "first_unread_path": "doc/gh-pages::search/variables_0.js",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
-    "status": "parent-evidence-only-after-descendant-accounting-commit",
-    "target_head": "2b7525663fed3eceb22a062b816bdeff781b93e7",
+    "status": "parent-source-authority-success-descendant-validation-required",
+    "target_head": "f0c4965a18a3b15d8770b67a7e82a28100f3e374",
     "runs": [
       {
-        "id": 38216855900,
+        "id": 38221698605,
         "workflow": "Rust desktop runtime",
-        "attempt": 1,
-        "conclusion": "success"
+        "conclusion": "in_progress-at-descendant-write"
       },
       {
-        "id": 38216855977,
+        "id": 38221698586,
         "workflow": "Desktop Chat Parity CI",
-        "attempt": 1,
-        "conclusion": "success"
+        "conclusion": "in_progress-at-descendant-write"
       }
     ],
     "jobs": [
       {
-        "id": 114704898380,
+        "id": 114719528020,
         "name": "Source authority / recursive inventory",
         "conclusion": "success"
       },
       {
-        "id": 114704898266,
-        "name": "rust-host",
+        "id": 114719528237,
+        "name": "platform-worker",
         "conclusion": "success"
       },
       {
-        "id": 114704898283,
-        "name": "Pressure profiler / windows-2025",
-        "conclusion": "success"
-      },
-      {
-        "id": 114704898255,
-        "name": "Pressure profiler / macos-15",
-        "conclusion": "success"
-      },
-      {
-        "id": 114703504093,
-        "name": "Focused Electron chat E2E",
-        "conclusion": "success"
-      },
-      {
-        "id": 114703504160,
-        "name": "Renderer typecheck and build",
+        "id": 114719528411,
+        "name": "renderer",
         "conclusion": "success"
       }
     ],
     "artifacts": [
       {
-        "id": 11732670599,
-        "name": "tdrp-revision9-authority-2b7525663fed3eceb22a062b816bdeff781b93e7",
-        "digest": "sha256:86d2d743d499b531d4ae72eeec0433603c9bc64285d73c02a324534a5ad13d05"
-      },
-      {
-        "id": 11732985410,
-        "name": "rust-messaging-responsibilities-2b7525663fed3eceb22a062b816bdeff781b93e7",
-        "digest": "sha256:424320b4a34cfbc3e9622e7e8e1b1bfa9ef262a9dd0c59dc25fd89fd5d2c878e"
-      },
-      {
-        "id": 11732745413,
-        "name": "desktop-chat-parity-playwright-2b7525663fed3eceb22a062b816bdeff781b93e7",
-        "digest": "sha256:4146ef83234163a7d8616c33ebc091a1aaf2fb38057430dba85f188e86737260"
+        "id": 11734751172,
+        "name": "tdrp-revision9-authority-f0c4965a18a3b15d8770b67a7e82a28100f3e374",
+        "digest": "sha256:f3f7940092a94aae678db9a06f59a90e99d35394546877e1c124fb19da4cdb8b"
       }
     ],
-    "note": "Valid exact-head evidence for parent 2b752566 only; the 14,325-14,388 accounting descendant requires fresh Actions."
+    "note": "Parent exact-head Source authority succeeded and materialized 14,453-14,516; full required workflows were still running when descendant accounting was written."
   }
 }
