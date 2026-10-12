@@ -1,4 +1,4 @@
-Current accepted TDRP Revision 9 upstream authority: telegramdesktop/tdesktop@63a1831728147e941ad2dc8939879cf5afe419c7 tree c259b2d6982213b2231266508316cd23f99f5a47; recursive non-directory 16,137; exact read-through 16,137; unread=0; unknown=12,435; omitted=0.
+Current accepted TDRP Revision 9 upstream authority: telegramdesktop/tdesktop@63a1831728147e941ad2dc8939879cf5afe419c7 tree c259b2d6982213b2231266508316cd23f99f5a47; recursive non-directory 16,137; exact read-through 16,137; unread=0; unknown=12,022; omitted=0. Orders 149, 162 and 435-437 are per-blob reachability-closed; order 58 remains release-acceptance-open.
 
 Accepted TDRP Revision 9 upstream authority (2026-10-12): `5b81fa35aaa8d24e14ec9603e5929d324850d9c9` tree `7539504ec9294b9c1ca03332570127b8b69ad201`; recursive non-directory=16,135, read-through=16,135, unread=0, unknown=12,435, omitted=0; fresh same-head Actions required.
 

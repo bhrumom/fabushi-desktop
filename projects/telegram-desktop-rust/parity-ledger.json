@@ -6,7 +6,7 @@
   "target_commit": "371b72f1cd20de03dc4dff9a15ed761054968093",
   "coverage": {
     "source_entries_total": 16137,
-    "unknown": 12030,
+    "unknown": 12022,
     "unread": 0,
     "omitted": 0,
     "responsibilities_total": 56,
@@ -10667,7 +10667,7 @@
       "implementation_status": "mapped",
       "coverage_disposition": "rewritten",
       "blockers": [
-        "Composer cursor and source-neutral link-preview/WebPage payload parity is implemented in the canonical renderer draft model and persistence store; exact-head CI plus editor/runtime production write/read wiring evidence remains required.",
+        "Shipping editor/runtime production write/read wiring for cursor selection/scroll and canonical link-preview policy is implemented and exact-head renderer + Focused Electron chat E2E evidence is recorded at bbe2eca6967465e683e6158d4e2490725c0ae940; the responsibility remains mapped because service-authoritative parity is still incomplete.",
         "Cross-device/cloud draft service parity not yet evidenced",
         "SavedSublist authoritative relation feed remains required for trusted child scope"
       ],
@@ -10685,19 +10685,24 @@
         "commit:411a3fc0d1cc260849fac3298c824c6b477a5106",
         "commit:9bb4f954932b5ab23b6ceb95834901e2fe416b4b",
         "path:frontend/src/recovered/features/conversation/workspace/model.ts#ComposerDraftCursor",
-        "path:frontend/src/recovered/features/conversation/workspace/model.ts#ComposerDraftLinkPreview"
+        "path:frontend/src/recovered/features/conversation/workspace/model.ts#ComposerDraftLinkPreview",
+        "commit:bbe2eca6967465e683e6158d4e2490725c0ae940",
+        "path:frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx#promptEditorCursor",
+        "path:frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx#restorePromptEditorCursor",
+        "path:frontend/src/recovered/features/conversation/workspace/composer.tsx#ConversationComposer",
+        "path:frontend/src/production/ProductionRenderer.tsx#activeComposerDraftScope"
       ],
       "test_evidence": [
         "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts",
         ".github/workflows/rust-desktop-runtime.yml",
         ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "target_commit": "9bb4f954932b5ab23b6ceb95834901e2fe416b4b",
-      "workflow_run": null,
-      "run_attempt": null,
-      "job": null,
-      "artifact_id": null,
-      "artifact_digest": null,
+      "target_commit": "bbe2eca6967465e683e6158d4e2490725c0ae940",
+      "workflow_run": 38312081487,
+      "run_attempt": 1,
+      "job": "Focused Electron chat E2E",
+      "artifact_id": 11774878972,
+      "artifact_digest": "sha256:a1b708e3bf3a09c2a3fa554024d7fb8d07e8800654f8cdc9eda22e098484c2bf",
       "composition_root": "Fabushi ProductShell -> Messages -> ConversationWorkspace -> Composer",
       "composition_slot": "Canonical Composer / Conversation draft state",
       "capability_component": "Composer",
@@ -10809,14 +10814,23 @@
       "test_environment_ids": [
         "GitHub Actions only"
       ],
-      "coverage_matrix_status": "pending",
-      "flake_status": "not-run",
-      "test_execution_evidence": [],
+      "coverage_matrix_status": "mapped-shipping-editor-runtime-wiring-evidenced-cloud-and-savedsublist-authority-open",
+      "flake_status": "current-exact-head-renderer-and-focused-electron-success",
+      "test_execution_evidence": [
+        "github-actions:38312081487:job-115020026653:success@bbe2eca6967465e683e6158d4e2490725c0ae940",
+        "github-actions:38312081487:job-115020027184:success@bbe2eca6967465e683e6158d4e2490725c0ae940",
+        "github-actions:38312081503:job-115020396107:success@bbe2eca6967465e683e6158d4e2490725c0ae940",
+        "github-actions:38312081503:job-115020396349:success@bbe2eca6967465e683e6158d4e2490725c0ae940",
+        "github-actions:38312081503:job-115020396400:success@bbe2eca6967465e683e6158d4e2490725c0ae940",
+        "github-actions:38312081503:job-115020396423:success@bbe2eca6967465e683e6158d4e2490725c0ae940",
+        "github-actions:38312081503:jobs-115020396301,115020396375,115020396478:pressure-success@bbe2eca6967465e683e6158d4e2490725c0ae940",
+        "github-actions:38312081503:jobs-115020396345,115020396487,115020396579:updater-contract-success@bbe2eca6967465e683e6158d4e2490725c0ae940"
+      ],
       "acceptance_reviewer": null,
       "release_gate_status": "pending",
       "license_and_provenance": "Source-informed mapping from accepted telegramdesktop/tdesktop data_drafts.h blob f610d7ab604fade113d3311f7cc8b19daf946174.",
       "reviewer": null,
-      "notes": "Exact accepted 268-line header was read in full. Typed renderer scope identity covers Agent/Conversation/Topic/SavedSublist/conversation-child keys with schema-v1 Agent migration. Canonical draft payload now additionally models cursor selection/scroll and link-preview/WebPage identity plus force-large/force-small/invert/manual/removed policy bits using lossless string ids. Mapping remains open for shipping editor/runtime population of those new fields, cross-device/cloud draft service evidence, and production-authoritative SavedSublist relation settlement.",
+      "notes": "Exact accepted 268-line header was read in full. Typed renderer scope identity covers Agent/Conversation/Topic/SavedSublist/conversation-child keys with schema-v1 Agent migration. Canonical draft payload models cursor selection/scroll and link-preview/WebPage identity plus force-large/force-small/invert/manual/removed policy bits using lossless string ids. Shipping TipTap selection/scroll write, cursor restore, link-preview policy projection, typed Human Conversation scope, stash/recovery/navigation continuity and stale compare-and-clear fencing are evidenced by current-head renderer and Focused Electron chat E2E at bbe2eca6967465e683e6158d4e2490725c0ae940. Mapping intentionally remains open for cross-device/cloud draft service evidence and production-authoritative SavedSublist relation settlement.",
       "fabushi_target_bindings": [
         {
           "path": "native/mahayana-messaging/src/conversation.rs",
@@ -14465,7 +14479,7 @@
     "upstream_commit": "63a1831728147e941ad2dc8939879cf5afe419c7",
     "deterministic_prefix_closed": 57,
     "development_only_non_applicable": 3617,
-    "unknown_closed": 4107,
+    "unknown_closed": 4115,
     "omitted": 0,
     "read_through": 16137,
     "first_unread_order": 16138,
