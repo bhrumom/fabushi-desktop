@@ -1240,15 +1240,17 @@ fn shared_media_projection_uses_canonical_message_and_child_state_only() {
 #[test]
 fn shared_media_search_deletion_rebuilds_from_canonical_state_without_evicting_media_cache() {
     let actor_id = ActorId::new("human:shared-media-search-owner");
+    let saved_peer = ActorId::new("human:shared-media-search-peer");
+    let unknown_saved_peer = ActorId::new("human:shared-media-search-unknown");
     let conversation_id = ConversationId::new("conversation:shared-media-search");
     let message_id = MessageId::new("message:shared-media-search");
     let saved = ConversationDestination::saved_sublist(
         conversation_id.clone(),
-        ActorId::new("human:shared-media-search-peer"),
+        saved_peer.clone(),
     );
     let unknown_saved = ConversationDestination::saved_sublist(
         conversation_id.clone(),
-        ActorId::new("human:shared-media-search-unknown"),
+        unknown_saved_peer.clone(),
     );
     let media = MediaRef {
         id: "media:shared-media-search".into(),
@@ -1299,6 +1301,17 @@ fn shared_media_search_deletion_rebuilds_from_canonical_state_without_evicting_m
     state.actors.insert(
         actor_id.clone(),
         Actor::human(actor_id.0.clone(), "Shared Media Search Owner"),
+    );
+    state.actors.insert(
+        saved_peer.clone(),
+        Actor::human(saved_peer.0.clone(), "Shared Media Search Peer"),
+    );
+    state.actors.insert(
+        unknown_saved_peer.clone(),
+        Actor::human(
+            unknown_saved_peer.0.clone(),
+            "Shared Media Search Unknown Peer",
+        ),
     );
     state.conversations.insert(conversation_id.clone(), conversation);
     state.messages.entry(conversation_id.clone()).or_default().insert(
