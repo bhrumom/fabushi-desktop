@@ -1279,3 +1279,11 @@ Exact-head `e57a1b17889178f722b035b1f5b4fcce86e53e15` exposed deterministic Rust
 Orders 13,629–13,652 were individually exact-read at `ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae`. All 24 are Doxygen 1.9.4 generated API/concept HTML or matching generated JS index metadata and have no independent shipping Fabushi product responsibility. They are explicitly `development-only-non-applicable` with `unknown_closed=true`; no directory-level N/A is used.
 
 Accounting: **13,652/16,125 read; 2,473 unread; 15,640 unknown; 0 omitted; 485 unknown_closed; 411 development-only-non-applicable**. First unread is 13,653 `doc/gh-pages::conceptconcepts_1_1defs_1_1derived__from__.html`. All parent runs are predecessor evidence after this repair; fresh same-head Rust desktop runtime and Desktop Chat Parity CI are required.
+
+## Revision 9 source-registry repair + deterministic read-through 13,653–13,712
+
+After the 809-file canonical-tree repair, exact-head `2bfe0f3ea5f9a4c0f1240a95661d842a6ca8445e` renderer passed, while source-authority job 114658262307 advanced through 363 attestation outputs and failed only when validator opened registered shard `projects/telegram-desktop-rust/inventory/source-dispositions/13347-13410.json`. Central registry consistency audit found this was the sole referenced shard missing from the current tree. The shard exists at its creation commit `6c7250d84a5346ed4bc75dab36e2407baa83a841` as exact blob `4fe799e8f5ce19630ca8a49195baec775c31492a`, containing 64 rows for orders 13,347–13,410. This descendant reattaches that exact blob instead of reconstructing it.
+
+Orders 13,653–13,712 were individually exact-read at `ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae`; all 60 carry Doxygen 1.9.4 generator/footer evidence and are generated API/concept HTML with no independent shipping Fabushi responsibility. They are explicitly `development-only-non-applicable`, `unknown_closed=true`.
+
+Accounting: **13,712/16,125 read; 2,413 unread; 15,580 unknown; 0 omitted; 545 unknown_closed; 471 development-only-non-applicable**. First unread is 13,713 `doc/gh-pages::conceptranges_1_1erasable__range.html`. Parent runs become predecessor evidence; fresh same-head Rust desktop runtime and Desktop Chat Parity CI are required.
