@@ -51,6 +51,10 @@ import {
   createComposerDraftStateStore,
   type ComposerDraftPersistence,
 } from "./conversation/workspace/draft-state.ts";
+import {
+  areComposerDraftsEqual,
+  parseComposerDraft,
+} from "./conversation/workspace/model.ts";
 import { createTranscriptAcknowledgementController } from "./conversation/workspace/acknowledgement.ts";
 import {
   searchEmoji,
@@ -616,7 +620,37 @@ test("composer draft schema v1 fails closed on an empty legacy scope key", async
   store.dispose();
 });
 
-test("composer draft typed scopes isolate conversation children and preserve rich attachment metadata", async () => {
+test("composer draft payload preserves cursor and canonical link-preview metadata losslessly", () => {
+  const draft = {
+    prompt: "preview",
+    attachments: [],
+    richText: "{\"type\":\"doc\"}",
+    replyToId: "message:7",
+    cursor: { position: 9, anchor: 2, scroll: 2147483647 },
+    linkPreview: {
+      id: "18446744073709551615",
+      url: "https://example.com/article",
+      forceLargeMedia: true,
+      forceSmallMedia: false,
+      invert: true,
+      manual: true,
+      removed: false,
+    },
+  };
+  const parsed = parseComposerDraft(draft);
+  assert.deepEqual(parsed, draft);
+  assert.equal(areComposerDraftsEqual(parsed!, { ...draft, cursor: { ...draft.cursor } }), true);
+  assert.equal(areComposerDraftsEqual(parsed!, { ...draft, cursor: { ...draft.cursor, position: 10 } }), false);
+  assert.equal(areComposerDraftsEqual(parsed!, {
+    ...draft,
+    linkPreview: { ...draft.linkPreview, removed: true },
+  }), false);
+
+  assert.equal(parseComposerDraft({ ...draft, cursor: { ...draft.cursor, position: 1.5 } }), null);
+  assert.equal(parseComposerDraft({ ...draft, linkPreview: { ...draft.linkPreview, id: "" } }), null);
+});
+
+test("composer draft typed scopes isolate conversation children and preserve cursor/link-preview metadata", async () => {
   const writes: unknown[] = [];
   const persistence: ComposerDraftPersistence = {
     async read() { return null; },
@@ -636,6 +670,14 @@ test("composer draft typed scopes isolate conversation children and preserve ric
     prompt: "topic draft",
     richText: "{\"type\":\"doc\",\"content\":[]}",
     replyToId: "message:7",
+    cursor: { position: 11, anchor: 4, scroll: 320 },
+    linkPreview: {
+      id: "9223372036854775808",
+      url: "https://example.com/topic",
+      forceLargeMedia: true,
+      invert: true,
+      manual: true,
+    },
     attachments: [{ path: "/tmp/photo.png", name: "photo.png", size: 2048, mimeType: "image/png" }],
   });
   store.setDraft(saved, { prompt: "saved draft", attachments: [] });
@@ -646,9 +688,21 @@ test("composer draft typed scopes isolate conversation children and preserve ric
   assert.equal(store.snapshotsFor(nested).get().draft?.prompt, "nested draft");
   assert.equal(store.snapshotsFor("conversation:1").get().draft, null, "legacy Agent namespace must not alias canonical conversation scopes");
   assert.equal(store.snapshotsFor(topic).get().draft?.attachments[0]?.mimeType, "image/png");
+  assert.deepEqual(store.snapshotsFor(topic).get().draft?.cursor, { position: 11, anchor: 4, scroll: 320 });
+  assert.equal(store.snapshotsFor(topic).get().draft?.linkPreview?.id, "9223372036854775808");
   await flush();
-  const last = writes.at(-1) as { scopes: Record<string, { draft: { attachments: Array<{ mimeType?: string }> } }> };
+  const last = writes.at(-1) as {
+    scopes: Record<string, {
+      draft: {
+        attachments: Array<{ mimeType?: string }>;
+        cursor?: { position: number; anchor: number; scroll: number };
+        linkPreview?: { id?: string; url: string };
+      };
+    }>;
+  };
   assert.equal(last.scopes[composerDraftScopeKey(topic)]?.draft.attachments[0]?.mimeType, "image/png");
+  assert.deepEqual(last.scopes[composerDraftScopeKey(topic)]?.draft.cursor, { position: 11, anchor: 4, scroll: 320 });
+  assert.equal(last.scopes[composerDraftScopeKey(topic)]?.draft.linkPreview?.url, "https://example.com/topic");
   store.dispose();
 });
 
