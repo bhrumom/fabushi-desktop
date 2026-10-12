@@ -734,6 +734,10 @@ test("CONTRACT-TDRP-IV-INLINE-BUTTON-FENCE-001 disabled and hostile widget optio
   const hostile = "x".repeat(MAX_WIDGET_OPTION_LABEL_CODE_UNITS + 1);
   assert.equal(projectTranscriptCardEntry({ kind: "send-message", id: "widget-hostile", message: { type: "widget", widget: { prompt: "Choose", options: [{ label: hostile }] } } }), null);
   assert.equal(projectTranscriptCardEntry({ kind: "send-message", id: "widget-invalid-disabled", message: { type: "widget", widget: { prompt: "Choose", options: [{ label: "Nope", disabled: "yes" }] } } }), null);
+  assert.equal(MAX_WIDGET_OPTION_LABEL_CODE_UNITS, 4096);
+  const widgetSource = readFileSync(new URL("./conversation/cards/transcript-card/views/widget.tsx", import.meta.url), "utf8");
+  assert.match(widgetSource, /if \(action\?\.kind === "authorize-url"\) return;/, "authorization URLs cannot be executed by the widget surface");
+  assert.match(widgetSource, /actionCanAct = option\.action\?\.kind === "authorize-url"[\s\S]{0,80}\? false/, "authorization URL choices stay disabled before activation");
 });
 
 test("widget action lifecycle fences duplicate and stale rich-button settlement", async () => {
