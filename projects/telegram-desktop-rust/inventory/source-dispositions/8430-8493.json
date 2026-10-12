@@ -862,13 +862,13 @@
       "source_symbols": [
         "fixture line-ending contract"
       ],
-      "responsibility": "Regression fixtures require canonical LF normalization for suggestion/good/wrong/morph expectations so evidence is cross-platform deterministic.",
-      "fabushi_canonical_owner": "existing canonical test/provenance owner",
-      "fabushi_target": "existing canonical test/provenance owner",
+      "responsibility": "Exact Hunspell dependency-test-repository-metadata audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Standalone Hunspell tools/test fixtures are not product surfaces; applicable semantics map to existing canonical Fabushi owners and regression evidence.",
       "platform_differences": "Source-specific C++/shell/Perl/AWK and fixture formats are authority only; product behavior remains source-neutral.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/current-head evidence remains open",
       "state_machine": "exact source/fixture -> requirement extraction -> existing-owner-first mapping -> canonical implementation/test -> exact-head GitHub Actions evidence",
@@ -886,7 +886,27 @@
         "verified_blob_sha": "6078232ab0f3f76ee99d576a8d963ef34a10d2d9",
         "file_type": "blob",
         "recursive_order": 8447
-      }
+      },
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-test-repository-metadata audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:6078232ab0f3f76ee99d576a8d963ef34a10d2d9",
+        "byte-audit:recomputed-git-blob=6078232ab0f3f76ee99d576a8d963ef34a10d2d9;byte_length=77;role=dependency-test-repository-metadata",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8448,
@@ -911,13 +931,13 @@
         "*.log",
         "*.trs"
       ],
-      "responsibility": "Generated test outputs remain excluded from accepted source/evidence provenance.",
-      "fabushi_canonical_owner": "existing canonical Build/test hygiene owner",
-      "fabushi_target": "existing canonical Build/test hygiene owner",
+      "responsibility": "Exact Hunspell dependency-test-repository-metadata audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Standalone Hunspell tools/test fixtures are not product surfaces; applicable semantics map to existing canonical Fabushi owners and regression evidence.",
       "platform_differences": "Source-specific C++/shell/Perl/AWK and fixture formats are authority only; product behavior remains source-neutral.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/current-head evidence remains open",
       "state_machine": "exact source/fixture -> requirement extraction -> existing-owner-first mapping -> canonical implementation/test -> exact-head GitHub Actions evidence",
@@ -935,7 +955,27 @@
         "verified_blob_sha": "9955cba183245f9ea5e452b4afc8967d94b8d6b4",
         "file_type": "blob",
         "recursive_order": 8448
-      }
+      },
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-test-repository-metadata audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:9955cba183245f9ea5e452b4afc8967d94b8d6b4",
+        "byte-audit:recomputed-git-blob=9955cba183245f9ea5e452b4afc8967d94b8d6b4;byte_length=23;role=dependency-test-repository-metadata",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8449,
@@ -958,13 +998,13 @@
       "source_symbols": [
         "fixture:1463589:aff"
       ],
-      "responsibility": "Regression fixture locks capitalized German n-gram suggestion behavior across legacy and UTF-8 dictionaries, including case correction and MAXNGRAMSUGS=1.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck regression owner",
-      "fabushi_target": "existing canonical text-input/spellcheck regression owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Standalone Hunspell tools/test fixtures are not product surfaces; applicable semantics map to existing canonical Fabushi owners and regression evidence.",
       "platform_differences": "Source-specific C++/shell/Perl/AWK and fixture formats are authority only; product behavior remains source-neutral.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/current-head evidence remains open",
       "state_machine": "exact source/fixture -> requirement extraction -> existing-owner-first mapping -> canonical implementation/test -> exact-head GitHub Actions evidence",
@@ -982,7 +1022,27 @@
         "verified_blob_sha": "20b0ee64615705bc404a41ecbb4efeb32585a258",
         "file_type": "blob",
         "recursive_order": 8449
-      }
+      },
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:20b0ee64615705bc404a41ecbb4efeb32585a258",
+        "byte-audit:recomputed-git-blob=20b0ee64615705bc404a41ecbb4efeb32585a258;byte_length=122;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8450,
@@ -1005,13 +1065,13 @@
       "source_symbols": [
         "fixture:1463589:dic"
       ],
-      "responsibility": "Regression fixture locks capitalized German n-gram suggestion behavior across legacy and UTF-8 dictionaries, including case correction and MAXNGRAMSUGS=1.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck regression owner",
-      "fabushi_target": "existing canonical text-input/spellcheck regression owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Standalone Hunspell tools/test fixtures are not product surfaces; applicable semantics map to existing canonical Fabushi owners and regression evidence.",
       "platform_differences": "Source-specific C++/shell/Perl/AWK and fixture formats are authority only; product behavior remains source-neutral.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/current-head evidence remains open",
       "state_machine": "exact source/fixture -> requirement extraction -> existing-owner-first mapping -> canonical implementation/test -> exact-head GitHub Actions evidence",
@@ -1029,7 +1089,27 @@
         "verified_blob_sha": "a3caab802fcfae75f6b9290a042a34a6fa112c43",
         "file_type": "blob",
         "recursive_order": 8450
-      }
+      },
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:a3caab802fcfae75f6b9290a042a34a6fa112c43",
+        "byte-audit:recomputed-git-blob=a3caab802fcfae75f6b9290a042a34a6fa112c43;byte_length=14;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8451,
@@ -1052,13 +1132,13 @@
       "source_symbols": [
         "fixture:1463589:sug"
       ],
-      "responsibility": "Regression fixture locks capitalized German n-gram suggestion behavior across legacy and UTF-8 dictionaries, including case correction and MAXNGRAMSUGS=1.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck regression owner",
-      "fabushi_target": "existing canonical text-input/spellcheck regression owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Standalone Hunspell tools/test fixtures are not product surfaces; applicable semantics map to existing canonical Fabushi owners and regression evidence.",
       "platform_differences": "Source-specific C++/shell/Perl/AWK and fixture formats are authority only; product behavior remains source-neutral.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/current-head evidence remains open",
       "state_machine": "exact source/fixture -> requirement extraction -> existing-owner-first mapping -> canonical implementation/test -> exact-head GitHub Actions evidence",
@@ -1076,7 +1156,27 @@
         "verified_blob_sha": "8a72f1e21f14347250008b6bf2412909802e7e6c",
         "file_type": "blob",
         "recursive_order": 8451
-      }
+      },
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:8a72f1e21f14347250008b6bf2412909802e7e6c",
+        "byte-audit:recomputed-git-blob=8a72f1e21f14347250008b6bf2412909802e7e6c;byte_length=65;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8452,
@@ -1099,13 +1199,13 @@
       "source_symbols": [
         "fixture:1463589:wrong"
       ],
-      "responsibility": "Regression fixture locks capitalized German n-gram suggestion behavior across legacy and UTF-8 dictionaries, including case correction and MAXNGRAMSUGS=1.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck regression owner",
-      "fabushi_target": "existing canonical text-input/spellcheck regression owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Standalone Hunspell tools/test fixtures are not product surfaces; applicable semantics map to existing canonical Fabushi owners and regression evidence.",
       "platform_differences": "Source-specific C++/shell/Perl/AWK and fixture formats are authority only; product behavior remains source-neutral.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/current-head evidence remains open",
       "state_machine": "exact source/fixture -> requirement extraction -> existing-owner-first mapping -> canonical implementation/test -> exact-head GitHub Actions evidence",
@@ -1123,7 +1223,27 @@
         "verified_blob_sha": "9de6c63cdf060869e4f79b6263498081a4a9de79",
         "file_type": "blob",
         "recursive_order": 8452
-      }
+      },
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:9de6c63cdf060869e4f79b6263498081a4a9de79",
+        "byte-audit:recomputed-git-blob=9de6c63cdf060869e4f79b6263498081a4a9de79;byte_length=63;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8453,
@@ -1146,13 +1266,13 @@
       "source_symbols": [
         "fixture:1463589_utf:aff"
       ],
-      "responsibility": "Regression fixture locks capitalized German n-gram suggestion behavior across legacy and UTF-8 dictionaries, including case correction and MAXNGRAMSUGS=1.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck regression owner",
-      "fabushi_target": "existing canonical text-input/spellcheck regression owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Standalone Hunspell tools/test fixtures are not product surfaces; applicable semantics map to existing canonical Fabushi owners and regression evidence.",
       "platform_differences": "Source-specific C++/shell/Perl/AWK and fixture formats are authority only; product behavior remains source-neutral.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/current-head evidence remains open",
       "state_machine": "exact source/fixture -> requirement extraction -> existing-owner-first mapping -> canonical implementation/test -> exact-head GitHub Actions evidence",
@@ -1170,7 +1290,27 @@
         "verified_blob_sha": "9f187d8ee054cce266279f7d721f182b7cec522f",
         "file_type": "blob",
         "recursive_order": 8453
-      }
+      },
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:9f187d8ee054cce266279f7d721f182b7cec522f",
+        "byte-audit:recomputed-git-blob=9f187d8ee054cce266279f7d721f182b7cec522f;byte_length=150;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8454,
@@ -1193,13 +1333,13 @@
       "source_symbols": [
         "fixture:1463589_utf:dic"
       ],
-      "responsibility": "Regression fixture locks capitalized German n-gram suggestion behavior across legacy and UTF-8 dictionaries, including case correction and MAXNGRAMSUGS=1.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck regression owner",
-      "fabushi_target": "existing canonical text-input/spellcheck regression owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Standalone Hunspell tools/test fixtures are not product surfaces; applicable semantics map to existing canonical Fabushi owners and regression evidence.",
       "platform_differences": "Source-specific C++/shell/Perl/AWK and fixture formats are authority only; product behavior remains source-neutral.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/current-head evidence remains open",
       "state_machine": "exact source/fixture -> requirement extraction -> existing-owner-first mapping -> canonical implementation/test -> exact-head GitHub Actions evidence",
@@ -1217,7 +1357,27 @@
         "verified_blob_sha": "8cec606034a3eda35ab3642ad34add2bf6523631",
         "file_type": "blob",
         "recursive_order": 8454
-      }
+      },
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:8cec606034a3eda35ab3642ad34add2bf6523631",
+        "byte-audit:recomputed-git-blob=8cec606034a3eda35ab3642ad34add2bf6523631;byte_length=15;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8455,
@@ -1240,13 +1400,13 @@
       "source_symbols": [
         "fixture:1463589_utf:sug"
       ],
-      "responsibility": "Regression fixture locks capitalized German n-gram suggestion behavior across legacy and UTF-8 dictionaries, including case correction and MAXNGRAMSUGS=1.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck regression owner",
-      "fabushi_target": "existing canonical text-input/spellcheck regression owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Standalone Hunspell tools/test fixtures are not product surfaces; applicable semantics map to existing canonical Fabushi owners and regression evidence.",
       "platform_differences": "Source-specific C++/shell/Perl/AWK and fixture formats are authority only; product behavior remains source-neutral.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/current-head evidence remains open",
       "state_machine": "exact source/fixture -> requirement extraction -> existing-owner-first mapping -> canonical implementation/test -> exact-head GitHub Actions evidence",
@@ -1264,7 +1424,27 @@
         "verified_blob_sha": "8a72f1e21f14347250008b6bf2412909802e7e6c",
         "file_type": "blob",
         "recursive_order": 8455
-      }
+      },
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:8a72f1e21f14347250008b6bf2412909802e7e6c",
+        "byte-audit:recomputed-git-blob=8a72f1e21f14347250008b6bf2412909802e7e6c;byte_length=65;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8456,
@@ -1287,13 +1467,13 @@
       "source_symbols": [
         "fixture:1463589_utf:wrong"
       ],
-      "responsibility": "Regression fixture locks capitalized German n-gram suggestion behavior across legacy and UTF-8 dictionaries, including case correction and MAXNGRAMSUGS=1.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck regression owner",
-      "fabushi_target": "existing canonical text-input/spellcheck regression owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Standalone Hunspell tools/test fixtures are not product surfaces; applicable semantics map to existing canonical Fabushi owners and regression evidence.",
       "platform_differences": "Source-specific C++/shell/Perl/AWK and fixture formats are authority only; product behavior remains source-neutral.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/current-head evidence remains open",
       "state_machine": "exact source/fixture -> requirement extraction -> existing-owner-first mapping -> canonical implementation/test -> exact-head GitHub Actions evidence",
@@ -1311,7 +1491,27 @@
         "verified_blob_sha": "9de6c63cdf060869e4f79b6263498081a4a9de79",
         "file_type": "blob",
         "recursive_order": 8456
-      }
+      },
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:9de6c63cdf060869e4f79b6263498081a4a9de79",
+        "byte-audit:recomputed-git-blob=9de6c63cdf060869e4f79b6263498081a4a9de79;byte_length=63;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8457,
@@ -1334,13 +1534,13 @@
       "source_symbols": [
         "fixture:1592880:aff"
       ],
-      "responsibility": "Regression fixture locks German homonym handling across suffixes, compound-end/permit/only-in-compound flags and valid derived forms.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck regression owner",
-      "fabushi_target": "existing canonical text-input/spellcheck regression owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Standalone Hunspell tools/test fixtures are not product surfaces; applicable semantics map to existing canonical Fabushi owners and regression evidence.",
       "platform_differences": "Source-specific C++/shell/Perl/AWK and fixture formats are authority only; product behavior remains source-neutral.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/current-head evidence remains open",
       "state_machine": "exact source/fixture -> requirement extraction -> existing-owner-first mapping -> canonical implementation/test -> exact-head GitHub Actions evidence",
@@ -1358,7 +1558,27 @@
         "verified_blob_sha": "0aa064e37ed15f9537eb77689b95b4d211989d6d",
         "file_type": "blob",
         "recursive_order": 8457
-      }
+      },
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:0aa064e37ed15f9537eb77689b95b4d211989d6d",
+        "byte-audit:recomputed-git-blob=0aa064e37ed15f9537eb77689b95b4d211989d6d;byte_length=279;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8458,
@@ -1381,13 +1601,13 @@
       "source_symbols": [
         "fixture:1592880:dic"
       ],
-      "responsibility": "Regression fixture locks German homonym handling across suffixes, compound-end/permit/only-in-compound flags and valid derived forms.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck regression owner",
-      "fabushi_target": "existing canonical text-input/spellcheck regression owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Standalone Hunspell tools/test fixtures are not product surfaces; applicable semantics map to existing canonical Fabushi owners and regression evidence.",
       "platform_differences": "Source-specific C++/shell/Perl/AWK and fixture formats are authority only; product behavior remains source-neutral.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/current-head evidence remains open",
       "state_machine": "exact source/fixture -> requirement extraction -> existing-owner-first mapping -> canonical implementation/test -> exact-head GitHub Actions evidence",
@@ -1405,7 +1625,27 @@
         "verified_blob_sha": "8b0fef814182f37d28f5e51ba390dffd60741b8b",
         "file_type": "blob",
         "recursive_order": 8458
-      }
+      },
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:8b0fef814182f37d28f5e51ba390dffd60741b8b",
+        "byte-audit:recomputed-git-blob=8b0fef814182f37d28f5e51ba390dffd60741b8b;byte_length=21;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8459,
@@ -1428,13 +1668,13 @@
       "source_symbols": [
         "fixture:1592880:good"
       ],
-      "responsibility": "Regression fixture locks German homonym handling across suffixes, compound-end/permit/only-in-compound flags and valid derived forms.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck regression owner",
-      "fabushi_target": "existing canonical text-input/spellcheck regression owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Standalone Hunspell tools/test fixtures are not product surfaces; applicable semantics map to existing canonical Fabushi owners and regression evidence.",
       "platform_differences": "Source-specific C++/shell/Perl/AWK and fixture formats are authority only; product behavior remains source-neutral.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/current-head evidence remains open",
       "state_machine": "exact source/fixture -> requirement extraction -> existing-owner-first mapping -> canonical implementation/test -> exact-head GitHub Actions evidence",
@@ -1452,7 +1692,27 @@
         "verified_blob_sha": "aa00a58b12b12b753c23c8e9c914020cd4c8099e",
         "file_type": "blob",
         "recursive_order": 8459
-      }
+      },
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:aa00a58b12b12b753c23c8e9c914020cd4c8099e",
+        "byte-audit:recomputed-git-blob=aa00a58b12b12b753c23c8e9c914020cd4c8099e;byte_length=15;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8460,
@@ -1475,13 +1735,13 @@
       "source_symbols": [
         "fixture:1695964:aff"
       ],
-      "responsibility": "Regression fixture locks NEEDAFFIX homonym suggestion semantics so base and suffixed candidates remain policy-correct.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck regression owner",
-      "fabushi_target": "existing canonical text-input/spellcheck regression owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Standalone Hunspell tools/test fixtures are not product surfaces; applicable semantics map to existing canonical Fabushi owners and regression evidence.",
       "platform_differences": "Source-specific C++/shell/Perl/AWK and fixture formats are authority only; product behavior remains source-neutral.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/current-head evidence remains open",
       "state_machine": "exact source/fixture -> requirement extraction -> existing-owner-first mapping -> canonical implementation/test -> exact-head GitHub Actions evidence",
@@ -1499,7 +1759,27 @@
         "verified_blob_sha": "359a25f3a377463173f84256e30a4aa69b5d6e8d",
         "file_type": "blob",
         "recursive_order": 8460
-      }
+      },
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:359a25f3a377463173f84256e30a4aa69b5d6e8d",
+        "byte-audit:recomputed-git-blob=359a25f3a377463173f84256e30a4aa69b5d6e8d;byte_length=208;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8461,
@@ -1522,13 +1802,13 @@
       "source_symbols": [
         "fixture:1695964:dic"
       ],
-      "responsibility": "Regression fixture locks NEEDAFFIX homonym suggestion semantics so base and suffixed candidates remain policy-correct.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck regression owner",
-      "fabushi_target": "existing canonical text-input/spellcheck regression owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Standalone Hunspell tools/test fixtures are not product surfaces; applicable semantics map to existing canonical Fabushi owners and regression evidence.",
       "platform_differences": "Source-specific C++/shell/Perl/AWK and fixture formats are authority only; product behavior remains source-neutral.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/current-head evidence remains open",
       "state_machine": "exact source/fixture -> requirement extraction -> existing-owner-first mapping -> canonical implementation/test -> exact-head GitHub Actions evidence",
@@ -1546,7 +1826,27 @@
         "verified_blob_sha": "ff6d110cc7e9f86e41b04e1ea363e75b399805a1",
         "file_type": "blob",
         "recursive_order": 8461
-      }
+      },
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:ff6d110cc7e9f86e41b04e1ea363e75b399805a1",
+        "byte-audit:recomputed-git-blob=ff6d110cc7e9f86e41b04e1ea363e75b399805a1;byte_length=17;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8462,
@@ -1569,13 +1869,13 @@
       "source_symbols": [
         "fixture:1695964:sug"
       ],
-      "responsibility": "Regression fixture locks NEEDAFFIX homonym suggestion semantics so base and suffixed candidates remain policy-correct.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck regression owner",
-      "fabushi_target": "existing canonical text-input/spellcheck regression owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Standalone Hunspell tools/test fixtures are not product surfaces; applicable semantics map to existing canonical Fabushi owners and regression evidence.",
       "platform_differences": "Source-specific C++/shell/Perl/AWK and fixture formats are authority only; product behavior remains source-neutral.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/current-head evidence remains open",
       "state_machine": "exact source/fixture -> requirement extraction -> existing-owner-first mapping -> canonical implementation/test -> exact-head GitHub Actions evidence",
@@ -1593,7 +1893,27 @@
         "verified_blob_sha": "35aedff7cc4bddf071a2a0cd156d43dc959f17d6",
         "file_type": "blob",
         "recursive_order": 8462
-      }
+      },
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:35aedff7cc4bddf071a2a0cd156d43dc959f17d6",
+        "byte-audit:recomputed-git-blob=35aedff7cc4bddf071a2a0cd156d43dc959f17d6;byte_length=17;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8463,
@@ -1616,13 +1936,13 @@
       "source_symbols": [
         "fixture:1695964:wrong"
       ],
-      "responsibility": "Regression fixture locks NEEDAFFIX homonym suggestion semantics so base and suffixed candidates remain policy-correct.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck regression owner",
-      "fabushi_target": "existing canonical text-input/spellcheck regression owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Standalone Hunspell tools/test fixtures are not product surfaces; applicable semantics map to existing canonical Fabushi owners and regression evidence.",
       "platform_differences": "Source-specific C++/shell/Perl/AWK and fixture formats are authority only; product behavior remains source-neutral.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/current-head evidence remains open",
       "state_machine": "exact source/fixture -> requirement extraction -> existing-owner-first mapping -> canonical implementation/test -> exact-head GitHub Actions evidence",
@@ -1640,7 +1960,27 @@
         "verified_blob_sha": "fd13dc8cacc673905e2d3402f82b73f1321df3a1",
         "file_type": "blob",
         "recursive_order": 8463
-      }
+      },
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:fd13dc8cacc673905e2d3402f82b73f1321df3a1",
+        "byte-audit:recomputed-git-blob=fd13dc8cacc673905e2d3402f82b73f1321df3a1;byte_length=17;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8464,
@@ -1663,13 +2003,13 @@
       "source_symbols": [
         "fixture:1706659:aff"
       ],
-      "responsibility": "Regression fixture locks COMPOUNDRULE rejection of invalid compound order and affixed derivatives.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck regression owner",
-      "fabushi_target": "existing canonical text-input/spellcheck regression owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Standalone Hunspell tools/test fixtures are not product surfaces; applicable semantics map to existing canonical Fabushi owners and regression evidence.",
       "platform_differences": "Source-specific C++/shell/Perl/AWK and fixture formats are authority only; product behavior remains source-neutral.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/current-head evidence remains open",
       "state_machine": "exact source/fixture -> requirement extraction -> existing-owner-first mapping -> canonical implementation/test -> exact-head GitHub Actions evidence",
@@ -1687,7 +2027,27 @@
         "verified_blob_sha": "66a676efa54496fb4b9babc89e0cc85904054720",
         "file_type": "blob",
         "recursive_order": 8464
-      }
+      },
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:66a676efa54496fb4b9babc89e0cc85904054720",
+        "byte-audit:recomputed-git-blob=66a676efa54496fb4b9babc89e0cc85904054720;byte_length=201;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8465,
@@ -1710,13 +2070,13 @@
       "source_symbols": [
         "fixture:1706659:dic"
       ],
-      "responsibility": "Regression fixture locks COMPOUNDRULE rejection of invalid compound order and affixed derivatives.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck regression owner",
-      "fabushi_target": "existing canonical text-input/spellcheck regression owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Standalone Hunspell tools/test fixtures are not product surfaces; applicable semantics map to existing canonical Fabushi owners and regression evidence.",
       "platform_differences": "Source-specific C++/shell/Perl/AWK and fixture formats are authority only; product behavior remains source-neutral.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/current-head evidence remains open",
       "state_machine": "exact source/fixture -> requirement extraction -> existing-owner-first mapping -> canonical implementation/test -> exact-head GitHub Actions evidence",
@@ -1734,7 +2094,27 @@
         "verified_blob_sha": "32d461f7a905adcfd8ff9797181986566316de86",
         "file_type": "blob",
         "recursive_order": 8465
-      }
+      },
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:32d461f7a905adcfd8ff9797181986566316de86",
+        "byte-audit:recomputed-git-blob=32d461f7a905adcfd8ff9797181986566316de86;byte_length=30;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8466,
@@ -1757,13 +2137,13 @@
       "source_symbols": [
         "fixture:1706659:wrong"
       ],
-      "responsibility": "Regression fixture locks COMPOUNDRULE rejection of invalid compound order and affixed derivatives.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck regression owner",
-      "fabushi_target": "existing canonical text-input/spellcheck regression owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Standalone Hunspell tools/test fixtures are not product surfaces; applicable semantics map to existing canonical Fabushi owners and regression evidence.",
       "platform_differences": "Source-specific C++/shell/Perl/AWK and fixture formats are authority only; product behavior remains source-neutral.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/current-head evidence remains open",
       "state_machine": "exact source/fixture -> requirement extraction -> existing-owner-first mapping -> canonical implementation/test -> exact-head GitHub Actions evidence",
@@ -1781,7 +2161,27 @@
         "verified_blob_sha": "799dd3111731a973005095c163cd97c83abc731d",
         "file_type": "blob",
         "recursive_order": 8466
-      }
+      },
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:799dd3111731a973005095c163cd97c83abc731d",
+        "byte-audit:recomputed-git-blob=799dd3111731a973005095c163cd97c83abc731d;byte_length=45;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8467,
@@ -1804,13 +2204,13 @@
       "source_symbols": [
         "fixture:1748408-1:aff"
       ],
-      "responsibility": "Crash regression fixture locks large AF/AM alias-count allocation and malformed-directive parsing against pointer-array preallocation crashes; empty good output means no-crash is the requirement.",
-      "fabushi_canonical_owner": "existing canonical dictionary parser security/regression owner",
-      "fabushi_target": "existing canonical dictionary parser security/regression owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Standalone Hunspell tools/test fixtures are not product surfaces; applicable semantics map to existing canonical Fabushi owners and regression evidence.",
       "platform_differences": "Source-specific C++/shell/Perl/AWK and fixture formats are authority only; product behavior remains source-neutral.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/current-head evidence remains open",
       "state_machine": "exact source/fixture -> requirement extraction -> existing-owner-first mapping -> canonical implementation/test -> exact-head GitHub Actions evidence",
@@ -1828,7 +2228,27 @@
         "verified_blob_sha": "a4a406c639ab667465153bb42ff083bea56d7209",
         "file_type": "blob",
         "recursive_order": 8467
-      }
+      },
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:a4a406c639ab667465153bb42ff083bea56d7209",
+        "byte-audit:recomputed-git-blob=a4a406c639ab667465153bb42ff083bea56d7209;byte_length=236;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8468,
@@ -1851,13 +2271,13 @@
       "source_symbols": [
         "fixture:1748408-1:dic"
       ],
-      "responsibility": "Crash regression fixture locks large AF/AM alias-count allocation and malformed-directive parsing against pointer-array preallocation crashes; empty good output means no-crash is the requirement.",
-      "fabushi_canonical_owner": "existing canonical dictionary parser security/regression owner",
-      "fabushi_target": "existing canonical dictionary parser security/regression owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Standalone Hunspell tools/test fixtures are not product surfaces; applicable semantics map to existing canonical Fabushi owners and regression evidence.",
       "platform_differences": "Source-specific C++/shell/Perl/AWK and fixture formats are authority only; product behavior remains source-neutral.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/current-head evidence remains open",
       "state_machine": "exact source/fixture -> requirement extraction -> existing-owner-first mapping -> canonical implementation/test -> exact-head GitHub Actions evidence",
@@ -1875,7 +2295,27 @@
         "verified_blob_sha": "421376db9e8aee847e9d774891e73098a7415e94",
         "file_type": "blob",
         "recursive_order": 8468
-      }
+      },
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:421376db9e8aee847e9d774891e73098a7415e94",
+        "byte-audit:recomputed-git-blob=421376db9e8aee847e9d774891e73098a7415e94;byte_length=6;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8469,
@@ -1898,13 +2338,13 @@
       "source_symbols": [
         "fixture:1748408-1:good"
       ],
-      "responsibility": "Crash regression fixture locks large AF/AM alias-count allocation and malformed-directive parsing against pointer-array preallocation crashes; empty good output means no-crash is the requirement.",
-      "fabushi_canonical_owner": "existing canonical dictionary parser security/regression owner",
-      "fabushi_target": "existing canonical dictionary parser security/regression owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Standalone Hunspell tools/test fixtures are not product surfaces; applicable semantics map to existing canonical Fabushi owners and regression evidence.",
       "platform_differences": "Source-specific C++/shell/Perl/AWK and fixture formats are authority only; product behavior remains source-neutral.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/current-head evidence remains open",
       "state_machine": "exact source/fixture -> requirement extraction -> existing-owner-first mapping -> canonical implementation/test -> exact-head GitHub Actions evidence",
@@ -1922,7 +2362,27 @@
         "verified_blob_sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
         "file_type": "blob",
         "recursive_order": 8469
-      }
+      },
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+        "byte-audit:recomputed-git-blob=e69de29bb2d1d6434b8b29ae775ad8c2e48c5391;byte_length=0;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8470,
@@ -1945,13 +2405,13 @@
       "source_symbols": [
         "fixture:1748408-2:aff"
       ],
-      "responsibility": "Crash regression fixture locks large AF/AM alias-count allocation and malformed-directive parsing against pointer-array preallocation crashes; empty good output means no-crash is the requirement.",
-      "fabushi_canonical_owner": "existing canonical dictionary parser security/regression owner",
-      "fabushi_target": "existing canonical dictionary parser security/regression owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Standalone Hunspell tools/test fixtures are not product surfaces; applicable semantics map to existing canonical Fabushi owners and regression evidence.",
       "platform_differences": "Source-specific C++/shell/Perl/AWK and fixture formats are authority only; product behavior remains source-neutral.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/current-head evidence remains open",
       "state_machine": "exact source/fixture -> requirement extraction -> existing-owner-first mapping -> canonical implementation/test -> exact-head GitHub Actions evidence",
@@ -1969,7 +2429,27 @@
         "verified_blob_sha": "59ddd40c6c6187f0f398e65943c697273c0b6691",
         "file_type": "blob",
         "recursive_order": 8470
-      }
+      },
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:59ddd40c6c6187f0f398e65943c697273c0b6691",
+        "byte-audit:recomputed-git-blob=59ddd40c6c6187f0f398e65943c697273c0b6691;byte_length=60;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8471,
@@ -1992,13 +2472,13 @@
       "source_symbols": [
         "fixture:1748408-2:dic"
       ],
-      "responsibility": "Crash regression fixture locks large AF/AM alias-count allocation and malformed-directive parsing against pointer-array preallocation crashes; empty good output means no-crash is the requirement.",
-      "fabushi_canonical_owner": "existing canonical dictionary parser security/regression owner",
-      "fabushi_target": "existing canonical dictionary parser security/regression owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Standalone Hunspell tools/test fixtures are not product surfaces; applicable semantics map to existing canonical Fabushi owners and regression evidence.",
       "platform_differences": "Source-specific C++/shell/Perl/AWK and fixture formats are authority only; product behavior remains source-neutral.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/current-head evidence remains open",
       "state_machine": "exact source/fixture -> requirement extraction -> existing-owner-first mapping -> canonical implementation/test -> exact-head GitHub Actions evidence",
@@ -2016,7 +2496,27 @@
         "verified_blob_sha": "421376db9e8aee847e9d774891e73098a7415e94",
         "file_type": "blob",
         "recursive_order": 8471
-      }
+      },
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:421376db9e8aee847e9d774891e73098a7415e94",
+        "byte-audit:recomputed-git-blob=421376db9e8aee847e9d774891e73098a7415e94;byte_length=6;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8472,
@@ -2039,13 +2539,13 @@
       "source_symbols": [
         "fixture:1748408-2:good"
       ],
-      "responsibility": "Crash regression fixture locks large AF/AM alias-count allocation and malformed-directive parsing against pointer-array preallocation crashes; empty good output means no-crash is the requirement.",
-      "fabushi_canonical_owner": "existing canonical dictionary parser security/regression owner",
-      "fabushi_target": "existing canonical dictionary parser security/regression owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Standalone Hunspell tools/test fixtures are not product surfaces; applicable semantics map to existing canonical Fabushi owners and regression evidence.",
       "platform_differences": "Source-specific C++/shell/Perl/AWK and fixture formats are authority only; product behavior remains source-neutral.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/current-head evidence remains open",
       "state_machine": "exact source/fixture -> requirement extraction -> existing-owner-first mapping -> canonical implementation/test -> exact-head GitHub Actions evidence",
@@ -2063,7 +2563,27 @@
         "verified_blob_sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
         "file_type": "blob",
         "recursive_order": 8472
-      }
+      },
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+        "byte-audit:recomputed-git-blob=e69de29bb2d1d6434b8b29ae775ad8c2e48c5391;byte_length=0;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8473,
@@ -2086,13 +2606,13 @@
       "source_symbols": [
         "fixture:1748408-3:aff"
       ],
-      "responsibility": "Crash regression fixture locks large AF/AM alias-count allocation and malformed-directive parsing against pointer-array preallocation crashes; empty good output means no-crash is the requirement.",
-      "fabushi_canonical_owner": "existing canonical dictionary parser security/regression owner",
-      "fabushi_target": "existing canonical dictionary parser security/regression owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Standalone Hunspell tools/test fixtures are not product surfaces; applicable semantics map to existing canonical Fabushi owners and regression evidence.",
       "platform_differences": "Source-specific C++/shell/Perl/AWK and fixture formats are authority only; product behavior remains source-neutral.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/current-head evidence remains open",
       "state_machine": "exact source/fixture -> requirement extraction -> existing-owner-first mapping -> canonical implementation/test -> exact-head GitHub Actions evidence",
@@ -2110,7 +2630,27 @@
         "verified_blob_sha": "a9d576695560ab344266a3e354d8cd940ccb7a56",
         "file_type": "blob",
         "recursive_order": 8473
-      }
+      },
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:a9d576695560ab344266a3e354d8cd940ccb7a56",
+        "byte-audit:recomputed-git-blob=a9d576695560ab344266a3e354d8cd940ccb7a56;byte_length=8;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8474,
@@ -2133,13 +2673,13 @@
       "source_symbols": [
         "fixture:1748408-3:dic"
       ],
-      "responsibility": "Crash regression fixture locks large AF/AM alias-count allocation and malformed-directive parsing against pointer-array preallocation crashes; empty good output means no-crash is the requirement.",
-      "fabushi_canonical_owner": "existing canonical dictionary parser security/regression owner",
-      "fabushi_target": "existing canonical dictionary parser security/regression owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Standalone Hunspell tools/test fixtures are not product surfaces; applicable semantics map to existing canonical Fabushi owners and regression evidence.",
       "platform_differences": "Source-specific C++/shell/Perl/AWK and fixture formats are authority only; product behavior remains source-neutral.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/current-head evidence remains open",
       "state_machine": "exact source/fixture -> requirement extraction -> existing-owner-first mapping -> canonical implementation/test -> exact-head GitHub Actions evidence",
@@ -2157,7 +2697,27 @@
         "verified_blob_sha": "421376db9e8aee847e9d774891e73098a7415e94",
         "file_type": "blob",
         "recursive_order": 8474
-      }
+      },
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:421376db9e8aee847e9d774891e73098a7415e94",
+        "byte-audit:recomputed-git-blob=421376db9e8aee847e9d774891e73098a7415e94;byte_length=6;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8475,
@@ -2180,13 +2740,13 @@
       "source_symbols": [
         "fixture:1748408-3:good"
       ],
-      "responsibility": "Crash regression fixture locks large AF/AM alias-count allocation and malformed-directive parsing against pointer-array preallocation crashes; empty good output means no-crash is the requirement.",
-      "fabushi_canonical_owner": "existing canonical dictionary parser security/regression owner",
-      "fabushi_target": "existing canonical dictionary parser security/regression owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Standalone Hunspell tools/test fixtures are not product surfaces; applicable semantics map to existing canonical Fabushi owners and regression evidence.",
       "platform_differences": "Source-specific C++/shell/Perl/AWK and fixture formats are authority only; product behavior remains source-neutral.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/current-head evidence remains open",
       "state_machine": "exact source/fixture -> requirement extraction -> existing-owner-first mapping -> canonical implementation/test -> exact-head GitHub Actions evidence",
@@ -2204,7 +2764,27 @@
         "verified_blob_sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
         "file_type": "blob",
         "recursive_order": 8475
-      }
+      },
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+        "byte-audit:recomputed-git-blob=e69de29bb2d1d6434b8b29ae775ad8c2e48c5391;byte_length=0;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8476,
@@ -2227,13 +2807,13 @@
       "source_symbols": [
         "fixture:1748408-4:aff"
       ],
-      "responsibility": "Crash regression fixture locks large AF/AM alias-count allocation and malformed-directive parsing against pointer-array preallocation crashes; empty good output means no-crash is the requirement.",
-      "fabushi_canonical_owner": "existing canonical dictionary parser security/regression owner",
-      "fabushi_target": "existing canonical dictionary parser security/regression owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Standalone Hunspell tools/test fixtures are not product surfaces; applicable semantics map to existing canonical Fabushi owners and regression evidence.",
       "platform_differences": "Source-specific C++/shell/Perl/AWK and fixture formats are authority only; product behavior remains source-neutral.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/current-head evidence remains open",
       "state_machine": "exact source/fixture -> requirement extraction -> existing-owner-first mapping -> canonical implementation/test -> exact-head GitHub Actions evidence",
@@ -2251,7 +2831,27 @@
         "verified_blob_sha": "59ddd40c6c6187f0f398e65943c697273c0b6691",
         "file_type": "blob",
         "recursive_order": 8476
-      }
+      },
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:59ddd40c6c6187f0f398e65943c697273c0b6691",
+        "byte-audit:recomputed-git-blob=59ddd40c6c6187f0f398e65943c697273c0b6691;byte_length=60;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8477,
@@ -2274,13 +2874,13 @@
       "source_symbols": [
         "fixture:1748408-4:dic"
       ],
-      "responsibility": "Crash regression fixture locks large AF/AM alias-count allocation and malformed-directive parsing against pointer-array preallocation crashes; empty good output means no-crash is the requirement.",
-      "fabushi_canonical_owner": "existing canonical dictionary parser security/regression owner",
-      "fabushi_target": "existing canonical dictionary parser security/regression owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Standalone Hunspell tools/test fixtures are not product surfaces; applicable semantics map to existing canonical Fabushi owners and regression evidence.",
       "platform_differences": "Source-specific C++/shell/Perl/AWK and fixture formats are authority only; product behavior remains source-neutral.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/current-head evidence remains open",
       "state_machine": "exact source/fixture -> requirement extraction -> existing-owner-first mapping -> canonical implementation/test -> exact-head GitHub Actions evidence",
@@ -2298,7 +2898,27 @@
         "verified_blob_sha": "421376db9e8aee847e9d774891e73098a7415e94",
         "file_type": "blob",
         "recursive_order": 8477
-      }
+      },
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:421376db9e8aee847e9d774891e73098a7415e94",
+        "byte-audit:recomputed-git-blob=421376db9e8aee847e9d774891e73098a7415e94;byte_length=6;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8478,
@@ -2321,13 +2941,13 @@
       "source_symbols": [
         "fixture:1748408-4:good"
       ],
-      "responsibility": "Crash regression fixture locks large AF/AM alias-count allocation and malformed-directive parsing against pointer-array preallocation crashes; empty good output means no-crash is the requirement.",
-      "fabushi_canonical_owner": "existing canonical dictionary parser security/regression owner",
-      "fabushi_target": "existing canonical dictionary parser security/regression owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Standalone Hunspell tools/test fixtures are not product surfaces; applicable semantics map to existing canonical Fabushi owners and regression evidence.",
       "platform_differences": "Source-specific C++/shell/Perl/AWK and fixture formats are authority only; product behavior remains source-neutral.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/current-head evidence remains open",
       "state_machine": "exact source/fixture -> requirement extraction -> existing-owner-first mapping -> canonical implementation/test -> exact-head GitHub Actions evidence",
@@ -2345,7 +2965,27 @@
         "verified_blob_sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
         "file_type": "blob",
         "recursive_order": 8478
-      }
+      },
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+        "byte-audit:recomputed-git-blob=e69de29bb2d1d6434b8b29ae775ad8c2e48c5391;byte_length=0;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8479,
@@ -2368,13 +3008,13 @@
       "source_symbols": [
         "fixture:1975530:aff"
       ],
-      "responsibility": "Regression fixture locks UTF-8 Arabic IGNORE combining-mark/tatweel normalization plus prefix condition matching without admitting invalid forms.",
-      "fabushi_canonical_owner": "existing canonical Unicode normalization + spellcheck regression owner",
-      "fabushi_target": "existing canonical Unicode normalization + spellcheck regression owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Standalone Hunspell tools/test fixtures are not product surfaces; applicable semantics map to existing canonical Fabushi owners and regression evidence.",
       "platform_differences": "Source-specific C++/shell/Perl/AWK and fixture formats are authority only; product behavior remains source-neutral.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/current-head evidence remains open",
       "state_machine": "exact source/fixture -> requirement extraction -> existing-owner-first mapping -> canonical implementation/test -> exact-head GitHub Actions evidence",
@@ -2392,7 +3032,27 @@
         "verified_blob_sha": "0912050d1f9147a2167e70d89f80206c387cc879",
         "file_type": "blob",
         "recursive_order": 8479
-      }
+      },
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:0912050d1f9147a2167e70d89f80206c387cc879",
+        "byte-audit:recomputed-git-blob=0912050d1f9147a2167e70d89f80206c387cc879;byte_length=66;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8480,
@@ -2415,13 +3075,13 @@
       "source_symbols": [
         "fixture:1975530:dic"
       ],
-      "responsibility": "Regression fixture locks UTF-8 Arabic IGNORE combining-mark/tatweel normalization plus prefix condition matching without admitting invalid forms.",
-      "fabushi_canonical_owner": "existing canonical Unicode normalization + spellcheck regression owner",
-      "fabushi_target": "existing canonical Unicode normalization + spellcheck regression owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Standalone Hunspell tools/test fixtures are not product surfaces; applicable semantics map to existing canonical Fabushi owners and regression evidence.",
       "platform_differences": "Source-specific C++/shell/Perl/AWK and fixture formats are authority only; product behavior remains source-neutral.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/current-head evidence remains open",
       "state_machine": "exact source/fixture -> requirement extraction -> existing-owner-first mapping -> canonical implementation/test -> exact-head GitHub Actions evidence",
@@ -2439,7 +3099,27 @@
         "verified_blob_sha": "b1b455df5a24cbdabda59e8922affd66cdc1035d",
         "file_type": "blob",
         "recursive_order": 8480
-      }
+      },
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:b1b455df5a24cbdabda59e8922affd66cdc1035d",
+        "byte-audit:recomputed-git-blob=b1b455df5a24cbdabda59e8922affd66cdc1035d;byte_length=22;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8481,
@@ -2462,13 +3142,13 @@
       "source_symbols": [
         "fixture:1975530:good"
       ],
-      "responsibility": "Regression fixture locks UTF-8 Arabic IGNORE combining-mark/tatweel normalization plus prefix condition matching without admitting invalid forms.",
-      "fabushi_canonical_owner": "existing canonical Unicode normalization + spellcheck regression owner",
-      "fabushi_target": "existing canonical Unicode normalization + spellcheck regression owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Standalone Hunspell tools/test fixtures are not product surfaces; applicable semantics map to existing canonical Fabushi owners and regression evidence.",
       "platform_differences": "Source-specific C++/shell/Perl/AWK and fixture formats are authority only; product behavior remains source-neutral.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/current-head evidence remains open",
       "state_machine": "exact source/fixture -> requirement extraction -> existing-owner-first mapping -> canonical implementation/test -> exact-head GitHub Actions evidence",
@@ -2486,7 +3166,27 @@
         "verified_blob_sha": "89212a57ec0f93a061424d24d125e2d9039fad8a",
         "file_type": "blob",
         "recursive_order": 8481
-      }
+      },
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:89212a57ec0f93a061424d24d125e2d9039fad8a",
+        "byte-audit:recomputed-git-blob=89212a57ec0f93a061424d24d125e2d9039fad8a;byte_length=23;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8482,
@@ -2509,13 +3209,13 @@
       "source_symbols": [
         "fixture:1975530:wrong"
       ],
-      "responsibility": "Regression fixture locks UTF-8 Arabic IGNORE combining-mark/tatweel normalization plus prefix condition matching without admitting invalid forms.",
-      "fabushi_canonical_owner": "existing canonical Unicode normalization + spellcheck regression owner",
-      "fabushi_target": "existing canonical Unicode normalization + spellcheck regression owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Standalone Hunspell tools/test fixtures are not product surfaces; applicable semantics map to existing canonical Fabushi owners and regression evidence.",
       "platform_differences": "Source-specific C++/shell/Perl/AWK and fixture formats are authority only; product behavior remains source-neutral.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/current-head evidence remains open",
       "state_machine": "exact source/fixture -> requirement extraction -> existing-owner-first mapping -> canonical implementation/test -> exact-head GitHub Actions evidence",
@@ -2533,7 +3233,27 @@
         "verified_blob_sha": "24cb57627a52531384bf083b30d3b503dbfb954c",
         "file_type": "blob",
         "recursive_order": 8482
-      }
+      },
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:24cb57627a52531384bf083b30d3b503dbfb954c",
+        "byte-audit:recomputed-git-blob=24cb57627a52531384bf083b30d3b503dbfb954c;byte_length=9;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8483,
@@ -2556,13 +3276,13 @@
       "source_symbols": [
         "fixture:2970240:aff"
       ],
-      "responsibility": "Regression fixture locks three-part CHECKCOMPOUNDPATTERN ordering semantics.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck regression owner",
-      "fabushi_target": "existing canonical text-input/spellcheck regression owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Standalone Hunspell tools/test fixtures are not product surfaces; applicable semantics map to existing canonical Fabushi owners and regression evidence.",
       "platform_differences": "Source-specific C++/shell/Perl/AWK and fixture formats are authority only; product behavior remains source-neutral.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/current-head evidence remains open",
       "state_machine": "exact source/fixture -> requirement extraction -> existing-owner-first mapping -> canonical implementation/test -> exact-head GitHub Actions evidence",
@@ -2580,7 +3300,27 @@
         "verified_blob_sha": "6ef95161d77ae48e9e95bdf16384a7dc02f7e707",
         "file_type": "blob",
         "recursive_order": 8483
-      }
+      },
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:6ef95161d77ae48e9e95bdf16384a7dc02f7e707",
+        "byte-audit:recomputed-git-blob=6ef95161d77ae48e9e95bdf16384a7dc02f7e707;byte_length=96;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8484,
@@ -2603,13 +3343,13 @@
       "source_symbols": [
         "fixture:2970240:dic"
       ],
-      "responsibility": "Regression fixture locks three-part CHECKCOMPOUNDPATTERN ordering semantics.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck regression owner",
-      "fabushi_target": "existing canonical text-input/spellcheck regression owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Standalone Hunspell tools/test fixtures are not product surfaces; applicable semantics map to existing canonical Fabushi owners and regression evidence.",
       "platform_differences": "Source-specific C++/shell/Perl/AWK and fixture formats are authority only; product behavior remains source-neutral.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/current-head evidence remains open",
       "state_machine": "exact source/fixture -> requirement extraction -> existing-owner-first mapping -> canonical implementation/test -> exact-head GitHub Actions evidence",
@@ -2627,7 +3367,27 @@
         "verified_blob_sha": "f0b630569388b64b26784417d16e847ee33074d0",
         "file_type": "blob",
         "recursive_order": 8484
-      }
+      },
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:f0b630569388b64b26784417d16e847ee33074d0",
+        "byte-audit:recomputed-git-blob=f0b630569388b64b26784417d16e847ee33074d0;byte_length=26;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8485,
@@ -2650,13 +3410,13 @@
       "source_symbols": [
         "fixture:2970240:good"
       ],
-      "responsibility": "Regression fixture locks three-part CHECKCOMPOUNDPATTERN ordering semantics.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck regression owner",
-      "fabushi_target": "existing canonical text-input/spellcheck regression owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Standalone Hunspell tools/test fixtures are not product surfaces; applicable semantics map to existing canonical Fabushi owners and regression evidence.",
       "platform_differences": "Source-specific C++/shell/Perl/AWK and fixture formats are authority only; product behavior remains source-neutral.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/current-head evidence remains open",
       "state_machine": "exact source/fixture -> requirement extraction -> existing-owner-first mapping -> canonical implementation/test -> exact-head GitHub Actions evidence",
@@ -2674,7 +3434,27 @@
         "verified_blob_sha": "a8d3a593b6650af1684b4c29d5fa7f1ca48687ce",
         "file_type": "blob",
         "recursive_order": 8485
-      }
+      },
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:a8d3a593b6650af1684b4c29d5fa7f1ca48687ce",
+        "byte-audit:recomputed-git-blob=a8d3a593b6650af1684b4c29d5fa7f1ca48687ce;byte_length=16;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8486,
@@ -2697,13 +3477,13 @@
       "source_symbols": [
         "fixture:2970240:wrong"
       ],
-      "responsibility": "Regression fixture locks three-part CHECKCOMPOUNDPATTERN ordering semantics.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck regression owner",
-      "fabushi_target": "existing canonical text-input/spellcheck regression owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Standalone Hunspell tools/test fixtures are not product surfaces; applicable semantics map to existing canonical Fabushi owners and regression evidence.",
       "platform_differences": "Source-specific C++/shell/Perl/AWK and fixture formats are authority only; product behavior remains source-neutral.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/current-head evidence remains open",
       "state_machine": "exact source/fixture -> requirement extraction -> existing-owner-first mapping -> canonical implementation/test -> exact-head GitHub Actions evidence",
@@ -2721,7 +3501,27 @@
         "verified_blob_sha": "32cead611dd87c579ebed96855bba9bb79bee435",
         "file_type": "blob",
         "recursive_order": 8486
-      }
+      },
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:32cead611dd87c579ebed96855bba9bb79bee435",
+        "byte-audit:recomputed-git-blob=32cead611dd87c579ebed96855bba9bb79bee435;byte_length=16;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8487,
@@ -2744,13 +3544,13 @@
       "source_symbols": [
         "fixture:2970242:aff"
       ],
-      "responsibility": "Regression fixture locks flag-qualified CHECKCOMPOUNDPATTERN acceptance/rejection across compound members.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck regression owner",
-      "fabushi_target": "existing canonical text-input/spellcheck regression owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Standalone Hunspell tools/test fixtures are not product surfaces; applicable semantics map to existing canonical Fabushi owners and regression evidence.",
       "platform_differences": "Source-specific C++/shell/Perl/AWK and fixture formats are authority only; product behavior remains source-neutral.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/current-head evidence remains open",
       "state_machine": "exact source/fixture -> requirement extraction -> existing-owner-first mapping -> canonical implementation/test -> exact-head GitHub Actions evidence",
@@ -2768,7 +3568,27 @@
         "verified_blob_sha": "909f0fbc3d9a02f485874b0d0025ac5296329703",
         "file_type": "blob",
         "recursive_order": 8487
-      }
+      },
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:909f0fbc3d9a02f485874b0d0025ac5296329703",
+        "byte-audit:recomputed-git-blob=909f0fbc3d9a02f485874b0d0025ac5296329703;byte_length=66;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8488,
@@ -2791,13 +3611,13 @@
       "source_symbols": [
         "fixture:2970242:dic"
       ],
-      "responsibility": "Regression fixture locks flag-qualified CHECKCOMPOUNDPATTERN acceptance/rejection across compound members.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck regression owner",
-      "fabushi_target": "existing canonical text-input/spellcheck regression owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Standalone Hunspell tools/test fixtures are not product surfaces; applicable semantics map to existing canonical Fabushi owners and regression evidence.",
       "platform_differences": "Source-specific C++/shell/Perl/AWK and fixture formats are authority only; product behavior remains source-neutral.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/current-head evidence remains open",
       "state_machine": "exact source/fixture -> requirement extraction -> existing-owner-first mapping -> canonical implementation/test -> exact-head GitHub Actions evidence",
@@ -2815,7 +3635,27 @@
         "verified_blob_sha": "da0d05f92a2cf60651198301dd406b196078cd95",
         "file_type": "blob",
         "recursive_order": 8488
-      }
+      },
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:da0d05f92a2cf60651198301dd406b196078cd95",
+        "byte-audit:recomputed-git-blob=da0d05f92a2cf60651198301dd406b196078cd95;byte_length=22;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8489,
@@ -2838,13 +3678,13 @@
       "source_symbols": [
         "fixture:2970242:good"
       ],
-      "responsibility": "Regression fixture locks flag-qualified CHECKCOMPOUNDPATTERN acceptance/rejection across compound members.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck regression owner",
-      "fabushi_target": "existing canonical text-input/spellcheck regression owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Standalone Hunspell tools/test fixtures are not product surfaces; applicable semantics map to existing canonical Fabushi owners and regression evidence.",
       "platform_differences": "Source-specific C++/shell/Perl/AWK and fixture formats are authority only; product behavior remains source-neutral.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/current-head evidence remains open",
       "state_machine": "exact source/fixture -> requirement extraction -> existing-owner-first mapping -> canonical implementation/test -> exact-head GitHub Actions evidence",
@@ -2862,7 +3702,27 @@
         "verified_blob_sha": "90ecb182fa451e5828caaf75d04314dcc1f6194a",
         "file_type": "blob",
         "recursive_order": 8489
-      }
+      },
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:90ecb182fa451e5828caaf75d04314dcc1f6194a",
+        "byte-audit:recomputed-git-blob=90ecb182fa451e5828caaf75d04314dcc1f6194a;byte_length=35;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8490,
@@ -2885,13 +3745,13 @@
       "source_symbols": [
         "fixture:2970242:wrong"
       ],
-      "responsibility": "Regression fixture locks flag-qualified CHECKCOMPOUNDPATTERN acceptance/rejection across compound members.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck regression owner",
-      "fabushi_target": "existing canonical text-input/spellcheck regression owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Standalone Hunspell tools/test fixtures are not product surfaces; applicable semantics map to existing canonical Fabushi owners and regression evidence.",
       "platform_differences": "Source-specific C++/shell/Perl/AWK and fixture formats are authority only; product behavior remains source-neutral.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/current-head evidence remains open",
       "state_machine": "exact source/fixture -> requirement extraction -> existing-owner-first mapping -> canonical implementation/test -> exact-head GitHub Actions evidence",
@@ -2909,7 +3769,27 @@
         "verified_blob_sha": "9dabfec9194affdefddeffab8a74ec018554bf56",
         "file_type": "blob",
         "recursive_order": 8490
-      }
+      },
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:9dabfec9194affdefddeffab8a74ec018554bf56",
+        "byte-audit:recomputed-git-blob=9dabfec9194affdefddeffab8a74ec018554bf56;byte_length=7;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8491,
@@ -2932,13 +3812,13 @@
       "source_symbols": [
         "fixture:2999225:aff"
       ],
-      "responsibility": "Regression fixture locks interaction between COMPOUNDRULE and COMPOUNDBEGIN/COMPOUNDEND flags.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck regression owner",
-      "fabushi_target": "existing canonical text-input/spellcheck regression owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Standalone Hunspell tools/test fixtures are not product surfaces; applicable semantics map to existing canonical Fabushi owners and regression evidence.",
       "platform_differences": "Source-specific C++/shell/Perl/AWK and fixture formats are authority only; product behavior remains source-neutral.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/current-head evidence remains open",
       "state_machine": "exact source/fixture -> requirement extraction -> existing-owner-first mapping -> canonical implementation/test -> exact-head GitHub Actions evidence",
@@ -2956,7 +3836,27 @@
         "verified_blob_sha": "ea9d0b07ba61f31f14044e21efb2a01190ab8757",
         "file_type": "blob",
         "recursive_order": 8491
-      }
+      },
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:ea9d0b07ba61f31f14044e21efb2a01190ab8757",
+        "byte-audit:recomputed-git-blob=ea9d0b07ba61f31f14044e21efb2a01190ab8757;byte_length=63;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8492,
@@ -2979,13 +3879,13 @@
       "source_symbols": [
         "fixture:2999225:dic"
       ],
-      "responsibility": "Regression fixture locks interaction between COMPOUNDRULE and COMPOUNDBEGIN/COMPOUNDEND flags.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck regression owner",
-      "fabushi_target": "existing canonical text-input/spellcheck regression owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Standalone Hunspell tools/test fixtures are not product surfaces; applicable semantics map to existing canonical Fabushi owners and regression evidence.",
       "platform_differences": "Source-specific C++/shell/Perl/AWK and fixture formats are authority only; product behavior remains source-neutral.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/current-head evidence remains open",
       "state_machine": "exact source/fixture -> requirement extraction -> existing-owner-first mapping -> canonical implementation/test -> exact-head GitHub Actions evidence",
@@ -3003,7 +3903,27 @@
         "verified_blob_sha": "249860362e9edad6618fded4d32a908fb0dcb01d",
         "file_type": "blob",
         "recursive_order": 8492
-      }
+      },
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:249860362e9edad6618fded4d32a908fb0dcb01d",
+        "byte-audit:recomputed-git-blob=249860362e9edad6618fded4d32a908fb0dcb01d;byte_length=21;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8493,
@@ -3026,13 +3946,13 @@
       "source_symbols": [
         "fixture:2999225:good"
       ],
-      "responsibility": "Regression fixture locks interaction between COMPOUNDRULE and COMPOUNDBEGIN/COMPOUNDEND flags.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck regression owner",
-      "fabushi_target": "existing canonical text-input/spellcheck regression owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Standalone Hunspell tools/test fixtures are not product surfaces; applicable semantics map to existing canonical Fabushi owners and regression evidence.",
       "platform_differences": "Source-specific C++/shell/Perl/AWK and fixture formats are authority only; product behavior remains source-neutral.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/current-head evidence remains open",
       "state_machine": "exact source/fixture -> requirement extraction -> existing-owner-first mapping -> canonical implementation/test -> exact-head GitHub Actions evidence",
@@ -3050,7 +3970,27 @@
         "verified_blob_sha": "865e15452dfc433fc091be7ffa0abc7b7159529e",
         "file_type": "blob",
         "recursive_order": 8493
-      }
+      },
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:865e15452dfc433fc091be7ffa0abc7b7159529e",
+        "byte-audit:recomputed-git-blob=865e15452dfc433fc091be7ffa0abc7b7159529e;byte_length=14;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     }
   ]
 }

@@ -265,10 +265,10 @@
   "coverage": {
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
-    "unknown_minimum": 13167,
+    "unknown_minimum": 12537,
     "unread_minimum": 0,
     "omitted_known": 0,
-    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 16,125; unknown=13,167, unread=0, omitted=0."
+    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 16,125; unknown=12,537, unread=0, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -629,8 +629,8 @@
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "deterministic_prefix_closed": 57,
-    "development_only_non_applicable": 2884,
-    "unknown_closed": 2958,
+    "development_only_non_applicable": 3514,
+    "unknown_closed": 3588,
     "omitted": 0,
     "read_through": 16125,
     "first_unread_order": 16126,

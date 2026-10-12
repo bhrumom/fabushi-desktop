@@ -35,13 +35,13 @@
         "fixture:ofz5627151457255424.test",
         "malformed spellcheck input crash-safety regression"
       ],
-      "responsibility": "Malformed dictionary/affix fuzz regressions must fail closed without crashes, memory corruption, unsafe parser state or non-zero process failure.",
-      "fabushi_canonical_owner": "existing canonical platform spellcheck dependency security + Resource/input-validation owner",
-      "fabushi_target": "existing canonical platform spellcheck dependency security + Resource/input-validation owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Hunspell fixtures are source authority, not Fabushi product surfaces; applicable behavior stays in the canonical Composer/platform spellcheck path and existing source-neutral UI.",
       "platform_differences": "Fabushi uses Electron/Chromium platform spellchecking plus canonical source-neutral policy/normalization owners. Do not introduce a Hunspell/Telegram side runtime, second dictionary truth, source-specific editor, or source-specific UI.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/replacement behavior and descendant exact-head evidence remain open",
       "state_machine": "exact source/fixture -> responsibility extraction -> existing-owner-first mapping -> source-neutral production/replacement behavior -> exact-head GitHub Actions evidence",
@@ -50,7 +50,27 @@
       "production_evidence": "source/test mapping only; source reading or upstream fixture existence is not Fabushi production verification",
       "test_evidence": "Exact recursive identity from GitHub Actions artifact 11689542414 at 18413ebb9cabc4220c66983fce9081aa7206e4f1 plus direct exact pinned GitHub blob reads in the implementation session; descendant exact-head Actions required; no local build/test used.",
       "license_and_provenance": "telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 -> Telegram/ThirdParty/hunspell -> hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/ofz5627151457255424.test@0af8cd974e4f5a395b1b830f8f35f2da42609781",
-      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete."
+      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete.",
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:0af8cd974e4f5a395b1b830f8f35f2da42609781",
+        "byte-audit:recomputed-git-blob=0af8cd974e4f5a395b1b830f8f35f2da42609781;byte_length=361;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8954,
@@ -74,13 +94,13 @@
         "fixture:onlyincompound.aff",
         "ONLYINCOMPOUND compound eligibility regression"
       ],
-      "responsibility": "Words or affix-derived forms marked only-in-compound must remain invalid standalone while exact permitted compound positions and fogemorpheme patterns remain valid.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck compound-policy owner",
-      "fabushi_target": "existing canonical text-input/spellcheck compound-policy owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Hunspell fixtures are source authority, not Fabushi product surfaces; applicable behavior stays in the canonical Composer/platform spellcheck path and existing source-neutral UI.",
       "platform_differences": "Fabushi uses Electron/Chromium platform spellchecking plus canonical source-neutral policy/normalization owners. Do not introduce a Hunspell/Telegram side runtime, second dictionary truth, source-specific editor, or source-specific UI.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/replacement behavior and descendant exact-head evidence remain open",
       "state_machine": "exact source/fixture -> responsibility extraction -> existing-owner-first mapping -> source-neutral production/replacement behavior -> exact-head GitHub Actions evidence",
@@ -89,7 +109,27 @@
       "production_evidence": "source/test mapping only; source reading or upstream fixture existence is not Fabushi production verification",
       "test_evidence": "Exact recursive identity from GitHub Actions artifact 11689542414 at 18413ebb9cabc4220c66983fce9081aa7206e4f1 plus direct exact pinned GitHub blob reads in the implementation session; descendant exact-head Actions required; no local build/test used.",
       "license_and_provenance": "telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 -> Telegram/ThirdParty/hunspell -> hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/onlyincompound.aff@e700b0e54aa4f1e7eadb95dbf091e653ddb3a9dd",
-      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete."
+      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete.",
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:e700b0e54aa4f1e7eadb95dbf091e653ddb3a9dd",
+        "byte-audit:recomputed-git-blob=e700b0e54aa4f1e7eadb95dbf091e653ddb3a9dd;byte_length=112;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8955,
@@ -113,13 +153,13 @@
         "fixture:onlyincompound.dic",
         "ONLYINCOMPOUND compound eligibility regression"
       ],
-      "responsibility": "Words or affix-derived forms marked only-in-compound must remain invalid standalone while exact permitted compound positions and fogemorpheme patterns remain valid.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck compound-policy owner",
-      "fabushi_target": "existing canonical text-input/spellcheck compound-policy owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Hunspell fixtures are source authority, not Fabushi product surfaces; applicable behavior stays in the canonical Composer/platform spellcheck path and existing source-neutral UI.",
       "platform_differences": "Fabushi uses Electron/Chromium platform spellchecking plus canonical source-neutral policy/normalization owners. Do not introduce a Hunspell/Telegram side runtime, second dictionary truth, source-specific editor, or source-specific UI.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/replacement behavior and descendant exact-head evidence remain open",
       "state_machine": "exact source/fixture -> responsibility extraction -> existing-owner-first mapping -> source-neutral production/replacement behavior -> exact-head GitHub Actions evidence",
@@ -128,7 +168,27 @@
       "production_evidence": "source/test mapping only; source reading or upstream fixture existence is not Fabushi production verification",
       "test_evidence": "Exact recursive identity from GitHub Actions artifact 11689542414 at 18413ebb9cabc4220c66983fce9081aa7206e4f1 plus direct exact pinned GitHub blob reads in the implementation session; descendant exact-head Actions required; no local build/test used.",
       "license_and_provenance": "telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 -> Telegram/ThirdParty/hunspell -> hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/onlyincompound.dic@dc742f7abeaeb2c3f66c8cec8fd4ce1df1c1986b",
-      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete."
+      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete.",
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:dc742f7abeaeb2c3f66c8cec8fd4ce1df1c1986b",
+        "byte-audit:recomputed-git-blob=dc742f7abeaeb2c3f66c8cec8fd4ce1df1c1986b;byte_length=19;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8956,
@@ -152,13 +212,13 @@
         "fixture:onlyincompound.good",
         "ONLYINCOMPOUND compound eligibility regression"
       ],
-      "responsibility": "Words or affix-derived forms marked only-in-compound must remain invalid standalone while exact permitted compound positions and fogemorpheme patterns remain valid.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck compound-policy owner",
-      "fabushi_target": "existing canonical text-input/spellcheck compound-policy owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Hunspell fixtures are source authority, not Fabushi product surfaces; applicable behavior stays in the canonical Composer/platform spellcheck path and existing source-neutral UI.",
       "platform_differences": "Fabushi uses Electron/Chromium platform spellchecking plus canonical source-neutral policy/normalization owners. Do not introduce a Hunspell/Telegram side runtime, second dictionary truth, source-specific editor, or source-specific UI.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/replacement behavior and descendant exact-head evidence remain open",
       "state_machine": "exact source/fixture -> responsibility extraction -> existing-owner-first mapping -> source-neutral production/replacement behavior -> exact-head GitHub Actions evidence",
@@ -167,7 +227,27 @@
       "production_evidence": "source/test mapping only; source reading or upstream fixture existence is not Fabushi production verification",
       "test_evidence": "Exact recursive identity from GitHub Actions artifact 11689542414 at 18413ebb9cabc4220c66983fce9081aa7206e4f1 plus direct exact pinned GitHub blob reads in the implementation session; descendant exact-head Actions required; no local build/test used.",
       "license_and_provenance": "telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 -> Telegram/ThirdParty/hunspell -> hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/onlyincompound.good@151d5973423956363d417e7c86fc7f9f2d0d1877",
-      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete."
+      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete.",
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:151d5973423956363d417e7c86fc7f9f2d0d1877",
+        "byte-audit:recomputed-git-blob=151d5973423956363d417e7c86fc7f9f2d0d1877;byte_length=35;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8957,
@@ -191,13 +271,13 @@
         "fixture:onlyincompound.sug",
         "ONLYINCOMPOUND compound eligibility regression"
       ],
-      "responsibility": "Words or affix-derived forms marked only-in-compound must remain invalid standalone while exact permitted compound positions and fogemorpheme patterns remain valid.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck compound-policy owner",
-      "fabushi_target": "existing canonical text-input/spellcheck compound-policy owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Hunspell fixtures are source authority, not Fabushi product surfaces; applicable behavior stays in the canonical Composer/platform spellcheck path and existing source-neutral UI.",
       "platform_differences": "Fabushi uses Electron/Chromium platform spellchecking plus canonical source-neutral policy/normalization owners. Do not introduce a Hunspell/Telegram side runtime, second dictionary truth, source-specific editor, or source-specific UI.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/replacement behavior and descendant exact-head evidence remain open",
       "state_machine": "exact source/fixture -> responsibility extraction -> existing-owner-first mapping -> source-neutral production/replacement behavior -> exact-head GitHub Actions evidence",
@@ -206,7 +286,27 @@
       "production_evidence": "source/test mapping only; source reading or upstream fixture existence is not Fabushi production verification",
       "test_evidence": "Exact recursive identity from GitHub Actions artifact 11689542414 at 18413ebb9cabc4220c66983fce9081aa7206e4f1 plus direct exact pinned GitHub blob reads in the implementation session; descendant exact-head Actions required; no local build/test used.",
       "license_and_provenance": "telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 -> Telegram/ThirdParty/hunspell -> hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/onlyincompound.sug@e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
-      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete."
+      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete.",
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+        "byte-audit:recomputed-git-blob=e69de29bb2d1d6434b8b29ae775ad8c2e48c5391;byte_length=0;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8958,
@@ -230,13 +330,13 @@
         "fixture:onlyincompound.wrong",
         "ONLYINCOMPOUND compound eligibility regression"
       ],
-      "responsibility": "Words or affix-derived forms marked only-in-compound must remain invalid standalone while exact permitted compound positions and fogemorpheme patterns remain valid.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck compound-policy owner",
-      "fabushi_target": "existing canonical text-input/spellcheck compound-policy owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Hunspell fixtures are source authority, not Fabushi product surfaces; applicable behavior stays in the canonical Composer/platform spellcheck path and existing source-neutral UI.",
       "platform_differences": "Fabushi uses Electron/Chromium platform spellchecking plus canonical source-neutral policy/normalization owners. Do not introduce a Hunspell/Telegram side runtime, second dictionary truth, source-specific editor, or source-specific UI.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/replacement behavior and descendant exact-head evidence remain open",
       "state_machine": "exact source/fixture -> responsibility extraction -> existing-owner-first mapping -> source-neutral production/replacement behavior -> exact-head GitHub Actions evidence",
@@ -245,7 +345,27 @@
       "production_evidence": "source/test mapping only; source reading or upstream fixture existence is not Fabushi production verification",
       "test_evidence": "Exact recursive identity from GitHub Actions artifact 11689542414 at 18413ebb9cabc4220c66983fce9081aa7206e4f1 plus direct exact pinned GitHub blob reads in the implementation session; descendant exact-head Actions required; no local build/test used.",
       "license_and_provenance": "telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 -> Telegram/ThirdParty/hunspell -> hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/onlyincompound.wrong@115d0c6174e94086162f0b120a904edc6f7d5c50",
-      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete."
+      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete.",
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:115d0c6174e94086162f0b120a904edc6f7d5c50",
+        "byte-audit:recomputed-git-blob=115d0c6174e94086162f0b120a904edc6f7d5c50;byte_length=15;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8959,
@@ -269,13 +389,13 @@
         "fixture:onlyincompound2.aff",
         "ONLYINCOMPOUND compound eligibility regression"
       ],
-      "responsibility": "Words or affix-derived forms marked only-in-compound must remain invalid standalone while exact permitted compound positions and fogemorpheme patterns remain valid.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck compound-policy owner",
-      "fabushi_target": "existing canonical text-input/spellcheck compound-policy owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Hunspell fixtures are source authority, not Fabushi product surfaces; applicable behavior stays in the canonical Composer/platform spellcheck path and existing source-neutral UI.",
       "platform_differences": "Fabushi uses Electron/Chromium platform spellchecking plus canonical source-neutral policy/normalization owners. Do not introduce a Hunspell/Telegram side runtime, second dictionary truth, source-specific editor, or source-specific UI.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/replacement behavior and descendant exact-head evidence remain open",
       "state_machine": "exact source/fixture -> responsibility extraction -> existing-owner-first mapping -> source-neutral production/replacement behavior -> exact-head GitHub Actions evidence",
@@ -284,7 +404,27 @@
       "production_evidence": "source/test mapping only; source reading or upstream fixture existence is not Fabushi production verification",
       "test_evidence": "Exact recursive identity from GitHub Actions artifact 11689542414 at 18413ebb9cabc4220c66983fce9081aa7206e4f1 plus direct exact pinned GitHub blob reads in the implementation session; descendant exact-head Actions required; no local build/test used.",
       "license_and_provenance": "telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 -> Telegram/ThirdParty/hunspell -> hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/onlyincompound2.aff@5d0ac5e69b1eb29baeb169dc949da8e17f66fa12",
-      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete."
+      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete.",
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:5d0ac5e69b1eb29baeb169dc949da8e17f66fa12",
+        "byte-audit:recomputed-git-blob=5d0ac5e69b1eb29baeb169dc949da8e17f66fa12;byte_length=256;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8960,
@@ -308,13 +448,13 @@
         "fixture:onlyincompound2.dic",
         "ONLYINCOMPOUND compound eligibility regression"
       ],
-      "responsibility": "Words or affix-derived forms marked only-in-compound must remain invalid standalone while exact permitted compound positions and fogemorpheme patterns remain valid.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck compound-policy owner",
-      "fabushi_target": "existing canonical text-input/spellcheck compound-policy owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Hunspell fixtures are source authority, not Fabushi product surfaces; applicable behavior stays in the canonical Composer/platform spellcheck path and existing source-neutral UI.",
       "platform_differences": "Fabushi uses Electron/Chromium platform spellchecking plus canonical source-neutral policy/normalization owners. Do not introduce a Hunspell/Telegram side runtime, second dictionary truth, source-specific editor, or source-specific UI.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/replacement behavior and descendant exact-head evidence remain open",
       "state_machine": "exact source/fixture -> responsibility extraction -> existing-owner-first mapping -> source-neutral production/replacement behavior -> exact-head GitHub Actions evidence",
@@ -323,7 +463,27 @@
       "production_evidence": "source/test mapping only; source reading or upstream fixture existence is not Fabushi production verification",
       "test_evidence": "Exact recursive identity from GitHub Actions artifact 11689542414 at 18413ebb9cabc4220c66983fce9081aa7206e4f1 plus direct exact pinned GitHub blob reads in the implementation session; descendant exact-head Actions required; no local build/test used.",
       "license_and_provenance": "telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 -> Telegram/ThirdParty/hunspell -> hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/onlyincompound2.dic@1adab653bf643c118d0fb9ac393c0c8c0fd89cac",
-      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete."
+      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete.",
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:1adab653bf643c118d0fb9ac393c0c8c0fd89cac",
+        "byte-audit:recomputed-git-blob=1adab653bf643c118d0fb9ac393c0c8c0fd89cac;byte_length=18;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8961,
@@ -347,13 +507,13 @@
         "fixture:onlyincompound2.good",
         "ONLYINCOMPOUND compound eligibility regression"
       ],
-      "responsibility": "Words or affix-derived forms marked only-in-compound must remain invalid standalone while exact permitted compound positions and fogemorpheme patterns remain valid.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck compound-policy owner",
-      "fabushi_target": "existing canonical text-input/spellcheck compound-policy owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Hunspell fixtures are source authority, not Fabushi product surfaces; applicable behavior stays in the canonical Composer/platform spellcheck path and existing source-neutral UI.",
       "platform_differences": "Fabushi uses Electron/Chromium platform spellchecking plus canonical source-neutral policy/normalization owners. Do not introduce a Hunspell/Telegram side runtime, second dictionary truth, source-specific editor, or source-specific UI.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/replacement behavior and descendant exact-head evidence remain open",
       "state_machine": "exact source/fixture -> responsibility extraction -> existing-owner-first mapping -> source-neutral production/replacement behavior -> exact-head GitHub Actions evidence",
@@ -362,7 +522,27 @@
       "production_evidence": "source/test mapping only; source reading or upstream fixture existence is not Fabushi production verification",
       "test_evidence": "Exact recursive identity from GitHub Actions artifact 11689542414 at 18413ebb9cabc4220c66983fce9081aa7206e4f1 plus direct exact pinned GitHub blob reads in the implementation session; descendant exact-head Actions required; no local build/test used.",
       "license_and_provenance": "telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 -> Telegram/ThirdParty/hunspell -> hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/onlyincompound2.good@a31ce34acae6b4654f85c8e0e3ad3a3ab4c9b22c",
-      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete."
+      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete.",
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:a31ce34acae6b4654f85c8e0e3ad3a3ab4c9b22c",
+        "byte-audit:recomputed-git-blob=a31ce34acae6b4654f85c8e0e3ad3a3ab4c9b22c;byte_length=25;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8962,
@@ -386,13 +566,13 @@
         "fixture:onlyincompound2.wrong",
         "ONLYINCOMPOUND compound eligibility regression"
       ],
-      "responsibility": "Words or affix-derived forms marked only-in-compound must remain invalid standalone while exact permitted compound positions and fogemorpheme patterns remain valid.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck compound-policy owner",
-      "fabushi_target": "existing canonical text-input/spellcheck compound-policy owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Hunspell fixtures are source authority, not Fabushi product surfaces; applicable behavior stays in the canonical Composer/platform spellcheck path and existing source-neutral UI.",
       "platform_differences": "Fabushi uses Electron/Chromium platform spellchecking plus canonical source-neutral policy/normalization owners. Do not introduce a Hunspell/Telegram side runtime, second dictionary truth, source-specific editor, or source-specific UI.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/replacement behavior and descendant exact-head evidence remain open",
       "state_machine": "exact source/fixture -> responsibility extraction -> existing-owner-first mapping -> source-neutral production/replacement behavior -> exact-head GitHub Actions evidence",
@@ -401,7 +581,27 @@
       "production_evidence": "source/test mapping only; source reading or upstream fixture existence is not Fabushi production verification",
       "test_evidence": "Exact recursive identity from GitHub Actions artifact 11689542414 at 18413ebb9cabc4220c66983fce9081aa7206e4f1 plus direct exact pinned GitHub blob reads in the implementation session; descendant exact-head Actions required; no local build/test used.",
       "license_and_provenance": "telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 -> Telegram/ThirdParty/hunspell -> hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/onlyincompound2.wrong@29a71a3c3ba198b5437b3636dfd4d8427b0d9331",
-      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete."
+      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete.",
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:29a71a3c3ba198b5437b3636dfd4d8427b0d9331",
+        "byte-audit:recomputed-git-blob=29a71a3c3ba198b5437b3636dfd4d8427b0d9331;byte_length=29;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8963,
@@ -425,13 +625,13 @@
         "fixture:opentaal_cpdpat.aff",
         "compound-pattern and linking-form regression"
       ],
-      "responsibility": "CHECKCOMPOUNDPATTERN, compound position flags, linking morphemes and hyphenated forms must deterministically permit intended compounds and reject structurally invalid near-matches.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck compound-policy owner",
-      "fabushi_target": "existing canonical text-input/spellcheck compound-policy owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Hunspell fixtures are source authority, not Fabushi product surfaces; applicable behavior stays in the canonical Composer/platform spellcheck path and existing source-neutral UI.",
       "platform_differences": "Fabushi uses Electron/Chromium platform spellchecking plus canonical source-neutral policy/normalization owners. Do not introduce a Hunspell/Telegram side runtime, second dictionary truth, source-specific editor, or source-specific UI.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/replacement behavior and descendant exact-head evidence remain open",
       "state_machine": "exact source/fixture -> responsibility extraction -> existing-owner-first mapping -> source-neutral production/replacement behavior -> exact-head GitHub Actions evidence",
@@ -440,7 +640,27 @@
       "production_evidence": "source/test mapping only; source reading or upstream fixture existence is not Fabushi production verification",
       "test_evidence": "Exact recursive identity from GitHub Actions artifact 11689542414 at 18413ebb9cabc4220c66983fce9081aa7206e4f1 plus direct exact pinned GitHub blob reads in the implementation session; descendant exact-head Actions required; no local build/test used.",
       "license_and_provenance": "telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 -> Telegram/ThirdParty/hunspell -> hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/opentaal_cpdpat.aff@413aca40497f7e94046d6358a22dc348524352eb",
-      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete."
+      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete.",
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:413aca40497f7e94046d6358a22dc348524352eb",
+        "byte-audit:recomputed-git-blob=413aca40497f7e94046d6358a22dc348524352eb;byte_length=210;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8964,
@@ -464,13 +684,13 @@
         "fixture:opentaal_cpdpat.dic",
         "compound-pattern and linking-form regression"
       ],
-      "responsibility": "CHECKCOMPOUNDPATTERN, compound position flags, linking morphemes and hyphenated forms must deterministically permit intended compounds and reject structurally invalid near-matches.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck compound-policy owner",
-      "fabushi_target": "existing canonical text-input/spellcheck compound-policy owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Hunspell fixtures are source authority, not Fabushi product surfaces; applicable behavior stays in the canonical Composer/platform spellcheck path and existing source-neutral UI.",
       "platform_differences": "Fabushi uses Electron/Chromium platform spellchecking plus canonical source-neutral policy/normalization owners. Do not introduce a Hunspell/Telegram side runtime, second dictionary truth, source-specific editor, or source-specific UI.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/replacement behavior and descendant exact-head evidence remain open",
       "state_machine": "exact source/fixture -> responsibility extraction -> existing-owner-first mapping -> source-neutral production/replacement behavior -> exact-head GitHub Actions evidence",
@@ -479,7 +699,27 @@
       "production_evidence": "source/test mapping only; source reading or upstream fixture existence is not Fabushi production verification",
       "test_evidence": "Exact recursive identity from GitHub Actions artifact 11689542414 at 18413ebb9cabc4220c66983fce9081aa7206e4f1 plus direct exact pinned GitHub blob reads in the implementation session; descendant exact-head Actions required; no local build/test used.",
       "license_and_provenance": "telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 -> Telegram/ThirdParty/hunspell -> hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/opentaal_cpdpat.dic@e7831b704510bfe15a30c4c8dce7de578032dc2f",
-      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete."
+      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete.",
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:e7831b704510bfe15a30c4c8dce7de578032dc2f",
+        "byte-audit:recomputed-git-blob=e7831b704510bfe15a30c4c8dce7de578032dc2f;byte_length=35;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8965,
@@ -503,13 +743,13 @@
         "fixture:opentaal_cpdpat.good",
         "compound-pattern and linking-form regression"
       ],
-      "responsibility": "CHECKCOMPOUNDPATTERN, compound position flags, linking morphemes and hyphenated forms must deterministically permit intended compounds and reject structurally invalid near-matches.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck compound-policy owner",
-      "fabushi_target": "existing canonical text-input/spellcheck compound-policy owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Hunspell fixtures are source authority, not Fabushi product surfaces; applicable behavior stays in the canonical Composer/platform spellcheck path and existing source-neutral UI.",
       "platform_differences": "Fabushi uses Electron/Chromium platform spellchecking plus canonical source-neutral policy/normalization owners. Do not introduce a Hunspell/Telegram side runtime, second dictionary truth, source-specific editor, or source-specific UI.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/replacement behavior and descendant exact-head evidence remain open",
       "state_machine": "exact source/fixture -> responsibility extraction -> existing-owner-first mapping -> source-neutral production/replacement behavior -> exact-head GitHub Actions evidence",
@@ -518,7 +758,27 @@
       "production_evidence": "source/test mapping only; source reading or upstream fixture existence is not Fabushi production verification",
       "test_evidence": "Exact recursive identity from GitHub Actions artifact 11689542414 at 18413ebb9cabc4220c66983fce9081aa7206e4f1 plus direct exact pinned GitHub blob reads in the implementation session; descendant exact-head Actions required; no local build/test used.",
       "license_and_provenance": "telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 -> Telegram/ThirdParty/hunspell -> hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/opentaal_cpdpat.good@fbaf830bebf714347ca4c699c3b0a7f6117aa043",
-      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete."
+      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete.",
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:fbaf830bebf714347ca4c699c3b0a7f6117aa043",
+        "byte-audit:recomputed-git-blob=fbaf830bebf714347ca4c699c3b0a7f6117aa043;byte_length=17;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8966,
@@ -542,13 +802,13 @@
         "fixture:opentaal_cpdpat.wrong",
         "compound-pattern and linking-form regression"
       ],
-      "responsibility": "CHECKCOMPOUNDPATTERN, compound position flags, linking morphemes and hyphenated forms must deterministically permit intended compounds and reject structurally invalid near-matches.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck compound-policy owner",
-      "fabushi_target": "existing canonical text-input/spellcheck compound-policy owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Hunspell fixtures are source authority, not Fabushi product surfaces; applicable behavior stays in the canonical Composer/platform spellcheck path and existing source-neutral UI.",
       "platform_differences": "Fabushi uses Electron/Chromium platform spellchecking plus canonical source-neutral policy/normalization owners. Do not introduce a Hunspell/Telegram side runtime, second dictionary truth, source-specific editor, or source-specific UI.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/replacement behavior and descendant exact-head evidence remain open",
       "state_machine": "exact source/fixture -> responsibility extraction -> existing-owner-first mapping -> source-neutral production/replacement behavior -> exact-head GitHub Actions evidence",
@@ -557,7 +817,27 @@
       "production_evidence": "source/test mapping only; source reading or upstream fixture existence is not Fabushi production verification",
       "test_evidence": "Exact recursive identity from GitHub Actions artifact 11689542414 at 18413ebb9cabc4220c66983fce9081aa7206e4f1 plus direct exact pinned GitHub blob reads in the implementation session; descendant exact-head Actions required; no local build/test used.",
       "license_and_provenance": "telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 -> Telegram/ThirdParty/hunspell -> hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/opentaal_cpdpat.wrong@3f9e8949b1f8355ce0a23d00a0d963e97b95ac8e",
-      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete."
+      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete.",
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:3f9e8949b1f8355ce0a23d00a0d963e97b95ac8e",
+        "byte-audit:recomputed-git-blob=3f9e8949b1f8355ce0a23d00a0d963e97b95ac8e;byte_length=16;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8967,
@@ -581,13 +861,13 @@
         "fixture:opentaal_cpdpat2.aff",
         "compound-pattern and linking-form regression"
       ],
-      "responsibility": "CHECKCOMPOUNDPATTERN, compound position flags, linking morphemes and hyphenated forms must deterministically permit intended compounds and reject structurally invalid near-matches.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck compound-policy owner",
-      "fabushi_target": "existing canonical text-input/spellcheck compound-policy owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Hunspell fixtures are source authority, not Fabushi product surfaces; applicable behavior stays in the canonical Composer/platform spellcheck path and existing source-neutral UI.",
       "platform_differences": "Fabushi uses Electron/Chromium platform spellchecking plus canonical source-neutral policy/normalization owners. Do not introduce a Hunspell/Telegram side runtime, second dictionary truth, source-specific editor, or source-specific UI.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/replacement behavior and descendant exact-head evidence remain open",
       "state_machine": "exact source/fixture -> responsibility extraction -> existing-owner-first mapping -> source-neutral production/replacement behavior -> exact-head GitHub Actions evidence",
@@ -596,7 +876,27 @@
       "production_evidence": "source/test mapping only; source reading or upstream fixture existence is not Fabushi production verification",
       "test_evidence": "Exact recursive identity from GitHub Actions artifact 11689542414 at 18413ebb9cabc4220c66983fce9081aa7206e4f1 plus direct exact pinned GitHub blob reads in the implementation session; descendant exact-head Actions required; no local build/test used.",
       "license_and_provenance": "telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 -> Telegram/ThirdParty/hunspell -> hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/opentaal_cpdpat2.aff@22dfe69d86657bf363101def39b3c024cf062fd9",
-      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete."
+      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete.",
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:22dfe69d86657bf363101def39b3c024cf062fd9",
+        "byte-audit:recomputed-git-blob=22dfe69d86657bf363101def39b3c024cf062fd9;byte_length=431;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8968,
@@ -620,13 +920,13 @@
         "fixture:opentaal_cpdpat2.dic",
         "compound-pattern and linking-form regression"
       ],
-      "responsibility": "CHECKCOMPOUNDPATTERN, compound position flags, linking morphemes and hyphenated forms must deterministically permit intended compounds and reject structurally invalid near-matches.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck compound-policy owner",
-      "fabushi_target": "existing canonical text-input/spellcheck compound-policy owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Hunspell fixtures are source authority, not Fabushi product surfaces; applicable behavior stays in the canonical Composer/platform spellcheck path and existing source-neutral UI.",
       "platform_differences": "Fabushi uses Electron/Chromium platform spellchecking plus canonical source-neutral policy/normalization owners. Do not introduce a Hunspell/Telegram side runtime, second dictionary truth, source-specific editor, or source-specific UI.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/replacement behavior and descendant exact-head evidence remain open",
       "state_machine": "exact source/fixture -> responsibility extraction -> existing-owner-first mapping -> source-neutral production/replacement behavior -> exact-head GitHub Actions evidence",
@@ -635,7 +935,27 @@
       "production_evidence": "source/test mapping only; source reading or upstream fixture existence is not Fabushi production verification",
       "test_evidence": "Exact recursive identity from GitHub Actions artifact 11689542414 at 18413ebb9cabc4220c66983fce9081aa7206e4f1 plus direct exact pinned GitHub blob reads in the implementation session; descendant exact-head Actions required; no local build/test used.",
       "license_and_provenance": "telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 -> Telegram/ThirdParty/hunspell -> hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/opentaal_cpdpat2.dic@52581e942e026605fdff798a4da35bc582ca75d0",
-      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete."
+      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete.",
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:52581e942e026605fdff798a4da35bc582ca75d0",
+        "byte-audit:recomputed-git-blob=52581e942e026605fdff798a4da35bc582ca75d0;byte_length=41;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8969,
@@ -659,13 +979,13 @@
         "fixture:opentaal_cpdpat2.good",
         "compound-pattern and linking-form regression"
       ],
-      "responsibility": "CHECKCOMPOUNDPATTERN, compound position flags, linking morphemes and hyphenated forms must deterministically permit intended compounds and reject structurally invalid near-matches.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck compound-policy owner",
-      "fabushi_target": "existing canonical text-input/spellcheck compound-policy owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Hunspell fixtures are source authority, not Fabushi product surfaces; applicable behavior stays in the canonical Composer/platform spellcheck path and existing source-neutral UI.",
       "platform_differences": "Fabushi uses Electron/Chromium platform spellchecking plus canonical source-neutral policy/normalization owners. Do not introduce a Hunspell/Telegram side runtime, second dictionary truth, source-specific editor, or source-specific UI.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/replacement behavior and descendant exact-head evidence remain open",
       "state_machine": "exact source/fixture -> responsibility extraction -> existing-owner-first mapping -> source-neutral production/replacement behavior -> exact-head GitHub Actions evidence",
@@ -674,7 +994,27 @@
       "production_evidence": "source/test mapping only; source reading or upstream fixture existence is not Fabushi production verification",
       "test_evidence": "Exact recursive identity from GitHub Actions artifact 11689542414 at 18413ebb9cabc4220c66983fce9081aa7206e4f1 plus direct exact pinned GitHub blob reads in the implementation session; descendant exact-head Actions required; no local build/test used.",
       "license_and_provenance": "telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 -> Telegram/ThirdParty/hunspell -> hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/opentaal_cpdpat2.good@e604d6e2f7dda496620897aa47aa3acd039f125f",
-      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete."
+      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete.",
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:e604d6e2f7dda496620897aa47aa3acd039f125f",
+        "byte-audit:recomputed-git-blob=e604d6e2f7dda496620897aa47aa3acd039f125f;byte_length=16;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8970,
@@ -698,13 +1038,13 @@
         "fixture:opentaal_cpdpat2.wrong",
         "compound-pattern and linking-form regression"
       ],
-      "responsibility": "CHECKCOMPOUNDPATTERN, compound position flags, linking morphemes and hyphenated forms must deterministically permit intended compounds and reject structurally invalid near-matches.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck compound-policy owner",
-      "fabushi_target": "existing canonical text-input/spellcheck compound-policy owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Hunspell fixtures are source authority, not Fabushi product surfaces; applicable behavior stays in the canonical Composer/platform spellcheck path and existing source-neutral UI.",
       "platform_differences": "Fabushi uses Electron/Chromium platform spellchecking plus canonical source-neutral policy/normalization owners. Do not introduce a Hunspell/Telegram side runtime, second dictionary truth, source-specific editor, or source-specific UI.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/replacement behavior and descendant exact-head evidence remain open",
       "state_machine": "exact source/fixture -> responsibility extraction -> existing-owner-first mapping -> source-neutral production/replacement behavior -> exact-head GitHub Actions evidence",
@@ -713,7 +1053,27 @@
       "production_evidence": "source/test mapping only; source reading or upstream fixture existence is not Fabushi production verification",
       "test_evidence": "Exact recursive identity from GitHub Actions artifact 11689542414 at 18413ebb9cabc4220c66983fce9081aa7206e4f1 plus direct exact pinned GitHub blob reads in the implementation session; descendant exact-head Actions required; no local build/test used.",
       "license_and_provenance": "telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 -> Telegram/ThirdParty/hunspell -> hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/opentaal_cpdpat2.wrong@d8ddb16a57988696d458c8e6d4c60fb5e049027d",
-      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete."
+      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete.",
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:d8ddb16a57988696d458c8e6d4c60fb5e049027d",
+        "byte-audit:recomputed-git-blob=d8ddb16a57988696d458c8e6d4c60fb5e049027d;byte_length=15;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8971,
@@ -737,13 +1097,13 @@
         "fixture:opentaal_forbiddenword1.aff",
         "FORBIDDENWORD acceptance and suggestion-leak regression"
       ],
-      "responsibility": "Forbidden dictionary forms and their derived variants must be rejected and must not leak back through suggestion generation, including compound-near-miss paths.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck forbidden-token + suggestion-policy owner",
-      "fabushi_target": "existing canonical text-input/spellcheck forbidden-token + suggestion-policy owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Hunspell fixtures are source authority, not Fabushi product surfaces; applicable behavior stays in the canonical Composer/platform spellcheck path and existing source-neutral UI.",
       "platform_differences": "Fabushi uses Electron/Chromium platform spellchecking plus canonical source-neutral policy/normalization owners. Do not introduce a Hunspell/Telegram side runtime, second dictionary truth, source-specific editor, or source-specific UI.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/replacement behavior and descendant exact-head evidence remain open",
       "state_machine": "exact source/fixture -> responsibility extraction -> existing-owner-first mapping -> source-neutral production/replacement behavior -> exact-head GitHub Actions evidence",
@@ -752,7 +1112,27 @@
       "production_evidence": "source/test mapping only; source reading or upstream fixture existence is not Fabushi production verification",
       "test_evidence": "Exact recursive identity from GitHub Actions artifact 11689542414 at 18413ebb9cabc4220c66983fce9081aa7206e4f1 plus direct exact pinned GitHub blob reads in the implementation session; descendant exact-head Actions required; no local build/test used.",
       "license_and_provenance": "telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 -> Telegram/ThirdParty/hunspell -> hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/opentaal_forbiddenword1.aff@fa073432f5a69c00c79a0568fb1c4e1702e341c9",
-      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete."
+      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete.",
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:fa073432f5a69c00c79a0568fb1c4e1702e341c9",
+        "byte-audit:recomputed-git-blob=fa073432f5a69c00c79a0568fb1c4e1702e341c9;byte_length=94;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8972,
@@ -776,13 +1156,13 @@
         "fixture:opentaal_forbiddenword1.dic",
         "FORBIDDENWORD acceptance and suggestion-leak regression"
       ],
-      "responsibility": "Forbidden dictionary forms and their derived variants must be rejected and must not leak back through suggestion generation, including compound-near-miss paths.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck forbidden-token + suggestion-policy owner",
-      "fabushi_target": "existing canonical text-input/spellcheck forbidden-token + suggestion-policy owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Hunspell fixtures are source authority, not Fabushi product surfaces; applicable behavior stays in the canonical Composer/platform spellcheck path and existing source-neutral UI.",
       "platform_differences": "Fabushi uses Electron/Chromium platform spellchecking plus canonical source-neutral policy/normalization owners. Do not introduce a Hunspell/Telegram side runtime, second dictionary truth, source-specific editor, or source-specific UI.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/replacement behavior and descendant exact-head evidence remain open",
       "state_machine": "exact source/fixture -> responsibility extraction -> existing-owner-first mapping -> source-neutral production/replacement behavior -> exact-head GitHub Actions evidence",
@@ -791,7 +1171,27 @@
       "production_evidence": "source/test mapping only; source reading or upstream fixture existence is not Fabushi production verification",
       "test_evidence": "Exact recursive identity from GitHub Actions artifact 11689542414 at 18413ebb9cabc4220c66983fce9081aa7206e4f1 plus direct exact pinned GitHub blob reads in the implementation session; descendant exact-head Actions required; no local build/test used.",
       "license_and_provenance": "telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 -> Telegram/ThirdParty/hunspell -> hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/opentaal_forbiddenword1.dic@44375948ff4623a0ab7edab805309e97e8340574",
-      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete."
+      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete.",
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:44375948ff4623a0ab7edab805309e97e8340574",
+        "byte-audit:recomputed-git-blob=44375948ff4623a0ab7edab805309e97e8340574;byte_length=36;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8973,
@@ -815,13 +1215,13 @@
         "fixture:opentaal_forbiddenword1.good",
         "FORBIDDENWORD acceptance and suggestion-leak regression"
       ],
-      "responsibility": "Forbidden dictionary forms and their derived variants must be rejected and must not leak back through suggestion generation, including compound-near-miss paths.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck forbidden-token + suggestion-policy owner",
-      "fabushi_target": "existing canonical text-input/spellcheck forbidden-token + suggestion-policy owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Hunspell fixtures are source authority, not Fabushi product surfaces; applicable behavior stays in the canonical Composer/platform spellcheck path and existing source-neutral UI.",
       "platform_differences": "Fabushi uses Electron/Chromium platform spellchecking plus canonical source-neutral policy/normalization owners. Do not introduce a Hunspell/Telegram side runtime, second dictionary truth, source-specific editor, or source-specific UI.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/replacement behavior and descendant exact-head evidence remain open",
       "state_machine": "exact source/fixture -> responsibility extraction -> existing-owner-first mapping -> source-neutral production/replacement behavior -> exact-head GitHub Actions evidence",
@@ -830,7 +1230,27 @@
       "production_evidence": "source/test mapping only; source reading or upstream fixture existence is not Fabushi production verification",
       "test_evidence": "Exact recursive identity from GitHub Actions artifact 11689542414 at 18413ebb9cabc4220c66983fce9081aa7206e4f1 plus direct exact pinned GitHub blob reads in the implementation session; descendant exact-head Actions required; no local build/test used.",
       "license_and_provenance": "telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 -> Telegram/ThirdParty/hunspell -> hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/opentaal_forbiddenword1.good@73a96a784518b61fb51dc2604e3545df10b9b41f",
-      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete."
+      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete.",
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:73a96a784518b61fb51dc2604e3545df10b9b41f",
+        "byte-audit:recomputed-git-blob=73a96a784518b61fb51dc2604e3545df10b9b41f;byte_length=27;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8974,
@@ -854,13 +1274,13 @@
         "fixture:opentaal_forbiddenword1.sug",
         "FORBIDDENWORD acceptance and suggestion-leak regression"
       ],
-      "responsibility": "Forbidden dictionary forms and their derived variants must be rejected and must not leak back through suggestion generation, including compound-near-miss paths.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck forbidden-token + suggestion-policy owner",
-      "fabushi_target": "existing canonical text-input/spellcheck forbidden-token + suggestion-policy owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Hunspell fixtures are source authority, not Fabushi product surfaces; applicable behavior stays in the canonical Composer/platform spellcheck path and existing source-neutral UI.",
       "platform_differences": "Fabushi uses Electron/Chromium platform spellchecking plus canonical source-neutral policy/normalization owners. Do not introduce a Hunspell/Telegram side runtime, second dictionary truth, source-specific editor, or source-specific UI.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/replacement behavior and descendant exact-head evidence remain open",
       "state_machine": "exact source/fixture -> responsibility extraction -> existing-owner-first mapping -> source-neutral production/replacement behavior -> exact-head GitHub Actions evidence",
@@ -869,7 +1289,27 @@
       "production_evidence": "source/test mapping only; source reading or upstream fixture existence is not Fabushi production verification",
       "test_evidence": "Exact recursive identity from GitHub Actions artifact 11689542414 at 18413ebb9cabc4220c66983fce9081aa7206e4f1 plus direct exact pinned GitHub blob reads in the implementation session; descendant exact-head Actions required; no local build/test used.",
       "license_and_provenance": "telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 -> Telegram/ThirdParty/hunspell -> hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/opentaal_forbiddenword1.sug@60111a417ff70c3479b6dd9beb0eeb9f9b897b49",
-      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete."
+      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete.",
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:60111a417ff70c3479b6dd9beb0eeb9f9b897b49",
+        "byte-audit:recomputed-git-blob=60111a417ff70c3479b6dd9beb0eeb9f9b897b49;byte_length=11;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8975,
@@ -893,13 +1333,13 @@
         "fixture:opentaal_forbiddenword1.wrong",
         "FORBIDDENWORD acceptance and suggestion-leak regression"
       ],
-      "responsibility": "Forbidden dictionary forms and their derived variants must be rejected and must not leak back through suggestion generation, including compound-near-miss paths.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck forbidden-token + suggestion-policy owner",
-      "fabushi_target": "existing canonical text-input/spellcheck forbidden-token + suggestion-policy owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Hunspell fixtures are source authority, not Fabushi product surfaces; applicable behavior stays in the canonical Composer/platform spellcheck path and existing source-neutral UI.",
       "platform_differences": "Fabushi uses Electron/Chromium platform spellchecking plus canonical source-neutral policy/normalization owners. Do not introduce a Hunspell/Telegram side runtime, second dictionary truth, source-specific editor, or source-specific UI.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/replacement behavior and descendant exact-head evidence remain open",
       "state_machine": "exact source/fixture -> responsibility extraction -> existing-owner-first mapping -> source-neutral production/replacement behavior -> exact-head GitHub Actions evidence",
@@ -908,7 +1348,27 @@
       "production_evidence": "source/test mapping only; source reading or upstream fixture existence is not Fabushi production verification",
       "test_evidence": "Exact recursive identity from GitHub Actions artifact 11689542414 at 18413ebb9cabc4220c66983fce9081aa7206e4f1 plus direct exact pinned GitHub blob reads in the implementation session; descendant exact-head Actions required; no local build/test used.",
       "license_and_provenance": "telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 -> Telegram/ThirdParty/hunspell -> hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/opentaal_forbiddenword1.wrong@59dfddfb2467b3b4bf63a5f335aab0029142e37c",
-      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete."
+      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete.",
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:59dfddfb2467b3b4bf63a5f335aab0029142e37c",
+        "byte-audit:recomputed-git-blob=59dfddfb2467b3b4bf63a5f335aab0029142e37c;byte_length=54;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8976,
@@ -932,13 +1392,13 @@
         "fixture:opentaal_forbiddenword2.aff",
         "FORBIDDENWORD acceptance and suggestion-leak regression"
       ],
-      "responsibility": "Forbidden dictionary forms and their derived variants must be rejected and must not leak back through suggestion generation, including compound-near-miss paths.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck forbidden-token + suggestion-policy owner",
-      "fabushi_target": "existing canonical text-input/spellcheck forbidden-token + suggestion-policy owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Hunspell fixtures are source authority, not Fabushi product surfaces; applicable behavior stays in the canonical Composer/platform spellcheck path and existing source-neutral UI.",
       "platform_differences": "Fabushi uses Electron/Chromium platform spellchecking plus canonical source-neutral policy/normalization owners. Do not introduce a Hunspell/Telegram side runtime, second dictionary truth, source-specific editor, or source-specific UI.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/replacement behavior and descendant exact-head evidence remain open",
       "state_machine": "exact source/fixture -> responsibility extraction -> existing-owner-first mapping -> source-neutral production/replacement behavior -> exact-head GitHub Actions evidence",
@@ -947,7 +1407,27 @@
       "production_evidence": "source/test mapping only; source reading or upstream fixture existence is not Fabushi production verification",
       "test_evidence": "Exact recursive identity from GitHub Actions artifact 11689542414 at 18413ebb9cabc4220c66983fce9081aa7206e4f1 plus direct exact pinned GitHub blob reads in the implementation session; descendant exact-head Actions required; no local build/test used.",
       "license_and_provenance": "telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 -> Telegram/ThirdParty/hunspell -> hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/opentaal_forbiddenword2.aff@441354d6b0d59aa7263c60d8c653482d17cbfae7",
-      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete."
+      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete.",
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:441354d6b0d59aa7263c60d8c653482d17cbfae7",
+        "byte-audit:recomputed-git-blob=441354d6b0d59aa7263c60d8c653482d17cbfae7;byte_length=61;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8977,
@@ -971,13 +1451,13 @@
         "fixture:opentaal_forbiddenword2.dic",
         "FORBIDDENWORD acceptance and suggestion-leak regression"
       ],
-      "responsibility": "Forbidden dictionary forms and their derived variants must be rejected and must not leak back through suggestion generation, including compound-near-miss paths.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck forbidden-token + suggestion-policy owner",
-      "fabushi_target": "existing canonical text-input/spellcheck forbidden-token + suggestion-policy owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Hunspell fixtures are source authority, not Fabushi product surfaces; applicable behavior stays in the canonical Composer/platform spellcheck path and existing source-neutral UI.",
       "platform_differences": "Fabushi uses Electron/Chromium platform spellchecking plus canonical source-neutral policy/normalization owners. Do not introduce a Hunspell/Telegram side runtime, second dictionary truth, source-specific editor, or source-specific UI.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/replacement behavior and descendant exact-head evidence remain open",
       "state_machine": "exact source/fixture -> responsibility extraction -> existing-owner-first mapping -> source-neutral production/replacement behavior -> exact-head GitHub Actions evidence",
@@ -986,7 +1466,27 @@
       "production_evidence": "source/test mapping only; source reading or upstream fixture existence is not Fabushi production verification",
       "test_evidence": "Exact recursive identity from GitHub Actions artifact 11689542414 at 18413ebb9cabc4220c66983fce9081aa7206e4f1 plus direct exact pinned GitHub blob reads in the implementation session; descendant exact-head Actions required; no local build/test used.",
       "license_and_provenance": "telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 -> Telegram/ThirdParty/hunspell -> hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/opentaal_forbiddenword2.dic@895dd62305239286a36a820f0c805a7311d055d3",
-      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete."
+      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete.",
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:895dd62305239286a36a820f0c805a7311d055d3",
+        "byte-audit:recomputed-git-blob=895dd62305239286a36a820f0c805a7311d055d3;byte_length=36;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8978,
@@ -1010,13 +1510,13 @@
         "fixture:opentaal_forbiddenword2.good",
         "FORBIDDENWORD acceptance and suggestion-leak regression"
       ],
-      "responsibility": "Forbidden dictionary forms and their derived variants must be rejected and must not leak back through suggestion generation, including compound-near-miss paths.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck forbidden-token + suggestion-policy owner",
-      "fabushi_target": "existing canonical text-input/spellcheck forbidden-token + suggestion-policy owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Hunspell fixtures are source authority, not Fabushi product surfaces; applicable behavior stays in the canonical Composer/platform spellcheck path and existing source-neutral UI.",
       "platform_differences": "Fabushi uses Electron/Chromium platform spellchecking plus canonical source-neutral policy/normalization owners. Do not introduce a Hunspell/Telegram side runtime, second dictionary truth, source-specific editor, or source-specific UI.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/replacement behavior and descendant exact-head evidence remain open",
       "state_machine": "exact source/fixture -> responsibility extraction -> existing-owner-first mapping -> source-neutral production/replacement behavior -> exact-head GitHub Actions evidence",
@@ -1025,7 +1525,27 @@
       "production_evidence": "source/test mapping only; source reading or upstream fixture existence is not Fabushi production verification",
       "test_evidence": "Exact recursive identity from GitHub Actions artifact 11689542414 at 18413ebb9cabc4220c66983fce9081aa7206e4f1 plus direct exact pinned GitHub blob reads in the implementation session; descendant exact-head Actions required; no local build/test used.",
       "license_and_provenance": "telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 -> Telegram/ThirdParty/hunspell -> hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/opentaal_forbiddenword2.good@17cf47de3d53313235111a80f98f61dd17f85426",
-      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete."
+      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete.",
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:17cf47de3d53313235111a80f98f61dd17f85426",
+        "byte-audit:recomputed-git-blob=17cf47de3d53313235111a80f98f61dd17f85426;byte_length=39;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8979,
@@ -1049,13 +1569,13 @@
         "fixture:opentaal_forbiddenword2.sug",
         "FORBIDDENWORD acceptance and suggestion-leak regression"
       ],
-      "responsibility": "Forbidden dictionary forms and their derived variants must be rejected and must not leak back through suggestion generation, including compound-near-miss paths.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck forbidden-token + suggestion-policy owner",
-      "fabushi_target": "existing canonical text-input/spellcheck forbidden-token + suggestion-policy owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Hunspell fixtures are source authority, not Fabushi product surfaces; applicable behavior stays in the canonical Composer/platform spellcheck path and existing source-neutral UI.",
       "platform_differences": "Fabushi uses Electron/Chromium platform spellchecking plus canonical source-neutral policy/normalization owners. Do not introduce a Hunspell/Telegram side runtime, second dictionary truth, source-specific editor, or source-specific UI.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/replacement behavior and descendant exact-head evidence remain open",
       "state_machine": "exact source/fixture -> responsibility extraction -> existing-owner-first mapping -> source-neutral production/replacement behavior -> exact-head GitHub Actions evidence",
@@ -1064,7 +1584,27 @@
       "production_evidence": "source/test mapping only; source reading or upstream fixture existence is not Fabushi production verification",
       "test_evidence": "Exact recursive identity from GitHub Actions artifact 11689542414 at 18413ebb9cabc4220c66983fce9081aa7206e4f1 plus direct exact pinned GitHub blob reads in the implementation session; descendant exact-head Actions required; no local build/test used.",
       "license_and_provenance": "telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 -> Telegram/ThirdParty/hunspell -> hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/opentaal_forbiddenword2.sug@60111a417ff70c3479b6dd9beb0eeb9f9b897b49",
-      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete."
+      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete.",
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:60111a417ff70c3479b6dd9beb0eeb9f9b897b49",
+        "byte-audit:recomputed-git-blob=60111a417ff70c3479b6dd9beb0eeb9f9b897b49;byte_length=11;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8980,
@@ -1088,13 +1628,13 @@
         "fixture:opentaal_forbiddenword2.wrong",
         "FORBIDDENWORD acceptance and suggestion-leak regression"
       ],
-      "responsibility": "Forbidden dictionary forms and their derived variants must be rejected and must not leak back through suggestion generation, including compound-near-miss paths.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck forbidden-token + suggestion-policy owner",
-      "fabushi_target": "existing canonical text-input/spellcheck forbidden-token + suggestion-policy owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Hunspell fixtures are source authority, not Fabushi product surfaces; applicable behavior stays in the canonical Composer/platform spellcheck path and existing source-neutral UI.",
       "platform_differences": "Fabushi uses Electron/Chromium platform spellchecking plus canonical source-neutral policy/normalization owners. Do not introduce a Hunspell/Telegram side runtime, second dictionary truth, source-specific editor, or source-specific UI.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/replacement behavior and descendant exact-head evidence remain open",
       "state_machine": "exact source/fixture -> responsibility extraction -> existing-owner-first mapping -> source-neutral production/replacement behavior -> exact-head GitHub Actions evidence",
@@ -1103,7 +1643,27 @@
       "production_evidence": "source/test mapping only; source reading or upstream fixture existence is not Fabushi production verification",
       "test_evidence": "Exact recursive identity from GitHub Actions artifact 11689542414 at 18413ebb9cabc4220c66983fce9081aa7206e4f1 plus direct exact pinned GitHub blob reads in the implementation session; descendant exact-head Actions required; no local build/test used.",
       "license_and_provenance": "telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 -> Telegram/ThirdParty/hunspell -> hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/opentaal_forbiddenword2.wrong@59dfddfb2467b3b4bf63a5f335aab0029142e37c",
-      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete."
+      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete.",
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:59dfddfb2467b3b4bf63a5f335aab0029142e37c",
+        "byte-audit:recomputed-git-blob=59dfddfb2467b3b4bf63a5f335aab0029142e37c;byte_length=54;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8981,
@@ -1127,13 +1687,13 @@
         "fixture:opentaal_keepcase.aff",
         "KEEPCASE compound casing regression"
       ],
-      "responsibility": "KEEPCASE entries must preserve authoritative casing inside compounds; case-folded or title-cased variants must remain invalid unless separately authorized.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck casing + compound-policy owner",
-      "fabushi_target": "existing canonical text-input/spellcheck casing + compound-policy owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Hunspell fixtures are source authority, not Fabushi product surfaces; applicable behavior stays in the canonical Composer/platform spellcheck path and existing source-neutral UI.",
       "platform_differences": "Fabushi uses Electron/Chromium platform spellchecking plus canonical source-neutral policy/normalization owners. Do not introduce a Hunspell/Telegram side runtime, second dictionary truth, source-specific editor, or source-specific UI.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/replacement behavior and descendant exact-head evidence remain open",
       "state_machine": "exact source/fixture -> responsibility extraction -> existing-owner-first mapping -> source-neutral production/replacement behavior -> exact-head GitHub Actions evidence",
@@ -1142,7 +1702,27 @@
       "production_evidence": "source/test mapping only; source reading or upstream fixture existence is not Fabushi production verification",
       "test_evidence": "Exact recursive identity from GitHub Actions artifact 11689542414 at 18413ebb9cabc4220c66983fce9081aa7206e4f1 plus direct exact pinned GitHub blob reads in the implementation session; descendant exact-head Actions required; no local build/test used.",
       "license_and_provenance": "telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 -> Telegram/ThirdParty/hunspell -> hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/opentaal_keepcase.aff@15c914bec3bd2d88c5009d0849feb9454460cbdc",
-      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete."
+      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete.",
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:15c914bec3bd2d88c5009d0849feb9454460cbdc",
+        "byte-audit:recomputed-git-blob=15c914bec3bd2d88c5009d0849feb9454460cbdc;byte_length=98;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8982,
@@ -1166,13 +1746,13 @@
         "fixture:opentaal_keepcase.dic",
         "KEEPCASE compound casing regression"
       ],
-      "responsibility": "KEEPCASE entries must preserve authoritative casing inside compounds; case-folded or title-cased variants must remain invalid unless separately authorized.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck casing + compound-policy owner",
-      "fabushi_target": "existing canonical text-input/spellcheck casing + compound-policy owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Hunspell fixtures are source authority, not Fabushi product surfaces; applicable behavior stays in the canonical Composer/platform spellcheck path and existing source-neutral UI.",
       "platform_differences": "Fabushi uses Electron/Chromium platform spellchecking plus canonical source-neutral policy/normalization owners. Do not introduce a Hunspell/Telegram side runtime, second dictionary truth, source-specific editor, or source-specific UI.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/replacement behavior and descendant exact-head evidence remain open",
       "state_machine": "exact source/fixture -> responsibility extraction -> existing-owner-first mapping -> source-neutral production/replacement behavior -> exact-head GitHub Actions evidence",
@@ -1181,7 +1761,27 @@
       "production_evidence": "source/test mapping only; source reading or upstream fixture existence is not Fabushi production verification",
       "test_evidence": "Exact recursive identity from GitHub Actions artifact 11689542414 at 18413ebb9cabc4220c66983fce9081aa7206e4f1 plus direct exact pinned GitHub blob reads in the implementation session; descendant exact-head Actions required; no local build/test used.",
       "license_and_provenance": "telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 -> Telegram/ThirdParty/hunspell -> hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/opentaal_keepcase.dic@b05ec131a231a3d0dbaa055fe0d1b472a5c7b90b",
-      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete."
+      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete.",
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:b05ec131a231a3d0dbaa055fe0d1b472a5c7b90b",
+        "byte-audit:recomputed-git-blob=b05ec131a231a3d0dbaa055fe0d1b472a5c7b90b;byte_length=40;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8983,
@@ -1205,13 +1805,13 @@
         "fixture:opentaal_keepcase.good",
         "KEEPCASE compound casing regression"
       ],
-      "responsibility": "KEEPCASE entries must preserve authoritative casing inside compounds; case-folded or title-cased variants must remain invalid unless separately authorized.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck casing + compound-policy owner",
-      "fabushi_target": "existing canonical text-input/spellcheck casing + compound-policy owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Hunspell fixtures are source authority, not Fabushi product surfaces; applicable behavior stays in the canonical Composer/platform spellcheck path and existing source-neutral UI.",
       "platform_differences": "Fabushi uses Electron/Chromium platform spellchecking plus canonical source-neutral policy/normalization owners. Do not introduce a Hunspell/Telegram side runtime, second dictionary truth, source-specific editor, or source-specific UI.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/replacement behavior and descendant exact-head evidence remain open",
       "state_machine": "exact source/fixture -> responsibility extraction -> existing-owner-first mapping -> source-neutral production/replacement behavior -> exact-head GitHub Actions evidence",
@@ -1220,7 +1820,27 @@
       "production_evidence": "source/test mapping only; source reading or upstream fixture existence is not Fabushi production verification",
       "test_evidence": "Exact recursive identity from GitHub Actions artifact 11689542414 at 18413ebb9cabc4220c66983fce9081aa7206e4f1 plus direct exact pinned GitHub blob reads in the implementation session; descendant exact-head Actions required; no local build/test used.",
       "license_and_provenance": "telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 -> Telegram/ThirdParty/hunspell -> hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/opentaal_keepcase.good@e1c1129102197d76c713140d1658b9f37ebac557",
-      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete."
+      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete.",
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:e1c1129102197d76c713140d1658b9f37ebac557",
+        "byte-audit:recomputed-git-blob=e1c1129102197d76c713140d1658b9f37ebac557;byte_length=36;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8984,
@@ -1244,13 +1864,13 @@
         "fixture:opentaal_keepcase.sug",
         "KEEPCASE compound casing regression"
       ],
-      "responsibility": "KEEPCASE entries must preserve authoritative casing inside compounds; case-folded or title-cased variants must remain invalid unless separately authorized.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck casing + compound-policy owner",
-      "fabushi_target": "existing canonical text-input/spellcheck casing + compound-policy owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Hunspell fixtures are source authority, not Fabushi product surfaces; applicable behavior stays in the canonical Composer/platform spellcheck path and existing source-neutral UI.",
       "platform_differences": "Fabushi uses Electron/Chromium platform spellchecking plus canonical source-neutral policy/normalization owners. Do not introduce a Hunspell/Telegram side runtime, second dictionary truth, source-specific editor, or source-specific UI.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/replacement behavior and descendant exact-head evidence remain open",
       "state_machine": "exact source/fixture -> responsibility extraction -> existing-owner-first mapping -> source-neutral production/replacement behavior -> exact-head GitHub Actions evidence",
@@ -1259,7 +1879,27 @@
       "production_evidence": "source/test mapping only; source reading or upstream fixture existence is not Fabushi production verification",
       "test_evidence": "Exact recursive identity from GitHub Actions artifact 11689542414 at 18413ebb9cabc4220c66983fce9081aa7206e4f1 plus direct exact pinned GitHub blob reads in the implementation session; descendant exact-head Actions required; no local build/test used.",
       "license_and_provenance": "telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 -> Telegram/ThirdParty/hunspell -> hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/opentaal_keepcase.sug@5998d53edcd1580deb7360c69e4a48da86591907",
-      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete."
+      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete.",
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:5998d53edcd1580deb7360c69e4a48da86591907",
+        "byte-audit:recomputed-git-blob=5998d53edcd1580deb7360c69e4a48da86591907;byte_length=102;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     },
     {
       "recursive_order": 8985,
@@ -1283,13 +1923,13 @@
         "fixture:opentaal_keepcase.wrong",
         "KEEPCASE compound casing regression"
       ],
-      "responsibility": "KEEPCASE entries must preserve authoritative casing inside compounds; case-folded or title-cased variants must remain invalid unless separately authorized.",
-      "fabushi_canonical_owner": "existing canonical text-input/spellcheck casing + compound-policy owner",
-      "fabushi_target": "existing canonical text-input/spellcheck casing + compound-policy owner",
+      "responsibility": "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner.",
+      "fabushi_canonical_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "fabushi_target": "No Hunspell test runtime in Fabushi. Applicable spelling UX remains with canonical rich-text/composer browser/platform spellcheck.",
       "ui_disposition": "Hunspell fixtures are source authority, not Fabushi product surfaces; applicable behavior stays in the canonical Composer/platform spellcheck path and existing source-neutral UI.",
       "platform_differences": "Fabushi uses Electron/Chromium platform spellchecking plus canonical source-neutral policy/normalization owners. Do not introduce a Hunspell/Telegram side runtime, second dictionary truth, source-specific editor, or source-specific UI.",
-      "disposition": "mapped-open",
-      "unknown_closed": false,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
       "omitted": false,
       "reachability_status": "exact pinned source read and responsibility-decomposed; canonical production/replacement behavior and descendant exact-head evidence remain open",
       "state_machine": "exact source/fixture -> responsibility extraction -> existing-owner-first mapping -> source-neutral production/replacement behavior -> exact-head GitHub Actions evidence",
@@ -1298,7 +1938,27 @@
       "production_evidence": "source/test mapping only; source reading or upstream fixture existence is not Fabushi production verification",
       "test_evidence": "Exact recursive identity from GitHub Actions artifact 11689542414 at 18413ebb9cabc4220c66983fce9081aa7206e4f1 plus direct exact pinned GitHub blob reads in the implementation session; descendant exact-head Actions required; no local build/test used.",
       "license_and_provenance": "telegramdesktop/tdesktop@6fed91ffab9861771a75f29df65031b3c80b6941 -> Telegram/ThirdParty/hunspell -> hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/opentaal_keepcase.wrong@b15752ed20f84926d945d6d223ba11a1cf432cdd",
-      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete."
+      "notes": "Source reading closes no unknown; mapped-open until canonical shipping/replacement ownership and same-head evidence are complete.",
+      "chosen_owner": "Canonical composer spellcheck owner + dependency provenance/quality owner",
+      "responsibilities": [
+        "Exact Hunspell dependency-spellcheck-test-fixture audited as dependency validation input. Preserve spellchecking behavior through canonical Fabushi spellcheck; this test-only object is not a shipping runtime or product owner."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx (canonical browser/platform spellcheck); no Hunspell runtime/package consumer"
+      ],
+      "tests": [
+        "accepted Hunspell tests/Makefile.am check_PROGRAMS/TESTS/EXTRA_DIST audit",
+        "exact Git blob identity/byte-size audit",
+        "current Fabushi dependency/reachability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:b15752ed20f84926d945d6d223ba11a1cf432cdd",
+        "byte-audit:recomputed-git-blob=b15752ed20f84926d945d6d223ba11a1cf432cdd;byte_length=75;role=dependency-spellcheck-test-fixture",
+        "test-only-consumer-audit:hunspell/hunspel@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/Makefile.am@948b95ea5ac6fded795f2fee96a43bba9e96bb74 uses check_PROGRAMS/TESTS/EXTRA_DIST",
+        "test-only-consumer-audit:hunspell/hunspell@a698d8b53cab3507d1d619d5fa08a88777abe50b:tests/suggestiontest/Makefile.am@b8be6c5b6da9b845f08b82319a8fe0b02e7922 uses EXTRA_DIST only",
+        "fabushi-reachability-audit:233acbb0e48c141ec91f999b63972a0169d1929a:no.Hunspell-runtime-or-package-dependency;canonical-editor-spellcheck-present"
+      ],
+      "evidence_gap": "No implementation gap for this exact dependency test-only object. Global spellcheck product/release evidence remains governed by canonical spellcheck responsibility; fresh descendant Actions required."
     }
   ]
 }
