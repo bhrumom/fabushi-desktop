@@ -37,6 +37,8 @@ export interface ConversationComposerProps {
   onSubmit(): void | Promise<void>;
   onSendSilently?(): void | Promise<void>;
   onScheduleSend?(): void;
+  onConfigureRetention?(): void;
+  retentionLabel?: string;
   onExchangeStash?(): void;
   onSendStash?(): void | Promise<void>;
   onRemoveStash?(): void | Promise<void>;
@@ -73,7 +75,7 @@ export function selectComposerFiles(files: readonly File[], existingCount: numbe
   return files.slice(0, remaining);
 }
 
-export function ConversationComposer({ acceptedSendGeneration = 0, canExchangeStash = false, draft, disabled = false, hasStash = false, notice, placeholder = "Ask anything, or drop a file.", transcribeAudio, onChange, onClearReplyTarget, onExchangeStash, onRemoveAttachment, onRemoveStash, onScheduleSend, onSendSilently, onSendStash, onStageFiles, onSubmit, replyTarget, editorProviders, scopeKey, platformInput }: ConversationComposerProps) {
+export function ConversationComposer({ acceptedSendGeneration = 0, canExchangeStash = false, draft, disabled = false, hasStash = false, notice, placeholder = "Ask anything, or drop a file.", transcribeAudio, onChange, onClearReplyTarget, onConfigureRetention, onExchangeStash, onRemoveAttachment, onRemoveStash, onScheduleSend, onSendSilently, onSendStash, onStageFiles, onSubmit, retentionLabel, replyTarget, editorProviders, scopeKey, platformInput }: ConversationComposerProps) {
   const fileInput = useRef<HTMLInputElement>(null);
   const editorControls = useRef<PromptEditorControls | null>(null);
   const dragDepth = useRef(0);
@@ -247,11 +249,12 @@ export function ConversationComposer({ acceptedSendGeneration = 0, canExchangeSt
         <div className="sand-prompt-actions-row">
           <SandIconButton aria-label="Attach file" className={PROMPT_ATTACH_CLASS} disabled={disabled || atLimit || voiceBusy} icon="plus" onClick={() => fileInput.current?.click()} shape="circle" size="lg" type="button" variant="default" />
           {onExchangeStash == null ? null : <SandIconButton aria-label={hasStash ? "Swap saved draft" : "Store draft"} disabled={disabled || !canExchangeStash || voiceBusy} icon="arrow-swap" onClick={onExchangeStash} shape="circle" size="lg" title={`${hasStash ? "Swap saved draft" : "Store draft"} (Ctrl+Shift+Y)`} type="button" variant="default" />}
-          {onSendSilently == null && onScheduleSend == null ? null : <SandMenuRoot placement="top-start">
-            <SandMenuTrigger><SandIconButton aria-label="Send options" disabled={disabled || voiceBusy || !hasPayload} icon="more" shape="circle" size="lg" type="button" variant="default" /></SandMenuTrigger>
+          {onSendSilently == null && onScheduleSend == null && onConfigureRetention == null ? null : <SandMenuRoot placement="top-start">
+            <SandMenuTrigger><SandIconButton aria-label="Send options" disabled={disabled || voiceBusy || (onConfigureRetention == null && !hasPayload)} icon="more" shape="circle" size="lg" type="button" variant="default" /></SandMenuTrigger>
             <SandMenuContent ariaLabel="Send options">
               {onSendSilently == null ? null : <SandMenuItem disabled={disabled || voiceBusy || !hasPayload} index={0} onSelect={() => { void onSendSilently(); }}>Send silently</SandMenuItem>}
               {onScheduleSend == null ? null : <SandMenuItem disabled={disabled || voiceBusy || !hasPayload} index={1} onSelect={onScheduleSend}>Schedule send…</SandMenuItem>}
+              {onConfigureRetention == null ? null : <SandMenuItem disabled={disabled || voiceBusy} index={2} onSelect={onConfigureRetention}>Message retention{retentionLabel == null ? "" : ` · ${retentionLabel}`}</SandMenuItem>}
             </SandMenuContent>
           </SandMenuRoot>}
           {!hasStash || onSendStash == null || onRemoveStash == null ? null : <SandMenuRoot placement="top-start">
