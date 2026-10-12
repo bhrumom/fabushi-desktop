@@ -2576,12 +2576,20 @@ impl MessagingEngine {
                 // ordering into truth. The parent relation must already have been
                 // reconciled for this account; renderer/client commands cannot
                 // mint that relation.
-                let parent_authorized = self
+                let self_saved_messages = self
+                    .state
+                    .conversations
+                    .get(&destination.conversation_id)
+                    .is_some_and(|conversation| {
+                        matches!(conversation.kind, ConversationKind::SavedMessages)
+                            && conversation.owner_id.as_ref() == Some(&actor_id)
+                    });
+                let server_parent = self
                     .state
                     .saved_sublist_parent_access
                     .get(&destination.conversation_id)
                     .is_some_and(|actors| actors.contains(&actor_id));
-                if !parent_authorized {
+                if !self_saved_messages && !server_parent {
                     return Err(EngineError::InvalidConversationChildDestination);
                 }
                 let message_ids = message_ids
