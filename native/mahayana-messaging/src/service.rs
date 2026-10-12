@@ -3255,7 +3255,7 @@ mod recent_participant_suggestion_service_tests {
                 self_actor,
                 30,
             ),
-            Err(MessagingServiceError::Engine(EngineError::SelfRecentSuggestion))
+            Err(MessagingServiceError::Engine(EngineError::InvalidActor))
         ));
         assert!(
             !mutation_service
