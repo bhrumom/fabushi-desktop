@@ -410,7 +410,7 @@
       "referencePath": "frontend/src/recovered/features/conversation/workspace/draft-state.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "cfc5dae776269e871e160db58c6a472bfec83dbb",
+      "targetBlobSha": "3010e0e89af79593d371cb6c58f9f372bf7e08e9",
       "behavioralEvidence": [
         "frontend/src/recovered/features/conversation/workspace/draft-state.ts"
       ],
