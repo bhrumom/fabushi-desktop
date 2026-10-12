@@ -266,9 +266,9 @@
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
     "unknown_minimum": 15845,
-    "unread_minimum": 3153,
+    "unread_minimum": 3089,
     "omitted_known": 0,
-    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 12,972; unknown=15,845, unread=3,153, omitted=0."
+    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 13,036; unknown=15,845, unread=3,089, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -282,7 +282,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Closure open. Read-through 12,972/16,125; first unread 12,973 Telegram/lib_ui::ui/arc_angles.h@39c1ce22ffecb5ae8f242dea374d01c3c7b6ae3f; unknown remains 15,845; product/release closure remains open."
+    "note": "Closure open. Read-through 13,036/16,125; first unread 13,037 Telegram/lib_ui::ui/gl/gl_surface.h@588120ae9081f14edf5ba6f7b93afcc7f581fc37; unknown remains 15,845; product/release closure remains open."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",
@@ -311,7 +311,7 @@
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "recursive_non_directory_entries": 16125,
     "source_closure_ready": false,
-    "note": "12,909-12,972 were directly reviewed at accepted desktop-app/lib_ui@91ff4463 using predecessor recursive ordering plus exact Git blob/content verification; binary PNG inputs matched declared size/signature/dimensions. Current descendant requires fresh exact-head Actions."
+    "note": "12,973-13,036 were directly refetched and read at accepted desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd. Predecessor recursive evidence is used only for order; current descendant requires fresh exact-head Actions."
   },
   "build_time_acquisition_inventory": {
     "path": "projects/telegram-desktop-rust/inventory/build-time-acquisitions.json",
@@ -635,9 +635,9 @@
     "development_only_non_applicable": 206,
     "unknown_closed": 280,
     "omitted": 0,
-    "read_through": 12972,
-    "first_unread_order": 12973,
-    "first_unread_path": "Telegram/lib_ui::ui/arc_angles.h",
+    "read_through": 13036,
+    "first_unread_order": 13037,
+    "first_unread_path": "Telegram/lib_ui::ui/gl/gl_surface.h",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
@@ -738,5 +738,5 @@
     ],
     "note": "Valid exact-head evidence for 46dfaf only; main reconciliation/accounting descendants require fresh Actions."
   },
-  "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 12,972; unknown=15,845, unread=3,153, omitted=0; first unread=12,973 Telegram/lib_ui::ui/arc_angles.h@39c1ce22ffecb5ae8f242dea374d01c3c7b6ae3f."
+  "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 13,036; unknown=15,845, unread=3,089, omitted=0; first unread=13,037 Telegram/lib_ui::ui/gl/gl_surface.h@588120ae9081f14edf5ba6f7b93afcc7f581fc37."
 }
