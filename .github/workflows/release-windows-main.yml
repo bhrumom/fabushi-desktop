@@ -312,8 +312,8 @@ jobs:
         run: |
           $files = Get-ChildItem desktop/release -File | Where-Object { $_.Extension -in ".exe", ".yml", ".blockmap" }
           $lines = foreach ($file in $files) { $h = Get-FileHash $file.FullName -Algorithm SHA256; "$($h.Hash.ToLower())  $($file.Name)" }
-          $lines | Set-Content desktop/release/SHA256SUMS.txt
-          @{source="${{ steps.source.outputs.sha }}";runId="${{ github.run_id }}";runAttempt="${{ github.run_attempt }}";platform="windows";artifacts=$lines} | ConvertTo-Json -Depth 4 | Set-Content desktop/release/provenance.json
+          $lines | Set-Content desktop/release/SHA256SUMS-windows.txt
+          @{source="${{ steps.source.outputs.sha }}";runId="${{ github.run_id }}";runAttempt="${{ github.run_attempt }}";platform="windows";artifacts=$lines} | ConvertTo-Json -Depth 4 | Set-Content desktop/release/provenance-windows.json
 
       - name: Upload packaged acceptance evidence
         if: always()
@@ -336,8 +336,8 @@ jobs:
             desktop/release/*.exe
             desktop/release/*.yml
             desktop/release/*.blockmap
-            desktop/release/SHA256SUMS.txt
-            desktop/release/provenance.json
+            desktop/release/SHA256SUMS-windows.txt
+            desktop/release/provenance-windows.json
           if-no-files-found: error
           retention-days: 90
 
@@ -358,4 +358,4 @@ jobs:
           fi
           remote_tag="$(git ls-remote origin "refs/tags/$TAG" | awk '{print $1}')"
           test "$remote_tag" = "$SOURCE_SHA"
-          gh release upload "$TAG" desktop/release/*.exe desktop/release/*.yml desktop/release/*.blockmap desktop/release/SHA256SUMS.txt desktop/release/provenance.json --repo "$repo" --clobber
+          gh release upload "$TAG" desktop/release/*.exe desktop/release/*.yml desktop/release/*.blockmap desktop/release/SHA256SUMS-windows.txt desktop/release/provenance-windows.json --repo "$repo" --clobber
