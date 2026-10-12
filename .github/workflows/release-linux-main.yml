@@ -231,6 +231,8 @@ jobs:
             gpg --batch --yes --pinentry-mode loopback --passphrase "$GPG_PASSPHRASE" --local-user "$EXPECTED_FINGERPRINT" --detach-sign --armor "$package"
             gpg --batch --verify "$package.asc" "$package"
           done
+          gpg --batch --armor --export "$EXPECTED_FINGERPRINT" > desktop/release/linux-release-signing-key.asc
+          test -s desktop/release/linux-release-signing-key.asc
           appimage="$(printf '%s\n' "${packages[@]}" | grep -m1 '\.AppImage$')"
           deb="$(printf '%s\n' "${packages[@]}" | grep -m1 '\.deb$')"
           test -n "$appimage"
