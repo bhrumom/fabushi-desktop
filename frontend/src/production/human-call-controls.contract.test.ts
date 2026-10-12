@@ -196,6 +196,16 @@ test("shipping SFU publication advertises actual camera simulcast layers", () =>
   assert.ok(source.includes('simulcastRids: track.kind === "video" ? [...CALL_VIDEO_SIMULCAST_RIDS] : []'));
 });
 
+test("SFU participant churn retires stale receive sessions before rebuilding discovery", () => {
+  assert.ok(source.includes("const discoveredPublicationIds = new Set("));
+  assert.ok(source.includes("const staleSubscriptionIds = Array.from(runtime.subscribedPublicationIds)"));
+  assert.ok(source.includes("!discoveredPublicationIds.has(publicationId)"));
+  assert.ok(source.includes("Removing a publication from discovery does not close an already-created"));
+  assert.ok(source.includes("sfuSyncInFlightRef.current = false;"));
+  assert.ok(source.includes("await configurePeer(nextCall, currentLease, local);"));
+  assert.ok(source.includes("closeRemoteMediaSessions(nextCall)"));
+});
+
 test("shipping SFU layer switching uses durable subscription identity and explicit applied settlement", () => {
   assert.ok(source.includes("remoteVideoSubscriptions: Map<string, SfuRemoteVideoSubscription>"));
   assert.ok(source.includes("successfulSubscriptions.set(raw.publicationId, raw.subscriptionId)"));
