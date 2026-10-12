@@ -1,4 +1,5 @@
 import { Component, lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ErrorInfo, type ReactNode } from "react";
+import { createCanonicalRecentParticipantSelectionRequest } from "../recovered/contracts/desktop-bridge";
 import type { CoordinatorPortBridge, CursorAuthStatus, DesktopAutoReviewInstructions, DesktopBridge, DesktopUiPreferences, SidebarSection, ThemePreference } from "../recovered/contracts/desktop-bridge";
 import computerEntrypoint from "../recovered/features/computer/overlay/entrypoint";
 import { ConversationComposer } from "../recovered/features/conversation/workspace/composer";
@@ -2755,6 +2756,35 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     }
   }, [client]);
 
+  const noteRecentParticipantSelection = useCallback(async (
+    agentId: string,
+    accountScopeGeneration: number,
+    transportScopeGeneration: number,
+    requestGeneration: number,
+  ) => {
+    if (client == null) return;
+    const humanConversation = humanConversationsRef.current.some((conversation) => conversation.id === agentId);
+    const agent = agentsRef.current.find((candidate) => candidate.id === agentId);
+    if (!humanConversation && (agent == null || agent.isGroup)) return;
+    if (agent?.isGroup === true) return;
+    const isCurrentSelection = () =>
+      accountScopeGenerationRef.current === accountScopeGeneration
+      && transportScopeGenerationRef.current === transportScopeGeneration
+      && openAgentRequestGenerationRef.current === requestGeneration
+      && accountRef.current?.kind === "logged-in";
+    if (!isCurrentSelection()) return;
+    try {
+      await client.call(
+        "noteRecentParticipantSuggestion",
+        createCanonicalRecentParticipantSelectionRequest(agentId),
+      );
+    } catch {
+      // MessagingService atomically rolls back projection state, cursor and
+      // journal visibility. A failed Recent Peers write must not turn an
+      // already-open conversation into a transcript failure.
+    }
+  }, [client]);
+
   const openAgent = useCallback(async (agentId: string) => {
     const accountScopeGeneration = accountScopeGenerationRef.current;
     const transportScopeGeneration = transportScopeGenerationRef.current;
@@ -2767,9 +2797,18 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     setOverlay(null);
     setWorkspaceRoute(null);
     setCommandPaletteOpen(false);
-    if (hasLoadedEntries) selectionStore.settle(agentId);
-    if (hasLoadedEntries || client == null) {
-      if (client == null) selectionStore.settle(agentId);
+    if (hasLoadedEntries) {
+      selectionStore.settle(agentId);
+      void noteRecentParticipantSelection(
+        agentId,
+        accountScopeGeneration,
+        transportScopeGeneration,
+        requestGeneration,
+      );
+      return;
+    }
+    if (client == null) {
+      selectionStore.settle(agentId);
       return;
     }
     const humanConversation = humanConversationsRef.current.find((conversation) => conversation.id === agentId);
@@ -2808,6 +2847,12 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       selectionStore.settle(agentId);
       selectionStore.reconcile({ agentIds: completeRosterAgentIdsRef.current, isRosterComplete: hasLoadedAgentsRef.current });
       setTranscriptLoadError((current) => current?.agentId === agentId ? null : current);
+      void noteRecentParticipantSelection(
+        agentId,
+        accountScopeGeneration,
+        transportScopeGeneration,
+        requestGeneration,
+      );
     } catch {
       if (accountScopeGenerationRef.current !== accountScopeGeneration
         || openAgentRequestGenerationRef.current !== requestGeneration
@@ -2817,7 +2862,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       selectionStore.reconcile({ agentIds: completeRosterAgentIdsRef.current, isRosterComplete: hasLoadedAgentsRef.current });
       setTranscriptLoadError({ agentId, accountScopeGeneration });
     }
-  }, [client, selectionStore, transcriptAccountSlot, transcriptPaginationController]);
+  }, [client, noteRecentParticipantSelection, selectionStore, transcriptAccountSlot, transcriptPaginationController]);
 
   const openGroupMemberChat = useCallback((agentId: string) => {
     setGroupInfoPaneOpen(false);

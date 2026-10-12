@@ -153,6 +153,16 @@ jobs:
         run: npm run check:desktop-runtime
       - name: Enforce built desktop bundle boundary
         run: node scripts/check-desktop-bundle.mjs
+      - name: Run canonical Recent Peers shipping E2E
+        env:
+          FABUSHI_FEATURE_HOST_MODE: test
+          MAHAYANA_APP_HOST_BIN: ${{ github.workspace }}/desktop/resources/bin/mahayana-app-host
+          DEBUG: pw:browser*
+          ELECTRON_ENABLE_LOGGING: "1"
+          ELECTRON_ENABLE_STACK_DUMPING: "1"
+        run: npx playwright test e2e/mahayana-agent-workbench.spec.ts --grep "canonical participant search selection persists Recent Peers" --workers=1
+      - name: Run canonical participant search wiring contract
+        run: npx playwright test e2e/tdrp-canonical-search-contract.spec.ts --workers=1
       - name: Run Grok Agent shell and Mahayana chat regression
         env:
           FABUSHI_FEATURE_HOST_MODE: test

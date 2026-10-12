@@ -1,9 +1,14 @@
 import { expect, test } from '@playwright/test';
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
   commandPaletteEntries,
   dedupeCommandPaletteAgents,
   type CommandPaletteAgent,
 } from '../../frontend/src/production/command-palette-model';
+
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
 const replacedRoster: readonly CommandPaletteAgent[] = [
   { id: 'human:ada', name: 'Ada (stale)', title: 'Old row', isGroup: false, isHidden: false },
@@ -75,3 +80,36 @@ test('canonical fuzzy search preserves Unicode, RTL and separator semantics from
   expect(search('tf')).toEqual(['human:file']);
   expect(search('Name')).not.toContain('human:short');
 });
+
+test('shipping canonical selection crosses renderer gateway into the one durable Recent Peers owner', async () => {
+  const [renderer, bridgeContract, sessionGateway, productionSession, messagingService, coordinatorRpc] =
+    await Promise.all([
+      readFile(path.join(repoRoot, 'frontend/src/production/ProductionRenderer.tsx'), 'utf8'),
+      readFile(path.join(repoRoot, 'frontend/src/recovered/contracts/desktop-bridge.ts'), 'utf8'),
+      readFile(path.join(repoRoot, 'source/host/src/extensions/session/gateway.rs'), 'utf8'),
+      readFile(path.join(repoRoot, 'source/host/src/extensions/session/production.rs'), 'utf8'),
+      readFile(path.join(repoRoot, 'native/mahayana-messaging/src/service.rs'), 'utf8'),
+      readFile(path.join(repoRoot, 'source/shared/rpc/coordinator.ts'), 'utf8'),
+    ]);
+
+  expect(bridgeContract).toContain('createCanonicalRecentParticipantSelectionRequest');
+  expect(renderer).toContain('"noteRecentParticipantSuggestion"');
+  expect(renderer).toContain('createCanonicalRecentParticipantSelectionRequest(agentId)');
+  expect(renderer).toContain('accountScopeGenerationRef.current === accountScopeGeneration');
+  expect(renderer).toContain('openAgentRequestGenerationRef.current === requestGeneration');
+  expect(sessionGateway).toContain('"noteRecentParticipantSuggestion"');
+  expect(productionSession).toContain('service.note_recent_participant_suggestion(');
+  expect(productionSession).toContain('self.agents_root.join("_messaging")');
+  expect(messagingService).toContain('pub fn note_recent_participant_suggestion(');
+  expect(messagingService).toContain('self.engine = previous_engine');
+  expect(coordinatorRpc).toContain('noteRecentParticipantSuggestion: { args: "object", reply: "record" }');
+
+  const openAgentStart = renderer.indexOf('const openAgent = useCallback');
+  const openAgentEnd = renderer.indexOf('const openGroupMemberChat');
+  expect(openAgentStart).toBeGreaterThanOrEqual(0);
+  expect(openAgentEnd).toBeGreaterThan(openAgentStart);
+  const selectionBranch = renderer.slice(openAgentStart, openAgentEnd);
+  expect(selectionBranch).toContain('} catch {');
+  expect(selectionBranch.split('noteRecentParticipantSelection(')).toHaveLength(3);
+});
+

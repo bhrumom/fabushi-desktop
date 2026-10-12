@@ -1,5 +1,5 @@
 import { _electron as electron, expect, test, type ElectronApplication, type Locator, type Page } from '@playwright/test';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -670,6 +670,53 @@ async function completeBrowserLogin(page: Page): Promise<void> {
   await expect(primary).toBeVisible({ timeout: 15_000 });
 }
 
+async function readRecentParticipantSuggestions(
+  appDataDir: string,
+): Promise<Record<string, readonly string[]>> {
+  const snapshots: string[] = [];
+  const walk = async (directory: string, depth: number): Promise<void> => {
+    if (depth > 12) return;
+    let entries;
+    try {
+      entries = await readdir(directory, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
+      const candidate = path.join(directory, entry.name);
+      if (entry.isDirectory()) {
+        await walk(candidate, depth + 1);
+      } else if (
+        entry.isFile()
+        && entry.name === 'snapshot.json'
+        && path.basename(directory) === '_messaging'
+      ) {
+        snapshots.push(candidate);
+      }
+    }
+  };
+  await walk(appDataDir, 0);
+
+  let emptyProjection: Record<string, readonly string[]> = {};
+  for (const snapshotPath of snapshots) {
+    try {
+      const parsed = JSON.parse(await readFile(snapshotPath, 'utf8')) as {
+        state?: { recentParticipantSuggestions?: unknown };
+      };
+      const candidate = parsed.state?.recentParticipantSuggestions;
+      if (candidate == null || typeof candidate !== 'object' || Array.isArray(candidate)) continue;
+      const projection = candidate as Record<string, readonly string[]>;
+      emptyProjection = projection;
+      if (Object.values(projection).some((items) => Array.isArray(items) && items.length > 0)) {
+        return projection;
+      }
+    } catch {
+      // A concurrently replaced snapshot is retried by expect.poll.
+    }
+  }
+  return emptyProjection;
+}
+
 async function openMahayanaConversation(page: Page): Promise<void> {
   const peer = page.getByRole('region', { name: 'Agent list' }).getByRole('button', { name: 'New chat', exact: true });
   await expect(peer).toBeVisible({ timeout: 15_000 });
@@ -773,6 +820,62 @@ async function expectHermesAssistantTurn(page: Page, expectedText: string): Prom
   expect(bodyText.split(expectedText).length - 1).toBe(1);
   return turn;
 }
+
+test('canonical participant search selection persists Recent Peers through the shipping renderer and Host', async () => {
+  const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-recent-peers-e2e-'));
+  let app: ElectronApplication | null = null;
+
+  try {
+    app = await launchDesktopApp(appDataDir);
+    let page = await app.firstWindow();
+    await completeBrowserLogin(page);
+
+    const openPalette = async (): Promise<void> => {
+      await page.keyboard.press(process.platform === 'darwin' ? 'Meta+K' : 'Control+K');
+      await expect(page.getByRole('dialog', { name: 'Search' })).toBeVisible();
+    };
+
+    await openPalette();
+    const palette = page.getByRole('dialog', { name: 'Search' });
+    await palette.getByRole('combobox').fill('New chat');
+    const participant = palette.getByRole('option').filter({ hasText: 'New chat' }).first();
+    await expect(participant).toBeVisible();
+    await participant.click();
+    await expect(page.getByRole('textbox', { name: 'Prompt' })).toHaveAttribute(
+      'contenteditable',
+      'true',
+      { timeout: 15_000 },
+    );
+
+    await expect.poll(async () => {
+      const projection = await readRecentParticipantSuggestions(appDataDir);
+      return Object.values(projection).reduce((count, items) => count + items.length, 0);
+    }, { timeout: 15_000 }).toBeGreaterThan(0);
+
+    const beforeCancel = await readRecentParticipantSuggestions(appDataDir);
+    await openPalette();
+    await palette.getByRole('combobox').fill('New chat');
+    await page.keyboard.press('Escape');
+    await expect(palette).toBeHidden();
+    await expect.poll(
+      async () => JSON.stringify(await readRecentParticipantSuggestions(appDataDir)),
+      { timeout: 3_000 },
+    ).toBe(JSON.stringify(beforeCancel));
+
+    await app.close();
+    app = null;
+    app = await launchDesktopApp(appDataDir);
+    page = await app.firstWindow();
+    await completeBrowserLogin(page);
+    const afterRestart = await readRecentParticipantSuggestions(appDataDir);
+    expect(
+      Object.values(afterRestart).reduce((count, items) => count + items.length, 0),
+    ).toBeGreaterThan(0);
+  } finally {
+    if (app != null) await app.close();
+    await rm(appDataDir, { recursive: true, force: true });
+  }
+});
 
 test('Mahayana renders one Hermes-style assistant turn instead of a completion Workbench card', async () => {
   const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-mahayana-assistant-turn-'));

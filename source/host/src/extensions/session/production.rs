@@ -101,6 +101,7 @@ pub const PRODUCTION_BLOB_BUSY_TIMEOUT_MS: u64 = 5_000;
 pub const REMOTE_RESOURCE_RESOLVE_MAX_IN_FLIGHT: usize = 10;
 pub const REMOTE_RESOURCE_RESOLVE_DEADLINE_MS: i64 = 60_000;
 const REMOTE_RESOURCE_RESOLVE_WAIT: Duration = Duration::from_millis(10);
+static MESSAGING_PROJECTION_IO_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
 
 fn current_resource_time_ms() -> i64 {
     let millis = SystemTime::now()
@@ -3582,6 +3583,133 @@ impl ProductionSessionWorkers {
         Ok(entry)
     }
 
+    fn stable_recent_participant_actor_id(
+        namespace: &str,
+        canonical_id: &str,
+    ) -> MessagingActorId {
+        let digest = Sha256::digest(canonical_id.as_bytes());
+        let fingerprint = digest[..16]
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<String>();
+        MessagingActorId::new(format!("{namespace}:{fingerprint}"))
+    }
+
+    fn recent_participant_actor_for_selection(
+        &self,
+        selection_id: &str,
+    ) -> Result<MessagingActor, String> {
+        let selection_id = selection_id.trim();
+        if selection_id.is_empty()
+            || selection_id.len() > 512
+            || selection_id.chars().any(char::is_control)
+        {
+            return Err("canonical participant selection id is invalid".into());
+        }
+        let local_human_id = self.local_human_id()?;
+        if selection_id == local_human_id {
+            return Err("canonical participant selection cannot target the active identity".into());
+        }
+
+        if let Some(agent) = self.summarize_agent_by_id(selection_id, None)? {
+            if agent.is_group {
+                return Err("Recent Peers only accepts an atomic participant selection".into());
+            }
+            return Ok(MessagingActor::assistant(
+                Self::stable_recent_participant_actor_id("assistant:agent", &agent.id).0,
+                agent.name,
+            ));
+        }
+
+        let owner = self.open_human_conversation_db_owner(selection_id)?;
+        let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+        if !self.metadata_has_local_human(&metadata)? {
+            return Err("local Human identity is not a participant in the selected conversation".into());
+        }
+        let peer_human_id = self.peer_human_id_from_metadata(&metadata)?;
+        if peer_human_id == local_human_id {
+            return Err("canonical participant selection cannot target the active identity".into());
+        }
+        let display_name = metadata
+            .get("title")
+            .and_then(serde_json::Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .unwrap_or(peer_human_id.as_str())
+            .to_string();
+        Ok(MessagingActor::human(
+            Self::stable_recent_participant_actor_id("human:peer", &peer_human_id).0,
+            display_name,
+        ))
+    }
+
+    pub fn note_recent_participant_suggestion(
+        &self,
+        selection_id: &str,
+    ) -> Result<serde_json::Value, String> {
+        let peer_actor = self.recent_participant_actor_for_selection(selection_id)?;
+        let peer_actor_id = peer_actor.id.clone();
+        let owner_id = self.story_actor_id()?;
+        if peer_actor_id == owner_id {
+            return Err("canonical participant selection cannot target the active identity".into());
+        }
+
+        if let Some(client) = self.shipping_native_messaging()? {
+            let identity = client.identity()?;
+            if identity.user_id != self.local_human_id()? {
+                return Err(
+                    "Recent Peers credential identity does not match active Human identity".into(),
+                );
+            }
+        }
+
+        let _guard = MESSAGING_PROJECTION_IO_LOCK
+            .get_or_init(|| Mutex::new(()))
+            .lock()
+            .map_err(|_| "canonical messaging projection storage lock is poisoned".to_string())?;
+        let root = self.agents_root.join("_messaging");
+        let mut service = MessagingService::load_with_blob_store(
+            MessagingJsonFileStateStore::new(root.join("snapshot.json")),
+            MessagingFileBlobStore::new(root.join("blobs")),
+        )
+        .map_err(|error| format!("canonical Recent Peers service could not load: {error}"))?;
+        let now_ms = Self::story_server_time_ms();
+
+        if !service.engine().state().actors.contains_key(&owner_id) {
+            service
+                .upsert_recent_participant_actor_projection(
+                    MessagingActor::human(owner_id.0.clone(), "Fabushi Human"),
+                    now_ms,
+                )
+                .map_err(|error| {
+                    format!("canonical Recent Peers owner projection failed: {error}")
+                })?;
+        }
+        if !service.engine().state().actors.contains_key(&peer_actor_id) {
+            service
+                .upsert_recent_participant_actor_projection(peer_actor, now_ms)
+                .map_err(|error| {
+                    format!("canonical Recent Peers participant projection failed: {error}")
+                })?;
+        }
+
+        service
+            .note_recent_participant_suggestion(owner_id.clone(), peer_actor_id.clone(), now_ms)
+            .map_err(|error| format!("canonical Recent Peers persistence failed: {error}"))?;
+        let recent_participant_actor_ids = service
+            .engine()
+            .recent_participant_suggestions(&owner_id)
+            .iter()
+            .map(|actor_id| actor_id.0.clone())
+            .collect::<Vec<_>>();
+        Ok(serde_json::json!({
+            "applied": true,
+            "ownerId": owner_id.0,
+            "peerId": peer_actor_id.0,
+            "recentParticipantActorIds": recent_participant_actor_ids,
+        }))
+    }
+
     fn story_actor_id(&self) -> Result<MessagingActorId, String> {
         let account_id = self.local_human_id()?;
         let digest = Sha256::digest(account_id.as_bytes());
@@ -3604,11 +3732,10 @@ impl ProductionSessionWorkers {
         &self,
         command: MessagingClientCommand,
     ) -> Result<Vec<MessagingServerEnvelope>, String> {
-        static STORY_IO_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
-        let _guard = STORY_IO_LOCK
+        let _guard = MESSAGING_PROJECTION_IO_LOCK
             .get_or_init(|| Mutex::new(()))
             .lock()
-            .map_err(|_| "canonical Story storage lock is poisoned".to_string())?;
+            .map_err(|_| "canonical messaging projection storage lock is poisoned".to_string())?;
         let actor_id = self.story_actor_id()?;
         let device_id = match self.shipping_native_messaging()? {
             Some(client) => {

@@ -1,4 +1,4 @@
-use crate::actor::{ActorId, ActorKind, ParticipantRole, Presence, PresenceStatus};
+use crate::actor::{Actor, ActorId, ActorKind, ParticipantRole, Presence, PresenceStatus};
 use crate::blob_store::{BlobStoreError, FileBlobStore};
 use crate::bot::BotInvocation;
 use crate::community::{CommunityState, MemberStatus};
@@ -116,6 +116,19 @@ impl<S: MessagingStateStore> MessagingService<S> {
 
     pub fn engine(&self) -> &MessagingEngine {
         &self.engine
+    }
+
+    /// Persist one canonical participant actor projection in the same durable
+    /// owner used by Recent Peers. Projection-only mutations intentionally do
+    /// not advance the server event cursor or journal.
+    pub fn upsert_recent_participant_actor_projection(
+        &mut self,
+        actor: Actor,
+        now_ms: i64,
+    ) -> Result<(), MessagingServiceError> {
+        self.persist_recent_projection_mutation(now_ms, move |engine| {
+            engine.execute(Command::UpsertActor { actor }).map(|_| ())
+        })
     }
 
     pub fn cursor(&self) -> u64 {

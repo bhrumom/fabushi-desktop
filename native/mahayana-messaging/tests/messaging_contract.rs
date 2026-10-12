@@ -883,3 +883,90 @@ fn stories_communities_and_bot_execution_enforce_actor_permissions() {
         })
         .unwrap();
 }
+
+#[test]
+fn recent_participant_selection_projection_is_durable_bounded_account_scoped_and_cursor_neutral() {
+    let owner_a = ActorId::new("human:recent-integration-owner-a");
+    let owner_b = ActorId::new("human:recent-integration-owner-b");
+    let mut service = MessagingService::load(MemoryStateStore::default()).unwrap();
+
+    service
+        .upsert_recent_participant_actor_projection(
+            Actor::human(owner_a.0.clone(), "Owner A"),
+            1,
+        )
+        .unwrap();
+    service
+        .upsert_recent_participant_actor_projection(
+            Actor::human(owner_b.0.clone(), "Owner B"),
+            2,
+        )
+        .unwrap();
+
+    for index in 0_i64..=48 {
+        let peer = ActorId::new(format!("human:recent-integration-peer:{index}"));
+        service
+            .upsert_recent_participant_actor_projection(
+                Actor::human(peer.0.clone(), format!("Peer {index}")),
+                10 + index,
+            )
+            .unwrap();
+        service
+            .note_recent_participant_suggestion(owner_a.clone(), peer, 100 + index)
+            .unwrap();
+    }
+
+    let repeated = ActorId::new("human:recent-integration-peer:5");
+    service
+        .note_recent_participant_suggestion(owner_a.clone(), repeated.clone(), 200)
+        .unwrap();
+    service
+        .note_recent_participant_suggestion(owner_b.clone(), repeated.clone(), 201)
+        .unwrap();
+
+    let recent_a = service.engine().recent_participant_suggestions(&owner_a);
+    assert_eq!(recent_a.len(), 48);
+    assert_eq!(recent_a.first(), Some(&repeated));
+    assert_eq!(
+        recent_a.iter().filter(|candidate| *candidate == &repeated).count(),
+        1
+    );
+    assert_eq!(
+        service.engine().recent_participant_suggestions(&owner_b),
+        &[repeated.clone()]
+    );
+
+    let before_invalid = service.engine().state().clone();
+    assert!(service
+        .note_recent_participant_suggestion(owner_a.clone(), owner_a.clone(), 202)
+        .is_err());
+    assert!(service
+        .note_recent_participant_suggestion(
+            owner_a.clone(),
+            ActorId::new("human:recent-integration-unknown"),
+            203,
+        )
+        .is_err());
+    assert_eq!(service.engine().state(), &before_invalid);
+
+    let store = service.into_store();
+    let snapshot = store.load().unwrap().expect("recent projection snapshot");
+    assert_eq!(
+        snapshot.cursor, 0,
+        "projection-only writes must not advance the cursor or journal"
+    );
+
+    let reopened = MessagingService::load(store).unwrap();
+    assert_eq!(
+        reopened
+            .engine()
+            .recent_participant_suggestions(&owner_a)
+            .first(),
+        Some(&repeated)
+    );
+    assert_eq!(
+        reopened.engine().recent_participant_suggestions(&owner_b),
+        &[repeated]
+    );
+}
+

@@ -219,6 +219,7 @@ export const COORDINATOR_METHOD_TABLE = {
   submitSecret: { args: "object", reply: "void" },
   reactToMessage: { args: "object", reply: "void" },
   listAgents: { args: "none", reply: "array" },
+  noteRecentParticipantSuggestion: { args: "object", reply: "record" },
   countAgents: { args: "none", reply: "count" },
   searchAgents: { args: "object", reply: "array" },
   searchMedia: { args: "object", reply: "array" },

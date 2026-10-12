@@ -627,3 +627,18 @@ export function requireDesktopBridge(value: unknown): DesktopBridge {
   }
   return value;
 }
+
+export interface CanonicalRecentParticipantSelectionRequest {
+  readonly selectionId: string;
+}
+
+export function createCanonicalRecentParticipantSelectionRequest(
+  selectionId: string,
+): CanonicalRecentParticipantSelectionRequest {
+  const normalized = selectionId.trim();
+  if (normalized.length === 0 || normalized.length > 512 || /[\u0000-\u001f\u007f]/u.test(normalized)) {
+    throw new Error("canonical recent participant selection requires a valid selectionId");
+  }
+  return { selectionId: normalized };
+}
+
