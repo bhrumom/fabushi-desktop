@@ -1,0 +1,3749 @@
+{
+  "format_version": 2,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+    "tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6"
+  },
+  "source_component": {
+    "repository": "ericniebler/range-v3",
+    "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+    "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+    "mount": "doc/gh-pages"
+  },
+  "exact_head_evidence": {
+    "production_owner_audit_head": "ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+    "status": "Direct exact-blob audit on the current PR lineage. Predecessor ca7bf00 exact-head Actions were still running when this accounting descendant was prepared; the descendant requires its own same-head Actions."
+  },
+  "accounting": {
+    "recursive_total": 16125,
+    "read_through": 14196,
+    "unread": 1929,
+    "unknown": 15096,
+    "omitted": 0,
+    "unknown_closed": 1029
+  },
+  "range": {
+    "first_order": 14133,
+    "last_order": 14196,
+    "entries": 64,
+    "next_order": 14197,
+    "next_source_path": "doc/gh-pages::reference__wrapper_8hpp.js"
+  },
+  "rows": [
+    {
+      "recursive_order": 14133,
+      "source_path": "doc/gh-pages::navtreeindex2.js",
+      "source_blob_sha": "de9dc8a5a468d1968a6bd9e3af5f870704cb087c",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "navtreeindex2.js",
+        "mode": "100644",
+        "type": "blob",
+        "object": "de9dc8a5a468d1968a6bd9e3af5f870704cb087c",
+        "size": 18190
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:de9dc8a5a468d1968a6bd9e3af5f870704cb087c",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact var NAVTREEINDEX* documentation navigation index audited"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen-generated NAVTREE index sidecar",
+        "navtreeindex2.js"
+      ],
+      "upstream_owner": "navtreeindex2.js",
+      "responsibility": "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14134,
+      "source_path": "doc/gh-pages::navtreeindex3.js",
+      "source_blob_sha": "6a4f6dae0c5b2e99d2c3b15f92d1ba700529aec7",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "navtreeindex3.js",
+        "mode": "100644",
+        "type": "blob",
+        "object": "6a4f6dae0c5b2e99d2c3b15f92d1ba700529aec7",
+        "size": 13865
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:6a4f6dae0c5b2e99d2c3b15f92d1ba700529aec7",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact var NAVTREEINDEX* documentation navigation index audited"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen-generated NAVTREE index sidecar",
+        "navtreeindex3.js"
+      ],
+      "upstream_owner": "navtreeindex3.js",
+      "responsibility": "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14135,
+      "source_path": "doc/gh-pages::navtreeindex4.js",
+      "source_blob_sha": "93c86ea38bb9a4ccc9ac43a079309d7a2678625c",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "navtreeindex4.js",
+        "mode": "100644",
+        "type": "blob",
+        "object": "93c86ea38bb9a4ccc9ac43a079309d7a2678625c",
+        "size": 14097
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:93c86ea38bb9a4ccc9ac43a079309d7a2678625c",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact var NAVTREEINDEX* documentation navigation index audited"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen-generated NAVTREE index sidecar",
+        "navtreeindex4.js"
+      ],
+      "upstream_owner": "navtreeindex4.js",
+      "responsibility": "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14136,
+      "source_path": "doc/gh-pages::navtreeindex5.js",
+      "source_blob_sha": "d09cf72b323f6cc5bf81c7566ecc9b46dcdf5003",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "navtreeindex5.js",
+        "mode": "100644",
+        "type": "blob",
+        "object": "d09cf72b323f6cc5bf81c7566ecc9b46dcdf5003",
+        "size": 14851
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:d09cf72b323f6cc5bf81c7566ecc9b46dcdf5003",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact var NAVTREEINDEX* documentation navigation index audited"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen-generated NAVTREE index sidecar",
+        "navtreeindex5.js"
+      ],
+      "upstream_owner": "navtreeindex5.js",
+      "responsibility": "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14137,
+      "source_path": "doc/gh-pages::navtreeindex6.js",
+      "source_blob_sha": "e32b82c8d5f588573dbe8c21fd54b39785cefdcf",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "navtreeindex6.js",
+        "mode": "100644",
+        "type": "blob",
+        "object": "e32b82c8d5f588573dbe8c21fd54b39785cefdcf",
+        "size": 6121
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:e32b82c8d5f588573dbe8c21fd54b39785cefdcf",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact var NAVTREEINDEX* documentation navigation index audited"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen-generated NAVTREE index sidecar",
+        "navtreeindex6.js"
+      ],
+      "upstream_owner": "navtreeindex6.js",
+      "responsibility": "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14138,
+      "source_path": "doc/gh-pages::navtreeindex7.js",
+      "source_blob_sha": "d45ea2d3189e0323a4ef93831ef262bea4c5bbbe",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "navtreeindex7.js",
+        "mode": "100644",
+        "type": "blob",
+        "object": "d45ea2d3189e0323a4ef93831ef262bea4c5bbbe",
+        "size": 20871
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:d45ea2d3189e0323a4ef93831ef262bea4c5bbbe",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact var NAVTREEINDEX* documentation navigation index audited"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen-generated NAVTREE index sidecar",
+        "navtreeindex7.js"
+      ],
+      "upstream_owner": "navtreeindex7.js",
+      "responsibility": "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14139,
+      "source_path": "doc/gh-pages::navtreeindex8.js",
+      "source_blob_sha": "2849c540783d9a18871548607e8f629ac24ade1c",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "navtreeindex8.js",
+        "mode": "100644",
+        "type": "blob",
+        "object": "2849c540783d9a18871548607e8f629ac24ade1c",
+        "size": 3078
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:2849c540783d9a18871548607e8f629ac24ade1c",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact var NAVTREEINDEX* documentation navigation index audited"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen-generated NAVTREE index sidecar",
+        "navtreeindex8.js"
+      ],
+      "upstream_owner": "navtreeindex8.js",
+      "responsibility": "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14140,
+      "source_path": "doc/gh-pages::none__of_8hpp.html",
+      "source_blob_sha": "489aaef47fb99a4ef6a071bbc42cb5512874fbc2",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "none__of_8hpp.html",
+        "mode": "100644",
+        "type": "blob",
+        "object": "489aaef47fb99a4ef6a071bbc42cb5512874fbc2",
+        "size": 6808
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:489aaef47fb99a4ef6a071bbc42cb5512874fbc2",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact HTML carries Doxygen generated-page identity"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen 1.9.4 generated documentation HTML page",
+        "none__of_8hpp.html"
+      ],
+      "upstream_owner": "none__of_8hpp.html",
+      "responsibility": "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14141,
+      "source_path": "doc/gh-pages::none__of_8hpp.js",
+      "source_blob_sha": "8431c59549bfe7674c8179762388b916ee182685",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "none__of_8hpp.js",
+        "mode": "100644",
+        "type": "blob",
+        "object": "8431c59549bfe7674c8179762388b916ee182685",
+        "size": 187
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:8431c59549bfe7674c8179762388b916ee182685",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact var <file> = [...] documentation index sidecar audited"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen-generated documentation index sidecar",
+        "none__of_8hpp.js"
+      ],
+      "upstream_owner": "none__of_8hpp.js",
+      "responsibility": "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14142,
+      "source_path": "doc/gh-pages::not__fn_8hpp.html",
+      "source_blob_sha": "b5335e27a84be27be75bee72922cb992b4187058",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "not__fn_8hpp.html",
+        "mode": "100644",
+        "type": "blob",
+        "object": "b5335e27a84be27be75bee72922cb992b4187058",
+        "size": 6242
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:b5335e27a84be27be75bee72922cb992b4187058",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact HTML carries Doxygen generated-page identity"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen 1.9.4 generated documentation HTML page",
+        "not__fn_8hpp.html"
+      ],
+      "upstream_owner": "not__fn_8hpp.html",
+      "responsibility": "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14143,
+      "source_path": "doc/gh-pages::not__fn_8hpp.js",
+      "source_blob_sha": "43e3e2094f500972098f6b97d62d5c2e765e1a85",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "not__fn_8hpp.js",
+        "mode": "100644",
+        "type": "blob",
+        "object": "43e3e2094f500972098f6b97d62d5c2e765e1a85",
+        "size": 102
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:43e3e2094f500972098f6b97d62d5c2e765e1a85",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact var <file> = [...] documentation index sidecar audited"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen-generated documentation index sidecar",
+        "not__fn_8hpp.js"
+      ],
+      "upstream_owner": "not__fn_8hpp.js",
+      "responsibility": "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14144,
+      "source_path": "doc/gh-pages::nth__element_8hpp.html",
+      "source_blob_sha": "7f6bde7a60f8799a61691f1f7e266222e80eb44a",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "nth__element_8hpp.html",
+        "mode": "100644",
+        "type": "blob",
+        "object": "7f6bde7a60f8799a61691f1f7e266222e80eb44a",
+        "size": 6837
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:7f6bde7a60f8799a61691f1f7e266222e80eb44a",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact HTML carries Doxygen generated-page identity"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen 1.9.4 generated documentation HTML page",
+        "nth__element_8hpp.html"
+      ],
+      "upstream_owner": "nth__element_8hpp.html",
+      "responsibility": "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14145,
+      "source_path": "doc/gh-pages::nth__element_8hpp.js",
+      "source_blob_sha": "2e956ded3606c7dee85981e15769e1226df3763c",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "nth__element_8hpp.js",
+        "mode": "100644",
+        "type": "blob",
+        "object": "2e956ded3606c7dee85981e15769e1226df3763c",
+        "size": 207
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:2e956ded3606c7dee85981e15769e1226df3763c",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact var <file> = [...] documentation index sidecar audited"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen-generated documentation index sidecar",
+        "nth__element_8hpp.js"
+      ],
+      "upstream_owner": "nth__element_8hpp.js",
+      "responsibility": "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14146,
+      "source_path": "doc/gh-pages::numeric_2iota_8hpp.html",
+      "source_blob_sha": "69e5bbd0e8e0964003431e88ed5c65407c9482b8",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "numeric_2iota_8hpp.html",
+        "mode": "100644",
+        "type": "blob",
+        "object": "69e5bbd0e8e0964003431e88ed5c65407c9482b8",
+        "size": 5837
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:69e5bbd0e8e0964003431e88ed5c65407c9482b8",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact HTML carries Doxygen generated-page identity"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen 1.9.4 generated documentation HTML page",
+        "numeric_2iota_8hpp.html"
+      ],
+      "upstream_owner": "numeric_2iota_8hpp.html",
+      "responsibility": "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14147,
+      "source_path": "doc/gh-pages::numeric_2partial__sum_8hpp.html",
+      "source_blob_sha": "261c8141bc6259b09c340b46d01f4454be98d478",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "numeric_2partial__sum_8hpp.html",
+        "mode": "100644",
+        "type": "blob",
+        "object": "261c8141bc6259b09c340b46d01f4454be98d478",
+        "size": 8681
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:261c8141bc6259b09c340b46d01f4454be98d478",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact HTML carries Doxygen generated-page identity"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen 1.9.4 generated documentation HTML page",
+        "numeric_2partial__sum_8hpp.html"
+      ],
+      "upstream_owner": "numeric_2partial__sum_8hpp.html",
+      "responsibility": "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14148,
+      "source_path": "doc/gh-pages::numeric_8hpp.html",
+      "source_blob_sha": "1f4af1747cfaf6d1184d657fcb46033bd1a3076d",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "numeric_8hpp.html",
+        "mode": "100644",
+        "type": "blob",
+        "object": "1f4af1747cfaf6d1184d657fcb46033bd1a3076d",
+        "size": 4947
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:1f4af1747cfaf6d1184d657fcb46033bd1a3076d",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact HTML carries Doxygen generated-page identity"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen 1.9.4 generated documentation HTML page",
+        "numeric_8hpp.html"
+      ],
+      "upstream_owner": "numeric_8hpp.html",
+      "responsibility": "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14149,
+      "source_path": "doc/gh-pages::on_8hpp.html",
+      "source_blob_sha": "2513adfff4704cc71aa176b27929fff4f31bf5f7",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "on_8hpp.html",
+        "mode": "100644",
+        "type": "blob",
+        "object": "2513adfff4704cc71aa176b27929fff4f31bf5f7",
+        "size": 6202
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:2513adfff4704cc71aa176b27929fff4f31bf5f7",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact HTML carries Doxygen generated-page identity"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen 1.9.4 generated documentation HTML page",
+        "on_8hpp.html"
+      ],
+      "upstream_owner": "on_8hpp.html",
+      "responsibility": "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14150,
+      "source_path": "doc/gh-pages::on_8hpp.js",
+      "source_blob_sha": "420bfead4430b7e947a6e96a393dd610bbf68f4e",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "on_8hpp.js",
+        "mode": "100644",
+        "type": "blob",
+        "object": "420bfead4430b7e947a6e96a393dd610bbf68f4e",
+        "size": 88
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:420bfead4430b7e947a6e96a393dd610bbf68f4e",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact var <file> = [...] documentation index sidecar audited"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen-generated documentation index sidecar",
+        "on_8hpp.js"
+      ],
+      "upstream_owner": "on_8hpp.js",
+      "responsibility": "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14151,
+      "source_path": "doc/gh-pages::open.png",
+      "source_blob_sha": "e655601214fad434dc0255350dbcca7b99fa1b17",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "open.png",
+        "mode": "100644",
+        "type": "blob",
+        "object": "e655601214fad434dc0255350dbcca7b99fa1b17",
+        "size": 123
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:e655601214fad434dc0255350dbcca7b99fa1b17",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "binary-evidence:123-byte PNG signature 89504e470d0a1a0a, IHDR 9x9, complete IEND"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen navigation open-state PNG asset",
+        "open.png"
+      ],
+      "upstream_owner": "open.png",
+      "responsibility": "Doxygen-generated documentation navigation state raster only; exact binary bytes were inspected and it has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated documentation navigation state raster only; exact binary bytes were inspected and it has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14152,
+      "source_path": "doc/gh-pages::optional_8hpp.html",
+      "source_blob_sha": "adbe6ada808fa79fde9781a79a6bb9146705dfbe",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "optional_8hpp.html",
+        "mode": "100644",
+        "type": "blob",
+        "object": "adbe6ada808fa79fde9781a79a6bb9146705dfbe",
+        "size": 10270
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:adbe6ada808fa79fde9781a79a6bb9146705dfbe",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact HTML carries Doxygen generated-page identity"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen 1.9.4 generated documentation HTML page",
+        "optional_8hpp.html"
+      ],
+      "upstream_owner": "optional_8hpp.html",
+      "responsibility": "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14153,
+      "source_path": "doc/gh-pages::optional_8hpp.js",
+      "source_blob_sha": "f449a7a30e90f98103d2a5e1791e8090df684ff9",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "optional_8hpp.js",
+        "mode": "100644",
+        "type": "blob",
+        "object": "f449a7a30e90f98103d2a5e1791e8090df684ff9",
+        "size": 577
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:f449a7a30e90f98103d2a5e1791e8090df684ff9",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact var <file> = [...] documentation index sidecar audited"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen-generated documentation index sidecar",
+        "optional_8hpp.js"
+      ],
+      "upstream_owner": "optional_8hpp.js",
+      "responsibility": "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14154,
+      "source_path": "doc/gh-pages::overload_8hpp.html",
+      "source_blob_sha": "ca503260c29d4a594a0bdd30f06896a1e72e61ff",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "overload_8hpp.html",
+        "mode": "100644",
+        "type": "blob",
+        "object": "ca503260c29d4a594a0bdd30f06896a1e72e61ff",
+        "size": 6597
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:ca503260c29d4a594a0bdd30f06896a1e72e61ff",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact HTML carries Doxygen generated-page identity"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen 1.9.4 generated documentation HTML page",
+        "overload_8hpp.html"
+      ],
+      "upstream_owner": "overload_8hpp.html",
+      "responsibility": "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14155,
+      "source_path": "doc/gh-pages::overload_8hpp.js",
+      "source_blob_sha": "39d63fa26f815a60ae8eb025e485bead015a66a8",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "overload_8hpp.js",
+        "mode": "100644",
+        "type": "blob",
+        "object": "39d63fa26f815a60ae8eb025e485bead015a66a8",
+        "size": 106
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:39d63fa26f815a60ae8eb025e485bead015a66a8",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact var <file> = [...] documentation index sidecar audited"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen-generated documentation index sidecar",
+        "overload_8hpp.js"
+      ],
+      "upstream_owner": "overload_8hpp.js",
+      "responsibility": "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14156,
+      "source_path": "doc/gh-pages::pages.html",
+      "source_blob_sha": "1a2762714acb0b2a9bb8db9aba9c1897a9c64005",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "pages.html",
+        "mode": "100644",
+        "type": "blob",
+        "object": "1a2762714acb0b2a9bb8db9aba9c1897a9c64005",
+        "size": 4919
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:1a2762714acb0b2a9bb8db9aba9c1897a9c64005",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact HTML carries Doxygen generated-page identity"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen 1.9.4 generated documentation HTML page",
+        "pages.html"
+      ],
+      "upstream_owner": "pages.html",
+      "responsibility": "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14157,
+      "source_path": "doc/gh-pages::partial__sort_8hpp.html",
+      "source_blob_sha": "94b26b964287e4d07dfbbab8eec20ba92aebeb55",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "partial__sort_8hpp.html",
+        "mode": "100644",
+        "type": "blob",
+        "object": "94b26b964287e4d07dfbbab8eec20ba92aebeb55",
+        "size": 6887
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:94b26b964287e4d07dfbbab8eec20ba92aebeb55",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact HTML carries Doxygen generated-page identity"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen 1.9.4 generated documentation HTML page",
+        "partial__sort_8hpp.html"
+      ],
+      "upstream_owner": "partial__sort_8hpp.html",
+      "responsibility": "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14158,
+      "source_path": "doc/gh-pages::partial__sort_8hpp.js",
+      "source_blob_sha": "4d08ef8073b1671bfb237748b948b3ee45a8e28c",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "partial__sort_8hpp.js",
+        "mode": "100644",
+        "type": "blob",
+        "object": "4d08ef8073b1671bfb237748b948b3ee45a8e28c",
+        "size": 212
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:4d08ef8073b1671bfb237748b948b3ee45a8e28c",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact var <file> = [...] documentation index sidecar audited"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen-generated documentation index sidecar",
+        "partial__sort_8hpp.js"
+      ],
+      "upstream_owner": "partial__sort_8hpp.js",
+      "responsibility": "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14159,
+      "source_path": "doc/gh-pages::partial__sort__copy_8hpp.html",
+      "source_blob_sha": "53f814d791394d1f7450d3e1a8ccb18e26ed3b04",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "partial__sort__copy_8hpp.html",
+        "mode": "100644",
+        "type": "blob",
+        "object": "53f814d791394d1f7450d3e1a8ccb18e26ed3b04",
+        "size": 7576
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:53f814d791394d1f7450d3e1a8ccb18e26ed3b04",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact HTML carries Doxygen generated-page identity"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen 1.9.4 generated documentation HTML page",
+        "partial__sort__copy_8hpp.html"
+      ],
+      "upstream_owner": "partial__sort__copy_8hpp.html",
+      "responsibility": "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14160,
+      "source_path": "doc/gh-pages::partial__sort__copy_8hpp.js",
+      "source_blob_sha": "65e5d91d4cc7a3e91ad55ea88e82289d04c81fb6",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "partial__sort__copy_8hpp.js",
+        "mode": "100644",
+        "type": "blob",
+        "object": "65e5d91d4cc7a3e91ad55ea88e82289d04c81fb6",
+        "size": 240
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:65e5d91d4cc7a3e91ad55ea88e82289d04c81fb6",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact var <file> = [...] documentation index sidecar audited"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen-generated documentation index sidecar",
+        "partial__sort__copy_8hpp.js"
+      ],
+      "upstream_owner": "partial__sort__copy_8hpp.js",
+      "responsibility": "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14161,
+      "source_path": "doc/gh-pages::partition_8hpp.html",
+      "source_blob_sha": "6143c4454903dd10d3c8d42fec68cae9ca7ef625",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "partition_8hpp.html",
+        "mode": "100644",
+        "type": "blob",
+        "object": "6143c4454903dd10d3c8d42fec68cae9ca7ef625",
+        "size": 6896
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:6143c4454903dd10d3c8d42fec68cae9ca7ef625",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact HTML carries Doxygen generated-page identity"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen 1.9.4 generated documentation HTML page",
+        "partition_8hpp.html"
+      ],
+      "upstream_owner": "partition_8hpp.html",
+      "responsibility": "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14162,
+      "source_path": "doc/gh-pages::partition_8hpp.js",
+      "source_blob_sha": "bb3d3b51e43393b9943173319fbde39833c8388f",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "partition_8hpp.js",
+        "mode": "100644",
+        "type": "blob",
+        "object": "bb3d3b51e43393b9943173319fbde39833c8388f",
+        "size": 194
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:bb3d3b51e43393b9943173319fbde39833c8388f",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact var <file> = [...] documentation index sidecar audited"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen-generated documentation index sidecar",
+        "partition_8hpp.js"
+      ],
+      "upstream_owner": "partition_8hpp.js",
+      "responsibility": "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14163,
+      "source_path": "doc/gh-pages::partition__copy_8hpp.html",
+      "source_blob_sha": "0021193f9d49b4ef8cec32b569a649c300015081",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "partition__copy_8hpp.html",
+        "mode": "100644",
+        "type": "blob",
+        "object": "0021193f9d49b4ef8cec32b569a649c300015081",
+        "size": 8196
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:0021193f9d49b4ef8cec32b569a649c300015081",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact HTML carries Doxygen generated-page identity"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen 1.9.4 generated documentation HTML page",
+        "partition__copy_8hpp.html"
+      ],
+      "upstream_owner": "partition__copy_8hpp.html",
+      "responsibility": "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14164,
+      "source_path": "doc/gh-pages::partition__copy_8hpp.js",
+      "source_blob_sha": "4081d10fe32370e05155a379475c1dcf360cbc1c",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "partition__copy_8hpp.js",
+        "mode": "100644",
+        "type": "blob",
+        "object": "4081d10fe32370e05155a379475c1dcf360cbc1c",
+        "size": 222
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:4081d10fe32370e05155a379475c1dcf360cbc1c",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact var <file> = [...] documentation index sidecar audited"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen-generated documentation index sidecar",
+        "partition__copy_8hpp.js"
+      ],
+      "upstream_owner": "partition__copy_8hpp.js",
+      "responsibility": "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14165,
+      "source_path": "doc/gh-pages::partition__point_8hpp.html",
+      "source_blob_sha": "8813778ca32005bef6cef5a00f27f0b535fcda35",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "partition__point_8hpp.html",
+        "mode": "100644",
+        "type": "blob",
+        "object": "8813778ca32005bef6cef5a00f27f0b535fcda35",
+        "size": 6901
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:8813778ca32005bef6cef5a00f27f0b535fcda35",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact HTML carries Doxygen generated-page identity"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen 1.9.4 generated documentation HTML page",
+        "partition__point_8hpp.html"
+      ],
+      "upstream_owner": "partition__point_8hpp.html",
+      "responsibility": "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14166,
+      "source_path": "doc/gh-pages::partition__point_8hpp.js",
+      "source_blob_sha": "2045ae89346108a21867b50c74a760882dd720d5",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "partition__point_8hpp.js",
+        "mode": "100644",
+        "type": "blob",
+        "object": "2045ae89346108a21867b50c74a760882dd720d5",
+        "size": 227
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:2045ae89346108a21867b50c74a760882dd720d5",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact var <file> = [...] documentation index sidecar audited"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen-generated documentation index sidecar",
+        "partition__point_8hpp.js"
+      ],
+      "upstream_owner": "partition__point_8hpp.js",
+      "responsibility": "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14167,
+      "source_path": "doc/gh-pages::permutation_8hpp.html",
+      "source_blob_sha": "54cb011f00b2da8cc49c09a9bf19151c80e7b5dd",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "permutation_8hpp.html",
+        "mode": "100644",
+        "type": "blob",
+        "object": "54cb011f00b2da8cc49c09a9bf19151c80e7b5dd",
+        "size": 13409
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:54cb011f00b2da8cc49c09a9bf19151c80e7b5dd",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact HTML carries Doxygen generated-page identity"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen 1.9.4 generated documentation HTML page",
+        "permutation_8hpp.html"
+      ],
+      "upstream_owner": "permutation_8hpp.html",
+      "responsibility": "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14168,
+      "source_path": "doc/gh-pages::permutation_8hpp.js",
+      "source_blob_sha": "e9cf52bb1eeaf801964f6e176106eb65df502b22",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "permutation_8hpp.js",
+        "mode": "100644",
+        "type": "blob",
+        "object": "e9cf52bb1eeaf801964f6e176106eb65df502b22",
+        "size": 770
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:e9cf52bb1eeaf801964f6e176106eb65df502b22",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact var <file> = [...] documentation index sidecar audited"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen-generated documentation index sidecar",
+        "permutation_8hpp.js"
+      ],
+      "upstream_owner": "permutation_8hpp.js",
+      "responsibility": "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14169,
+      "source_path": "doc/gh-pages::pipeable_8hpp.html",
+      "source_blob_sha": "b2591ea8410e48723c2fac8fcae1e6c638d289d9",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "pipeable_8hpp.html",
+        "mode": "100644",
+        "type": "blob",
+        "object": "b2591ea8410e48723c2fac8fcae1e6c638d289d9",
+        "size": 9825
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:b2591ea8410e48723c2fac8fcae1e6c638d289d9",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact HTML carries Doxygen generated-page identity"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen 1.9.4 generated documentation HTML page",
+        "pipeable_8hpp.html"
+      ],
+      "upstream_owner": "pipeable_8hpp.html",
+      "responsibility": "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14170,
+      "source_path": "doc/gh-pages::pipeable_8hpp.js",
+      "source_blob_sha": "a13ee1fe70c049e7319093d32e2c8561cdd986ac",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "pipeable_8hpp.js",
+        "mode": "100644",
+        "type": "blob",
+        "object": "a13ee1fe70c049e7319093d32e2c8561cdd986ac",
+        "size": 219
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:a13ee1fe70c049e7319093d32e2c8561cdd986ac",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact var <file> = [...] documentation index sidecar audited"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen-generated documentation index sidecar",
+        "pipeable_8hpp.js"
+      ],
+      "upstream_owner": "pipeable_8hpp.js",
+      "responsibility": "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14171,
+      "source_path": "doc/gh-pages::primitives_8hpp.html",
+      "source_blob_sha": "47b2876a196d8245cf36b9f554e5fccda42558d2",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "primitives_8hpp.html",
+        "mode": "100644",
+        "type": "blob",
+        "object": "47b2876a196d8245cf36b9f554e5fccda42558d2",
+        "size": 7195
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:47b2876a196d8245cf36b9f554e5fccda42558d2",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact HTML carries Doxygen generated-page identity"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen 1.9.4 generated documentation HTML page",
+        "primitives_8hpp.html"
+      ],
+      "upstream_owner": "primitives_8hpp.html",
+      "responsibility": "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14172,
+      "source_path": "doc/gh-pages::primitives_8hpp.js",
+      "source_blob_sha": "58e87c5b6e40a544bcf08ede860f15772447b9a6",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "primitives_8hpp.js",
+        "mode": "100644",
+        "type": "blob",
+        "object": "58e87c5b6e40a544bcf08ede860f15772447b9a6",
+        "size": 270
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:58e87c5b6e40a544bcf08ede860f15772447b9a6",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact var <file> = [...] documentation index sidecar audited"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen-generated documentation index sidecar",
+        "primitives_8hpp.js"
+      ],
+      "upstream_owner": "primitives_8hpp.js",
+      "responsibility": "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14173,
+      "source_path": "doc/gh-pages::push__back_8hpp.html",
+      "source_blob_sha": "eddbbbea130e1d21e726c77798e8b36a5fe6742f",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "push__back_8hpp.html",
+        "mode": "100644",
+        "type": "blob",
+        "object": "eddbbbea130e1d21e726c77798e8b36a5fe6742f",
+        "size": 8935
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:eddbbbea130e1d21e726c77798e8b36a5fe6742f",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact HTML carries Doxygen generated-page identity"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen 1.9.4 generated documentation HTML page",
+        "push__back_8hpp.html"
+      ],
+      "upstream_owner": "push__back_8hpp.html",
+      "responsibility": "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14174,
+      "source_path": "doc/gh-pages::push__back_8hpp.js",
+      "source_blob_sha": "6da18eb7b5a9f4a043e65ccb6cf8f01ca177c3f7",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "push__back_8hpp.js",
+        "mode": "100644",
+        "type": "blob",
+        "object": "6da18eb7b5a9f4a043e65ccb6cf8f01ca177c3f7",
+        "size": 197
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:6da18eb7b5a9f4a043e65ccb6cf8f01ca177c3f7",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact var <file> = [...] documentation index sidecar audited"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen-generated documentation index sidecar",
+        "push__back_8hpp.js"
+      ],
+      "upstream_owner": "push__back_8hpp.js",
+      "responsibility": "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14175,
+      "source_path": "doc/gh-pages::push__front_8hpp.html",
+      "source_blob_sha": "b254f7c034788d0ae829f70612ad24ac8961cbeb",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "push__front_8hpp.html",
+        "mode": "100644",
+        "type": "blob",
+        "object": "b254f7c034788d0ae829f70612ad24ac8961cbeb",
+        "size": 8311
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:b254f7c034788d0ae829f70612ad24ac8961cbeb",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact HTML carries Doxygen generated-page identity"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen 1.9.4 generated documentation HTML page",
+        "push__front_8hpp.html"
+      ],
+      "upstream_owner": "push__front_8hpp.html",
+      "responsibility": "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14176,
+      "source_path": "doc/gh-pages::push__front_8hpp.js",
+      "source_blob_sha": "213fb618df85cf44d531e80f9ab90d72b8890230",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "push__front_8hpp.js",
+        "mode": "100644",
+        "type": "blob",
+        "object": "213fb618df85cf44d531e80f9ab90d72b8890230",
+        "size": 202
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:213fb618df85cf44d531e80f9ab90d72b8890230",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact var <file> = [...] documentation index sidecar audited"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen-generated documentation index sidecar",
+        "push__front_8hpp.js"
+      ],
+      "upstream_owner": "push__front_8hpp.js",
+      "responsibility": "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14177,
+      "source_path": "doc/gh-pages::random_8hpp.html",
+      "source_blob_sha": "4373e5ae9b2942336d8f99512967a2b3588b3638",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "random_8hpp.html",
+        "mode": "100644",
+        "type": "blob",
+        "object": "4373e5ae9b2942336d8f99512967a2b3588b3638",
+        "size": 5967
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:4373e5ae9b2942336d8f99512967a2b3588b3638",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact HTML carries Doxygen generated-page identity"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen 1.9.4 generated documentation HTML page",
+        "random_8hpp.html"
+      ],
+      "upstream_owner": "random_8hpp.html",
+      "responsibility": "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14178,
+      "source_path": "doc/gh-pages::range_2access_8hpp.html",
+      "source_blob_sha": "f9bad3ff33839ea3e34b172d69232211200a5a20",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "range_2access_8hpp.html",
+        "mode": "100644",
+        "type": "blob",
+        "object": "f9bad3ff33839ea3e34b172d69232211200a5a20",
+        "size": 12438
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:f9bad3ff33839ea3e34b172d69232211200a5a20",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact HTML carries Doxygen generated-page identity"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen 1.9.4 generated documentation HTML page",
+        "range_2access_8hpp.html"
+      ],
+      "upstream_owner": "range_2access_8hpp.html",
+      "responsibility": "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14179,
+      "source_path": "doc/gh-pages::range_2access_8hpp.js",
+      "source_blob_sha": "d07d2bb83071bb29247aa07fe62932792518fd6c",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "range_2access_8hpp.js",
+        "mode": "100644",
+        "type": "blob",
+        "object": "d07d2bb83071bb29247aa07fe62932792518fd6c",
+        "size": 708
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:d07d2bb83071bb29247aa07fe62932792518fd6c",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact var <file> = [...] documentation index sidecar audited"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen-generated documentation index sidecar",
+        "range_2access_8hpp.js"
+      ],
+      "upstream_owner": "range_2access_8hpp.js",
+      "responsibility": "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14180,
+      "source_path": "doc/gh-pages::range_2operations_8hpp.html",
+      "source_blob_sha": "47c90c8ff3b441424aa1da456db942aeb11eca19",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "range_2operations_8hpp.html",
+        "mode": "100644",
+        "type": "blob",
+        "object": "47c90c8ff3b441424aa1da456db942aeb11eca19",
+        "size": 8839
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:47c90c8ff3b441424aa1da456db942aeb11eca19",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact HTML carries Doxygen generated-page identity"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen 1.9.4 generated documentation HTML page",
+        "range_2operations_8hpp.html"
+      ],
+      "upstream_owner": "range_2operations_8hpp.html",
+      "responsibility": "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14181,
+      "source_path": "doc/gh-pages::range_2operations_8hpp.js",
+      "source_blob_sha": "ae618fdb1c664976a4781f8e6bebf4fa8e3e3a93",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "range_2operations_8hpp.js",
+        "mode": "100644",
+        "type": "blob",
+        "object": "ae618fdb1c664976a4781f8e6bebf4fa8e3e3a93",
+        "size": 384
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:ae618fdb1c664976a4781f8e6bebf4fa8e3e3a93",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact var <file> = [...] documentation index sidecar audited"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen-generated documentation index sidecar",
+        "range_2operations_8hpp.js"
+      ],
+      "upstream_owner": "range_2operations_8hpp.js",
+      "responsibility": "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14182,
+      "source_path": "doc/gh-pages::range_2traits_8hpp.html",
+      "source_blob_sha": "9124e174718b0705bc30203378d7f09e2d5a8277",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "range_2traits_8hpp.html",
+        "mode": "100644",
+        "type": "blob",
+        "object": "9124e174718b0705bc30203378d7f09e2d5a8277",
+        "size": 9898
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:9124e174718b0705bc30203378d7f09e2d5a8277",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact HTML carries Doxygen generated-page identity"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen 1.9.4 generated documentation HTML page",
+        "range_2traits_8hpp.html"
+      ],
+      "upstream_owner": "range_2traits_8hpp.html",
+      "responsibility": "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14183,
+      "source_path": "doc/gh-pages::range_2v3_2action_2concepts_8hpp.html",
+      "source_blob_sha": "0e448d9406123724300d8d92fc2f800acbda6f98",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "range_2v3_2action_2concepts_8hpp.html",
+        "mode": "100644",
+        "type": "blob",
+        "object": "0e448d9406123724300d8d92fc2f800acbda6f98",
+        "size": 9676
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:0e448d9406123724300d8d92fc2f800acbda6f98",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact HTML carries Doxygen generated-page identity"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen 1.9.4 generated documentation HTML page",
+        "range_2v3_2action_2concepts_8hpp.html"
+      ],
+      "upstream_owner": "range_2v3_2action_2concepts_8hpp.html",
+      "responsibility": "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14184,
+      "source_path": "doc/gh-pages::range_2v3_2compare_8hpp.html",
+      "source_blob_sha": "fa778be3af5bb75cf4c7222e791bd1c0bfa1a799",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "range_2v3_2compare_8hpp.html",
+        "mode": "100644",
+        "type": "blob",
+        "object": "fa778be3af5bb75cf4c7222e791bd1c0bfa1a799",
+        "size": 4691
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:fa778be3af5bb75cf4c7222e791bd1c0bfa1a799",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact HTML carries Doxygen generated-page identity"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen 1.9.4 generated documentation HTML page",
+        "range_2v3_2compare_8hpp.html"
+      ],
+      "upstream_owner": "range_2v3_2compare_8hpp.html",
+      "responsibility": "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14185,
+      "source_path": "doc/gh-pages::range_2v3_2functional_2concepts_8hpp.html",
+      "source_blob_sha": "a9cc88b8685ad65e6509aa02ffb1a19e2465a2f9",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "range_2v3_2functional_2concepts_8hpp.html",
+        "mode": "100644",
+        "type": "blob",
+        "object": "a9cc88b8685ad65e6509aa02ffb1a19e2465a2f9",
+        "size": 8081
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:a9cc88b8685ad65e6509aa02ffb1a19e2465a2f9",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact HTML carries Doxygen generated-page identity"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen 1.9.4 generated documentation HTML page",
+        "range_2v3_2functional_2concepts_8hpp.html"
+      ],
+      "upstream_owner": "range_2v3_2functional_2concepts_8hpp.html",
+      "responsibility": "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14186,
+      "source_path": "doc/gh-pages::range_2v3_2iterator_2concepts_8hpp.html",
+      "source_blob_sha": "b48bd84c93f950398d6840a4e52ae271ec59d60d",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "range_2v3_2iterator_2concepts_8hpp.html",
+        "mode": "100644",
+        "type": "blob",
+        "object": "b48bd84c93f950398d6840a4e52ae271ec59d60d",
+        "size": 34751
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:b48bd84c93f950398d6840a4e52ae271ec59d60d",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact HTML carries Doxygen generated-page identity"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen 1.9.4 generated documentation HTML page",
+        "range_2v3_2iterator_2concepts_8hpp.html"
+      ],
+      "upstream_owner": "range_2v3_2iterator_2concepts_8hpp.html",
+      "responsibility": "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14187,
+      "source_path": "doc/gh-pages::range_2v3_2range_2concepts_8hpp.html",
+      "source_blob_sha": "8497e26d4f3b134ef807e774dbb5c210f92753f4",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "range_2v3_2range_2concepts_8hpp.html",
+        "mode": "100644",
+        "type": "blob",
+        "object": "8497e26d4f3b134ef807e774dbb5c210f92753f4",
+        "size": 21079
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:8497e26d4f3b134ef807e774dbb5c210f92753f4",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact HTML carries Doxygen generated-page identity"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen 1.9.4 generated documentation HTML page",
+        "range_2v3_2range_2concepts_8hpp.html"
+      ],
+      "upstream_owner": "range_2v3_2range_2concepts_8hpp.html",
+      "responsibility": "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14188,
+      "source_path": "doc/gh-pages::range_2v3_2utility_2swap_8hpp.html",
+      "source_blob_sha": "45730a88c8ac20342be5bf992b8aef684295d8e7",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "range_2v3_2utility_2swap_8hpp.html",
+        "mode": "100644",
+        "type": "blob",
+        "object": "45730a88c8ac20342be5bf992b8aef684295d8e7",
+        "size": 8268
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:45730a88c8ac20342be5bf992b8aef684295d8e7",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact HTML carries Doxygen generated-page identity"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen 1.9.4 generated documentation HTML page",
+        "range_2v3_2utility_2swap_8hpp.html"
+      ],
+      "upstream_owner": "range_2v3_2utility_2swap_8hpp.html",
+      "responsibility": "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14189,
+      "source_path": "doc/gh-pages::range_8hpp.html",
+      "source_blob_sha": "59215b9e85cb4aadfffa70f9de25e3a56e2bc592",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "range_8hpp.html",
+        "mode": "100644",
+        "type": "blob",
+        "object": "59215b9e85cb4aadfffa70f9de25e3a56e2bc592",
+        "size": 4659
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:59215b9e85cb4aadfffa70f9de25e3a56e2bc592",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact HTML carries Doxygen generated-page identity"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen 1.9.4 generated documentation HTML page",
+        "range_8hpp.html"
+      ],
+      "upstream_owner": "range_8hpp.html",
+      "responsibility": "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14190,
+      "source_path": "doc/gh-pages::range__for_8hpp.html",
+      "source_blob_sha": "d3255a1f1774c7af02380d8181ea918863655224",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "range__for_8hpp.html",
+        "mode": "100644",
+        "type": "blob",
+        "object": "d3255a1f1774c7af02380d8181ea918863655224",
+        "size": 10125
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:d3255a1f1774c7af02380d8181ea918863655224",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact HTML carries Doxygen generated-page identity"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen 1.9.4 generated documentation HTML page",
+        "range__for_8hpp.html"
+      ],
+      "upstream_owner": "range__for_8hpp.html",
+      "responsibility": "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14191,
+      "source_path": "doc/gh-pages::range__for_8hpp.js",
+      "source_blob_sha": "ee1468dbb687866a5b1943dcd1ddfa9fa547ced2",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "range__for_8hpp.js",
+        "mode": "100644",
+        "type": "blob",
+        "object": "ee1468dbb687866a5b1943dcd1ddfa9fa547ced2",
+        "size": 111
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:ee1468dbb687866a5b1943dcd1ddfa9fa547ced2",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact var <file> = [...] documentation index sidecar audited"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen-generated documentation index sidecar",
+        "range__for_8hpp.js"
+      ],
+      "upstream_owner": "range__for_8hpp.js",
+      "responsibility": "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14192,
+      "source_path": "doc/gh-pages::range__fwd_8hpp.html",
+      "source_blob_sha": "16883a9357736966884dee3ce725b82c0bd72ece",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "range__fwd_8hpp.html",
+        "mode": "100644",
+        "type": "blob",
+        "object": "16883a9357736966884dee3ce725b82c0bd72ece",
+        "size": 17139
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:16883a9357736966884dee3ce725b82c0bd72ece",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact HTML carries Doxygen generated-page identity"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen 1.9.4 generated documentation HTML page",
+        "range__fwd_8hpp.html"
+      ],
+      "upstream_owner": "range__fwd_8hpp.html",
+      "responsibility": "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14193,
+      "source_path": "doc/gh-pages::range__fwd_8hpp.js",
+      "source_blob_sha": "dd0339f3b69d8d7f48a7ede3c94546ced544ec74",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "range__fwd_8hpp.js",
+        "mode": "100644",
+        "type": "blob",
+        "object": "dd0339f3b69d8d7f48a7ede3c94546ced544ec74",
+        "size": 454
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:dd0339f3b69d8d7f48a7ede3c94546ced544ec74",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact var <file> = [...] documentation index sidecar audited"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen-generated documentation index sidecar",
+        "range__fwd_8hpp.js"
+      ],
+      "upstream_owner": "range__fwd_8hpp.js",
+      "responsibility": "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14194,
+      "source_path": "doc/gh-pages::ref_8hpp.html",
+      "source_blob_sha": "9d72baabbc892c1138a46a6c8638ed3168803242",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "ref_8hpp.html",
+        "mode": "100644",
+        "type": "blob",
+        "object": "9d72baabbc892c1138a46a6c8638ed3168803242",
+        "size": 7172
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:9d72baabbc892c1138a46a6c8638ed3168803242",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact HTML carries Doxygen generated-page identity"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen 1.9.4 generated documentation HTML page",
+        "ref_8hpp.html"
+      ],
+      "upstream_owner": "ref_8hpp.html",
+      "responsibility": "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14195,
+      "source_path": "doc/gh-pages::ref_8hpp.js",
+      "source_blob_sha": "1b9301892b3d7a0c43cd5f08b7b77bf773eb19d2",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "ref_8hpp.js",
+        "mode": "100644",
+        "type": "blob",
+        "object": "1b9301892b3d7a0c43cd5f08b7b77bf773eb19d2",
+        "size": 96
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:1b9301892b3d7a0c43cd5f08b7b77bf773eb19d2",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact var <file> = [...] documentation index sidecar audited"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen-generated documentation index sidecar",
+        "ref_8hpp.js"
+      ],
+      "upstream_owner": "ref_8hpp.js",
+      "responsibility": "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated documentation navigation/symbol index metadata only; underlying range-v3 source semantics are audited at owning source blobs; this sidecar has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    },
+    {
+      "recursive_order": 14196,
+      "source_path": "doc/gh-pages::reference__wrapper_8hpp.html",
+      "source_blob_sha": "2d765e89bf00b887df9e4738743d0647f41148dd",
+      "source_identity": {
+        "repository": "ericniebler/range-v3",
+        "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae",
+        "scope": "nested-gitlink",
+        "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+        "mount": "doc/gh-pages",
+        "path": "reference__wrapper_8hpp.html",
+        "mode": "100644",
+        "type": "blob",
+        "object": "2d765e89bf00b887df9e4738743d0647f41148dd",
+        "size": 8257
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "disposition": "development-only-non-applicable",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:ericniebler/range-v3@2dae74bb693e42d850fb0adcc9045c5b71fbdeae:2d765e89bf00b887df9e4738743d0647f41148dd",
+        "applicability-audit:ca7bf00ec5b9a4ac22721f66e8a213499d1dc04e",
+        "generated-evidence:exact HTML carries Doxygen generated-page identity"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact documentation artifact after explicit per-blob non-applicable classification; release acceptance remains open globally.",
+      "source_symbols": [
+        "Doxygen 1.9.4 generated documentation HTML page",
+        "reference__wrapper_8hpp.html"
+      ],
+      "upstream_owner": "reference__wrapper_8hpp.html",
+      "responsibility": "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility.",
+      "responsibilities": [
+        "Doxygen-generated API/documentation HTML output only; underlying range-v3 source semantics are audited at owning source blobs; this generated display artifact has no independent shipping Fabushi responsibility."
+      ],
+      "production_entrypoints": [
+        "none: generated documentation artifact excluded from shipping Fabushi runtime/package"
+      ]
+    }
+  ]
+}
