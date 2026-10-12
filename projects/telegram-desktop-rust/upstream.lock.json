@@ -265,10 +265,10 @@
   "coverage": {
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
-    "unknown_minimum": 14008,
-    "unread_minimum": 841,
+    "unknown_minimum": 13944,
+    "unread_minimum": 777,
     "omitted_known": 0,
-    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 15,284; unknown=14,008, unread=841, omitted=0."
+    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 15,348; unknown=13,944, unread=777, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -282,7 +282,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Closure open. Read-through 15,284/16,125; first unread 15,285 doc/gh-pages::structranges_1_1sized__sentinel__tag.html; unknown remains 14,008; product/release closure remains open."
+    "note": "Closure open. Read-through 15,348/16,125; first unread 15,349 doc/gh-pages::structranges_1_1tuple__foldl__fn.html; unknown remains 13,944; product/release closure remains open."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",
@@ -629,12 +629,12 @@
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "deterministic_prefix_closed": 57,
-    "development_only_non_applicable": 2043,
-    "unknown_closed": 2117,
+    "development_only_non_applicable": 2107,
+    "unknown_closed": 2181,
     "omitted": 0,
-    "read_through": 15284,
-    "first_unread_order": 15285,
-    "first_unread_path": "doc/gh-pages::structranges_1_1sized__sentinel__tag.html",
+    "read_through": 15348,
+    "first_unread_order": 15349,
+    "first_unread_path": "doc/gh-pages::structranges_1_1tuple__foldl__fn.html",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
@@ -671,17 +671,17 @@
   "note": "Accepted baseline; exact read-through 14,964; unknown=14,328, unread=1,161, omitted=0; first unread 14,965 doc/gh-pages::structranges_1_1filter__view.html.",
   "source_accounting": {
     "recursive_total": 16125,
-    "read_through": 15284,
-    "first_unread_order": 15285,
-    "first_unread_path": "doc/gh-pages::structranges_1_1sized__sentinel__tag.html",
-    "unread": 841,
-    "unknown": 14008,
+    "read_through": 15348,
+    "first_unread_order": 15349,
+    "first_unread_path": "doc/gh-pages::structranges_1_1tuple__foldl__fn.html",
+    "unread": 777,
+    "unknown": 13944,
     "omitted": 0,
     "parent_exact_head_evidence": {
-      "head": "ba806c4d4ec53aa0c9407382f4ef050e5c91111f",
-      "note": "Orders 15,221-15,284 directly exact-read on this lineage; fresh same-head Actions required for descendant."
+      "head": "1db8c0e7d70ef4c4c5d80ba9807e67294dcce8b8",
+      "note": "Orders 15,285-15,348 individually byte-audited on this lineage; fresh same-head Actions required for descendant."
     },
-    "development_only_non_applicable": 2043,
-    "unknown_closed": 2117
+    "development_only_non_applicable": 2107,
+    "unknown_closed": 2181
   }
 }

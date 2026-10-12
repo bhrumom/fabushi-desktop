@@ -6,8 +6,8 @@
   "target_commit": "371b72f1cd20de03dc4dff9a15ed761054968093",
   "coverage": {
     "source_entries_total": 16125,
-    "unknown": 14008,
-    "unread": 841,
+    "unknown": 13944,
+    "unread": 777,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,22 +13478,22 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Accepted prefix 15,284/16,125; orders 15,221-15,284 exact-read per blob as Doxygen HTML/JS plus PNGs with exact identity, signature/byte-size and HTML consumer reachability.",
-    "source_authority_evidence": "Direct per-blob audit through 15,284 is durable on this PR lineage; fresh same-head Actions required after accounting writes.",
-    "current_source_read_through": 15284,
-    "first_unread_order": 15285,
-    "first_unread_path": "doc/gh-pages::structranges_1_1sized__sentinel__tag.html"
+    "source_read_reconciliation": "Accepted prefix 15,348/16,125; orders 15,285-15,348 exact-read per blob as Doxygen HTML/JS plus PNGs with exact identity, signature/byte-size and HTML consumer reachability.",
+    "source_authority_evidence": "Direct per-blob audit through 15,348 is durable on this PR lineage; fresh same-head Actions required after accounting writes.",
+    "current_source_read_through": 15348,
+    "first_unread_order": 15349,
+    "first_unread_path": "doc/gh-pages::structranges_1_1tuple__foldl__fn.html"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "deterministic_prefix_closed": 57,
-    "development_only_non_applicable": 2043,
-    "unknown_closed": 2117,
+    "development_only_non_applicable": 2107,
+    "unknown_closed": 2181,
     "omitted": 0,
-    "read_through": 15284,
-    "first_unread_order": 15285,
-    "first_unread_path": "doc/gh-pages::structranges_1_1sized__sentinel__tag.html",
+    "read_through": 15348,
+    "first_unread_order": 15349,
+    "first_unread_path": "doc/gh-pages::structranges_1_1tuple__foldl__fn.html",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
