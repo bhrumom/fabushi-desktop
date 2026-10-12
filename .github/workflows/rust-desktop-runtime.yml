@@ -103,7 +103,8 @@ jobs:
               "formatted-text-utf16-entity-offset",
               "typed-forward-thread-destination",
               "missing-closed-hidden-topic-rejection",
-              "recent-participant-selection-lifecycle"
+              "recent-participant-selection-lifecycle",
+              "typed-shared-media-derived-invalidation"
             ],
             "result": "passed"
           }
