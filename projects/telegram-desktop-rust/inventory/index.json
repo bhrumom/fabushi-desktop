@@ -13,10 +13,10 @@
     "recursive_non_directory_entries": 16125,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 14904,
-    "unread_minimum": 1737,
+    "unknown_minimum": 14840,
+    "unread_minimum": 1673,
     "omitted_known": 0,
-    "note": "Recursive 16,125; exact read/decomposition through deterministic order 14,388; unknown 14,904; unread 1,737; omitted 0."
+    "note": "Recursive 16,125; exact read/decomposition through deterministic order 14,452; unknown 14,840; unread 1,673; omitted 0."
   },
   "latest_recursive_evidence": {
     "run_id": 38216855900,
@@ -35,7 +35,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live baseline accepted; closure open. Read-through 14,388; unread_minimum is 1,737; unknown remains 14,904; omitted remains 0; first unread 14,389 is doc/gh-pages::search/functions_10.js.",
+  "note": "Live baseline accepted; closure open. Read-through 14,452; unread_minimum is 1,673; unknown remains 14,840; omitted remains 0; first unread 14,453 is doc/gh-pages::search/namespaces_1.html.",
   "rebaseline": {
     "from_commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
@@ -53,23 +53,23 @@
       6541,
       6627
     ],
-    "current_source_read_through": 14388,
-    "first_unread_order": 14389,
-    "first_unread_path": "doc/gh-pages::search/functions_10.js",
-    "current_head_source_authority_evidence": "Parent 2b752566 exact-head required workflows passed; this 14,388 accounting descendant requires fresh same-head Actions.",
-    "source_read_reconciliation": "Accepted prefix 14,388/16,125; orders 14,325-14,388 exact-read as 32 Doxygen search HTML outputs plus 32 searchData JS indexes.",
-    "source_authority_evidence": "Parent 2b752566 Source authority / recursive inventory 38216855900/114704898380 succeeded; fresh exact-head validation required for the 14,388 descendant."
+    "current_source_read_through": 14452,
+    "first_unread_order": 14453,
+    "first_unread_path": "doc/gh-pages::search/namespaces_1.html",
+    "current_head_source_authority_evidence": "Orders 14,389-14,452 directly exact-read on current PR lineage; fresh same-head Actions required.",
+    "source_read_reconciliation": "Accepted prefix 14,452/16,125; orders 14,389-14,452 exact-read as Doxygen search HTML/searchData outputs plus mag_sel.svg with generated-page consumer reachability.",
+    "source_authority_evidence": "Fresh exact-head validation required for the 14,452 accounting descendant."
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "deterministic_prefix_closed": 57,
-    "development_only_non_applicable": 1147,
-    "unknown_closed": 1221,
+    "development_only_non_applicable": 1211,
+    "unknown_closed": 1285,
     "omitted": 0,
-    "read_through": 14388,
-    "first_unread_order": 14389,
-    "first_unread_path": "doc/gh-pages::search/functions_10.js",
+    "read_through": 14452,
+    "first_unread_order": 14453,
+    "first_unread_path": "doc/gh-pages::search/namespaces_1.html",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   }
 }
