@@ -123,7 +123,9 @@ function cloneDraft(draft: ComposerDraft | null): ComposerDraft | null {
     })),
     ...(draft.richText === undefined ? {} : { richText: draft.richText }),
     ...(draft.replyToId === undefined ? {} : { replyToId: draft.replyToId }),
-    ...(draft.isFork === undefined ? {} : { isFork: draft.isFork })
+    ...(draft.isFork === undefined ? {} : { isFork: draft.isFork }),
+    ...(draft.cursor === undefined ? {} : { cursor: { ...draft.cursor } }),
+    ...(draft.linkPreview === undefined ? {} : { linkPreview: { ...draft.linkPreview } })
   };
 }
 
