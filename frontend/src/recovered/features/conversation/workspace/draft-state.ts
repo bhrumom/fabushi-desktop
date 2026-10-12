@@ -8,10 +8,19 @@ import { areComposerDraftsEqual, parseComposerDraft, type ComposerDraft } from "
 
 export const COMPOSER_DRAFT_SLICE = {
   slice: "composer-drafts",
-  schemaVersion: 1,
+  schemaVersion: 2,
   scope: "client-persisted",
   accountSensitive: true
 } as const;
+
+export type ComposerDraftScope =
+  | { readonly kind: "agent"; readonly agentId: string }
+  | { readonly kind: "conversation"; readonly conversationId: string }
+  | { readonly kind: "topic"; readonly conversationId: string; readonly topicId: string }
+  | { readonly kind: "savedSublist"; readonly conversationId: string; readonly participantId: string }
+  | { readonly kind: "conversationChild"; readonly conversationId: string; readonly childConversationId: string };
+
+export type ComposerDraftScopeInput = ComposerDraftScope | string;
 
 export interface ComposerDraftSnapshot {
   readonly draft: ComposerDraft | null;
@@ -32,7 +41,7 @@ export interface ComposerDraftPersistence {
 }
 
 export interface ComposerDraftEnvelope {
-  agents: Record<string, {
+  scopes: Record<string, {
     readonly draft: ComposerDraft | null;
     readonly draftId: string | null;
     readonly recovery: ComposerDraft | null;
@@ -40,19 +49,19 @@ export interface ComposerDraftEnvelope {
 }
 
 export interface ComposerDraftStateStore {
-  snapshotsFor(agentKey: string): ComposerDraftSnapshotStore;
-  setDraft(agentKey: string, draft: ComposerDraft): void;
+  snapshotsFor(scope: ComposerDraftScopeInput): ComposerDraftSnapshotStore;
+  setDraft(scope: ComposerDraftScopeInput, draft: ComposerDraft): void;
   identifyDraft(input: { agentId: string; draft: ComposerDraft }): { agentId: string; draftId: string } | null;
   clearDraftIfCurrent(input: { agentId: string; draftId: string }): boolean;
   clearDraftIfMatches(input: { agentId: string; draft: ComposerDraft }): boolean;
-  clearDraft(agentKey: string): void;
-  recoverDraft(agentKey: string, draft: ComposerDraft): void;
-  clearRecovery(agentKey: string): void;
-  canExchangeDraft(agentKey: string): boolean;
-  exchangeDraft(agentKey: string, validate?: (draft: ComposerDraft) => boolean): boolean;
-  removeStash(agentKey: string): boolean;
-  removeStashIfMatches(agentKey: string, draft: ComposerDraft): boolean;
-  clearScope(agentKey: string): void;
+  clearDraft(scope: ComposerDraftScopeInput): void;
+  recoverDraft(scope: ComposerDraftScopeInput, draft: ComposerDraft): void;
+  clearRecovery(scope: ComposerDraftScopeInput): void;
+  canExchangeDraft(scope: ComposerDraftScopeInput): boolean;
+  exchangeDraft(scope: ComposerDraftScopeInput, validate?: (draft: ComposerDraft) => boolean): boolean;
+  removeStash(scope: ComposerDraftScopeInput): boolean;
+  removeStashIfMatches(scope: ComposerDraftScopeInput, draft: ComposerDraft): boolean;
+  clearScope(scope: ComposerDraftScopeInput): void;
   restore(accountSlot: string | null): Promise<void>;
   reset(): void;
   dispose(): void;
@@ -69,6 +78,34 @@ function encodeAccountSlot(accountSlot: string): string {
   return encodeURIComponent(accountSlot).replaceAll(".", "%2E");
 }
 
+function encodeScopePart(value: string, label: string): string {
+  if (value.trim().length === 0) throw new Error(`${label} must not be empty`);
+  return encodeURIComponent(value);
+}
+
+export function composerDraftScopeKey(scope: ComposerDraftScopeInput): string {
+  if (typeof scope === "string") {
+    return `agent:${encodeScopePart(scope, "agentId")}`;
+  }
+  switch (scope.kind) {
+    case "agent":
+      return `agent:${encodeScopePart(scope.agentId, "agentId")}`;
+    case "conversation":
+      return `conversation:${encodeScopePart(scope.conversationId, "conversationId")}`;
+    case "topic":
+      return `topic:${encodeScopePart(scope.conversationId, "conversationId")}:${encodeScopePart(scope.topicId, "topicId")}`;
+    case "savedSublist":
+      return `saved-sublist:${encodeScopePart(scope.conversationId, "conversationId")}:${encodeScopePart(scope.participantId, "participantId")}`;
+    case "conversationChild":
+      return `conversation-child:${encodeScopePart(scope.conversationId, "conversationId")}:${encodeScopePart(scope.childConversationId, "childConversationId")}`;
+  }
+}
+
+function isPersistedComposerDraftScopeKey(value: string): boolean {
+  return /^(?:agent|conversation):[^:]+$/u.test(value)
+    || /^(?:topic|saved-sublist|conversation-child):[^:]+:[^:]+$/u.test(value);
+}
+
 export function composerDraftPersistenceKey(accountSlot: string): string {
   if (accountSlot.length === 0) throw new Error("accountSlot must not be empty");
   return `sand.client.slice.account.${encodeAccountSlot(accountSlot)}.${COMPOSER_DRAFT_SLICE.slice}`;
@@ -78,7 +115,12 @@ function cloneDraft(draft: ComposerDraft | null): ComposerDraft | null {
   if (draft == null) return null;
   return {
     prompt: draft.prompt,
-    attachments: draft.attachments.map(({ path, name, size }) => ({ path, name, ...(size === undefined ? {} : { size }) })),
+    attachments: draft.attachments.map(({ path, name, size, mimeType }) => ({
+      path,
+      name,
+      ...(size === undefined ? {} : { size }),
+      ...(mimeType === undefined ? {} : { mimeType }),
+    })),
     ...(draft.richText === undefined ? {} : { richText: draft.richText }),
     ...(draft.replyToId === undefined ? {} : { replyToId: draft.replyToId }),
     ...(draft.isFork === undefined ? {} : { isFork: draft.isFork })
@@ -103,18 +145,26 @@ function parseEnvelope(value: string | null):
   }
 }
 
-function parsePersistedValue(value: unknown): Map<string, { draft: ComposerDraft | null; draftId: string | null; recovery: ComposerDraft | null }> | null {
-  if (!isRecord(value) || !isRecord(value.agents)) return null;
+function parsePersistedValue(
+  value: unknown,
+  schemaVersion: number,
+): Map<string, { draft: ComposerDraft | null; draftId: string | null; recovery: ComposerDraft | null }> | null {
+  if (!isRecord(value)) return null;
+  const rawScopes = schemaVersion === 1 ? value.agents : schemaVersion === 2 ? value.scopes : null;
+  if (!isRecord(rawScopes)) return null;
   const result = new Map<string, { draft: ComposerDraft | null; draftId: string | null; recovery: ComposerDraft | null }>();
-  for (const [agentKey, raw] of Object.entries(value.agents)) {
-    if (agentKey.length === 0 || !isRecord(raw)) return null;
+  for (const [persistedKey, raw] of Object.entries(rawScopes)) {
+    const scopeKey = schemaVersion === 1
+      ? composerDraftScopeKey(persistedKey)
+      : isPersistedComposerDraftScopeKey(persistedKey) ? persistedKey : null;
+    if (scopeKey == null || !isRecord(raw)) return null;
     const draft = raw.draft == null ? null : parseComposerDraft(raw.draft);
     const recovery = raw.recovery == null ? null : parseComposerDraft(raw.recovery);
     if ((raw.draft != null && draft == null) || (raw.recovery != null && recovery == null)) return null;
     const draftId = raw.draftId == null ? null : typeof raw.draftId === "string" && raw.draftId.length > 0 ? raw.draftId : null;
     if (raw.draftId != null && draftId == null || draft == null && draftId != null) return null;
     if (draft == null && recovery == null) continue;
-    result.set(agentKey, { draft, draftId, recovery });
+    result.set(scopeKey, { draft, draftId, recovery });
   }
   return result;
 }
@@ -151,26 +201,26 @@ export function createComposerDraftStateStore(persistence: ComposerDraftPersiste
   let disposed = false;
   let writes = Promise.resolve();
 
-  const snapshotFor = (agentKey: string) => {
-    const existing = snapshots.get(agentKey);
+  const snapshotFor = (scopeKey: string) => {
+    const existing = snapshots.get(scopeKey);
     if (existing != null) return existing;
     const created = { snapshot: EMPTY_SNAPSHOT, listeners: new Set<() => void>() };
-    snapshots.set(agentKey, created);
+    snapshots.set(scopeKey, created);
     return created;
   };
-  const notify = (agentKey: string, next: ComposerDraftSnapshot) => {
-    const state = snapshotFor(agentKey);
+  const notify = (scopeKey: string, next: ComposerDraftSnapshot) => {
+    const state = snapshotFor(scopeKey);
     state.snapshot = cloneSnapshot(next);
     for (const listener of [...state.listeners]) listener();
   };
-  const currentRecord = (agentKey: string) => records.get(agentKey) ?? EMPTY_RECORD;
+  const currentRecord = (scopeKey: string) => records.get(scopeKey) ?? EMPTY_RECORD;
   const serialize = (): ComposerDraftEnvelope => {
-    const agents: ComposerDraftEnvelope["agents"] = {};
-    for (const [agentKey, record] of records) {
+    const scopes: ComposerDraftEnvelope["scopes"] = {};
+    for (const [scopeKey, record] of records) {
       if (record.draft == null && record.recovery == null) continue;
-      agents[agentKey] = { draft: cloneDraft(record.draft), draftId: record.draftId, recovery: cloneDraft(record.recovery) };
+      scopes[scopeKey] = { draft: cloneDraft(record.draft), draftId: record.draftId, recovery: cloneDraft(record.recovery) };
     }
-    return { agents };
+    return { scopes };
   };
   const enqueueWrite = () => {
     if (accountSlot == null || disposed) return;
@@ -178,11 +228,11 @@ export function createComposerDraftStateStore(persistence: ComposerDraftPersiste
     const value = serialize();
     writes = writes.then(() => persistence.write(slot, value)).catch(() => {});
   };
-  const replace = (agentKey: string, next: { draft: ComposerDraft | null; draftId: string | null; recovery: ComposerDraft | null }) => {
+  const replace = (scopeKey: string, next: { draft: ComposerDraft | null; draftId: string | null; recovery: ComposerDraft | null }) => {
     mutationRevision += 1;
-    if (next.draft == null && next.recovery == null) records.delete(agentKey);
-    else records.set(agentKey, { draft: cloneDraft(next.draft), draftId: next.draftId, recovery: cloneDraft(next.recovery) });
-    notify(agentKey, { draft: next.draft, recovery: next.recovery, stash: stashes.get(agentKey) ?? null });
+    if (next.draft == null && next.recovery == null) records.delete(scopeKey);
+    else records.set(scopeKey, { draft: cloneDraft(next.draft), draftId: next.draftId, recovery: cloneDraft(next.recovery) });
+    notify(scopeKey, { draft: next.draft, recovery: next.recovery, stash: stashes.get(scopeKey) ?? null });
     enqueueWrite();
   };
   const isCurrent = (expectedGeneration: number, expectedAccount: string): boolean =>
