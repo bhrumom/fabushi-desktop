@@ -69,7 +69,7 @@ jobs:
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "short=$short" >> "$GITHUB_OUTPUT"
-          echo "tag=macos-main-v${version}-${short}" >> "$GITHUB_OUTPUT"
+          echo "tag=fabushi-rc-v${version}-${short}" >> "$GITHUB_OUTPUT"
           {
             echo "## macOS exact-source package"
             echo "- Source: \`$sha\`"
@@ -407,12 +407,15 @@ jobs:
           retention-days: 90
           compression-level: 0
 
-      - name: Write checksums
+      - name: Write checksums and exact-source provenance
         shell: bash
+        env:
+          SOURCE_SHA: ${{ steps.source.outputs.sha }}
         run: |
           set -euo pipefail
           cd desktop/release
-          find . -maxdepth 1 -type f \( -name '*.dmg' -o -name '*.zip' \) -print0 | sort -z | xargs -0 shasum -a 256 > SHA256SUMS.txt
+          find . -maxdepth 1 -type f \( -name '*.dmg' -o -name '*.zip' -o -name '*.blockmap' -o -name 'latest-mac.yml' \) -print0 | sort -z | xargs -0 shasum -a 256 > SHA256SUMS.txt
+          node -e 'const fs=require("fs"); fs.writeFileSync("provenance.json", JSON.stringify({source:process.env.SOURCE_SHA,runId:process.env.GITHUB_RUN_ID,runAttempt:process.env.GITHUB_RUN_ATTEMPT,platform:"macos"},null,2))'
           cat SHA256SUMS.txt
 
       - name: Upload workflow artifacts
@@ -426,11 +429,12 @@ jobs:
             desktop/release/*.blockmap
             desktop/release/latest-mac.yml
             desktop/release/SHA256SUMS.txt
+            desktop/release/provenance.json
           if-no-files-found: error
           retention-days: 90
           compression-level: 0
 
-      - name: Publish GitHub prerelease
+      - name: Publish exact-source shared GitHub prerelease
         if: ${{ (github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/package-macos-') || startsWith(github.event.head_commit.message, 'release:'))) || (github.event_name == 'workflow_dispatch' && inputs.publish_release) }}
         shell: bash
         env:
@@ -440,10 +444,13 @@ jobs:
           SOURCE_SHA: ${{ steps.source.outputs.sha }}
         run: |
           set -euo pipefail
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release delete "$TAG" --yes --cleanup-tag
+          repo="$GITHUB_REPOSITORY"
+          if ! gh release view "$TAG" --repo "$repo" >/dev/null 2>&1; then
+            gh release create "$TAG" --repo "$repo" --target "$SOURCE_SHA" --prerelease --title "Fabushi release candidate $VERSION - ${SOURCE_SHA:0:12}" --notes "Exact-source three-platform Fabushi release candidate: $SOURCE_SHA" || gh release view "$TAG" --repo "$repo" >/dev/null
           fi
-          gh release create "$TAG"             desktop/release/*.dmg             desktop/release/*.zip             desktop/release/*.blockmap             desktop/release/latest-mac.yml             desktop/release/SHA256SUMS.txt             --target "$SOURCE_SHA"             --title "Fabushi macOS $VERSION — ${SOURCE_SHA:0:12}"             --notes "Signed and Apple-notarized macOS arm64 installer built from exact fabushi-desktop commit \`$SOURCE_SHA\`."             --prerelease
-          url="$(gh release view "$TAG" --json url -q .url)"
+          remote_tag="$(git ls-remote origin "refs/tags/$TAG" | awk '{print $1}')"
+          test "$remote_tag" = "$SOURCE_SHA"
+          gh release upload "$TAG" desktop/release/*.dmg desktop/release/*.zip desktop/release/*.blockmap desktop/release/latest-mac.yml desktop/release/SHA256SUMS.txt desktop/release/provenance.json --repo "$repo" --clobber
+          url="$(gh release view "$TAG" --repo "$repo" --json url -q .url)"
           echo "### Published" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Release: $url" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Shared release: $url" >> "$GITHUB_STEP_SUMMARY"
