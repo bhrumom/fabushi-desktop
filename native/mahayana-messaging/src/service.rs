@@ -1002,7 +1002,8 @@ impl<S: MessagingStateStore> MessagingService<S> {
                     || expected_content
                         .as_ref()
                         .is_some_and(|content| &existing.content != content)
-                    || existing.thread_root_message_id != thread_root_message_id
+                    || existing.thread_root_message_id.as_ref()
+                        != thread_root_message_id.as_ref()
                     || &existing.scheduled_at_ms != scheduled_at_ms
                     || &existing.silent != silent
                 {

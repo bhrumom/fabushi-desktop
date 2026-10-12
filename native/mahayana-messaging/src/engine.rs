@@ -2136,7 +2136,7 @@ impl MessagingEngine {
                         .child_state(&destination, &sender_id)
                         .ok_or(EngineError::InvalidConversationChildDestination)?;
                     if matches!(
-                        destination.child,
+                        &destination.child,
                         Some(ConversationChildIdentity::SavedSublist { .. })
                     ) && !child.authoritative_membership_known
                     {
@@ -2339,7 +2339,7 @@ impl MessagingEngine {
                     content.clear_caption();
                 }
                 let saved_membership = if matches!(
-                    destination.child,
+                    &destination.child,
                     Some(ConversationChildIdentity::SavedSublist { .. })
                 ) {
                     let child = self
