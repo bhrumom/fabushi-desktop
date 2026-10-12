@@ -13760,9 +13760,8 @@
       ],
       "fabushi_target_symbols": [
         "Build, notarize, and publish macOS arm64",
-        "Updater contract / ubuntu-24.04",
-        "Updater contract / macos-15",
-        "Updater contract / windows-2025"
+        "updater-platform-contract",
+        "Updater contract / ${{ matrix.os }}"
       ],
       "target_language": "GitHub Actions + existing packaging/updater implementation",
       "language_rationale": "Release orchestration belongs to existing source-neutral Fabushi packaging/updater workflows, not a product runtime port.",
@@ -13789,7 +13788,7 @@
       ],
       "production_entrypoints": [
         ".github/workflows/release-macos-main.yml::Build, notarize, and publish macOS arm64",
-        ".github/workflows/rust-desktop-runtime.yml::Updater contract / ubuntu-24.04|macos-15|windows-2025"
+        ".github/workflows/rust-desktop-runtime.yml::updater-platform-contract / Updater contract / ${{ matrix.os }}"
       ],
       "production_evidence": [
         "predecessor-evidence:github-actions:38273831359:success@92944016319539f8115607f05aeeff0c7fb7de4f",
@@ -13930,8 +13929,25 @@
       "acceptance_reviewer": null,
       "release_gate_status": "pending",
       "license_and_provenance": "Source-informed release-semantics mapping from telegramdesktop/tdesktop .github/workflows/canary.yml at accepted blob cff0a8cd8bb0008ddd1dc833c37005c8890e6a8c. No Telegram canary runtime, Bot API publication transport, signing material, or source-specific infrastructure is retained; Fabushi reuses its source-neutral GitHub Actions, platform signing, packaging, updater trust, and provenance owners.",
-      "notes": "Schema-complete canary decomposition records the accepted upstream exact blob, existing-owner audit, source-neutral production entrypoints, tests, security boundary, licensing and provenance. Windows/Linux signed package acceptance and independent release acceptance remain open.",
-      "reviewer": null
+      "notes": "Schema-complete canary decomposition records the accepted upstream exact blob, existing-owner audit, exact target bindings for the macOS formal release owner and the source-neutral updater matrix owner, tests, security boundary, licensing and provenance. Windows/Linux signed package acceptance and independent release acceptance remain open.",
+      "reviewer": null,
+      "fabushi_target_bindings": [
+        {
+          "path": ".github/workflows/release-macos-main.yml",
+          "symbols": [
+            "Build, notarize, and publish macOS arm64"
+          ],
+          "responsibility_scope": "formal macOS signed/notarized release-candidate packaging, packaged acceptance, checksum/provenance, and publication owner"
+        },
+        {
+          "path": ".github/workflows/rust-desktop-runtime.yml",
+          "symbols": [
+            "updater-platform-contract",
+            "Updater contract / ${{ matrix.os }}"
+          ],
+          "responsibility_scope": "source-neutral three-platform updater contract matrix owner exercised by GitHub Actions"
+        }
+      ]
     }
   ],
   "rebaseline": {
