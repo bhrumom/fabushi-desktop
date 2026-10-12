@@ -265,10 +265,10 @@
   "coverage": {
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
-    "unknown_minimum": 14776,
-    "unread_minimum": 1609,
+    "unknown_minimum": 14584,
+    "unread_minimum": 1417,
     "omitted_known": 0,
-    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 14,516; unknown=14,776, unread=1,609, omitted=0."
+    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 14,708; unknown=14,584, unread=1,417, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -282,7 +282,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Closure open. Read-through 14,516/16,125; first unread 14,517 doc/gh-pages::search/variables_0.js; unknown remains 14,776; product/release closure remains open."
+    "note": "Closure open. Read-through 14,708/16,125; first unread 14,709 doc/gh-pages::structranges_1_1actions_1_1transform__fn-members.html; unknown remains 14,584; product/release closure remains open."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",
@@ -668,7 +668,7 @@
     ],
     "note": "Parent Source authority succeeded; full workflows still running when descendant accounting was written."
   },
-  "note": "Accepted baseline; exact read-through 14,516; unknown=14,776, unread=1,609, omitted=0; first unread 14,517 doc/gh-pages::search/variables_0.js.",
+  "note": "Accepted baseline; exact read-through 14,708; unknown=14,584, unread=1,417, omitted=0; first unread 14,709 doc/gh-pages::structranges_1_1actions_1_1transform__fn-members.html.",
   "source_accounting": {
     "recursive_total": 16125,
     "read_through": 14708,
