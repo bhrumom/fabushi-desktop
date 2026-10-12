@@ -71,13 +71,14 @@ test("CONTRACT-TDRP-STORY-CANONICAL-ROUTE-001 keeps Story RPC on Coordinator to 
   const gatewayApi = read("source/host/src/host_gateway_api.rs");
   const gateway = read("source/host/src/extensions/session/gateway.rs");
   const storyMethods = ["getStoryStealthStatus", "activateStoryStealth", "listStories", "viewStory", "reactStory", "deleteStory"];
+  const productOwnedMethods = ["noteRecentParticipantSuggestion", ...storyMethods];
   const extensionRegistry = gatewayApi.match(
     /pub const FABUSHI_HOST_GATEWAY_METHODS: &\[&str\] = &\[([\s\S]*?)\];/,
   )?.[1];
   assert.ok(extensionRegistry, "Fabushi Host gateway extension registry must remain present");
   assert.deepEqual(
     [...extensionRegistry.matchAll(/"([^"]+)"/g)].map((match) => match[1]),
-    storyMethods,
+    productOwnedMethods,
   );
   for (const method of storyMethods) {
     assert.match(client, new RegExp(method));
