@@ -265,10 +265,10 @@
   "coverage": {
     "root_source_entries_total": 6653,
     "recursive_source_entries_total": 16125,
-    "unknown_minimum": 13752,
-    "unread_minimum": 585,
+    "unknown_minimum": 13688,
+    "unread_minimum": 521,
     "omitted_known": 0,
-    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 15,540; unknown=13,752, unread=585, omitted=0."
+    "note": "Accepted 6fed91ffab9861771a75f29df65031b3c80b6941 tree 4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6; exact read-through 15,604; unknown=13,688, unread=521, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -282,7 +282,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Closure open. Read-through 15,540/16,125; first unread 15,541 doc/gh-pages::structranges_1_1views_1_1generate__n__fn.js; unknown remains 13,752; product/release closure remains open."
+    "note": "Closure open. Read-through 15,604/16,125; first unread 15,605 doc/gh-pages::structranges_1_1views_1_1linear__distribute__view.png; unknown remains 13,688; product/release closure remains open."
   },
   "baseline_identity_evidence": {
     "status": "historical-only",
