@@ -99,6 +99,8 @@ test('shipping canonical selection crosses renderer gateway into the one durable
   expect(renderer).toContain('openAgentRequestGenerationRef.current === requestGeneration');
   expect(sessionGateway).toContain('"noteRecentParticipantSuggestion"');
   expect(productionSession).toContain('service.note_recent_participant_selection(');
+  expect(productionSession).not.toContain('service.upsert_recent_participant_actor_projection(');
+  expect(productionSession).not.toContain('service.note_recent_participant_suggestion(');
   expect(productionSession).toContain('self.agents_root.join("_messaging")');
   expect(messagingService).toContain('pub fn note_recent_participant_selection(');
   expect(messagingService).toContain('pub fn note_recent_participant_suggestion(');
