@@ -254,7 +254,7 @@ fn production_gateway_forward_revalidates_recipient_authority_before_destination
         json!({
             "sourceConversationId": source_id,
             "sourceEntryId": source_entry_id,
-            "destinationConversationIds": [destination_id],
+            "destinations": [{"conversationId": destination_id, "child": null}],
             "clientNonce": "gateway-forward-after-revocation",
             "dropSenderNames": false,
             "dropCaptions": false
