@@ -167,15 +167,14 @@ impl<S: MessagingStateStore> MessagingService<S> {
         allowed: bool,
         server_time_ms: i64,
     ) -> Result<(), MessagingServiceError> {
-        let events = self.engine.execute(Command::ReconcileSavedSublistParentAccess {
-            conversation_id,
-            actor_id,
-            allowed,
-        })?;
-        self.cursor = self
-            .cursor
-            .saturating_add(u64::try_from(events.len()).unwrap_or(u64::MAX));
-        self.persist(server_time_ms)
+        self.persist_authoritative_reconciliation(
+            Command::ReconcileSavedSublistParentAccess {
+                conversation_id,
+                actor_id,
+                allowed,
+            },
+            server_time_ms,
+        )
     }
 
     /// Replace the trusted server/native membership snapshot for one SavedSublist.
@@ -188,15 +187,43 @@ impl<S: MessagingStateStore> MessagingService<S> {
         message_ids: Vec<MessageId>,
         server_time_ms: i64,
     ) -> Result<(), MessagingServiceError> {
-        let events = self.engine.execute(Command::ReconcileSavedSublistMembership {
-            destination,
-            actor_id,
-            message_ids,
-        })?;
+        self.persist_authoritative_reconciliation(
+            Command::ReconcileSavedSublistMembership {
+                destination,
+                actor_id,
+                message_ids,
+            },
+            server_time_ms,
+        )
+    }
+
+    /// Authoritative reconciliation is one durable transaction. A failed store
+    /// write must not leave trusted access/membership visible only in memory or
+    /// advance the cursor beyond the last durable snapshot.
+    fn persist_authoritative_reconciliation(
+        &mut self,
+        command: Command,
+        server_time_ms: i64,
+    ) -> Result<(), MessagingServiceError> {
+        let previous_engine = self.engine.clone();
+        let previous_cursor = self.cursor;
+        let events = match self.engine.execute(command) {
+            Ok(events) => events,
+            Err(error) => {
+                self.engine = previous_engine;
+                self.cursor = previous_cursor;
+                return Err(error.into());
+            }
+        };
         self.cursor = self
             .cursor
             .saturating_add(u64::try_from(events.len()).unwrap_or(u64::MAX));
-        self.persist(server_time_ms)
+        if let Err(error) = self.persist(server_time_ms) {
+            self.engine = previous_engine;
+            self.cursor = previous_cursor;
+            return Err(error);
+        }
+        Ok(())
     }
 
     pub fn reconcile_entitlement(
@@ -3219,6 +3246,237 @@ mod recent_participant_suggestion_service_tests {
         let restored =
             MessagingService::load(store.inner).expect("restore service after retry");
         assert_eq!(restored.engine().recent_participant_suggestions(&owner), &[peer]);
+    }
+
+    #[test]
+    fn saved_sublist_parent_access_persistence_failure_rolls_back_and_retry_commits_exactly_once() {
+        let owner = ActorId::new("human:saved-parent-owner");
+        let conversation_id = ConversationId::new("group:saved-parent");
+        let mut state = crate::engine::MessagingState::default();
+        state
+            .actors
+            .insert(owner.clone(), Actor::human(owner.0.clone(), "Owner"));
+        let mut conversation = Conversation::direct(
+            conversation_id.0.clone(),
+            "Saved parent",
+            vec![crate::actor::Participant {
+                actor_id: owner.clone(),
+                role: ParticipantRole::Owner,
+                joined_at_ms: 1,
+                muted_until_ms: None,
+            }],
+            1,
+        );
+        conversation.kind = ConversationKind::Group;
+        conversation.owner_id = Some(owner.clone());
+        state
+            .conversations
+            .insert(conversation_id.clone(), conversation);
+        state.communities.insert(
+            conversation_id.clone(),
+            crate::community::CommunityState::new(conversation_id.clone()),
+        );
+
+        let mut inner = MemoryStateStore::default();
+        inner
+            .save(&MessagingSnapshot::new(state, 13, 100))
+            .expect("seed SavedSublist parent authority state");
+        let store = FailOnceStateStore {
+            inner,
+            fail_next_save: true,
+        };
+        let mut service =
+            MessagingService::load(store).expect("load SavedSublist parent authority state");
+
+        assert!(matches!(
+            service.reconcile_saved_sublist_parent_access(
+                conversation_id.clone(),
+                owner.clone(),
+                true,
+                110,
+            ),
+            Err(MessagingServiceError::Store(StoreError::Io(_)))
+        ));
+        assert_eq!(service.cursor(), 13);
+        assert!(
+            !service
+                .engine()
+                .state()
+                .saved_sublist_parent_access
+                .get(&conversation_id)
+                .is_some_and(|actors| actors.contains(&owner)),
+            "failed persistence must not leave non-durable SavedSublist parent access"
+        );
+
+        service
+            .reconcile_saved_sublist_parent_access(
+                conversation_id.clone(),
+                owner.clone(),
+                true,
+                120,
+            )
+            .expect("retry SavedSublist parent authority");
+        assert_eq!(service.cursor(), 14);
+        assert!(
+            service
+                .engine()
+                .state()
+                .saved_sublist_parent_access
+                .get(&conversation_id)
+                .is_some_and(|actors| actors.contains(&owner))
+        );
+
+        let store = service.into_store();
+        let persisted = store.inner.snapshot().expect("persisted parent authority");
+        assert_eq!(persisted.cursor, 14);
+        assert!(
+            persisted
+                .state
+                .saved_sublist_parent_access
+                .get(&conversation_id)
+                .is_some_and(|actors| actors.contains(&owner))
+        );
+        let restored =
+            MessagingService::load(store.inner).expect("restore SavedSublist parent authority");
+        assert_eq!(restored.cursor(), 14);
+        assert!(
+            restored
+                .engine()
+                .state()
+                .saved_sublist_parent_access
+                .get(&conversation_id)
+                .is_some_and(|actors| actors.contains(&owner))
+        );
+    }
+
+    #[test]
+    fn saved_sublist_membership_persistence_failure_rolls_back_and_retry_commits_exactly_once() {
+        let owner = ActorId::new("human:saved-membership-owner");
+        let participant = ActorId::new("human:saved-membership-peer");
+        let conversation_id = ConversationId::new("saved:saved-membership");
+        let message_id = MessageId::new("message:saved-membership");
+        let destination =
+            ConversationDestination::saved_sublist(conversation_id.clone(), participant.clone());
+
+        let mut state = crate::engine::MessagingState::default();
+        state
+            .actors
+            .insert(owner.clone(), Actor::human(owner.0.clone(), "Owner"));
+        state.actors.insert(
+            participant.clone(),
+            Actor::human(participant.0.clone(), "Saved peer"),
+        );
+        let mut conversation = Conversation::direct(
+            conversation_id.0.clone(),
+            "Saved membership",
+            vec![crate::actor::Participant {
+                actor_id: owner.clone(),
+                role: ParticipantRole::Owner,
+                joined_at_ms: 1,
+                muted_until_ms: None,
+            }],
+            1,
+        );
+        conversation.kind = ConversationKind::SavedMessages;
+        conversation.owner_id = Some(owner.clone());
+        state
+            .conversations
+            .insert(conversation_id.clone(), conversation);
+        state
+            .messages
+            .entry(conversation_id.clone())
+            .or_default()
+            .insert(
+                message_id.clone(),
+                Message {
+                    id: message_id.clone(),
+                    conversation_id: conversation_id.clone(),
+                    sender_id: owner.clone(),
+                    content: MessageContent::Text {
+                        text: crate::message::FormattedText::plain("owned child message"),
+                    },
+                    reply_to_message_id: None,
+                    thread_root_message_id: None,
+                    forward_origin: None,
+                    reply_markup: None,
+                    reactions: Vec::new(),
+                    delivery_state: DeliveryState::Delivered,
+                    created_at_ms: 2,
+                    edited_at_ms: None,
+                    scheduled_at_ms: None,
+                    silent: false,
+                    protected_content: false,
+                    pinned: false,
+                    deleted: false,
+                },
+            );
+
+        let mut inner = MemoryStateStore::default();
+        inner
+            .save(&MessagingSnapshot::new(state, 21, 100))
+            .expect("seed SavedSublist membership authority state");
+        let store = FailOnceStateStore {
+            inner,
+            fail_next_save: true,
+        };
+        let mut service =
+            MessagingService::load(store).expect("load SavedSublist membership authority state");
+
+        assert!(matches!(
+            service.reconcile_saved_sublist_membership(
+                destination.clone(),
+                owner.clone(),
+                vec![message_id.clone()],
+                110,
+            ),
+            Err(MessagingServiceError::Store(StoreError::Io(_)))
+        ));
+        assert_eq!(service.cursor(), 21);
+        assert!(
+            service
+                .engine()
+                .state()
+                .child_state(&destination, &owner)
+                .is_none(),
+            "failed persistence must restore unknown SavedSublist membership"
+        );
+
+        service
+            .reconcile_saved_sublist_membership(
+                destination.clone(),
+                owner.clone(),
+                vec![message_id.clone()],
+                120,
+            )
+            .expect("retry SavedSublist membership authority");
+        assert_eq!(service.cursor(), 22);
+        assert!(
+            service
+                .engine()
+                .state()
+                .child_state(&destination, &owner)
+                .is_some_and(|child| {
+                    child.authoritative_membership_known
+                        && child.has_authoritative_message(message_id.0.as_str())
+                })
+        );
+
+        let store = service.into_store();
+        let persisted = store.inner.snapshot().expect("persisted membership authority");
+        assert_eq!(persisted.cursor, 22);
+        let restored =
+            MessagingService::load(store.inner).expect("restore SavedSublist membership authority");
+        assert_eq!(restored.cursor(), 22);
+        assert!(
+            restored
+                .engine()
+                .state()
+                .child_state(&destination, &owner)
+                .is_some_and(|child| {
+                    child.authoritative_membership_known
+                        && child.has_authoritative_message(message_id.0.as_str())
+                })
+        );
     }
 
     #[test]
