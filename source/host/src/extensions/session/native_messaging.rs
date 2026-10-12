@@ -69,6 +69,10 @@ pub struct FabushiRemoteHumanMessage {
     pub delivered_at: Option<String>,
     pub reply_to_message_id: Option<Value>,
     pub destination: Option<fabushi_messaging_core::ConversationDestination>,
+    pub expires_at_ms: Option<i64>,
+    pub expired_at_ms: Option<i64>,
+    #[serde(default)]
+    pub expired: bool,
     #[serde(default)]
     pub attachments: Vec<FabushiRemoteHumanAttachment>,
     #[serde(default)]
@@ -153,6 +157,29 @@ struct ListEnvelope {
     success: bool,
     data: Option<ListData>,
     error: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct FabushiRemoteMessageRetention {
+    pub conversation_id: String,
+    pub retention_seconds: Option<u32>,
+    pub revision: u64,
+}
+
+#[derive(Debug, Deserialize)]
+struct RetentionEnvelope {
+    success: bool,
+    retention: Option<FabushiRemoteMessageRetention>,
+    error: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct SetRetentionRequest<'a> {
+    target_user_id: &'a str,
+    retention_seconds: Option<u32>,
+    expected_revision: u64,
 }
 
 #[derive(Debug, Serialize)]
@@ -678,6 +705,96 @@ impl FabushiNativeMessagingClient {
             ));
         }
         Ok(envelope.data.map(|data| data.friends).unwrap_or_default())
+    }
+
+    pub fn get_direct_message_retention(
+        &self,
+        peer_human_id: &str,
+    ) -> Result<FabushiRemoteMessageRetention, String> {
+        let peer_human_id = required_trimmed(peer_human_id, "peer Human id")?;
+        let credentials = read_credentials(&self.credential_path)?;
+        let mut url = self.endpoint("/api/social/message-retention")?;
+        url.query_pairs_mut().append_pair("contactId", peer_human_id);
+        let response = self
+            .client
+            .get(url)
+            .bearer_auth(required_trimmed(&credentials.access_token, "accessToken")?)
+            .header(
+                "x-fabushi-device-id",
+                required_trimmed(&credentials.device_id, "deviceId")?,
+            )
+            .header("accept", "application/json")
+            .send()
+            .map_err(|error| format!("Fabushi Human retention sync failed: {error}"))?;
+        let status = response.status();
+        let body = response
+            .text()
+            .map_err(|error| format!("Fabushi Human retention response could not be read: {error}"))?;
+        let envelope: RetentionEnvelope = serde_json::from_str(&body).map_err(|error| {
+            format!(
+                "Fabushi Human retention response was invalid JSON (HTTP {}): {error}",
+                status.as_u16()
+            )
+        })?;
+        if !status.is_success() || !envelope.success {
+            return Err(format!(
+                "Fabushi Human retention sync was rejected (HTTP {}): {}",
+                status.as_u16(),
+                envelope.error.unwrap_or_else(|| "unknown backend error".into())
+            ));
+        }
+        envelope
+            .retention
+            .ok_or_else(|| "Fabushi Human retention response omitted the canonical policy.".to_string())
+    }
+
+    pub fn set_direct_message_retention(
+        &self,
+        peer_human_id: &str,
+        retention_seconds: Option<u32>,
+        expected_revision: u64,
+    ) -> Result<FabushiRemoteMessageRetention, String> {
+        let peer_human_id = required_trimmed(peer_human_id, "peer Human id")?;
+        if retention_seconds == Some(0) {
+            return Err("Fabushi Human retention seconds must be positive when present".into());
+        }
+        let credentials = read_credentials(&self.credential_path)?;
+        let response = self
+            .client
+            .request(Method::PUT, self.endpoint("/api/social/message-retention")?)
+            .bearer_auth(required_trimmed(&credentials.access_token, "accessToken")?)
+            .header(
+                "x-fabushi-device-id",
+                required_trimmed(&credentials.device_id, "deviceId")?,
+            )
+            .header("accept", "application/json")
+            .json(&SetRetentionRequest {
+                target_user_id: peer_human_id,
+                retention_seconds,
+                expected_revision,
+            })
+            .send()
+            .map_err(|error| format!("Fabushi Human retention mutation failed: {error}"))?;
+        let status = response.status();
+        let body = response
+            .text()
+            .map_err(|error| format!("Fabushi Human retention mutation response could not be read: {error}"))?;
+        let envelope: RetentionEnvelope = serde_json::from_str(&body).map_err(|error| {
+            format!(
+                "Fabushi Human retention mutation response was invalid JSON (HTTP {}): {error}",
+                status.as_u16()
+            )
+        })?;
+        if !status.is_success() || !envelope.success {
+            return Err(format!(
+                "Fabushi Human retention mutation was rejected (HTTP {}): {}",
+                status.as_u16(),
+                envelope.error.unwrap_or_else(|| "unknown backend error".into())
+            ));
+        }
+        envelope
+            .retention
+            .ok_or_else(|| "Fabushi Human retention mutation omitted the canonical policy.".to_string())
     }
 
     pub fn list_direct_messages(
