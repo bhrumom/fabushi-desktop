@@ -6086,6 +6086,7 @@ mod recent_open_history_tests {
             created_at_ms,
             edited_at_ms: None,
             scheduled_at_ms: None,
+            expires_at_ms: None,
             silent: false,
             protected_content: false,
             pinned: false,
