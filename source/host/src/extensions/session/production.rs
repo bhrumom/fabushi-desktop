@@ -5226,6 +5226,31 @@ mod sharebox_shipping_tests {
             ],
         );
 
+        let searchable = workers
+            .search_human_recipients(&source, source_entry_id, "", 50)
+            .unwrap();
+        for kind in ["topic", "savedSublist", "conversation"] {
+            assert!(
+                searchable.iter().any(|recipient| {
+                    recipient
+                        .pointer("/forwardDestination/child/kind")
+                        .and_then(serde_json::Value::as_str)
+                        == Some(kind)
+                }),
+                "authorized typed child {kind} must be discoverable before forwarding"
+            );
+        }
+        assert!(searchable.iter().any(|recipient| {
+            recipient
+                .pointer("/forwardDestination/child/kind")
+                .and_then(serde_json::Value::as_str)
+                == Some("savedSublist")
+                && recipient
+                    .get("forwardLabel")
+                    .and_then(serde_json::Value::as_str)
+                    .is_some_and(|label| label.contains("Saved human-alpha"))
+        }));
+
         let result = workers
             .forward_human_message(
                 &source,
@@ -5302,6 +5327,18 @@ mod sharebox_shipping_tests {
         );
         assert!(missing_parent_access.pointer("/destinations/0/error").and_then(serde_json::Value::as_str)
             .is_some_and(|error| error.contains("authoritative parent access")));
+        let hidden_without_parent = workers
+            .search_human_recipients(&source, source_entry_id, "Saved", 50)
+            .unwrap();
+        assert!(
+            hidden_without_parent.iter().all(|recipient| {
+                recipient
+                    .pointer("/forwardDestination/child/kind")
+                    .and_then(serde_json::Value::as_str)
+                    != Some("savedSublist")
+            }),
+            "SavedSublist without authoritative parent access must be filtered before renderer exposure"
+        );
 
         seed_forward_child_authorities(&workers, &[(saved.clone(), false)]);
         let missing_membership = workers
@@ -5320,6 +5357,18 @@ mod sharebox_shipping_tests {
         );
         assert!(missing_membership.pointer("/destinations/0/error").and_then(serde_json::Value::as_str)
             .is_some_and(|error| error.contains("authoritative child membership")));
+        let hidden_without_membership = workers
+            .search_human_recipients(&source, source_entry_id, "Saved", 50)
+            .unwrap();
+        assert!(
+            hidden_without_membership.iter().all(|recipient| {
+                recipient
+                    .pointer("/forwardDestination/child/kind")
+                    .and_then(serde_json::Value::as_str)
+                    != Some("savedSublist")
+            }),
+            "SavedSublist without authoritative membership must be filtered before renderer exposure"
+        );
 
         workers.shutdown();
         let _ = fs::remove_dir_all(root);
