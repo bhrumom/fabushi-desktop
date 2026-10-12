@@ -1,5 +1,5 @@
 {
-  "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+  "accepted_upstream": "5b81fa35aaa8d24e14ec9603e5929d324850d9c9",
   "start": 5411,
   "end": 5475,
   "entries": [
@@ -336,7 +336,7 @@
     {
       "order": 5466,
       "path": "Telegram/SourceFiles/platform/mac/window_title_mac.mm",
-      "blob": "5453e5431a2a382cc1d1a2670bb3a8f280fd7f4f",
+      "blob": "0a3044718e0851ac6d9d4518bc312b378d124aae",
       "consumer_symbol": "Window title"
     },
     {
@@ -394,5 +394,5 @@
       "consumer_symbol": "OS notification manager"
     }
   ],
-  "accepted_tree": "4ddb5182fc1ae238e4dc62a396614614b5b35f97"
+  "accepted_tree": "7539504ec9294b9c1ca03332570127b8b69ad201"
 }

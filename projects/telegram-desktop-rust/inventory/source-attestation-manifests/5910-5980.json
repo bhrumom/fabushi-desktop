@@ -1,6 +1,6 @@
 {
-  "accepted_upstream": "6fed91ffab9861771a75f29df65031b3c80b6941",
-  "accepted_tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6",
+  "accepted_upstream": "5b81fa35aaa8d24e14ec9603e5929d324850d9c9",
+  "accepted_tree": "7539504ec9294b9c1ca03332570127b8b69ad201",
   "deterministic_order_basis": "non-directory/blob rank in accepted recursive tree",
   "start": 5910,
   "end": 5980,
@@ -86,13 +86,13 @@
     {
       "order": 5923,
       "path": "Telegram/SourceFiles/ui/chat/attach/attach_bot_webview.cpp",
-      "blob": "540dc2afe3845ca8a0e8db34104f0654e7c522d0",
+      "blob": "2959557fd41e26d52eb1b3e43d24d678b3bea113",
       "consumer_symbol": "attach_bot_webview.cpp"
     },
     {
       "order": 5924,
       "path": "Telegram/SourceFiles/ui/chat/attach/attach_bot_webview.h",
-      "blob": "ca7fde6aa39e5075e12af3d345b2634c434bbeb5",
+      "blob": "f8d27991da8137a7a7fd56643b67d96272fa1b95",
       "consumer_symbol": "attach_bot_webview.h"
     },
     {

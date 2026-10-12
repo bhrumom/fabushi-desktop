@@ -1,12 +1,12 @@
 {
-  "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+  "accepted_upstream": "5b81fa35aaa8d24e14ec9603e5929d324850d9c9",
   "start": 5085,
   "end": 5090,
   "entries": [
     {
       "order": 5085,
       "path": "Telegram/SourceFiles/media/player/media_player_instance.h",
-      "blob": "7751f6a4090f31430fd57d18cc3c8d36c8e3c8f1",
+      "blob": "cf491d92a8ed19da81e376077077b900d97754de",
       "consumer_symbol": "media_player_instance"
     },
     {
@@ -24,7 +24,7 @@
     {
       "order": 5088,
       "path": "Telegram/SourceFiles/media/player/media_player_panel.cpp",
-      "blob": "65baa116915c96f2d6fe2c0dc75c278b6ac0a590",
+      "blob": "3aa54512db5e1cc4417bfe30440ff3a6e110316c",
       "consumer_symbol": "media_player_panel"
     },
     {
@@ -40,5 +40,5 @@
       "consumer_symbol": "media_player_volume_controller"
     }
   ],
-  "accepted_tree": "4ddb5182fc1ae238e4dc62a396614614b5b35f97"
+  "accepted_tree": "7539504ec9294b9c1ca03332570127b8b69ad201"
 }
