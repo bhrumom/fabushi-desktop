@@ -178,7 +178,8 @@
         "provider": "github",
         "owner": "bhrumom",
         "repo": "fabushi-desktop",
-        "releaseType": "release"
+        "releaseType": "release",
+        "tagNamePrefix": "fabushi-rc-v"
       }
     ]
   }
