@@ -886,7 +886,9 @@ export function HumanCallControls({
       const currentIndex = subscription.preferredRid == null
         ? -1
         : subscription.simulcastRids.indexOf(subscription.preferredRid);
-      const nextRid = subscription.simulcastRids[(currentIndex + 1) % subscription.simulcastRids.length];
+      const nextRid = subscription.simulcastRids[(currentIndex + 1) % subscription.simulcastRids.length]
+        ?? subscription.simulcastRids[0];
+      if (nextRid == null) return;
       const response = await client.call("updateCallMediaSubscriptionLayer", {
         callId: current.id,
         mediaSessionId: runtime.subscribeSessionId,
