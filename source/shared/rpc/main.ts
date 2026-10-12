@@ -77,6 +77,7 @@ export const MAIN_METHOD_TABLE = {
   transcribeAudio: { args: "object" },
   requestCallMediaPermissions: { args: "object" },
   listCallDisplaySources: { args: "none" },
+  getCallDisplayCapturePolicy: { args: "none" },
   getCursorAuthStatus: { args: "none" },
   loginCursor: { args: "none" },
   cancelCursorLogin: { args: "none" },

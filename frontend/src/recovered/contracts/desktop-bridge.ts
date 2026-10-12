@@ -479,6 +479,13 @@ export interface DesktopCallMediaBridge {
     camera: "granted" | "denied" | "prompt" | "not-requested";
   }>;
   listDisplaySources(): Promise<Array<{ id: string; name: string; displayId?: string }>>;
+  getDisplayCapturePolicy(): Promise<{
+    platform: "aix" | "android" | "darwin" | "freebsd" | "haiku" | "linux" | "openbsd" | "sunos" | "win32" | "cygwin" | "netbsd";
+    systemAudio: "supported" | "best-effort" | "unsupported";
+    adapter: "electron-desktop-loopback" | "coreaudio-tap" | "pipewire-portal" | "none";
+    permission: "os-media-capture" | "portal" | "none";
+    reason: string;
+  }>;
 }
 
 export interface DesktopBridge {

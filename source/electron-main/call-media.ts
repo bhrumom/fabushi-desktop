@@ -6,12 +6,21 @@ export interface DesktopCallDisplaySource {
   readonly displayId?: string;
 }
 
+export interface DesktopCallDisplayCapturePolicy {
+  readonly platform: NodeJS.Platform;
+  readonly systemAudio: "supported" | "best-effort" | "unsupported";
+  readonly adapter: "electron-desktop-loopback" | "coreaudio-tap" | "pipewire-portal" | "none";
+  readonly permission: "os-media-capture" | "portal" | "none";
+  readonly reason: string;
+}
+
 export interface DesktopCallMediaPort {
   requestPermissions(input: { readonly audio: boolean; readonly video: boolean }): Promise<{
     readonly microphone: DesktopCallMediaPermission;
     readonly camera: DesktopCallMediaPermission;
   }>;
   listDisplaySources(): Promise<readonly DesktopCallDisplaySource[]>;
+  getDisplayCapturePolicy(): DesktopCallDisplayCapturePolicy;
 }
 
 export interface DesktopCallMediaNative {
@@ -56,6 +65,43 @@ async function requestOne(
   return "prompt";
 }
 
+export function resolveDesktopCallDisplayCapturePolicy(platform: NodeJS.Platform): DesktopCallDisplayCapturePolicy {
+  if (platform === "win32") {
+    return {
+      platform,
+      systemAudio: "supported",
+      adapter: "electron-desktop-loopback",
+      permission: "os-media-capture",
+      reason: "Windows desktop capture supports a loopback system-audio track bound to the selected display source.",
+    };
+  }
+  if (platform === "darwin") {
+    return {
+      platform,
+      systemAudio: "best-effort",
+      adapter: "coreaudio-tap",
+      permission: "os-media-capture",
+      reason: "macOS desktop audio depends on CoreAudio screen/system-audio capture permission and the running macOS version.",
+    };
+  }
+  if (platform === "linux") {
+    return {
+      platform,
+      systemAudio: "best-effort",
+      adapter: "pipewire-portal",
+      permission: "portal",
+      reason: "Linux system audio availability is negotiated by Chromium with the active PipeWire/desktop portal.",
+    };
+  }
+  return {
+    platform,
+    systemAudio: "unsupported",
+    adapter: "none",
+    permission: "none",
+    reason: "System audio capture is not supported on this desktop platform.",
+  };
+}
+
 export function createDesktopCallMediaPort(
   native: DesktopCallMediaNative,
   platform: NodeJS.Platform = process.platform,
@@ -67,6 +113,9 @@ export function createDesktopCallMediaPort(
         requestOne(native, platform, "camera", input.video),
       ]);
       return { microphone, camera };
+    },
+    getDisplayCapturePolicy() {
+      return resolveDesktopCallDisplayCapturePolicy(platform);
     },
     async listDisplaySources() {
       if (native.desktopCapturer?.getSources == null) {

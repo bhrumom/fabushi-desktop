@@ -123,6 +123,10 @@ export function createMainEdgeHandlers(deps: MainEdgeDeps): HandlerMap {
       if (deps.callMedia == null) throw new EdgeCallFailure({ code: MAIN_EDGE_UNSERVED, detail: "Call display capture is unavailable." });
       return await deps.callMedia.listDisplaySources();
     },
+    getCallDisplayCapturePolicy: () => {
+      if (deps.callMedia == null) throw new EdgeCallFailure({ code: MAIN_EDGE_UNSERVED, detail: "Call display capture policy is unavailable." });
+      return deps.callMedia.getDisplayCapturePolicy();
+    },
 
     getThemeState: () => invoke(themeController(deps), "getState"),
     setThemePreference: (raw) => { const controller = themeController(deps); const preference = req(raw).preference; return isSandThemePreference(preference) ? invoke(controller, "setPreference", preference) : invoke(controller, "getState"); },

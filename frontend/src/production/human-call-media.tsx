@@ -401,6 +401,15 @@ function desktopSourceConstraint(sourceId: string): MediaTrackConstraints {
   } as unknown as MediaTrackConstraints;
 }
 
+function desktopAudioSourceConstraint(sourceId: string): MediaTrackConstraints {
+  return {
+    mandatory: {
+      chromeMediaSource: "desktop",
+      chromeMediaSourceId: sourceId,
+    },
+  } as unknown as MediaTrackConstraints;
+}
+
 function stopStream(stream: MediaStream | null): void {
   for (const track of stream?.getTracks() ?? []) track.stop();
 }
@@ -482,6 +491,7 @@ export function HumanCallControls({
   const [mutePending, setMutePending] = useState(false);
   const [cameraPending, setCameraPending] = useState(false);
   const [screenPending, setScreenPending] = useState(false);
+  const [screenAudioStatus, setScreenAudioStatus] = useState<"mixed" | "video-only" | null>(null);
   const [layerPending, setLayerPending] = useState(false);
   const [remoteVideoLayer, setRemoteVideoLayer] = useState<{ readonly current: string | null; readonly available: readonly string[] } | null>(null);
   const [callToneState, setCallToneState] = useState<CallTonePlaybackState>("idle");
@@ -489,6 +499,16 @@ export function HumanCallControls({
   const localStreamRef = useRef<MediaStream | null>(null);
   const remoteStreamRef = useRef<MediaStream | null>(null);
   const screenStreamRef = useRef<MediaStream | null>(null);
+  const screenAudioMixRef = useRef<{
+    context: AudioContext;
+    destination: MediaStreamAudioDestinationNode;
+    microphoneSource: MediaStreamAudioSourceNode | null;
+    systemSource: MediaStreamAudioSourceNode;
+    mixedTrack: MediaStreamTrack;
+    systemTrack: MediaStreamTrack;
+    sender: RTCRtpSender;
+  } | null>(null);
+  const rebindScreenAudioMicrophoneRef = useRef<(track: MediaStreamTrack) => void>(() => {});
   const cameraCaptureGenerationRef = useRef(0);
   const cameraRecoveryInFlightRef = useRef(false);
   const deviceReconcileGenerationRef = useRef(0);
@@ -514,6 +534,80 @@ export function HumanCallControls({
   const callTonePlayerRef = useRef<HumanCallTonePlayer | null>(null);
   const callToneKeyRef = useRef<string | null>(null);
   const callToneFailedKeyRef = useRef<string | null>(null);
+
+  const disposeScreenAudioMix = useCallback(async (restoreMicrophone: boolean) => {
+    const mix = screenAudioMixRef.current;
+    if (mix == null) {
+      setScreenAudioStatus(null);
+      return;
+    }
+    screenAudioMixRef.current = null;
+    if (restoreMicrophone && pcRef.current?.getSenders().includes(mix.sender)) {
+      const microphone = localStreamRef.current?.getAudioTracks()[0] ?? null;
+      await mix.sender.replaceTrack(microphone).catch(() => undefined);
+    }
+    mix.microphoneSource?.disconnect();
+    mix.systemSource.disconnect();
+    mix.mixedTrack.stop();
+    await mix.context.close().catch(() => undefined);
+    setScreenAudioStatus(null);
+  }, []);
+
+  const rebindScreenAudioMicrophone = useCallback((track: MediaStreamTrack) => {
+    const mix = screenAudioMixRef.current;
+    if (mix == null || track.readyState !== "live") return;
+    mix.microphoneSource?.disconnect();
+    const source = mix.context.createMediaStreamSource(new MediaStream([track]));
+    source.connect(mix.destination);
+    mix.microphoneSource = source;
+  }, []);
+  rebindScreenAudioMicrophoneRef.current = rebindScreenAudioMicrophone;
+
+  const installScreenAudioMix = useCallback(async (capture: MediaStream): Promise<boolean> => {
+    const systemTrack = capture.getAudioTracks()[0] ?? null;
+    if (systemTrack == null || systemTrack.readyState !== "live") return false;
+    const pc = pcRef.current;
+    const sender = pc?.getSenders().find((candidate) => candidate.track?.kind === "audio") ?? null;
+    if (pc == null || sender == null) return false;
+
+    await disposeScreenAudioMix(true);
+    const context = new AudioContext();
+    await context.resume().catch(() => undefined);
+    const destination = context.createMediaStreamDestination();
+    const systemSource = context.createMediaStreamSource(new MediaStream([systemTrack]));
+    systemSource.connect(destination);
+    const microphone = localStreamRef.current?.getAudioTracks()[0] ?? null;
+    const microphoneSource = microphone != null && microphone.readyState === "live"
+      ? context.createMediaStreamSource(new MediaStream([microphone]))
+      : null;
+    microphoneSource?.connect(destination);
+    const mixedTrack = destination.stream.getAudioTracks()[0] ?? null;
+    if (mixedTrack == null) {
+      microphoneSource?.disconnect();
+      systemSource.disconnect();
+      await context.close().catch(() => undefined);
+      return false;
+    }
+    try {
+      await sender.replaceTrack(mixedTrack);
+    } catch (error) {
+      mixedTrack.stop();
+      microphoneSource?.disconnect();
+      systemSource.disconnect();
+      await context.close().catch(() => undefined);
+      throw error;
+    }
+    screenAudioMixRef.current = { context, destination, microphoneSource, systemSource, mixedTrack, systemTrack, sender };
+    systemTrack.onended = () => {
+      const active = screenAudioMixRef.current;
+      if (active == null || active.systemTrack !== systemTrack) return;
+      active.systemSource.disconnect();
+      setScreenAudioStatus("video-only");
+      setError("System audio capture ended; screen video and microphone sharing remain active.");
+    };
+    setScreenAudioStatus("mixed");
+    return true;
+  }, [disposeScreenAudioMix]);
 
   const publish = useCallback((next: HumanCall | null, nextLease?: CallLease | null) => {
     callRef.current = next;
@@ -804,7 +898,10 @@ export function HumanCallControls({
               continue;
             }
             replacement.enabled = oldAudio.enabled;
-            const sender = pcRef.current?.getSenders().find((candidate) => candidate.track === oldAudio || candidate.track?.kind === "audio") ?? null;
+            const activeMix = screenAudioMixRef.current;
+            const sender = activeMix == null
+              ? pcRef.current?.getSenders().find((candidate) => candidate.track === oldAudio || candidate.track?.kind === "audio") ?? null
+              : null;
             if (sender != null) await sender.replaceTrack(replacement);
             if (!isOwned()) {
               if (sender != null) await sender.replaceTrack(oldAudio).catch(() => undefined);
@@ -816,6 +913,9 @@ export function HumanCallControls({
             stream.addTrack(replacement);
             oldAudio.stop();
             bindMicrophoneTrackLifecycle(stream, replacement);
+            if (activeMix != null && screenAudioMixRef.current === activeMix) {
+              rebindScreenAudioMicrophoneRef.current(replacement);
+            }
           }
         }
 
@@ -906,10 +1006,11 @@ export function HumanCallControls({
     diagnosticsTimerRef.current = window.setInterval(() => {
       void sample().catch((statsError) => console.warn("[human-call] diagnostics sample failed", statsError));
     }, 2000);
-  }, [stopDiagnostics]);
+  }, [disposeScreenAudioMix, stopDiagnostics]);
 
   const closePeer = useCallback(() => {
     stopDiagnostics();
+    void disposeScreenAudioMix(false);
     const publishPc = pcRef.current;
     const subscribePc = subscribePcRef.current;
     pcRef.current = null;
@@ -958,6 +1059,7 @@ export function HumanCallControls({
     screenStreamRef.current = null;
     setScreenSharing(false);
     setScreenCapturePaused(false);
+    setScreenAudioStatus(null);
     setCameraEnabled(false);
     setCameraCapturePaused(false);
   }, [closePeer, invalidateCameraCapture, stopCallTone, transition]);
@@ -1352,6 +1454,7 @@ export function HumanCallControls({
     screenStreamRef.current = null;
     setScreenSharing(false);
     setScreenCapturePaused(false);
+    setScreenAudioStatus(null);
     setCameraEnabled(false);
     setCameraCapturePaused(false);
     setStatus("idle");
@@ -1373,6 +1476,7 @@ export function HumanCallControls({
     setStatus("idle");
     setScreenSharing(false);
     setScreenCapturePaused(false);
+    setScreenAudioStatus(null);
     setCameraCapturePaused(false);
     setCameraEnabled(false);
     publish(null, null);
@@ -1493,6 +1597,7 @@ export function HumanCallControls({
       if (current == null || pc == null) return;
       const capture = screenStreamRef.current;
       const screenTrack = capture?.getVideoTracks()[0] ?? null;
+      await disposeScreenAudioMix(true);
       const sender = pc.getSenders().find((candidate) => candidate.track?.kind === "video");
       const camera = localStreamRef.current?.getVideoTracks()[0] ?? null;
       if (sender != null) await sender.replaceTrack(camera);
@@ -1510,7 +1615,7 @@ export function HumanCallControls({
       commandLease.release();
       setScreenPending(false);
     }
-  }, [callCommandFence, updateMediaState]);
+  }, [callCommandFence, disposeScreenAudioMix, updateMediaState]);
 
   const selectDisplaySource = useCallback(async (sourceId: string) => {
     const commandLease = callCommandFence.acquire("video-media");
@@ -1526,7 +1631,22 @@ export function HumanCallControls({
         setDisplaySources(refreshed);
         throw new Error("That display source is no longer available. Choose another source.");
       }
-      const capture = await navigator.mediaDevices.getUserMedia({ audio: false, video: desktopSourceConstraint(source.id) });
+      const displayPolicy = await bridge.callMedia.getDisplayCapturePolicy();
+      let capture: MediaStream;
+      let systemAudioWarning: string | null = null;
+      if (displayPolicy.systemAudio === "unsupported") {
+        capture = await navigator.mediaDevices.getUserMedia({ audio: false, video: desktopSourceConstraint(source.id) });
+      } else {
+        try {
+          capture = await navigator.mediaDevices.getUserMedia({
+            audio: desktopAudioSourceConstraint(source.id),
+            video: desktopSourceConstraint(source.id),
+          });
+        } catch (audioCaptureError) {
+          capture = await navigator.mediaDevices.getUserMedia({ audio: false, video: desktopSourceConstraint(source.id) });
+          systemAudioWarning = `${displayPolicy.reason} ${mediaFailure(audioCaptureError)}`;
+        }
+      }
       const track = capture.getVideoTracks()[0];
       if (track == null) {
         stopStream(capture);
@@ -1534,12 +1654,32 @@ export function HumanCallControls({
       }
       const sender = pc.getSenders().find((candidate) => candidate.track?.kind === "video");
       const previousCapture = screenStreamRef.current;
+      const capturedSystemAudio = capture.getAudioTracks()[0] ?? null;
+      let mixedSystemAudio = false;
+      if (capturedSystemAudio != null) {
+        try {
+          mixedSystemAudio = await installScreenAudioMix(capture);
+        } catch (mixError) {
+          capturedSystemAudio.stop();
+          capture.removeTrack(capturedSystemAudio);
+          systemAudioWarning = `System audio could not join the existing call audio sender. ${mediaFailure(mixError)}`;
+        }
+      }
+      if (!mixedSystemAudio && capturedSystemAudio != null && capturedSystemAudio.readyState === "live") {
+        capturedSystemAudio.stop();
+        capture.removeTrack(capturedSystemAudio);
+      }
+      if (!mixedSystemAudio && displayPolicy.systemAudio !== "unsupported" && systemAudioWarning == null) {
+        systemAudioWarning = `System audio is unavailable for this selected source. ${displayPolicy.reason}`;
+      }
+      setScreenAudioStatus(mixedSystemAudio ? "mixed" : "video-only");
       const previousTrack = sender?.track ?? null;
       const addedSender = sender == null ? pc.addTrack(track, capture) : null;
       if (sender != null) await sender.replaceTrack(track);
       try {
         await updateMediaState(current, { screenShare: true, displaySourceId: source.id, screenSharePaused: false, screenShareActive: true });
       } catch (error) {
+        await disposeScreenAudioMix(true);
         if (sender != null) await sender.replaceTrack(previousTrack).catch(() => undefined);
         if (addedSender != null && pcRef.current === pc) pc.removeTrack(addedSender);
         stopStream(capture);
@@ -1548,6 +1688,7 @@ export function HumanCallControls({
       screenStreamRef.current = capture;
       setScreenSharing(true);
       setScreenCapturePaused(false);
+      if (systemAudioWarning != null) setError(`Screen sharing started without system audio: ${systemAudioWarning}`);
       closeDisplayPicker();
       stopStream(previousCapture);
       const projectCaptureActivity = (paused: boolean) => {
@@ -1573,6 +1714,7 @@ export function HumanCallControls({
             screenStreamRef.current = null;
             setScreenSharing(false);
             setScreenCapturePaused(false);
+            await disposeScreenAudioMix(true);
             const camera = localStreamRef.current?.getVideoTracks()[0] ?? null;
             const currentSender = pcRef.current?.getSenders().find((candidate) => candidate.track?.kind === "video");
             if (currentSender != null) await currentSender.replaceTrack(camera);
@@ -1589,7 +1731,7 @@ export function HumanCallControls({
       commandLease.release();
       setScreenPending(false);
     }
-  }, [bridge.callMedia, callCommandFence, closeDisplayPicker, updateMediaState]);
+  }, [bridge.callMedia, callCommandFence, closeDisplayPicker, disposeScreenAudioMix, installScreenAudioMix, updateMediaState]);
 
   const toggleScreen = useCallback(async () => {
     if (screenSharing) await stopScreenShare();
@@ -1670,6 +1812,8 @@ export function HumanCallControls({
       <SandButton aria-pressed={screenSharing} onClick={() => void toggleScreen().catch((toggleError) => setError(mediaFailure(toggleError)))} pending={screenPending} size="sm" variant="secondary">{screenSharing ? "Stop sharing" : "Share screen"}</SandButton>
       {remoteVideoLayer != null && remoteVideoLayer.available.length > 0 ? <SandButton aria-label="Switch remote video quality" onClick={() => void cycleRemoteVideoLayer().catch((layerError) => setError(mediaFailure(layerError)))} pending={layerPending} size="sm" variant="secondary">Video quality{remoteVideoLayer.current == null ? "" : ` · ${remoteVideoLayer.current}`}</SandButton> : null}
       {screenSharing && screenCapturePaused ? <span role="status">Screen sharing paused</span> : null}
+      {screenSharing && screenAudioStatus === "mixed" ? <span role="status">System audio shared</span> : null}
+      {screenSharing && screenAudioStatus === "video-only" ? <span role="status">Screen video only</span> : null}
       {screenSharing ? <SandButton aria-label="Choose another display source" onClick={() => void openDisplayPicker().catch((pickerError) => setError(mediaFailure(pickerError)))} pending={screenPending} size="sm" variant="secondary">Change screen</SandButton> : null}
       <SandButton aria-label="End call" onClick={() => void hangup()} sentiment="danger" size="sm">End</SandButton>
       {diagnostics == null ? null : <details aria-label="Call diagnostics">

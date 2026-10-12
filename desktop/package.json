@@ -118,7 +118,8 @@
       "entitlementsInherit": "resources/mac/entitlements.plist",
       "extendInfo": {
         "NSMicrophoneUsageDescription": "全球法布施使用麦克风进行语音消息、语音输入和离线语音识别。",
-        "NSCameraUsageDescription": "全球法布施使用摄像头进行视频通话。"
+        "NSCameraUsageDescription": "全球法布施使用摄像头进行视频通话。",
+        "NSAudioCaptureUsageDescription": "全球法布施在你主动共享屏幕时，可采集所选屏幕的系统音频并与通话麦克风混合发送。"
       },
       "icon": "resources/icon.png",
       "forceCodeSigning": true

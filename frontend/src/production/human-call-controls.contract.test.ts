@@ -244,3 +244,20 @@ test("mediaDevices devicechange re-resolves preferred/default inputs with call a
   assert.ok(source.includes("await sender.replaceTrack(replacement)"));
   assert.ok(source.includes("deviceReconciledAtMs: Date.now()"));
 });
+
+
+test("screen sharing mixes selected-source system audio into the existing call sender with explicit platform fallback", () => {
+  assert.ok(source.includes("desktopAudioSourceConstraint"));
+  assert.ok(source.includes("bridge.callMedia.getDisplayCapturePolicy()"));
+  assert.ok(source.includes('displayPolicy.systemAudio === "unsupported"'));
+  assert.ok(source.includes("const screenAudioMixRef = useRef<"));
+  assert.ok(source.includes("new AudioContext()"));
+  assert.ok(source.includes("context.createMediaStreamDestination()"));
+  assert.ok(source.includes("await sender.replaceTrack(mixedTrack)"));
+  assert.ok(source.includes("await disposeScreenAudioMix(true)"));
+  assert.ok(source.includes("rebindScreenAudioMicrophoneRef.current(replacement)"));
+  assert.ok(source.includes("System audio capture ended; screen video and microphone sharing remain active."));
+  assert.ok(source.includes("Screen sharing started without system audio:"));
+  assert.ok(source.includes("System audio shared"));
+  assert.ok(source.includes("Screen video only"));
+});
