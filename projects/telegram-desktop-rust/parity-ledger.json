@@ -13488,12 +13488,12 @@
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "deterministic_prefix_closed": 57,
-    "development_only_non_applicable": 1339,
-    "unknown_closed": 1413,
+    "development_only_non_applicable": 1403,
+    "unknown_closed": 1477,
     "omitted": 0,
-    "read_through": 14580,
-    "first_unread_order": 14581,
-    "first_unread_path": "doc/gh-pages::structconcepts_1_1common__type_3_01T_00_01U_00_01Vs_8_8_8_01_4.html",
+    "read_through": 14644,
+    "first_unread_order": 14645,
+    "first_unread_path": "doc/gh-pages::structmeta_1_1quote__i.html",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
