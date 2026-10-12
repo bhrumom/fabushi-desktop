@@ -9,13 +9,37 @@ import {
   nextForwardRecipientIndex,
 } from "./forward-recipient-navigation";
 
+export type ForwardDestinationChild =
+  | { readonly kind: "topic"; readonly rootMessageId: string }
+  | { readonly kind: "savedSublist"; readonly participantId: string }
+  | { readonly kind: "conversation"; readonly conversationId: string };
+
+export interface ForwardDestination {
+  readonly conversationId: string;
+  readonly child: ForwardDestinationChild | null;
+}
+
+export function forwardDestinationKey(destination: ForwardDestination): string {
+  const { child } = destination;
+  if (child == null) return `root:${destination.conversationId}`;
+  switch (child.kind) {
+    case "topic":
+      return `topic:${destination.conversationId}:${child.rootMessageId}`;
+    case "savedSublist":
+      return `savedSublist:${destination.conversationId}:${child.participantId}`;
+    case "conversation":
+      return `conversation:${destination.conversationId}:${child.conversationId}`;
+  }
+}
+
 export interface ForwardRecipient {
   readonly id: string;
   readonly name: string;
+  readonly destination: ForwardDestination;
 }
 
 export interface ForwardSettlement {
-  readonly conversationId: string;
+  readonly destination: ForwardDestination;
   readonly status: "sent" | "failed";
   readonly error?: string;
 }
@@ -34,7 +58,7 @@ export interface ForwardMessageDialogProps {
   readonly forwardMessage: (input: {
     sourceConversationId: string;
     sourceEntryId: string;
-    destinationConversationIds: readonly string[];
+    destinations: readonly ForwardDestination[];
     clientNonce: string;
     dropSenderNames: boolean;
     dropCaptions: boolean;
@@ -189,7 +213,7 @@ export function ForwardMessageDialog({
       const settlement = await forwardMessage({
         sourceConversationId,
         sourceEntryId: message.id,
-        destinationConversationIds: [...selected],
+        destinations: selectedRecipients.map((recipient) => recipient.destination),
         clientNonce: requestId,
         dropSenderNames,
         dropCaptions,
@@ -201,7 +225,9 @@ export function ForwardMessageDialog({
         return;
       }
       const succeeded = new Set(
-        settlement.filter((item) => item.status === "sent").map((item) => item.conversationId),
+        settlement
+          .filter((item) => item.status === "sent")
+          .map((item) => forwardDestinationKey(item.destination)),
       );
       setSelected((current) => new Set([...current].filter((id) => !succeeded.has(id))));
       setFailure(

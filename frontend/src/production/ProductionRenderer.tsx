@@ -104,7 +104,14 @@ import { WorkspaceIndicator } from "../recovered/features/window-chrome/workspac
 import { applyRootShellTheme, applyRootShellZoomFactor, shouldRefreshRootShellOnFocus } from "../recovered/features/window-chrome/model";
 import { createRuntimeThemeInstaller, RUNTIME_THEME_CLASS, type ThemeDocument } from "../recovered/features/runtime-theme-token-installer";
 import { CommandPalette } from "./CommandPalette";
-import { ForwardMessageDialog, type ForwardRecipient, type ForwardSettlement } from "./ForwardMessageDialog";
+import {
+  ForwardMessageDialog,
+  forwardDestinationKey,
+  type ForwardDestination,
+  type ForwardDestinationChild,
+  type ForwardRecipient,
+  type ForwardSettlement,
+} from "./ForwardMessageDialog";
 import { AgentDeleteConfirmation, type AgentDeleteTarget } from "./AgentDeleteConfirmation";
 import type { CommandPaletteCommand } from "./command-palette-model";
 import { createCommandPaletteMessageProvider, type CommandPaletteMessage } from "./command-palette-message-provider";
@@ -1149,16 +1156,23 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   }): Promise<readonly ForwardRecipient[]> => {
     if (client == null) throw new Error("coordinator is unavailable for recipient search");
     const raw = await client.call("searchHumanRecipients", input);
-    return projectHumanConversations(raw).map((conversation) => ({
-      id: conversation.id,
-      name: conversation.name,
-    }));
+    return projectHumanConversations(raw).map((conversation) => {
+      const destination: ForwardDestination = {
+        conversationId: conversation.id,
+        child: null,
+      };
+      return {
+        id: forwardDestinationKey(destination),
+        name: conversation.name,
+        destination,
+      };
+    });
   }, [client]);
 
   const forwardHumanMessage = useCallback(async (input: {
     sourceConversationId: string;
     sourceEntryId: string;
-    destinationConversationIds: readonly string[];
+    destinations: readonly ForwardDestination[];
     clientNonce: string;
     dropSenderNames: boolean;
     dropCaptions: boolean;
@@ -1172,17 +1186,37 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       if (candidate == null || typeof candidate !== "object") {
         throw new Error("forwardHumanMessage returned an invalid destination settlement");
       }
-      const conversationId = "conversationId" in candidate && typeof candidate.conversationId === "string"
-        ? candidate.conversationId
+      const rawDestination = "destination" in candidate && candidate.destination != null
+        && typeof candidate.destination === "object"
+        ? candidate.destination
         : null;
+      const conversationId = rawDestination != null && "conversationId" in rawDestination
+        && typeof rawDestination.conversationId === "string"
+        ? rawDestination.conversationId
+        : null;
+      let child: ForwardDestinationChild | null | undefined;
+      if (rawDestination != null && (!("child" in rawDestination) || rawDestination.child == null)) {
+        child = null;
+      } else if (rawDestination != null && "child" in rawDestination
+        && rawDestination.child != null && typeof rawDestination.child === "object"
+        && "kind" in rawDestination.child && typeof rawDestination.child.kind === "string") {
+        const rawChild = rawDestination.child;
+        if (rawChild.kind === "topic" && "rootMessageId" in rawChild && typeof rawChild.rootMessageId === "string") {
+          child = { kind: "topic", rootMessageId: rawChild.rootMessageId };
+        } else if (rawChild.kind === "savedSublist" && "participantId" in rawChild && typeof rawChild.participantId === "string") {
+          child = { kind: "savedSublist", participantId: rawChild.participantId };
+        } else if (rawChild.kind === "conversation" && "conversationId" in rawChild && typeof rawChild.conversationId === "string") {
+          child = { kind: "conversation", conversationId: rawChild.conversationId };
+        }
+      }
       const status = "status" in candidate && (candidate.status === "sent" || candidate.status === "failed")
         ? candidate.status
         : null;
-      if (conversationId == null || status == null) {
+      if (conversationId == null || child === undefined || status == null) {
         throw new Error("forwardHumanMessage returned an invalid destination settlement");
       }
       return {
-        conversationId,
+        destination: { conversationId, child },
         status,
         ...("error" in candidate && typeof candidate.error === "string" ? { error: candidate.error } : {}),
       };

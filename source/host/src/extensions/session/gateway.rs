@@ -398,13 +398,17 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
         }),
         "forwardHumanMessage" => required_string(args, "sourceConversationId").and_then(|source_conversation_id| {
             required_string(args, "sourceEntryId").and_then(|source_entry_id| {
-                let destination_conversation_ids = required_string_array(args, "destinationConversationIds")?;
+                let destinations = args
+                    .get("destinations")
+                    .and_then(Value::as_array)
+                    .cloned()
+                    .ok_or_else(|| SessionGatewayError::bad("missing or invalid destinations"))?;
                 required_string(args, "clientNonce").and_then(|client_nonce| {
                     session
                         .forward_human_message(
                             source_conversation_id,
                             source_entry_id,
-                            &destination_conversation_ids,
+                            &destinations,
                             client_nonce,
                             optional_bool(args, "dropSenderNames")?.unwrap_or(false),
                             optional_bool(args, "dropCaptions")?.unwrap_or(false),

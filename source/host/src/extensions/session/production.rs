@@ -3030,7 +3030,7 @@ impl ProductionSessionWorkers {
         &self,
         source_conversation_id: &str,
         source_entry_id: &str,
-        destination_conversation_ids: &[String],
+        destination_values: &[serde_json::Value],
         client_nonce: &str,
         drop_sender_names: bool,
         drop_captions: bool,
@@ -3039,19 +3039,128 @@ impl ProductionSessionWorkers {
         if client_nonce.is_empty() || client_nonce.len() > 200 {
             return Err("forwardHumanMessage requires a valid clientNonce".into());
         }
-        if destination_conversation_ids.is_empty() {
+        if destination_values.is_empty() {
             return Err("forwardHumanMessage requires at least one destination".into());
         }
 
         let mut seen_destinations = BTreeSet::new();
         let mut destinations = Vec::new();
-        for destination in destination_conversation_ids {
-            let destination = destination.trim();
-            if destination.is_empty() {
-                return Err("forwardHumanMessage destination id must not be empty".into());
-            }
-            if seen_destinations.insert(destination.to_string()) {
-                destinations.push(destination.to_string());
+        for value in destination_values {
+            let object = value
+                .as_object()
+                .ok_or_else(|| "forwardHumanMessage destination must be an object".to_string())?;
+            let conversation_id = object
+                .get("conversationId")
+                .and_then(serde_json::Value::as_str)
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .ok_or_else(|| {
+                    "forwardHumanMessage destination requires conversationId".to_string()
+                })?
+                .to_string();
+
+            let (key, child, unsupported_child) = match object.get("child") {
+                None | Some(serde_json::Value::Null) => (
+                    format!("root:{conversation_id}"),
+                    serde_json::Value::Null,
+                    None,
+                ),
+                Some(serde_json::Value::Object(child)) => {
+                    let kind = child
+                        .get("kind")
+                        .and_then(serde_json::Value::as_str)
+                        .ok_or_else(|| {
+                            "forwardHumanMessage destination child requires kind".to_string()
+                        })?;
+                    match kind {
+                        "topic" => {
+                            let root_message_id = child
+                                .get("rootMessageId")
+                                .and_then(serde_json::Value::as_str)
+                                .map(str::trim)
+                                .filter(|value| !value.is_empty())
+                                .ok_or_else(|| {
+                                    "forwardHumanMessage Topic destination requires rootMessageId"
+                                        .to_string()
+                                })?;
+                            (
+                                format!("topic:{conversation_id}:{root_message_id}"),
+                                serde_json::json!({
+                                    "kind": "topic",
+                                    "rootMessageId": root_message_id,
+                                }),
+                                Some(
+                                    "shipping Human forwarding backend does not yet support Topic destinations"
+                                        .to_string(),
+                                ),
+                            )
+                        }
+                        "savedSublist" => {
+                            let participant_id = child
+                                .get("participantId")
+                                .and_then(serde_json::Value::as_str)
+                                .map(str::trim)
+                                .filter(|value| !value.is_empty())
+                                .ok_or_else(|| {
+                                    "forwardHumanMessage SavedSublist destination requires participantId"
+                                        .to_string()
+                                })?;
+                            (
+                                format!("savedSublist:{conversation_id}:{participant_id}"),
+                                serde_json::json!({
+                                    "kind": "savedSublist",
+                                    "participantId": participant_id,
+                                }),
+                                Some(
+                                    "shipping Human forwarding backend does not yet support SavedSublist destinations"
+                                        .to_string(),
+                                ),
+                            )
+                        }
+                        "conversation" => {
+                            let child_conversation_id = child
+                                .get("conversationId")
+                                .and_then(serde_json::Value::as_str)
+                                .map(str::trim)
+                                .filter(|value| !value.is_empty())
+                                .ok_or_else(|| {
+                                    "forwardHumanMessage nested Conversation destination requires conversationId"
+                                        .to_string()
+                                })?;
+                            (
+                                format!(
+                                    "conversation:{conversation_id}:{child_conversation_id}"
+                                ),
+                                serde_json::json!({
+                                    "kind": "conversation",
+                                    "conversationId": child_conversation_id,
+                                }),
+                                Some(
+                                    "shipping Human forwarding backend does not yet support nested Conversation destinations"
+                                        .to_string(),
+                                ),
+                            )
+                        }
+                        _ => {
+                            return Err(
+                                "forwardHumanMessage destination child kind is unsupported".into()
+                            );
+                        }
+                    }
+                }
+                Some(_) => {
+                    return Err("forwardHumanMessage destination child must be an object or null".into());
+                }
+            };
+            if seen_destinations.insert(key) {
+                destinations.push((
+                    conversation_id.clone(),
+                    serde_json::json!({
+                        "conversationId": conversation_id,
+                        "child": child,
+                    }),
+                    unsupported_child,
+                ));
             }
         }
         if destinations.len() > 32 {
@@ -3084,7 +3193,6 @@ impl ProductionSessionWorkers {
         }
 
         let requirements = Self::human_share_requirements(&source_entry);
-
         let source_text = source_entry
             .get("content")
             .and_then(serde_json::Value::as_str)
@@ -3136,36 +3244,44 @@ impl ProductionSessionWorkers {
         }
 
         let mut settlement = Vec::with_capacity(destinations.len());
-        for destination_conversation_id in destinations {
+        for (destination_conversation_id, destination, unsupported_child) in destinations {
             let mut digest = Sha256::new();
             digest.update(client_nonce.as_bytes());
             digest.update([0]);
-            digest.update(destination_conversation_id.as_bytes());
+            digest.update(
+                serde_json::to_vec(&destination)
+                    .map_err(|error| format!("forwardHumanMessage destination could not be encoded: {error}"))?,
+            );
             let destination_nonce = format!("human-forward-{:x}", digest.finalize());
 
-            let send_result = self
-                .authorize_human_share_destination(&destination_conversation_id, requirements)
-                .and_then(|_| {
-                    self.append_human_message_with_context(
-                        &destination_conversation_id,
-                        forwarded_text,
-                        &destination_nonce,
-                        None,
-                        None,
-                        &attachments,
-                        false,
-                        None,
-                        Some(&forward_context),
-                    )
-                });
+            let send_result = if let Some(error) = unsupported_child {
+                Err(error)
+            } else {
+                self.authorize_human_share_destination(&destination_conversation_id, requirements)
+                    .and_then(|_| {
+                        self.append_human_message_with_context(
+                            &destination_conversation_id,
+                            forwarded_text,
+                            &destination_nonce,
+                            None,
+                            None,
+                            &attachments,
+                            false,
+                            None,
+                            Some(&forward_context),
+                        )
+                    })
+            };
             match send_result {
                 Ok(entry) => settlement.push(serde_json::json!({
+                    "destination": destination,
                     "conversationId": destination_conversation_id,
                     "clientNonce": destination_nonce,
                     "status": "sent",
                     "entry": entry,
                 })),
                 Err(error) => settlement.push(serde_json::json!({
+                    "destination": destination,
                     "conversationId": destination_conversation_id,
                     "clientNonce": destination_nonce,
                     "status": "failed",
@@ -4367,7 +4483,11 @@ mod sharebox_shipping_tests {
         assert_eq!(search[0].get("id").and_then(serde_json::Value::as_str), Some(beta.as_str()));
 
         let missing = "human-direct-does-not-exist".to_string();
-        let destinations = vec![alpha.clone(), missing.clone(), alpha.clone()];
+        let destinations = vec![
+            serde_json::json!({ "conversationId": alpha, "child": null }),
+            serde_json::json!({ "conversationId": missing, "child": null }),
+            serde_json::json!({ "conversationId": alpha, "child": null }),
+        ];
         let first = workers
             .forward_human_message(&source, source_entry_id, &destinations, "forward-request-1", false, true)
             .unwrap();
@@ -4375,6 +4495,33 @@ mod sharebox_shipping_tests {
         assert_eq!(settlement.len(), 2, "duplicate destinations must collapse before fan-out");
         assert_eq!(settlement[0].get("status").and_then(serde_json::Value::as_str), Some("sent"));
         assert_eq!(settlement[1].get("status").and_then(serde_json::Value::as_str), Some("failed"));
+
+        let child_blocked = workers
+            .forward_human_message(
+                &source,
+                source_entry_id,
+                &[serde_json::json!({
+                    "conversationId": alpha,
+                    "child": {
+                        "kind": "topic",
+                        "rootMessageId": "topic:unsupported",
+                    },
+                })],
+                "forward-child-blocked",
+                false,
+                false,
+            )
+            .unwrap();
+        assert_eq!(
+            child_blocked.pointer("/destinations/0/status").and_then(serde_json::Value::as_str),
+            Some("failed"),
+        );
+        assert_eq!(
+            child_blocked.pointer("/destinations/0/destination/child/kind").and_then(serde_json::Value::as_str),
+            Some("topic"),
+        );
+        assert!(child_blocked.pointer("/destinations/0/error").and_then(serde_json::Value::as_str)
+            .is_some_and(|error| error.contains("does not yet support Topic")));
 
         let alpha_entries = workers.read_human_conversation_transcript(&alpha).unwrap();
         assert_eq!(alpha_entries.len(), 1);
@@ -4394,7 +4541,14 @@ mod sharebox_shipping_tests {
         assert_eq!(workers.read_human_conversation_transcript(&alpha).unwrap().len(), 1);
 
         let changed = workers
-            .forward_human_message(&source, source_entry_id, &[alpha.clone()], "forward-request-1", false, false)
+            .forward_human_message(
+                &source,
+                source_entry_id,
+                &[serde_json::json!({ "conversationId": alpha, "child": null })],
+                "forward-request-1",
+                false,
+                false,
+            )
             .unwrap();
         assert_eq!(
             changed.pointer("/destinations/0/status").and_then(serde_json::Value::as_str),
@@ -4407,7 +4561,14 @@ mod sharebox_shipping_tests {
 
         let restarted = test_workers(&root);
         let replay_after_restart = restarted
-            .forward_human_message(&source, source_entry_id, &[alpha.clone()], "forward-request-1", false, true)
+            .forward_human_message(
+                &source,
+                source_entry_id,
+                &[serde_json::json!({ "conversationId": alpha, "child": null })],
+                "forward-request-1",
+                false,
+                true,
+            )
             .unwrap();
         assert_eq!(
             replay_after_restart.pointer("/destinations/0/status").and_then(serde_json::Value::as_str),
