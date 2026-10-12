@@ -169,6 +169,41 @@ import "./production.css";
 
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#L132985
 
+type HumanMessageRetentionState = {
+  conversationId: string;
+  retentionSeconds: number | null;
+  revision: number;
+};
+
+function projectHumanMessageRetention(value: unknown, expectedConversationId: string): HumanMessageRetentionState {
+  if (typeof value !== "object" || value == null || Array.isArray(value)) {
+    throw new Error("message retention response is invalid");
+  }
+  const record = value as Record<string, unknown>;
+  if (record.conversationId !== expectedConversationId
+    || !Number.isSafeInteger(record.revision)
+    || Number(record.revision) < 0
+    || (record.retentionSeconds !== null
+      && (!Number.isSafeInteger(record.retentionSeconds) || Number(record.retentionSeconds) <= 0))) {
+    throw new Error("message retention response does not match the canonical conversation");
+  }
+  return {
+    conversationId: expectedConversationId,
+    retentionSeconds: record.retentionSeconds == null ? null : Number(record.retentionSeconds),
+    revision: Number(record.revision),
+  };
+}
+
+function humanRetentionLabel(seconds: number | null): string {
+  if (seconds == null) return "Off";
+  if (seconds % 86_400 === 0) {
+    const days = seconds / 86_400;
+    return days === 1 ? "1 day" : `${days} days`;
+  }
+  if (seconds % 3_600 === 0) return `${seconds / 3_600} hours`;
+  return `${seconds} seconds`;
+}
+
 const SettingsDesktopSurface = lazy(async () => {
   const module = await import("../recovered/features/settings/overlay/desktop-surface");
   return { default: module.SettingsDesktopSurface };
@@ -986,6 +1021,9 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const [notice, setNotice] = useState<string | null>(null);
   const [scheduleComposerOpen, setScheduleComposerOpen] = useState(false);
   const [scheduleComposerValue, setScheduleComposerValue] = useState("");
+  const [retentionDialogOpen, setRetentionDialogOpen] = useState(false);
+  const [humanRetention, setHumanRetention] = useState<HumanMessageRetentionState | null>(null);
+  const [retentionPending, setRetentionPending] = useState(false);
   const [composerClearGeneration, setComposerClearGeneration] = useState(0);
   const [overlay, setOverlay] = useState<AuxiliaryOverlay>(null);
   const [workspaceRoute, setWorkspaceRoute] = useState<WorkspaceRoute>(null);
@@ -1507,6 +1545,56 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     ...reactionRootCallbacks
   }));
   const activeIsHuman = humanConversations.some((conversation) => conversation.id === activeAgentId);
+  useEffect(() => {
+    if (!activeIsHuman || client == null || activeAgentId.length === 0) {
+      setHumanRetention(null);
+      setRetentionDialogOpen(false);
+      return;
+    }
+    let cancelled = false;
+    const conversationId = activeAgentId;
+    void client.call("getHumanConversationRetention", { conversationId }).then((value) => {
+      if (cancelled || activeAgentIdRef.current !== conversationId) return;
+      setHumanRetention(projectHumanMessageRetention(value, conversationId));
+    }).catch((error) => {
+      if (cancelled || activeAgentIdRef.current !== conversationId) return;
+      setHumanRetention(null);
+      setNotice(error instanceof Error ? error.message : String(error));
+    });
+    return () => { cancelled = true; };
+  }, [activeAgentId, activeIsHuman, client]);
+
+  const updateHumanRetention = useCallback(async (retentionSeconds: number | null): Promise<void> => {
+    if (client == null || !activeIsHuman || humanRetention == null) return;
+    const conversationId = activeAgentId;
+    const expectedRevision = humanRetention.revision;
+    setRetentionPending(true);
+    try {
+      const value = await client.call("setHumanConversationRetention", {
+        conversationId,
+        retentionSeconds,
+        expectedRevision,
+      });
+      if (activeAgentIdRef.current !== conversationId) return;
+      setHumanRetention(projectHumanMessageRetention(value, conversationId));
+      setRetentionDialogOpen(false);
+      setNotice(null);
+    } catch (error) {
+      if (activeAgentIdRef.current === conversationId) {
+        try {
+          const latest = await client.call("getHumanConversationRetention", { conversationId });
+          if (activeAgentIdRef.current === conversationId) {
+            setHumanRetention(projectHumanMessageRetention(latest, conversationId));
+          }
+        } catch {
+          // Preserve the mutation failure below; a failed refresh must not hide it.
+        }
+        setNotice(`Message retention changed or could not be updated. Refreshed the server policy. ${error instanceof Error ? error.message : String(error)}`);
+      }
+    } finally {
+      if (activeAgentIdRef.current === conversationId) setRetentionPending(false);
+    }
+  }, [activeAgentId, activeIsHuman, client, humanRetention]);
   const humanReactionTransport = useMemo(() => activeIsHuman && client != null ? {
     async reactToMessage(input: { entryId: string; emoji: string; agentId: string }) {
       const conversation = humanConversationsRef.current.find((candidate) => candidate.id === input.agentId);
@@ -4478,7 +4566,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
           </main>
           <div className="sand-chat-input-dock">
             {activeIsHuman ? null : localToolPermissionDock}
-            <ConversationComposer acceptedSendGeneration={composerClearGeneration} canExchangeStash={canExchangeComposerStash} disabled={busy || client == null} draft={draft} editorProviders={activeIsHuman ? undefined : editorProviders} hasStash={activeDraftSnapshot.stash != null} notice={notice} onChange={(value) => { if (activeComposerDraftScope != null) composerDraftStore.setDraft(activeComposerDraftScope, value); }} onClearReplyTarget={clearReplyTarget} onExchangeStash={exchangeComposerStash} onRemoveAttachment={removeAttachment} onRemoveStash={removeComposerStash} onScheduleSend={activeIsHuman ? openScheduleComposer : undefined} onSendSilently={activeIsHuman ? () => submit({ silent: true }) : undefined} onSendStash={sendComposerStash} onStageFiles={stageFiles} onSubmit={submit} placeholder={`Message ${activeAgent.name}`} platformInput={bridge.platformInput} replyTarget={replyTarget} scopeKey={`${transcriptAccountSlot ?? "signed-out"}:${activeComposerDraftScopeKey ?? activeAgent.id}`} transcribeAudio={transcribeAudio} />
+            <ConversationComposer acceptedSendGeneration={composerClearGeneration} canExchangeStash={canExchangeComposerStash} disabled={busy || client == null} draft={draft} editorProviders={activeIsHuman ? undefined : editorProviders} hasStash={activeDraftSnapshot.stash != null} notice={notice} onChange={(value) => { if (activeComposerDraftScope != null) composerDraftStore.setDraft(activeComposerDraftScope, value); }} onClearReplyTarget={clearReplyTarget} onConfigureRetention={activeIsHuman && humanRetention != null ? () => setRetentionDialogOpen(true) : undefined} onExchangeStash={exchangeComposerStash} onRemoveAttachment={removeAttachment} onRemoveStash={removeComposerStash} onScheduleSend={activeIsHuman ? openScheduleComposer : undefined} onSendSilently={activeIsHuman ? () => submit({ silent: true }) : undefined} onSendStash={sendComposerStash} onStageFiles={stageFiles} onSubmit={submit} placeholder={`Message ${activeAgent.name}`} platformInput={bridge.platformInput} replyTarget={replyTarget} retentionLabel={activeIsHuman && humanRetention != null ? humanRetentionLabel(humanRetention.retentionSeconds) : undefined} scopeKey={`${transcriptAccountSlot ?? "signed-out"}:${activeComposerDraftScopeKey ?? activeAgent.id}`} transcribeAudio={transcribeAudio} />
           </div>
         </div>}
         </div>
@@ -4500,6 +4588,39 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
             <SandButton disabled={scheduleComposerValue.length === 0} size="sm" type="submit">Schedule</SandButton>
           </footer>
         </form>
+      </OverlayDialog>
+
+      <OverlayDialog
+        className="sand-message-retention-dialog"
+        label="Message retention"
+        onClose={() => { if (!retentionPending) setRetentionDialogOpen(false); }}
+        open={retentionDialogOpen && activeIsHuman && humanRetention != null}
+      >
+        <header>
+          <div>
+            <h2>Message retention</h2>
+            <p>Messages expire on the server. Scheduled messages start their retention period when they are due to send.</p>
+          </div>
+        </header>
+        <div className="sand-message-retention-dialog__body" role="radiogroup" aria-label="Message retention period">
+          {[
+            { label: "Off", seconds: null },
+            { label: "1 day", seconds: 86_400 },
+            { label: "7 days", seconds: 604_800 },
+            { label: "30 days", seconds: 2_592_000 },
+          ].map((option) => <SandButton
+            aria-pressed={humanRetention?.retentionSeconds === option.seconds}
+            disabled={retentionPending}
+            key={option.label}
+            onClick={() => { void updateHumanRetention(option.seconds); }}
+            pending={retentionPending && humanRetention?.retentionSeconds !== option.seconds}
+            type="button"
+            variant={humanRetention?.retentionSeconds === option.seconds ? "primary" : "secondary"}
+          >{option.label}</SandButton>)}
+        </div>
+        <footer>
+          <SandButton disabled={retentionPending} onClick={() => setRetentionDialogOpen(false)} size="sm" type="button" variant="secondary">Cancel</SandButton>
+        </footer>
       </OverlayDialog>
 
       <ForwardMessageDialog
