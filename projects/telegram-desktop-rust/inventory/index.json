@@ -31,7 +31,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live baseline accepted for source accounting; read-through 16,135; unread=0; unknown=12,435; omitted=0; first unread 16,136 is none.",
+  "note": "Live baseline accepted for source accounting; read-through 16,135; unread_minimum is 0; unknown remains 12,435; omitted remains 0; first unread 16,136 is none.",
   "rebaseline": {
     "from_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "to_commit": "5b81fa35aaa8d24e14ec9603e5929d324850d9c9",
