@@ -794,9 +794,32 @@ export function HumanCallControls({
       if (!isRecord(discovered) || discovered.generation !== nextCall.generation || !Array.isArray(discovered.publications)) {
         throw new Error("Host returned malformed SFU publication discovery.");
       }
-      const pending = discovered.publications
+      const remotePublications = discovered.publications
         .filter(isCallMediaPublication)
-        .filter((publication) => String(publication.memberUserId) !== owner.userId)
+        .filter((publication) => String(publication.memberUserId) !== owner.userId);
+      const discoveredPublicationIds = new Set(
+        remotePublications.map((publication) => publication.publicationId),
+      );
+      const staleSubscriptionIds = Array.from(runtime.subscribedPublicationIds)
+        .filter((publicationId) => !discoveredPublicationIds.has(publicationId));
+      if (staleSubscriptionIds.length > 0) {
+        const configurePeer = configurePeerRef.current;
+        const local = localStreamRef.current;
+        const currentLease = leaseRef.current;
+        if (configurePeer == null || local == null || currentLease == null
+          || sfuRuntimeRef.current !== runtime || callRef.current?.id !== nextCall.id
+          || callRef.current?.generation !== nextCall.generation) {
+          throw new Error("SFU publication churn requires a fresh canonical media session.");
+        }
+        // Removing a publication from discovery does not close an already-created
+        // remote subscription. Retire the old subscribe session and rebuild from
+        // the current discovery snapshot so departed members cannot remain audible
+        // or visible through a stale PeerConnection.
+        sfuSyncInFlightRef.current = false;
+        await configurePeer(nextCall, currentLease, local);
+        return;
+      }
+      const pending = remotePublications
         .filter((publication) => !runtime.subscribedPublicationIds.has(publication.publicationId));
       if (pending.length === 0) return;
 
