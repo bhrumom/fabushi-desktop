@@ -1248,18 +1248,21 @@
       "referencePath": "source/electron-main/production-binding-providers.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "19d73ece44ef800feec467ecbdcc8c3c957478f7",
+      "targetBlobSha": "e90f5ea002ef2bcd1dc915cc0c380add850b1296",
       "behavioralEvidence": [
         "source/electron-main/production-binding-providers.ts",
+        "source/electron-main/update/update-wiring.ts",
+        "source/electron-main/update/update-gate.ts",
+        "source/electron-main/notifications/os-notification-manager.ts",
         "source/electron-main/local-exec/local-exec-daemon-protocol.ts",
         "source/shared/node/sand-data-root.ts"
       ],
       "testEvidence": [
-        "source/electron-main/local-exec/local-exec-daemon-protocol.test.ts",
         "source/electron-main/foundations.test.ts",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "rationale": "Preserves the frozen Grok production binding graph while retaining the existing Electron Main local-exec/data-root adaptations and composing the canonical OS-notification action surface into the shipping binding. The Electron Notification port now admits native reply metadata and mark-read button actions, and scoped action failures are routed through the existing desktop-edge failure reporter. Message/send/read ownership remains outside Electron Main; this binding only supplies the platform adapter to the unique notification manager and introduces no parallel runtime or policy owner."
+      "rationale": "Preserves the frozen Grok production binding graph while extending the existing Electron Main owner with the canonical Fabushi release-updater adapter. The shipping binding injects electron-updater autoUpdater, computes fail-closed platform/package gates including real Linux AppImage identity, and keeps notification/local-exec/data-root adaptations in the same owner. It does not create a second updater or messaging runtime."
     },
     {
       "referencePath": "source/electron-main/startup/desktop-user-data-bootstrap.ts",
@@ -1311,18 +1314,21 @@
       "referencePath": "source/electron-main/update/sand-update-service.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "2ec6c4672f471267602dd3efd4976c33b394c133",
+      "targetBlobSha": "775f4ae544f11c908789c93486d69aa1c1964e31",
       "behavioralEvidence": [
         "source/electron-main/update/update-feed.ts",
         "source/electron-main/update/update-download.ts",
         "source/electron-main/update/sand-update-service.ts",
+        "source/electron-main/update/apply-marker.ts",
+        "source/electron-main/update/update-wiring.ts",
         "projects/telegram-desktop-rust/dossiers/platform-mac-windows-5411-5475-complete-read.md"
       ],
       "testEvidence": [
         "source/electron-main/foundations.test.ts",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "rationale": "Hardens the existing canonical live updater rather than introducing a Telegram-derived updater owner. Windows/iupdate offers now fail closed without a canonical 64-hex SHA-256 digest; download staging exclusively creates mode-0600 package files instead of following or overwriting a pre-existing destination; the single update service creates mode-0700 staging directories and removes them if permission hardening fails. Existing Authenticode verification, safe-relaunch gating, parent identity handoff and apply-marker recovery remain in the same shipping owner. macOS authenticated apply and post-install installed-artifact identity remain explicitly open."
+      "rationale": "Extends the existing canonical updater rather than introducing a Telegram-derived owner. The same service now supports authenticated electron-updater release staging across macOS, Windows and AppImage Linux, preserves safe-relaunch and durable apply-marker recovery, keeps protected legacy feed behavior, and gates prerelease access to explicit release-candidate acceptance. Package trust and exact-source publication remain release-workflow responsibilities."
     },
     {
       "referencePath": "source/electron-main/update/update-download.ts",
@@ -1830,6 +1836,38 @@
         ".github/workflows/desktop-chat-parity-ci.yml"
       ],
       "rationale": "Preserves the frozen send-message:text projection and canonical URL-card owner while adapting only the relative runtime module specifier from ./url-card to ./url-card.ts so Node 24 native TypeScript loading resolves the exact production module boundary. No message behavior, URL policy, state ownership, transport, persistence, or UI semantics change; executable recovered-conversation contracts and both required workflows remain the acceptance authority."
+    },
+    {
+      "referencePath": "source/electron-main/update/apply-marker.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "488931216bf5a7367816f2aa15bca610431981f7",
+      "behavioralEvidence": [
+        "source/electron-main/update/apply-marker.ts",
+        "source/electron-main/update/sand-update-service.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Extends the frozen durable updater apply marker with the source-neutral AppImage mechanism so Linux release staging, relaunch settlement, stale-version detection, orphan recovery and telemetry use the same persistent lifecycle owner as macOS Squirrel and Windows NSIS. No parallel Linux updater state is introduced."
+    },
+    {
+      "referencePath": "source/electron-main/update/update-wiring.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "ec9af241de35f9c1abf82cf5f12796274acf1667",
+      "behavioralEvidence": [
+        "source/electron-main/update/update-wiring.ts",
+        "source/electron-main/update/sand-update-service.ts",
+        "source/electron-main/update/apply-marker.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Keeps the frozen Electron update composition while selecting the existing legacy feed only when an explicit development feed override is configured and otherwise wiring the canonical electron-updater release port. The same service retains settings, experiment gates, idle relaunch, telemetry and durable apply markers; prerelease access is explicitly acceptance-only."
     }
   ]
 }
