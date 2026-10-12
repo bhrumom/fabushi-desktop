@@ -103,6 +103,8 @@ fn search_indexes_humans_bots_and_channels_without_transport_assumptions() {
         archived: false,
         pinned: false,
         marked_unread: false,
+        message_retention_seconds: None,
+        retention_revision: 0,
         created_at_ms: 1,
         updated_at_ms: 2,
     };
