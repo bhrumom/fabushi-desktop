@@ -89,7 +89,8 @@ test("UNIT-TDRP-EMOJI-AUTOCOMPLETE-001 Composer emoji suggestions preserve matur
   assert.equal(searchEmojiSuggestions(TDRP_EMOJI_SUGGESTION_CATALOG, "red-heart")[0]?.id, "redheart");
   assert.deepEqual(
     searchEmojiSuggestions(TDRP_EMOJI_SUGGESTION_CATALOG, "redhea").map((entry) => entry.id),
-    ["redheart", "heart"],
+    ["redheart", "heart", "heartred"],
+    "multi-word prefix matches remain valid candidates but rank behind stronger primary/source matches",
   );
   assert.equal(searchEmojiSuggestions(TDRP_EMOJI_SUGGESTION_CATALOG, "heartred")[0]?.id, "heartred");
   assert.equal(searchEmojiSuggestions(TDRP_EMOJI_SUGGESTION_CATALOG, "+1")[0]?.id, "plus_one");
