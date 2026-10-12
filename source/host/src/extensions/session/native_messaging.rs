@@ -68,6 +68,7 @@ pub struct FabushiRemoteHumanMessage {
     pub delivery_state: Option<String>,
     pub delivered_at: Option<String>,
     pub reply_to_message_id: Option<Value>,
+    pub destination: Option<fabushi_messaging_core::ConversationDestination>,
     #[serde(default)]
     pub attachments: Vec<FabushiRemoteHumanAttachment>,
     #[serde(default)]
@@ -171,6 +172,8 @@ struct SendRequest<'a> {
     silent: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     scheduled_at_ms: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    destination: Option<&'a fabushi_messaging_core::ConversationDestination>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     attachments: Vec<SendAttachmentRequest<'a>>,
 }
@@ -520,6 +523,7 @@ impl FabushiNativeMessagingClient {
         attachments: &[FabushiRemoteHumanAttachment],
         silent: bool,
         scheduled_at_ms: Option<i64>,
+        destination: Option<&fabushi_messaging_core::ConversationDestination>,
     ) -> Result<FabushiRemoteHumanMessage, String> {
         let peer_human_id = required_trimmed(peer_human_id, "peer Human id")?;
         let text = text.trim();
@@ -550,6 +554,7 @@ impl FabushiNativeMessagingClient {
                 reply_to_message_id,
                 silent,
                 scheduled_at_ms,
+                destination,
                 attachments: attachments
                     .iter()
                     .map(|attachment| SendAttachmentRequest {
