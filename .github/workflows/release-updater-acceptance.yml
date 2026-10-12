@@ -112,9 +112,17 @@ jobs:
           digest="$(jq -r --arg name "$asset" '.assets[] | select(.name==$name) | .digest // empty' "$json")"
           test -n "$asset"
           test "$digest" != ""
-          gh release download "$BASELINE_TAG" --repo "$GITHUB_REPOSITORY" --dir "$base" -p "$asset"
+          gh release download "$BASELINE_TAG" --repo "$GITHUB_REPOSITORY" --dir "$base" -p "$asset" -p provenance-macos.json
           actual="sha256:$(shasum -a 256 "$base/$asset" | awk '{print $1}')"
           test "$actual" = "$digest"
+          prov="$base/provenance-macos.json"
+          test -s "$prov"
+          baseline_source="$(jq -r .source "$prov")"
+          baseline_team="$(jq -r .teamId "$prov")"
+          test -n "$baseline_source"
+          test -n "$baseline_team"
+          test "$baseline_source" != "$CANDIDATE_SHA"
+          test "$(git ls-remote origin "refs/tags/$BASELINE_TAG" | awk '{print $1}')" = "$baseline_source"
           extract="$base/extract"
           mkdir -p "$extract"
           ditto -x -k "$base/$asset" "$extract"
@@ -126,6 +134,8 @@ jobs:
           codesign --verify --deep --strict --verbose=2 "$installed"
           xcrun stapler validate "$installed"
           spctl --assess --type execute --verbose=4 "$installed"
+          installed_team="$(codesign -dv --verbose=4 "$installed" 2>&1 | awk -F= '/^TeamIdentifier=/{print $2;exit}')"
+          test "$installed_team" = "$baseline_team"
           version="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$installed/Contents/Info.plist")"
           test "$version" != "$CANDIDATE_VERSION"
           executable_name="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$installed/Contents/Info.plist")"
@@ -227,6 +237,9 @@ jobs:
           if (-not $setup) { throw "Trusted Windows baseline installer is missing" }
           $provenance = Get-Content (Join-Path $base "provenance-windows.json") -Raw | ConvertFrom-Json
           if (-not $provenance.source -or -not $provenance.signerThumbprint) { throw "Windows baseline provenance is incomplete" }
+          if ($provenance.source -eq $env:CANDIDATE_SHA) { throw "Windows baseline provenance must reference an older source" }
+          $tagSource = (git ls-remote origin "refs/tags/$env:BASELINE_TAG" | ForEach-Object { ($_ -split "\s+")[0] })
+          if (-not $tagSource -or $tagSource -ne $provenance.source) { throw "Windows baseline tag/source provenance mismatch" }
           $sig = Get-AuthenticodeSignature $setup.FullName
           if ($sig.Status -ne "Valid" -or $sig.SignerCertificate.Thumbprint -ne $provenance.signerThumbprint) { throw "Windows baseline signature/provenance mismatch" }
           $p = Start-Process $setup.FullName -ArgumentList "/S" -Wait -PassThru
@@ -330,6 +343,10 @@ jobs:
           test -n "$appimage"
           prov="$base/provenance-linux.json"
           test -s "$prov"
+          baseline_source="$(jq -r .source "$prov")"
+          test -n "$baseline_source"
+          test "$baseline_source" != "$CANDIDATE_SHA"
+          test "$(git ls-remote origin "refs/tags/$BASELINE_TAG" | awk '{print $1}')" = "$baseline_source"
           key="$base/linux-release-signing-key.asc"
           test -s "$key"
           fingerprint="$(gpg --batch --with-colons --import-options show-only --import "$key" 2>/dev/null | awk -F: '$1=="fpr"{print $10;exit}')"
