@@ -6,7 +6,7 @@
   "target_commit": "371b72f1cd20de03dc4dff9a15ed761054968093",
   "coverage": {
     "source_entries_total": 16137,
-    "unknown": 12167,
+    "unknown": 12030,
     "unread": 0,
     "omitted": 0,
     "responsibilities_total": 56,
@@ -12554,11 +12554,15 @@
       "new_owner_adr": null,
       "fabushi_target_paths": [
         "native/mahayana-messaging/src/engine.rs",
-        "native/mahayana-messaging/src/conversation.rs"
+        "native/mahayana-messaging/src/conversation.rs",
+        "native/mahayana-messaging/src/search.rs",
+        "native/mahayana-messaging/src/media_cache.rs"
       ],
       "fabushi_target_symbols": [
         "MessagingEngine",
-        "ConversationChildRuntimeState"
+        "ConversationChildRuntimeState",
+        "SearchIndex",
+        "MediaCache"
       ],
       "target_language": "Rust + TypeScript",
       "language_rationale": "Durable forward/draft lifecycle and authorization state belong in the existing Rust messaging domain; visual projection belongs in existing canonical renderer components.",
@@ -12579,13 +12583,20 @@
       "implementation_status": "mapped",
       "coverage_disposition": "rewritten",
       "blockers": [
-        "Cross-owner SavedSublist deletion cleanup is not fully proven in shipping composition.",
-        "SavedSublist authoritative relation/membership feed remains a service blocker.",
-        "Full applicable message/resource semantics still require implementation and exact-head evidence."
+        "Exact SavedSublist member deletion -> child authority cleanup -> empty shared-media search before and after restart is now contract-tested; physical MediaCache ownership is deliberately independent and must not be seized by logical child destruction.",
+        "SavedSublist server-authoritative relation/membership feed remains blocked until server main is actually deployed to production and the authenticated production sync/restart E2E succeeds.",
+        "Broader applicable Data Changes/History semantics beyond the proven SavedSublist/shared-media deletion path still require production implementation, focused tests, and fresh exact-head evidence before this responsibility can become implemented/verified."
       ],
       "production_entrypoints": [],
-      "production_evidence": [],
-      "test_evidence": [],
+      "production_evidence": [
+        "path:native/mahayana-messaging/src/engine.rs#Event::MessagesDeleted",
+        "path:native/mahayana-messaging/src/conversation.rs#ConversationChildRuntimeState::remove_message",
+        "path:native/mahayana-messaging/src/search.rs#SearchIndex::remove_message",
+        "path:native/mahayana-messaging/src/media_cache.rs#MediaCache"
+      ],
+      "test_evidence": [
+        "native/mahayana-messaging/tests/messaging_contract.rs#shared_media_search_deletion_rebuilds_from_canonical_state_without_evicting_media_cache"
+      ],
       "target_commit": "d15988f899b7c855f1995c3fa36a1122183000db",
       "workflow_run": null,
       "run_attempt": null,
@@ -12715,7 +12726,7 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior is source-informed from accepted telegramdesktop/tdesktop Telegram/SourceFiles/data/data_changes.h blob f10c987604b21b84626f5fb0288c180cedac9f2c; no Telegram C++ runtime is retained.",
       "reviewer": null,
-      "notes": "Exact accepted 484-line header read in full; mapped/open only. Sibling-row audit: requirement/oracle/invariant are registered in RTM+dossier; current target bindings name only real exact-head symbols; SearchIndex/MediaCache cleanup remains open with no fabricated test/production evidence.",
+      "notes": "Exact accepted 484-line header read in full; mapped/open only. Sibling-row audit: requirement/oracle/invariant are registered in RTM+dossier; current target bindings name only real exact-head symbols; SearchIndex/MediaCache cleanup remains open with no fabricated test/production evidence. Current audit corrects stale cleanup status: canonical MessagesDeleted removes exact child authority/unread/draft references, SearchIndex has explicit message removal and service search rebuilds from canonical state, and the focused restart contract proves deleted SavedSublist media is absent from search after restart while an independently owned MediaCache entry survives. This is evidence refinement only; implementation_status remains mapped.",
       "fabushi_target_bindings": [
         {
           "path": "native/mahayana-messaging/src/engine.rs",
@@ -12730,6 +12741,20 @@
             "ConversationChildRuntimeState"
           ],
           "responsibility_scope": "typed Topic/SavedSublist draft/unread child state"
+        },
+        {
+          "path": "native/mahayana-messaging/src/search.rs",
+          "symbols": [
+            "SearchIndex"
+          ],
+          "responsibility_scope": "contract: canonical message search projection removal/rebuild after exact message or child destruction"
+        },
+        {
+          "path": "native/mahayana-messaging/src/media_cache.rs",
+          "symbols": [
+            "MediaCache"
+          ],
+          "responsibility_scope": "contract: independent physical media-cache ownership retained across logical history/search projection destruction"
         }
       ]
     },
@@ -12801,10 +12826,14 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
-        "native/mahayana-messaging/src/engine.rs"
+        "native/mahayana-messaging/src/engine.rs",
+        "native/mahayana-messaging/src/search.rs",
+        "native/mahayana-messaging/src/media_cache.rs"
       ],
       "fabushi_target_symbols": [
-        "MessagingEngine"
+        "MessagingEngine",
+        "SearchIndex",
+        "MediaCache"
       ],
       "target_language": "Rust + TypeScript",
       "language_rationale": "Durable forward/draft lifecycle and authorization state belong in the existing Rust messaging domain; visual projection belongs in existing canonical renderer components.",
@@ -12825,13 +12854,20 @@
       "implementation_status": "mapped",
       "coverage_disposition": "rewritten",
       "blockers": [
-        "Cross-owner SavedSublist deletion cleanup is not fully proven in shipping composition.",
-        "SavedSublist authoritative relation/membership feed remains a service blocker.",
-        "Full applicable message/resource semantics still require implementation and exact-head evidence."
+        "Exact SavedSublist member deletion -> child authority cleanup -> empty shared-media search before and after restart is now contract-tested; physical MediaCache ownership is deliberately independent and must not be seized by logical child destruction.",
+        "SavedSublist server-authoritative relation/membership feed remains blocked until server main is actually deployed to production and the authenticated production sync/restart E2E succeeds.",
+        "Broader applicable Data Changes/History semantics beyond the proven SavedSublist/shared-media deletion path still require production implementation, focused tests, and fresh exact-head evidence before this responsibility can become implemented/verified."
       ],
       "production_entrypoints": [],
-      "production_evidence": [],
-      "test_evidence": [],
+      "production_evidence": [
+        "path:native/mahayana-messaging/src/engine.rs#Event::MessagesDeleted",
+        "path:native/mahayana-messaging/src/conversation.rs#ConversationChildRuntimeState::remove_message",
+        "path:native/mahayana-messaging/src/search.rs#SearchIndex::remove_message",
+        "path:native/mahayana-messaging/src/media_cache.rs#MediaCache"
+      ],
+      "test_evidence": [
+        "native/mahayana-messaging/tests/messaging_contract.rs#shared_media_search_deletion_rebuilds_from_canonical_state_without_evicting_media_cache"
+      ],
       "target_commit": "d15988f899b7c855f1995c3fa36a1122183000db",
       "workflow_run": null,
       "run_attempt": null,
@@ -12961,7 +12997,7 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior is source-informed from accepted telegramdesktop/tdesktop Telegram/SourceFiles/data/data_changes.cpp blob 8b5d73c9a8fa037d05cdb299acff3c4a76f29270; no Telegram C++ runtime is retained.",
       "reviewer": null,
-      "notes": "Exact accepted 395-line implementation read in full; mapped/open only. Sibling-row audit: requirement/oracle/invariant are registered in RTM+dossier; current target bindings name only real exact-head symbols; SearchIndex/MediaCache cleanup remains open with no fabricated test/production evidence.",
+      "notes": "Exact accepted 395-line implementation read in full; mapped/open only. Sibling-row audit: requirement/oracle/invariant are registered in RTM+dossier; current target bindings name only real exact-head symbols; SearchIndex/MediaCache cleanup remains open with no fabricated test/production evidence. Current audit corrects stale cleanup status: canonical MessagesDeleted removes exact child authority/unread/draft references, SearchIndex has explicit message removal and service search rebuilds from canonical state, and the focused restart contract proves deleted SavedSublist media is absent from search after restart while an independently owned MediaCache entry survives. This is evidence refinement only; implementation_status remains mapped.",
       "fabushi_target_bindings": [
         {
           "path": "native/mahayana-messaging/src/engine.rs",
@@ -12969,6 +13005,20 @@
             "MessagingEngine"
           ],
           "responsibility_scope": "canonical event sequencing, child/message destruction and stale-event fencing"
+        },
+        {
+          "path": "native/mahayana-messaging/src/search.rs",
+          "symbols": [
+            "SearchIndex"
+          ],
+          "responsibility_scope": "lifecycle: canonical message search projection removal/rebuild after exact message or child destruction"
+        },
+        {
+          "path": "native/mahayana-messaging/src/media_cache.rs",
+          "symbols": [
+            "MediaCache"
+          ],
+          "responsibility_scope": "lifecycle: independent physical media-cache ownership retained across logical history/search projection destruction"
         }
       ]
     },
@@ -13297,12 +13347,16 @@
       "fabushi_target_paths": [
         "native/mahayana-messaging/src/engine.rs",
         "native/mahayana-messaging/src/conversation.rs",
-        "native/mahayana-messaging/src/message.rs"
+        "native/mahayana-messaging/src/message.rs",
+        "native/mahayana-messaging/src/search.rs",
+        "native/mahayana-messaging/src/media_cache.rs"
       ],
       "fabushi_target_symbols": [
         "MessagingEngine",
         "ConversationChildRuntimeState",
-        "Message"
+        "Message",
+        "SearchIndex",
+        "MediaCache"
       ],
       "target_language": "Rust + TypeScript",
       "language_rationale": "Durable lifecycle/state belongs in existing Rust messaging owners; renderer only projects canonical state.",
@@ -13323,13 +13377,20 @@
       "implementation_status": "mapped",
       "coverage_disposition": "rewritten",
       "blockers": [
-        "Cross-owner deletion cleanup is not fully wired/proven in shipping composition.",
-        "SavedSublist authoritative relation/membership feed remains blocked/fail-closed.",
-        "Search/resource cleanup and full History applicability remain open."
+        "Exact SavedSublist member deletion -> child authority cleanup -> empty shared-media search before and after restart is now contract-tested; physical MediaCache ownership is deliberately independent and must not be seized by logical child destruction.",
+        "SavedSublist server-authoritative relation/membership feed remains blocked until server main is actually deployed to production and the authenticated production sync/restart E2E succeeds.",
+        "Broader applicable Data Changes/History semantics beyond the proven SavedSublist/shared-media deletion path still require production implementation, focused tests, and fresh exact-head evidence before this responsibility can become implemented/verified."
       ],
       "production_entrypoints": [],
-      "production_evidence": [],
-      "test_evidence": [],
+      "production_evidence": [
+        "path:native/mahayana-messaging/src/engine.rs#Event::MessagesDeleted",
+        "path:native/mahayana-messaging/src/conversation.rs#ConversationChildRuntimeState::remove_message",
+        "path:native/mahayana-messaging/src/search.rs#SearchIndex::remove_message",
+        "path:native/mahayana-messaging/src/media_cache.rs#MediaCache"
+      ],
+      "test_evidence": [
+        "native/mahayana-messaging/tests/messaging_contract.rs#shared_media_search_deletion_rebuilds_from_canonical_state_without_evicting_media_cache"
+      ],
       "target_commit": "44278b09d8035172f72a4bdb12c50926dd4a06e6",
       "workflow_run": null,
       "run_attempt": null,
@@ -13461,7 +13522,7 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior is source-informed from accepted telegramdesktop/tdesktop Telegram/SourceFiles/history/history.h blob d3a6412fc9d5246164c8bfed777ecf6bb32c31e8; no Telegram C++ runtime is retained.",
       "reviewer": null,
-      "notes": "Exact accepted 795-line header read in full; mapped/open only.",
+      "notes": "Exact accepted 795-line header read in full; mapped/open only. Current audit corrects stale cleanup status: canonical MessagesDeleted removes exact child authority/unread/draft references, SearchIndex has explicit message removal and service search rebuilds from canonical state, and the focused restart contract proves deleted SavedSublist media is absent from search after restart while an independently owned MediaCache entry survives. This is evidence refinement only; implementation_status remains mapped.",
       "fabushi_target_bindings": [
         {
           "path": "native/mahayana-messaging/src/engine.rs",
@@ -13483,6 +13544,20 @@
             "Message"
           ],
           "responsibility_scope": "canonical message identity/content/delivery state"
+        },
+        {
+          "path": "native/mahayana-messaging/src/search.rs",
+          "symbols": [
+            "SearchIndex"
+          ],
+          "responsibility_scope": "contract: canonical message search projection removal/rebuild after exact message or child destruction"
+        },
+        {
+          "path": "native/mahayana-messaging/src/media_cache.rs",
+          "symbols": [
+            "MediaCache"
+          ],
+          "responsibility_scope": "contract: independent physical media-cache ownership retained across logical history/search projection destruction"
         }
       ]
     },
@@ -13566,12 +13641,16 @@
       "fabushi_target_paths": [
         "native/mahayana-messaging/src/engine.rs",
         "native/mahayana-messaging/src/conversation.rs",
-        "native/mahayana-messaging/src/message.rs"
+        "native/mahayana-messaging/src/message.rs",
+        "native/mahayana-messaging/src/search.rs",
+        "native/mahayana-messaging/src/media_cache.rs"
       ],
       "fabushi_target_symbols": [
         "MessagingEngine",
         "ConversationChildRuntimeState",
-        "Message"
+        "Message",
+        "SearchIndex",
+        "MediaCache"
       ],
       "target_language": "Rust + TypeScript",
       "language_rationale": "Durable lifecycle/state belongs in existing Rust messaging owners; renderer only projects canonical state.",
@@ -13592,13 +13671,20 @@
       "implementation_status": "mapped",
       "coverage_disposition": "rewritten",
       "blockers": [
-        "Cross-owner deletion cleanup is not fully wired/proven in shipping composition.",
-        "SavedSublist authoritative relation/membership feed remains blocked/fail-closed.",
-        "Search/resource cleanup and full History applicability remain open."
+        "Exact SavedSublist member deletion -> child authority cleanup -> empty shared-media search before and after restart is now contract-tested; physical MediaCache ownership is deliberately independent and must not be seized by logical child destruction.",
+        "SavedSublist server-authoritative relation/membership feed remains blocked until server main is actually deployed to production and the authenticated production sync/restart E2E succeeds.",
+        "Broader applicable Data Changes/History semantics beyond the proven SavedSublist/shared-media deletion path still require production implementation, focused tests, and fresh exact-head evidence before this responsibility can become implemented/verified."
       ],
       "production_entrypoints": [],
-      "production_evidence": [],
-      "test_evidence": [],
+      "production_evidence": [
+        "path:native/mahayana-messaging/src/engine.rs#Event::MessagesDeleted",
+        "path:native/mahayana-messaging/src/conversation.rs#ConversationChildRuntimeState::remove_message",
+        "path:native/mahayana-messaging/src/search.rs#SearchIndex::remove_message",
+        "path:native/mahayana-messaging/src/media_cache.rs#MediaCache"
+      ],
+      "test_evidence": [
+        "native/mahayana-messaging/tests/messaging_contract.rs#shared_media_search_deletion_rebuilds_from_canonical_state_without_evicting_media_cache"
+      ],
       "target_commit": "44278b09d8035172f72a4bdb12c50926dd4a06e6",
       "workflow_run": null,
       "run_attempt": null,
@@ -13730,7 +13816,7 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior is source-informed from accepted telegramdesktop/tdesktop Telegram/SourceFiles/history/history.cpp blob 1fabd7d7d9399f8db8141c29d71068d447736595; no Telegram C++ runtime is retained.",
       "reviewer": null,
-      "notes": "Exact accepted 4651-line implementation read in full in contiguous ranges; mapped/open only. SearchIndex/resource cleanup remain downstream open responsibilities, not fabricated target bindings.",
+      "notes": "Exact accepted 4651-line implementation read in full in contiguous ranges; mapped/open only. SearchIndex/resource cleanup remain downstream open responsibilities, not fabricated target bindings. Current audit corrects stale cleanup status: canonical MessagesDeleted removes exact child authority/unread/draft references, SearchIndex has explicit message removal and service search rebuilds from canonical state, and the focused restart contract proves deleted SavedSublist media is absent from search after restart while an independently owned MediaCache entry survives. This is evidence refinement only; implementation_status remains mapped.",
       "fabushi_target_bindings": [
         {
           "path": "native/mahayana-messaging/src/engine.rs",
@@ -13752,6 +13838,20 @@
             "Message"
           ],
           "responsibility_scope": "canonical message retirement identity and surviving payload state"
+        },
+        {
+          "path": "native/mahayana-messaging/src/search.rs",
+          "symbols": [
+            "SearchIndex"
+          ],
+          "responsibility_scope": "lifecycle: canonical message search projection removal/rebuild after exact message or child destruction"
+        },
+        {
+          "path": "native/mahayana-messaging/src/media_cache.rs",
+          "symbols": [
+            "MediaCache"
+          ],
+          "responsibility_scope": "lifecycle: independent physical media-cache ownership retained across logical history/search projection destruction"
         }
       ]
     },
@@ -14342,7 +14442,7 @@
     "upstream_commit": "63a1831728147e941ad2dc8939879cf5afe419c7",
     "deterministic_prefix_closed": 57,
     "development_only_non_applicable": 3617,
-    "unknown_closed": 3970,
+    "unknown_closed": 4107,
     "omitted": 0,
     "read_through": 16137,
     "first_unread_order": 16138,
