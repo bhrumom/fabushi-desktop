@@ -6,7 +6,7 @@
   "target_commit": "371b72f1cd20de03dc4dff9a15ed761054968093",
   "coverage": {
     "source_entries_total": 16137,
-    "unknown": 12431,
+    "unknown": 12425,
     "unread": 0,
     "omitted": 0,
     "responsibilities_total": 56,
@@ -11688,7 +11688,7 @@
             "authorize_canonical_forward_destination",
             "forward_human_message"
           ],
-          "responsibility_scope": "canonical recipient discovery, permission filtering, typed-child authority revalidation, idempotent forwarding and partial settlement"
+          "responsibility_scope": "contract: canonical recipient search result shape, destination authorization preconditions, and forward command/settlement schema"
         },
         {
           "path": "frontend/src/production/ForwardMessageDialog.tsx",
@@ -11696,7 +11696,7 @@
             "ForwardMessageDialog",
             "forwardDestinationKey"
           ],
-          "responsibility_scope": "single canonical forwarding interaction surface, multi-select state, privacy options, request identity, partial retry and keyboard/a11y behavior"
+          "responsibility_scope": "contract: canonical destination identity, selection/privacy option inputs, request identity, and accessible submit surface"
         },
         {
           "path": "frontend/src/production/ProductionRenderer.tsx",
@@ -11704,7 +11704,7 @@
             "searchForwardRecipients",
             "forwardHumanMessage"
           ],
-          "responsibility_scope": "shipping renderer composition, strict typed-destination parsing and Coordinator/Host transport binding"
+          "responsibility_scope": "contract: strict typed-destination decoder plus Coordinator/Host search and forward method binding"
         }
       ]
     },
@@ -11966,7 +11966,7 @@
             "authorize_canonical_forward_destination",
             "forward_human_message"
           ],
-          "responsibility_scope": "canonical recipient discovery, permission filtering, typed-child authority revalidation, idempotent forwarding and partial settlement"
+          "responsibility_scope": "lifecycle: search-time/send-time revalidation, stale typed-child fencing, idempotency, partial settlement, retry, and restart continuity"
         },
         {
           "path": "frontend/src/production/ForwardMessageDialog.tsx",
@@ -11974,7 +11974,7 @@
             "ForwardMessageDialog",
             "forwardDestinationKey"
           ],
-          "responsibility_scope": "single canonical forwarding interaction surface, multi-select state, privacy options, request identity, partial retry and keyboard/a11y behavior"
+          "responsibility_scope": "lifecycle: generation-scoped recipient search, pending close fence, stable request identity, partial-failure retention, and retry state"
         },
         {
           "path": "frontend/src/production/ProductionRenderer.tsx",
@@ -11982,7 +11982,7 @@
             "searchForwardRecipients",
             "forwardHumanMessage"
           ],
-          "responsibility_scope": "shipping renderer composition, strict typed-destination parsing and Coordinator/Host transport binding"
+          "responsibility_scope": "lifecycle: malformed explicit destination fail-closed projection and asynchronous settlement propagation across Host calls"
         }
       ]
     },
@@ -14342,7 +14342,7 @@
     "upstream_commit": "63a1831728147e941ad2dc8939879cf5afe419c7",
     "deterministic_prefix_closed": 57,
     "development_only_non_applicable": 3617,
-    "unknown_closed": 3706,
+    "unknown_closed": 3712,
     "omitted": 0,
     "read_through": 16137,
     "first_unread_order": 16138,
