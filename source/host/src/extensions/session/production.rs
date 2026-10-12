@@ -2422,6 +2422,14 @@ impl ProductionSessionWorkers {
         {
             object.insert("clientNonce".into(), serde_json::json!(client_nonce));
         }
+        if let Some(destination) = remote.destination.as_ref() {
+            object.insert(
+                "destination".into(),
+                serde_json::to_value(destination).map_err(|error| {
+                    format!("remote Human destination could not be projected: {error}")
+                })?,
+            );
+        }
         if let Some(read_at) = remote
             .read_at
             .as_deref()
@@ -3269,6 +3277,14 @@ impl ProductionSessionWorkers {
                             false,
                             None,
                             Some(&forward_context),
+                            Some(
+                                &serde_json::from_value::<fabushi_messaging_core::ConversationDestination>(
+                                    destination.clone(),
+                                )
+                                .map_err(|error| format!(
+                                    "forwardHumanMessage destination is not canonical: {error}"
+                                ))?,
+                            ),
                         )
                     })
             };
@@ -3321,6 +3337,7 @@ impl ProductionSessionWorkers {
             silent,
             scheduled_at_ms,
             None,
+            None,
         )
     }
 
@@ -3335,6 +3352,7 @@ impl ProductionSessionWorkers {
         silent: bool,
         scheduled_at_ms: Option<i64>,
         forward_context: Option<&serde_json::Value>,
+        route_destination: Option<&fabushi_messaging_core::ConversationDestination>,
     ) -> Result<serde_json::Value, String> {
         let sender_id = self.local_human_id()?;
         let text = text.trim();
@@ -3407,10 +3425,15 @@ impl ProductionSessionWorkers {
                 None => normalized_attachments.is_empty(),
             };
             let same_forward_context = entry.get("forwardContext") == forward_context;
+            let route_value = route_destination
+                .map(serde_json::to_value)
+                .transpose()
+                .map_err(|error| format!("sendHumanMessage destination could not be encoded: {error}"))?;
+            let same_route = entry.get("destination") == route_value.as_ref();
             let same_silent = entry.get("silent").and_then(serde_json::Value::as_bool).unwrap_or(false) == silent;
             let same_schedule = entry.get("scheduledAtMs").and_then(serde_json::Value::as_i64) == scheduled_at_ms;
-            if !(same_sender && same_text && same_reply && same_attachments && same_forward_context && same_silent && same_schedule) {
-                return Err("sendHumanMessage clientNonce already identifies different content or forward context".into());
+            if !(same_sender && same_text && same_reply && same_attachments && same_forward_context && same_route && same_silent && same_schedule) {
+                return Err("sendHumanMessage clientNonce already identifies different content, forward context, or destination".into());
             }
             if entry.get("remoteMessageId").is_some()
                 || entry.get("delivery").and_then(serde_json::Value::as_str) == Some("sent")
@@ -3447,6 +3470,12 @@ impl ProductionSessionWorkers {
                 if let Some(reply_id) = normalized_reply.as_deref() { object.insert("replyToId".into(), serde_json::json!(reply_id)); }
                 if !normalized_attachments.is_empty() { object.insert("attachments".into(), serde_json::Value::Array(normalized_attachments.clone())); }
                 if let Some(context) = forward_context { object.insert("forwardContext".into(), context.clone()); }
+                if let Some(destination) = route_destination {
+                    object.insert(
+                        "destination".into(),
+                        serde_json::to_value(destination).expect("canonical destination serializes"),
+                    );
+                }
                 entry
             });
             if !existing.iter().any(|entry| entry.get("id") == pending_entry.get("id"))
@@ -3508,7 +3537,7 @@ impl ProductionSessionWorkers {
                     .map_err(|error| error.to_string())?
                     .ok_or_else(|| "Human pending send disappeared before dispatch".to_string())?;
 
-                let remote = client.send_direct_message(&peer_human_id, text, client_nonce, remote_reply_to_id.as_deref(), &uploaded, silent, scheduled_at_ms, None)?;
+                let remote = client.send_direct_message(&peer_human_id, text, client_nonce, remote_reply_to_id.as_deref(), &uploaded, silent, scheduled_at_ms, route_destination)?;
                 let remote_sender = fabushi_identity_text(&remote.sender_user_id)?;
                 let remote_recipient = fabushi_identity_text(&remote.recipient_user_id)?;
                 let remote_reply_matches = match (&remote_reply_to_id, &remote.reply_to_message_id) {
@@ -3524,6 +3553,7 @@ impl ProductionSessionWorkers {
                     || remote.client_request_id.as_deref() != Some(client_nonce)
                     || remote.silent != silent
                     || remote.scheduled_at_ms != scheduled_at_ms
+                    || remote.destination.as_ref() != route_destination
                     || !remote_reply_matches
                     || remote_resources != uploaded_resources
                 {
@@ -3580,6 +3610,13 @@ impl ProductionSessionWorkers {
         }
         if let Some(context) = forward_context {
             object.insert("forwardContext".into(), context.clone());
+        }
+        if let Some(destination) = route_destination {
+            object.insert(
+                "destination".into(),
+                serde_json::to_value(destination)
+                    .map_err(|error| format!("sendHumanMessage destination could not be encoded: {error}"))?,
+            );
         }
         if !owner
             .append_transcript_entry(&entry)
