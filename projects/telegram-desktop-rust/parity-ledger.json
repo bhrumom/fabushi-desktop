@@ -6,8 +6,8 @@
   "target_commit": "371b72f1cd20de03dc4dff9a15ed761054968093",
   "coverage": {
     "source_entries_total": 16125,
-    "unknown": 15288,
-    "unread": 2121,
+    "unknown": 15224,
+    "unread": 2057,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13478,22 +13478,22 @@
     "to_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "ahead_by": 4,
     "changed_paths": 10,
-    "source_read_reconciliation": "Accepted prefix 13,940/16,125; 13,933 formula.repository separately proven Doxygen-generated incremental formula-image cache excluded from shipping/build reachability.",
-    "source_authority_evidence": "Parent fa3b27 source authority and Focused Electron chat E2E succeeded; descendant requires fresh exact-head Actions.",
-    "current_source_read_through": 13940,
-    "first_unread_order": 13941,
-    "first_unread_path": "doc/gh-pages::functions_dup.js"
+    "source_read_reconciliation": "Accepted prefix 14,068/16,125; orders 14,005-14,068 directly exact-read and explicitly classified as Doxygen 1.9.4 generated HTML/JS documentation artifacts.",
+    "source_authority_evidence": "Parent 1d9ecd76 exact-head Rust desktop runtime 38210191386 and Desktop Chat Parity CI 38210191379 succeeded; descendant requires fresh exact-head Actions.",
+    "current_source_read_through": 14068,
+    "first_unread_order": 14069,
+    "first_unread_path": "doc/gh-pages::istream_8hpp.js"
   },
   "source_dispositions": {
     "path": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
     "upstream_commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
     "deterministic_prefix_closed": 57,
-    "development_only_non_applicable": 763,
-    "unknown_closed": 837,
+    "development_only_non_applicable": 827,
+    "unknown_closed": 901,
     "omitted": 0,
-    "read_through": 14004,
-    "first_unread_order": 14005,
-    "first_unread_path": "doc/gh-pages::group__integral.js",
+    "read_through": 14068,
+    "first_unread_order": 14069,
+    "first_unread_path": "doc/gh-pages::istream_8hpp.js",
     "rebaseline_overrides": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-28ac5769-to-6fed91ff.json"
   },
   "historical_exact_head_evidence": {
