@@ -46,6 +46,8 @@ import {
   presentRoutineRunHistory,
 } from "./automations/routines/run-history.ts";
 import {
+  COMPOSER_DRAFT_SLICE,
+  composerDraftScopeKey,
   createComposerDraftStateStore,
   type ComposerDraftPersistence,
 } from "./conversation/workspace/draft-state.ts";
@@ -536,6 +538,92 @@ test("composer draft restore does not overwrite a staged attachment added while 
   store.dispose();
 });
 
+
+test("composer draft schema v1 migrates legacy Agent keys into typed scope keys without losing Bot state", async () => {
+  const writes: unknown[] = [];
+  const persisted = JSON.stringify({
+    schemaVersion: 1,
+    value: {
+      agents: {
+        "agent/legacy": {
+          draft: {
+            prompt: "legacy",
+            richText: "{\"type\":\"doc\"}",
+            replyToId: "reply-legacy",
+            attachments: [{
+              path: "/tmp/legacy.png",
+              name: "legacy.png",
+              size: 42,
+              mimeType: "image/png",
+            }],
+          },
+          draftId: "legacy-draft-id",
+          recovery: null,
+        },
+      },
+    },
+  });
+  const persistence: ComposerDraftPersistence = {
+    async read() { return persisted; },
+    async write(_accountSlot, value) { writes.push(value); },
+    async clear() { assert.fail("valid legacy draft must migrate instead of being cleared"); },
+  };
+  const store = createComposerDraftStateStore(persistence);
+  await store.restore("account-1");
+  assert.equal(COMPOSER_DRAFT_SLICE.schemaVersion, 2);
+  assert.equal(composerDraftScopeKey("agent/legacy"), "agent:agent%2Flegacy");
+  assert.deepEqual(store.snapshotsFor("agent/legacy").get().draft, {
+    prompt: "legacy",
+    richText: "{\"type\":\"doc\"}",
+    replyToId: "reply-legacy",
+    attachments: [{
+      path: "/tmp/legacy.png",
+      name: "legacy.png",
+      size: 42,
+      mimeType: "image/png",
+    }],
+  });
+  await flush();
+  assert.equal(writes.length, 1, "legacy restore should durably rewrite the account slice as schema v2");
+  assert.deepEqual(Object.keys((writes[0] as { scopes: Record<string, unknown> }).scopes), ["agent:agent%2Flegacy"]);
+  store.dispose();
+});
+
+test("composer draft typed scopes isolate conversation children and preserve rich attachment metadata", async () => {
+  const writes: unknown[] = [];
+  const persistence: ComposerDraftPersistence = {
+    async read() { return null; },
+    async write(_accountSlot, value) { writes.push(value); },
+    async clear() {},
+  };
+  const store = createComposerDraftStateStore(persistence);
+  await store.restore("account-1");
+  const topic = { kind: "topic", conversationId: "conversation:1", topicId: "root:7" } as const;
+  const saved = { kind: "savedSublist", conversationId: "conversation:1", participantId: "human:7" } as const;
+  const nested = { kind: "conversationChild", conversationId: "conversation:1", childConversationId: "child:7" } as const;
+  assert.equal(composerDraftScopeKey(topic), "topic:conversation%3A1:root%3A7");
+  assert.equal(composerDraftScopeKey(saved), "saved-sublist:conversation%3A1:human%3A7");
+  assert.equal(composerDraftScopeKey(nested), "conversation-child:conversation%3A1:child%3A7");
+
+  store.setDraft(topic, {
+    prompt: "topic draft",
+    richText: "{\"type\":\"doc\",\"content\":[]}",
+    replyToId: "message:7",
+    attachments: [{ path: "/tmp/photo.png", name: "photo.png", size: 2048, mimeType: "image/png" }],
+  });
+  store.setDraft(saved, { prompt: "saved draft", attachments: [] });
+  store.setDraft(nested, { prompt: "nested draft", attachments: [] });
+
+  assert.equal(store.snapshotsFor(topic).get().draft?.prompt, "topic draft");
+  assert.equal(store.snapshotsFor(saved).get().draft?.prompt, "saved draft");
+  assert.equal(store.snapshotsFor(nested).get().draft?.prompt, "nested draft");
+  assert.equal(store.snapshotsFor("conversation:1").get().draft, null, "legacy Agent namespace must not alias canonical conversation scopes");
+  assert.equal(store.snapshotsFor(topic).get().draft?.attachments[0]?.mimeType, "image/png");
+  await flush();
+  const last = writes.at(-1) as { scopes: Record<string, { draft: { attachments: Array<{ mimeType?: string }> } }> };
+  assert.equal(last.scopes[composerDraftScopeKey(topic)]?.draft.attachments[0]?.mimeType, "image/png");
+  store.dispose();
+});
 
 test("composer stash atomically exchanges rich drafts and prepared attachments per scope", async () => {
   const writes: unknown[] = [];
