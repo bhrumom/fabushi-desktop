@@ -11,7 +11,7 @@ use mahayana_app_host::{
     AppHost, AppHostError, AppHostFeatureMode, HostRequest, HostResponse, MiniAppAccountPort, default_app_data_dir,
 };
 #[cfg(not(target_arch = "wasm32"))]
-use mahayana_app_host::MiniAppRuntimeStorePort;
+pub use mahayana_app_host::MiniAppRuntimeStorePort;
 pub use mahayana_app_host::{FeatureEventSource, PlatformRequestHost, is_platform_request_json};
 use mahayana_core::BuildProfile;
 use mahayana_harness_protocol::HarnessApi;

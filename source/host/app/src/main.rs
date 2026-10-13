@@ -11056,7 +11056,7 @@ fn proof_gateway_error(error: mahayana_host_runtime::extensions::mcp::installabl
 
 fn refresh_mini_app_trust(
     client: &mahayana_host_runtime::extensions::mcp::installable_package::policy::CatalogClient,
-    store: &mahayana_host_runtime::MiniAppRuntimeStorePort,
+    store: &mahayana_unified_app_host::MiniAppRuntimeStorePort,
     allow_transport_fallback: bool,
 ) -> Result<Option<String>, GatewayCommandError> {
     use mahayana_host_runtime::extensions::mcp::installable_package::{ledger, policy};

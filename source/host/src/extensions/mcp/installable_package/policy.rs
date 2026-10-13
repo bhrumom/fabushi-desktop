@@ -987,6 +987,17 @@ mod tests {
     }
 
     #[test]
+    fn production_node_feed_matches_native_pinned_ed25519_contract() {
+        let Ok(path) = std::env::var("FABUSHI_PRODUCTION_TRUST_FIXTURE") else {
+            return;
+        };
+        let response = std::fs::read_to_string(path).unwrap();
+        let envelope = extract_install_trust_response(&response).unwrap();
+        let feed = verify_trust_feed(&envelope, now_ms(), false).unwrap();
+        assert_eq!(feed.epoch, 1);
+    }
+
+    #[test]
     fn newer_timestamp_cannot_reactivate_a_cached_revoked_key() {
         let (proof_raw, _) = signed_fixture(false, true);
         let proof: InstallProofEnvelope = parse_unique(&proof_raw).unwrap();

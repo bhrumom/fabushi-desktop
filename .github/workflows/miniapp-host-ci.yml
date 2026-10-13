@@ -43,6 +43,8 @@ jobs:
           done
           echo 'b4fb72cfcdec50acd4c4a648f44699813c3b31cbbd0080445a6057fb4578c64e  signed-delivery.zip' | sha256sum -c -
           unzip signed-delivery.zip global-dandelion-0.1.0.fabapp -d signed-fixture
+      - name: Read public production signed trust feed
+        run: curl --fail --silent --show-error --retry 2 --max-time 20 https://api.ombhrum.com/v1/extensions/install-trust > signed-fixture/production-trust.json
       - name: Check canonical formatting without modifying exact source
         run: rustfmt --check --edition 2024 source/host/src/extensions/mcp/installable_package.rs
       - name: Export canonical formatting repair for review
@@ -54,6 +56,7 @@ jobs:
         if: always()
         env:
           FABUSHI_SIGNED_HOST_FIXTURE: ${{ github.workspace }}/signed-fixture/global-dandelion-0.1.0.fabapp
+          FABUSHI_PRODUCTION_TRUST_FIXTURE: ${{ github.workspace }}/signed-fixture/production-trust.json
         run: cargo test --manifest-path source/host/Cargo.toml --lib installable_package
       - uses: actions/upload-artifact@v4
         if: always()
