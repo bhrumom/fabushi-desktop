@@ -82,7 +82,7 @@ export interface MainBrowserWindow extends WindowStatePersistenceWindow {
 export interface ElectronMainApp {
   readonly isPackaged: boolean;
   disableHardwareAcceleration(): void;
-  readonly commandLine: { readonly appendSwitch: (name: string) => void };
+  readonly commandLine: { readonly appendSwitch: (name: string) => void; readonly hasSwitch?: (name: string) => boolean };
   requestSingleInstanceLock(): boolean;
   quit(): void;
   isReady(): boolean;

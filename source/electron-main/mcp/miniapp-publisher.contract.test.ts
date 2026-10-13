@@ -14,6 +14,9 @@ function setup(options: { bytes?: Uint8Array; networkFailure?: boolean; switchDu
     selectPackage: async () => { if (options.switchDuringPick) token = "different-account-fixture"; return options.bytes ?? null; },
     fetch: async (url, init) => {
       calls.push({ url: String(url), method: init?.method ?? "GET", headers: new Headers(init?.headers), body: init?.body });
+      assert.equal(init?.credentials, "omit");
+      assert.equal(init?.cache, "no-store");
+      assert.equal(init?.referrerPolicy, "no-referrer");
       if (options.networkFailure) throw new Error("fixture uncertain write");
       assert.equal(init?.redirect, "manual");
       if (String(url).endsWith("namespaces")) return Response.json({ namespaces: [{ namespace: "bhrumom", privateIgnoredField: "fixture" }] });

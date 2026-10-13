@@ -79,13 +79,15 @@
       "referencePath": "source/electron-preload/preload.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "e9476d9b24a3dde1c78bc418c6ac8079877ce6fd",
+      "targetBlobSha": "4d4aadb62aacb85cae559c4cb6aa01885a9990b8",
       "behavioralEvidence": [
         "source/electron-preload/preload.ts",
         "source/electron-preload/runtime/primary.ts",
         "docs/specs/desktop-miniapp-publisher.md",
         "source/electron-main/mcp/miniapp-publisher.ts",
-        "desktop/scripts/build-electron-runtime.mjs"
+        "desktop/scripts/build-electron-runtime.mjs",
+        "docs/specs/desktop-miniapp-management-ui.md",
+        "source/electron-main/mcp/miniapp-production.ts"
       ],
       "testEvidence": [
         "source/electron-preload/preload-boundaries.test.ts",
@@ -95,9 +97,11 @@
         ".github/workflows/desktop-chat-parity-ci.yml",
         ".github/workflows/rust-desktop-runtime.yml",
         "frontend/src/production/human-call-media.tsx",
-        "desktop/e2e/mahayana-agent-workbench.spec.ts"
+        "desktop/e2e/mahayana-agent-workbench.spec.ts",
+        "source/electron-main/mcp/miniapp-production.contract.test.ts",
+        ".github/workflows/miniapp-management-ci.yml"
       ],
-      "rationale": "Preserves the frozen Grok 0.18 thin preload boundary while adapting Fabushi's native attachment IPC contract: renderer Uint8Array payloads are encoded to the native bytesBase64 field, rich native staging results are normalized to the recovered {ok,path} contract, and rich committed attachment records are normalized to string paths. Commit requests carry path/name pairs as native items so file names survive the staging-to-committed transition. The shipping preload is bundled from source/electron-preload/runtime/primary.ts by desktop/scripts/build-electron-runtime.mjs; no deleted desktop/electron compatibility root is retained as behavioral or test evidence. Phase 1 additionally routes canonical UI language/accessibility preferences through this existing boundary and applies them to the shipping renderer without creating a parallel settings owner. Phase 1 media/device settings remain on this same canonical Settings/MainEdge/preload owner: selected microphone/camera IDs are normalized and persisted locally, exposed through the existing callMedia bridge, projected by recovered Settings, and consumed by the shipping Human call capture path with stale-device fallback. MP-01..05 additionally routes an optional first-party publisher facet through this same native composition: exact trusted-main sender, current account auth kept internal, bounded OS-selected signed package, account-departure fence and no uncertain-write retry. Backend retains namespace/artifact/review authority; the bridge exposes no reviewer credential, approval or installation runtime. Existing MCP, Coordinator and Host responsibilities are preserved."
+      "rationale": "Preserves the frozen Grok 0.18 thin preload boundary while adapting Fabushi's native attachment IPC contract: renderer Uint8Array payloads are encoded to the native bytesBase64 field, rich native staging results are normalized to the recovered {ok,path} contract, and rich committed attachment records are normalized to string paths. Commit requests carry path/name pairs as native items so file names survive the staging-to-committed transition. The shipping preload is bundled from source/electron-preload/runtime/primary.ts by desktop/scripts/build-electron-runtime.mjs; no deleted desktop/electron compatibility root is retained as behavioral or test evidence. Phase 1 additionally routes canonical UI language/accessibility preferences through this existing boundary and applies them to the shipping renderer without creating a parallel settings owner. Phase 1 media/device settings remain on this same canonical Settings/MainEdge/preload owner: selected microphone/camera IDs are normalized and persisted locally, exposed through the existing callMedia bridge, projected by recovered Settings, and consumed by the shipping Human call capture path with stale-device fallback. MP-01..05 additionally routes an optional first-party publisher facet through this same native composition: exact trusted-main sender, current account auth kept internal, bounded OS-selected signed package, account-departure fence and no uncertain-write retry. Backend retains namespace/artifact/review authority; the bridge exposes no reviewer credential, approval or installation runtime. Existing MCP, Coordinator and Host responsibilities are preserved. MU production wiring uses only appId intents and public metadata at the existing MCP owner; Account supplies confirmed authId scope and departure fences, Host retains verification on MainData, and main alone decodes resources into isolated windows. First-party Account and publisher requests use Electron net with no cookies or weakened origin checks."
     },
     {
       "referencePath": "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
@@ -137,7 +141,7 @@
       "referencePath": "source/electron-main/adapters/mcp-oauth.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "cde8f8196bc82479e0a5d4ae54dec310b66b4987",
+      "targetBlobSha": "909f7fcf51018f93ab95a1473f48a899d8cd3bd0",
       "behavioralEvidence": [
         "source/electron-main/adapters/mcp-oauth.ts",
         "docs/specs/desktop-miniapp-publisher.md",
@@ -157,7 +161,9 @@
         "source/host/src/extensions/mcp/production.rs",
         "source/shared/node/mcp/mcp-discovery-settlement.ts",
         "source/host/src/extensions/telemetry/mcp_discovery_telemetry.rs",
-        "source/host/src/extensions/telemetry/connector_auth_telemetry.rs"
+        "source/host/src/extensions/telemetry/connector_auth_telemetry.rs",
+        "docs/specs/desktop-miniapp-management-ui.md",
+        "source/electron-main/mcp/miniapp-production.ts"
       ],
       "testEvidence": [
         "source/electron-main/foundations.test.ts",
@@ -176,9 +182,11 @@
         "source/host/tests/mcp_discovery_telemetry_contract.rs",
         "source/host/tests/mcp_discovery_production_wiring_contract.rs",
         "source/host/tests/connector_auth_telemetry_contract.rs",
-        "source/host/tests/connector_auth_production_wiring_contract.rs"
+        "source/host/tests/connector_auth_production_wiring_contract.rs",
+        "source/electron-main/mcp/miniapp-production.contract.test.ts",
+        ".github/workflows/miniapp-management-ci.yml"
       ],
-      "rationale": "Preserves Grok MCP/OAuth composition while keeping SandMcpManager as the single Electron/Coordinator-owned MCP manager and the Mahayana Host as the owner of Plugin Skills lifecycle, cache, authenticated startup, refresh, install/uninstall resync, live-reference cleanup, and Skill Publish. The Cursor Dashboard/marketplace-dependent installed-plugin loader stays as a narrow TypeScript SDK edge in Electron Main and is reached only through the existing allowlisted, correlated Mahayana Coordinator MCP relay. This preserves the frozen Grok process and responsibility boundaries while choosing TypeScript for the Cursor Node SDK edge and Rust for Host lifecycle/state; it does not introduce a second MCP manager or collapse Coordinator/Host/Runner. The approved row-62 MCP discovery failure extension now forwards the frozen success/failure/stale/elapsed settlement through a dedicated reportMcpDiscoveryFailed Coordinator main-data request to the unique HostStructuredLogTelemetry owner; generic MCP diagnostics remain separate. MP-01..05 additionally routes an optional first-party publisher facet through this same native composition: exact trusted-main sender, current account auth kept internal, bounded OS-selected signed package, account-departure fence and no uncertain-write retry. Backend retains namespace/artifact/review authority; the bridge exposes no reviewer credential, approval or installation runtime. Existing MCP, Coordinator and Host responsibilities are preserved."
+      "rationale": "Preserves Grok MCP/OAuth composition while keeping SandMcpManager as the single Electron/Coordinator-owned MCP manager and the Mahayana Host as the owner of Plugin Skills lifecycle, cache, authenticated startup, refresh, install/uninstall resync, live-reference cleanup, and Skill Publish. The Cursor Dashboard/marketplace-dependent installed-plugin loader stays as a narrow TypeScript SDK edge in Electron Main and is reached only through the existing allowlisted, correlated Mahayana Coordinator MCP relay. This preserves the frozen Grok process and responsibility boundaries while choosing TypeScript for the Cursor Node SDK edge and Rust for Host lifecycle/state; it does not introduce a second MCP manager or collapse Coordinator/Host/Runner. The approved row-62 MCP discovery failure extension now forwards the frozen success/failure/stale/elapsed settlement through a dedicated reportMcpDiscoveryFailed Coordinator main-data request to the unique HostStructuredLogTelemetry owner; generic MCP diagnostics remain separate. MP-01..05 additionally routes an optional first-party publisher facet through this same native composition: exact trusted-main sender, current account auth kept internal, bounded OS-selected signed package, account-departure fence and no uncertain-write retry. Backend retains namespace/artifact/review authority; the bridge exposes no reviewer credential, approval or installation runtime. Existing MCP, Coordinator and Host responsibilities are preserved. MU production wiring uses only appId intents and public metadata at the existing MCP owner; Account supplies confirmed authId scope and departure fences, Host retains verification on MainData, and main alone decodes resources into isolated windows. First-party Account and publisher requests use Electron net with no cookies or weakened origin checks."
     },
     {
       "referencePath": "source/electron-main/attachments/attachment-manager.ts",
@@ -402,22 +410,26 @@
       "referencePath": "source/electron-main/main-production-services.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "79db9c8befd1a9c223289b497790b64fd8b3438c",
+      "targetBlobSha": "d68935b8d58104ed011087cc9cb110fd9d821e6b",
       "behavioralEvidence": [
         "source/electron-main/main-production-services.ts",
         "docs/specs/desktop-miniapp-publisher.md",
         "source/electron-main/mcp/miniapp-publisher.ts",
         "source/electron-main/adapters/mcp-oauth.ts",
-        "source/electron-main/window-broadcast.ts"
+        "source/electron-main/window-broadcast.ts",
+        "docs/specs/desktop-miniapp-management-ui.md",
+        "source/electron-main/mcp/miniapp-production.ts"
       ],
       "testEvidence": [
         "source/electron-main/foundations.test.ts",
         "source/electron-main/coordinator/coordinator-executors.test.ts",
         "source/electron-main/mcp/miniapp-publisher.contract.test.ts",
         ".github/workflows/miniapp-publisher-ci.yml",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/electron-main/mcp/miniapp-production.contract.test.ts",
+        ".github/workflows/miniapp-management-ci.yml"
       ],
-      "rationale": "Preserves the frozen Grok production composition while applying two explicit Fabushi product adaptations without moving ownership: the existing Host lifecycle/Plugin Skills SDK-edge surface remains in the single Electron MCP owner, and renderer-scoped BrowserWindow delivery is narrowed at the shipping composition boundary to the trusted main WebContents. The frozen source/electron-main/window-broadcast.ts helper remains byte-identical to Grok for truly global fanout; MCP OAuth completion and dev-control renderer events no longer use that all-window helper in production. Coordinator, Host, Runner, MCP manager, and MainEdge ownership remain unchanged. MP-01..05 additionally routes an optional first-party publisher facet through this same native composition: exact trusted-main sender, current account auth kept internal, bounded OS-selected signed package, account-departure fence and no uncertain-write retry. Backend retains namespace/artifact/review authority; the bridge exposes no reviewer credential, approval or installation runtime. Existing MCP, Coordinator and Host responsibilities are preserved."
+      "rationale": "Preserves the frozen Grok production composition while applying two explicit Fabushi product adaptations without moving ownership: the existing Host lifecycle/Plugin Skills SDK-edge surface remains in the single Electron MCP owner, and renderer-scoped BrowserWindow delivery is narrowed at the shipping composition boundary to the trusted main WebContents. The frozen source/electron-main/window-broadcast.ts helper remains byte-identical to Grok for truly global fanout; MCP OAuth completion and dev-control renderer events no longer use that all-window helper in production. Coordinator, Host, Runner, MCP manager, and MainEdge ownership remain unchanged. MP-01..05 additionally routes an optional first-party publisher facet through this same native composition: exact trusted-main sender, current account auth kept internal, bounded OS-selected signed package, account-departure fence and no uncertain-write retry. Backend retains namespace/artifact/review authority; the bridge exposes no reviewer credential, approval or installation runtime. Existing MCP, Coordinator and Host responsibilities are preserved. MU production wiring uses only appId intents and public metadata at the existing MCP owner; Account supplies confirmed authId scope and departure fences, Host retains verification on MainData, and main alone decodes resources into isolated windows. First-party Account and publisher requests use Electron net with no cookies or weakened origin checks."
     },
     {
       "referencePath": "source/electron-main/mcp/desktop-mcp-manager.ts",
@@ -1252,12 +1264,12 @@
         ".github/workflows/release-macos-main.yml"
       ],
       "rationale": "Preserves the frozen Plugins dialog, navigation and connector browser while adding one optional first-party publisher presentation slot under MP-01. Existing callers need no change and the view gains no authentication, upload, review or installation authority. This is the user-requested Fabushi Marketplace product adaptation within the single Plugins owner, not restoration of the removed standalone Mini Apps shell. Exact-head renderer/contract and packaged gates must pass before publication is claimed."
-    }
-    ,{
+    },
+    {
       "referencePath": "source/electron-main/main.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "125e2d531db164004b7c677ee284a2e49a99feb9",
+      "targetBlobSha": "b8eeed322ec07e5c8f67fa367cd2f58ac212b4f0",
       "behavioralEvidence": [
         "source/electron-main/main.ts",
         "source/electron-main/mcp/miniapp-window.ts",

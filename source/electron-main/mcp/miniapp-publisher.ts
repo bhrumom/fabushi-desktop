@@ -35,6 +35,7 @@ export function registerMiniAppPublisher(ports: MiniAppPublisherPorts): { dispos
       try {
         response = await ports.fetch(API + path, {
           method, redirect: "manual", signal: AbortSignal.timeout(30_000),
+          credentials: "omit", cache: "no-store", referrerPolicy: "no-referrer",
           headers: { Authorization: `Bearer ${token}`, ...headers },
           ...(body === undefined ? {} : { body: body instanceof Uint8Array ? new Uint8Array(body) : JSON.stringify(body) }),
         });

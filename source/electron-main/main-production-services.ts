@@ -88,6 +88,8 @@ export interface ElectronProductionNativeBindings {
     setApplicationMenu(menu: unknown): void;
   };
   readonly shell: { openExternal(url: string): Promise<unknown> };
+  readonly net?: { fetch: typeof globalThis.fetch };
+  readonly session?: import("./mcp/miniapp-window.js").MiniAppWindowFactoryPorts["session"];
   readonly screen: WindowStatePersistenceScreen;
   readonly dialog?: {
     showOpenDialog(options: { properties: ["openFile"]; filters: { name: string; extensions: string[] }[] }): Promise<{ canceled: boolean; filePaths: string[] }>;
@@ -114,6 +116,8 @@ export function createElectronProductionNativeBindings(electron: {
   readonly shell: ElectronProductionNativeBindings["shell"];
   readonly screen: ElectronProductionNativeBindings["screen"];
   readonly dialog?: ElectronProductionNativeBindings["dialog"];
+  readonly net?: ElectronProductionNativeBindings["net"];
+  readonly session?: ElectronProductionNativeBindings["session"];
   readonly desktopCapturer?: ElectronProductionNativeBindings["desktopCapturer"];
   readonly systemPreferences?: ElectronProductionNativeBindings["systemPreferences"];
 }): ElectronProductionNativeBindings {
@@ -125,7 +129,7 @@ export function createElectronProductionNativeBindings(electron: {
   if (typeof electron.Menu.buildFromTemplate !== "function" || typeof electron.Menu.setApplicationMenu !== "function") throw new Error("Electron production ABI requires Menu construction and installation.");
   if (typeof electron.shell.openExternal !== "function") throw new Error("Electron production ABI requires shell.openExternal().");
   if (typeof electron.safeStorage.isEncryptionAvailable !== "function" || typeof electron.safeStorage.encryptString !== "function" || typeof electron.safeStorage.decryptString !== "function") throw new Error("Electron production ABI requires safeStorage encryption methods.");
-  return { app: electron.app, safeStorage: electron.safeStorage, ipcMain: electron.ipcMain, BrowserWindow: electron.BrowserWindow, Menu: electron.Menu, shell: electron.shell, screen: electron.screen, ...(electron.dialog == null ? {} : { dialog: electron.dialog }), ...(electron.desktopCapturer == null ? {} : { desktopCapturer: electron.desktopCapturer }), ...(electron.systemPreferences == null ? {} : { systemPreferences: electron.systemPreferences }) };
+return { app: electron.app, safeStorage: electron.safeStorage, ipcMain: electron.ipcMain, BrowserWindow: electron.BrowserWindow, Menu: electron.Menu, shell: electron.shell, screen: electron.screen, ...(electron.dialog == null ? {} : { dialog: electron.dialog }), ...(electron.net == null ? {} : { net: electron.net }), ...(electron.session == null ? {} : { session: electron.session }), ...(electron.desktopCapturer == null ? {} : { desktopCapturer: electron.desktopCapturer }), ...(electron.systemPreferences == null ? {} : { systemPreferences: electron.systemPreferences }) };
 }
 
 export interface ElectronProductionResources {

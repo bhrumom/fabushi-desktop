@@ -3,6 +3,9 @@ on:
   pull_request:
     paths:
       - 'source/electron-main/mcp/miniapp-management*'
+      - 'source/electron-main/mcp/miniapp-production*'
+      - 'source/electron-main/adapters/mcp-oauth.ts'
+      - 'source/electron-preload/preload.ts'
       - 'frontend/src/recovered/features/plugins/overlay/miniapp-management.tsx'
       - '.github/workflows/miniapp-management-ci.yml'
 permissions:
@@ -18,4 +21,4 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
-      - run: npx --yes tsx@4.21.0 --test source/electron-main/mcp/miniapp-management.contract.test.ts
+      - run: npx --yes tsx@4.21.0 --test source/electron-main/mcp/miniapp-management.contract.test.ts source/electron-main/mcp/miniapp-production.contract.test.ts

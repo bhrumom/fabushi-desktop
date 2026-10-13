@@ -40,6 +40,16 @@ This narrow first release does not invent a generic publisher/code-upload servic
 The prepared signed package digest is pinned to the reviewed delivery evidence;
 other package/version requires a separate reviewed release update.
 
+### Native network adapter
+
+Signed candidate0bf recovered real bhrum108 in the normal UI, but owned-namespace
+GET timed out in the Node fetch path. Production native ports inject Electron
+net.fetch into the existing account and publisher owners, using the installed
+client's OS network/proxy stack. Recipient stays the fixed first-party API;
+redirects remain refused, ambient cookies omitted, and TLS validation enabled.
+Headless ports retain injected/global fetch, with no second auth owner. No
+uncertain writes are retried. The cause/fix still requires actual UI verification.
+
 Verification exclusively Actions: trusted sender rejection, no renderer-supplied
 path/token, file bounds, token change, uncertain-write/no-retry, exact headers/bytes,
 namespace ownership rejection, draft/upload/submit order; frontend accessible

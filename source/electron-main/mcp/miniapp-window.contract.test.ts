@@ -231,6 +231,11 @@ test("actual Electron uses the isolated protocol and blocks real network, worker
       return { results: window.__results, hasNode: typeof process !== "undefined" || typeof require !== "undefined", origin: location.origin, wasm: Boolean(wasm.instance) };
     });
     assert.equal(browserFacts.hasNode, false);
+    if (process.platform === "linux") {
+      const pid = await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].webContents.getOSProcessId());
+      const status = await (await import("node:fs/promises")).readFile(`/proc/${pid}/status`, "utf8");
+      assert.match(status, /^Seccomp:\s+2$/m, "actual renderer must use kernel seccomp filtering");
+    }
     assert.equal(browserFacts.wasm, true);
     assert.match(browserFacts.origin, /^fabushi-miniapp:\/\//);
     assert.equal(browserFacts.results.fetch, "blocked");

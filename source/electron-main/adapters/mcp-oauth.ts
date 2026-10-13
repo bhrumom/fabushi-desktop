@@ -17,6 +17,7 @@ import { createSandCursorBackendClient } from "../../shared/node/cursor-backend/
 import { reportDesktopEdgeFailure, reportDesktopEdgeFailureClass } from "../desktop-edge-failures.js";
 import { requireFunction, requireObject } from "./provider-guards.js";
 import { registerMiniAppPublisher } from "../mcp/miniapp-publisher.js";
+import { registerProductionMiniApps } from "../mcp/miniapp-production.js";
 import { constants } from "node:fs";
 import { open } from "node:fs/promises";
 
@@ -307,6 +308,7 @@ export function createProductionMcpOAuthAdapter(
       });
       let desktopHandle: ReturnType<typeof registerMcpDesktopIpc> | undefined;
       let publisherHandle: ReturnType<typeof registerMiniAppPublisher> | undefined;
+      let miniAppHandle: ReturnType<typeof registerProductionMiniApps> | undefined;
       let disposed = false;
       return {
         async openExternalUrl(value) {
@@ -416,10 +418,11 @@ export function createProductionMcpOAuthAdapter(
           const desktopDeps = { ...ports.resolveDesktopDeps(context, runtime.ensureMcpManager), ...rootPorts?.desktop } as McpDesktopDeps;
           requireObject(desktopDeps, "mcpOAuth.desktopDeps");
           desktopHandle = registerMcpDesktopIpc({ ...desktopDeps, ipc, getManager: runtime.ensureMcpManager });
+          miniAppHandle = registerProductionMiniApps(context, ipc);
           publisherHandle = registerMiniAppPublisher({
             ipc, trustedSender: context.getTrustedContents,
             accessToken: async () => (await context.requireAccount().getAuthService()).getValidAccessToken({ backendUrl: "https://api.ombhrum.com" }),
-            fetch: globalThis.fetch,
+            fetch: context.native.net?.fetch.bind(context.native.net) ?? globalThis.fetch,
             selectPackage: async () => {
               if (!context.native.dialog) throw new Error("PUBLISHER_FILE_DIALOG_UNAVAILABLE");
               const selected = await context.native.dialog.showOpenDialog({ properties: ["openFile"], filters: [{ name: "Fabushi signed Mini App", extensions: ["fabapp"] }] });
@@ -458,6 +461,8 @@ export function createProductionMcpOAuthAdapter(
           const current = desktopHandle;
           publisherHandle?.dispose();
           publisherHandle = undefined;
+          miniAppHandle?.dispose();
+          miniAppHandle = undefined;
           desktopHandle = undefined;
           const failures: unknown[] = [];
           try { await runtime.dispose(); } catch (error) { failures.push(error); }

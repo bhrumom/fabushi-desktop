@@ -34,3 +34,14 @@ Actions verification: renderer typecheck, actual Plugins UI + native sender/acco
 intent tests, Host ledger and sandbox tests, exact signed packaged flow. AC: actual
 approved package shown, installed, cold-launched offline and code removed with data
 retained; connector/Skills regressions pass. Pending until production wiring/proof.
+# Production join acceptance
+
+The existing MCP production owner registers the four mini-app IPC intents. Its
+native account service supplies SHA-256 of the confirmed `authId`; neither email,
+renderer identity nor a bearer token is a scope. Any account notification invalidates
+pending launches and destroys mini-app windows. Resources travel only over MainData
+from the Host, are bounded and decoded in main, and never enter preload responses.
+The Host-provided scope must equal the current native scope before opening a window.
+Installed-only entries remain visible offline when the public catalog is unavailable.
+Electron session absence or an explicit no-sandbox switch fails closed.
+
