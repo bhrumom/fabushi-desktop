@@ -181,6 +181,8 @@ define_host_gateway_registry!(
 /// so upstream parity evidence cannot silently absorb product-owned extensions.
 pub const FABUSHI_HOST_GATEWAY_METHODS: &[&str] = &[
     "noteRecentParticipantSuggestion",
+    "getHumanSavedSublistDraft",
+    "setHumanSavedSublistDraft",
     "getStoryStealthStatus",
     "activateStoryStealth",
     "listStories",
@@ -191,7 +193,9 @@ pub const FABUSHI_HOST_GATEWAY_METHODS: &[&str] = &[
 
 pub fn host_gateway_owner(method: &str) -> Option<HostGatewayOwner> {
     match method {
-        "noteRecentParticipantSuggestion" => Some(HostGatewayOwner::Session),
+        "noteRecentParticipantSuggestion"
+        | "getHumanSavedSublistDraft"
+        | "setHumanSavedSublistDraft" => Some(HostGatewayOwner::Session),
         "getStoryStealthStatus"
         | "activateStoryStealth"
         | "listStories"
