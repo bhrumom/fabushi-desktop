@@ -10742,6 +10742,19 @@ fn dispatch_gateway_call(
         return result.map_err(GatewayCommandError::Internal);
     }
 
+    // HostLane is the owner-thread fallback for gateway calls that could not be
+    // completed on the concurrent GatewayApi surface. Keep the canonical
+    // Session/Transcript owner ahead of the legacy Grok compatibility fallback:
+    // the compatibility dispatcher reports an unknown method as an error rather
+    // than Ok(None), so running it first would prevent valid session-owned Human
+    // messaging/call methods from ever reaching their production owner.
+    if let Some(result) = transcript_manager.dispatch_session_gateway_call(method, &args) {
+        return result.map_err(|error| match error {
+            SessionGatewayError::BadRequest(message) => GatewayCommandError::BadRequest(message),
+            SessionGatewayError::Internal(message) => GatewayCommandError::Internal(message),
+        });
+    }
+
     match host.grok_gateway_call(method, args.clone()) {
         Ok(Some(result)) => return Ok(result),
         Ok(None) => {}
@@ -10750,19 +10763,6 @@ fn dispatch_gateway_call(
                 "Mahayana Host Grok compatibility dispatch failed for {method}: {error}"
             )));
         }
-    }
-
-    // HostLane is the owner-thread fallback for gateway calls that could not be
-    // completed on the concurrent GatewayApi surface. Keep that fallback wired
-    // to the same production Session/Transcript dispatcher as GatewayApi itself;
-    // otherwise newly added canonical Human messaging/call methods silently
-    // fall through to the older UnifiedAppHost JSON compatibility surface and
-    // are reported as unknown even though their production owner is present.
-    if let Some(result) = transcript_manager.dispatch_session_gateway_call(method, &args) {
-        return result.map_err(|error| match error {
-            SessionGatewayError::BadRequest(message) => GatewayCommandError::BadRequest(message),
-            SessionGatewayError::Internal(message) => GatewayCommandError::Internal(message),
-        });
     }
 
     if let Some(result) = dispatch_box_environment_call(method, &args, |update| {
