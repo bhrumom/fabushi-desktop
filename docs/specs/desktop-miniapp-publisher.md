@@ -54,3 +54,21 @@ artifact uploaded and pending-review state observable. AC-3 separate reviewer sc
 release signature/approval, catalog and packaged install acceptance. All pending.
 References: Global Dandelion PR2 fce746b, backend production signing run38366572165
 (packageSHA de10e02115415908f827723457817e51cb4f39aa5ca68798da824fecc483118a).
+
+## Architecture exception and protected-source evidence
+
+The user's explicit request to publish a Fabushi offline mini app supersedes the
+historical CONN-009 prohibition only for this bounded publisher feature inside
+the existing Plugins dialog. It does not authorize a separate Mini Apps shell,
+parallel Host, renderer-owned install ledger, or approval bypass. Existing frozen
+reference inventory and reference blob hashes remain unchanged.
+
+Five mapped modules require evidence-locked semantic adaptation: preload adds
+the optional narrow three-intent facet; MCP OAuth native composition injects
+existing authentication and safe OS file selection; production services forwards
+Electron dialog without creating a manager; Plugins desktop surface mounts the
+same panel during catalog loading/failure; Plugins view accepts one optional
+presentation slot. Each adaptation retains original behavior/evidence and adds
+this spec and the signed-candidate publisher contract workflow. Updating a target
+hash records inspected source, not passing CI or independent review. All five
+must re-pass strict architecture and exact-source packaged acceptance.
