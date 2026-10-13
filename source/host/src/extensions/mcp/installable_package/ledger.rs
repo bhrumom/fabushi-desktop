@@ -778,13 +778,15 @@ mod tests {
             &s,
             "fenced-install",
             package("1.0.0", "fenced"),
-            "signed-proof",
+            r#"{"trust":{"trustEpoch":1,"issuedAtMs":1,"payload":"signed-feed-fixture"}}"#,
             1,
             || false,
         )
         .err()
         .unwrap();
         assert!(matches!(rejected, InstallError::StaleScope));
+        assert!(installed(&db, &s, "org.test.app").unwrap().is_none());
+        assert!(current_trust_envelope(&db).unwrap().is_none());
 
         let active = activate(&mut db, &s, &s, "install", package("1.0.0", "active")).unwrap();
         let rejected = remove_fenced(&mut db, &s, &s, &active.app_id, "fenced-remove", || false)

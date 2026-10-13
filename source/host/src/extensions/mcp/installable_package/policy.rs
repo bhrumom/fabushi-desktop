@@ -971,8 +971,11 @@ mod tests {
         let trust_raw = serde_json::to_string(&proof.trust).unwrap();
         let wrapped = serde_json::json!({"trust": proof.trust});
         assert_eq!(
-            extract_install_trust_response(&wrapped.to_string()).unwrap(),
-            trust_raw
+            serde_json::from_str::<Value>(
+                &extract_install_trust_response(&wrapped.to_string()).unwrap()
+            )
+            .unwrap(),
+            serde_json::from_str::<Value>(&trust_raw).unwrap()
         );
         assert_eq!(
             extract_install_trust_response(&format!("{{\"trust\":{trust_raw},\"extra\":true}}")),
