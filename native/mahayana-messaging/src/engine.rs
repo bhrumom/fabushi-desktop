@@ -6099,6 +6099,99 @@ mod recent_open_history_tests {
         assert!(restored.recent_open_destinations(&actor_id).is_empty());
     }
 
+    #[test]
+    fn authoritative_saved_sublist_draft_reply_uses_membership_without_local_message_payload() {
+        let actor_id = ActorId::new("human:child-draft-owner");
+        let peer_id = ActorId::new("human:child-draft-peer");
+        let parent = ConversationId::new("conversation:child-draft-parent");
+        let destination = ConversationDestination::saved_sublist(
+            parent.clone(),
+            peer_id.clone(),
+        );
+        let reply_id = MessageId::new("human-server-message:7");
+        let mut engine = MessagingEngine::new();
+
+        for actor in [
+            Actor::human(actor_id.0.clone(), "Draft Owner"),
+            Actor::human(peer_id.0.clone(), "Draft Peer"),
+        ] {
+            engine.execute(Command::UpsertActor { actor }).unwrap();
+        }
+        engine
+            .execute(Command::UpsertConversation {
+                conversation: Conversation::direct(
+                    parent.0.clone(),
+                    "Draft Peer",
+                    vec![
+                        Participant {
+                            actor_id: actor_id.clone(),
+                            role: ParticipantRole::Member,
+                            joined_at_ms: 1,
+                            muted_until_ms: None,
+                        },
+                        Participant {
+                            actor_id: peer_id,
+                            role: ParticipantRole::Member,
+                            joined_at_ms: 1,
+                            muted_until_ms: None,
+                        },
+                    ],
+                    1,
+                ),
+            })
+            .unwrap();
+        engine
+            .execute(Command::ReconcileSavedSublistParentAccess {
+                conversation_id: parent,
+                actor_id: actor_id.clone(),
+                allowed: true,
+            })
+            .unwrap();
+        engine
+            .execute(Command::ReconcileSavedSublistMembership {
+                destination: destination.clone(),
+                actor_id: actor_id.clone(),
+                message_ids: vec![reply_id.clone()],
+            })
+            .unwrap();
+
+        assert!(
+            engine
+                .state()
+                .messages
+                .values()
+                .all(|messages| !messages.contains_key(&reply_id)),
+            "test must prove reconciliation does not depend on a local Message payload"
+        );
+        engine
+            .execute(Command::ReconcileConversationChildDraft {
+                destination: destination.clone(),
+                actor_id: actor_id.clone(),
+                text: "cloud draft".into(),
+                reply_to_message_id: Some(reply_id.clone()),
+                updated_at_ms: 42,
+            })
+            .unwrap();
+        let child = engine
+            .state()
+            .child_state(&destination, &actor_id)
+            .expect("authoritative child draft state");
+        assert_eq!(child.draft_text, "cloud draft");
+        assert_eq!(
+            child.draft_reply_to_message_id.as_deref(),
+            Some(reply_id.0.as_str())
+        );
+
+        let rejected = engine.execute(Command::ReconcileConversationChildDraft {
+            destination,
+            actor_id,
+            text: "stale forged reply".into(),
+            reply_to_message_id: Some(MessageId::new("human-server-message:8")),
+            updated_at_ms: 43,
+        });
+        assert_eq!(rejected, Err(EngineError::ConversationChildMessageMismatch));
+    }
+
     fn shared_media_test_message(
         id: &str,
         conversation_id: &ConversationId,
