@@ -36,12 +36,22 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh api repos/bhrumom/fabushi-backend/actions/artifacts/11797530939/zip > signed-delivery.zip
+          for attempt in 1 2 3; do
+            if gh api repos/bhrumom/fabushi-backend/actions/artifacts/11797530939/zip > signed-delivery.zip; then break; fi
+            if [ "$attempt" = 3 ]; then exit 1; fi
+            sleep 3
+          done
           echo 'b4fb72cfcdec50acd4c4a648f44699813c3b31cbbd0080445a6057fb4578c64e  signed-delivery.zip' | sha256sum -c -
           unzip signed-delivery.zip global-dandelion-0.1.0.fabapp -d signed-fixture
       - name: Check canonical formatting without modifying exact source
         run: rustfmt --check --edition 2024 source/host/src/extensions/mcp/installable_package.rs
+      - name: Export canonical formatting repair for review
+        if: failure()
+        run: |
+          rustfmt --edition 2024 source/host/src/extensions/mcp/installable_package.rs
+          git diff -- source/host/src/extensions/mcp/installable_package.rs source/host/src/extensions/mcp/installable_package > "$RUNNER_TEMP/host-miniapp-format.patch"
       - name: Verify existing Host library contracts
+        if: always()
         env:
           FABUSHI_SIGNED_HOST_FIXTURE: ${{ github.workspace }}/signed-fixture/global-dandelion-0.1.0.fabapp
         run: cargo test --manifest-path source/host/Cargo.toml --lib installable_package
@@ -50,5 +60,7 @@ jobs:
         with:
           name: host-miniapp-verifier-source-${{ github.event.pull_request.head.sha || github.sha }}
           path: |
+            ${{ runner.temp }}/host-miniapp-format.patch
             source/host/src/extensions/mcp/installable_package.rs
             source/host/src/extensions/mcp/installable_package/ledger.rs
+            source/host/src/extensions/mcp/installable_package/policy.rs
