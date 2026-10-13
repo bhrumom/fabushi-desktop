@@ -82,3 +82,10 @@ presentation slot. Each adaptation retains original behavior/evidence and adds
 this spec and the signed-candidate publisher contract workflow. Updating a target
 hash records inspected source, not passing CI or independent review. All five
 must re-pass strict architecture and exact-source packaged acceptance.
+# Native error redaction
+
+All publisher IPC failures return only a fixed safe error code. Native account,
+file-picker, filesystem and stream exceptions must not send paths, credentials,
+upstream diagnostics or selected file contents to Renderer. HTTP failures retain
+only the numeric status; network uncertainty still forbids automatic write retry.
+

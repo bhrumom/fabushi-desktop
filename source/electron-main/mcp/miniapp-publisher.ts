@@ -6,6 +6,15 @@ export const DandelionCandidate = Object.freeze({
   appId: "org.fabushi.global-dandelion",
 });
 const API = "https://api.ombhrum.com";
+const SAFE_ERRORS = new Set([
+  "PUBLISHER_ACCOUNT_CHANGED", "PUBLISHER_ACCOUNT_REQUIRED", "PUBLISHER_BUSY",
+  "PUBLISHER_CLOSED", "PUBLISHER_FILE_DIALOG_UNAVAILABLE", "PUBLISHER_PACKAGE_CHANGED",
+  "PUBLISHER_PACKAGE_LIMIT", "PUBLISHER_IMMUTABLE_CONFLICT", "PUBLISHER_INVALID_RESPONSE",
+  "PUBLISHER_INVALID_REVIEW_STATE", "PUBLISHER_NAMESPACE_REQUIRED",
+  "PUBLISHER_NETWORK_UNCERTAIN_NO_RETRY", "PUBLISHER_OPERATION_FAILED",
+  "PUBLISHER_RELEASE_FROZEN", "PUBLISHER_RESPONSE_LIMIT", "PUBLISHER_SENDER_DENIED",
+  "PUBLISHER_UNREVIEWED_PACKAGE",
+]);
 type Handler = (event: unknown) => Promise<unknown>;
 export interface MiniAppPublisherPorts {
   ipc: { handle(channel: string, handler: Handler): void };
@@ -21,6 +30,13 @@ function trusted(ports: MiniAppPublisherPorts, event: unknown): void {
 export function registerMiniAppPublisher(ports: MiniAppPublisherPorts): { dispose(): void } {
   let disposed = false;
   let publishing = false;
+  const handle = (name: string, handler: Handler) => ports.ipc.handle(name, async (event) => {
+    try { return await handler(event); }
+    catch (error) {
+      const message = error instanceof Error ? error.message : "";
+      throw new Error(SAFE_ERRORS.has(message) || /^PUBLISHER_HTTP_[1-5][0-9]{2}$/.test(message) ? message : "PUBLISHER_OPERATION_FAILED");
+    }
+  });
   const begin = async (event: unknown) => {
     if (disposed) throw new Error("PUBLISHER_CLOSED");
     trusted(ports, event);
@@ -59,20 +75,20 @@ export function registerMiniAppPublisher(ports: MiniAppPublisherPorts): { dispos
     };
     return { request, fence };
   };
-  ports.ipc.handle("sand:marketplace-publisher-owned", async (event) => {
+  handle("sand:marketplace-publisher-owned", async (event) => {
     const { request } = await begin(event);
     const data = await request("/v1/extensions/publisher/namespaces");
     return { namespaces: (Array.isArray(data.namespaces) ? data.namespaces : [])
       .map((item: { namespace?: unknown }) => item.namespace)
       .filter((name: unknown) => typeof name === "string" && /^[a-z0-9][a-z0-9._-]{0,127}$/.test(name)) };
   });
-  ports.ipc.handle("sand:marketplace-publisher-claim", async (event) => {
+  handle("sand:marketplace-publisher-claim", async (event) => {
     const { request } = await begin(event);
     await request("/v1/extensions/publisher/namespaces", "POST",
       { namespace: DandelionCandidate.namespace, displayName: "bhrumom" }, { "Content-Type": "application/json" });
     return { namespace: DandelionCandidate.namespace };
   });
-  ports.ipc.handle("sand:marketplace-submit-dandelion", async (event) => {
+  handle("sand:marketplace-submit-dandelion", async (event) => {
     if (publishing) throw new Error("PUBLISHER_BUSY");
     publishing = true;
     try {

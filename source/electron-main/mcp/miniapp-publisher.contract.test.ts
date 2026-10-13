@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { DandelionCandidate, registerMiniAppPublisher } from "./miniapp-publisher.js";
 
-function setup(options: { bytes?: Uint8Array; networkFailure?: boolean; switchDuringPick?: boolean; token?: string | null } = {}) {
+function setup(options: { bytes?: Uint8Array; networkFailure?: boolean; switchDuringPick?: boolean; token?: string | null; pickerFailure?: boolean } = {}) {
   const sender = {};
   const handlers = new Map<string, (event: unknown) => Promise<unknown>>();
   const calls: { url: string; method: string; headers: Headers; body: unknown }[] = [];
@@ -11,7 +11,7 @@ function setup(options: { bytes?: Uint8Array; networkFailure?: boolean; switchDu
   const handle = registerMiniAppPublisher({
     ipc: { handle(name, handler) { handlers.set(name, handler); } }, trustedSender: () => sender,
     accessToken: async () => token,
-    selectPackage: async () => { if (options.switchDuringPick) token = "different-account-fixture"; return options.bytes ?? null; },
+    selectPackage: async () => { if (options.pickerFailure) throw new Error("/private/fixture-user-path bearer fixture-secret"); if (options.switchDuringPick) token = "different-account-fixture"; return options.bytes ?? null; },
     fetch: async (url, init) => {
       calls.push({ url: String(url), method: init?.method ?? "GET", headers: new Headers(init?.headers), body: init?.body });
       assert.equal(init?.credentials, "omit");
@@ -54,6 +54,11 @@ test("uncertain namespace mutation is never retried", async () => {
   const p = setup({ networkFailure: true });
   await assert.rejects(p.invoke("sand:marketplace-publisher-claim"), /UNCERTAIN_NO_RETRY/);
   assert.equal(p.calls.length, 1);
+});
+test("native file/account diagnostics never escape the publisher IPC boundary", async () => {
+  const p = setup({ pickerFailure: true });
+  await assert.rejects(p.invoke("sand:marketplace-submit-dandelion"), { message: "PUBLISHER_OPERATION_FAILED" });
+  assert.equal(p.calls.length, 0);
 });
 test("actual production-signed candidate follows genuine account draft/upload/submit order", async () => {
   const filename = process.env.FABUSHI_SIGNED_DANDELION_FIXTURE;
