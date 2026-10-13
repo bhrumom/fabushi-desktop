@@ -129,7 +129,8 @@ pub fn list_installed(
             size_bytes: u64::try_from(size).unwrap_or_default(),
         })
     })?;
-    rows.collect::<Result<Vec<_>, _>>().map_err(InstallError::Storage)
+    rows.collect::<Result<Vec<_>, _>>()
+        .map_err(InstallError::Storage)
 }
 /// Serializes activation with code bytes and operation receipt. Failure before
 /// commit leaves both active pointer and last-good archive unchanged.
@@ -213,11 +214,21 @@ fn activate_with_snapshot(
     let new_version = stable_version(package.version()).ok_or(InstallError::VersionPolicy)?;
     let tx = db.transaction_with_behavior(TransactionBehavior::Immediate)?;
     if let Some((snapshot, _)) = proof_snapshot {
-        let proof: serde_json::Value = serde_json::from_str(snapshot).map_err(|_| InstallError::Conflict)?;
+        let proof: serde_json::Value =
+            serde_json::from_str(snapshot).map_err(|_| InstallError::Conflict)?;
         let trust = proof.get("trust").ok_or(InstallError::Conflict)?;
-        let epoch = trust.get("trustEpoch").and_then(serde_json::Value::as_u64).ok_or(InstallError::Conflict)?;
-        let issued_at_ms = trust.get("issuedAtMs").and_then(serde_json::Value::as_u64).ok_or(InstallError::Conflict)?;
-        let signed_payload = trust.get("payload").and_then(serde_json::Value::as_str).ok_or(InstallError::Conflict)?;
+        let epoch = trust
+            .get("trustEpoch")
+            .and_then(serde_json::Value::as_u64)
+            .ok_or(InstallError::Conflict)?;
+        let issued_at_ms = trust
+            .get("issuedAtMs")
+            .and_then(serde_json::Value::as_u64)
+            .ok_or(InstallError::Conflict)?;
+        let signed_payload = trust
+            .get("payload")
+            .and_then(serde_json::Value::as_str)
+            .ok_or(InstallError::Conflict)?;
         let envelope_json = serde_json::to_string(trust).map_err(|_| InstallError::Conflict)?;
         let previous: Option<(i64, i64, String)> = tx.query_row(
             "SELECT trust_epoch,issued_at_ms,signed_payload FROM host_miniapp_trust_state WHERE singleton=1",
@@ -225,9 +236,13 @@ fn activate_with_snapshot(
         ).optional()?;
         if let Some((previous_epoch, previous_issued, previous_payload)) = previous {
             if i64::try_from(epoch).map_err(|_| InstallError::TrustRollback)? < previous_epoch
-                || (i64::try_from(epoch).map_err(|_| InstallError::TrustRollback)? == previous_epoch
-                    && (i64::try_from(issued_at_ms).map_err(|_| InstallError::TrustRollback)? < previous_issued
-                        || (i64::try_from(issued_at_ms).map_err(|_| InstallError::TrustRollback)? == previous_issued
+                || (i64::try_from(epoch).map_err(|_| InstallError::TrustRollback)?
+                    == previous_epoch
+                    && (i64::try_from(issued_at_ms).map_err(|_| InstallError::TrustRollback)?
+                        < previous_issued
+                        || (i64::try_from(issued_at_ms)
+                            .map_err(|_| InstallError::TrustRollback)?
+                            == previous_issued
                             && signed_payload != previous_payload)))
             {
                 return Err(InstallError::TrustRollback);
@@ -317,8 +332,10 @@ fn activate_with_snapshot(
         params![current.account_scope,package.app_id(),package.digest(),previous])?;
     tx.execute("INSERT INTO host_miniapp_operations(account_scope,operation_id,app_id,digest) VALUES(?1,?2,?3,?4)",
         params![current.account_scope,operation_id,package.app_id(),package.digest()])?;
-    tx.execute("DELETE FROM host_miniapp_quarantine WHERE account_scope=?1 AND app_id=?2",
-        params![current.account_scope, package.app_id()])?;
+    tx.execute(
+        "DELETE FROM host_miniapp_quarantine WHERE account_scope=?1 AND app_id=?2",
+        params![current.account_scope, package.app_id()],
+    )?;
     let record = installed(&tx, current, package.app_id())?.ok_or(InstallError::Conflict)?;
     if !fence() {
         return Err(InstallError::StaleScope);
@@ -342,22 +359,27 @@ pub fn load_active_authorized_archive(
     current: &HostInstallScope,
     app_id: &str,
 ) -> Result<Option<(Vec<u8>, String, Option<String>)>, InstallError> {
-    Ok(db.query_row(
-        "SELECT p.archive,a.proof_json,t.envelope_json FROM host_miniapp_installs i
+    Ok(db
+        .query_row(
+            "SELECT p.archive,a.proof_json,t.envelope_json FROM host_miniapp_installs i
          JOIN host_miniapp_packages p ON p.digest=i.digest
          JOIN host_miniapp_authorizations a ON a.digest=p.digest
          LEFT JOIN host_miniapp_trust_state t ON t.singleton=1
          WHERE i.account_scope=?1 AND i.app_id=?2",
-        params![current.account_scope, app_id],
-        |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
-    ).optional()?)
+            params![current.account_scope, app_id],
+            |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+        )
+        .optional()?)
 }
 
 pub fn current_trust_envelope(db: &Connection) -> Result<Option<String>, InstallError> {
-    Ok(db.query_row(
-        "SELECT envelope_json FROM host_miniapp_trust_state WHERE singleton=1",
-        [], |row| row.get(0),
-    ).optional()?)
+    Ok(db
+        .query_row(
+            "SELECT envelope_json FROM host_miniapp_trust_state WHERE singleton=1",
+            [],
+            |row| row.get(0),
+        )
+        .optional()?)
 }
 
 /// Persist a cryptographically verified independent feed before any release
@@ -381,8 +403,11 @@ pub fn cache_verified_trust(
         [], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
     ).optional()?;
     if let Some((old_epoch, old_issued, old_payload)) = previous {
-        if epoch < old_epoch || (epoch == old_epoch
-            && (issued_at_ms < old_issued || (issued_at_ms == old_issued && signed_payload != old_payload))) {
+        if epoch < old_epoch
+            || (epoch == old_epoch
+                && (issued_at_ms < old_issued
+                    || (issued_at_ms == old_issued && signed_payload != old_payload)))
+        {
             return Err(InstallError::TrustRollback);
         }
     }
@@ -414,11 +439,15 @@ pub fn verified_native_account(
         [], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
     ).optional()?;
     let generation = match previous {
-        Some((scope, binding, generation)) if scope == account_scope_hash && binding == session_binding_hash => {
+        Some((scope, binding, generation))
+            if scope == account_scope_hash && binding == session_binding_hash =>
+        {
             u64::try_from(generation).map_err(|_| InstallError::StaleScope)?
         }
-        Some((_, _, generation)) => u64::try_from(generation).map_err(|_| InstallError::StaleScope)?
-            .checked_add(1).ok_or(InstallError::StaleScope)?,
+        Some((_, _, generation)) => u64::try_from(generation)
+            .map_err(|_| InstallError::StaleScope)?
+            .checked_add(1)
+            .ok_or(InstallError::StaleScope)?,
         None => 1,
     };
     db.execute(
@@ -430,7 +459,10 @@ pub fn verified_native_account(
             i64::try_from(generation).map_err(|_| InstallError::StaleScope)?,
             i64::try_from(expires_at_ms).map_err(|_| InstallError::StaleScope)?],
     )?;
-    Ok(HostInstallScope { account_scope: account_scope_hash.into(), generation })
+    Ok(HostInstallScope {
+        account_scope: account_scope_hash.into(),
+        generation,
+    })
 }
 
 pub fn cached_native_account(
@@ -445,17 +477,24 @@ pub fn cached_native_account(
     ).optional()?;
     match cached {
         Some((scope, binding, generation, expires))
-            if scope == account_scope_hash && binding == session_binding_hash
+            if scope == account_scope_hash
+                && binding == session_binding_hash
                 && u64::try_from(expires).is_ok_and(|expires| expires > now_ms) =>
         {
-            Ok(Some(HostInstallScope { account_scope: scope, generation: u64::try_from(generation).map_err(|_| InstallError::StaleScope)? }))
+            Ok(Some(HostInstallScope {
+                account_scope: scope,
+                generation: u64::try_from(generation).map_err(|_| InstallError::StaleScope)?,
+            }))
         }
         _ => Ok(None),
     }
 }
 
 pub fn clear_cached_native_account(db: &Connection) -> Result<(), InstallError> {
-    db.execute("DELETE FROM host_miniapp_native_account WHERE singleton=1", [])?;
+    db.execute(
+        "DELETE FROM host_miniapp_native_account WHERE singleton=1",
+        [],
+    )?;
     Ok(())
 }
 
@@ -483,11 +522,18 @@ pub fn set_quarantined(
     Ok(())
 }
 
-pub fn quarantine_reason(db: &Connection, current: &HostInstallScope, app_id: &str) -> Result<Option<String>, InstallError> {
-    Ok(db.query_row(
-        "SELECT reason FROM host_miniapp_quarantine WHERE account_scope=?1 AND app_id=?2",
-        params![current.account_scope, app_id], |row| row.get(0),
-    ).optional()?)
+pub fn quarantine_reason(
+    db: &Connection,
+    current: &HostInstallScope,
+    app_id: &str,
+) -> Result<Option<String>, InstallError> {
+    Ok(db
+        .query_row(
+            "SELECT reason FROM host_miniapp_quarantine WHERE account_scope=?1 AND app_id=?2",
+            params![current.account_scope, app_id],
+            |row| row.get(0),
+        )
+        .optional()?)
 }
 /// Code-only removal. Per-app browser user data remains with the native data
 /// owner and requires a separately explicit retain/delete UI intent.
@@ -512,7 +558,11 @@ pub fn remove_fenced<F>(
 where
     F: FnOnce() -> bool,
 {
-    if current != intent || current.generation == 0 || operation_id.is_empty() || operation_id.len() > 128 {
+    if current != intent
+        || current.generation == 0
+        || operation_id.is_empty()
+        || operation_id.len() > 128
+    {
         return Err(InstallError::StaleScope);
     }
     let tx = db.transaction_with_behavior(TransactionBehavior::Immediate)?;
@@ -635,13 +685,24 @@ mod tests {
         // This models the exact release proof returning HTTP 404 after the
         // feed has committed; quarantine is an independent durable write.
         set_quarantined(&db, &current, "org.test.app", Some("release_revoked")).unwrap();
-        assert_eq!(current_trust_envelope(&db).unwrap().as_deref(), Some(envelope));
-        assert_eq!(quarantine_reason(&db, &current, "org.test.app").unwrap().as_deref(), Some("release_revoked"));
+        assert_eq!(
+            current_trust_envelope(&db).unwrap().as_deref(),
+            Some(envelope)
+        );
+        assert_eq!(
+            quarantine_reason(&db, &current, "org.test.app")
+                .unwrap()
+                .as_deref(),
+            Some("release_revoked")
+        );
         assert!(matches!(
             cache_verified_trust(&mut db, 1, 100, "older", "older-envelope"),
             Err(InstallError::TrustRollback)
         ));
-        assert_eq!(current_trust_envelope(&db).unwrap().as_deref(), Some(envelope));
+        assert_eq!(
+            current_trust_envelope(&db).unwrap().as_deref(),
+            Some(envelope)
+        );
     }
     #[test]
     fn rollback_on_storage_failure_preserves_last_good() {
@@ -695,7 +756,13 @@ mod tests {
         .unwrap();
         assert_eq!(installed.version, "0.1.0");
         assert!(matches!(
-            activate(&mut db, &s, &s, "prerelease", package("0.2.0-preview.1", "pre")),
+            activate(
+                &mut db,
+                &s,
+                &s,
+                "prerelease",
+                package("0.2.0-preview.1", "pre")
+            ),
             Err(InstallError::VersionPolicy)
         ));
     }
@@ -706,14 +773,23 @@ mod tests {
         initialize(&db).unwrap();
         let s = scope("a");
         let rejected = activate_authorized_fenced(
-            &mut db, &s, &s, "fenced-install", package("1.0.0", "fenced"),
-            "signed-proof", 1, || false,
-        ).err().unwrap();
+            &mut db,
+            &s,
+            &s,
+            "fenced-install",
+            package("1.0.0", "fenced"),
+            "signed-proof",
+            1,
+            || false,
+        )
+        .err()
+        .unwrap();
         assert!(matches!(rejected, InstallError::StaleScope));
 
         let active = activate(&mut db, &s, &s, "install", package("1.0.0", "active")).unwrap();
         let rejected = remove_fenced(&mut db, &s, &s, &active.app_id, "fenced-remove", || false)
-            .err().unwrap();
+            .err()
+            .unwrap();
         assert!(matches!(rejected, InstallError::StaleScope));
         assert!(installed(&db, &s, &active.app_id).unwrap().is_some());
     }
@@ -722,17 +798,34 @@ mod tests {
     fn native_verified_scope_advances_on_account_or_session_change_and_offline_cache_is_bound() {
         let db = Connection::open_in_memory().unwrap();
         initialize(&db).unwrap();
-        let first = verified_native_account(&db, "user-hash-a", "session-hash-a", 10_000, 1).unwrap();
+        let first =
+            verified_native_account(&db, "user-hash-a", "session-hash-a", 10_000, 1).unwrap();
         assert_eq!(first.generation, 1);
-        assert_eq!(cached_native_account(&db, "user-hash-a", "session-hash-a", 2).unwrap(), Some(first.clone()));
-        assert!(cached_native_account(&db, "user-hash-a", "other-session", 2).unwrap().is_none());
-        assert!(cached_native_account(&db, "user-hash-a", "session-hash-a", 10_000).unwrap().is_none());
+        assert_eq!(
+            cached_native_account(&db, "user-hash-a", "session-hash-a", 2).unwrap(),
+            Some(first.clone())
+        );
+        assert!(
+            cached_native_account(&db, "user-hash-a", "other-session", 2)
+                .unwrap()
+                .is_none()
+        );
+        assert!(
+            cached_native_account(&db, "user-hash-a", "session-hash-a", 10_000)
+                .unwrap()
+                .is_none()
+        );
 
-        let next_session = verified_native_account(&db, "user-hash-a", "session-hash-b", 20_000, 3).unwrap();
+        let next_session =
+            verified_native_account(&db, "user-hash-a", "session-hash-b", 20_000, 3).unwrap();
         assert_eq!(next_session.generation, 2);
-        let next_user = verified_native_account(&db, "user-hash-b", "session-hash-c", 30_000, 4).unwrap();
+        let next_user =
+            verified_native_account(&db, "user-hash-b", "session-hash-c", 30_000, 4).unwrap();
         assert_eq!(next_user.generation, 3);
-        assert!(matches!(verified_native_account(&db, "user-hash-c", "session-hash-d", 4, 5), Err(InstallError::StaleScope)));
+        assert!(matches!(
+            verified_native_account(&db, "user-hash-c", "session-hash-d", 4, 5),
+            Err(InstallError::StaleScope)
+        ));
     }
 
     #[test]
@@ -740,12 +833,37 @@ mod tests {
         let mut db = Connection::open_in_memory().unwrap();
         initialize(&db).unwrap();
         let s = scope("a");
-        let snapshot = |issued: u64, payload: &str| serde_json::json!({
-            "trust": { "trustEpoch": 1, "issuedAtMs": issued, "payload": payload }
-        }).to_string();
-        activate_authorized(&mut db, &s, &s, "one", package("1.0.0", "one"), &snapshot(200, "new"), 1).unwrap();
-        let rejected = activate_authorized(&mut db, &s, &s, "two", package("1.1.0", "two"), &snapshot(100, "old"), 2).err().unwrap();
+        let snapshot = |issued: u64, payload: &str| {
+            serde_json::json!({
+                "trust": { "trustEpoch": 1, "issuedAtMs": issued, "payload": payload }
+            })
+            .to_string()
+        };
+        activate_authorized(
+            &mut db,
+            &s,
+            &s,
+            "one",
+            package("1.0.0", "one"),
+            &snapshot(200, "new"),
+            1,
+        )
+        .unwrap();
+        let rejected = activate_authorized(
+            &mut db,
+            &s,
+            &s,
+            "two",
+            package("1.1.0", "two"),
+            &snapshot(100, "old"),
+            2,
+        )
+        .err()
+        .unwrap();
         assert!(matches!(rejected, InstallError::TrustRollback));
-        assert_eq!(installed(&db, &s, "org.test.app").unwrap().unwrap().version, "1.0.0");
+        assert_eq!(
+            installed(&db, &s, "org.test.app").unwrap().unwrap().version,
+            "1.0.0"
+        );
     }
 }

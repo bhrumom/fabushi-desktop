@@ -469,7 +469,10 @@ mod tests {
         assert_eq!(json["publisherId"], "bhrumom");
         assert_eq!(json["version"], "0.1.0");
         let expected_digest = "a".repeat(64);
-        assert_eq!(json["packageDigest"].as_str(), Some(expected_digest.as_str()));
+        assert_eq!(
+            json["packageDigest"].as_str(),
+            Some(expected_digest.as_str())
+        );
         assert_eq!(json["sizeBytes"], 4096);
         assert_eq!(json["offlineCore"], true);
         assert_eq!(json["installed"], true);

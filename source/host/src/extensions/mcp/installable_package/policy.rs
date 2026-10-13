@@ -1,7 +1,10 @@
 //! Strict verification of the existing Backend install-proof wire envelope.
 //! All signed strings are verified byte-for-byte; JSON is never re-canonicalized.
 use super::{CatalogAuthorization, UniqueJson};
-use base64::{Engine, engine::general_purpose::{STANDARD, URL_SAFE_NO_PAD}};
+use base64::{
+    Engine,
+    engine::general_purpose::{STANDARD, URL_SAFE_NO_PAD},
+};
 use ed25519_dalek::{Signature, Verifier, VerifyingKey};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -88,7 +91,9 @@ impl CatalogClient {
     fn route(&self, segments: &[&str]) -> Result<Url, ProofError> {
         let mut url = self.origin.clone();
         {
-            let mut path = url.path_segments_mut().map_err(|_| ProofError::Authorization)?;
+            let mut path = url
+                .path_segments_mut()
+                .map_err(|_| ProofError::Authorization)?;
             path.clear();
             path.push("v1").push("extensions");
             for segment in segments {
@@ -112,7 +117,11 @@ impl CatalogClient {
                     query.append_pair("cursor", value);
                 }
             }
-            let response = self.client.get(url).send().map_err(|_| ProofError::Network)?;
+            let response = self
+                .client
+                .get(url)
+                .send()
+                .map_err(|_| ProofError::Network)?;
             if response.status() == reqwest::StatusCode::NOT_FOUND {
                 return Err(ProofError::NotFound);
             }
@@ -121,12 +130,16 @@ impl CatalogClient {
             }
             let mut limited = response.take(4 * 1024 * 1024 + 1);
             let mut bytes = Vec::new();
-            limited.read_to_end(&mut bytes).map_err(|_| ProofError::Network)?;
+            limited
+                .read_to_end(&mut bytes)
+                .map_err(|_| ProofError::Network)?;
             if bytes.len() > 4 * 1024 * 1024 {
                 return Err(ProofError::Malformed);
             }
-            let UniqueJson(body) = serde_json::from_slice(&bytes).map_err(|_| ProofError::Malformed)?;
-            let page: RegistryPage = serde_json::from_value(body).map_err(|_| ProofError::Malformed)?;
+            let UniqueJson(body) =
+                serde_json::from_slice(&bytes).map_err(|_| ProofError::Malformed)?;
+            let page: RegistryPage =
+                serde_json::from_value(body).map_err(|_| ProofError::Malformed)?;
             if page.protocol != "fabushi.extension-registry.v1" || page.schema_version != 1 {
                 return Err(ProofError::Malformed);
             }
@@ -148,26 +161,39 @@ impl CatalogClient {
     /// Fetch the Node-signed trust envelope from its independent install route.
     /// The Worker `/v1/extensions/trust` route is intentionally not used here.
     pub fn fetch_install_trust(&self) -> Result<String, ProofError> {
-        let response = self.client.get(self.route(&["install-trust"])?).send()
+        let response = self
+            .client
+            .get(self.route(&["install-trust"])?)
+            .send()
             .map_err(|_| ProofError::Network)?;
         if !response.status().is_success() {
             return Err(ProofError::Rejected);
         }
         let mut limited = response.take(1024 * 1024 + 1);
         let mut bytes = Vec::new();
-        limited.read_to_end(&mut bytes).map_err(|_| ProofError::Network)?;
-        if bytes.len() > 1024 * 1024 { return Err(ProofError::Malformed); }
+        limited
+            .read_to_end(&mut bytes)
+            .map_err(|_| ProofError::Network)?;
+        if bytes.len() > 1024 * 1024 {
+            return Err(ProofError::Malformed);
+        }
         let raw = String::from_utf8(bytes).map_err(|_| ProofError::Malformed)?;
         extract_install_trust_response(&raw)
     }
 
     pub fn fetch_install_proof(&self, descriptor: &Value) -> Result<String, ProofError> {
         let kind = string_at(descriptor, &["identity", "kind"]).ok_or(ProofError::Malformed)?;
-        let namespace = string_at(descriptor, &["identity", "namespace"]).ok_or(ProofError::Malformed)?;
+        let namespace =
+            string_at(descriptor, &["identity", "namespace"]).ok_or(ProofError::Malformed)?;
         let name = string_at(descriptor, &["identity", "name"]).ok_or(ProofError::Malformed)?;
-        let version = string_at(descriptor, &["release", "version"]).ok_or(ProofError::Malformed)?;
+        let version =
+            string_at(descriptor, &["release", "version"]).ok_or(ProofError::Malformed)?;
         let url = self.route(&["install", kind, namespace, name, version])?;
-        let response = self.client.get(url).send().map_err(|_| ProofError::Network)?;
+        let response = self
+            .client
+            .get(url)
+            .send()
+            .map_err(|_| ProofError::Network)?;
         if response.status() == reqwest::StatusCode::NOT_FOUND {
             return Err(ProofError::NotFound);
         }
@@ -176,7 +202,9 @@ impl CatalogClient {
         }
         let mut limited = response.take(2 * 1024 * 1024 + 1);
         let mut bytes = Vec::new();
-        limited.read_to_end(&mut bytes).map_err(|_| ProofError::Network)?;
+        limited
+            .read_to_end(&mut bytes)
+            .map_err(|_| ProofError::Network)?;
         if bytes.len() > 2 * 1024 * 1024 {
             return Err(ProofError::Malformed);
         }
@@ -192,28 +220,43 @@ impl CatalogClient {
         Ok(raw)
     }
 
-    pub fn download_artifact(&self, digest: &str, expected_size: u64) -> Result<Vec<u8>, ProofError> {
+    pub fn download_artifact(
+        &self,
+        digest: &str,
+        expected_size: u64,
+    ) -> Result<Vec<u8>, ProofError> {
         if digest.len() != 64
-            || !digest.bytes().all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
+            || !digest
+                .bytes()
+                .all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
             || expected_size == 0
             || expected_size > MAX_ARCHIVE_BYTES
         {
             return Err(ProofError::Authorization);
         }
         let url = self.route(&["artifacts", digest])?;
-        let response = self.client.get(url).send().map_err(|_| ProofError::Network)?;
+        let response = self
+            .client
+            .get(url)
+            .send()
+            .map_err(|_| ProofError::Network)?;
         if response.status() == reqwest::StatusCode::NOT_FOUND {
             return Err(ProofError::NotFound);
         }
         if !response.status().is_success() {
             return Err(ProofError::Network);
         }
-        if response.content_length().is_some_and(|length| length != expected_size) {
+        if response
+            .content_length()
+            .is_some_and(|length| length != expected_size)
+        {
             return Err(ProofError::ArtifactSize);
         }
         let mut limited = response.take(expected_size.saturating_add(1));
         let mut bytes = Vec::with_capacity(expected_size as usize);
-        limited.read_to_end(&mut bytes).map_err(|_| ProofError::Network)?;
+        limited
+            .read_to_end(&mut bytes)
+            .map_err(|_| ProofError::Network)?;
         if bytes.len() as u64 != expected_size || bytes.len() as u64 > MAX_ARCHIVE_BYTES {
             return Err(ProofError::ArtifactSize);
         }
@@ -355,17 +398,22 @@ pub struct VerifiedTrustFeed {
 }
 
 fn extract_install_trust_response(raw: &str) -> Result<String, ProofError> {
-    let UniqueJson(mut wrapper) = serde_json::from_str::<UniqueJson>(raw).map_err(|_| ProofError::Malformed)?;
+    let UniqueJson(mut wrapper) =
+        serde_json::from_str::<UniqueJson>(raw).map_err(|_| ProofError::Malformed)?;
     let object = wrapper.as_object_mut().ok_or(ProofError::Malformed)?;
     let trust = object.remove("trust").ok_or(ProofError::Malformed)?;
-    if !object.is_empty() { return Err(ProofError::Malformed); }
+    if !object.is_empty() {
+        return Err(ProofError::Malformed);
+    }
     let trust_raw = serde_json::to_string(&trust).map_err(|_| ProofError::Malformed)?;
     let _: TrustEnvelope = parse_unique(&trust_raw)?;
     Ok(trust_raw)
 }
 
 pub fn pinned_marketplace_anchor() -> Result<TrustAnchor, ProofError> {
-    let public_key = URL_SAFE_NO_PAD.decode(PINNED_FEED_RAW_KEY).map_err(|_| ProofError::Malformed)?;
+    let public_key = URL_SAFE_NO_PAD
+        .decode(PINNED_FEED_RAW_KEY)
+        .map_err(|_| ProofError::Malformed)?;
     Ok(TrustAnchor {
         key_id: PINNED_FEED_KEY_ID.to_string(),
         trust_epoch: PINNED_FEED_EPOCH,
@@ -380,7 +428,9 @@ fn sha256_hex(bytes: &[u8]) -> String {
 fn decode_spki(value: &str) -> Result<[u8; 32], ProofError> {
     let der = STANDARD.decode(value).map_err(|_| ProofError::Malformed)?;
     // RFC 8410 Ed25519 SubjectPublicKeyInfo: fixed 12-byte DER prefix + 32 raw bytes.
-    const PREFIX: &[u8] = &[0x30, 0x2a, 0x30, 0x05, 0x06, 0x03, 0x2b, 0x65, 0x70, 0x03, 0x21, 0x00];
+    const PREFIX: &[u8] = &[
+        0x30, 0x2a, 0x30, 0x05, 0x06, 0x03, 0x2b, 0x65, 0x70, 0x03, 0x21, 0x00,
+    ];
     if der.len() != PREFIX.len() + 32 || !der.starts_with(PREFIX) {
         return Err(ProofError::Malformed);
     }
@@ -391,9 +441,12 @@ fn decode_spki(value: &str) -> Result<[u8; 32], ProofError> {
 
 fn verify_raw(public_key: &[u8; 32], payload: &str, signature: &str) -> Result<(), ProofError> {
     let key = VerifyingKey::from_bytes(public_key).map_err(|_| ProofError::Signature)?;
-    let bytes = STANDARD.decode(signature).map_err(|_| ProofError::Signature)?;
+    let bytes = STANDARD
+        .decode(signature)
+        .map_err(|_| ProofError::Signature)?;
     let signature = Signature::from_slice(&bytes).map_err(|_| ProofError::Signature)?;
-    key.verify(payload.as_bytes(), &signature).map_err(|_| ProofError::Signature)
+    key.verify(payload.as_bytes(), &signature)
+        .map_err(|_| ProofError::Signature)
 }
 
 fn parse_unique<T: for<'de> Deserialize<'de>>(raw: &str) -> Result<T, ProofError> {
@@ -402,7 +455,8 @@ fn parse_unique<T: for<'de> Deserialize<'de>>(raw: &str) -> Result<T, ProofError
 }
 
 fn value_at<'a>(value: &'a Value, path: &[&str]) -> Option<&'a Value> {
-    path.iter().try_fold(value, |current, part| current.get(*part))
+    path.iter()
+        .try_fold(value, |current, part| current.get(*part))
 }
 fn string_at<'a>(value: &'a Value, path: &[&str]) -> Option<&'a str> {
     value_at(value, path)?.as_str()
@@ -444,15 +498,21 @@ pub fn verify_install_proof_with_anchor(
     }
     let trust_payload = validate_trust_envelope(&proof.trust, now_ms, allow_expired_feed, anchor)?;
 
-    let signed_key = trust_payload.keys.iter().find(|key| {
-        key.key_id == proof.release_signature.key_id
-            && key.trust_epoch == proof.release_signature.trust_epoch
-    }).ok_or(ProofError::Signature)?;
+    let signed_key = trust_payload
+        .keys
+        .iter()
+        .find(|key| {
+            key.key_id == proof.release_signature.key_id
+                && key.trust_epoch == proof.release_signature.trust_epoch
+        })
+        .ok_or(ProofError::Signature)?;
     if signed_key.status != "active" {
         return Err(ProofError::Revoked);
     }
     let release_raw = decode_spki(&proof.release_signature.public_key)?;
-    let release_spki = STANDARD.decode(&proof.release_signature.public_key).map_err(|_| ProofError::Malformed)?;
+    let release_spki = STANDARD
+        .decode(&proof.release_signature.public_key)
+        .map_err(|_| ProofError::Malformed)?;
     if signed_key.public_key != proof.release_signature.public_key
         || signed_key.public_key_fingerprint != proof.release_signature.public_key_fingerprint
         || sha256_hex(&release_spki) != proof.release_signature.public_key_fingerprint
@@ -460,15 +520,22 @@ pub fn verify_install_proof_with_anchor(
     {
         return Err(ProofError::Signature);
     }
-    verify_raw(&release_raw, &proof.release_signature.payload, &proof.release_signature.signature)?;
+    verify_raw(
+        &release_raw,
+        &proof.release_signature.payload,
+        &proof.release_signature.signature,
+    )?;
     let release: ReleasePayload = parse_unique(&proof.release_signature.payload)?;
     if release.protocol != RELEASE_PROTOCOL
         || release.key_id != proof.release_signature.key_id
         || release.trust_epoch != proof.release_signature.trust_epoch
         || release.identity.kind != "web-miniapp"
-        || release.identity.namespace != string_at(&proof.descriptor, &["identity", "namespace"]).unwrap_or_default()
-        || release.identity.name != string_at(&proof.descriptor, &["identity", "name"]).unwrap_or_default()
-        || release.version != string_at(&proof.descriptor, &["release", "version"]).unwrap_or_default()
+        || release.identity.namespace
+            != string_at(&proof.descriptor, &["identity", "namespace"]).unwrap_or_default()
+        || release.identity.name
+            != string_at(&proof.descriptor, &["identity", "name"]).unwrap_or_default()
+        || release.version
+            != string_at(&proof.descriptor, &["release", "version"]).unwrap_or_default()
         || release.descriptor_digest != sha256_hex(proof.descriptor_payload.as_bytes())
     {
         return Err(ProofError::DescriptorBinding);
@@ -477,32 +544,47 @@ pub fn verify_install_proof_with_anchor(
     if parsed_descriptor != proof.descriptor
         || descriptor_app_id(&proof.descriptor) != Some(expected_app_id)
         || string_at(&proof.descriptor, &["release", "bundleDigest"]).is_none()
-        || value_at(&proof.descriptor, &["release", "revoked"]).and_then(Value::as_bool) == Some(true)
-        || value_at(&proof.descriptor, &["release", "requestedCapabilities"]).and_then(Value::as_array).is_none_or(|items| !items.is_empty())
+        || value_at(&proof.descriptor, &["release", "revoked"]).and_then(Value::as_bool)
+            == Some(true)
+        || value_at(&proof.descriptor, &["release", "requestedCapabilities"])
+            .and_then(Value::as_array)
+            .is_none_or(|items| !items.is_empty())
         || !descriptor_supports_desktop(&proof.descriptor)
     {
         return Err(ProofError::DescriptorBinding);
     }
-    let bundle_digest = string_at(&proof.descriptor, &["release", "bundleDigest"]).unwrap_or_default();
+    let bundle_digest =
+        string_at(&proof.descriptor, &["release", "bundleDigest"]).unwrap_or_default();
     let mut previous_id: Option<&str> = None;
     for artifact in &release.artifacts {
         if previous_id.is_some_and(|previous| previous >= artifact.artifact_id.as_str())
             || artifact.size_bytes == 0
             || artifact.digest.len() != 64
-            || !artifact.digest.bytes().all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
+            || !artifact
+                .digest
+                .bytes()
+                .all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
         {
             return Err(ProofError::Malformed);
         }
         previous_id = Some(&artifact.artifact_id);
     }
-    let selected: Vec<_> = release.artifacts.iter().filter(|artifact| {
-        artifact.digest == bundle_digest && artifact.platform == "desktop" && artifact.format == "fabapp"
-    }).collect();
+    let selected: Vec<_> = release
+        .artifacts
+        .iter()
+        .filter(|artifact| {
+            artifact.digest == bundle_digest
+                && artifact.platform == "desktop"
+                && artifact.format == "fabapp"
+        })
+        .collect();
     if selected.len() != 1 {
         return Err(ProofError::Authorization);
     }
     let artifact = (*selected.into_iter().next().expect("one artifact")).clone();
-    if string_at(&proof.descriptor, &["publisher", "id"]) != Some(release.identity.namespace.as_str()) {
+    if string_at(&proof.descriptor, &["publisher", "id"])
+        != Some(release.identity.namespace.as_str())
+    {
         return Err(ProofError::DescriptorBinding);
     }
     let authorization = CatalogAuthorization {
@@ -533,8 +615,17 @@ pub fn verify_install_proof_with_anchor(
 
 /// Validate the independent Node-signed feed against the pinned Marketplace root.
 /// Only callers that already hold a last-good feed may pass `allow_expired_feed`.
-pub fn verify_trust_feed(raw: &str, now_ms: u64, allow_expired_feed: bool) -> Result<VerifiedTrustFeed, ProofError> {
-    verify_trust_feed_with_anchor(raw, now_ms, allow_expired_feed, &pinned_marketplace_anchor()?)
+pub fn verify_trust_feed(
+    raw: &str,
+    now_ms: u64,
+    allow_expired_feed: bool,
+) -> Result<VerifiedTrustFeed, ProofError> {
+    verify_trust_feed_with_anchor(
+        raw,
+        now_ms,
+        allow_expired_feed,
+        &pinned_marketplace_anchor()?,
+    )
 }
 
 pub fn verify_trust_feed_with_anchor(
@@ -548,7 +639,7 @@ pub fn verify_trust_feed_with_anchor(
     Ok(VerifiedTrustFeed {
         epoch: envelope.trust_epoch,
         issued_at_ms: envelope.issued_at_ms,
-        signed_payload: envelope.payload,
+        signed_payload: envelope.payload.clone(),
         envelope_json: serde_json::to_string(&envelope).map_err(|_| ProofError::Malformed)?,
     })
 }
@@ -562,38 +653,52 @@ fn validate_trust_envelope<'a>(
     if envelope.protocol != TRUST_PROTOCOL || envelope.algorithm != "Ed25519" {
         return Err(ProofError::Malformed);
     }
-    let spki = STANDARD.decode(&envelope.public_key).map_err(|_| ProofError::Malformed)?;
+    let spki = STANDARD
+        .decode(&envelope.public_key)
+        .map_err(|_| ProofError::Malformed)?;
     if sha256_hex(&spki) != envelope.public_key_fingerprint
-        || envelope.key_id != anchor.key_id || envelope.trust_epoch != anchor.trust_epoch
-        || decode_spki(&envelope.public_key)? != anchor.public_key {
+        || envelope.key_id != anchor.key_id
+        || envelope.trust_epoch != anchor.trust_epoch
+        || decode_spki(&envelope.public_key)? != anchor.public_key
+    {
         return Err(ProofError::Signature);
     }
     verify_raw(&anchor.public_key, &envelope.payload, &envelope.signature)?;
     let payload: TrustPayload = parse_unique(&envelope.payload)?;
-    if payload.protocol != TRUST_PROTOCOL || payload.issued_at_ms != envelope.issued_at_ms
+    if payload.protocol != TRUST_PROTOCOL
+        || payload.issued_at_ms != envelope.issued_at_ms
         || payload.expires_at_ms != envelope.expires_at_ms
-        || payload.signer.algorithm != "Ed25519" || payload.signer.key_id != envelope.key_id
+        || payload.signer.algorithm != "Ed25519"
+        || payload.signer.key_id != envelope.key_id
         || payload.signer.trust_epoch != envelope.trust_epoch
         || payload.signer.public_key_fingerprint != envelope.public_key_fingerprint
         || envelope.expires_at_ms <= envelope.issued_at_ms
         || envelope.expires_at_ms - envelope.issued_at_ms > MAX_FEED_TTL_MS
         || envelope.issued_at_ms > now_ms.saturating_add(MAX_FUTURE_SKEW_MS)
-        || (!allow_expired_feed && now_ms > envelope.expires_at_ms) {
+        || (!allow_expired_feed && now_ms > envelope.expires_at_ms)
+    {
         return Err(ProofError::FeedFreshness);
     }
     let mut seen = std::collections::BTreeSet::new();
     for key in &payload.keys {
-        if key.algorithm != "Ed25519" || !matches!(key.status.as_str(), "active" | "revoked")
+        if key.algorithm != "Ed25519"
+            || !matches!(key.status.as_str(), "active" | "revoked")
             || key.created_at_ms > payload.issued_at_ms
             || (key.status == "revoked") != key.revoked_at_ms.is_some()
-            || !seen.insert((key.key_id.as_str(), key.trust_epoch)) {
+            || !seen.insert((key.key_id.as_str(), key.trust_epoch))
+        {
             return Err(ProofError::Malformed);
         }
     }
-    let signer = payload.keys.iter().find(|key| key.key_id == envelope.key_id && key.trust_epoch == envelope.trust_epoch)
+    let signer = payload
+        .keys
+        .iter()
+        .find(|key| key.key_id == envelope.key_id && key.trust_epoch == envelope.trust_epoch)
         .ok_or(ProofError::Signature)?;
-    if signer.status != "active" || signer.public_key != envelope.public_key
-        || signer.public_key_fingerprint != envelope.public_key_fingerprint {
+    if signer.status != "active"
+        || signer.public_key != envelope.public_key
+        || signer.public_key_fingerprint != envelope.public_key_fingerprint
+    {
         return Err(ProofError::Revoked);
     }
     Ok(payload)
@@ -611,7 +716,9 @@ pub fn descriptor_app_id(value: &Value) -> Option<&str> {
     // identity; the public descriptor intentionally has no renderer-set appId.
     let namespace = string_at(value, &["identity", "namespace"])?;
     let name = string_at(value, &["identity", "name"])?;
-    if namespace != "bhrumom" { return None; }
+    if namespace != "bhrumom" {
+        return None;
+    }
     match (namespace, name) {
         ("bhrumom", "global-dandelion") => Some("org.fabushi.global-dandelion"),
         _ => None,
@@ -632,32 +739,46 @@ pub fn descriptor_publisher(value: &Value) -> Option<&str> {
 
 pub fn descriptor_identity(value: &Value) -> Option<(&str, &str, &str)> {
     Some((
-        string_at(value, &["identity", "kind"] )?,
-        string_at(value, &["identity", "namespace"] )?,
-        string_at(value, &["identity", "name"] )?,
+        string_at(value, &["identity", "kind"])?,
+        string_at(value, &["identity", "namespace"])?,
+        string_at(value, &["identity", "name"])?,
     ))
 }
 
 pub fn descriptor_supports_desktop(value: &Value) -> bool {
     value_at(value, &["release", "platforms"])
         .and_then(Value::as_array)
-        .is_some_and(|platforms| platforms.iter().any(|entry| entry.as_str() == Some("desktop")))
+        .is_some_and(|platforms| {
+            platforms
+                .iter()
+                .any(|entry| entry.as_str() == Some("desktop"))
+        })
         && string_at(value, &["runtime", "installMode"]) == Some("package")
 }
 
 /// Replace only the unsigned proof wrapper's trust envelope with the latest
 /// trust snapshot accepted by this Host ledger. Signed payload strings remain
 /// byte-for-byte unchanged and are reverified by `verify_install_proof`.
-pub fn overlay_cached_trust(proof_snapshot: &str, latest_trust: Option<&str>) -> Result<String, ProofError> {
-    let Some(latest_trust) = latest_trust else { return Ok(proof_snapshot.to_string()) };
-    let UniqueJson(mut proof) = serde_json::from_str(proof_snapshot).map_err(|_| ProofError::Malformed)?;
-    let UniqueJson(trust) = serde_json::from_str(latest_trust).map_err(|_| ProofError::Malformed)?;
+pub fn overlay_cached_trust(
+    proof_snapshot: &str,
+    latest_trust: Option<&str>,
+) -> Result<String, ProofError> {
+    let Some(latest_trust) = latest_trust else {
+        return Ok(proof_snapshot.to_string());
+    };
+    let UniqueJson(mut proof) =
+        serde_json::from_str(proof_snapshot).map_err(|_| ProofError::Malformed)?;
+    let UniqueJson(trust) =
+        serde_json::from_str(latest_trust).map_err(|_| ProofError::Malformed)?;
     let object = proof.as_object_mut().ok_or(ProofError::Malformed)?;
     object.insert("trust".into(), trust);
     serde_json::to_string(&proof).map_err(|_| ProofError::Malformed)
 }
 
-pub fn overlay_trust(proof_snapshot: &str, trust_envelope_json: &str) -> Result<String, ProofError> {
+pub fn overlay_trust(
+    proof_snapshot: &str,
+    trust_envelope_json: &str,
+) -> Result<String, ProofError> {
     overlay_cached_trust(proof_snapshot, Some(trust_envelope_json))
 }
 
@@ -666,37 +787,66 @@ pub fn proof_descriptor(raw: &str) -> Result<Value, ProofError> {
     Ok(proof.descriptor)
 }
 
-pub fn trust_feed_not_rolled_back(newer: &VerifiedTrustFeed, previous_raw: Option<&str>) -> Result<(), ProofError> {
-    let Some(previous_raw) = previous_raw else { return Ok(()) };
+pub fn trust_feed_not_rolled_back(
+    newer: &VerifiedTrustFeed,
+    previous_raw: Option<&str>,
+) -> Result<(), ProofError> {
+    let Some(previous_raw) = previous_raw else {
+        return Ok(());
+    };
     let previous: TrustEnvelope = parse_unique(previous_raw)?;
-    if newer.epoch < previous.trust_epoch || (newer.epoch == previous.trust_epoch
-        && (newer.issued_at_ms < previous.issued_at_ms
-            || (newer.issued_at_ms == previous.issued_at_ms && newer.signed_payload != previous.payload))) {
+    if newer.epoch < previous.trust_epoch
+        || (newer.epoch == previous.trust_epoch
+            && (newer.issued_at_ms < previous.issued_at_ms
+                || (newer.issued_at_ms == previous.issued_at_ms
+                    && newer.signed_payload != previous.payload)))
+    {
         return Err(ProofError::TrustRollback);
     }
-    Ok(())
+    ensure_revocations_retained(&previous.payload, &newer.signed_payload)
 }
 
-pub fn ensure_trust_not_rolled_back(proof_snapshot: &str, latest_trust: Option<&str>) -> Result<(), ProofError> {
-    let Some(latest_trust) = latest_trust else { return Ok(()) };
+pub fn ensure_trust_not_rolled_back(
+    proof_snapshot: &str,
+    latest_trust: Option<&str>,
+) -> Result<(), ProofError> {
+    let Some(latest_trust) = latest_trust else {
+        return Ok(());
+    };
     let proof: InstallProofEnvelope = parse_unique(proof_snapshot)?;
     let latest: TrustEnvelope = parse_unique(latest_trust)?;
     if proof.trust.trust_epoch < latest.trust_epoch
         || (proof.trust.trust_epoch == latest.trust_epoch
             && (proof.trust.issued_at_ms < latest.issued_at_ms
-                || (proof.trust.issued_at_ms == latest.issued_at_ms && proof.trust.payload != latest.payload)))
+                || (proof.trust.issued_at_ms == latest.issued_at_ms
+                    && proof.trust.payload != latest.payload)))
     {
         return Err(ProofError::TrustRollback);
     }
-    let previous_payload: TrustPayload = parse_unique(&previous.payload)?;
-    let newer_payload: TrustPayload = parse_unique(&newer.signed_payload)?;
-    for old_key in previous_payload.keys.iter().filter(|key| key.status == "revoked") {
+    ensure_revocations_retained(&latest.payload, &proof.trust.payload)
+}
+
+fn ensure_revocations_retained(
+    previous_payload: &str,
+    newer_payload: &str,
+) -> Result<(), ProofError> {
+    let previous_payload: TrustPayload = parse_unique(previous_payload)?;
+    let newer_payload: TrustPayload = parse_unique(newer_payload)?;
+    for old_key in previous_payload
+        .keys
+        .iter()
+        .filter(|key| key.status == "revoked")
+    {
         let retained = newer_payload.keys.iter().any(|key| {
-            key.key_id == old_key.key_id && key.trust_epoch == old_key.trust_epoch
-                && key.status == "revoked" && key.public_key == old_key.public_key
+            key.key_id == old_key.key_id
+                && key.trust_epoch == old_key.trust_epoch
+                && key.status == "revoked"
+                && key.public_key == old_key.public_key
                 && key.public_key_fingerprint == old_key.public_key_fingerprint
         });
-        if !retained { return Err(ProofError::TrustRollback); }
+        if !retained {
+            return Err(ProofError::TrustRollback);
+        }
     }
     Ok(())
 }
@@ -709,11 +859,17 @@ mod tests {
     fn signed_fixture(expired: bool, revoked_release_key: bool) -> (String, TrustAnchor) {
         let signing = SigningKey::from_bytes(&[23; 32]);
         let raw = signing.verifying_key().to_bytes();
-        let mut der = vec![0x30, 0x2a, 0x30, 0x05, 0x06, 0x03, 0x2b, 0x65, 0x70, 0x03, 0x21, 0x00];
+        let mut der = vec![
+            0x30, 0x2a, 0x30, 0x05, 0x06, 0x03, 0x2b, 0x65, 0x70, 0x03, 0x21, 0x00,
+        ];
         der.extend_from_slice(&raw);
         let spki = STANDARD.encode(&der);
         let fingerprint = sha256_hex(&der);
-        let anchor = TrustAnchor { key_id: "test-root".into(), trust_epoch: 1, public_key: raw };
+        let anchor = TrustAnchor {
+            key_id: "test-root".into(),
+            trust_epoch: 1,
+            public_key: raw,
+        };
         let now = 10_000_u64;
         let issued = if expired { 100 } else { now };
         let expires = if expired { 200 } else { now + 60_000 };
@@ -735,7 +891,8 @@ mod tests {
             "artifacts": [{ "artifactId": "desktop-fabapp", "digest": "de10e02115415908f827723457817e51cb4f39aa5ca68798da824fecc483118a",
                 "sizeBytes": 512, "platform": "desktop", "architecture": "universal", "format": "fabapp" }]
         }).to_string();
-        let release_signature = STANDARD.encode(signing.sign(release_payload.as_bytes()).to_bytes());
+        let release_signature =
+            STANDARD.encode(signing.sign(release_payload.as_bytes()).to_bytes());
         let trust_payload = serde_json::json!({
             "protocol": TRUST_PROTOCOL, "issuedAtMs": issued, "expiresAtMs": expires,
             "signer": { "algorithm": "Ed25519", "keyId": "test-root", "trustEpoch": 1, "publicKeyFingerprint": fingerprint },
@@ -764,9 +921,19 @@ mod tests {
     #[test]
     fn verifies_preview_channel_stable_semver_and_exact_signed_payloads() {
         let (raw, anchor) = signed_fixture(false, false);
-        let proof = verify_install_proof_with_anchor(&raw, "org.fabushi.global-dandelion", 10_000, false, &anchor).unwrap();
+        let proof = verify_install_proof_with_anchor(
+            &raw,
+            "org.fabushi.global-dandelion",
+            10_000,
+            false,
+            &anchor,
+        )
+        .unwrap();
         assert_eq!(proof.authorization.version, "0.1.0");
-        assert_eq!(proof.artifact.digest, "de10e02115415908f827723457817e51cb4f39aa5ca68798da824fecc483118a");
+        assert_eq!(
+            proof.artifact.digest,
+            "de10e02115415908f827723457817e51cb4f39aa5ca68798da824fecc483118a"
+        );
     }
 
     #[test]
@@ -776,12 +943,25 @@ mod tests {
         let feed_raw = serde_json::to_string(&proof.trust).unwrap();
         let verified = verify_trust_feed_with_anchor(&feed_raw, 10_000, false, &anchor).unwrap();
         assert_eq!(verified.epoch, 1);
-        assert!(verify_trust_feed_with_anchor(&feed_raw.replace("active", "revoked"), 10_000, false, &anchor).is_err());
+        assert!(
+            verify_trust_feed_with_anchor(
+                &feed_raw.replace("active", "revoked"),
+                10_000,
+                false,
+                &anchor
+            )
+            .is_err()
+        );
         let older = VerifiedTrustFeed {
-            epoch: 0, issued_at_ms: verified.issued_at_ms,
-            signed_payload: verified.signed_payload.clone(), envelope_json: feed_raw.clone(),
+            epoch: 0,
+            issued_at_ms: verified.issued_at_ms,
+            signed_payload: verified.signed_payload.clone(),
+            envelope_json: feed_raw.clone(),
         };
-        assert_eq!(trust_feed_not_rolled_back(&older, Some(&feed_raw)), Err(ProofError::TrustRollback));
+        assert_eq!(
+            trust_feed_not_rolled_back(&older, Some(&feed_raw)),
+            Err(ProofError::TrustRollback)
+        );
     }
 
     #[test]
@@ -790,9 +970,42 @@ mod tests {
         let proof: InstallProofEnvelope = parse_unique(&proof_raw).unwrap();
         let trust_raw = serde_json::to_string(&proof.trust).unwrap();
         let wrapped = serde_json::json!({"trust": proof.trust});
-        assert_eq!(extract_install_trust_response(&wrapped.to_string()).unwrap(), trust_raw);
-        assert_eq!(extract_install_trust_response(&format!("{{\"trust\":{trust_raw},\"extra\":true}}")), Err(ProofError::Malformed));
-        assert_eq!(extract_install_trust_response(&format!("{{\"trust\":{trust_raw},\"trust\":{trust_raw}}}")), Err(ProofError::Malformed));
+        assert_eq!(
+            extract_install_trust_response(&wrapped.to_string()).unwrap(),
+            trust_raw
+        );
+        assert_eq!(
+            extract_install_trust_response(&format!("{{\"trust\":{trust_raw},\"extra\":true}}")),
+            Err(ProofError::Malformed)
+        );
+        assert_eq!(
+            extract_install_trust_response(&format!(
+                "{{\"trust\":{trust_raw},\"trust\":{trust_raw}}}"
+            )),
+            Err(ProofError::Malformed)
+        );
+    }
+
+    #[test]
+    fn newer_timestamp_cannot_reactivate_a_cached_revoked_key() {
+        let (proof_raw, _) = signed_fixture(false, true);
+        let proof: InstallProofEnvelope = parse_unique(&proof_raw).unwrap();
+        let previous_raw = serde_json::to_string(&proof.trust).unwrap();
+        let mut payload: Value = serde_json::from_str(&proof.trust.payload).unwrap();
+        for key in payload["keys"].as_array_mut().unwrap() {
+            key["status"] = Value::String("active".into());
+            key["revokedAtMs"] = Value::Null;
+        }
+        let newer = VerifiedTrustFeed {
+            epoch: proof.trust.trust_epoch,
+            issued_at_ms: proof.trust.issued_at_ms + 1,
+            signed_payload: payload.to_string(),
+            envelope_json: String::new(),
+        };
+        assert_eq!(
+            trust_feed_not_rolled_back(&newer, Some(&previous_raw)),
+            Err(ProofError::TrustRollback)
+        );
     }
 
     #[test]
@@ -806,10 +1019,41 @@ mod tests {
     #[test]
     fn expired_feed_is_offline_only_and_revoked_key_never_launches() {
         let (expired, anchor) = signed_fixture(true, false);
-        assert_eq!(verify_install_proof_with_anchor(&expired, "org.fabushi.global-dandelion", 10_000, false, &anchor).err().unwrap(), ProofError::FeedFreshness);
-        assert!(verify_install_proof_with_anchor(&expired, "org.fabushi.global-dandelion", 10_000, true, &anchor).is_ok());
+        assert_eq!(
+            verify_install_proof_with_anchor(
+                &expired,
+                "org.fabushi.global-dandelion",
+                10_000,
+                false,
+                &anchor
+            )
+            .err()
+            .unwrap(),
+            ProofError::FeedFreshness
+        );
+        assert!(
+            verify_install_proof_with_anchor(
+                &expired,
+                "org.fabushi.global-dandelion",
+                10_000,
+                true,
+                &anchor
+            )
+            .is_ok()
+        );
         let (revoked, anchor) = signed_fixture(true, true);
-        assert_eq!(verify_install_proof_with_anchor(&revoked, "org.fabushi.global-dandelion", 10_000, true, &anchor).err().unwrap(), ProofError::Revoked);
+        assert_eq!(
+            verify_install_proof_with_anchor(
+                &revoked,
+                "org.fabushi.global-dandelion",
+                10_000,
+                true,
+                &anchor
+            )
+            .err()
+            .unwrap(),
+            ProofError::Revoked
+        );
     }
 
     #[test]
@@ -817,6 +1061,17 @@ mod tests {
         let (raw, anchor) = signed_fixture(false, false);
         let mut proof: Value = serde_json::from_str(&raw).unwrap();
         proof["descriptorPayload"] = Value::String("{}".into());
-        assert_eq!(verify_install_proof_with_anchor(&proof.to_string(), "org.fabushi.global-dandelion", 10_000, false, &anchor).err().unwrap(), ProofError::DescriptorBinding);
+        assert_eq!(
+            verify_install_proof_with_anchor(
+                &proof.to_string(),
+                "org.fabushi.global-dandelion",
+                10_000,
+                false,
+                &anchor
+            )
+            .err()
+            .unwrap(),
+            ProofError::DescriptorBinding
+        );
     }
 }
