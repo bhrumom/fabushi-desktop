@@ -53,6 +53,21 @@ export interface ComposerDraft {
   linkPreview?: ComposerDraftLinkPreview;
 }
 
+export interface ComposerReplyKeyboardButton {
+  text: string;
+  payload?: string;
+}
+
+export interface ComposerReplyKeyboard {
+  /** Stable identity of the authoritative message that owns this keyboard. */
+  messageId: string;
+  rows: readonly (readonly ComposerReplyKeyboardButton[])[];
+  singleUse?: boolean;
+  persistent?: boolean;
+  forceReply?: boolean;
+  placeholder?: string;
+}
+
 export const COMPOSER_DRAFT_METADATA = {
   slice: "composer-drafts",
   schemaVersion: 2,
@@ -351,6 +366,8 @@ export interface TranscriptMessage {
   composedAtMs?: number;
   isStreaming?: boolean;
   replyToId?: string;
+  /** Message-bound source-neutral custom keyboard projected into the single Composer owner. */
+  replyKeyboard?: ComposerReplyKeyboard;
   // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=5083971
   reactions?: readonly import("../cards/transcript-card/reaction-actions").TranscriptReaction[];
   myReactions?: ReadonlySet<string>;

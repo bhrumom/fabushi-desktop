@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type DragEvent, type FormEvent } from "react";
-import { COMPOSER_ATTACHMENT_LIMIT, attachmentBasename, formatAttachmentBytes, inferAttachmentKind, isComposerDraftEmpty, reconcileComposerDraftLinkPreview, type ComposerDraft, type ComposerDraftLinkPreview, type DraftAttachment } from "./model";
+import { COMPOSER_ATTACHMENT_LIMIT, attachmentBasename, formatAttachmentBytes, inferAttachmentKind, isComposerDraftEmpty, reconcileComposerDraftLinkPreview, type ComposerDraft, type ComposerDraftLinkPreview, type ComposerReplyKeyboard, type ComposerReplyKeyboardButton, type DraftAttachment } from "./model";
 import { useVoiceSession, VoiceWaveform, type VoiceTranscriber } from "./voice";
 import { ComposerReplyPill, replyComposerPlaceholder, type ComposerReplyTarget } from "./reply-preview";
 import { PromptRichTextEditor, type PromptEditorChange, type PromptEditorControls, type PromptEditorProviders } from "./rich-text-editor";
 import { compositionOnlyInputStatus, platformInputStatusText, type NativePlatformInputStatusSnapshot, type PlatformInputStatusSnapshot } from "./input-composition-state";
-import { SandIcon, SandIconButton } from "../../../ui/sand-kit-primitives";
+import { SandButton, SandIcon, SandIconButton } from "../../../ui/sand-kit-primitives";
 import { SandMenuContent, SandMenuItem, SandMenuRoot, SandMenuTrigger } from "../../../ui/sand-floating-primitives";
 import { SandSpinner } from "../../../ui/sand-status-primitives";
 
@@ -34,6 +34,7 @@ export interface ComposerBotCommand {
 export interface ConversationComposerProps {
   draft: ComposerDraft;
   botCommands?: readonly ComposerBotCommand[];
+  replyKeyboard?: ComposerReplyKeyboard;
   disabled?: boolean;
   notice?: string | null;
   placeholder?: string;
@@ -81,11 +82,12 @@ export function selectComposerFiles(files: readonly File[], existingCount: numbe
   return files.slice(0, remaining);
 }
 
-export function ConversationComposer({ acceptedSendGeneration = 0, botCommands = [], canExchangeStash = false, draft, disabled = false, hasStash = false, notice, placeholder = "Ask anything, or drop a file.", transcribeAudio, onChange, onClearReplyTarget, onConfigureRetention, onExchangeStash, onRemoveAttachment, onRemoveStash, onScheduleSend, onSendSilently, onSendStash, onStageFiles, onSubmit, retentionLabel, replyTarget, editorProviders, scopeKey, platformInput }: ConversationComposerProps) {
+export function ConversationComposer({ acceptedSendGeneration = 0, botCommands = [], replyKeyboard, canExchangeStash = false, draft, disabled = false, hasStash = false, notice, placeholder = "Ask anything, or drop a file.", transcribeAudio, onChange, onClearReplyTarget, onConfigureRetention, onExchangeStash, onRemoveAttachment, onRemoveStash, onScheduleSend, onSendSilently, onSendStash, onStageFiles, onSubmit, retentionLabel, replyTarget, editorProviders, scopeKey, platformInput }: ConversationComposerProps) {
   const fileInput = useRef<HTMLInputElement>(null);
   const editorControls = useRef<PromptEditorControls | null>(null);
   const dragDepth = useRef(0);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [hiddenReplyKeyboardMessageId, setHiddenReplyKeyboardMessageId] = useState<string | null>(null);
   const [inputStatus, setInputStatus] = useState<PlatformInputStatusSnapshot>(() => compositionOnlyInputStatus(false));
   const draftRef = useRef(draft);
   const hasPayload = !isComposerDraftEmpty(draft);
@@ -96,6 +98,12 @@ export function ConversationComposer({ acceptedSendGeneration = 0, botCommands =
   const canSend = hasPayload && !disabled && !voiceBusy;
   const atLimit = draft.attachments.length >= COMPOSER_ATTACHMENT_LIMIT;
   const showBotCommands = botCommands.length > 0 && !hasPayload && replyTarget == null;
+  const showReplyKeyboard = replyKeyboard != null && hiddenReplyKeyboardMessageId !== replyKeyboard.messageId;
+  const editorPlaceholder = replyTarget != null
+    ? replyComposerPlaceholder(replyTarget.preview)
+    : showReplyKeyboard && replyKeyboard.forceReply
+      ? replyKeyboard.placeholder ?? "Reply…"
+      : placeholder;
 
   useEffect(() => voice.controller.onFinal((text) => {
     editorControls.current?.insertText(text);
@@ -158,6 +166,14 @@ export function ConversationComposer({ acceptedSendGeneration = 0, botCommands =
     editorControls.current?.insertText(command);
     editorControls.current?.focus();
   }, []);
+
+  const selectReplyKeyboardButton = useCallback((button: ComposerReplyKeyboardButton) => {
+    editorControls.current?.insertText(button.payload ?? button.text);
+    editorControls.current?.focus();
+    if (replyKeyboard?.singleUse === true && replyKeyboard.persistent !== true) {
+      setHiddenReplyKeyboardMessageId(replyKeyboard.messageId);
+    }
+  }, [replyKeyboard]);
 
   const stageFiles = useCallback((files: readonly File[]) => {
     const accepted = selectComposerFiles(files, draft.attachments.length);
@@ -249,7 +265,7 @@ export function ConversationComposer({ acceptedSendGeneration = 0, botCommands =
           onPasteFiles={stageFiles}
           onInputStatusChange={setInputStatus}
           onSubmit={onSubmit}
-          placeholder={replyTarget == null ? placeholder : replyComposerPlaceholder(replyTarget.preview)}
+          placeholder={editorPlaceholder}
           prompt={draft.prompt}
           providers={editorProviders}
           platformInput={platformInput}
@@ -258,6 +274,14 @@ export function ConversationComposer({ acceptedSendGeneration = 0, botCommands =
         />
         {voice.isRecording || voice.isActivating ? <span aria-live="polite" className="sand-prompt-voice-status" role="status">Listening…</span> : null}
         {platformInputStatusText(inputStatus) == null ? null : <p aria-live="polite" className="fabushi-input-status" data-testid="input-composition-status" role="status">{platformInputStatusText(inputStatus)}</p>}
+        {!showReplyKeyboard || replyKeyboard == null ? null : <div aria-label="Bot keyboard" className="sand-prompt-actions-row" data-message-id={replyKeyboard.messageId} role="group">
+          <div>
+            {replyKeyboard.rows.map((row, rowIndex) => <div key={`${replyKeyboard.messageId}:row:${rowIndex}`} role="group">
+              {row.map((button, buttonIndex) => <SandButton disabled={disabled || voiceBusy} key={`${rowIndex}:${buttonIndex}:${button.text}`} onClick={() => selectReplyKeyboardButton(button)} size="sm" type="button" variant="secondary">{button.text}</SandButton>)}
+            </div>)}
+          </div>
+          <SandIconButton aria-label="Hide bot keyboard" disabled={disabled || voiceBusy} icon="close" onClick={() => setHiddenReplyKeyboardMessageId(replyKeyboard.messageId)} shape="circle" size="lg" type="button" variant="default" />
+        </div>}
         <div className="sand-prompt-actions-row">
           {!showBotCommands ? null : <SandMenuRoot placement="top-start">
             <SandMenuTrigger><SandIconButton aria-label="Bot commands" disabled={disabled || voiceBusy} icon="more" shape="circle" size="lg" type="button" variant="default" /></SandMenuTrigger>

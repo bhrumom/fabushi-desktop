@@ -2,6 +2,7 @@ import type {
   ConversationAgentSummary,
   ConversationAgentLastEntry,
   ConversationTranscriptEntry,
+  ComposerReplyKeyboard,
   DraftAttachment,
   TranscriptMessage,
   TranscriptLocalToolPermission,
@@ -104,6 +105,40 @@ export function projectRendererBotCommands(value: unknown): RendererBotCommand[]
     if (commands.length === 32) break;
   }
   return commands;
+}
+
+export function projectComposerReplyKeyboard(value: unknown, messageId: string): ComposerReplyKeyboard | null {
+  if (!isRecord(value) || messageId.length === 0) return null;
+  const rawRows = Array.isArray(value.rows) ? value.rows : Array.isArray(value.keyboard) ? value.keyboard : null;
+  if (rawRows == null || rawRows.length === 0 || rawRows.length > 12) return null;
+  const rows: ComposerReplyKeyboard["rows"][number][] = [];
+  for (const rawRow of rawRows) {
+    if (!Array.isArray(rawRow) || rawRow.length === 0 || rawRow.length > 8) return null;
+    const row: { text: string; payload?: string }[] = [];
+    for (const rawButton of rawRow) {
+      if (!isRecord(rawButton) || typeof rawButton.text !== "string") return null;
+      const text = rawButton.text.trim();
+      if (text.length === 0 || text.length > 256) return null;
+      const payload = typeof rawButton.payload === "string"
+        ? rawButton.payload
+        : typeof rawButton.data === "string"
+          ? rawButton.data
+          : undefined;
+      row.push({ text, ...(payload == null || payload.length === 0 ? {} : { payload }) });
+    }
+    rows.push(row);
+  }
+  const placeholder = typeof value.placeholder === "string" && value.placeholder.trim().length > 0
+    ? value.placeholder.trim().slice(0, 256)
+    : undefined;
+  return {
+    messageId,
+    rows,
+    ...(value.singleUse === true ? { singleUse: true } : {}),
+    ...(value.persistent === true ? { persistent: true } : {}),
+    ...(value.forceReply === true ? { forceReply: true } : {}),
+    ...(placeholder == null ? {} : { placeholder }),
+  };
 }
 
 function parseLastEntryKinds(value: unknown): Readonly<Record<string, number>> | null {
@@ -546,6 +581,9 @@ export function projectTranscriptEntry(value: unknown, index: number, agentName:
   if (text == null) return null;
   const attachments = attachmentsFromEntry(value);
   const role = value.kind === "send-message" || value.role === "assistant" ? "assistant" : "user";
+  const replyKeyboard = role === "assistant"
+    ? projectComposerReplyKeyboard(value.replyMarkup ?? value.replyKeyboard ?? message?.replyMarkup, id)
+    : null;
   return {
     kind: "message",
     id,
@@ -560,6 +598,7 @@ export function projectTranscriptEntry(value: unknown, index: number, agentName:
     ...(composedAtMs == null ? {} : { composedAtMs }),
     ...(transcriptStreaming(value) ? { isStreaming: true } : {}),
     ...(transcriptReplyToId(value) == null ? {} : { replyToId: transcriptReplyToId(value) }),
+    ...(replyKeyboard == null ? {} : { replyKeyboard }),
     ...transcriptReactionFields(value)
   };
 }

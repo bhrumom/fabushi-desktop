@@ -21,4 +21,20 @@ describe("canonical Bot command Composer contract", () => {
     expect(composer).toContain("editorControls.current?.insertText(command)");
     expect(composer).not.toContain("TelegramBot");
   });
+
+  it("keeps custom reply markup message-bound inside the canonical transcript and Composer owners", () => {
+    const workspaceModel = read("src/recovered/features/conversation/workspace/model.ts");
+    const model = read("src/production/model.ts");
+    const composer = read("src/recovered/features/conversation/workspace/composer.tsx");
+    const renderer = read("src/production/ProductionRenderer.tsx");
+    expect(workspaceModel).toContain("replyKeyboard?: ComposerReplyKeyboard");
+    expect(model).toContain("projectComposerReplyKeyboard");
+    expect(model).toContain("value.replyMarkup ?? value.replyKeyboard ?? message?.replyMarkup");
+    expect(composer).toContain('aria-label="Bot keyboard"');
+    expect(composer).toContain('aria-label="Hide bot keyboard"');
+    expect(composer).toContain("replyKeyboard?.singleUse === true && replyKeyboard.persistent !== true");
+    expect(composer).toContain('replyKeyboard.placeholder ?? "Reply…"');
+    expect(renderer).toContain("entry.replyKeyboard != null)?.replyKeyboard");
+    expect(composer).not.toContain("TelegramKeyboard");
+  });
 });
