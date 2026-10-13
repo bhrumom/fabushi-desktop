@@ -207,7 +207,12 @@ test("actual Electron uses the isolated protocol and blocks real network, worker
       globalThis.__active = {accountScope:scope,generation:7};
       globalThis.__mini = mini.createMiniAppWindowFactory({ BrowserWindow: TrackingBrowserWindow, session, currentAccount: () => globalThis.__active });
       const scoped = crypto.createHash('sha256').update(scope).update('\\0').update('org.fabushi.global-dandelion').digest('hex');
-      session.fromPartition('persist:fabushi-miniapp-' + scoped).setDownloadPath(process.env.FABUSHI_MINIAPP_DOWNLOAD_DIR);
+      const fixtureSession = session.fromPartition('persist:fabushi-miniapp-' + scoped);
+      fixtureSession.setDownloadPath(process.env.FABUSHI_MINIAPP_DOWNLOAD_DIR);
+      globalThis.__downloadFacts = [];
+      fixtureSession.on('will-download', (event,item,contents) => {
+        globalThis.__downloadFacts.push({url:item.getURL(),mime:item.getMimeType(),filename:item.getFilename(),size:item.getTotalBytes(),gesture:item.hasUserGesture(),contents:contents && contents.id});
+      });
       globalThis.__snapshotFor = (appId, accountScope=scope, accountGeneration=7) => ({ appId, version:'1.0.0', packageDigest:'${digest}', entrypoint:'index.html', accountScope, accountGeneration,
         resources:new Map([['index.html',{bytes:new TextEncoder().encode(${JSON.stringify(html)}),mime:'text/html'}],['app.js',{bytes:new TextEncoder().encode(${JSON.stringify(appJs)}),mime:'text/javascript'}],['module.wasm',{bytes:new Uint8Array([0,97,115,109,1,0,0,0]),mime:'application/wasm'}]]) });
       globalThis.__open = async (snapshot) => { globalThis.__handle = await globalThis.__mini.open(snapshot); };
@@ -249,7 +254,10 @@ test("actual Electron uses the isolated protocol and blocks real network, worker
     await page.getByRole("button", { name: "Export report" }).click();
     const reportPath = join(downloadDirectory, "global-dandelion-local-report.json");
     // Playwright owns accepted download paths in automation; this is not OS dialog acceptance.
-    const reportDownload = await downloadEvent;
+    const reportDownload = await downloadEvent.catch(async (error) => {
+      const facts = await app.evaluate(() => globalThis.__downloadFacts);
+      throw new Error('report download denied; native fixture facts=' + JSON.stringify(facts), {cause:error});
+    });
     assert.equal(reportDownload.suggestedFilename(), "global-dandelion-local-report.json");
     assert.equal(await reportDownload.failure(), null, "native policy must allow the real user-gesture export");
     await reportDownload.saveAs(reportPath);
@@ -315,6 +323,67 @@ test("actual Electron uses the isolated protocol and blocks real network, worker
       tcp.close();
       await rm(directory, { recursive: true, force: true });
     }
+  }
+});
+
+test("actual signed Dandelion bundle runs its Rust codec offline in the production isolated window", { skip: !process.env.FABUSHI_DANDELION_SIGNED_FIXTURE, timeout: 90_000 }, async () => {
+  const bundle = process.env.FABUSHI_MINIAPP_WINDOW_BUNDLE;
+  assert.ok(bundle);
+  const directory = await mkdtemp(join(tmpdir(), "fabushi-dandelion-interop-"));
+  const harness = `
+    const {app, protocol, BrowserWindow, session} = require('electron');
+    const fs = require('node:fs'), path = require('node:path'), crypto = require('node:crypto');
+    const mini = require(process.env.FABUSHI_MINIAPP_WINDOW_BUNDLE);
+    protocol.registerSchemesAsPrivileged([mini.FABUSHI_MINI_APP_PRIVILEGED_SCHEME]);
+    app.whenReady().then(() => {
+      globalThis.__factory = mini.createMiniAppWindowFactory({BrowserWindow, session, currentAccount:() => ({accountScope:'e'.repeat(64),generation:1})});
+      globalThis.__openSignedFixture = async () => {
+        const root = process.env.FABUSHI_DANDELION_SIGNED_FIXTURE;
+        const manifest = JSON.parse(fs.readFileSync(path.join(root,'manifest.json'),'utf8'));
+        if (manifest.appId !== 'org.fabushi.global-dandelion' || manifest.version !== '0.1.0' || manifest.signature.keyId !== 'fabushi-marketplace-managed-20261013-1') throw new Error('wrong pinned fixture identity');
+        const resources = new Map();
+        for (const [name, metadata] of Object.entries(manifest.files)) {
+          if (!name.split('/').every(part => /^[A-Za-z0-9._-]+$/.test(part) && part!=='.' && part!=='..')) throw new Error('invalid fixture path');
+          const bytes = fs.readFileSync(path.join(root,name));
+          if (bytes.length !== metadata.bytes || crypto.createHash('sha256').update(bytes).digest('hex') !== metadata.sha256) throw new Error('fixture resource mismatch');
+          resources.set(name,{bytes,mime:metadata.mime});
+        }
+        await globalThis.__factory.open({appId:manifest.appId,version:manifest.version,packageDigest:'de10e02115415908f827723457817e51cb4f39aa5ca68798da824fecc483118a',entrypoint:manifest.entrypoint,accountScope:'e'.repeat(64),accountGeneration:1,resources});
+      };
+    });
+  `;
+  await writeFile(join(directory, "main.cjs"), harness);
+  await writeFile(join(directory, "package.json"), JSON.stringify({name:"dandelion-interoperability",version:"1.0.0",main:"main.cjs"}));
+  let application: Awaited<ReturnType<typeof electron.launch>> | undefined;
+  try {
+    const app = application = await electron.launch({executablePath:require("electron") as string,args:[directory],chromiumSandbox:true,timeout:30_000,env:{...process.env,FABUSHI_MINIAPP_WINDOW_BUNDLE:resolve(bundle)}});
+    await app.evaluate(async () => { await globalThis.__openSignedFixture(); });
+    const page = await app.firstWindow();
+    await page.waitForFunction(() => document.getElementById("status")?.textContent?.includes("已就绪"), null, {timeout:15_000});
+    assert.equal(await page.evaluate(() => typeof process !== "undefined" || typeof require !== "undefined"), false);
+    await page.locator("#files").setInputFiles([{name:"<img onerror=alert(1)>.txt",mimeType:"text/plain",buffer:Buffer.from("hello")},{name:"empty.txt",mimeType:"text/plain",buffer:Buffer.alloc(0)}]);
+    assert.equal(await page.locator("#selection img").count(), 0);
+    await page.locator("#start").click();
+    await page.waitForFunction(() => document.getElementById("status")?.textContent?.includes("本地校验完成"), null, {timeout:15_000});
+    assert.equal(await page.locator("#file-count").textContent(), "2");
+    assert.equal(await page.locator("#packet-count").textContent(), "2");
+    const pending = page.waitForEvent("download", {timeout:10_000});
+    await page.locator("#export").click();
+    const download = await pending;
+    assert.equal(await download.failure(), null);
+    const filename = await download.path();
+    assert.ok(filename);
+    const report = JSON.parse(await (await import("node:fs/promises")).readFile(filename, "utf8"));
+    assert.equal(report.networkSent, false);
+    assert.equal(report.verifiedBytes, 5);
+    assert.equal(report.status, "complete");
+    await page.reload();
+    await page.waitForFunction(() => document.getElementById("status")?.textContent?.includes("已就绪"));
+    assert.equal(await page.locator("#selection li").count(), 0);
+    assert.equal(await app.evaluate(({BrowserWindow}) => BrowserWindow.getAllWindows()[0].webContents.getLastWebPreferences().sandbox), true);
+  } finally {
+    try { if (application) { await application.evaluate(() => globalThis.__factory?.closeAll()).catch(() => {}); await application.close(); } }
+    finally { await rm(directory, {recursive:true,force:true}); }
   }
 });
 

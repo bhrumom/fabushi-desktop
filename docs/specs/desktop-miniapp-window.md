@@ -56,6 +56,11 @@ account `generation`; neither comes from a renderer or access token.
   WebRTC, navigation, popup, permission and download behavior. CSP assertions
   alone are insufficient. Native account and packaged-client acceptance remains
   a separate gate.
+  Ubuntu's runner may ship Electron without a SUID helper: use a runner-local
+  AppArmor profile that grants user namespaces to only the exact Electron binary.
+  Do not disable AppArmor or its system-wide namespace restriction. Assert actual
+  renderer seccomp filtering in addition to sandbox preferences and absence of
+  the no-sandbox switch. This setup is only ephemeral Actions configuration.
 
 ## Interface and initialization sequence
 
@@ -106,3 +111,12 @@ complete OMA-001 AC-01–AC-10 or public Marketplace approval.
   [custom scheme privileges](https://www.electronjs.org/docs/latest/api/structures/custom-scheme),
   [BrowserWindow security options](https://www.electronjs.org/docs/latest/api/structures/browser-window-options),
   [security guidance](https://www.electronjs.org/docs/latest/tutorial/security).
+# Signed Dandelion interoperability gate
+
+Actions additionally downloads immutable signed delivery artifact 11797530939,
+checks transport SHA-256 and the exact .fabapp digest, and mounts its actual
+manifest-listed HTML/JS/CSS/Wasm in the production window factory. It exercises
+real file selection, Rust packet verification and JSON export with no Node/preload.
+This is package/window interoperability, not a claim of genuine marketplace
+installation or native OS file/save dialog acceptance; those remain packaged gates.
+
