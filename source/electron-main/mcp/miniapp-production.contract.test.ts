@@ -56,3 +56,23 @@ test("account notification fences an in-flight native catalog response", async (
   await assert.rejects(pending, /MINIAPP_SCOPE_CHANGED/);
   f.handle.dispose();
 });
+
+test("production refuses Host resources from a different verified account", async () => {
+  const f = fixture();
+  f.handle.dispose();
+  let opened = 0;
+  Object.assign(f.context.native, {
+    session: { fromPartition() { throw new Error("must not access partition"); } },
+    BrowserWindow: class { constructor() { opened += 1; } },
+  });
+  f.context.coordinatorLegs.legs.getInstalledMiniAppResources = async (raw) => {
+    const args = raw as Record<string, unknown>;
+    assert.deepEqual(Object.keys(args).sort(), ["appId", "operationId"]);
+    assert.equal(args.appId, f.entry.appId);
+    return { sameScopeHash: "b".repeat(64), descriptor: {}, resources: [] };
+  };
+  const registration = registerProductionMiniApps(f.context, { handle: (name, fn) => { f.handlers.set(name, fn); } });
+  await assert.rejects(f.invoke("sand:miniapp-launch", f.entry.appId), /MINIAPP_SCOPE_CHANGED/);
+  assert.equal(opened, 0);
+  registration.dispose();
+});

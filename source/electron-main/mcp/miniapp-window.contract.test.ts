@@ -219,8 +219,9 @@ test("actual Electron uses the isolated protocol and blocks real network, worker
   const downloadDirectory = join(directory, "downloads");
   await (await import("node:fs/promises")).mkdir(downloadDirectory);
   const electronBinary = require("electron") as string;
-  const app = await electron.launch({ executablePath: electronBinary, args: [directory], chromiumSandbox: true, env: { ...process.env, FABUSHI_MINIAPP_WINDOW_BUNDLE: resolve(bundle), FABUSHI_MINIAPP_DOWNLOAD_DIR: downloadDirectory } });
+  let application: Awaited<ReturnType<typeof electron.launch>> | undefined;
   try {
+    const app = application = await electron.launch({ executablePath: electronBinary, args: [directory], chromiumSandbox: true, timeout: 30_000, env: { ...process.env, FABUSHI_MINIAPP_WINDOW_BUNDLE: resolve(bundle), FABUSHI_MINIAPP_DOWNLOAD_DIR: downloadDirectory } });
     await app.evaluate(async () => { await globalThis.__open(globalThis.__snapshotFor('org.fabushi.global-dandelion')); });
     assert.equal(await app.evaluate(() => globalThis.__noSandboxSwitch), false, "sandbox acceptance must not launch Electron with --no-sandbox");
     assert.equal(await app.evaluate(() => globalThis.__miniAppWebRTCPolicy), "disable_non_proxied_udp");
@@ -298,12 +299,17 @@ test("actual Electron uses the isolated protocol and blocks real network, worker
     assert.equal(prefs.webSecurity, true);
     assert.equal(prefs.preload, undefined);
   } finally {
-    await app.evaluate(() => globalThis.__mini.closeAll());
-    await app.close();
-    server.close();
-    udp.close();
-    tcp.close();
-    await rm(directory, { recursive: true, force: true });
+    try {
+      if (application) {
+        await application.evaluate(() => globalThis.__mini?.closeAll()).catch(() => {});
+        await application.close();
+      }
+    } finally {
+      server.close();
+      udp.close();
+      tcp.close();
+      await rm(directory, { recursive: true, force: true });
+    }
   }
 });
 
