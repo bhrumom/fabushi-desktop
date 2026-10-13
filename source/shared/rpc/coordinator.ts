@@ -81,6 +81,32 @@ export interface CoordinatorStoryIdRequest { readonly storyId: string }
 export interface CoordinatorStoryReactionRequest extends CoordinatorStoryIdRequest { readonly reaction?: string | null }
 export interface CoordinatorStoryDeleteResponse { readonly storyId: string; readonly deleted: boolean }
 
+export interface CoordinatorSavedSublistDestination {
+  readonly conversationId: string;
+  readonly child: {
+    readonly kind: "savedSublist";
+    readonly participantId: string;
+  };
+}
+
+export interface CoordinatorSavedSublistDraft {
+  readonly destination: CoordinatorSavedSublistDestination;
+  readonly text: string;
+  readonly replyToMessageId?: string | null;
+  readonly revision: number;
+  readonly updatedAt?: string | null;
+}
+
+export interface CoordinatorSavedSublistDraftRequest {
+  readonly conversationId: string;
+}
+
+export interface CoordinatorSetSavedSublistDraftRequest extends CoordinatorSavedSublistDraftRequest {
+  readonly text: string;
+  readonly replyToMessageId?: string | null;
+  readonly expectedRevision: number;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -150,6 +176,25 @@ export function parseCoordinatorStoryDeleteResponse(value: unknown): Coordinator
   return isRecord(value) && typeof value.storyId === "string" && value.storyId.length > 0 && typeof value.deleted === "boolean"
     ? { storyId: value.storyId, deleted: value.deleted }
     : null;
+}
+
+export function parseCoordinatorSavedSublistDraft(value: unknown): CoordinatorSavedSublistDraft | null {
+  if (!isRecord(value) || !isRecord(value.destination) || !isRecord(value.destination.child)) return null;
+  const { destination } = value;
+  if (
+    typeof destination.conversationId !== "string" ||
+    destination.conversationId.length === 0 ||
+    destination.child.kind !== "savedSublist" ||
+    typeof destination.child.participantId !== "string" ||
+    destination.child.participantId.length === 0 ||
+    typeof value.text !== "string" ||
+    value.text.length > 4000 ||
+    !Number.isSafeInteger(value.revision) ||
+    (value.revision as number) < 0 ||
+    !isNullableString(value.replyToMessageId) ||
+    !isNullableString(value.updatedAt)
+  ) return null;
+  return value as unknown as CoordinatorSavedSublistDraft;
 }
 
 export function parseCoordinatorTranscriptWindowResponse(value: unknown): CoordinatorTranscriptWindowResponse | null {
@@ -251,6 +296,8 @@ export const COORDINATOR_METHOD_TABLE = {
   importAgentWorkflowUrl: { args: "object", reply: "import-result" },
   portAgentLocalSkills: { args: "object", reply: "import-result" },
   getConversationOutline: { args: "object", reply: "array" },
+  getHumanSavedSublistDraft: { args: "object", reply: "saved-sublist-draft" },
+  setHumanSavedSublistDraft: { args: "object", reply: "saved-sublist-draft" },
   getStoryStealthStatus: { args: "none", reply: "record" },
   activateStoryStealth: { args: "object", reply: "record" },
   listStories: { args: "object", reply: "story-array" },
