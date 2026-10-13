@@ -1,9 +1,8 @@
 import fs from "node:fs";
-import path from "node:path";
 import { describe, expect, it } from "vitest";
 
-const root = path.resolve(__dirname, "..", "..");
-const read = (relative: string) => fs.readFileSync(path.join(root, relative), "utf8");
+const root = new URL("../../", import.meta.url);
+const read = (relative: string) => fs.readFileSync(new URL(relative, root), "utf8");
 
 describe("canonical Bot command Composer contract", () => {
   it("projects durable Bot command metadata through the existing Agent model", () => {
