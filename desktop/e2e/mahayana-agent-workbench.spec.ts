@@ -1225,12 +1225,10 @@ test('shipping Human Forward uses the canonical picker and survives restart', as
   const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-human-forward-e2e-'));
   let app: ElectronApplication | null = null;
 
-  const createHumanConversation = async (page: Page, humanId: string, title: string): Promise<void> => {
-    await page.getByRole('button', { name: 'New Human chat', exact: true }).click();
-    const dialog = page.getByRole('dialog', { name: 'New Human chat' });
-    await dialog.getByRole('textbox', { name: 'Human identity' }).fill(humanId);
-    await dialog.getByRole('textbox', { name: 'Conversation title' }).fill(title);
-    await dialog.getByRole('button', { name: 'Create', exact: true }).click();
+  const switchToAgentConversation = async (page: Page): Promise<void> => {
+    const agent = page.getByRole('region', { name: 'Agent list' }).getByRole('button', { name: 'New chat', exact: true });
+    await expect(agent).toBeVisible({ timeout: 15_000 });
+    await agent.click();
     await expect(page.getByRole('textbox', { name: 'Prompt' })).toHaveAttribute('contenteditable', 'true', { timeout: 15_000 });
   };
 
@@ -1339,10 +1337,14 @@ test('two shipping Electron device sessions converge one Human conversation and 
     await completeBrowserLogin(pageB);
     await openMahayanaConversation(pageB);
 
-    const convergencePeerId = 'human-convergence-peer-e2e';
-    const convergenceTitle = 'Human Convergence Peer';
-    await createHumanConversation(pageA, convergencePeerId, convergenceTitle);
-    await createHumanConversation(pageB, convergencePeerId, convergenceTitle);
+    // The shipping Messages shell no longer exposes the retired "New Human chat"
+    // test-only surface. Both devices consume the same canonical Human direct
+    // conversation from remote sync, then exercise retention and message
+    // convergence against that server-authoritative identity.
+    const convergencePeerId = 'human-parity-peer-e2e';
+    const convergenceTitle = 'Human Parity Peer';
+    await reopenConversation(pageA, convergenceTitle);
+    await reopenConversation(pageB, convergenceTitle);
 
     const openRetentionDialog = async (page: Page, expectedLabel: string): Promise<Locator> => {
       const sendOptions = page.getByRole('button', { name: 'Send options' });
@@ -1373,7 +1375,7 @@ test('two shipping Electron device sessions converge one Human conversation and 
     await staleRetentionB.getByRole('button', { name: '7 days', exact: true }).click();
     await expect(staleRetentionB).toBeHidden();
 
-    await createHumanConversation(pageA, 'human-convergence-retention-switch-e2e', 'Human Retention Switch A');
+    await switchToAgentConversation(pageA);
     await reopenConversation(pageA, convergenceTitle);
     await pageA.getByRole('button', { name: 'Send options' }).click();
     await expect(pageA.getByRole('menuitem', { name: 'Message retention · 7 days', exact: true })).toBeVisible();
@@ -1386,14 +1388,14 @@ test('two shipping Electron device sessions converge one Human conversation and 
     const fromA = 'Dual-device Human convergence from Electron device A.';
     await sendHumanTurn(pageA, fromA);
 
-    await createHumanConversation(pageB, 'human-convergence-switch-b-e2e', 'Human Convergence Switch B');
+    await switchToAgentConversation(pageB);
     await reopenConversation(pageB, convergenceTitle);
     await expect(pageB.getByRole('article').filter({ hasText: fromA }).last()).toBeVisible({ timeout: 15_000 });
 
     const fromB = 'Dual-device Human convergence from Electron device B.';
     await sendHumanTurn(pageB, fromB);
 
-    await createHumanConversation(pageA, 'human-convergence-switch-a-e2e', 'Human Convergence Switch A');
+    await switchToAgentConversation(pageA);
     await reopenConversation(pageA, convergenceTitle);
     await expect(pageA.getByRole('article').filter({ hasText: fromA }).last()).toBeVisible({ timeout: 15_000 });
     await expect(pageA.getByRole('article').filter({ hasText: fromB }).last()).toBeVisible({ timeout: 15_000 });
