@@ -427,8 +427,8 @@ mod tests {
             app_id: "org.fabushi.global-dandelion".into(),
             publisher_id: "bhrumom".into(),
             version: "0.1.0".into(),
-            package_sha256:
-                "de10e02115415908f827723457817e51cb4f39aa5ca68798da824fecc483118a".into(),
+            package_sha256: "de10e02115415908f827723457817e51cb4f39aa5ca68798da824fecc483118a"
+                .into(),
             key_id: "fabushi-marketplace-managed-20261013-1".into(),
             public_key: URL_SAFE_NO_PAD
                 .decode("VbvgbVxNAeftFYB0l1-NzE2-Gx3d4NQ7hkKiQ0HMpu0")
