@@ -417,6 +417,39 @@ mod tests {
     use std::io::Write;
     use zip::{ZipWriter, write::SimpleFileOptions};
 
+    #[test]
+    fn actual_production_signed_candidate_interoperability() {
+        let Ok(path) = std::env::var("FABUSHI_SIGNED_HOST_FIXTURE") else {
+            return; // Separate synthetic contracts do not claim production acceptance.
+        };
+        let bytes = std::fs::read(path).unwrap();
+        let policy = CatalogAuthorization {
+            app_id: "org.fabushi.global-dandelion".into(),
+            publisher_id: "bhrumom".into(),
+            version: "0.1.0".into(),
+            package_sha256:
+                "de10e02115415908f827723457817e51cb4f39aa5ca68798da824fecc483118a".into(),
+            key_id: "fabushi-marketplace-managed-20261013-1".into(),
+            public_key: URL_SAFE_NO_PAD
+                .decode("VbvgbVxNAeftFYB0l1-NzE2-Gx3d4NQ7hkKiQ0HMpu0")
+                .unwrap()
+                .try_into()
+                .unwrap(),
+            trust_epoch: 1,
+            host_api: 1,
+        };
+        // This explicit test policy proves only package interoperability. It is
+        // not a catalog approval or a production authorization constructor.
+        let verified = verify_catalog_bundle(&bytes, &policy).unwrap();
+        assert_eq!(verified.entrypoint(), "index.html");
+        assert!(verified.resource("app.js").is_some());
+        assert!(
+            verified
+                .resource("pkg/dandelion_web_adapter_bg.wasm")
+                .is_some()
+        );
+    }
+
     fn archive(items: Vec<(String, Vec<u8>)>) -> Vec<u8> {
         let mut writer = ZipWriter::new(Cursor::new(Vec::new()));
         for (name, data) in items {

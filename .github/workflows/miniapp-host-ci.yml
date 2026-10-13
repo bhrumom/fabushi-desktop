@@ -15,6 +15,7 @@ on:
       - 'source/host/Cargo.toml'
 permissions:
   contents: read
+  actions: read
 jobs:
   verifier:
     runs-on: ubuntu-24.04
@@ -31,9 +32,18 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: source/host -> target
+      - name: Download immutable production-signed interoperability fixture
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api repos/bhrumom/fabushi-backend/actions/artifacts/11797530939/zip > signed-delivery.zip
+          echo 'b4fb72cfcdec50acd4c4a648f44699813c3b31cbbd0080445a6057fb4578c64e  signed-delivery.zip' | sha256sum -c -
+          unzip signed-delivery.zip global-dandelion-0.1.0.fabapp -d signed-fixture
       - name: Check canonical formatting without modifying exact source
         run: rustfmt --check --edition 2024 source/host/src/extensions/mcp/installable_package.rs
       - name: Verify existing Host library contracts
+        env:
+          FABUSHI_SIGNED_HOST_FIXTURE: ${{ github.workspace }}/signed-fixture/global-dandelion-0.1.0.fabapp
         run: cargo test --manifest-path source/host/Cargo.toml --lib installable_package
       - uses: actions/upload-artifact@v4
         if: always()
