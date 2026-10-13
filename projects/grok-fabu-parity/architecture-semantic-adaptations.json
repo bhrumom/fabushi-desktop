@@ -35,7 +35,7 @@
       "referencePath": "frontend/src/production/coordinator-client.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "00293171f5e17a195de5de248d68f6fd3f75fe14",
+      "targetBlobSha": "77481fa7d71a168de123db535ea677a209cc699c",
       "behavioralEvidence": [
         "frontend/src/production/coordinator-client.ts",
         "source/shared/rpc/coordinator.ts",
@@ -52,7 +52,7 @@
         ".github/workflows/rust-desktop-runtime.yml",
         ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "rationale": "Preserves the frozen Coordinator transport, pending-call settlement, event fanout and failure behavior while adding only typed Story projection/command helpers. Story replies are fail-closed parsed at the existing renderer RPC boundary, and the helpers route through the existing Coordinator/Host gateway to the canonical Rust Story service; the client does not own Story state or create a second transport. Story stealth status and activation are typed through the same closed Coordinator path; authoritative entitlement, cooldown and anonymity state remain in the canonical messaging service, and neither Host nor renderer owns a parallel Story state machine."
+      "rationale": "Preserves the frozen Coordinator transport, pending-call settlement, event fanout and failure behavior while adding only typed Story projection/command helpers. Story replies are fail-closed parsed at the existing renderer RPC boundary, and the helpers route through the existing Coordinator/Host gateway to the canonical Rust Story service; the client does not own Story state or create a second transport. Story stealth status and activation are typed through the same closed Coordinator path; authoritative entitlement, cooldown and anonymity state remain in the canonical messaging service, and neither Host nor renderer owns a parallel Story state machine. SavedSublist cloud drafts now reuse that same Coordinator/Host transport: production-client replies are fail-closed parsed to the canonical typed child destination plus revision, while server/native authority owns conflict fencing and the existing ConversationChildRuntimeState remains the only desktop draft state owner."
     },
     {
       "referencePath": "frontend/src/production/evidence.ts",
