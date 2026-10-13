@@ -209,7 +209,7 @@ test("actual Electron uses the isolated protocol and blocks real network, worker
       const scoped = crypto.createHash('sha256').update(scope).update('\\0').update('org.fabushi.global-dandelion').digest('hex');
       session.fromPartition('persist:fabushi-miniapp-' + scoped).setDownloadPath(process.env.FABUSHI_MINIAPP_DOWNLOAD_DIR);
       globalThis.__snapshotFor = (appId, accountScope=scope, accountGeneration=7) => ({ appId, version:'1.0.0', packageDigest:'${digest}', entrypoint:'index.html', accountScope, accountGeneration,
-        resources:new Map([['index.html',{bytes:new TextEncoder().encode(${JSON.stringify(html)}),mime:'text/html'}],['app.js',{bytes:new TextEncoder().encode(${JSON.stringify(appJs)}),mime:'text/javascript'}],['module.wasm',{bytes:new Uint8Array([0,97,115,109,1,0,0,0]),mime:'application/wasm'}]]) };
+        resources:new Map([['index.html',{bytes:new TextEncoder().encode(${JSON.stringify(html)}),mime:'text/html'}],['app.js',{bytes:new TextEncoder().encode(${JSON.stringify(appJs)}),mime:'text/javascript'}],['module.wasm',{bytes:new Uint8Array([0,97,115,109,1,0,0,0]),mime:'application/wasm'}]]) });
       globalThis.__open = async (snapshot) => { globalThis.__handle = await globalThis.__mini.open(snapshot); };
       globalThis.__close = () => globalThis.__handle.close();
     });
