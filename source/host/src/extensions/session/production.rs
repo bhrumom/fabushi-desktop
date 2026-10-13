@@ -93,8 +93,8 @@ use super::session_mutations::set_agent_avatar_bytes as mutate_agent_avatar_byte
 use super::production_agent_store::{ProductionAgentStore, ProductionWorkerBlobStore};
 use super::native_messaging::{
     FabushiNativeMessagingClient, FabushiRemoteHumanAttachment, FabushiRemoteHumanCall,
-    FabushiRemoteHumanCallEvent, FabushiRemoteHumanCallMediaSession, FabushiRemoteHumanMessage,
-    fabushi_identity_text,
+    FabushiRemoteConversationChildDraft, FabushiRemoteHumanCallEvent,
+    FabushiRemoteHumanCallMediaSession, FabushiRemoteHumanMessage, fabushi_identity_text,
 };
 
 pub const PRODUCTION_BLOB_BUSY_TIMEOUT_MS: u64 = 5_000;
@@ -3072,6 +3072,263 @@ impl ProductionSessionWorkers {
             "conversationId": retention.conversation_id,
             "retentionSeconds": retention.retention_seconds,
             "revision": retention.revision,
+        }))
+    }
+
+
+    fn canonical_saved_sublist_destination(
+        conversation_id: &str,
+        peer_human_id: &str,
+    ) -> fabushi_messaging_core::ConversationDestination {
+        fabushi_messaging_core::ConversationDestination::saved_sublist(
+            fabushi_messaging_core::ConversationId::new(conversation_id),
+            MessagingActorId::new(peer_human_id),
+        )
+    }
+
+    fn reconcile_remote_saved_sublist_draft(
+        &self,
+        conversation_id: &str,
+        peer_human_id: &str,
+        peer_display_name: &str,
+        remote: &FabushiRemoteConversationChildDraft,
+    ) -> Result<(), String> {
+        if remote.destination.conversation_id.0 != conversation_id {
+            return Err("Fabushi ConversationChild draft backend returned a mismatched conversation id".into());
+        }
+        let expected = Self::canonical_saved_sublist_destination(conversation_id, peer_human_id);
+        if remote.destination != expected {
+            return Err("Fabushi ConversationChild draft backend returned a mismatched SavedSublist identity".into());
+        }
+
+        let actor_id = self.story_actor_id()?;
+        let peer_actor_id = MessagingActorId::new(peer_human_id);
+        let _guard = MESSAGING_PROJECTION_IO_LOCK
+            .get_or_init(|| Mutex::new(()))
+            .lock()
+            .map_err(|_| "canonical messaging projection storage lock is poisoned".to_string())?;
+        let root = self.agents_root.join("_messaging");
+        let mut service = MessagingService::load_with_blob_store(
+            MessagingJsonFileStateStore::new(root.join("snapshot.json")),
+            MessagingFileBlobStore::new(root.join("blobs")),
+        )
+        .map_err(|error| {
+            format!("canonical ConversationChild draft service could not load: {error}")
+        })?;
+        let now_ms = Self::story_server_time_ms();
+        let identity = self
+            .shipping_native_messaging()?
+            .ok_or_else(|| "ConversationChild draft sync requires shipping native messaging".to_string())?
+            .identity()?;
+        if identity.user_id != self.local_human_id()? {
+            return Err("ConversationChild draft credential identity does not match active Human identity".into());
+        }
+        let context = |request_id: String| MessagingRequestContext {
+            request_id,
+            device_id: identity.device_id.clone(),
+            actor_id: actor_id.clone(),
+            session_id: "desktop-conversation-child-draft".into(),
+            sent_at_ms: now_ms,
+        };
+
+        if !service.engine().state().actors.contains_key(&actor_id) {
+            service
+                .handle(
+                    MessagingClientEnvelope {
+                        protocol_version: FABUSHI_MESSAGING_PROTOCOL_VERSION,
+                        context: context(format!("child-draft-owner:{}", Uuid::new_v4().simple())),
+                        command: MessagingClientCommand::UpsertProfile {
+                            actor: MessagingActor::human(actor_id.0.clone(), "Fabushi Human"),
+                        },
+                    },
+                    now_ms,
+                )
+                .map_err(|error| format!("canonical child-draft owner projection failed: {error}"))?;
+        }
+        if !service.engine().state().actors.contains_key(&peer_actor_id) {
+            service
+                .handle(
+                    MessagingClientEnvelope {
+                        protocol_version: FABUSHI_MESSAGING_PROTOCOL_VERSION,
+                        context: context(format!("child-draft-peer:{}", Uuid::new_v4().simple())),
+                        command: MessagingClientCommand::UpsertProfile {
+                            actor: MessagingActor::human(
+                                peer_actor_id.0.clone(),
+                                peer_display_name,
+                            ),
+                        },
+                    },
+                    now_ms,
+                )
+                .map_err(|error| format!("canonical child-draft peer projection failed: {error}"))?;
+        }
+        if !service
+            .engine()
+            .state()
+            .conversations
+            .contains_key(&remote.destination.conversation_id)
+        {
+            let participants = vec![
+                fabushi_messaging_core::Participant {
+                    actor_id: actor_id.clone(),
+                    role: fabushi_messaging_core::ParticipantRole::Member,
+                    joined_at_ms: now_ms,
+                    muted_until_ms: None,
+                },
+                fabushi_messaging_core::Participant {
+                    actor_id: peer_actor_id,
+                    role: fabushi_messaging_core::ParticipantRole::Member,
+                    joined_at_ms: now_ms,
+                    muted_until_ms: None,
+                },
+            ];
+            service
+                .handle(
+                    MessagingClientEnvelope {
+                        protocol_version: FABUSHI_MESSAGING_PROTOCOL_VERSION,
+                        context: context(format!("child-draft-conversation:{}", Uuid::new_v4().simple())),
+                        command: MessagingClientCommand::CreateConversation {
+                            conversation: fabushi_messaging_core::Conversation::direct(
+                                conversation_id,
+                                peer_display_name,
+                                participants,
+                                now_ms,
+                            ),
+                        },
+                    },
+                    now_ms,
+                )
+                .map_err(|error| format!("canonical child-draft conversation projection failed: {error}"))?;
+        }
+        service
+            .reconcile_saved_sublist_parent_access(
+                remote.destination.conversation_id.clone(),
+                actor_id.clone(),
+                true,
+                now_ms,
+            )
+            .map_err(|error| {
+                format!("canonical SavedSublist parent-access reconciliation failed: {error}")
+            })?;
+        let reply_to_message_id = remote.reply_to_message_id.as_ref().map(|id| {
+            let canonical = if id.starts_with("human-server-message:") {
+                id.clone()
+            } else {
+                format!("human-server-message:{id}")
+            };
+            fabushi_messaging_core::MessageId::new(canonical)
+        });
+        service
+            .reconcile_conversation_child_draft(
+                remote.destination.clone(),
+                actor_id,
+                remote.text.clone(),
+                reply_to_message_id,
+                now_ms,
+            )
+            .map_err(|error| {
+                format!("canonical ConversationChild draft reconciliation failed: {error}")
+            })
+    }
+
+    pub fn get_human_saved_sublist_draft(
+        &self,
+        conversation_id: &str,
+    ) -> Result<serde_json::Value, String> {
+        // Refresh server-owned messages first so any reply target has an exact
+        // authoritative SavedSublist membership snapshot before draft projection.
+        let _ = self.sync_human_conversation(conversation_id)?;
+        let owner = self.open_human_conversation_db_owner(conversation_id)?;
+        let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+        if !self.metadata_has_local_human(&metadata)? {
+            return Err("local Human identity is not a conversation participant".into());
+        }
+        let peer_human_id = self.peer_human_id_from_metadata(&metadata)?;
+        let peer_display_name = metadata
+            .get("title")
+            .and_then(serde_json::Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .unwrap_or(peer_human_id.as_str());
+        let client = self
+            .shipping_native_messaging()?
+            .ok_or_else(|| "SavedSublist draft sync requires shipping native messaging".to_string())?;
+        let remote = client.get_conversation_child_draft(&peer_human_id)?;
+        self.reconcile_remote_saved_sublist_draft(
+            conversation_id,
+            &peer_human_id,
+            peer_display_name,
+            &remote,
+        )?;
+        let canonical_reply = remote.reply_to_message_id.as_ref().map(|id| {
+            if id.starts_with("human-server-message:") {
+                id.clone()
+            } else {
+                format!("human-server-message:{id}")
+            }
+        });
+        Ok(serde_json::json!({
+            "destination": remote.destination,
+            "text": remote.text,
+            "replyToMessageId": canonical_reply,
+            "revision": remote.revision,
+            "updatedAt": remote.updated_at,
+        }))
+    }
+
+    pub fn set_human_saved_sublist_draft(
+        &self,
+        conversation_id: &str,
+        text: &str,
+        reply_to_message_id: Option<&str>,
+        expected_revision: u64,
+    ) -> Result<serde_json::Value, String> {
+        let _ = self.sync_human_conversation(conversation_id)?;
+        let owner = self.open_human_conversation_db_owner(conversation_id)?;
+        let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+        if !self.metadata_has_local_human(&metadata)? {
+            return Err("local Human identity is not a conversation participant".into());
+        }
+        let peer_human_id = self.peer_human_id_from_metadata(&metadata)?;
+        let peer_display_name = metadata
+            .get("title")
+            .and_then(serde_json::Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .unwrap_or(peer_human_id.as_str());
+        let destination = Self::canonical_saved_sublist_destination(
+            conversation_id,
+            &peer_human_id,
+        );
+        let client = self
+            .shipping_native_messaging()?
+            .ok_or_else(|| "SavedSublist draft mutation requires shipping native messaging".to_string())?;
+        let remote = client.set_conversation_child_draft(
+            &peer_human_id,
+            &destination,
+            text,
+            reply_to_message_id,
+            expected_revision,
+        )?;
+        self.reconcile_remote_saved_sublist_draft(
+            conversation_id,
+            &peer_human_id,
+            peer_display_name,
+            &remote,
+        )?;
+        let canonical_reply = remote.reply_to_message_id.as_ref().map(|id| {
+            if id.starts_with("human-server-message:") {
+                id.clone()
+            } else {
+                format!("human-server-message:{id}")
+            }
+        });
+        Ok(serde_json::json!({
+            "destination": remote.destination,
+            "text": remote.text,
+            "replyToMessageId": canonical_reply,
+            "revision": remote.revision,
+            "updatedAt": remote.updated_at,
         }))
     }
 
