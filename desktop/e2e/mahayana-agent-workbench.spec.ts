@@ -1375,7 +1375,7 @@ test('two shipping Electron device sessions converge one Human conversation and 
     await staleRetentionB.getByRole('button', { name: '7 days', exact: true }).click();
     await expect(staleRetentionB).toBeHidden();
 
-    await switchToAgentConversation(pageA);
+    await openMahayanaConversation(pageA);
     await reopenConversation(pageA, convergenceTitle);
     await pageA.getByRole('button', { name: 'Send options' }).click();
     await expect(pageA.getByRole('menuitem', { name: 'Message retention · 7 days', exact: true })).toBeVisible();
@@ -1388,14 +1388,14 @@ test('two shipping Electron device sessions converge one Human conversation and 
     const fromA = 'Dual-device Human convergence from Electron device A.';
     await sendHumanTurn(pageA, fromA);
 
-    await switchToAgentConversation(pageB);
+    await openMahayanaConversation(pageB);
     await reopenConversation(pageB, convergenceTitle);
     await expect(pageB.getByRole('article').filter({ hasText: fromA }).last()).toBeVisible({ timeout: 15_000 });
 
     const fromB = 'Dual-device Human convergence from Electron device B.';
     await sendHumanTurn(pageB, fromB);
 
-    await switchToAgentConversation(pageA);
+    await openMahayanaConversation(pageA);
     await reopenConversation(pageA, convergenceTitle);
     await expect(pageA.getByRole('article').filter({ hasText: fromA }).last()).toBeVisible({ timeout: 15_000 });
     await expect(pageA.getByRole('article').filter({ hasText: fromB }).last()).toBeVisible({ timeout: 15_000 });
