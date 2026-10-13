@@ -28,6 +28,12 @@ jobs:
           node-version: '24'
       - name: Install the pinned Desktop Electron runtime
         run: npm ci --prefix desktop
+      - name: Materialize the lockfile-pinned Electron binary
+        run: |
+          if ! test -x desktop/node_modules/electron/dist/electron; then
+            node desktop/node_modules/electron/install.js
+          fi
+          test -x desktop/node_modules/electron/dist/electron
       - name: Configure the exact Electron binary's runner-local sandbox
         run: |
           test "$(id -u)" -ne 0
