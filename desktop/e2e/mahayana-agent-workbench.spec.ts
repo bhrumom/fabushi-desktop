@@ -660,6 +660,11 @@ async function launchDesktopApp(appDataDir: string): Promise<ElectronApplication
   // exec-daemon, so give every process an isolated loopback endpoint instead
   // of letting the second process collide with the production default :1337.
   const boxExecDaemonPort = await reserveLoopbackPort();
+  // Development builds also expose a loopback dev-control server. A focused
+  // multi-device acceptance launches two shipping Electron instances on one
+  // CI host, so isolate that optional per-process owner as well instead of
+  // letting the second instance collide with the default :62150 endpoint.
+  const devControlPort = await reserveLoopbackPort();
   // Exercise the shipping Fabushi account -> private Host credential ->
   // Responses transport chain. The browser-first login below owns the token;
   // focused acceptance must not seed a parallel Cursor inference credential.
@@ -680,6 +685,7 @@ async function launchDesktopApp(appDataDir: string): Promise<ElectronApplication
       FABUSHI_RESPONSES_URL: `${e2eAuthBackendUrl}/v1/ai/responses`,
       SAND_CURSOR_WEBSITE_URL: e2eAuthBackendUrl,
       SAND_BOX_EXEC_DAEMON_PORT: String(boxExecDaemonPort),
+      SAND_DEV_CONTROL_PORT: String(devControlPort),
       SAND_DISABLE_SENTRY: '1',
       FABUSHI_FEATURE_HOST_MODE: process.env.FABUSHI_FEATURE_HOST_MODE || 'test',
       MAHAYANA_APP_HOST_BIN: process.env.MAHAYANA_APP_HOST_BIN || '',
