@@ -51,6 +51,8 @@ use mahayana_product::ProductError;
 use mahayana_product::default_mahayana_home;
 use mahayana_product::default_product_surface_state_path;
 use mahayana_runtime_core::MahayanaRuntime;
+#[cfg(not(target_arch = "wasm32"))]
+pub use mahayana_runtime_core::{MiniAppRuntimeStorePort, RuntimeStoreError};
 use mahayana_runtime_core::RuntimeBuilder;
 use mahayana_runtime_core::RuntimeError;
 use mahayana_social::MahayanaSocialConversationProvider;
@@ -146,6 +148,13 @@ pub struct MahayanaHost {
 }
 
 impl MahayanaHost {
+    /// Return a native-only transactional port over the RuntimeStore SQLite
+    /// connection. No independent connection or database file is created.
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn mini_app_store_port(&self) -> Result<MiniAppRuntimeStorePort, RuntimeStoreError> {
+        self.runtime.mini_app_store_port()
+    }
+
     pub fn create(config: HostCreateConfig) -> Result<Self, HostError> {
         let api_base_url = env::var("MAHAYANA_API_BASE_URL")
             .ok()

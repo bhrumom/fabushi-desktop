@@ -169,6 +169,16 @@ define_host_gateway_registry!(
     ("listRoutedMcpTools", Mcp),
     ("executeRoutedMcpTool", Mcp),
     ("listBoxMcpServers", Mcp),
+    // OMA-001 native UI intents. These are the narrowly-scoped exception to
+    // the frozen Host gateway surface; Coordinator restricts them to MainData.
+    // Renderer payloads are restricted to identity and operation IDs; Host
+    // resolves account, approval and bytes internally. Resource bytes must be
+    // consumed by the native loader and never projected to Renderer JSON.
+    ("listApprovedMiniApps", Mcp),
+    ("listInstalledMiniApps", Mcp),
+    ("installApprovedMiniApp", Mcp),
+    ("getInstalledMiniAppResources", Mcp),
+    ("uninstallMiniApp", Mcp),
     ("completeMcpOAuth", Mcp),
     ("requestWebAuthnCeremony", WebAuthn),
     ("setBoxSecrets", Secrets),

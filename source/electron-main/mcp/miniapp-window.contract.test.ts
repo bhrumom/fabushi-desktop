@@ -215,7 +215,20 @@ test("actual Electron uses the isolated protocol and blocks real network, worker
       });
       globalThis.__snapshotFor = (appId, accountScope=scope, accountGeneration=7) => ({ appId, version:'1.0.0', packageDigest:'${digest}', entrypoint:'index.html', accountScope, accountGeneration,
         resources:new Map([['index.html',{bytes:new TextEncoder().encode(${JSON.stringify(html)}),mime:'text/html'}],['app.js',{bytes:new TextEncoder().encode(${JSON.stringify(appJs)}),mime:'text/javascript'}],['module.wasm',{bytes:new Uint8Array([0,97,115,109,1,0,0,0]),mime:'application/wasm'}]]) });
-      globalThis.__open = async (snapshot) => { globalThis.__handle = await globalThis.__mini.open(snapshot); };
+      globalThis.__open = async (snapshot) => {
+        globalThis.__handle = await globalThis.__mini.open(snapshot);
+        if (!globalThis.__captureInstalled) {
+          globalThis.__captureInstalled = true;
+          fixtureSession.on('will-download', (event,item) => {
+            const fact = globalThis.__downloadFacts.at(-1);
+            fact.allowed = !event.defaultPrevented;
+            if (!fact.allowed) return;
+            // Test-only save-choice substitute, registered AFTER the production policy.
+            item.setSavePath(require('node:path').join(process.env.FABUSHI_MINIAPP_DOWNLOAD_DIR,item.getFilename()));
+            item.on('done', (_event,state) => { fact.state = state; });
+          });
+        }
+      };
       globalThis.__close = () => globalThis.__handle.close();
     });
   `;
@@ -250,30 +263,25 @@ test("actual Electron uses the isolated protocol and blocks real network, worker
     assert.equal(browserFacts.results.serviceWorker, "blocked");
     assert.equal(browserFacts.results.permission, "blocked");
     assert.ok(["blocked", "timed-out"].includes(browserFacts.results.webrtc));
-    const downloadEvent = page.waitForEvent("download", { timeout: 10_000 });
     await page.getByRole("button", { name: "Export report" }).click();
     const reportPath = join(downloadDirectory, "global-dandelion-local-report.json");
-    // Playwright owns accepted download paths in automation; this is not OS dialog acceptance.
-    const reportDownload = await downloadEvent.catch(async (error) => {
-      const facts = await app.evaluate(() => globalThis.__downloadFacts);
-      throw new Error('report download denied; native fixture facts=' + JSON.stringify(facts), {cause:error});
-    });
-    assert.equal(reportDownload.suggestedFilename(), "global-dandelion-local-report.json");
-    assert.equal(await reportDownload.failure(), null, "native policy must allow the real user-gesture export");
-    await reportDownload.saveAs(reportPath);
+    for (let attempt=0;attempt<50;attempt++) {
+      if (await app.evaluate(() => globalThis.__downloadFacts.some(fact => fact.state === 'completed'))) break;
+      await page.waitForTimeout(100);
+    }
+    const reportFacts = await app.evaluate(() => globalThis.__downloadFacts);
+    assert.equal(reportFacts.some(fact => fact.allowed && fact.state === 'completed'), true, JSON.stringify(reportFacts));
     assert.equal((await (await import("node:fs/promises")).readFile(reportPath, "utf8")).includes('"report":"offline"'), true);
     await page.waitForTimeout(500);
     await unlink(reportPath);
-    let unauthorizedDownloads = 0;
-    page.on("download", () => { unauthorizedDownloads += 1; });
     await page.evaluate(() => setTimeout(() => window.__exportReport(), 6000));
     await page.waitForTimeout(6500);
     await assert.rejects(access(reportPath));
-    assert.equal(unauthorizedDownloads, 0, "gesture-free exports must not reach Playwright's intercepted download storage either");
+    assert.equal(await app.evaluate(() => globalThis.__downloadFacts.filter(fact => fact.allowed).length), 1, "gesture-free exports must be denied by native policy");
     await page.evaluate((url) => { const link = document.createElement('a'); link.href = url; link.download = 'untrusted.json'; link.click(); }, endpoint);
     await page.waitForTimeout(500);
     await assert.rejects(access(reportPath));
-    assert.equal(unauthorizedDownloads, 0, "foreign downloads must be denied before a download event");
+    assert.equal(await app.evaluate(() => globalThis.__downloadFacts.filter(fact => fact.allowed).length), 1, "foreign downloads must be denied by native policy");
     await assert.rejects(app.evaluate(async ({ BrowserWindow }, url) => {
       const window = BrowserWindow.getAllWindows()[0];
       await window.webContents.session.fetch(url);
@@ -349,6 +357,13 @@ test("actual signed Dandelion bundle runs its Rust codec offline in the producti
           resources.set(name,{bytes,mime:metadata.mime});
         }
         await globalThis.__factory.open({appId:manifest.appId,version:manifest.version,packageDigest:'de10e02115415908f827723457817e51cb4f39aa5ca68798da824fecc483118a',entrypoint:manifest.entrypoint,accountScope:'e'.repeat(64),accountGeneration:1,resources});
+        globalThis.__downloads = [];
+        BrowserWindow.getAllWindows()[0].webContents.session.on('will-download',(event,item) => {
+          const fact = {allowed:!event.defaultPrevented}; globalThis.__downloads.push(fact);
+          if (!fact.allowed) return;
+          item.setSavePath(path.join(process.env.FABUSHI_DANDELION_DOWNLOAD_DIR,item.getFilename()));
+          item.on('done',(_event,state) => { fact.state=state; });
+        });
       };
     });
   `;
@@ -356,7 +371,7 @@ test("actual signed Dandelion bundle runs its Rust codec offline in the producti
   await writeFile(join(directory, "package.json"), JSON.stringify({name:"dandelion-interoperability",version:"1.0.0",main:"main.cjs"}));
   let application: Awaited<ReturnType<typeof electron.launch>> | undefined;
   try {
-    const app = application = await electron.launch({executablePath:require("electron") as string,args:[directory],chromiumSandbox:true,timeout:30_000,env:{...process.env,FABUSHI_MINIAPP_WINDOW_BUNDLE:resolve(bundle)}});
+    const app = application = await electron.launch({executablePath:require("electron") as string,args:[directory],chromiumSandbox:true,timeout:30_000,env:{...process.env,FABUSHI_MINIAPP_WINDOW_BUNDLE:resolve(bundle),FABUSHI_DANDELION_DOWNLOAD_DIR:directory}});
     await app.evaluate(async () => { await globalThis.__openSignedFixture(); });
     const page = await app.firstWindow();
     await page.waitForFunction(() => document.getElementById("status")?.textContent?.includes("已就绪"), null, {timeout:15_000});
@@ -367,12 +382,13 @@ test("actual signed Dandelion bundle runs its Rust codec offline in the producti
     await page.waitForFunction(() => document.getElementById("status")?.textContent?.includes("本地校验完成"), null, {timeout:15_000});
     assert.equal(await page.locator("#file-count").textContent(), "2");
     assert.equal(await page.locator("#packet-count").textContent(), "2");
-    const pending = page.waitForEvent("download", {timeout:10_000});
     await page.locator("#export").click();
-    const download = await pending;
-    assert.equal(await download.failure(), null);
-    const filename = await download.path();
-    assert.ok(filename);
+    for (let attempt=0;attempt<50;attempt++) {
+      if (await app.evaluate(() => globalThis.__downloads.some(fact => fact.state==='completed'))) break;
+      await page.waitForTimeout(100);
+    }
+    assert.equal(await app.evaluate(() => globalThis.__downloads.some(fact => fact.allowed && fact.state==='completed')), true);
+    const filename = join(directory, "global-dandelion-local-report.json");
     const report = JSON.parse(await (await import("node:fs/promises")).readFile(filename, "utf8"));
     assert.equal(report.networkSent, false);
     assert.equal(report.verifiedBytes, 5);

@@ -3,7 +3,7 @@
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
 use ed25519_dalek::{Signature, VerifyingKey};
 use serde::{
-    Deserialize,
+    Deserialize, Serialize,
     de::{self, MapAccess, SeqAccess, Visitor},
 };
 use serde_json::Value;
@@ -22,6 +22,7 @@ const MAX_MANIFEST: usize = 2 * 1024 * 1024;
 const MAX_FILES: usize = 10_000;
 const MAX_SAFE_INTEGER: u64 = 9_007_199_254_740_991;
 pub mod ledger;
+pub mod policy;
 
 #[derive(Debug, Error, PartialEq, Eq)]
 pub enum PackageError {
@@ -50,6 +51,30 @@ pub struct CatalogAuthorization {
     pub public_key: [u8; 32],
     pub trust_epoch: u64,
     pub host_api: u64,
+}
+
+#[derive(Clone, Debug, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum NativeMiniAppInstallState {
+    Ready,
+    Quarantined,
+}
+
+/// Exact native management-list DTO shared by the Host response and its
+/// contract tests. It contains display metadata only, never code bytes/paths.
+#[derive(Clone, Debug, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct NativeMiniAppEntry {
+    pub app_id: String,
+    pub display_name: String,
+    pub publisher_id: String,
+    pub version: String,
+    pub package_digest: String,
+    pub size_bytes: u64,
+    pub offline_core: bool,
+    pub installed: bool,
+    pub supported: bool,
+    pub state: NativeMiniAppInstallState,
 }
 
 pub struct VerifiedPackage {
@@ -84,6 +109,13 @@ impl VerifiedPackage {
             self.resources.get(name)?.as_slice(),
             self.manifest.files.get(name)?.mime.as_str(),
         ))
+    }
+    pub fn resource_entries(&self) -> impl Iterator<Item = (&str, &[u8], &str)> {
+        self.manifest.files.iter().filter_map(|(name, metadata)| {
+            self.resources
+                .get(name)
+                .map(|bytes| (name.as_str(), bytes.as_slice(), metadata.mime.as_str()))
+        })
     }
 }
 
@@ -416,6 +448,51 @@ mod tests {
     use ed25519_dalek::{Signer, SigningKey};
     use std::io::Write;
     use zip::{ZipWriter, write::SimpleFileOptions};
+
+    #[test]
+    fn native_installed_entry_serializes_the_offline_catalog_contract() {
+        let ready = NativeMiniAppEntry {
+            app_id: "org.fabushi.global-dandelion".into(),
+            display_name: "Global Dandelion".into(),
+            publisher_id: "bhrumom".into(),
+            version: "0.1.0".into(),
+            package_digest: "a".repeat(64),
+            size_bytes: 4096,
+            offline_core: true,
+            installed: true,
+            supported: true,
+            state: NativeMiniAppInstallState::Ready,
+        };
+        let json = serde_json::to_value(ready).unwrap();
+        assert_eq!(json["appId"], "org.fabushi.global-dandelion");
+        assert_eq!(json["displayName"], "Global Dandelion");
+        assert_eq!(json["publisherId"], "bhrumom");
+        assert_eq!(json["version"], "0.1.0");
+        let expected_digest = "a".repeat(64);
+        assert_eq!(json["packageDigest"].as_str(), Some(expected_digest.as_str()));
+        assert_eq!(json["sizeBytes"], 4096);
+        assert_eq!(json["offlineCore"], true);
+        assert_eq!(json["installed"], true);
+        assert_eq!(json["supported"], true);
+        assert_eq!(json["state"], "ready");
+
+        let quarantined = NativeMiniAppEntry {
+            app_id: "org.fabushi.global-dandelion".into(),
+            display_name: "org.fabushi.global-dandelion".into(),
+            publisher_id: "bhrumom".into(),
+            version: "0.1.0".into(),
+            package_digest: "a".repeat(64),
+            size_bytes: 4096,
+            offline_core: true,
+            installed: true,
+            supported: false,
+            state: NativeMiniAppInstallState::Quarantined,
+        };
+        let json = serde_json::to_value(quarantined).unwrap();
+        assert_eq!(json["installed"], true);
+        assert_eq!(json["supported"], false);
+        assert_eq!(json["state"], "quarantined");
+    }
 
     #[test]
     fn actual_production_signed_candidate_interoperability() {

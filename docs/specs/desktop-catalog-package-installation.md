@@ -1,6 +1,6 @@
 # Desktop catalog package installation
 
-Status: active, implementation and packaged acceptance pending.
+Status: active, Host install service implementation and packaged acceptance pending.
 Owner: existing Host MCP/Plugins extension and storage owners; Electron native
 edge and existing Plugins surface. Date: 2026-10-13. Parent: OMA-001 / FPM-001.
 
@@ -36,6 +36,11 @@ slice is the reusable Host verifier, never a bypass import/install API.
 - DCI-05: existing Host storage owns account/app install journal and active digest.
   Prepare/verify/content move/activation crash recovery preserves last-good bytes;
   immutable version reuse, stale generation/account, downgrade and revocation denied.
+  Independently refresh the Node-signed trust feed before catalog enumeration and
+  installed launch; persist a cryptographically valid newer feed before release
+  proof lookup, including when the proof endpoint returns 404. Only transport
+  failure may use last-good offline policy; invalid/rejected/rollback feeds fail
+  closed. A proof 404 for an installed exact release is a hard online revocation.
 - DCI-06: native edge downloads only policy-authorized sources. Renderer requests
   catalog app identity, never raw URL/path/key/account identity. IPC sender bound
   to trusted first-party window and current authenticated account.
@@ -55,7 +60,15 @@ CatalogAuthorization (appId/publisherId/version/package digest/key ID/public key
 epoch/host version). Authorization can only be constructed by the native trusted
 policy adapter; it is not part of renderer IPC or downloadable manifest.
 Verifier returns opaque VerifiedPackage; no execution or persistent mutation.
-Then existing Host storage receives verified descriptor/resources and journals
+The Host obtains approval-bound proof from the existing Backend
+`/v1/extensions/install/:kind/:namespace/:name/:version` endpoint and the
+independent `no-store` `/v1/extensions/install-trust` endpoint (response
+`{ trust: <existing Node-signed trust envelope> }`), verifies exact
+signed payload bytes and fixed-origin CAS artifact, then passes only the
+verified package plus cached proof/trust snapshot to the existing RuntimeStore-backed
+ledger. A proof 404 is absence/revocation of that release; a trust-feed 404 is a
+rejected refresh and cannot authorize cached online policy.
+Existing Host storage receives verified descriptor/resources and journals
 activation, never Electron/Renderer-owned competing global install truth.
 The initial ledger uses the existing injected Host SQLite connection, not a new
 database file: immutable original verified archive BLOB, account/app active and
@@ -79,6 +92,10 @@ Fail closed on unknown trust, revoked policy, resource corruption, unsupported
 host/capability/network, malformed ZIP/JSON, disk or account mismatch. Verification
 failure never modifies prior installation. Bounded archive and expanded bytes;
 no extraction before validation. Return structured errors, not content/token/path.
+Refresh the independently signed Node trust feed before online catalog refresh
+and cold launch; cache only after signature and anti-rollback checks. Release-proof
+404 is hard revocation, whereas only transport failure permits last-good offline
+launch. The Worker `/v1/extensions/trust` manifest-pin route remains untouched.
 Implement verifier/tests first, then storage/journal, typed native edge, isolated
 surface and existing Plugins wiring. Native transfer capabilities require a
 separate narrowly reviewed Host grant adapter; no executable bundled in .fabapp.
@@ -99,7 +116,8 @@ retain user data. No legacy install or hosted-URL trust auto-migration.
 ## Acceptance / compliance
 
 AC-1: DCI-01..04 exact-head Host CI passes; verifier integrated in existing owner.
-AC-2: DCI-05..08 production wiring and packaged offline/security/lifecycle tests.
+AC-2: DCI-05 includes trust-refresh/revocation adversarial CI; DCI-05..08
+production wiring and packaged offline/security/lifecycle tests.
 AC-3: actual approved Registry listing, signed immutable artifact, install/open in
 installed Fabushi with source provenance; native functionality separately accepted.
 All criteria currently blocked for final product acceptance; evidence will be
