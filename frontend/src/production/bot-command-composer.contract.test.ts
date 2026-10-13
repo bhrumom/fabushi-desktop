@@ -36,7 +36,9 @@ describe("canonical Bot command Composer contract", () => {
     expect(composer).toContain("setHiddenReplyKeyboardMessageId(null)");
     expect(composer).toContain("replyKeyboard?.singleUse === true && replyKeyboard.persistent !== true");
     expect(composer).toContain('replyKeyboard.placeholder ?? "Reply…"');
-    expect(renderer).toContain("entry.replyKeyboard != null)?.replyKeyboard");
+    expect(renderer).toContain("function latestComposerReplyKeyboard");
+    expect(renderer).toContain("entry?.kind === \"message\" && entry.role === \"assistant\" && entry.replyKeyboard != null");
+    expect(renderer).toContain("replyKeyboard={activeIsHuman ? undefined : latestComposerReplyKeyboard(entries)}");
     expect(composer).not.toContain("TelegramKeyboard");
   });
 });
