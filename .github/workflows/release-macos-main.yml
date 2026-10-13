@@ -284,9 +284,9 @@ jobs:
           xcrun notarytool submit "$dmg" "${args[@]}" --wait --output-format json > "$RUNNER_TEMP/dmg-notary.json"
           node -e "const r=require(process.argv[1]); if(r.status!=='Accepted') { console.error(r); process.exit(1) }" "$RUNNER_TEMP/dmg-notary.json"
           xcrun stapler staple "$dmg"
-          xcrun stapler validate "$dmg"
+          node .github/scripts/validate-apple-ticket.mjs "$dmg"
           codesign --verify --deep --strict --verbose=2 "$app"
-          xcrun stapler validate "$app"
+          node .github/scripts/validate-apple-ticket.mjs "$app"
           spctl --assess --type execute --verbose=4 "$app"
 
       - name: Verify desktop updater metadata
@@ -316,7 +316,7 @@ jobs:
           rm -rf "$installed_app"
           /usr/bin/ditto "$source_app" "$installed_app"
           codesign --verify --deep --strict --verbose=2 "$installed_app"
-          xcrun stapler validate "$installed_app"
+          node .github/scripts/validate-apple-ticket.mjs "$installed_app"
           spctl --assess --type execute --verbose=4 "$installed_app"
 
           executable_name="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$installed_app/Contents/Info.plist")"
