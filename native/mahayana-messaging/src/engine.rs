@@ -179,6 +179,17 @@ pub enum Command {
         reply_to_message_id: Option<MessageId>,
         updated_at_ms: i64,
     },
+    /// Server/native-authoritative draft projection. Unlike a client-authored
+    /// mutation, a SavedSublist reply target may be represented by trusted child
+    /// membership even when this local projection has not materialized the full
+    /// Message payload.
+    ReconcileConversationChildDraft {
+        destination: ConversationDestination,
+        actor_id: ActorId,
+        text: String,
+        reply_to_message_id: Option<MessageId>,
+        updated_at_ms: i64,
+    },
     ReplaceConversationChildWindow {
         destination: ConversationDestination,
         actor_id: ActorId,
@@ -2908,6 +2919,52 @@ impl MessagingEngine {
                         if !authoritative_membership {
                             return Err(EngineError::ConversationChildMessageMismatch);
                         }
+                    }
+                }
+                Ok(vec![Event::ConversationChildDraftChanged {
+                    destination,
+                    actor_id,
+                    text,
+                    reply_to_message_id: reply_to_message_id.map(|id| id.0),
+                    updated_at_ms,
+                }])
+            }
+            Command::ReconcileConversationChildDraft {
+                destination,
+                actor_id,
+                text,
+                reply_to_message_id,
+                updated_at_ms,
+            } => {
+                // Reuse the ordinary child authorization/identity path without
+                // requiring a local Message payload for a remotely validated
+                // SavedSublist reply target.
+                self.decide(Command::SetConversationChildDraft {
+                    destination: destination.clone(),
+                    actor_id: actor_id.clone(),
+                    text: String::new(),
+                    reply_to_message_id: None,
+                    updated_at_ms: 0,
+                })?;
+                if let Some(reply_to_message_id) = &reply_to_message_id {
+                    if matches!(
+                        &destination.child,
+                        Some(ConversationChildIdentity::SavedSublist { .. })
+                    ) {
+                        let authoritative_membership = self
+                            .state
+                            .child_state(&destination, &actor_id)
+                            .is_some_and(|child| {
+                                child.has_authoritative_message(reply_to_message_id.0.as_str())
+                            });
+                        if !authoritative_membership {
+                            return Err(EngineError::ConversationChildMessageMismatch);
+                        }
+                    } else {
+                        self.require_message(
+                            destination_message_conversation_id(&destination),
+                            reply_to_message_id,
+                        )?;
                     }
                 }
                 Ok(vec![Event::ConversationChildDraftChanged {
