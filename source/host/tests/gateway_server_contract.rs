@@ -36,6 +36,45 @@ impl GatewayApi for TestApi {
             })),
             method if matches!(
                 method,
+                "listHumanConversations"
+                    | "syncHumanConversations"
+                    | "syncHumanConversation"
+                    | "getHumanConversationRetention"
+                    | "setHumanConversationRetention"
+                    | "createHumanConversation"
+                    | "searchHumanRecipients"
+                    | "forwardHumanMessage"
+                    | "sendHumanMessage"
+                    | "reactHumanMessage"
+                    | "getHumanConversationTranscript"
+                    | "getHumanConversationTranscriptTail"
+                    | "searchHumanMessages"
+                    | "getCallTransportIdentity"
+                    | "getCallTransportLease"
+                    | "getCallIceServers"
+                    | "listCallMediaSessions"
+                    | "createCallMediaSession"
+                    | "discoverCallMediaPublications"
+                    | "publishCallMedia"
+                    | "acknowledgeCallMediaPublication"
+                    | "subscribeCallMedia"
+                    | "answerCallMediaSubscription"
+                    | "updateCallMediaSubscriptionLayer"
+                    | "closeCallMediaSession"
+                    | "syncHumanCalls"
+                    | "createCallSession"
+                    | "getCallSession"
+                    | "listCallSessions"
+                    | "transitionCallSession"
+                    | "updateCallMedia"
+                    | "sendCallSignal"
+                    | "listCallSignals"
+            ) => Ok(json!({
+                "method": method,
+                "args": args,
+            })),
+            method if matches!(
+                method,
                 "runner.acceptRoutedPrompt"
                     | "runner.startRoutedProvider"
                     | "runner.cancelRoutedProvider"
