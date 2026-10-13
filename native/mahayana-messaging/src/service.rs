@@ -197,6 +197,29 @@ impl<S: MessagingStateStore> MessagingService<S> {
         )
     }
 
+    /// Persist a server-authoritative typed-child draft into the existing
+    /// ConversationChildRuntimeState owner. The remote service owns conflict
+    /// fencing/revisions; this local projection never creates a second draft store.
+    pub fn reconcile_conversation_child_draft(
+        &mut self,
+        destination: ConversationDestination,
+        actor_id: ActorId,
+        text: String,
+        reply_to_message_id: Option<MessageId>,
+        server_time_ms: i64,
+    ) -> Result<(), MessagingServiceError> {
+        self.persist_authoritative_reconciliation(
+            Command::SetConversationChildDraft {
+                destination,
+                actor_id,
+                text,
+                reply_to_message_id,
+                updated_at_ms: server_time_ms,
+            },
+            server_time_ms,
+        )
+    }
+
     /// Authoritative reconciliation is one durable transaction. A failed store
     /// write must not leave trusted access/membership visible only in memory or
     /// advance the cursor beyond the last durable snapshot.
