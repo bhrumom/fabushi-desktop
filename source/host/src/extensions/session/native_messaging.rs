@@ -182,6 +182,34 @@ struct SetRetentionRequest<'a> {
     expected_revision: u64,
 }
 
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct FabushiRemoteConversationChildDraft {
+    pub destination: fabushi_messaging_core::ConversationDestination,
+    pub text: String,
+    pub reply_to_message_id: Option<String>,
+    pub revision: u64,
+    pub updated_at: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ConversationChildDraftEnvelope {
+    success: bool,
+    draft: Option<FabushiRemoteConversationChildDraft>,
+    error: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct SetConversationChildDraftRequest<'a> {
+    target_user_id: &'a str,
+    destination: &'a fabushi_messaging_core::ConversationDestination,
+    text: &'a str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    reply_to_message_id: Option<&'a str>,
+    expected_revision: u64,
+}
+
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct SendAttachmentRequest<'a> {
@@ -795,6 +823,103 @@ impl FabushiNativeMessagingClient {
         envelope
             .retention
             .ok_or_else(|| "Fabushi Human retention mutation omitted the canonical policy.".to_string())
+    }
+
+    pub fn get_conversation_child_draft(
+        &self,
+        peer_human_id: &str,
+    ) -> Result<FabushiRemoteConversationChildDraft, String> {
+        let peer_human_id = required_trimmed(peer_human_id, "peer Human id")?;
+        let credentials = read_credentials(&self.credential_path)?;
+        let mut url = self.endpoint("/api/social/conversation-child-draft")?;
+        url.query_pairs_mut().append_pair("contactId", peer_human_id);
+        let response = self
+            .client
+            .get(url)
+            .bearer_auth(required_trimmed(&credentials.access_token, "accessToken")?)
+            .header(
+                "x-fabushi-device-id",
+                required_trimmed(&credentials.device_id, "deviceId")?,
+            )
+            .header("accept", "application/json")
+            .send()
+            .map_err(|error| format!("Fabushi ConversationChild draft sync failed: {error}"))?;
+        let status = response.status();
+        let body = response
+            .text()
+            .map_err(|error| format!("Fabushi ConversationChild draft response could not be read: {error}"))?;
+        let envelope: ConversationChildDraftEnvelope = serde_json::from_str(&body).map_err(|error| {
+            format!(
+                "Fabushi ConversationChild draft response was invalid JSON (HTTP {}): {error}",
+                status.as_u16()
+            )
+        })?;
+        if !status.is_success() || !envelope.success {
+            return Err(format!(
+                "Fabushi ConversationChild draft sync was rejected (HTTP {}): {}",
+                status.as_u16(),
+                envelope.error.unwrap_or_else(|| "unknown backend error".into())
+            ));
+        }
+        envelope
+            .draft
+            .ok_or_else(|| "Fabushi ConversationChild draft response omitted the canonical draft.".to_string())
+    }
+
+    pub fn set_conversation_child_draft(
+        &self,
+        peer_human_id: &str,
+        destination: &fabushi_messaging_core::ConversationDestination,
+        text: &str,
+        reply_to_message_id: Option<&str>,
+        expected_revision: u64,
+    ) -> Result<FabushiRemoteConversationChildDraft, String> {
+        let peer_human_id = required_trimmed(peer_human_id, "peer Human id")?;
+        if !destination.is_valid() || destination.child.is_none() {
+            return Err("Fabushi ConversationChild draft requires a valid typed destination".into());
+        }
+        if text.chars().count() > 4000 {
+            return Err("Fabushi ConversationChild draft exceeds the backend text limit".into());
+        }
+        let credentials = read_credentials(&self.credential_path)?;
+        let response = self
+            .client
+            .request(Method::PUT, self.endpoint("/api/social/conversation-child-draft")?)
+            .bearer_auth(required_trimmed(&credentials.access_token, "accessToken")?)
+            .header(
+                "x-fabushi-device-id",
+                required_trimmed(&credentials.device_id, "deviceId")?,
+            )
+            .header("accept", "application/json")
+            .json(&SetConversationChildDraftRequest {
+                target_user_id: peer_human_id,
+                destination,
+                text,
+                reply_to_message_id,
+                expected_revision,
+            })
+            .send()
+            .map_err(|error| format!("Fabushi ConversationChild draft mutation failed: {error}"))?;
+        let status = response.status();
+        let body = response
+            .text()
+            .map_err(|error| format!("Fabushi ConversationChild draft mutation response could not be read: {error}"))?;
+        let envelope: ConversationChildDraftEnvelope = serde_json::from_str(&body).map_err(|error| {
+            format!(
+                "Fabushi ConversationChild draft mutation response was invalid JSON (HTTP {}): {error}",
+                status.as_u16()
+            )
+        })?;
+        if !status.is_success() || !envelope.success {
+            return Err(format!(
+                "Fabushi ConversationChild draft mutation was rejected (HTTP {}): {}",
+                status.as_u16(),
+                envelope.error.unwrap_or_else(|| "unknown backend error".into())
+            ));
+        }
+        envelope
+            .draft
+            .ok_or_else(|| "Fabushi ConversationChild draft mutation omitted the canonical draft.".to_string())
     }
 
     pub fn list_direct_messages(
