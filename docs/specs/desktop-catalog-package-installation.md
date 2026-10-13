@@ -57,6 +57,16 @@ policy adapter; it is not part of renderer IPC or downloadable manifest.
 Verifier returns opaque VerifiedPackage; no execution or persistent mutation.
 Then existing Host storage receives verified descriptor/resources and journals
 activation, never Electron/Renderer-owned competing global install truth.
+The initial ledger uses the existing injected Host SQLite connection, not a new
+database file: immutable original verified archive BLOB, account/app active and
+previous digest, and operation receipts in one IMMEDIATE transaction. There is
+no filesystem move/pointer gap; SQLite rollback repairs interrupted activation.
+The native resource adapter must reverify the stored original archive against
+current trusted cached catalog policy before cold launch. Initial activation
+accepts stable semantic versions only; prerelease rollout requires an explicit
+version policy extension. Code cache quota is 500 MiB. User browser data is never
+stored or deleted by this code ledger. Current scope is supplied by the existing
+Host account owner; the ledger stores no competing account/authentication truth.
 
 Private UI intents retain OMA list/installApproved/launch/update/uninstall semantics.
 Exact production wiring and schema are to be recorded before implementing them.

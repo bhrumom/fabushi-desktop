@@ -21,6 +21,7 @@ const MAX_EXPANDED: u64 = 250 * 1024 * 1024;
 const MAX_MANIFEST: usize = 2 * 1024 * 1024;
 const MAX_FILES: usize = 10_000;
 const MAX_SAFE_INTEGER: u64 = 9_007_199_254_740_991;
+pub mod ledger;
 
 #[derive(Debug, Error, PartialEq, Eq)]
 pub enum PackageError {
@@ -56,6 +57,7 @@ pub struct VerifiedPackage {
     digest: String,
     resources: BTreeMap<String, Vec<u8>>,
     trust_epoch: u64,
+    archive: Vec<u8>,
 }
 
 impl VerifiedPackage {
@@ -404,6 +406,7 @@ pub fn verify_catalog_bundle(
         digest: package_digest,
         resources,
         trust_epoch: policy.trust_epoch,
+        archive: bytes.to_vec(),
     })
 }
 
@@ -429,7 +432,7 @@ mod tests {
         }
         writer.finish().unwrap().into_inner()
     }
-    fn fixture(
+    pub(super) fn fixture(
         mutate: impl FnOnce(&mut Value),
         resource: &[u8],
     ) -> (Vec<u8>, CatalogAuthorization) {
@@ -466,7 +469,7 @@ mod tests {
         };
         (bytes, policy)
     }
-    const HTML: &[u8] = b"<!doctype html><p>offline</p>";
+    pub(super) const HTML: &[u8] = b"<!doctype html><p>offline</p>";
     #[test]
     fn verifies_signed_content_and_descriptor() {
         let (bytes, policy) = fixture(|_| {}, HTML);
