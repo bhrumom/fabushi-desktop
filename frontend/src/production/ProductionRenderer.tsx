@@ -157,6 +157,7 @@ import {
   projectHumanConversationTranscript,
   projectRendererAgent,
   projectRendererAgentUpsert,
+  projectRendererBotCommands,
   projectRendererAgents,
   projectTranscriptEntry,
   projectTranscriptFeedEntries,
@@ -4571,7 +4572,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
           </main>
           <div className="sand-chat-input-dock">
             {activeIsHuman ? null : localToolPermissionDock}
-            <ConversationComposer acceptedSendGeneration={composerClearGeneration} canExchangeStash={canExchangeComposerStash} disabled={busy || client == null} draft={draft} editorProviders={activeIsHuman ? undefined : editorProviders} hasStash={activeDraftSnapshot.stash != null} notice={notice} onChange={(value) => { if (activeComposerDraftScope != null) composerDraftStore.setDraft(activeComposerDraftScope, value); }} onClearReplyTarget={clearReplyTarget} onConfigureRetention={activeIsHuman && humanRetention != null ? () => setRetentionDialogOpen(true) : undefined} onExchangeStash={exchangeComposerStash} onRemoveAttachment={removeAttachment} onRemoveStash={removeComposerStash} onScheduleSend={activeIsHuman ? openScheduleComposer : undefined} onSendSilently={activeIsHuman ? () => submit({ silent: true }) : undefined} onSendStash={sendComposerStash} onStageFiles={stageFiles} onSubmit={submit} placeholder={`Message ${activeAgent.name}`} platformInput={bridge.platformInput} replyTarget={replyTarget} retentionLabel={activeIsHuman && humanRetention != null ? humanRetentionLabel(humanRetention.retentionSeconds) : undefined} scopeKey={`${transcriptAccountSlot ?? "signed-out"}:${activeComposerDraftScopeKey ?? activeAgent.id}`} transcribeAudio={transcribeAudio} />
+            <ConversationComposer acceptedSendGeneration={composerClearGeneration} botCommands={activeIsHuman ? undefined : projectRendererBotCommands(activeAgent.raw.botCommands)} canExchangeStash={canExchangeComposerStash} disabled={busy || client == null} draft={draft} editorProviders={activeIsHuman ? undefined : editorProviders} hasStash={activeDraftSnapshot.stash != null} notice={notice} onChange={(value) => { if (activeComposerDraftScope != null) composerDraftStore.setDraft(activeComposerDraftScope, value); }} onClearReplyTarget={clearReplyTarget} onConfigureRetention={activeIsHuman && humanRetention != null ? () => setRetentionDialogOpen(true) : undefined} onExchangeStash={exchangeComposerStash} onRemoveAttachment={removeAttachment} onRemoveStash={removeComposerStash} onScheduleSend={activeIsHuman ? openScheduleComposer : undefined} onSendSilently={activeIsHuman ? () => submit({ silent: true }) : undefined} onSendStash={sendComposerStash} onStageFiles={stageFiles} onSubmit={submit} placeholder={`Message ${activeAgent.name}`} platformInput={bridge.platformInput} replyTarget={replyTarget} retentionLabel={activeIsHuman && humanRetention != null ? humanRetentionLabel(humanRetention.retentionSeconds) : undefined} scopeKey={`${transcriptAccountSlot ?? "signed-out"}:${activeComposerDraftScopeKey ?? activeAgent.id}`} transcribeAudio={transcribeAudio} />
           </div>
         </div>}
         </div>

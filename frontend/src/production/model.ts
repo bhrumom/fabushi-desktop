@@ -26,7 +26,13 @@ export type { DeepLinkInfo } from "../recovered/features/deep-links/overlay/mode
 // @evidence src/app/dist/renderer/assets/view-DPSBrvyV.js#SHA256=5bf28224da62a9042885e9da60e3fce82ed544846f470241ed6bcf4e12e64040
 
 /** Raw agent fields consumed by the renderer's local-group gate. */
+export interface RendererBotCommand {
+  readonly command: string;
+  readonly description: string;
+}
+
 export interface RendererAgentRaw extends Record<string, unknown> {
+  readonly botCommands?: readonly RendererBotCommand[];
   readonly isSharedRoom?: boolean;
   readonly sharedRoomId?: string | null;
 }
@@ -80,6 +86,24 @@ function numberValue(value: unknown, fallback: number): number {
 
 function stringArray(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === "string") : [];
+}
+
+export function projectRendererBotCommands(value: unknown): RendererBotCommand[] {
+  if (!Array.isArray(value)) return [];
+  const commands: RendererBotCommand[] = [];
+  const seen = new Set<string>();
+  for (const entry of value) {
+    if (!isRecord(entry) || typeof entry.command !== "string") continue;
+    const command = entry.command.trim();
+    if (command.length < 2 || !command.startsWith("/") || /\s/.test(command) || seen.has(command)) continue;
+    seen.add(command);
+    commands.push({
+      command,
+      description: typeof entry.description === "string" ? entry.description.trim() : ""
+    });
+    if (commands.length === 32) break;
+  }
+  return commands;
 }
 
 function parseLastEntryKinds(value: unknown): Readonly<Record<string, number>> | null {

@@ -26,8 +26,14 @@ const RECORDING_CHIP_CLASS = "sand-recording-chip sand-9f619 sand-3nfvp2 sand-pk
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=4738296 (e9n prompt editor; UTF-8 region SHA-256 0a96b805946245180330a9bffda0053e11015e9c8fe850dfa62361ab85acee35)
 // @evidence recovered/frontend/app/assets/index-UbX-y3il.js#byteOffset=5948419 (e9n prompt editor; UTF-8 region SHA-256 6f8b718ba4e43704baea5078c9498184b98f82a3ad84d47bf1e5a9f516988f07)
 
+export interface ComposerBotCommand {
+  readonly command: string;
+  readonly description: string;
+}
+
 export interface ConversationComposerProps {
   draft: ComposerDraft;
+  botCommands?: readonly ComposerBotCommand[];
   disabled?: boolean;
   notice?: string | null;
   placeholder?: string;
@@ -75,7 +81,7 @@ export function selectComposerFiles(files: readonly File[], existingCount: numbe
   return files.slice(0, remaining);
 }
 
-export function ConversationComposer({ acceptedSendGeneration = 0, canExchangeStash = false, draft, disabled = false, hasStash = false, notice, placeholder = "Ask anything, or drop a file.", transcribeAudio, onChange, onClearReplyTarget, onConfigureRetention, onExchangeStash, onRemoveAttachment, onRemoveStash, onScheduleSend, onSendSilently, onSendStash, onStageFiles, onSubmit, retentionLabel, replyTarget, editorProviders, scopeKey, platformInput }: ConversationComposerProps) {
+export function ConversationComposer({ acceptedSendGeneration = 0, botCommands = [], canExchangeStash = false, draft, disabled = false, hasStash = false, notice, placeholder = "Ask anything, or drop a file.", transcribeAudio, onChange, onClearReplyTarget, onConfigureRetention, onExchangeStash, onRemoveAttachment, onRemoveStash, onScheduleSend, onSendSilently, onSendStash, onStageFiles, onSubmit, retentionLabel, replyTarget, editorProviders, scopeKey, platformInput }: ConversationComposerProps) {
   const fileInput = useRef<HTMLInputElement>(null);
   const editorControls = useRef<PromptEditorControls | null>(null);
   const dragDepth = useRef(0);
@@ -89,6 +95,7 @@ export function ConversationComposer({ acceptedSendGeneration = 0, canExchangeSt
   const voiceBusy = voice.isRecording || voice.isProcessing || voice.isActivating;
   const canSend = hasPayload && !disabled && !voiceBusy;
   const atLimit = draft.attachments.length >= COMPOSER_ATTACHMENT_LIMIT;
+  const showBotCommands = botCommands.length > 0 && !hasPayload && replyTarget == null;
 
   useEffect(() => voice.controller.onFinal((text) => {
     editorControls.current?.insertText(text);
@@ -146,6 +153,11 @@ export function ConversationComposer({ acceptedSendGeneration = 0, canExchangeSt
       linkPreview: { ...current.linkPreview, ...patch, manual: true },
     });
   }, [onChange]);
+
+  const insertBotCommand = useCallback((command: string) => {
+    editorControls.current?.insertText(command);
+    editorControls.current?.focus();
+  }, []);
 
   const stageFiles = useCallback((files: readonly File[]) => {
     const accepted = selectComposerFiles(files, draft.attachments.length);
@@ -247,6 +259,14 @@ export function ConversationComposer({ acceptedSendGeneration = 0, canExchangeSt
         {voice.isRecording || voice.isActivating ? <span aria-live="polite" className="sand-prompt-voice-status" role="status">Listening…</span> : null}
         {platformInputStatusText(inputStatus) == null ? null : <p aria-live="polite" className="fabushi-input-status" data-testid="input-composition-status" role="status">{platformInputStatusText(inputStatus)}</p>}
         <div className="sand-prompt-actions-row">
+          {!showBotCommands ? null : <SandMenuRoot placement="top-start">
+            <SandMenuTrigger><SandIconButton aria-label="Bot commands" disabled={disabled || voiceBusy} icon="more" shape="circle" size="lg" type="button" variant="default" /></SandMenuTrigger>
+            <SandMenuContent ariaLabel="Bot commands">
+              {botCommands.map((command, index) => <SandMenuItem index={index} key={command.command} onSelect={() => insertBotCommand(command.command)}>
+                {command.command}{command.description.length === 0 ? "" : ` · ${command.description}`}
+              </SandMenuItem>)}
+            </SandMenuContent>
+          </SandMenuRoot>}
           <SandIconButton aria-label="Attach file" className={PROMPT_ATTACH_CLASS} disabled={disabled || atLimit || voiceBusy} icon="plus" onClick={() => fileInput.current?.click()} shape="circle" size="lg" type="button" variant="default" />
           {onExchangeStash == null ? null : <SandIconButton aria-label={hasStash ? "Swap saved draft" : "Store draft"} disabled={disabled || !canExchangeStash || voiceBusy} icon="arrow-swap" onClick={onExchangeStash} shape="circle" size="lg" title={`${hasStash ? "Swap saved draft" : "Store draft"} (Ctrl+Shift+Y)`} type="button" variant="default" />}
           {onSendSilently == null && onScheduleSend == null && onConfigureRetention == null ? null : <SandMenuRoot placement="top-start">

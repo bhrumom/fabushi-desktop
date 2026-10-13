@@ -6,6 +6,7 @@ use codex_secrets::SecretName;
 use codex_secrets::SecretScope;
 use codex_secrets::SecretsBackendKind;
 use codex_secrets::SecretsManager;
+use mahayana_host_protocol::BotCommandSummary;
 use mahayana_host_protocol::BotSummary;
 use mahayana_host_protocol::ConnectorAccountSummary;
 use mahayana_host_protocol::ConnectorStatus;
@@ -335,6 +336,13 @@ fn default_surface_skills() -> Vec<SkillSummary> {
     }]
 }
 
+fn default_surface_bot_commands() -> Vec<BotCommandSummary> {
+    vec![BotCommandSummary {
+        command: "/help".into(),
+        description: "Show this Bot's capabilities and example requests.".into(),
+    }]
+}
+
 fn default_surface_bots() -> Vec<BotSummary> {
     vec![
         BotSummary {
@@ -343,6 +351,7 @@ fn default_surface_bots() -> Vec<BotSummary> {
             name: "大乘助手".into(),
             description: "General-purpose Mahayana assistant.".into(),
             title: String::new(),
+            commands: default_surface_bot_commands(),
             hidden: false,
             avatar: None,
             avatar_shape: None,
@@ -359,6 +368,7 @@ fn default_surface_bots() -> Vec<BotSummary> {
             name: "Research Bot".into(),
             description: "Source verification and research synthesis.".into(),
             title: String::new(),
+            commands: default_surface_bot_commands(),
             hidden: false,
             avatar: None,
             avatar_shape: None,
@@ -375,6 +385,7 @@ fn default_surface_bots() -> Vec<BotSummary> {
             name: "Incident Bot".into(),
             description: "Incident triage and operational coordination.".into(),
             title: String::new(),
+            commands: default_surface_bot_commands(),
             hidden: true,
             avatar: None,
             avatar_shape: None,

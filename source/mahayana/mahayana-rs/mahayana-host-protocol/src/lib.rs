@@ -246,6 +246,14 @@ pub struct SkillTeamSummary {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct BotCommandSummary {
+    pub command: String,
+    #[serde(default)]
+    pub description: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct BotSummary {
     pub id: String,
     /// Runtime Agent identity owned by this Bot. Bot id and Agent id are
@@ -256,6 +264,8 @@ pub struct BotSummary {
     pub description: String,
     #[serde(default)]
     pub title: String,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub commands: Vec<BotCommandSummary>,
     pub hidden: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub avatar: Option<String>,

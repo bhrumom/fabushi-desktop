@@ -3,7 +3,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::agents::agent_profile::{
     SandAgentProfile, get_sand_profile_path, read_legacy_profile_avatar_field,
-    read_sand_profile_file, write_sand_profile_file,
+    read_sand_bot_commands, read_sand_profile_file, write_sand_profile_file,
 };
 
 fn temp_root(label: &str) -> std::path::PathBuf {
@@ -49,6 +49,35 @@ fn profile_file_round_trip_matches_frozen_grok_normalization() {
             avatar_color: "violet".into(),
         })
     );
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn profile_writer_preserves_bot_commands_for_roster_restart_projection() {
+    let root = temp_root("bot-commands");
+    fs::create_dir_all(&root).expect("root");
+    let path = root.join("profile.json");
+    fs::write(
+        &path,
+        r#"{"name":"Bot","description":"","title":"","avatarShape":"","avatarColor":"","botCommands":[{"command":"/help","description":"Show help"},{"command":"bad command","description":"drop"}]}"#,
+    ).expect("seed profile");
+
+    write_sand_profile_file(
+        &path,
+        &SandAgentProfile {
+            name: "Renamed Bot".into(),
+            description: "updated".into(),
+            title: String::new(),
+            avatar_shape: String::new(),
+            avatar_color: String::new(),
+        },
+    ).expect("rewrite profile");
+
+    let commands = read_sand_bot_commands(&path);
+    assert_eq!(commands.len(), 1);
+    assert_eq!(commands[0].command, "/help");
+    assert_eq!(commands[0].description, "Show help");
+    assert!(fs::read_to_string(&path).expect("profile").contains("\"botCommands\""));
     let _ = fs::remove_dir_all(root);
 }
 
