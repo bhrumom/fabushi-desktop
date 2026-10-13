@@ -231,33 +231,41 @@
       "referencePath": "source/electron-main/media/media-protocol.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "c8b23b825833995f7d6979df65006fe92723a47c",
+      "targetBlobSha": "af339a90e398c66fb89eebcb76e43947ad76b4e3",
       "behavioralEvidence": [
         "source/electron-main/media/media-protocol.ts",
-        "source/shared/node/sand-data-root.ts"
+        "source/shared/node/sand-data-root.ts",
+        "docs/specs/desktop-miniapp-window.md",
+        "source/electron-main/mcp/miniapp-window.ts"
       ],
       "testEvidence": [
         "source/electron-main/foundations.test.ts",
-        ".github/workflows/desktop-chat-parity-ci.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/electron-main/mcp/miniapp-window.contract.test.ts",
+        ".github/workflows/miniapp-window-ci.yml"
       ],
-      "rationale": "Keeps Grok media-protocol behavior and changes only the path-reanchoring dependency from legacy Host TypeScript to the shared data-root utility, preserving Electron Main ownership of privileged media protocol handling."
+      "rationale": "Keeps Grok media-protocol behavior and changes only the path-reanchoring dependency from legacy Host TypeScript to the shared data-root utility, preserving Electron Main ownership of privileged media protocol handling. DMW-01 adds an optional native-only declaration list to this same single pre-ready registration call; the production entry appends the isolated mini-app scheme, without another global registration or changes to sand-media handlers. The default call remains backward compatible."
     },
     {
       "referencePath": "source/electron-main/production-binding-providers.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "17af9206914a82adaf72a446304b028bc8730a83",
+      "targetBlobSha": "e65c2b1e9160d30dad1b549558e3d01826069dce",
       "behavioralEvidence": [
         "source/electron-main/production-binding-providers.ts",
         "source/electron-main/local-exec/local-exec-daemon-protocol.ts",
-        "source/shared/node/sand-data-root.ts"
+        "source/shared/node/sand-data-root.ts",
+        "docs/specs/desktop-miniapp-window.md",
+        "source/electron-main/mcp/miniapp-window.ts"
       ],
       "testEvidence": [
         "source/electron-main/local-exec/local-exec-daemon-protocol.test.ts",
         "source/electron-main/foundations.test.ts",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/electron-main/mcp/miniapp-window.contract.test.ts",
+        ".github/workflows/miniapp-window-ci.yml"
       ],
-      "rationale": "Preserves the frozen Grok production binding graph while cutting two legacy Host-TypeScript imports: local-exec daemon protocol ownership is now in Electron Main and the data-root resolver is shared. The actual local-exec supervision still belongs to Mahayana Coordinator, so this adaptation strengthens rather than collapses the Grok process boundary."
+      "rationale": "Preserves the frozen Grok production binding graph while cutting two legacy Host-TypeScript imports: local-exec daemon protocol ownership is now in Electron Main and the data-root resolver is shared. The actual local-exec supervision still belongs to Mahayana Coordinator, so this adaptation strengthens rather than collapses the Grok process boundary. DMW-01 additionally injects the mini-app scheme through the existing MediaProtocol registration owner, with an empty default for existing callers. No second protocol bootstrap, Host or account owner is introduced."
     },
     {
       "referencePath": "source/electron-main/startup/desktop-user-data-bootstrap.ts",
@@ -329,7 +337,7 @@
       "referencePath": "source/shared/rpc/coordinator-main.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "12e0310503db0e054451a0a6c9eda212fe10fd20",
+      "targetBlobSha": "9ee4b210ea92fbaeb4933b41ccb8e22ae5f3f4f3",
       "behavioralEvidence": [
         "source/shared/rpc/coordinator-main.ts",
         "source/electron-main/adapters/attachment-gateway.ts",
@@ -337,7 +345,9 @@
         "source/electron-main/adapters/mcp-oauth.ts",
         "source/host/app/src/main.rs",
         "source/shared/node/mcp/mcp-discovery-settlement.ts",
-        "source/host/src/extensions/telemetry/mcp_discovery_telemetry.rs"
+        "source/host/src/extensions/telemetry/mcp_discovery_telemetry.rs",
+        "docs/specs/desktop-miniapp-window.md",
+        "source/node-agent-coordinator/src/miniapp_management_relay.rs"
       ],
       "testEvidence": [
         "source/electron-main/coordinator/coordinator-executors.test.ts",
@@ -348,9 +358,11 @@
         "source/shared/node/mcp/mcp-discovery-settlement.contract.test.ts",
         "source/electron-main/mcp/mcp-runtime.contract.test.ts",
         "source/host/tests/mcp_discovery_telemetry_contract.rs",
-        "source/host/tests/mcp_discovery_production_wiring_contract.rs"
+        "source/host/tests/mcp_discovery_production_wiring_contract.rs",
+        "source/electron-main/mcp/miniapp-window.contract.test.ts",
+        ".github/workflows/miniapp-window-ci.yml"
       ],
-      "rationale": "Extends the frozen Coordinator-main RPC contract only for approved cross-boundary capabilities: fetchLinkMetadata plus Box MCP load/list-servers/list-tools-raw/execute-tool-raw operations. Electron remains the MCP manager owner; the calls cross the existing Coordinator protocol into the shipping Host/Box implementation with request/reply ownership preserved and no parallel transport channel. The approved row-62 MCP discovery failure extension now forwards the frozen success/failure/stale/elapsed settlement through a dedicated reportMcpDiscoveryFailed Coordinator main-data request to the unique HostStructuredLogTelemetry owner; generic MCP diagnostics remain separate."
+      "rationale": "Extends the frozen Coordinator-main RPC contract only for approved cross-boundary capabilities: fetchLinkMetadata plus Box MCP load/list-servers/list-tools-raw/execute-tool-raw operations. Electron remains the MCP manager owner; the calls cross the existing Coordinator protocol into the shipping Host/Box implementation with request/reply ownership preserved and no parallel transport channel. The approved row-62 MCP discovery failure extension now forwards the frozen success/failure/stale/elapsed settlement through a dedicated reportMcpDiscoveryFailed Coordinator main-data request to the unique HostStructuredLogTelemetry owner; generic MCP diagnostics remain separate. MU-02 adds five named package intents only on the existing native MainData carrier; Coordinator rejects Renderer Data and Control attempts before Host dispatch. Immutable resource bytes remain native-only and no generic transport or renderer installation authority is introduced."
     },
     {
       "referencePath": "source/electron-main/coordinator/coordinator-executors.ts",
@@ -1199,24 +1211,29 @@
         ".github/workflows/release-macos-main.yml"
       ],
       "rationale": "Preserves the frozen Grok Agent Network interaction model while adapting only its layout lifecycle to the canonical Fabushi workspace. When explicit dimensions are absent, the Agent Network region fills its current workspace, ResizeObserver owns live rendered geometry, layout/pan/zoom all consume that measured geometry, and the non-passive wheel listener is rebound when live layout dimensions change. This removes the recovered fixed 760x500 behavior and the stale-listener dependency bug without creating a second shell, state owner, or Agent runtime. Existing region/button accessibility semantics remain intact; the exact-head recovered-foundations contract locks measurement/listener dependencies, while the real Electron parity journey proves parent-fill geometry, aria-pressed state, wheel zoom behavior, and captures responsive Agent Network screenshot evidence. The release workflow now treats this evidence-locked architecture adaptation as a packaging-affecting input, so the same exact HEAD must re-pass the strict architecture gate before signed/notarized packaged acceptance can exist."
-    }
-    ,{
+    },
+    {
       "referencePath": "frontend/src/recovered/features/plugins/overlay/desktop-surface.tsx",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "117e7eb8cd6ebb1f46723800ba8f33c814a4b324",
+      "targetBlobSha": "a899cdcb1d12ae1631986b569a9c04feb1e454f5",
       "behavioralEvidence": [
         "frontend/src/recovered/features/plugins/overlay/desktop-surface.tsx",
         "frontend/src/recovered/features/plugins/overlay/miniapp-publisher.tsx",
-        "docs/specs/desktop-miniapp-publisher.md"
+        "frontend/src/recovered/features/plugins/overlay/miniapp-management.tsx",
+        "docs/specs/desktop-miniapp-management-ui.md",
+        "docs/specs/desktop-miniapp-publisher.md",
+        "source/electron-main/mcp/miniapp-window.ts"
       ],
       "testEvidence": [
         "source/electron-main/mcp/miniapp-publisher.contract.test.ts",
+        "source/electron-main/mcp/miniapp-management.contract.test.ts",
+        ".github/workflows/miniapp-management-ci.yml",
         ".github/workflows/miniapp-publisher-ci.yml",
         ".github/workflows/desktop-chat-parity-ci.yml",
         ".github/workflows/release-macos-main.yml"
       ],
-      "rationale": "Explicit MP-01 exception adds proprietary offline-package publication to the existing Plugins surface, not a separate Mini Apps product root. The recovered connector/skills navigation and lifecycle remain intact. The same publisher panel remains reachable during legacy MCP catalog loading/failure; it owns only transient UI state. Trusted native authentication and fixed package selection own privileged submission; Backend remains namespace, artifact and review authority. No Agent, installation, approval or runtime state moves into React. Contract CI exercises the real signed candidate and account/sender fences; renderer and packaged acceptance remain independent gates."
+      "rationale": "Explicit MP-01 exception adds proprietary offline-package publication to the existing Plugins surface, not a separate Mini Apps product root. The recovered connector/skills navigation and lifecycle remain intact. The same publisher panel remains reachable during legacy MCP catalog loading/failure; it owns only transient UI state. Trusted native authentication and fixed package selection own privileged submission; Backend remains namespace, artifact and review authority. No Agent, installation, approval or runtime state moves into React. Contract CI exercises the real signed candidate and account/sender fences; renderer and packaged acceptance remain independent gates. MU-01..05 adds transient management projection in this same dialog, preserving Connector/Skills content. Host owns install state and account isolation; absent native support is explicit, and remove-code retains user data."
     },
     {
       "referencePath": "frontend/src/recovered/features/plugins/overlay/view.tsx",
@@ -1235,6 +1252,25 @@
         ".github/workflows/release-macos-main.yml"
       ],
       "rationale": "Preserves the frozen Plugins dialog, navigation and connector browser while adding one optional first-party publisher presentation slot under MP-01. Existing callers need no change and the view gains no authentication, upload, review or installation authority. This is the user-requested Fabushi Marketplace product adaptation within the single Plugins owner, not restoration of the removed standalone Mini Apps shell. Exact-head renderer/contract and packaged gates must pass before publication is claimed."
+    }
+    ,{
+      "referencePath": "source/electron-main/main.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "125e2d531db164004b7c677ee284a2e49a99feb9",
+      "behavioralEvidence": [
+        "source/electron-main/main.ts",
+        "source/electron-main/mcp/miniapp-window.ts",
+        "docs/specs/desktop-miniapp-window.md",
+        "docs/specs/desktop-catalog-package-installation.md"
+      ],
+      "testEvidence": [
+        "source/electron-main/mcp/miniapp-window.contract.test.ts",
+        ".github/workflows/miniapp-window-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "rationale": "DCI-07 and DMW-03 remove the process-wide no-sandbox switch, which would defeat the requested untrusted Mini App isolation even when a new window requests sandbox=true. All existing main startup, singleton, window/preload, GPU and lifecycle behavior remains intact; this does not globally force trusted first-party windows into a different preload mode or change Human calls/browser networking. Each downloaded app uses its own sandboxed no-preload window and partition. Actual Electron and same-source signed package gates must prove this security adaptation; no frozen inventory or reference blob is rewritten."
     }
   ]
 }

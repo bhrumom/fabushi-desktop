@@ -1,0 +1,45 @@
+name: Isolated Mini App Electron window
+on:
+  pull_request:
+    paths:
+      - 'source/electron-main/mcp/miniapp-window.ts'
+      - 'source/electron-main/mcp/miniapp-window.contract.test.ts'
+      - 'docs/specs/desktop-miniapp-window.md'
+      - '.github/workflows/miniapp-window-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'source/electron-main/mcp/miniapp-window.ts'
+      - 'source/electron-main/mcp/miniapp-window.contract.test.ts'
+      - '.github/workflows/miniapp-window-ci.yml'
+permissions:
+  contents: read
+jobs:
+  electron-window:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Install the pinned Desktop Electron runtime
+        run: npm ci --prefix desktop
+      - name: Configure Electron's runner-local Chromium sandbox helper
+        run: |
+          test "$(id -u)" -ne 0
+          test -f desktop/node_modules/electron/dist/chrome-sandbox
+          sudo chown root:root desktop/node_modules/electron/dist/chrome-sandbox
+          sudo chmod 4755 desktop/node_modules/electron/dist/chrome-sandbox
+      - name: Resolve the locked Desktop packages for the repository-level test module
+        run: ln -s "$GITHUB_WORKSPACE/desktop/node_modules" "$GITHUB_WORKSPACE/node_modules"
+      - name: Bundle the production window module for the Electron main process
+        run: ./desktop/node_modules/.bin/esbuild source/electron-main/mcp/miniapp-window.ts --bundle --platform=node --format=cjs --external:electron --outfile="$RUNNER_TEMP/miniapp-window.cjs"
+      - name: Run contract and actual Electron isolation tests
+        env:
+          FABUSHI_MINIAPP_ELECTRON: '1'
+          FABUSHI_MINIAPP_WINDOW_BUNDLE: ${{ runner.temp }}/miniapp-window.cjs
+        run: xvfb-run -a npx --yes tsx@4.21.0 --test source/electron-main/mcp/miniapp-window.contract.test.ts
