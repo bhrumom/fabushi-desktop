@@ -476,6 +476,11 @@ export interface DesktopBridge {
   ): Promise<string[] | null>;
   discardStagedAttachment(path: string): Promise<void>;
   readonly mcp: McpDesktopBridge;
+  readonly marketplacePublisher?: {
+    ownedNamespaces(): Promise<{ namespaces: string[] }>;
+    claimDandelionNamespace(): Promise<{ namespace: string }>;
+    submitDandelion(): Promise<{ state: "cancelled" | "draft" | "pending_review" | "approved"; digest?: string }>;
+  };
   readonly callMedia: DesktopCallMediaBridge;
   forceGatewayReconnect(): Promise<void>;
   pickAvatarSource(): Promise<string | null>;
