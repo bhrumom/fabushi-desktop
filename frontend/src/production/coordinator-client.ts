@@ -5,6 +5,7 @@ import {
   parseCoordinatorStoryStealthState,
   parseCoordinatorStoryStealthStatus,
   parseCoordinatorStoryListResponse,
+  parseCoordinatorSavedSublistDraft,
   validateCoordinatorReply,
   type CoordinatorAgentThreadRequest,
   type CoordinatorStory,
@@ -15,6 +16,9 @@ import {
   type CoordinatorStoryIdRequest,
   type CoordinatorStoryListRequest,
   type CoordinatorStoryReactionRequest,
+  type CoordinatorSavedSublistDraft,
+  type CoordinatorSavedSublistDraftRequest,
+  type CoordinatorSetSavedSublistDraftRequest,
   type CoordinatorAgentThreadResponse,
   type CoordinatorTranscriptWindowRequest,
   type CoordinatorTranscriptWindowResponse
@@ -45,6 +49,11 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function validateReply(method: string, value: unknown): unknown {
   if (method === "getAgentTranscriptWindow" || method === "getAgentThread") return validateCoordinatorReply(method, value);
+  if (method === "getHumanSavedSublistDraft" || method === "setHumanSavedSublistDraft") {
+    const draft = parseCoordinatorSavedSublistDraft(value);
+    if (draft == null) throw new Error(`${method} returned a malformed SavedSublist draft projection`);
+    return draft;
+  }
   if (method === "getStoryStealthStatus") {
     const status = parseCoordinatorStoryStealthStatus(value);
     if (status == null) throw new Error("getStoryStealthStatus returned a malformed projection");
@@ -91,6 +100,8 @@ export interface ProductionCoordinatorClient {
   call(method: string, args?: unknown): Promise<unknown>;
   getAgentTranscriptWindow(args: CoordinatorTranscriptWindowRequest): Promise<CoordinatorTranscriptWindowResponse>;
   getAgentThread(args: CoordinatorAgentThreadRequest): Promise<CoordinatorAgentThreadResponse>;
+  getHumanSavedSublistDraft(args: CoordinatorSavedSublistDraftRequest): Promise<CoordinatorSavedSublistDraft>;
+  setHumanSavedSublistDraft(args: CoordinatorSetSavedSublistDraftRequest): Promise<CoordinatorSavedSublistDraft>;
   getStoryStealthStatus(): Promise<CoordinatorStoryStealthStatus>;
   activateStoryStealth(args: CoordinatorStoryStealthActivateRequest): Promise<CoordinatorStoryStealthState>;
   listStories(args?: CoordinatorStoryListRequest): Promise<readonly CoordinatorStory[]>;
@@ -212,6 +223,8 @@ export function createCoordinatorClient(portBridge: CoordinatorPortBridge): Prod
     call,
     getAgentTranscriptWindow: async (args) => await call("getAgentTranscriptWindow", args) as CoordinatorTranscriptWindowResponse,
     getAgentThread: async (args) => await call("getAgentThread", args) as CoordinatorAgentThreadResponse,
+    getHumanSavedSublistDraft: async (args) => validateReply("getHumanSavedSublistDraft", await call("getHumanSavedSublistDraft", args)) as CoordinatorSavedSublistDraft,
+    setHumanSavedSublistDraft: async (args) => validateReply("setHumanSavedSublistDraft", await call("setHumanSavedSublistDraft", args)) as CoordinatorSavedSublistDraft,
     getStoryStealthStatus: async () => validateReply("getStoryStealthStatus", await call("getStoryStealthStatus")) as CoordinatorStoryStealthStatus,
     activateStoryStealth: async (args) => validateReply("activateStoryStealth", await call("activateStoryStealth", args)) as CoordinatorStoryStealthState,
     listStories: async (args = {}) => validateReply("listStories", await call("listStories", args)) as readonly CoordinatorStory[],
