@@ -10838,7 +10838,7 @@ fn dispatch_mini_app_management(
                 let store = host.mini_app_store_port().map_err(|_| {
                     GatewayCommandError::Internal("not_configured: RuntimeStore SQLite connection is unavailable".into())
                 })?;
-                let client = CatalogClient::production_from_environment().map_err(proof_gateway_error)?;
+                let client = policy::CatalogClient::production_from_environment().map_err(proof_gateway_error)?;
                 // Commit a valid signed feed before looking up the exact release.
                 // This ordering preserves a key revocation even if proof lookup is 404.
                 let latest_trust = refresh_mini_app_trust(&client, &store, true)?;

@@ -10,6 +10,7 @@ name = "mahayana-app-host"
 path = "src/main.rs"
 
 [dependencies]
+base64 = "0.22"
 mahayana-host-runtime = { path = ".." }
 mahayana-unified-app-host = { path = "../../mahayana/mahayana-rs/mahayana-unified-app-host" }
 serde_json = "1"
