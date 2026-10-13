@@ -190,6 +190,7 @@ test("actual Electron uses the isolated protocol and blocks real network, worker
   const html = `<meta charset="utf-8"><body><h1>Mini App</h1><button id="export" onclick="window.__exportReport()">Export report</button><script src="app.js"></script><script>window.__domReady=true</script>`;
   const harness = `
     const { app, protocol, BrowserWindow, session } = require('electron');
+    app.on('window-all-closed', () => {}); // The real product's main window stays open.
     const crypto = require('node:crypto');
     const mini = require(process.env.FABUSHI_MINIAPP_WINDOW_BUNDLE);
     const scope = 'c'.repeat(64), otherScope = 'd'.repeat(64);
@@ -340,6 +341,7 @@ test("actual signed Dandelion bundle runs its Rust codec offline in the producti
   const directory = await mkdtemp(join(tmpdir(), "fabushi-dandelion-interop-"));
   const harness = `
     const {app, protocol, BrowserWindow, session} = require('electron');
+    app.on('window-all-closed', () => {});
     const fs = require('node:fs'), path = require('node:path'), crypto = require('node:crypto');
     const mini = require(process.env.FABUSHI_MINIAPP_WINDOW_BUNDLE);
     protocol.registerSchemesAsPrivileged([mini.FABUSHI_MINI_APP_PRIVILEGED_SCHEME]);

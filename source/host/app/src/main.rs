@@ -11232,7 +11232,7 @@ fn validate_installed_listing(
         return InstalledMiniAppValidation { display_name: app_id.into(), size_bytes: fallback_size_bytes, supported: false, state: mahayana_host_runtime::extensions::mcp::installable_package::NativeMiniAppInstallState::Quarantined };
     };
     let hard_revoked = store.with_connection(|connection| ledger::quarantine_reason(connection, scope, app_id))
-        .ok().and_then(|result| result.ok()).flatten().as_deref() == Some("release_revoked");
+        .ok().flatten().as_deref() == Some("release_revoked");
     if hard_revoked {
         return InstalledMiniAppValidation {
             display_name: app_id.to_string(), size_bytes: fallback_size_bytes, supported: false,
