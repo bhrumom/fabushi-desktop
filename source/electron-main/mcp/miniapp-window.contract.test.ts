@@ -194,12 +194,12 @@ test("actual Electron uses the isolated protocol and blocks real network, worker
     const mini = require(process.env.FABUSHI_MINIAPP_WINDOW_BUNDLE);
     const scope = 'c'.repeat(64), otherScope = 'd'.repeat(64);
     const NativeBrowserWindow = BrowserWindow;
-    class TrackingBrowserWindow extends NativeBrowserWindow {
-      constructor(options) {
-        super(options);
-        const applyPolicy = this.webContents.setWebRTCIPHandlingPolicy.bind(this.webContents);
-        this.webContents.setWebRTCIPHandlingPolicy = async (policy) => { globalThis.__miniAppWebRTCPolicy = policy; return applyPolicy(policy); };
-      }
+    function TrackingBrowserWindow(options) {
+      // Electron's getAllWindows filters constructor.name; retain the native object.
+      const window = new NativeBrowserWindow(options);
+      const applyPolicy = window.webContents.setWebRTCIPHandlingPolicy.bind(window.webContents);
+      window.webContents.setWebRTCIPHandlingPolicy = async (policy) => { globalThis.__miniAppWebRTCPolicy = policy; return applyPolicy(policy); };
+      return window;
     }
     protocol.registerSchemesAsPrivileged([mini.FABUSHI_MINI_APP_PRIVILEGED_SCHEME]);
     app.whenReady().then(() => {
