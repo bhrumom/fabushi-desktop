@@ -10734,6 +10734,7 @@ fn dispatch_gateway_call(
     host: &UnifiedAppHost,
     forever_box: &ForeverBoxService,
     attachments: &AttachmentsService,
+    transcript_manager: &TranscriptManager,
     method: &str,
     args: serde_json::Value,
 ) -> Result<serde_json::Value, GatewayCommandError> {
@@ -10749,6 +10750,19 @@ fn dispatch_gateway_call(
                 "Mahayana Host Grok compatibility dispatch failed for {method}: {error}"
             )));
         }
+    }
+
+    // HostLane is the owner-thread fallback for gateway calls that could not be
+    // completed on the concurrent GatewayApi surface. Keep that fallback wired
+    // to the same production Session/Transcript dispatcher as GatewayApi itself;
+    // otherwise newly added canonical Human messaging/call methods silently
+    // fall through to the older UnifiedAppHost JSON compatibility surface and
+    // are reported as unknown even though their production owner is present.
+    if let Some(result) = transcript_manager.dispatch_session_gateway_call(method, &args) {
+        return result.map_err(|error| match error {
+            SessionGatewayError::BadRequest(message) => GatewayCommandError::BadRequest(message),
+            SessionGatewayError::Internal(message) => GatewayCommandError::Internal(message),
+        });
     }
 
     if let Some(result) = dispatch_box_environment_call(method, &args, |update| {
@@ -12778,7 +12792,14 @@ fn main() {
     while let Ok(request) = host_rx.recv() {
         match request {
             HostLaneRequest::Gateway { method, args, reply } => {
-                let _ = reply.send(dispatch_gateway_call(&host, &forever_box, &attachments_service, &method, args));
+                let _ = reply.send(dispatch_gateway_call(
+                    &host,
+                    &forever_box,
+                    &attachments_service,
+                    &transcript_manager,
+                    &method,
+                    args,
+                ));
             }
             HostLaneRequest::StdinClosed => break,
             HostLaneRequest::Stdin(line) => {
