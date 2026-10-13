@@ -283,7 +283,7 @@ jobs:
           fi
           xcrun notarytool submit "$dmg" "${args[@]}" --wait --output-format json > "$RUNNER_TEMP/dmg-notary.json"
           node -e "const r=require(process.argv[1]); if(r.status!=='Accepted') { console.error(r); process.exit(1) }" "$RUNNER_TEMP/dmg-notary.json"
-          xcrun stapler staple "$dmg"
+          node .github/scripts/validate-apple-ticket.mjs --staple "$dmg"
           node .github/scripts/validate-apple-ticket.mjs "$dmg"
           codesign --verify --deep --strict --verbose=2 "$app"
           node .github/scripts/validate-apple-ticket.mjs "$app"

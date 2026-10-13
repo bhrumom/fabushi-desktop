@@ -22,3 +22,14 @@ Implementation: narrow native-command helper shared by existing workflow steps.
 No general command execution service. Rollback restores immediate validation;
 previous public installer remains untouched. AC: contract CI green and actual
 same-source validation/packaged acceptance green. Pending until observed.
+# Accepted-ticket stapling transport recovery
+
+After notarytool has returned `Accepted`, the same artifact may retry only
+`xcrun stapler staple` for a recognized transient Apple CloudKit transport error
+(-1005, -1001, -1009 or HTTP 503). Maximum three attempts, 60 seconds each, with
+5/10-second backoff. Other staple errors fail immediately. No re-signing, new
+notary submission, TLS bypass or missing-ticket success. Validation, codesign
+and Gatekeeper remain mandatory. Candidate dispatch must use the reviewed branch
+workflow and an exact source SHA; main's historical workflow cannot provide its
+new retry behavior merely by checking out the new source.
+
