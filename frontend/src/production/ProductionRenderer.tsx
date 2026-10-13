@@ -4,7 +4,7 @@ import type { CoordinatorPortBridge, CursorAuthStatus, DesktopAutoReviewInstruct
 import computerEntrypoint from "../recovered/features/computer/overlay/entrypoint";
 import { ConversationComposer } from "../recovered/features/conversation/workspace/composer";
 import { commitComposerAttachments, stageComposerFiles } from "../recovered/features/conversation/workspace/desktop";
-import { COMPOSER_ATTACHMENT_LIMIT, type ComposerDraft, type ConversationTranscriptEntry, type DraftAttachment, type TranscriptMessage } from "../recovered/features/conversation/workspace/model";
+import { COMPOSER_ATTACHMENT_LIMIT, type ComposerDraft, type ComposerReplyKeyboard, type ConversationTranscriptEntry, type DraftAttachment, type TranscriptMessage } from "../recovered/features/conversation/workspace/model";
 import { composerDraftScopeKey, createComposerDraftPersistence, createComposerDraftStateStore, type ComposerDraftScopeInput } from "../recovered/features/conversation/workspace/draft-state";
 import { createComposerSubmissionQueue, type ComposerSubmission, type ComposerSubmissionQueue } from "../recovered/features/conversation/workspace/submission";
 import { createSendJournalApprovalLifecycle } from "../recovered/features/conversation/workspace/send-journal-approval-lifecycle";
@@ -311,6 +311,16 @@ function applyAuthoritativeReactionUpdate(
     return entry;
   });
   return changed ? next : entries;
+}
+
+function latestComposerReplyKeyboard(entries: readonly ConversationTranscriptEntry[]): ComposerReplyKeyboard | undefined {
+  for (let index = entries.length - 1; index >= 0; index -= 1) {
+    const entry = entries[index];
+    if (entry?.kind === "message" && entry.role === "assistant" && entry.replyKeyboard != null) {
+      return entry.replyKeyboard;
+    }
+  }
+  return undefined;
 }
 
 function clearAuthoritativeReactions(entries: readonly ConversationTranscriptEntry[]): readonly ConversationTranscriptEntry[] {
@@ -4572,7 +4582,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
           </main>
           <div className="sand-chat-input-dock">
             {activeIsHuman ? null : localToolPermissionDock}
-            <ConversationComposer acceptedSendGeneration={composerClearGeneration} botCommands={activeIsHuman ? undefined : projectRendererBotCommands(activeAgent.raw.botCommands)} replyKeyboard={activeIsHuman ? undefined : [...entries].reverse().find((entry) => entry.kind === "message" && entry.role === "assistant" && entry.replyKeyboard != null)?.replyKeyboard} canExchangeStash={canExchangeComposerStash} disabled={busy || client == null} draft={draft} editorProviders={activeIsHuman ? undefined : editorProviders} hasStash={activeDraftSnapshot.stash != null} notice={notice} onChange={(value) => { if (activeComposerDraftScope != null) composerDraftStore.setDraft(activeComposerDraftScope, value); }} onClearReplyTarget={clearReplyTarget} onConfigureRetention={activeIsHuman && humanRetention != null ? () => setRetentionDialogOpen(true) : undefined} onExchangeStash={exchangeComposerStash} onRemoveAttachment={removeAttachment} onRemoveStash={removeComposerStash} onScheduleSend={activeIsHuman ? openScheduleComposer : undefined} onSendSilently={activeIsHuman ? () => submit({ silent: true }) : undefined} onSendStash={sendComposerStash} onStageFiles={stageFiles} onSubmit={submit} placeholder={`Message ${activeAgent.name}`} platformInput={bridge.platformInput} replyTarget={replyTarget} retentionLabel={activeIsHuman && humanRetention != null ? humanRetentionLabel(humanRetention.retentionSeconds) : undefined} scopeKey={`${transcriptAccountSlot ?? "signed-out"}:${activeComposerDraftScopeKey ?? activeAgent.id}`} transcribeAudio={transcribeAudio} />
+            <ConversationComposer acceptedSendGeneration={composerClearGeneration} botCommands={activeIsHuman ? undefined : projectRendererBotCommands(activeAgent.raw.botCommands)} replyKeyboard={activeIsHuman ? undefined : latestComposerReplyKeyboard(entries)} canExchangeStash={canExchangeComposerStash} disabled={busy || client == null} draft={draft} editorProviders={activeIsHuman ? undefined : editorProviders} hasStash={activeDraftSnapshot.stash != null} notice={notice} onChange={(value) => { if (activeComposerDraftScope != null) composerDraftStore.setDraft(activeComposerDraftScope, value); }} onClearReplyTarget={clearReplyTarget} onConfigureRetention={activeIsHuman && humanRetention != null ? () => setRetentionDialogOpen(true) : undefined} onExchangeStash={exchangeComposerStash} onRemoveAttachment={removeAttachment} onRemoveStash={removeComposerStash} onScheduleSend={activeIsHuman ? openScheduleComposer : undefined} onSendSilently={activeIsHuman ? () => submit({ silent: true }) : undefined} onSendStash={sendComposerStash} onStageFiles={stageFiles} onSubmit={submit} placeholder={`Message ${activeAgent.name}`} platformInput={bridge.platformInput} replyTarget={replyTarget} retentionLabel={activeIsHuman && humanRetention != null ? humanRetentionLabel(humanRetention.retentionSeconds) : undefined} scopeKey={`${transcriptAccountSlot ?? "signed-out"}:${activeComposerDraftScopeKey ?? activeAgent.id}`} transcribeAudio={transcribeAudio} />
           </div>
         </div>}
         </div>
