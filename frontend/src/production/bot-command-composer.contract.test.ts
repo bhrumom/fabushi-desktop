@@ -32,6 +32,8 @@ describe("canonical Bot command Composer contract", () => {
     expect(model).toContain("value.replyMarkup ?? value.replyKeyboard ?? message?.replyMarkup");
     expect(composer).toContain('aria-label="Bot keyboard"');
     expect(composer).toContain('aria-label="Hide bot keyboard"');
+    expect(composer).toContain('aria-label="Show bot keyboard"');
+    expect(composer).toContain("setHiddenReplyKeyboardMessageId(null)");
     expect(composer).toContain("replyKeyboard?.singleUse === true && replyKeyboard.persistent !== true");
     expect(composer).toContain('replyKeyboard.placeholder ?? "Reply…"');
     expect(renderer).toContain("entry.replyKeyboard != null)?.replyKeyboard");
