@@ -209,7 +209,7 @@ impl<S: MessagingStateStore> MessagingService<S> {
         server_time_ms: i64,
     ) -> Result<(), MessagingServiceError> {
         self.persist_authoritative_reconciliation(
-            Command::SetConversationChildDraft {
+            Command::ReconcileConversationChildDraft {
                 destination,
                 actor_id,
                 text,
