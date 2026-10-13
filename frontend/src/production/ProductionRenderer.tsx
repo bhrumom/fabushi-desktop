@@ -2966,12 +2966,18 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     if (accountRef.current?.kind !== "logged-in") return;
     setTranscriptLoadError((current) => current?.agentId === agentId ? null : current);
     const hasLoadedEntries = entriesByAgentRef.current[agentId] != null;
+    const humanConversation = humanConversationsRef.current.find((conversation) => conversation.id === agentId);
     transcriptPaginationController.setScope(transcriptAccountSlot, agentId);
     selectionStore.select(agentId);
     setOverlay(null);
     setWorkspaceRoute(null);
     setCommandPaletteOpen(false);
-    if (hasLoadedEntries) {
+    // Agent conversations can reopen from their already-authoritative local
+    // transcript projection. Human conversations are remote-sync owned: even
+    // when a local projection exists, reopening must converge the canonical
+    // Session store before rendering so another device's messages cannot stay
+    // invisible indefinitely.
+    if (hasLoadedEntries && humanConversation == null) {
       selectionStore.settle(agentId);
       void noteRecentParticipantSelection(
         agentId,
@@ -2985,7 +2991,6 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       selectionStore.settle(agentId);
       return;
     }
-    const humanConversation = humanConversationsRef.current.find((conversation) => conversation.id === agentId);
     const agentName = humanConversation?.name ?? agentsRef.current.find((agent) => agent.id === agentId)?.name ?? UI_TEXT.title;
     try {
       let page: unknown;
