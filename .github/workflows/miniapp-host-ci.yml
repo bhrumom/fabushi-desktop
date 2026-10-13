@@ -1,0 +1,40 @@
+name: Host catalog Mini App verifier
+on:
+  pull_request:
+    paths:
+      - 'source/host/src/extensions/mcp/installable_package.rs'
+      - 'source/host/Cargo.toml'
+      - 'docs/specs/desktop-catalog-package-installation.md'
+      - '.github/workflows/miniapp-host-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'source/host/src/extensions/mcp/installable_package.rs'
+      - 'source/host/Cargo.toml'
+permissions:
+  contents: read
+jobs:
+  verifier:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.97.1
+          components: rustfmt
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: source/host -> target
+      - name: Preserve canonical formatting from approved runner
+        run: rustfmt --edition 2024 source/host/src/extensions/mcp/installable_package.rs
+      - name: Verify existing Host library contracts
+        run: cargo test --manifest-path source/host/Cargo.toml --lib installable_package
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: host-miniapp-verifier-source-${{ github.event.pull_request.head.sha || github.sha }}
+          path: source/host/src/extensions/mcp/installable_package.rs
