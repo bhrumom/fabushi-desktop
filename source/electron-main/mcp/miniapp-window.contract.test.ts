@@ -245,22 +245,27 @@ test("actual Electron uses the isolated protocol and blocks real network, worker
     assert.equal(browserFacts.results.serviceWorker, "blocked");
     assert.equal(browserFacts.results.permission, "blocked");
     assert.ok(["blocked", "timed-out"].includes(browserFacts.results.webrtc));
+    const downloadEvent = page.waitForEvent("download", { timeout: 10_000 });
     await page.getByRole("button", { name: "Export report" }).click();
     const reportPath = join(downloadDirectory, "global-dandelion-local-report.json");
-    let reportSaved = false;
-    for (let attempt = 0; attempt < 50 && !reportSaved; attempt += 1) {
-      try { await access(reportPath); reportSaved = true; } catch { await new Promise((resolve) => setTimeout(resolve, 100)); }
-    }
-    assert.equal(reportSaved, true, "the user-gesture report export should reach the configured test download directory");
+    // Playwright owns accepted download paths in automation; this is not OS dialog acceptance.
+    const reportDownload = await downloadEvent;
+    assert.equal(reportDownload.suggestedFilename(), "global-dandelion-local-report.json");
+    assert.equal(await reportDownload.failure(), null, "native policy must allow the real user-gesture export");
+    await reportDownload.saveAs(reportPath);
     assert.equal((await (await import("node:fs/promises")).readFile(reportPath, "utf8")).includes('"report":"offline"'), true);
     await page.waitForTimeout(500);
     await unlink(reportPath);
+    let unauthorizedDownloads = 0;
+    page.on("download", () => { unauthorizedDownloads += 1; });
     await page.evaluate(() => setTimeout(() => window.__exportReport(), 6000));
     await page.waitForTimeout(6500);
     await assert.rejects(access(reportPath));
+    assert.equal(unauthorizedDownloads, 0, "gesture-free exports must not reach Playwright's intercepted download storage either");
     await page.evaluate((url) => { const link = document.createElement('a'); link.href = url; link.download = 'untrusted.json'; link.click(); }, endpoint);
     await page.waitForTimeout(500);
     await assert.rejects(access(reportPath));
+    assert.equal(unauthorizedDownloads, 0, "foreign downloads must be denied before a download event");
     await assert.rejects(app.evaluate(async ({ BrowserWindow }, url) => {
       const window = BrowserWindow.getAllWindows()[0];
       await window.webContents.session.fetch(url);
