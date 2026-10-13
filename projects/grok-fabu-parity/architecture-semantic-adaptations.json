@@ -365,7 +365,7 @@
       "referencePath": "frontend/src/recovered/features/conversation/workspace/composer.tsx",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "a9db16cde43c9ddecb3256b19fbe01e4a0a25e20",
+      "targetBlobSha": "d5161fd05bed78856391b1769c7469bff9784ec1",
       "behavioralEvidence": [
         "frontend/src/recovered/features/conversation/workspace/composer.tsx",
         "frontend/src/recovered/features/conversation/workspace/draft-state.ts",
