@@ -395,6 +395,27 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
                 )
                 .map_err(SessionGatewayError::internal)
         }),
+        "getHumanSavedSublistDraft" => required_string(args, "conversationId").and_then(|conversation_id| {
+            session
+                .get_human_saved_sublist_draft(conversation_id)
+                .map_err(SessionGatewayError::internal)
+        }),
+        "setHumanSavedSublistDraft" => required_string(args, "conversationId").and_then(|conversation_id| {
+            let text = optional_string(args, "text")?.unwrap_or_default();
+            if text.chars().count() > 4000 {
+                return Err(SessionGatewayError::bad("SavedSublist draft text exceeds 4000 characters"));
+            }
+            let reply_to_message_id = optional_string(args, "replyToMessageId")?;
+            let expected_revision = required_u64(args, "expectedRevision")?;
+            session
+                .set_human_saved_sublist_draft(
+                    conversation_id,
+                    text,
+                    reply_to_message_id,
+                    expected_revision,
+                )
+                .map_err(SessionGatewayError::internal)
+        }),
         "createHumanConversation" => required_string(args, "peerHumanId").and_then(|peer_human_id| {
             let local_human_id = session.local_human_id().map_err(SessionGatewayError::internal)?;
             if let Some(requested) = optional_string(args, "localHumanId")? {
