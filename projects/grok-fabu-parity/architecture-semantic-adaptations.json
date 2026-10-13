@@ -73,7 +73,7 @@
       "referencePath": "frontend/src/production/model.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "dc03692169422cc4c1131ea0ad9ef180876e30ea",
+      "targetBlobSha": "e18f9fc0a20e8629ebe21518fcaf4635fcf2096c",
       "behavioralEvidence": [
         "frontend/src/production/model.ts",
         "frontend/src/production/coordinator-client.ts",
@@ -92,7 +92,7 @@
       "referencePath": "frontend/src/production/ProductionRenderer.tsx",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "1869e7f3782244eda209927d28645e446b7ce8e6",
+      "targetBlobSha": "f8d57230ab0177de6eb21b45b54e71a6781af23e",
       "behavioralEvidence": [
         "frontend/src/production/ProductionRenderer.tsx",
         "frontend/src/recovered/features/account/session/sign-in-status.tsx",
@@ -365,7 +365,7 @@
       "referencePath": "frontend/src/recovered/features/conversation/workspace/composer.tsx",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "92962a9e8e5f3da32dda91c21f83280e5772173f",
+      "targetBlobSha": "3a67c3d211cc387572fb01e992b9d8ea2aa8e42c",
       "behavioralEvidence": [
         "frontend/src/recovered/features/conversation/workspace/composer.tsx",
         "frontend/src/recovered/features/conversation/workspace/draft-state.ts",
