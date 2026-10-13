@@ -768,7 +768,7 @@
       "referencePath": "frontend/src/recovered/runtime/coordinator-source.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "e48843db6e4d4e565b4adfaee3bec9751ef19539",
+      "targetBlobSha": "b72a40e5d8de624ae124898e728f5479ce1b6e87",
       "behavioralEvidence": [
         "frontend/src/recovered/runtime/coordinator-source.ts",
         "frontend/src/production/ProductionRenderer.tsx",
@@ -788,7 +788,7 @@
         "frontend/src/production/story-capability-surface.contract.test.ts",
         "native/mahayana-messaging/tests/story_service_contract.rs"
       ],
-      "rationale": "Preserves the frozen Grok 0.18 Coordinator renderer source except for the explicit Fabushi user-interrupt extension required by the shipping Agent product: interruptAgent is admitted through the closed method table, its {agentId, interrupted} reply is fail-closed validated, and telemetry remains owned by the existing send domain. The production renderer exposes the corresponding Stop response control, while signed packaged acceptance verifies cancellation settles and a fresh post-cancel turn completes; no parallel transport, owner, or legacy shell is introduced. The same closed Coordinator renderer method table also admits listStories/viewStory/reactStory/deleteStory, which remain typed at the shared RPC boundary and terminate in the canonical Host Story service; no alternate transport or Story owner is introduced. Story stealth status and activation are typed through the same closed Coordinator path; authoritative entitlement, cooldown and anonymity state remain in the canonical messaging service, and neither Host nor renderer owns a parallel Story state machine."
+      "rationale": "Preserves the frozen Grok 0.18 Coordinator renderer source except for the explicit Fabushi user-interrupt extension required by the shipping Agent product: interruptAgent is admitted through the closed method table, its {agentId, interrupted} reply is fail-closed validated, and telemetry remains owned by the existing send domain. The production renderer exposes the corresponding Stop response control, while signed packaged acceptance verifies cancellation settles and a fresh post-cancel turn completes; no parallel transport, owner, or legacy shell is introduced. The same closed Coordinator renderer method table also admits listStories/viewStory/reactStory/deleteStory, which remain typed at the shared RPC boundary and terminate in the canonical Host Story service; no alternate transport or Story owner is introduced. Story stealth status and activation are typed through the same closed Coordinator path; authoritative entitlement, cooldown and anonymity state remain in the canonical messaging service, and neither Host nor renderer owns a parallel Story state machine. The shared method table also admits the two Fabushi-owned SavedSublist draft RPCs; the recovered source only classifies their telemetry as messaging and otherwise retains its generic request/reply lifecycle, while strict draft shape validation remains in the production Coordinator client."
     },
     {
       "referencePath": "frontend/src/recovered/ui/overlay-primitives.tsx",
