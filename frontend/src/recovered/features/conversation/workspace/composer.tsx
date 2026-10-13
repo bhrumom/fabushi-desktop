@@ -282,6 +282,9 @@ export function ConversationComposer({ acceptedSendGeneration = 0, botCommands =
           </div>
           <SandIconButton aria-label="Hide bot keyboard" disabled={disabled || voiceBusy} icon="close" onClick={() => setHiddenReplyKeyboardMessageId(replyKeyboard.messageId)} shape="circle" size="lg" type="button" variant="default" />
         </div>}
+        {replyKeyboard == null || showReplyKeyboard ? null : <div className="sand-prompt-actions-row">
+          <SandIconButton aria-label="Show bot keyboard" disabled={disabled || voiceBusy} icon="keyboard" onClick={() => setHiddenReplyKeyboardMessageId(null)} shape="circle" size="lg" type="button" variant="default" />
+        </div>}
         <div className="sand-prompt-actions-row">
           {!showBotCommands ? null : <SandMenuRoot placement="top-start">
             <SandMenuTrigger><SandIconButton aria-label="Bot commands" disabled={disabled || voiceBusy} icon="more" shape="circle" size="lg" type="button" variant="default" /></SandMenuTrigger>
