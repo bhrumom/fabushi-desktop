@@ -181,12 +181,14 @@ export function parseCoordinatorStoryDeleteResponse(value: unknown): Coordinator
 export function parseCoordinatorSavedSublistDraft(value: unknown): CoordinatorSavedSublistDraft | null {
   if (!isRecord(value) || !isRecord(value.destination) || !isRecord(value.destination.child)) return null;
   const { destination } = value;
+  const child = destination.child;
   if (
     typeof destination.conversationId !== "string" ||
     destination.conversationId.length === 0 ||
-    destination.child.kind !== "savedSublist" ||
-    typeof destination.child.participantId !== "string" ||
-    destination.child.participantId.length === 0 ||
+    !isRecord(child) ||
+    child.kind !== "savedSublist" ||
+    typeof child.participantId !== "string" ||
+    child.participantId.length === 0 ||
     typeof value.text !== "string" ||
     value.text.length > 4000 ||
     !Number.isSafeInteger(value.revision) ||
