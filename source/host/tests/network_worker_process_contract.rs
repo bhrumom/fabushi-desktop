@@ -82,7 +82,9 @@ exit 0
 "#
     );
     fs::write(&executable, script).expect("write fake worker");
-    let mut permissions = fs::metadata(&executable).expect("fake metadata").permissions();
+    let mut permissions = fs::metadata(&executable)
+        .expect("fake metadata")
+        .permissions();
     permissions.set_mode(0o700);
     fs::set_permissions(&executable, permissions).expect("make fake worker executable");
 
