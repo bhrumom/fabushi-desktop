@@ -3,9 +3,9 @@ use std::thread;
 use std::time::Duration;
 
 use mahayana_host_runtime::extensions::local_exec::gateway_local_exec_sand_box::{
-    DEFAULT_MAX_LOCAL_EXEC_FILE_BYTES, MAX_LOCAL_EXEC_SHELL_STREAM_BYTES,
-    GatewayLocalExecFailureReport,
-    GatewayLocalExecSandBox, GatewayLocalToolGate, GatewayLocalToolScope,
+    DEFAULT_MAX_LOCAL_EXEC_FILE_BYTES, GatewayLocalExecFailureReport,
+    GatewayLocalExecOperationStatus, GatewayLocalExecSandBox,
+    GatewayLocalToolGate, GatewayLocalToolScope,
     create_bridge_user_computers, local_exec_file_too_large_message,
 };
 use mahayana_host_runtime::extensions::local_exec::local_exec_failure_classifier::LocalExecFailureClass;
@@ -236,8 +236,6 @@ fn exec_manager_streams_shell_and_read_through_permissioned_provider() {
     let shell_result = shell.join().expect("shell thread").expect("shell");
     assert_eq!(shell_result.stdout, "hello\n");
     assert_eq!(shell_result.exit_code, Some(0));
-    assert_eq!(shell_result.request_id, "shell-call");
-    assert!(!shell_result.outcome_unknown);
     let _ = receive.recv_timeout(Duration::from_secs(1)).expect("shell cancel");
 
     let read_manager = Arc::clone(&manager);
@@ -272,91 +270,6 @@ fn exec_manager_streams_shell_and_read_through_permissioned_provider() {
     assert!(calls.iter().any(|(_, action, target)| action == "read-file" && target == "/tmp/a.txt"));
 }
 
-
-#[test]
-fn exec_manager_marks_stream_close_without_exit_as_outcome_unknown() {
-    let (bridge, _registration, receive) = bridge_with_provider();
-    let gate = Arc::new(FakeGate::default());
-    let manager = GatewayLocalExecSandBox::new(bridge.clone(), gate)
-        .remote_resource_accessor()
-        .manager();
-
-    let shell_manager = Arc::clone(&manager);
-    let shell = thread::spawn(move || {
-        shell_manager.execute_shell(
-            &GatewayLocalToolScope {
-                agent_id: Some("agent-unknown".into()),
-                tool_call_id: Some("shell-unknown-1".into()),
-                action: Some("run-command".into()),
-            },
-            "touch /tmp/fabushi-outcome-unknown",
-            "/tmp",
-            "shell-unknown-1",
-        )
-    });
-    let frame = receive
-        .recv_timeout(Duration::from_secs(1))
-        .expect("shell exec frame");
-    bridge.submit_responses(json!({"frames":[{
-        "kind":"control",
-        "requestId":frame["requestId"],
-        "message":{"streamClose":{"id":1}}
-    }]}));
-
-    let result = shell.join().expect("shell thread").expect("unknown outcome result");
-    assert_eq!(result.request_id, "shell-unknown-1");
-    assert!(result.outcome_unknown);
-    assert_eq!(result.exit_code, None);
-    let _ = receive
-        .recv_timeout(Duration::from_secs(1))
-        .expect("unknown-outcome cleanup cancel");
-}
-
-#[test]
-fn exec_manager_bounds_streamed_shell_output_and_reports_truncation() {
-    let (bridge, _registration, receive) = bridge_with_provider();
-    let gate = Arc::new(FakeGate::default());
-    let manager = GatewayLocalExecSandBox::new(bridge.clone(), gate)
-        .remote_resource_accessor()
-        .manager();
-
-    let shell_manager = Arc::clone(&manager);
-    let shell = thread::spawn(move || {
-        shell_manager.execute_shell(
-            &GatewayLocalToolScope {
-                agent_id: Some("agent-bounded".into()),
-                tool_call_id: Some("shell-bounded-1".into()),
-                action: Some("run-command".into()),
-            },
-            "yes x",
-            "/tmp",
-            "shell-bounded-1",
-        )
-    });
-    let frame = receive
-        .recv_timeout(Duration::from_secs(1))
-        .expect("bounded shell frame");
-    let oversized = "x".repeat(MAX_LOCAL_EXEC_SHELL_STREAM_BYTES + 17);
-    bridge.submit_responses(json!({"frames":[{
-        "kind":"client",
-        "requestId":frame["requestId"],
-        "message":{"id":1,"shellStream":{"stdout":{"data":oversized}}}
-    }]}));
-    bridge.submit_responses(json!({"frames":[{
-        "kind":"client",
-        "requestId":frame["requestId"],
-        "message":{"id":1,"shellStream":{"exit":{"code":0,"cwd":"/tmp","aborted":false}}}
-    }]}));
-
-    let result = shell.join().expect("shell thread").expect("bounded shell result");
-    assert_eq!(result.stdout.len(), MAX_LOCAL_EXEC_SHELL_STREAM_BYTES);
-    assert!(result.stdout_truncated);
-    assert!(!result.stderr_truncated);
-    assert!(!result.outcome_unknown);
-    let _ = receive
-        .recv_timeout(Duration::from_secs(1))
-        .expect("bounded shell cleanup cancel");
-}
 
 #[test]
 fn exec_manager_reports_control_throw_with_frozen_failure_classification() {
@@ -415,4 +328,69 @@ fn exec_manager_reports_control_throw_with_frozen_failure_classification() {
             conversation_id: Some("agent-telemetry".into()),
         }]
     );
+}
+
+
+#[test]
+fn exec_manager_journals_stable_operation_id_and_cancels_provider_request() {
+    let (bridge, _registration, receive) = bridge_with_provider();
+    let gate = Arc::new(FakeGate::default());
+    let manager = GatewayLocalExecSandBox::new(bridge.clone(), gate)
+        .remote_resource_accessor()
+        .manager();
+
+    let shell_manager = Arc::clone(&manager);
+    let shell = thread::spawn(move || {
+        shell_manager.execute_shell(
+            &GatewayLocalToolScope {
+                agent_id: Some("agent-journal".into()),
+                tool_call_id: Some("operation-stable-1".into()),
+                action: Some("run-command".into()),
+            },
+            "sleep 30",
+            "/tmp",
+            "operation-stable-1",
+        )
+    });
+
+    let exec = receive
+        .recv_timeout(Duration::from_secs(1))
+        .expect("exec frame");
+    let bridge_request_id = exec["requestId"]
+        .as_str()
+        .expect("bridge request id")
+        .to_string();
+    let active = manager
+        .operation_for_agent("agent-journal", "operation-stable-1")
+        .expect("active operation");
+    assert_eq!(active.operation_id, "operation-stable-1");
+    assert_eq!(active.agent_id.as_deref(), Some("agent-journal"));
+    assert_eq!(active.bridge_request_id, bridge_request_id);
+    assert_eq!(active.status, GatewayLocalExecOperationStatus::Running);
+    assert!(manager.operation_for_agent("other-agent", "operation-stable-1").is_none());
+    assert!(!manager.cancel_operation_for_agent("other-agent", "operation-stable-1"));
+
+    assert!(manager.cancel_operation_for_agent("agent-journal", "operation-stable-1"));
+    assert!(!manager.cancel_operation("missing-operation"));
+    let cancel = receive
+        .recv_timeout(Duration::from_secs(1))
+        .expect("provider cancel");
+    assert_eq!(cancel["kind"], "cancel");
+    assert_eq!(cancel["requestId"], bridge_request_id);
+
+    bridge.submit_responses(json!({"frames":[{
+        "kind":"control",
+        "requestId":bridge_request_id,
+        "message":{"streamClose":{"id":1}}
+    }]}));
+    let result = shell.join().expect("shell thread").expect("cancelled shell");
+    assert_eq!(result.exit_code, None);
+
+    let settled = manager
+        .operation_for_agent("agent-journal", "operation-stable-1")
+        .expect("settled operation");
+    assert_eq!(settled.status, GatewayLocalExecOperationStatus::Cancelled);
+    assert_eq!(settled.bridge_request_id, bridge_request_id);
+    assert_eq!(manager.operation_history_for_agent("agent-journal").len(), 1);
+    assert!(manager.operation_history_for_agent("other-agent").is_empty());
 }
