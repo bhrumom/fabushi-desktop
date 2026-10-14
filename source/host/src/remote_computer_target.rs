@@ -14,6 +14,7 @@ use crate::extensions::auth::auth_service::{
     FabushiCoreCredential, FabushiCoreCredentialProvider,
 };
 use crate::network_worker_process::OwnedNetworkWorker;
+use crate::runner::routed_provider_runtime::RoutedToolBridge;
 
 const CORE_REQUEST_TIMEOUT_SECS: u64 = 15;
 const MAX_CORE_RESPONSE_BYTES: usize = 1024 * 1024;
@@ -198,6 +199,54 @@ pub trait RemoteComputerToolAuthorizer: Send + Sync {
 
 pub trait RemoteComputerToolCatalog: Send + Sync {
     fn describe_tool(&self, tool_name: &str) -> Result<Option<Value>, RemoteComputerTargetError>;
+}
+
+pub struct RoutedRemoteComputerToolCatalog {
+    bridge: Arc<dyn RoutedToolBridge>,
+}
+
+impl RoutedRemoteComputerToolCatalog {
+    pub fn new(bridge: Arc<dyn RoutedToolBridge>) -> Self {
+        Self { bridge }
+    }
+}
+
+impl RemoteComputerToolCatalog for RoutedRemoteComputerToolCatalog {
+    fn describe_tool(&self, tool_name: &str) -> Result<Option<Value>, RemoteComputerTargetError> {
+        let tools = self
+            .bridge
+            .list_tools()
+            .map_err(|_| RemoteComputerTargetError::AuthorityUnavailable)?;
+        let tool = tools
+            .into_iter()
+            .find(|tool| tool.name == tool_name || tool.tool_name == tool_name);
+        let Some(tool) = tool else {
+            return Ok(None);
+        };
+        let effective_name = if tool.name == tool_name {
+            tool.name
+        } else {
+            tool.tool_name
+        };
+        let output_schema = matches!(effective_name.as_str(), "Computer" | "Screenshot").then(|| {
+            json!({
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["content", "screenshotPath"],
+                "properties": {
+                    "content": {"type": "string"},
+                    "screenshotPath": {"type": ["string", "null"]}
+                }
+            })
+        });
+        Ok(Some(json!({
+            "name": effective_name,
+            "title": effective_name,
+            "description": tool.description,
+            "inputSchema": tool.input_schema,
+            "outputSchema": output_schema,
+        })))
+    }
 }
 
 #[derive(Debug, Deserialize)]
