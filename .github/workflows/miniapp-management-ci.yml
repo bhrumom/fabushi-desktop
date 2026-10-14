@@ -8,6 +8,12 @@ on:
       - 'source/electron-preload/preload.ts'
       - 'frontend/src/recovered/features/plugins/overlay/miniapp-management.tsx'
       - '.github/workflows/miniapp-management-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'source/electron-main/mcp/miniapp-management*'
+      - 'source/electron-main/mcp/miniapp-production*'
+      - '.github/workflows/miniapp-management-ci.yml'
 permissions:
   contents: read
 jobs:
@@ -16,7 +22,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
       - uses: actions/setup-node@v6
         with:

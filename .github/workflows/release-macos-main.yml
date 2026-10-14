@@ -12,6 +12,11 @@ on:
         required: true
         default: false
         type: boolean
+      iterate_existing_miniapp_candidate:
+        description: Diagnose the fixed e62ea0 signed binary with this harness; never publish or claim this harness SHA is the binary source.
+        required: false
+        default: false
+        type: boolean
   push:
     branches: [main]
     paths:
@@ -28,13 +33,21 @@ on:
 
 permissions:
   contents: write
+  actions: read
 
 concurrency:
   group: package-macos-${{ github.event_name == 'push' && github.sha || inputs.source_sha || github.ref }}
   cancel-in-progress: false
 
 jobs:
+  miniapp-iteration:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.iterate_existing_miniapp_candidate }}
+    uses: ./.github/workflows/miniapp-packaged-iteration.yml
+    secrets:
+      FABUSHI_CI_TEST_USERNAME: ${{ secrets.FABUSHI_CI_TEST_USERNAME }}
+      FABUSHI_CI_TEST_PASSWORD: ${{ secrets.FABUSHI_CI_TEST_PASSWORD }}
   publish:
+    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.iterate_existing_miniapp_candidate }}
     name: Build, notarize, and publish macOS arm64
     runs-on: macos-15
     timeout-minutes: 180
@@ -127,6 +140,8 @@ jobs:
         run: |
           ./node_modules/.bin/tsc --noEmit --strict --skipLibCheck --target ES2022 --module NodeNext --moduleResolution NodeNext --esModuleInterop e2e/miniapp-packaged-acceptance.spec.ts
           npx playwright test e2e/miniapp-packaged-acceptance.spec.ts --list
+          /usr/bin/osacompile -o "$RUNNER_TEMP/miniapp-save-report.scpt" ../.github/scripts/miniapp-save-report.applescript
+          node --test ../.github/scripts/miniapp-release-evidence.test.mjs
 
       - name: Validate Fabushi product adapter contracts
         shell: bash
@@ -444,7 +459,13 @@ jobs:
         with:
           name: fabushi-candidate-acceptance-${{ steps.source.outputs.short }}
           path: |
-            ${{ runner.temp }}/fabushi-candidate-acceptance
+            ${{ runner.temp }}/fabushi-candidate-acceptance/screenshots
+            ${{ runner.temp }}/fabushi-candidate-acceptance/*.json
+            ${{ runner.temp }}/fabushi-candidate-acceptance/*.txt
+            ${{ runner.temp }}/fabushi-candidate-acceptance/*.log
+            ${{ runner.temp }}/fabushi-candidate-acceptance/*.zip
+            ${{ runner.temp }}/fabushi-candidate-acceptance/*.mov
+            ${{ runner.temp }}/fabushi-candidate-acceptance/*.mp4
             desktop/playwright-report
             desktop/test-results
           if-no-files-found: warn

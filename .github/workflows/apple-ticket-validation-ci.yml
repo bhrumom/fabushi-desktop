@@ -6,6 +6,15 @@ on:
       - '.github/workflows/apple-ticket-validation-ci.yml'
       - '.github/workflows/release-macos-main.yml'
       - 'docs/specs/macos-ticket-validation-retry.md'
+      - '.github/scripts/miniapp-release-evidence*'
+      - '.github/scripts/miniapp-save-report.applescript'
+  push:
+    branches: [main]
+    paths:
+      - '.github/scripts/validate-apple-ticket*'
+      - '.github/scripts/miniapp-release-evidence*'
+      - '.github/scripts/miniapp-save-report.applescript'
+      - '.github/workflows/release-macos-main.yml'
 permissions:
   contents: read
 jobs:
@@ -14,9 +23,10 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
       - run: node --test .github/scripts/validate-apple-ticket.test.mjs
+      - run: node --test .github/scripts/miniapp-release-evidence.test.mjs

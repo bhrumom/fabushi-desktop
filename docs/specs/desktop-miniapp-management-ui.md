@@ -77,3 +77,35 @@ artifacts; public signed/notarized Desktop preview is published only after curre
 source CI and both existing chat and new MU-07 installed gates pass. Catalog
 release0.1.0 remains immutable; this host version change is not a new mini-app.
 
+## Escaped acceptance defects and evidence privacy
+
+Actions38506485199/e62ea0 proves genuine catalog installation, real sandboxed Wasm
+file processing and an actual macOS Save panel, but MU-07 failed while the harness
+waited for CDP download events. Electron's persistent-partition download delegate
+did not apply the browser-default CDP save override. Do not weaken the app export
+policy or skip export. The Actions-only harness must select a bounded temporary
+directory and exact report filename through that signed app PID's real Save panel,
+then check the completed file and report. Missing macOS automation permission is
+blocked, never auto-grant Accessibility or edit TCC. No workstation acceptance.
+
+MU-08: upload only explicitly named diagnostics, screenshots, traces and videos;
+never app-data, native credentials, secret stores, browser profiles or SQLite.
+The old packaged evidence directory included private CI-account runtime files;
+remove the affected task-owned artifacts without reading credential contents.
+CI sessions are bounded and refresh-token-free; no real publisher session is used
+by these acceptance jobs. Record affected artifact IDs/removal, preserve Actions
+logs/signed binary artifacts and regenerate clean runtime evidence. A GHA contract
+test must reject a return to broad runtime-directory upload.
+Removed credential-bearing task-owned evidence artifacts:11869200761(e62ea0),
+11840519028(f346686),11839768638(d69e2e0). Only archive member names were inspected;
+no credential values were read. Removed archives cannot be restored; source-run
+logs/signed installer artifacts remain, and clean evidence is regenerated.
+
+Harness iteration may use the exact immutable already signed e62ea0 candidate
+artifact11868294181 (archive SHA3af95af921aeecc8002dfa0332c8d3677068eb95da02c336cba447a6f6c01301)
+in a separate manual Actions job. Verify its source-run/required successful build,
+signing/notarization/chat steps, archive digest and installed codesign/Gatekeeper.
+Record binarySource=e62ea0 and harnessSource separately; never pretend this accepts
+a later binary SHA. Final shipping still requires fresh canonical-main exact-source
+build/sign/notarize and all packaged gates. Iteration has no public-release write.
+

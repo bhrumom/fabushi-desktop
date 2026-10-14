@@ -232,40 +232,22 @@ async function verifyWasmFileReport(page: Page, inputFile: string, inputBytes: n
   await expect(page.getByRole('button', { name: '导出报告', exact: true })).toBeEnabled();
 }
 
-async function exportAndVerifyReport(page: Page, downloadDir: string, inputFile: string, inputBytes: number): Promise<void> {
-  const browser = page.context().browser();
-  if (!browser) throw new Error('Packaged Chromium browser session is unavailable for report download capture.');
+async function exportAndVerifyReport(page: Page, appPid: number, downloadDir: string, inputFile: string, inputBytes: number): Promise<void> {
+  if (process.platform !== 'darwin' || process.env.GITHUB_ACTIONS !== 'true') throw new Error('Actions-only native Save panel gate');
   const reportDir = await mkdtemp(path.join(downloadDir, 'report-'));
-  const cdp = await browser.newBrowserCDPSession();
-  let reportGuid: string | undefined;
-  let reportCompleted = false;
-  const onDownloadBegin = (event: { guid: string; suggestedFilename: string }) => {
-    if (event.suggestedFilename === 'global-dandelion-local-report.json') reportGuid = event.guid;
-  };
-  const onDownloadProgress = (event: { guid: string; state: string }) => {
-    if (event.guid === reportGuid && event.state === 'completed') reportCompleted = true;
-  };
-  cdp.on('Browser.downloadWillBegin', onDownloadBegin);
-  cdp.on('Browser.downloadProgress', onDownloadProgress);
-  try {
-    // CI substitutes a bounded save location; Electron's production will-download policy remains active.
-    await cdp.send('Browser.setDownloadBehavior', {
-      behavior: 'allow',
-      downloadPath: reportDir,
-      eventsEnabled: true,
-    });
     await page.getByRole('button', { name: '导出报告', exact: true }).click();
-    await expect.poll(() => reportCompleted, {
-      timeout: 30_000,
-      message: 'the real Electron download pipeline must finish the allowed report export',
-    }).toBe(true);
-    expect(reportGuid).toBeTruthy();
+    execFileSync('/usr/bin/osascript', [path.resolve('../.github/scripts/miniapp-save-report.applescript'), String(appPid), reportDir], {
+      encoding: 'utf8', timeout: 20_000, stdio: ['ignore', 'pipe', 'pipe'],
+    });
     const reportFilename = 'global-dandelion-local-report.json';
     const reportPath = path.join(reportDir, reportFilename);
     await expect.poll(async () => {
       try { return (await stat(reportPath)).isFile(); }
       catch { return false; }
     }, { timeout: 10_000, message: 'completed native download must materialize its report file' }).toBe(true);
+    const reportStat = await stat(reportPath);
+    expect(reportStat.size).toBeGreaterThan(0);
+    expect(reportStat.size).toBeLessThanOrEqual(1024 * 1024);
     expect(await readdir(reportDir)).toContain(reportFilename);
     const report: unknown = JSON.parse(await readFile(reportPath, 'utf8'));
     expect(report).toMatchObject({
@@ -287,11 +269,6 @@ async function exportAndVerifyReport(page: Page, downloadDir: string, inputFile:
     expect(data.files[0].verified).toBe(true);
     expect(Number.isSafeInteger(data.files[0].packets) && Number(data.files[0].packets) > 0).toBe(true);
     expect(data.packets).toBe(data.files[0].packets);
-  } finally {
-    cdp.off('Browser.downloadWillBegin', onDownloadBegin);
-    cdp.off('Browser.downloadProgress', onDownloadProgress);
-    await cdp.detach().catch(() => undefined);
-  }
 }
 
 async function setAndVerifyDisplayPreference(page: Page, shouldBeChecked: boolean): Promise<void> {
@@ -394,6 +371,8 @@ test.describe('signed production Mini App install and offline lifecycle', () => 
     const evidenceDir = await mkdtemp(path.join(evidenceRoot, 'run-'));
     const evidence = {
       sourceSha,
+      binarySource: sourceSha,
+      harnessSource: process.env.GITHUB_SHA || sourceSha,
       appId,
       version: '0.1.0',
       packageDigest,
@@ -420,7 +399,7 @@ test.describe('signed production Mini App install and offline lifecycle', () => 
       await catalog.row.getByRole('button', { name: '打开', exact: true }).click();
       let mini = await findMiniAppPage(app.browser);
       await verifyWasmFileReport(mini, inputFile, fixtureStat.size);
-      await exportAndVerifyReport(mini, evidenceDir, inputFile, fixtureStat.size);
+      await exportAndVerifyReport(mini, app.process.pid!, evidenceDir, inputFile, fixtureStat.size);
       evidence.launchModes.push('online-install');
       evidence.wasmLoaded.push(true);
       evidence.reportObserved.push(true);
@@ -441,7 +420,7 @@ test.describe('signed production Mini App install and offline lifecycle', () => 
       await catalog.row.getByRole('button', { name: '打开', exact: true }).click();
       mini = await findMiniAppPage(app.browser);
       await verifyWasmFileReport(mini, inputFile, fixtureStat.size);
-      await exportAndVerifyReport(mini, evidenceDir, inputFile, fixtureStat.size);
+      await exportAndVerifyReport(mini, app.process.pid!, evidenceDir, inputFile, fixtureStat.size);
       evidence.launchModes.push('os-network-disabled-cold-launch');
       evidence.wasmLoaded.push(true);
       evidence.reportObserved.push(true);
