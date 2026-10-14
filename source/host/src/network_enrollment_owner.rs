@@ -553,7 +553,7 @@ impl NetworkEnrollmentSupervisor {
                     match owner.current_identity() {
                         Ok(identity) => {
                             if current_identity.as_deref() != Some(identity.as_str()) {
-                                if let Some(existing) = worker.take() {
+                                if let Some(mut existing) = worker.take() {
                                     let _ = existing.close();
                                 }
                                 current_identity = Some(identity);
@@ -563,7 +563,7 @@ impl NetworkEnrollmentSupervisor {
                                 .and_then(|owned| owned.status().ok())
                                 .is_some_and(|status| status.backend_state == "Running");
                             if !healthy {
-                                if let Some(existing) = worker.take() {
+                                if let Some(mut existing) = worker.take() {
                                     let _ = existing.close();
                                 }
                                 match owner.reconcile() {
@@ -575,7 +575,7 @@ impl NetworkEnrollmentSupervisor {
                             }
                         }
                         Err(NetworkEnrollmentError::AuthorityUnavailable) => {
-                            if let Some(existing) = worker.take() {
+                            if let Some(mut existing) = worker.take() {
                                 let _ = existing.close();
                             }
                             current_identity = None;
@@ -589,7 +589,7 @@ impl NetworkEnrollmentSupervisor {
                         thread::sleep(Duration::from_millis(SUPERVISOR_POLL_MS / 50));
                     }
                 }
-                if let Some(existing) = worker.take() {
+                if let Some(mut existing) = worker.take() {
                     let _ = existing.close();
                 }
             })
