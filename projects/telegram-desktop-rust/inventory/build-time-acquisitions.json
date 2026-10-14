@@ -1218,7 +1218,7 @@
       "accepted_upstream_evidence": [
         {
           "path": "Telegram/build/prepare/prepare.py",
-          "blob": "9482a53e60386743ae797d75cecc36767cd63646",
+          "blob": "698ccd839591d4497ff5a932885f45724f95b890",
           "evidence": "Qt 5 initializes only qtbase qtimageformats qtsvg; Qt 6 prepare initializes only qtbase qtimageformats qtshadertools qtsvg."
         },
         {
