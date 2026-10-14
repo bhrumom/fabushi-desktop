@@ -145,6 +145,29 @@ func streamAddress(peer string, port int) (string, bool) {
 	return net.JoinHostPort(normalized, fmt.Sprintf("%d", port)), true
 }
 
+func listenAddress(port int) (string, bool) {
+	if port < 1 || port > 65535 {
+		return "", false
+	}
+	return fmt.Sprintf(":%d", port), true
+}
+
+func remotePeerMatches(address net.Addr, expected string) bool {
+	if address == nil {
+		return false
+	}
+	host, _, err := net.SplitHostPort(address.String())
+	if err != nil {
+		return false
+	}
+	actual, ok := tailnetPeer(host)
+	if !ok {
+		return false
+	}
+	normalizedExpected, ok := tailnetPeer(expected)
+	return ok && actual == normalizedExpected
+}
+
 func streamTimeoutMS(value int) (int, bool) {
 	if value == 0 {
 		return 5_000, true
