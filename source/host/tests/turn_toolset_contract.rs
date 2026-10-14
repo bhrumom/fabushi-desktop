@@ -112,6 +112,8 @@ impl BrowserToolExecutor for FakeBrowserExecutor {
             text: format!("{}:{tool_call_id}", spec.op),
             image_b64: None,
             is_error: false,
+            view_id: None,
+            generation: None,
         })
     }
 }
