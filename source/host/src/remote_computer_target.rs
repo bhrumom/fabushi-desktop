@@ -407,6 +407,79 @@ pub struct ClaimedRemoteOperation {
     pub sensitive_result: bool,
 }
 
+#[derive(Clone, PartialEq, Eq)]
+pub struct RemoteNetworkEnrollmentGrant {
+    pub grant_id: String,
+    grant_secret: String,
+    pub cell_id: String,
+    pub generation: i64,
+    pub expires_at: i64,
+    pub request_id: String,
+    pub reconciled: bool,
+}
+
+impl std::fmt::Debug for RemoteNetworkEnrollmentGrant {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("RemoteNetworkEnrollmentGrant")
+            .field("grant_id", &self.grant_id)
+            .field("grant_secret", &"<redacted>")
+            .field("cell_id", &self.cell_id)
+            .field("generation", &self.generation)
+            .field("expires_at", &self.expires_at)
+            .field("request_id", &self.request_id)
+            .field("reconciled", &self.reconciled)
+            .finish()
+    }
+}
+
+impl RemoteNetworkEnrollmentGrant {
+    pub fn grant_secret(&self) -> &str {
+        &self.grant_secret
+    }
+}
+
+#[derive(Clone, PartialEq, Eq)]
+pub struct RemoteNetworkEnrollmentStarted {
+    pub grant_id: String,
+    auth_key: String,
+    pub device_id: String,
+    pub cell_id: String,
+    pub generation: i64,
+    pub expires_at: i64,
+    pub reconciled: bool,
+}
+
+impl std::fmt::Debug for RemoteNetworkEnrollmentStarted {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("RemoteNetworkEnrollmentStarted")
+            .field("grant_id", &self.grant_id)
+            .field("auth_key", &"<redacted>")
+            .field("device_id", &self.device_id)
+            .field("cell_id", &self.cell_id)
+            .field("generation", &self.generation)
+            .field("expires_at", &self.expires_at)
+            .field("reconciled", &self.reconciled)
+            .finish()
+    }
+}
+
+impl RemoteNetworkEnrollmentStarted {
+    pub fn auth_key(&self) -> &str {
+        &self.auth_key
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RemoteNetworkEnrollmentCompleted {
+    pub grant_id: String,
+    pub device_id: String,
+    pub node_id: String,
+    pub generation: i64,
+    pub reconciled: bool,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RemoteNetworkBinding {
     pub device_id: String,
