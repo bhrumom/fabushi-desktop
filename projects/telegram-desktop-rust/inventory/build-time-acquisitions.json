@@ -3,7 +3,7 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_repository": "telegramdesktop/tdesktop",
-  "upstream_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
+  "upstream_commit": "d77f486228a98e15d6695514d5f2b28ce1c6a872",
   "discovery": {
     "evidence_run_id": 37602112794,
     "evidence_head_sha": "6ea14a975654843140e77278261a73fb38cf072c",
@@ -1160,7 +1160,7 @@
   ],
   "recursive_build_reachability": {
     "status": "partial-audited-disposition-open",
-    "accepted_upstream_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
+    "accepted_upstream_commit": "d77f486228a98e15d6695514d5f2b28ce1c6a872",
     "rule": "A recursively discovered repository is source/build authority only when an accepted TDesktop build path actually initializes, downloads, generates, patches, or consumes it. Presence as an unselected superproject gitlink is not sufficient.",
     "qt_superproject": {
       "repository": "https://github.com/qt/qt5",
