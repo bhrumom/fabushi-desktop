@@ -85,7 +85,12 @@ impl ExternalMachineExecutor for ProductionExternalMachineExecutor {
             "stderr": result.stderr,
             "exitCode": result.exit_code,
             "cwd": result.cwd,
-            "aborted": result.aborted
+            "aborted": result.aborted,
+            "requestId": result.request_id.clone(),
+            "operationId": result.request_id,
+            "outcomeUnknown": result.outcome_unknown,
+            "stdoutTruncated": result.stdout_truncated,
+            "stderrTruncated": result.stderr_truncated
         }))
     }
 

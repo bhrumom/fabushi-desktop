@@ -23,6 +23,7 @@ use crate::r#box::box_transfer::TransferBox;
 
 pub const FALLBACK_TERMINALS_FOLDER: &str = "terminals";
 pub const DEFAULT_MAX_LOCAL_EXEC_FILE_BYTES: usize = 100 * 1024 * 1024;
+pub const MAX_LOCAL_EXEC_SHELL_STREAM_BYTES: usize = 256 * 1024;
 
 pub fn describe_local_exec_bytes(bytes: usize) -> String {
     format!("{:.1} MiB", bytes as f64 / (1024.0 * 1024.0))
@@ -169,6 +170,10 @@ pub struct GatewayLocalExecShellResult {
     pub exit_code: Option<u32>,
     pub cwd: Option<String>,
     pub aborted: bool,
+    pub request_id: String,
+    pub outcome_unknown: bool,
+    pub stdout_truncated: bool,
+    pub stderr_truncated: bool,
 }
 
 #[derive(Clone)]
@@ -416,6 +421,27 @@ impl GatewayLocalExecSandBox {
 }
 
 
+fn append_bounded_shell_output(target: &mut String, chunk: &str) -> bool {
+    let remaining = MAX_LOCAL_EXEC_SHELL_STREAM_BYTES.saturating_sub(target.len());
+    if remaining == 0 {
+        return !chunk.is_empty();
+    }
+    if chunk.len() <= remaining {
+        target.push_str(chunk);
+        return false;
+    }
+    let mut end = 0;
+    for (index, ch) in chunk.char_indices() {
+        let next = index + ch.len_utf8();
+        if next > remaining {
+            break;
+        }
+        end = next;
+    }
+    target.push_str(&chunk[..end]);
+    true
+}
+
 impl GatewayLocalExecManager {
     pub fn terminals_folder(&self) -> String {
         self.sandbox.terminals_folder()
@@ -461,11 +487,19 @@ impl GatewayLocalExecManager {
             self.next_id(), command, working_directory, tool_call_id,
         );
         let mut request = self.open_exec(scope, "run-command", command, message)?;
-        let mut result = GatewayLocalExecShellResult::default();
+        let mut result = GatewayLocalExecShellResult {
+            request_id: tool_call_id.to_string(),
+            ..GatewayLocalExecShellResult::default()
+        };
         loop {
-            let response = request
-                .recv_timeout(Duration::from_secs(10))
-                .map_err(|_| SandLocalExecError::new("local-exec exec response timed out"))?;
+            let response = match request.recv_timeout(Duration::from_secs(10)) {
+                Ok(response) => response,
+                Err(_) => {
+                    request.close();
+                    result.outcome_unknown = true;
+                    return Ok(result);
+                }
+            };
             match response.get("kind").and_then(Value::as_str) {
                 Some("client") => {
                     let message = response.get("message").cloned().ok_or_else(|| {
@@ -476,8 +510,12 @@ impl GatewayLocalExecManager {
                         .map_err(SandLocalExecError::new)?;
                     match decoded.payload() {
                         ProductionExecClientPayload::ShellStream(event) => match event {
-                            ProductionShellStreamEvent::Stdout(data) => result.stdout.push_str(data),
-                            ProductionShellStreamEvent::Stderr(data) => result.stderr.push_str(data),
+                            ProductionShellStreamEvent::Stdout(data) => {
+                                result.stdout_truncated |= append_bounded_shell_output(&mut result.stdout, data);
+                            }
+                            ProductionShellStreamEvent::Stderr(data) => {
+                                result.stderr_truncated |= append_bounded_shell_output(&mut result.stderr, data);
+                            }
                             ProductionShellStreamEvent::Exit { code, cwd, aborted } => {
                                 result.exit_code = Some(*code);
                                 result.cwd = (!cwd.is_empty()).then(|| cwd.clone());
@@ -517,6 +555,9 @@ impl GatewayLocalExecManager {
                         }
                         GatewayExecControl::StreamClose => {
                             request.close();
+                            if result.exit_code.is_none() {
+                                result.outcome_unknown = true;
+                            }
                             return Ok(result);
                         }
                         GatewayExecControl::Unknown => {}

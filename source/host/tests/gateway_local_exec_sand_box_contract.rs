@@ -3,7 +3,8 @@ use std::thread;
 use std::time::Duration;
 
 use mahayana_host_runtime::extensions::local_exec::gateway_local_exec_sand_box::{
-    DEFAULT_MAX_LOCAL_EXEC_FILE_BYTES, GatewayLocalExecFailureReport,
+    DEFAULT_MAX_LOCAL_EXEC_FILE_BYTES, MAX_LOCAL_EXEC_SHELL_STREAM_BYTES,
+    GatewayLocalExecFailureReport,
     GatewayLocalExecSandBox, GatewayLocalToolGate, GatewayLocalToolScope,
     create_bridge_user_computers, local_exec_file_too_large_message,
 };
@@ -235,6 +236,8 @@ fn exec_manager_streams_shell_and_read_through_permissioned_provider() {
     let shell_result = shell.join().expect("shell thread").expect("shell");
     assert_eq!(shell_result.stdout, "hello\n");
     assert_eq!(shell_result.exit_code, Some(0));
+    assert_eq!(shell_result.request_id, "shell-call");
+    assert!(!shell_result.outcome_unknown);
     let _ = receive.recv_timeout(Duration::from_secs(1)).expect("shell cancel");
 
     let read_manager = Arc::clone(&manager);
@@ -269,6 +272,91 @@ fn exec_manager_streams_shell_and_read_through_permissioned_provider() {
     assert!(calls.iter().any(|(_, action, target)| action == "read-file" && target == "/tmp/a.txt"));
 }
 
+
+#[test]
+fn exec_manager_marks_stream_close_without_exit_as_outcome_unknown() {
+    let (bridge, _registration, receive) = bridge_with_provider();
+    let gate = Arc::new(FakeGate::default());
+    let manager = GatewayLocalExecSandBox::new(bridge.clone(), gate)
+        .remote_resource_accessor()
+        .manager();
+
+    let shell_manager = Arc::clone(&manager);
+    let shell = thread::spawn(move || {
+        shell_manager.execute_shell(
+            &GatewayLocalToolScope {
+                agent_id: Some("agent-unknown".into()),
+                tool_call_id: Some("shell-unknown-1".into()),
+                action: Some("run-command".into()),
+            },
+            "touch /tmp/fabushi-outcome-unknown",
+            "/tmp",
+            "shell-unknown-1",
+        )
+    });
+    let frame = receive
+        .recv_timeout(Duration::from_secs(1))
+        .expect("shell exec frame");
+    bridge.submit_responses(json!({"frames":[{
+        "kind":"control",
+        "requestId":frame["requestId"],
+        "message":{"streamClose":{"id":1}}
+    }]}));
+
+    let result = shell.join().expect("shell thread").expect("unknown outcome result");
+    assert_eq!(result.request_id, "shell-unknown-1");
+    assert!(result.outcome_unknown);
+    assert_eq!(result.exit_code, None);
+    let _ = receive
+        .recv_timeout(Duration::from_secs(1))
+        .expect("unknown-outcome cleanup cancel");
+}
+
+#[test]
+fn exec_manager_bounds_streamed_shell_output_and_reports_truncation() {
+    let (bridge, _registration, receive) = bridge_with_provider();
+    let gate = Arc::new(FakeGate::default());
+    let manager = GatewayLocalExecSandBox::new(bridge.clone(), gate)
+        .remote_resource_accessor()
+        .manager();
+
+    let shell_manager = Arc::clone(&manager);
+    let shell = thread::spawn(move || {
+        shell_manager.execute_shell(
+            &GatewayLocalToolScope {
+                agent_id: Some("agent-bounded".into()),
+                tool_call_id: Some("shell-bounded-1".into()),
+                action: Some("run-command".into()),
+            },
+            "yes x",
+            "/tmp",
+            "shell-bounded-1",
+        )
+    });
+    let frame = receive
+        .recv_timeout(Duration::from_secs(1))
+        .expect("bounded shell frame");
+    let oversized = "x".repeat(MAX_LOCAL_EXEC_SHELL_STREAM_BYTES + 17);
+    bridge.submit_responses(json!({"frames":[{
+        "kind":"client",
+        "requestId":frame["requestId"],
+        "message":{"id":1,"shellStream":{"stdout":{"data":oversized}}}
+    }]}));
+    bridge.submit_responses(json!({"frames":[{
+        "kind":"client",
+        "requestId":frame["requestId"],
+        "message":{"id":1,"shellStream":{"exit":{"code":0,"cwd":"/tmp","aborted":false}}}
+    }]}));
+
+    let result = shell.join().expect("shell thread").expect("bounded shell result");
+    assert_eq!(result.stdout.len(), MAX_LOCAL_EXEC_SHELL_STREAM_BYTES);
+    assert!(result.stdout_truncated);
+    assert!(!result.stderr_truncated);
+    assert!(!result.outcome_unknown);
+    let _ = receive
+        .recv_timeout(Duration::from_secs(1))
+        .expect("bounded shell cleanup cancel");
+}
 
 #[test]
 fn exec_manager_reports_control_throw_with_frozen_failure_classification() {
