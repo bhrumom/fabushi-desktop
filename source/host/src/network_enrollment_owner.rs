@@ -29,6 +29,7 @@ use crate::remote_computer_target::RemoteComputerDeviceSecretProvider;
 const HTTP_TIMEOUT_SECS: u64 = 15;
 const MAX_RESPONSE_BYTES: usize = 1024 * 1024;
 const SUPERVISOR_POLL_MS: u64 = 5_000;
+const SERVICE_SUPERVISOR_POLL_MS: u64 = 50;
 const STATE_VERSION: u32 = 1;
 
 pub const FABUSHI_API_BASE_URL_ENV: &str = "FABUSHI_API_BASE_URL";
@@ -566,6 +567,10 @@ fn unix_seconds() -> Result<i64, NetworkEnrollmentError> {
     i64::try_from(seconds).map_err(|_| NetworkEnrollmentError::StateFailed)
 }
 
+pub trait NetworkWorkerService: Send + Sync {
+    fn poll(&self, worker: &mut OwnedNetworkWorker) -> Result<(), NetworkEnrollmentError>;
+}
+
 pub struct NetworkEnrollmentSupervisor {
     stop: Arc<AtomicBool>,
     join: Option<JoinHandle<()>>,
@@ -573,6 +578,13 @@ pub struct NetworkEnrollmentSupervisor {
 
 impl NetworkEnrollmentSupervisor {
     pub fn start(owner: NetworkEnrollmentOwner) -> Result<Self, NetworkEnrollmentError> {
+        Self::start_with_service(owner, None)
+    }
+
+    pub fn start_with_service(
+        owner: NetworkEnrollmentOwner,
+        service: Option<Arc<dyn NetworkWorkerService>>,
+    ) -> Result<Self, NetworkEnrollmentError> {
         let stop = Arc::new(AtomicBool::new(false));
         let stop_worker = Arc::clone(&stop);
         let join = thread::Builder::new()
@@ -604,6 +616,21 @@ impl NetworkEnrollmentSupervisor {
                                     Err(_) => {}
                                 }
                             }
+                            let reset_worker = if let (Some(runtime), Some(owned)) =
+                                (service.as_ref(), worker.as_mut())
+                            {
+                                matches!(
+                                    runtime.poll(owned),
+                                    Err(NetworkEnrollmentError::StateFailed)
+                                )
+                            } else {
+                                false
+                            };
+                            if reset_worker {
+                                if let Some(mut existing) = worker.take() {
+                                    let _ = existing.close();
+                                }
+                            }
                         }
                         Err(NetworkEnrollmentError::AuthorityUnavailable) => {
                             if let Some(mut existing) = worker.take() {
@@ -613,11 +640,16 @@ impl NetworkEnrollmentSupervisor {
                         }
                         Err(_) => {}
                     }
+                    let idle_ms = if service.is_some() {
+                        SERVICE_SUPERVISOR_POLL_MS
+                    } else {
+                        SUPERVISOR_POLL_MS
+                    };
                     for _ in 0..50 {
                         if stop_worker.load(Ordering::Acquire) {
                             break;
                         }
-                        thread::sleep(Duration::from_millis(SUPERVISOR_POLL_MS / 50));
+                        thread::sleep(Duration::from_millis(idle_ms / 50));
                     }
                 }
                 if let Some(mut existing) = worker.take() {

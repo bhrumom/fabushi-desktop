@@ -132,3 +132,24 @@ fn fdn_network_owner_only_rotates_uncertain_start_after_enrollment_expiry() {
     assert!(OWNER.contains("if state.reset_expired_uncertain_start(unix_seconds()?)"));
 }
 
+#[test]
+fn network_owner_keeps_optional_private_service_inside_same_supervised_worker() {
+    for required in [
+        "pub trait NetworkWorkerService",
+        "fn poll(&self, worker: &mut OwnedNetworkWorker)",
+        "pub fn start_with_service(",
+        "service: Option<Arc<dyn NetworkWorkerService>>",
+        "(service.as_ref(), worker.as_mut())",
+        "SERVICE_SUPERVISOR_POLL_MS",
+        "current_identity.as_deref() != Some(identity.as_str())",
+    ] {
+        assert!(
+            OWNER.contains(required),
+            "missing supervised private-service lifecycle invariant: {required}"
+        );
+    }
+    assert!(
+        OWNER.contains("if let Some(mut existing) = worker.take()"),
+        "account switch/logout must still close the shared worker before a new identity is served"
+    );
+}
