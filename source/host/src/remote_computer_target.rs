@@ -822,15 +822,22 @@ impl FabushiCoreTargetClient {
         authorizer: &dyn RemoteComputerToolAuthorizer,
         executor: &dyn RemoteComputerNativeExecutor,
     ) -> Result<(), RemoteComputerTargetError> {
-        self.serve_private_request_with_timeout(
-            worker,
-            expected_peer,
-            local_port,
-            REMOTE_TARGET_STREAM_TIMEOUT_MS,
-            catalog,
-            authorizer,
-            executor,
-        )
+        if expected_peer.trim().is_empty()
+            || !is_fabushi_tailnet_peer(expected_peer)
+            || local_port == 0
+        {
+            return Err(RemoteComputerTargetError::TransportFailed);
+        }
+        let stream_id = worker
+            .stream_listen(expected_peer, local_port, REMOTE_TARGET_STREAM_TIMEOUT_MS)
+            .map_err(|_| RemoteComputerTargetError::TransportFailed)?;
+        let result = self.serve_private_stream(worker, &stream_id, catalog, authorizer, executor);
+        let close_result = worker.stream_close(&stream_id);
+        match (result, close_result) {
+            (Err(error), _) => Err(error),
+            (Ok(()), Ok(())) => Ok(()),
+            (Ok(()), Err(_)) => Err(RemoteComputerTargetError::TransportFailed),
+        }
     }
 
     pub fn serve_private_request_with_timeout(
