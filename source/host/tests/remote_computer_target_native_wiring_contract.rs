@@ -13,14 +13,72 @@ fn target_reuses_product_native_computer_owner_and_remote_policy() {
         "ComputerControlOrigin::RemoteMobile",
         "mahayana_computer::execute_with_lease(",
         "REMOTE_NATIVE_TOOL_GRANT_MAX_SECONDS",
-        "sensitive_result_channel_unavailable",
         "\"screenshotTransferred\": false",
+        "\"screenshot\", \"click\"",
+        "sensitive_result_required",
     ] {
         assert!(TARGET.contains(required), "missing native target invariant: {required}");
     }
     assert!(TARGET.contains("tool_name != \"Computer\""));
     assert!(!TARGET.contains("AllowAllRemoteComputerToolAuthorizer"));
+    assert!(!TARGET.contains("sensitive_result_channel_unavailable"));
     assert!(CARGO.contains("mahayana-computer = { path = \"../mahayana/mahayana-rs/mahayana-computer\" }"));
+}
+
+#[test]
+fn sensitive_result_channel_is_bounded_one_time_and_identity_fenced() {
+    for required in [
+        "REMOTE_SENSITIVE_RESULT_MAX_BYTES",
+        "REMOTE_SENSITIVE_RESULT_CHUNK_BYTES",
+        "REMOTE_SENSITIVE_RESULT_TTL_SECONDS",
+        "REMOTE_SENSITIVE_RESULT_MAX_ENTRIES",
+        "SensitiveResultResume",
+        "SensitiveResultChunk",
+        "SensitiveResultRevoke",
+        "validate_sensitive_result_access(",
+        "validate_sensitive_entry(",
+        "entry.account_user_id == credential.user_id",
+        "entry.device_id == credential.device_id",
+        "entry.network_generation == network_generation",
+        "entry.session_id == session_id",
+        "entry.client_id == client_id",
+        "entry.request_id == request_id",
+        "entry.request_sha256 == request_sha256",
+        "entry.grant_generation == grant_generation",
+        "self.require_current_network_binding(device_id, network_generation)?",
+        "response.get(\"resultSha256\")",
+        "current.next_offset != offset",
+        "vault.entries.remove(result_ref)",
+        "Uuid::new_v4()",
+    ] {
+        assert!(TARGET.contains(required), "missing sensitive-result invariant: {required}");
+    }
+    for forbidden in [
+        "\"screenshotData\"",
+        "\"screenshotBase64\"",
+        "println!(",
+        "eprintln!(",
+    ] {
+        assert!(!TARGET.contains(forbidden), "sensitive screenshot must not enter ordinary logs/result fields: {forbidden}");
+    }
+}
+
+#[test]
+fn sensitive_screenshot_uses_native_capture_and_never_persists_plaintext_to_core() {
+    for required in [
+        "RemoteComputerNativeOutcome::SensitiveCompleted",
+        "decode_sensitive_snapshot(",
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "self.publish_result(claimed, \"completed\", &result_sha256, None)",
+        "if operation.sensitive_result && result.is_some()",
+        "\"sensitiveResult\": true",
+        "\"resultRef\": result_ref",
+    ] {
+        assert!(TARGET.contains(required), "missing sensitive screenshot invariant: {required}");
+    }
+    assert!(!TARGET.contains("publish_result(claimed, \"completed\", &result_sha256, Some("));
 }
 
 #[test]
