@@ -45,6 +45,7 @@ pub mod host_invariant;
 pub mod host_initial_transcript_load;
 pub mod process_crash_guard;
 pub mod network_worker_process;
+pub mod network_enrollment_owner;
 pub mod remote_computer_target;
 pub mod r#box;
 pub mod automations;
