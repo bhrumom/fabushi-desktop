@@ -191,8 +191,26 @@ jobs:
           src="$RUNNER_TEMP/whisper-cpp"
           build="$RUNNER_TEMP/whisper-build"
           rm -rf "$src" "$build"
-          git clone --filter=blob:none --no-checkout "$repo" "$src"
-          git -C "$src" checkout --detach "$commit"
+          fetched=false
+          for attempt in 1 2 3; do
+            rm -rf "$src"
+            git init -q "$src"
+            git -C "$src" remote add origin "$repo"
+            if git -C "$src" -c http.version=HTTP/1.1 fetch --depth=1 --filter=blob:none origin "$commit"; then
+              git -C "$src" checkout --detach FETCH_HEAD
+              if [[ "$(git -C "$src" rev-parse HEAD)" == "$commit" ]]; then
+                fetched=true
+                break
+              fi
+            fi
+            echo "::warning::offline ASR exact-source fetch attempt $attempt failed for $commit"
+            sleep $((attempt * 2))
+          done
+          if [[ "$fetched" != "true" ]]; then
+            echo "::error::failed to fetch pinned offline ASR commit $commit after 3 attempts"
+            exit 1
+          fi
+          test "$(git -C "$src" rev-parse HEAD)" = "$commit"
           cmake -S "$src" -B "$build"             -DWHISPER_BUILD_TESTS=OFF             -DWHISPER_BUILD_EXAMPLES=ON             -DWHISPER_BUILD_SERVER=OFF             -DBUILD_SHARED_LIBS=OFF             -DGGML_NATIVE=OFF
           cmake --build "$build" --config Release --parallel 2
           binary="$(find "$build" -type f -name whisper-cli -perm -111 -print -quit)"
