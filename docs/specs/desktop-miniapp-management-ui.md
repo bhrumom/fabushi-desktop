@@ -45,3 +45,30 @@ The Host-provided scope must equal the current native scope before opening a win
 Installed-only entries remain visible offline when the public catalog is unavailable.
 Electron session absence or an explicit no-sandbox switch fails closed.
 
+## Installed/catalog conflict and post-approval shipping gate (2026-10-14)
+
+MU-06: installed Host truth wins an appId collision with catalog metadata. Never
+replace a quarantined/older installed digest, version, installed or supported flag
+with an approved catalog row. A catalog-only entry remains installable; removing
+installed code allows a later explicit fresh installation of the approved version.
+Initial UI does not silently update existing code. Actions regressions cover ready,
+quarantined/older collisions and independent catalog-only entries.
+
+MU-07: signed packaged acceptance in GitHub Actions must use the real production
+CI login owner (not the real publisher's credentials), real Plugins intent IPC,
+Coordinator/Host and public approved Registry/CAS. No injected synthetic install
+ledger, resource map or test auth. Assert exact de10e02115415908f827723457817e51cb4f39aa5ca68798da824fecc483118a
+package / version0.1.0, launch actual Wasm, choose a bounded fixture through Web file
+input, verify its local packet report, close/restart the entire signed app with the
+same isolated app-data and network disabled, launch from installed truth and retain
+only settings. Remove code using native UI, confirm window teardown and absent
+installation, reinstall online and confirm retained app-scoped settings. No native
+LAN/WAN/hotspot claims. Record source, checks, failures and screenshots without
+token/credential/user-data contents. A sandbox-only signed resource fixture is not
+this installed acceptance. Missing configuration is blocked, never skipped/pass.
+
+Plan: preserve installed projection + focused Actions regression; independent
+packaged test through existing release workflow/production CI account; inspect
+exact-source evidence before final release. Rollback keeps code-only removal and
+browser data, no auth/DB/key migration. Existing chat packaged gate remains intact.
+

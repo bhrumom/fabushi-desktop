@@ -45,6 +45,20 @@ test("production never substitutes unsandboxed or absent sessions for launch", a
   f.handle.dispose();
 });
 
+test("installed ready or quarantined truth wins newer catalog metadata", async () => {
+  for (const supported of [true, false]) {
+    const f = fixture();
+    f.entry.supported = supported;
+    const catalogOnly = { ...f.entry, appId: "org.fabushi.other", installed: false };
+    f.context.coordinatorLegs.legs.listApprovedMiniApps = async () => ({ items: [
+      { ...f.entry, version: "0.2.0", packageDigest: "b".repeat(64), supported: true, installed: true },
+      catalogOnly,
+    ] });
+    assert.deepEqual(await f.invoke("sand:miniapp-list"), { entries: [f.entry, catalogOnly] });
+    f.handle.dispose();
+  }
+});
+
 test("account notification fences an in-flight native catalog response", async () => {
   const f = fixture();
   let resolve!: (value: unknown) => void;
