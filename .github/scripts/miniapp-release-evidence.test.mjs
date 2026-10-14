@@ -20,3 +20,8 @@ test('native report test does not replace the signed app download policy or gran
   assert.doesNotMatch(harness, /Browser\.setDownloadBehavior|setSavePath|showSaveDialog\s*=/u);
   assert.doesNotMatch(save, /tccutil|TCC\.db|AXIsProcessTrustedWithOptions/u);
 });
+test('diagnostic fixture uses the existing protected CI device identity contract', () => {
+  const iteration = readFileSync(new URL('../workflows/miniapp-packaged-iteration.yml', import.meta.url), 'utf8');
+  assert.ok(iteration.includes('DEVICE_ID: gha-${{ github.run_id }}-${{ github.run_attempt }}-macos-app'));
+  assert.ok(iteration.includes('5d75920308fa17f5000308df1a0153309eb8e9ab'));
+});

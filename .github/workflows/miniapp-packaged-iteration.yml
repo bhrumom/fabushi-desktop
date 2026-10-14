@@ -64,7 +64,7 @@ jobs:
           FABUSHI_CI_TEST_USERNAME: ${{ secrets.FABUSHI_CI_TEST_USERNAME }}
           FABUSHI_CI_TEST_PASSWORD: ${{ secrets.FABUSHI_CI_TEST_PASSWORD }}
           FABUSHI_API_BASE_URL: https://api.ombhrum.com
-          DEVICE_ID: gha-${{ github.run_id }}-${{ github.run_attempt }}-miniapp-iteration
+          DEVICE_ID: gha-${{ github.run_id }}-${{ github.run_attempt }}-macos-app
         shell: bash
         run: |
           set -euo pipefail
