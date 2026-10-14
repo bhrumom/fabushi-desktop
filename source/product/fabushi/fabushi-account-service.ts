@@ -258,7 +258,7 @@ export class FabushiAuthService implements AuthServicePort {
     this.stopRemoteComputerHeartbeat();
     this.remoteComputerHeartbeatIdentity = identity;
     const scheduleNext = () => {
-      if (this.remoteComputerHeartbeatIdentity !== identity) return;
+      if (this.remoteComputerHeartbeatIdentity !== identity || this.remoteComputerHeartbeatTimer != null) return;
       this.remoteComputerHeartbeatTimer = setTimeout(() => {
         this.remoteComputerHeartbeatTimer = undefined;
         void (async () => {
@@ -273,7 +273,7 @@ export class FabushiAuthService implements AuthServicePort {
             this.remoteComputerRegisteredIdentity = undefined;
             await this.clearHostRemoteComputerCredential();
           } finally {
-            if (this.remoteComputerHeartbeatIdentity === identity) scheduleNext();
+            if (this.remoteComputerHeartbeatIdentity === identity && this.remoteComputerHeartbeatTimer == null) scheduleNext();
           }
         })();
       }, REMOTE_COMPUTER_HEARTBEAT_MS);
