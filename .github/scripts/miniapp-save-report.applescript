@@ -47,6 +47,10 @@ on run argv
           set directoryChosen to true
           exit repeat
         end if
+        -- macOS resolves Go-to-folder suggestions asynchronously; Return while
+        -- resolution is pending can be ignored. Confirm only while this nested
+        -- navigation panel still exists, never press Return on the Save panel.
+        key code 36
         delay 0.1
       end repeat
       if not directoryChosen then error "REPORT_DIRECTORY_SELECTION_INCOMPLETE"
