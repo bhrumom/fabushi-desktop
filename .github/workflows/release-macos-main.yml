@@ -301,10 +301,25 @@ jobs:
           fi
           xcrun notarytool submit "$dmg" "${args[@]}" --wait --output-format json > "$RUNNER_TEMP/dmg-notary.json"
           node -e "const r=require(process.argv[1]); if(r.status!=='Accepted') { console.error(r); process.exit(1) }" "$RUNNER_TEMP/dmg-notary.json"
+          retry_stapler_validate() {
+            local target="$1"
+            local attempt
+            for attempt in 1 2 3; do
+              if xcrun stapler validate "$target"; then
+                return 0
+              fi
+              if [ "$attempt" -eq 3 ]; then
+                echo "::error::stapler validate failed for $target after $attempt attempts"
+                return 1
+              fi
+              echo "::warning::stapler validate transient failure for $target; retrying attempt $((attempt + 1)) of 3"
+              sleep $((attempt * 5))
+            done
+          }
           xcrun stapler staple "$dmg"
-          xcrun stapler validate "$dmg"
+          retry_stapler_validate "$dmg"
           codesign --verify --deep --strict --verbose=2 "$app"
-          xcrun stapler validate "$app"
+          retry_stapler_validate "$app"
           spctl --assess --type execute --verbose=4 "$app"
 
       - name: Verify desktop updater metadata
