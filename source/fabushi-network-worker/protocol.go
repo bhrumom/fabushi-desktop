@@ -60,6 +60,9 @@ func validateInitialize(request workerRequest) (initializeConfig, error) {
 	if err != nil || control.Scheme != "https" || control.Host == "" || control.User != nil || control.Fragment != "" {
 		return initializeConfig{}, errors.New("controlUrl must be an absolute HTTPS URL without userinfo or fragment")
 	}
+	if control.Path == "" {
+		control.Path = "/"
+	}
 	if request.StateDir == "" || !filepath.IsAbs(request.StateDir) {
 		return initializeConfig{}, errors.New("stateDir must be an absolute path")
 	}
