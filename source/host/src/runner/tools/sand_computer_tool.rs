@@ -21,6 +21,7 @@ pub const SAND_COMPUTER_MAX_FOLLOW_UP_ACTIONS: usize = 9;
 pub enum ComputerActionName {
     Screenshot,
     Click,
+    DoubleClick,
     Move,
     Drag,
     Type,
@@ -34,6 +35,7 @@ impl ComputerActionName {
         match self {
             Self::Screenshot => "screenshot",
             Self::Click => "click",
+            Self::DoubleClick => "doubleClick",
             Self::Move => "move",
             Self::Drag => "drag",
             Self::Type => "type",
@@ -209,8 +211,16 @@ fn validate_single_action(
             "Click count must be between 1 and 3.".to_string(),
         ));
     }
+    if args.action == ComputerActionName::DoubleClick && args.count.is_some() {
+        return Err(SandComputerToolInputError(
+            "Double Click has a fixed click count of 2 and does not accept count.".to_string(),
+        ));
+    }
     if auto_review_mode == Some(SandAutoReviewMode::Enforce)
-        && matches!(args.action, ComputerActionName::Click | ComputerActionName::Drag)
+        && matches!(
+            args.action,
+            ComputerActionName::Click | ComputerActionName::DoubleClick | ComputerActionName::Drag
+        )
         && args
             .description
             .as_deref()
@@ -218,7 +228,7 @@ fn validate_single_action(
             .is_none_or(str::is_empty)
     {
         return Err(SandComputerToolInputError(
-            "Click and drag require description: a concise statement of the intended UI target and purpose."
+            "Click, Double Click, and drag require description: a concise statement of the intended UI target and purpose."
                 .to_string(),
         ));
     }
@@ -247,6 +257,14 @@ pub fn to_action(args: &ComputerActionArgs) -> Result<ComputerProtocolAction, Sa
                 "coordinate": coordinate(args),
                 "button": args.button.unwrap_or(MouseButtonInput::Left).generated_name(),
                 "count": args.count.unwrap_or(1),
+            }),
+        ),
+        ComputerActionName::DoubleClick => (
+            "click",
+            json!({
+                "coordinate": coordinate(args),
+                "button": args.button.unwrap_or(MouseButtonInput::Left).generated_name(),
+                "count": 2,
             }),
         ),
         ComputerActionName::Move => (
@@ -323,6 +341,12 @@ pub fn to_reported_action(args: &ComputerActionArgs) -> Option<ReportedComputerA
             y: args.y?,
             button: args.button.unwrap_or(MouseButtonInput::Left).user_name().to_string(),
             count: args.count.unwrap_or(1),
+        }),
+        ComputerActionName::DoubleClick => Some(ReportedComputerAction::Click {
+            x: args.x?,
+            y: args.y?,
+            button: args.button.unwrap_or(MouseButtonInput::Left).user_name().to_string(),
+            count: 2,
         }),
         _ => None,
     }
@@ -488,6 +512,7 @@ fn parse_action_name(value: &str) -> Result<ComputerActionName, ProviderSessionE
     match value {
         "screenshot" => Ok(ComputerActionName::Screenshot),
         "click" => Ok(ComputerActionName::Click),
+        "doubleClick" => Ok(ComputerActionName::DoubleClick),
         "move" => Ok(ComputerActionName::Move),
         "drag" => Ok(ComputerActionName::Drag),
         "type" => Ok(ComputerActionName::Type),
@@ -610,7 +635,7 @@ pub fn computer_tool_definitions() -> Vec<RoutedToolDefinition> {
                 "additionalProperties":false,
                 "required":["action"],
                 "properties":{
-                    "action":{"type":"string","enum":["screenshot","click","move","drag","type","key","scroll","wait"]},
+                    "action":{"type":"string","enum":["screenshot","click","doubleClick","move","drag","type","key","scroll","wait"]},
                     "x":{"type":"integer"},"y":{"type":"integer"},
                     "x2":{"type":"integer"},"y2":{"type":"integer"},
                     "path":{"type":"array","items":{"type":"object","required":["x","y"],"properties":{"x":{"type":"integer"},"y":{"type":"integer"}}}},

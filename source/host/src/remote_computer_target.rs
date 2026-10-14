@@ -310,7 +310,7 @@ impl RemoteComputerToolCatalog for NativeDesktopRemoteToolCatalog {
                 "additionalProperties": false,
                 "required": ["action"],
                 "properties": {
-                    "action": {"type": "string", "enum": ["screenshot", "click", "move", "drag", "type", "key", "scroll", "wait"]},
+                    "action": {"type": "string", "enum": ["screenshot", "click", "doubleClick", "move", "drag", "type", "key", "scroll", "wait"]},
                     "x": {"type": "integer"}, "y": {"type": "integer"},
                     "x2": {"type": "integer"}, "y2": {"type": "integer"},
                     "path": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["x", "y"], "properties": {"x": {"type": "integer"}, "y": {"type": "integer"}}}},
@@ -377,6 +377,7 @@ fn native_computer_action(args: &ComputerActionArgs) -> Result<ComputerAction, S
     let action = match args.action {
         ComputerActionName::Screenshot => ComputerActionKind::Screenshot,
         ComputerActionName::Click => ComputerActionKind::Click,
+        ComputerActionName::DoubleClick => ComputerActionKind::Click,
         ComputerActionName::Move => ComputerActionKind::Move,
         ComputerActionName::Drag => ComputerActionKind::Drag,
         ComputerActionName::Type => ComputerActionKind::Type,
@@ -405,7 +406,14 @@ fn native_computer_action(args: &ComputerActionArgs) -> Result<ComputerAction, S
             MouseButtonInput::Right => ComputerMouseButton::Right,
             MouseButtonInput::Middle => ComputerMouseButton::Middle,
         }),
-        click_count: args.count,
+        click_count: if args.action == ComputerActionName::DoubleClick {
+            if args.count.is_some() {
+                return Err("doubleClick has a fixed click count of 2 and does not accept count".into());
+            }
+            Some(2)
+        } else {
+            args.count
+        },
         direction: args.direction.map(|direction| match direction {
             ScrollDirectionInput::Up => ComputerScrollDirection::Up,
             ScrollDirectionInput::Down => ComputerScrollDirection::Down,
