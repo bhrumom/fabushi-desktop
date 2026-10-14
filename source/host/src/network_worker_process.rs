@@ -139,8 +139,8 @@ pub fn resolve_network_worker_executable(host_executable: &Path) -> Result<PathB
 }
 
 pub fn default_network_worker_executable() -> Result<PathBuf, String> {
-    let current_exe =
-        env::current_exe().map_err(|error| format!("could not resolve Host executable: {error}"))?;
+    let current_exe = env::current_exe()
+        .map_err(|error| format!("could not resolve Host executable: {error}"))?;
     resolve_network_worker_executable(&current_exe)
 }
 
@@ -247,9 +247,8 @@ pub fn start_network_worker(
         let wait = remaining.min(Duration::from_millis(100));
         match readiness_rx.recv_timeout(wait) {
             Ok(Ok(line)) => {
-                let event: Value = serde_json::from_str(line.trim()).map_err(|_| {
-                    "network worker emitted invalid readiness protocol".to_string()
-                })?;
+                let event: Value = serde_json::from_str(line.trim())
+                    .map_err(|_| "network worker emitted invalid readiness protocol".to_string())?;
                 match event.get("type").and_then(Value::as_str) {
                     Some("ready") => break,
                     Some("error") => {
@@ -376,7 +375,11 @@ where
 fn wait_for_child_exit(child: &mut Child, timeout: Duration) -> Result<bool, String> {
     let deadline = Instant::now() + timeout;
     loop {
-        if child.try_wait().map_err(|error| error.to_string())?.is_some() {
+        if child
+            .try_wait()
+            .map_err(|error| error.to_string())?
+            .is_some()
+        {
             return Ok(true);
         }
         if Instant::now() >= deadline {
@@ -387,7 +390,11 @@ fn wait_for_child_exit(child: &mut Child, timeout: Duration) -> Result<bool, Str
 }
 
 fn terminate_child(child: &mut Child, pid: u32, timeout: Duration) -> Result<bool, String> {
-    if child.try_wait().map_err(|error| error.to_string())?.is_some() {
+    if child
+        .try_wait()
+        .map_err(|error| error.to_string())?
+        .is_some()
+    {
         return Ok(false);
     }
     if let Err(term_error) = request_graceful_termination(child) {
@@ -401,7 +408,11 @@ fn terminate_child(child: &mut Child, pid: u32, timeout: Duration) -> Result<boo
     }
     let deadline = Instant::now() + timeout;
     while Instant::now() < deadline {
-        if child.try_wait().map_err(|error| error.to_string())?.is_some() {
+        if child
+            .try_wait()
+            .map_err(|error| error.to_string())?
+            .is_some()
+        {
             return Ok(false);
         }
         thread::sleep(Duration::from_millis(25));
