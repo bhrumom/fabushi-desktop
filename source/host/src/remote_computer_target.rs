@@ -1057,6 +1057,90 @@ impl FabushiCoreTargetClient {
         Ok(binding)
     }
 
+    pub fn issue_network_enrollment(
+        &self,
+        request_id: &str,
+    ) -> Result<RemoteNetworkEnrollmentGrant, RemoteComputerTargetError> {
+        if request_id.trim().is_empty() || request_id.len() > 160 {
+            return Err(RemoteComputerTargetError::InvalidResponse);
+        }
+        let (credential, device_secret) = self.authority()?;
+        let response = self.post_json(
+            &credential,
+            self.endpoint(&[
+                "v1",
+                "computers",
+                &credential.device_id,
+                "network-enrollment-grants",
+            ])?,
+            json!({
+                "deviceSecret": device_secret,
+                "requestId": request_id,
+            }),
+        )?;
+        if response.get("requestId").and_then(Value::as_str) != Some(request_id) {
+            return Err(RemoteComputerTargetError::IdentityMismatch);
+        }
+        let grant_id = required_text(&response, "grantId")?;
+        let grant_secret = required_text(&response, "grantSecret")?;
+        let cell_id = required_text(&response, "cellId")?;
+        let generation = response
+            .get("generation")
+            .and_then(Value::as_i64)
+            .filter(|value| *value > 0)
+            .ok_or(RemoteComputerTargetError::InvalidResponse)?;
+        let expires_at = response
+            .get("expiresAt")
+            .and_then(Value::as_i64)
+            .filter(|value| *value > unix_seconds().unwrap_or_default())
+            .ok_or(RemoteComputerTargetError::InvalidResponse)?;
+        if !grant_id.starts_with("network-enroll-")
+            || grant_id.len() > 96
+            || grant_secret.len() < 80
+            || grant_secret.len() > 192
+        {
+            return Err(RemoteComputerTargetError::InvalidResponse);
+        }
+        Ok(RemoteNetworkEnrollmentGrant {
+            grant_id,
+            grant_secret,
+            cell_id,
+            generation,
+            expires_at,
+            request_id: request_id.to_string(),
+            reconciled: response.get("reconciled").and_then(Value::as_bool).unwrap_or(false),
+        })
+    }
+
+    pub fn revoke_network_enrollment(
+        &self,
+        grant_id: &str,
+    ) -> Result<bool, RemoteComputerTargetError> {
+        if !grant_id.starts_with("network-enroll-") || grant_id.len() > 96 {
+            return Err(RemoteComputerTargetError::InvalidResponse);
+        }
+        let (credential, device_secret) = self.authority()?;
+        let response = self.post_json(
+            &credential,
+            self.endpoint(&[
+                "v1",
+                "computers",
+                &credential.device_id,
+                "network-enrollment-grants",
+                grant_id,
+                "revoke",
+            ])?,
+            json!({"deviceSecret": device_secret}),
+        )?;
+        if response.get("grantId").and_then(Value::as_str) != Some(grant_id) {
+            return Err(RemoteComputerTargetError::IdentityMismatch);
+        }
+        response
+            .get("revoked")
+            .and_then(Value::as_bool)
+            .ok_or(RemoteComputerTargetError::InvalidResponse)
+    }
+
     pub fn network_binding(&self) -> Result<RemoteNetworkBinding, RemoteComputerTargetError> {
         let (credential, device_secret) = self.authority()?;
         let response = self.post_json(
