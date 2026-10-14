@@ -237,7 +237,7 @@
     {
       "path": "Telegram/build/prepare/prepare.py",
       "dependency": "desktop-app/patches",
-      "commit": "51912ada9f0c3dfbded54616175ddd211dce8aaf"
+      "commit": "f7433965ed33996c641a822c78a81eef3526c9e7"
     },
     {
       "path": "Telegram/build/docker/centos_env/Dockerfile",
