@@ -539,6 +539,93 @@ pub struct ComputerPoint {
     pub y: i32,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum ComputerWindowAction {
+    Raise,
+    Close,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ComputerWindowRequest {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub window_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub expected_name: Option<String>,
+    pub window_action: ComputerWindowAction,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ComputerWindowResult {
+    pub window_id: String,
+    pub window_action: ComputerWindowAction,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ComputerAccessibilityTreeRequest {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub window_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_depth: Option<u8>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_nodes: Option<u16>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum ComputerSemanticAction {
+    Press,
+    Focus,
+    SetValue,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ComputerSemanticActionRequest {
+    pub element_id: String,
+    pub semantic_action: ComputerSemanticAction,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ComputerAccessibilityNode {
+    pub id: String,
+    pub role: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub enabled: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub focused: Option<bool>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub children: Vec<ComputerAccessibilityNode>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ComputerAccessibilityTree {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub window_id: Option<String>,
+    pub root: ComputerAccessibilityNode,
+    pub truncated: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ComputerSemanticActionResult {
+    pub element_id: String,
+    pub semantic_action: ComputerSemanticAction,
+}
+
 /// Stable computer-action envelope. Fields intentionally stay flat so
 /// the exact same payload can be produced by the model tool, desktop UI, and a
 /// paired phone without translation-specific semantics.
@@ -2993,6 +3080,49 @@ mod tests {
         assert_eq!(
             serde_json::from_value::<ComputerControlTarget>(value).unwrap(),
             target
+        );
+    }
+
+    #[test]
+    fn typed_window_accessibility_and_semantic_contracts_round_trip() {
+        let window = ComputerWindowRequest {
+            window_id: Some("focused".into()),
+            expected_name: Some("Settings".into()),
+            window_action: ComputerWindowAction::Raise,
+        };
+        let window_value = serde_json::to_value(&window).expect("encode window request");
+        assert_eq!(window_value["windowId"], "focused");
+        assert_eq!(window_value["expectedName"], "Settings");
+        assert_eq!(window_value["windowAction"], "raise");
+        assert_eq!(
+            serde_json::from_value::<ComputerWindowRequest>(window_value).unwrap(),
+            window
+        );
+
+        let tree = ComputerAccessibilityTreeRequest {
+            window_id: Some("focused".into()),
+            max_depth: Some(4),
+            max_nodes: Some(256),
+        };
+        let tree_value = serde_json::to_value(&tree).expect("encode tree request");
+        assert_eq!(tree_value["maxDepth"], 4);
+        assert_eq!(tree_value["maxNodes"], 256);
+        assert_eq!(
+            serde_json::from_value::<ComputerAccessibilityTreeRequest>(tree_value).unwrap(),
+            tree
+        );
+
+        let semantic = ComputerSemanticActionRequest {
+            element_id: "focused/0/2".into(),
+            semantic_action: ComputerSemanticAction::SetValue,
+            value: Some("replacement".into()),
+        };
+        let semantic_value = serde_json::to_value(&semantic).expect("encode semantic request");
+        assert_eq!(semantic_value["elementId"], "focused/0/2");
+        assert_eq!(semantic_value["semanticAction"], "setValue");
+        assert_eq!(
+            serde_json::from_value::<ComputerSemanticActionRequest>(semantic_value).unwrap(),
+            semantic
         );
     }
 
