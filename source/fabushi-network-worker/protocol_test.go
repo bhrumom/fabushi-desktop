@@ -72,7 +72,6 @@ func TestRequestIDIsBoundedAndOpaque(t *testing.T) {
 	}
 }
 
-
 func TestStreamTargetIsTailnetOnlyAndBounded(t *testing.T) {
 	for _, peer := range []string{"100.64.0.10", "100.127.255.254", "fd7a:115c:a1e0::1234"} {
 		if _, ok := streamAddress(peer, 443); !ok {
