@@ -2099,6 +2099,7 @@ mod sensitive_result_tests {
             captured_at_ms: 123,
             width: Some(100),
             height: Some(80),
+            snapshot_generation: Some(1),
             expires_at: now + 60,
             next_offset: 0,
         }
