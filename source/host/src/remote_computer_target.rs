@@ -26,8 +26,8 @@ use crate::network_enrollment_owner::{NetworkEnrollmentError, NetworkWorkerServi
 use crate::network_worker_process::OwnedNetworkWorker;
 use crate::runner::routed_provider_runtime::RoutedToolBridge;
 use crate::runner::tools::sand_computer_tool::{
-    ComputerActionArgs, ComputerActionName, ComputerToolExecutor, ComputerUseResult,
-    MouseButtonInput, ScrollDirectionInput, parse_remote_computer_action,
+    ComputerActionArgs, ComputerActionName, MouseButtonInput, ScrollDirectionInput,
+    parse_remote_computer_action,
 };
 
 const CORE_REQUEST_TIMEOUT_SECS: u64 = 15;
@@ -230,77 +230,6 @@ pub trait RemoteComputerNativeExecutor: Send + Sync {
         arguments: &Value,
         disk_preflight: &Value,
     ) -> RemoteComputerNativeOutcome;
-}
-
-pub struct HostComputerRemoteExecutor {
-    computer: Arc<dyn ComputerToolExecutor>,
-}
-
-impl HostComputerRemoteExecutor {
-    pub fn new(computer: Arc<dyn ComputerToolExecutor>) -> Self {
-        Self { computer }
-    }
-}
-
-impl RemoteComputerNativeExecutor for HostComputerRemoteExecutor {
-    fn execute(
-        &self,
-        operation: &ClaimedRemoteOperation,
-        arguments: &Value,
-        _disk_preflight: &Value,
-    ) -> RemoteComputerNativeOutcome {
-        if operation.tool_name == "Screenshot" {
-            return RemoteComputerNativeOutcome::Failed(json!({
-                "code": "sensitive_result_channel_unavailable",
-                "message": "This legacy Host Computer adapter cannot transfer remote screenshots; use the authenticated native sensitive-result executor.",
-                "retryable": false,
-            }));
-        }
-        if operation.tool_name != "Computer" {
-            return RemoteComputerNativeOutcome::Failed(json!({
-                "code": "unsupported_tool",
-                "message": "This target executor only owns the existing Host Computer tool.",
-                "retryable": false,
-            }));
-        }
-        let action = match parse_remote_computer_action(arguments) {
-            Ok(action) => action,
-            Err(error) => {
-                return RemoteComputerNativeOutcome::Failed(json!({
-                    "code": "invalid_arguments",
-                    "message": error.to_string(),
-                    "retryable": false,
-                }));
-            }
-        };
-        match self.computer.execute(&action, &operation.request_id) {
-            Ok(ComputerUseResult::Success(success)) => RemoteComputerNativeOutcome::Completed(json!({
-                "content": "Computer action ran on the target desktop.",
-                "cursorPosition": success.cursor_position.map(|position| json!({
-                    "x": position.x,
-                    "y": position.y,
-                })),
-                "observedScreenshotAvailableOnTarget": success.screenshot.is_some()
-                    || success.screenshot_path.is_some(),
-                "screenshotTransferred": false,
-            })),
-            Ok(ComputerUseResult::Error(error)) => RemoteComputerNativeOutcome::Failed(json!({
-                "code": "computer_action_failed",
-                "message": error,
-                "retryable": false,
-            })),
-            Ok(ComputerUseResult::Other(state)) => RemoteComputerNativeOutcome::Failed(json!({
-                "code": "computer_action_unconfirmed",
-                "message": state,
-                "retryable": false,
-            })),
-            Err(error) => RemoteComputerNativeOutcome::Failed(json!({
-                "code": "computer_executor_error",
-                "message": error.to_string(),
-                "retryable": false,
-            })),
-        }
-    }
 }
 
 pub trait RemoteComputerToolAuthorizer: Send + Sync {
