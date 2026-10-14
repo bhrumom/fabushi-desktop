@@ -221,13 +221,13 @@
       "commit": "46111c61a9f49b7a9886127e679d4317478fab1c"
     },
     {
-      "parent": "ericniebler/range-v3@a81477931a8aa2ad025c6bda0609f38e09e4d7ec",
+      "parent": "ericniebler/range-v3@5ba39112d2eafbb3c851a16a537f29b445022998",
       "path": "doc/gh-pages",
       "repository": "ericniebler/range-v3",
       "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae"
     },
     {
-      "parent": "desktop-app/cmake_helpers@7a6abdae76f14d0ebb5a8d0500d7adc6d6c1e489",
+      "parent": "desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
       "path": "external/glib/cppgir",
       "repository": "gitlab.com/mnauw/cppgir",
       "commit": "47cf94f83b54cda59018135601e19d7fb0c77776"
