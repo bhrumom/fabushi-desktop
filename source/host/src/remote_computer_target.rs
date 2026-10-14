@@ -1175,6 +1175,157 @@ impl FabushiCoreTargetClient {
     }
 }
 
+pub struct FabushiNetworkEnrollmentBrokerClient {
+    base_url: Url,
+    credential_provider: Arc<dyn FabushiCoreCredentialProvider>,
+    http: Client,
+}
+
+impl std::fmt::Debug for FabushiNetworkEnrollmentBrokerClient {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("FabushiNetworkEnrollmentBrokerClient")
+            .field("base_url", &self.base_url)
+            .field("credential_provider", &"<first-party>")
+            .finish_non_exhaustive()
+    }
+}
+
+impl FabushiNetworkEnrollmentBrokerClient {
+    pub fn new(
+        base_url: &str,
+        credential_provider: Arc<dyn FabushiCoreCredentialProvider>,
+    ) -> Result<Self, RemoteComputerTargetError> {
+        let mut base_url =
+            Url::parse(base_url).map_err(|_| RemoteComputerTargetError::AuthorityUnavailable)?;
+        if !base_url.username().is_empty()
+            || base_url.password().is_some()
+            || base_url.query().is_some()
+            || base_url.fragment().is_some()
+        {
+            return Err(RemoteComputerTargetError::AuthorityUnavailable);
+        }
+        let loopback = matches!(base_url.host_str(), Some("localhost" | "127.0.0.1" | "::1"));
+        if base_url.scheme() != "https" && !(loopback && base_url.scheme() == "http") {
+            return Err(RemoteComputerTargetError::AuthorityUnavailable);
+        }
+        base_url.set_path("/");
+        let http = Client::builder()
+            .timeout(std::time::Duration::from_secs(CORE_REQUEST_TIMEOUT_SECS))
+            .build()
+            .map_err(|_| RemoteComputerTargetError::AuthorityUnavailable)?;
+        Ok(Self { base_url, credential_provider, http })
+    }
+
+    fn endpoint(&self, action: &str) -> Result<Url, RemoteComputerTargetError> {
+        let mut url = self.base_url.clone();
+        {
+            let mut path = url
+                .path_segments_mut()
+                .map_err(|_| RemoteComputerTargetError::AuthorityUnavailable)?;
+            path.clear();
+            for segment in ["api", "fdn", "network-enrollment", action] {
+                path.push(segment);
+            }
+        }
+        Ok(url)
+    }
+
+    fn post_json(&self, action: &str, body: Value) -> Result<(FabushiCoreCredential, Value), RemoteComputerTargetError> {
+        let credential = self
+            .credential_provider
+            .get_fabushi_core_credential()
+            .map_err(|_| RemoteComputerTargetError::AuthorityUnavailable)?;
+        let response = self
+            .http
+            .post(self.endpoint(action)?)
+            .bearer_auth(credential.access_token())
+            .header("Accept", "application/json")
+            .json(&body)
+            .send()
+            .map_err(|_| RemoteComputerTargetError::RequestFailed)?;
+        if !response.status().is_success() {
+            return Err(RemoteComputerTargetError::RequestFailed);
+        }
+        let bytes = response
+            .bytes()
+            .map_err(|_| RemoteComputerTargetError::RequestFailed)?;
+        if bytes.len() > MAX_CORE_RESPONSE_BYTES {
+            return Err(RemoteComputerTargetError::InvalidResponse);
+        }
+        let payload: Value =
+            serde_json::from_slice(&bytes).map_err(|_| RemoteComputerTargetError::InvalidResponse)?;
+        if payload.get("ok").and_then(Value::as_bool) != Some(true) {
+            return Err(RemoteComputerTargetError::RequestFailed);
+        }
+        Ok((credential, payload))
+    }
+
+    pub fn start(
+        &self,
+        grant: &RemoteNetworkEnrollmentGrant,
+    ) -> Result<RemoteNetworkEnrollmentStarted, RemoteComputerTargetError> {
+        let (credential, payload) = self.post_json(
+            "start",
+            json!({"grantId": grant.grant_id, "grantSecret": grant.grant_secret()}),
+        )?;
+        let enrollment = payload
+            .get("enrollment")
+            .and_then(Value::as_object)
+            .ok_or(RemoteComputerTargetError::InvalidResponse)?;
+        if enrollment.get("grantId").and_then(Value::as_str) != Some(grant.grant_id.as_str())
+            || enrollment.get("deviceId").and_then(Value::as_str) != Some(credential.device_id.as_str())
+            || enrollment.get("cellId").and_then(Value::as_str) != Some(grant.cell_id.as_str())
+            || enrollment.get("generation").and_then(Value::as_i64) != Some(grant.generation)
+        {
+            return Err(RemoteComputerTargetError::IdentityMismatch);
+        }
+        let auth_key = required_text(&Value::Object(enrollment.clone()), "authKey")?;
+        if auth_key.len() < 48 || auth_key.len() > 256 {
+            return Err(RemoteComputerTargetError::InvalidResponse);
+        }
+        Ok(RemoteNetworkEnrollmentStarted {
+            grant_id: grant.grant_id.clone(),
+            auth_key,
+            device_id: credential.device_id,
+            cell_id: grant.cell_id.clone(),
+            generation: grant.generation,
+            expires_at: enrollment
+                .get("expiresAt")
+                .and_then(Value::as_i64)
+                .filter(|value| *value > unix_seconds().unwrap_or_default())
+                .ok_or(RemoteComputerTargetError::InvalidResponse)?,
+            reconciled: enrollment.get("reconciled").and_then(Value::as_bool).unwrap_or(false),
+        })
+    }
+
+    pub fn complete(
+        &self,
+        started: &RemoteNetworkEnrollmentStarted,
+    ) -> Result<RemoteNetworkEnrollmentCompleted, RemoteComputerTargetError> {
+        let (_credential, payload) =
+            self.post_json("complete", json!({"grantId": started.grant_id}))?;
+        let enrollment = payload
+            .get("enrollment")
+            .and_then(Value::as_object)
+            .ok_or(RemoteComputerTargetError::InvalidResponse)?;
+        if enrollment.get("grantId").and_then(Value::as_str) != Some(started.grant_id.as_str())
+            || enrollment.get("deviceId").and_then(Value::as_str) != Some(started.device_id.as_str())
+            || enrollment.get("generation").and_then(Value::as_i64) != Some(started.generation)
+            || enrollment.get("completed").and_then(Value::as_bool) != Some(true)
+        {
+            return Err(RemoteComputerTargetError::IdentityMismatch);
+        }
+        Ok(RemoteNetworkEnrollmentCompleted {
+            grant_id: started.grant_id.clone(),
+            device_id: started.device_id.clone(),
+            node_id: required_text(&Value::Object(enrollment.clone()), "nodeId")?,
+            generation: started.generation,
+            reconciled: enrollment.get("reconciled").and_then(Value::as_bool).unwrap_or(false),
+        })
+    }
+}
+
 
 fn unix_seconds() -> Result<i64, RemoteComputerTargetError> {
     let seconds = SystemTime::now()
