@@ -122,6 +122,12 @@ jobs:
         shell: bash
         run: npm --prefix desktop ci --prefer-offline --no-audit --no-fund
 
+      - name: Compile and collect the installed Mini App gate before packaging
+        working-directory: desktop
+        run: |
+          ./node_modules/.bin/tsc --noEmit --strict --skipLibCheck --target ES2022 --module NodeNext --moduleResolution NodeNext --esModuleInterop e2e/miniapp-packaged-acceptance.spec.ts
+          npx playwright test e2e/miniapp-packaged-acceptance.spec.ts --list
+
       - name: Validate Fabushi product adapter contracts
         shell: bash
         run: |
@@ -393,6 +399,44 @@ jobs:
           test -s "$OBF_EVIDENCE_DIR/candidate.json"
           find "$OBF_EVIDENCE_DIR/screenshots" -type f -name '*.png' -size +0c -print -quit | grep -q .
           find "$OBF_EVIDENCE_DIR" -type f \( -name '*.mp4' -o -name '*.mov' -o -name '*.webm' \) -size +0c -print -quit | grep -q .
+
+      - name: Run approved Mini App installed and OS-offline lifecycle acceptance
+        working-directory: desktop
+        shell: bash
+        timeout-minutes: 30
+        env:
+          MINIAPP_REAL_ACCEPTANCE: '1'
+          MINIAPP_EVIDENCE_DIR: ${{ runner.temp }}/fabushi-miniapp-acceptance
+          OBF_SOURCE_SHA: ${{ steps.source.outputs.sha }}
+          OBF_EXPECTED_SOURCE_SHA: ${{ steps.source.outputs.sha }}
+          FABUSHI_ELECTRON_EXECUTABLE: ${{ steps.candidate.outputs.executable }}
+          FABUSHI_FEATURE_HOST_MODE: production
+          FABUSHI_E2E: '0'
+        run: |
+          set -euo pipefail
+          test "$MINIAPP_REAL_ACCEPTANCE" = 1
+          recorder="$GITHUB_WORKSPACE/desktop/scripts/macos-session-recorder.sh"
+          mkdir -p "$MINIAPP_EVIDENCE_DIR"
+          bash "$recorder" start "$MINIAPP_EVIDENCE_DIR"
+          bash "$recorder" assert-live "$MINIAPP_EVIDENCE_DIR"
+          test_status=0
+          npx playwright test e2e/miniapp-packaged-acceptance.spec.ts --workers=1 || test_status=$?
+          stop_status=0
+          bash "$recorder" stop "$MINIAPP_EVIDENCE_DIR" || stop_status=$?
+          verify_status=0
+          bash "$recorder" verify "$MINIAPP_EVIDENCE_DIR" || verify_status=$?
+          test "$test_status" -eq 0
+          test "$stop_status" -eq 0
+          test "$verify_status" -eq 0
+          find "$MINIAPP_EVIDENCE_DIR" -type f -name acceptance.json -size +0c -print -quit | grep -q .
+
+      - name: Upload Mini App installed acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: fabushi-miniapp-installed-${{ steps.source.outputs.short }}
+          path: ${{ runner.temp }}/fabushi-miniapp-acceptance
+          if-no-files-found: warn
 
       - name: Upload packaged acceptance evidence
         if: always()
