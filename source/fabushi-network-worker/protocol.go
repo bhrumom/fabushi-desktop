@@ -4,12 +4,21 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"net"
+	"net/netip"
 	"net/url"
 	"path/filepath"
 	"strings"
 )
 
 const protocolVersion = 1
+
+const (
+	maxStreamChunkBytes = 32 * 1024
+	maxStreamSessions   = 32
+	minStreamTimeoutMS  = 100
+	maxStreamTimeoutMS  = 30_000
+)
 
 type workerRequest struct {
 	Type            string `json:"type"`
@@ -20,13 +29,23 @@ type workerRequest struct {
 	StateDir        string `json:"stateDir,omitempty"`
 	StateKeyB64     string `json:"stateKeyB64,omitempty"`
 	RequestID       string `json:"requestId,omitempty"`
+	SessionID       string `json:"sessionId,omitempty"`
+	TargetPeer      string `json:"targetPeer,omitempty"`
+	TargetPort      int    `json:"targetPort,omitempty"`
+	DataB64         string `json:"dataB64,omitempty"`
+	MaxBytes        int    `json:"maxBytes,omitempty"`
+	TimeoutMS       int    `json:"timeoutMs,omitempty"`
 }
 
 type workerEvent struct {
 	Type         string   `json:"type"`
 	RequestID    string   `json:"requestId,omitempty"`
+	SessionID    string   `json:"sessionId,omitempty"`
 	BackendState string   `json:"backendState,omitempty"`
 	TailscaleIPs []string `json:"tailscaleIps,omitempty"`
+	DataB64      string   `json:"dataB64,omitempty"`
+	Bytes        int      `json:"bytes,omitempty"`
+	EOF          bool     `json:"eof,omitempty"`
 	Code         string   `json:"code,omitempty"`
 	Message      string   `json:"message,omitempty"`
 }
@@ -82,7 +101,7 @@ func validateInitialize(request workerRequest) (initializeConfig, error) {
 	}, nil
 }
 
-func validRequestID(value string) bool {
+func validOpaqueID(value string) bool {
 	if len(value) < 8 || len(value) > 160 {
 		return false
 	}
@@ -95,11 +114,91 @@ func validRequestID(value string) bool {
 	return true
 }
 
+func validRequestID(value string) bool { return validOpaqueID(value) }
+func validSessionID(value string) bool { return validOpaqueID(value) }
+
+func tailnetPeer(value string) (string, bool) {
+	addr, err := netip.ParseAddr(strings.TrimSpace(value))
+	if err != nil {
+		return "", false
+	}
+	addr = addr.Unmap()
+	if addr.Is4() {
+		prefix := netip.MustParsePrefix("100.64.0.0/10")
+		if !prefix.Contains(addr) {
+			return "", false
+		}
+	} else {
+		prefix := netip.MustParsePrefix("fd7a:115c:a1e0::/48")
+		if !prefix.Contains(addr) {
+			return "", false
+		}
+	}
+	return addr.String(), true
+}
+
+func streamAddress(peer string, port int) (string, bool) {
+	normalized, ok := tailnetPeer(peer)
+	if !ok || port < 1 || port > 65535 {
+		return "", false
+	}
+	return net.JoinHostPort(normalized, fmt.Sprintf("%d", port)), true
+}
+
+func listenAddress(port int) (string, bool) {
+	if port < 1 || port > 65535 {
+		return "", false
+	}
+	return fmt.Sprintf(":%d", port), true
+}
+
+func remotePeerMatches(address net.Addr, expected string) bool {
+	if address == nil {
+		return false
+	}
+	host, _, err := net.SplitHostPort(address.String())
+	if err != nil {
+		return false
+	}
+	actual, ok := tailnetPeer(host)
+	if !ok {
+		return false
+	}
+	normalizedExpected, ok := tailnetPeer(expected)
+	return ok && actual == normalizedExpected
+}
+
+func streamTimeoutMS(value int) (int, bool) {
+	if value == 0 {
+		return 5_000, true
+	}
+	if value < minStreamTimeoutMS || value > maxStreamTimeoutMS {
+		return 0, false
+	}
+	return value, true
+}
+
+func decodeStreamChunk(value string) ([]byte, bool) {
+	data, err := base64.StdEncoding.DecodeString(value)
+	if err != nil || len(data) > maxStreamChunkBytes {
+		return nil, false
+	}
+	return data, true
+}
+
+func boundedReadSize(value int) (int, bool) {
+	if value <= 0 {
+		return maxStreamChunkBytes, true
+	}
+	if value > maxStreamChunkBytes {
+		return 0, false
+	}
+	return value, true
+}
+
 func redactError(err error) workerEvent {
 	if err == nil {
 		return workerEvent{Type: "error", Code: "unknown", Message: "network worker failed"}
 	}
-	// Never serialize the original error here: upstream errors can include URLs
-	// or enrollment material. Detailed diagnostics stay in bounded local stderr.
 	return workerEvent{Type: "error", Code: "network_worker_error", Message: "network worker operation failed"}
 }
