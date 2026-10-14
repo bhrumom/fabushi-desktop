@@ -246,9 +246,16 @@ for (const [name,stage] of [['prepare.py',prepareLibavifStage],['Dockerfile',doc
 fail(snapLibavifStage.includes('source-tag: v1.3.0'),'accepted Snap libavif ref drift');
 
 const adaReachability=recursiveReachability.ada;
-fail(adaReachability?.repository==='https://github.com/ada-url/ada','Ada reachability authority missing');
-fail(adaReachability.commit==='010f7c45aeaff1205452e7da2df8702cf725fb3e','Ada reachability commit drift');
-fail(adaReachability.root_candidate_policy_status==='complete-for-current-ada-authority','Ada root candidate policy is not fail-closed complete');
+fail(Array.isArray(adaReachability?.observed_authorities),'Ada reachability authority set missing');
+const expectedAdaAuthorities=new Set([
+  'https://github.com/ada-url/ada@010f7c45aeaff1205452e7da2df8702cf725fb3e',
+  'https://github.com/ada-url/ada@6b4612162c34e7ffcee08c03b107b449e07a5683',
+]);
+for (const authority of adaReachability.observed_authorities||[]) {
+  expectedAdaAuthorities.delete(authority.repository+'@'+authority.commit);
+}
+fail(expectedAdaAuthorities.size===0,'Ada observed authority set drift');
+fail(adaReachability.root_candidate_policy_status==='complete-for-current-ada-authorities','Ada root candidate policy is not fail-closed complete');
 const adaPolicy=adaReachability.root_candidate_disposition_policy||[];
 for (const [kind,value] of [
   ['path_prefix','.github/'],['path_prefix','cmake/'],['path_prefix','benchmarks/'],
@@ -262,7 +269,7 @@ for (const [name,stage] of [['prepare.py',prepareAdaStage],['Dockerfile',dockerA
   fail(stage.includes('ADA_TOOLS=OFF'),'accepted Ada build lost ADA_TOOLS=OFF in '+name);
   fail(stage.includes('ADA_INCLUDE_URL_PATTERN=OFF'),'accepted Ada build lost ADA_INCLUDE_URL_PATTERN=OFF in '+name);
 }
-fail(snapAdaStage.includes('source-tag: v3.2.4'),'accepted Snap Ada ref drift');
+fail(snapAdaStage.includes('source-tag: v3.2.9'),'accepted Snap Ada ref drift');
 
 const openalReachability=recursiveReachability.openal_soft;
 fail(openalReachability?.root_candidate_policy_status==='complete-for-current-openal-authorities','OpenAL root candidate policy is not fail-closed complete');
