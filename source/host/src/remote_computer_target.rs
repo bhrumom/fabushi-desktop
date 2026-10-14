@@ -28,7 +28,6 @@ pub enum RemoteComputerTargetError {
     InvalidResponse,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
 #[derive(Clone, PartialEq, Eq)]
 pub struct RemoteServiceClientGrant {
     pub device_id: String,
