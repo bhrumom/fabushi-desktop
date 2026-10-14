@@ -120,3 +120,15 @@ fn fdn_network_owner_only_marks_transport_uncertainty_as_outcome_unknown() {
         "explicit broker/Core rejection must not be rewritten as uncertain execution"
     );
 }
+
+#[test]
+fn fdn_network_owner_only_rotates_uncertain_start_after_enrollment_expiry() {
+    assert!(OWNER.contains("reset_expired_uncertain_start"));
+    assert!(OWNER.contains("self.phase != \"worker_start_outcome_unknown\""));
+    assert!(OWNER.contains("expires_at > now"));
+    assert!(OWNER.contains("self.request_id = format!(\"network-enroll-request-{}\""));
+    assert!(OWNER.contains("self.phase = \"grant_pending\".into()"));
+    assert!(OWNER.contains("self.auth_key = None"));
+    assert!(OWNER.contains("if state.reset_expired_uncertain_start(unix_seconds()?)"));
+}
+
