@@ -76,7 +76,7 @@ fn fdn_network_owner_fences_account_switch_and_supervises_shipping_worker() {
         "existing.close()",
         "NetworkEnrollmentSupervisor::start(owner)",
         "supervisor.stop()",
-        "app_data_dir.join("fdn-network")",
+        r#"app_data_dir.join("fdn-network")"#,
     ] {
         assert!(
             OWNER.contains(required) || APP_MAIN.contains(required),
