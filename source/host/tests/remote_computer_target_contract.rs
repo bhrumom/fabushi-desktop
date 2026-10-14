@@ -48,3 +48,34 @@ fn target_operation_claim_and_result_keep_request_digest_and_generation_fences()
         assert!(TARGET_SOURCE.contains(required), "missing target operation invariant: {required}");
     }
 }
+
+
+#[test]
+fn operation_digest_is_canonical_across_object_key_order() {
+    use mahayana_host_runtime::remote_computer_target::operation_request_sha256;
+    use serde_json::json;
+
+    let left = operation_request_sha256(
+        "computer_state",
+        &json!({"z":1,"nested":{"b":2,"a":1},"list":[{"y":2,"x":1}]}),
+        &json!({"impact":"none","reason":"no growth","targets":[]}),
+    )
+    .expect("canonical digest");
+    let right = operation_request_sha256(
+        "computer_state",
+        &json!({"list":[{"x":1,"y":2}],"nested":{"a":1,"b":2},"z":1}),
+        &json!({"targets":[],"reason":"no growth","impact":"none"}),
+    )
+    .expect("canonical digest");
+    assert_eq!(left.len(), 64);
+    assert_eq!(left, right);
+    assert_ne!(
+        left,
+        operation_request_sha256(
+            "computer_state",
+            &json!({"list":[{"x":1,"y":2}],"nested":{"a":1,"b":3},"z":1}),
+            &json!({"impact":"none","reason":"no growth","targets":[]}),
+        )
+        .expect("changed digest")
+    );
+}
