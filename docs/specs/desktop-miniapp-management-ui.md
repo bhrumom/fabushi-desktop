@@ -117,4 +117,8 @@ wait for that nested panel to close, and wait for the native Save panel to dismi
 Use bounded UI-state waits rather than fixed 300ms delays. On failure preserve only
 the disposable CI desktop screenshot and expected report-directory member names;
 do not inspect app-data or relax the report-content assertions.
+The native controller must bind the Save panel by its owning window's stable name,
+not a mutable window index. macOS may expose GoToWindow as a separate top-level
+sheet; resolve its PathTextField by AX identifier and verify the entered directory
+before confirming navigation. Diagnostic traces contain only fixed stage names.
 

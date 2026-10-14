@@ -15,7 +15,8 @@ on run argv
           if exists sheet 1 of candidateWindow then
             set candidateSheet to sheet 1 of candidateWindow
             if exists button "Save" of candidateSheet then
-              set saveSheet to candidateSheet
+              set reportWindowName to name of candidateWindow
+              set saveSheet to sheet 1 of window reportWindowName
               exit repeat
             end if
           end if
@@ -28,6 +29,15 @@ on run argv
       keystroke "g" using {command down, shift down}
       set goSheet to missing value
       repeat 100 times
+        repeat with candidateElement in UI elements
+          try
+            if (value of attribute "AXIdentifier" of candidateElement) is "GoToWindow" then
+              set goSheet to contents of candidateElement
+              exit repeat
+            end if
+          end try
+        end repeat
+        if goSheet is not missing value then exit repeat
         if exists sheet 1 of saveSheet then
           set goSheet to sheet 1 of saveSheet
           if exists combo box 1 of goSheet then exit repeat
@@ -38,12 +48,16 @@ on run argv
       if goSheet is missing value then error "REPORT_DIRECTORY_PANEL_MISSING"
       -- A second Save panel may remember the first destination. Replace it;
       -- never append to a previous path or type before the nested panel exists.
+      set pathField to text field 1 of goSheet
+      if (value of attribute "AXIdentifier" of pathField) is not "PathTextField" then error "REPORT_DIRECTORY_FIELD_MISMATCH"
+      click pathField
       keystroke "a" using {command down}
       keystroke reportDirectory
+      if (value of pathField) is not reportDirectory then error "REPORT_DIRECTORY_INPUT_MISMATCH"
       key code 36
       set directoryChosen to false
       repeat 100 times
-        if not (exists sheet 1 of saveSheet) then
+        if not (exists goSheet) then
           set directoryChosen to true
           exit repeat
         end if
