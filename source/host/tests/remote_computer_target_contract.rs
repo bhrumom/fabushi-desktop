@@ -111,3 +111,24 @@ fn target_private_transport_is_peer_bound_generation_fenced_and_never_auto_repla
         "native execution must never be automatically retried after transport uncertainty"
     );
 }
+
+
+#[test]
+fn target_tool_description_is_service_bound_and_sourced_from_existing_host_bridge() {
+    for required in [
+        "pub struct RoutedRemoteComputerToolCatalog",
+        "bridge: Arc<dyn RoutedToolBridge>",
+        ".list_tools()",
+        "RemoteTargetPrivateRequest::DescribeTool",
+        "self.grant_service_client(&connection_id, &delegation_id, &request_id, &label)?",
+        "catalog.describe_tool(&tool_name)?",
+        ""type": "toolDescription"",
+        ""schemaVersion": schema_version",
+    ] {
+        assert!(TARGET_SOURCE.contains(required), "missing target tool projection invariant: {required}");
+    }
+    assert!(
+        !TARGET_SOURCE.contains(""clientToken": grant.client_token(),\n                        "type": "toolDescription""),
+        "tool description responses must not expose the service-bound controller credential"
+    );
+}
