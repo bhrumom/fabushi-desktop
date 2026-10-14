@@ -110,3 +110,27 @@ func TestStreamChunkAndReadBoundsAreFailClosed(t *testing.T) {
 		t.Fatal("oversized stream read was accepted")
 	}
 }
+
+
+type protocolTestAddr string
+
+func (a protocolTestAddr) Network() string { return "tcp" }
+func (a protocolTestAddr) String() string  { return string(a) }
+
+func TestPeerBoundListenValidation(t *testing.T) {
+	if address, ok := listenAddress(8443); !ok || address != ":8443" {
+		t.Fatalf("listen address mismatch: %q %v", address, ok)
+	}
+	if _, ok := listenAddress(0); ok {
+		t.Fatal("ephemeral/unbound port unexpectedly accepted")
+	}
+	if !remotePeerMatches(protocolTestAddr("100.64.0.30:51234"), "100.64.0.30") {
+		t.Fatal("expected Tailnet peer did not match")
+	}
+	if remotePeerMatches(protocolTestAddr("100.64.0.31:51234"), "100.64.0.30") {
+		t.Fatal("different Tailnet peer unexpectedly matched")
+	}
+	if remotePeerMatches(protocolTestAddr("10.0.0.5:51234"), "100.64.0.30") {
+		t.Fatal("non-Tailnet remote peer unexpectedly matched")
+	}
+}
