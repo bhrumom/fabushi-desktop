@@ -1,8 +1,10 @@
 use std::fs;
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use reqwest::blocking::Client;
+use serde::Deserialize;
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use thiserror::Error;
@@ -11,9 +13,13 @@ use url::Url;
 use crate::extensions::auth::auth_service::{
     FabushiCoreCredential, FabushiCoreCredentialProvider,
 };
+use crate::network_worker_process::OwnedNetworkWorker;
 
 const CORE_REQUEST_TIMEOUT_SECS: u64 = 15;
 const MAX_CORE_RESPONSE_BYTES: usize = 1024 * 1024;
+const REMOTE_TARGET_STREAM_TIMEOUT_MS: u64 = 15_000;
+const REMOTE_TARGET_FRAME_MAX_BYTES: usize = 32 * 1024;
+const REMOTE_TARGET_RESULT_MAX_BYTES: usize = 1024 * 1024;
 
 fn canonical_json(value: &Value, output: &mut String) -> Result<(), RemoteComputerTargetError> {
     match value {
@@ -156,6 +162,71 @@ pub enum RemoteComputerTargetError {
     IdentityMismatch,
     #[error("Fabushi Core target response is invalid.")]
     InvalidResponse,
+    #[error("Fabushi Remote Computer private transport failed.")]
+    TransportFailed,
+    #[error("Fabushi Remote Computer operation outcome is unknown; do not retry automatically.")]
+    OutcomeUnknown,
+}
+
+
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum RemoteComputerNativeOutcome {
+    Completed(Value),
+    Failed(Value),
+    OutcomeUnknown,
+}
+
+pub trait RemoteComputerNativeExecutor: Send + Sync {
+    fn execute(
+        &self,
+        operation: &ClaimedRemoteOperation,
+        arguments: &Value,
+        disk_preflight: &Value,
+    ) -> RemoteComputerNativeOutcome;
+}
+
+pub trait RemoteComputerToolAuthorizer: Send + Sync {
+    fn authorize_tool(
+        &self,
+        session_id: &str,
+        client_id: &str,
+        tool_name: &str,
+        requested_expires_at: i64,
+    ) -> Result<i64, RemoteComputerTargetError>;
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(tag = "type", rename_all = "camelCase", deny_unknown_fields)]
+enum RemoteTargetPrivateRequest {
+    GrantController {
+        device_id: String,
+        network_generation: i64,
+        connection_id: String,
+        delegation_id: String,
+        request_id: String,
+        label: String,
+    },
+    AuthorizeTool {
+        device_id: String,
+        network_generation: i64,
+        session_id: String,
+        client_id: String,
+        tool_name: String,
+        expires_at: i64,
+    },
+    Operation {
+        device_id: String,
+        network_generation: i64,
+        session_id: String,
+        client_id: String,
+        request_id: String,
+        tool_name: String,
+        request_sha256: String,
+        grant_generation: i64,
+        arguments: Value,
+        disk_preflight: Value,
+    },
 }
 
 #[derive(Clone, PartialEq, Eq)]
@@ -517,6 +588,223 @@ impl FabushiCoreTargetClient {
         Ok(response)
     }
 
+
+
+    pub fn serve_private_request(
+        &self,
+        worker: &mut OwnedNetworkWorker,
+        expected_peer: &str,
+        local_port: u16,
+        authorizer: &dyn RemoteComputerToolAuthorizer,
+        executor: &dyn RemoteComputerNativeExecutor,
+    ) -> Result<(), RemoteComputerTargetError> {
+        if expected_peer.trim().is_empty() || local_port == 0 {
+            return Err(RemoteComputerTargetError::TransportFailed);
+        }
+        let stream_id = worker
+            .stream_listen(expected_peer, local_port, REMOTE_TARGET_STREAM_TIMEOUT_MS)
+            .map_err(|_| RemoteComputerTargetError::TransportFailed)?;
+        let result = self.serve_private_stream(worker, &stream_id, authorizer, executor);
+        let close_result = worker.stream_close(&stream_id);
+        match (result, close_result) {
+            (Err(error), _) => Err(error),
+            (Ok(()), Ok(())) => Ok(()),
+            (Ok(()), Err(_)) => Err(RemoteComputerTargetError::TransportFailed),
+        }
+    }
+
+    fn serve_private_stream(
+        &self,
+        worker: &mut OwnedNetworkWorker,
+        stream_id: &str,
+        authorizer: &dyn RemoteComputerToolAuthorizer,
+        executor: &dyn RemoteComputerNativeExecutor,
+    ) -> Result<(), RemoteComputerTargetError> {
+        let frame = read_private_frame(worker, stream_id)?;
+        let request: RemoteTargetPrivateRequest =
+            serde_json::from_slice(&frame).map_err(|_| RemoteComputerTargetError::InvalidResponse)?;
+
+        match request {
+            RemoteTargetPrivateRequest::GrantController {
+                device_id,
+                network_generation,
+                connection_id,
+                delegation_id,
+                request_id,
+                label,
+            } => {
+                self.require_current_network_binding(&device_id, network_generation)?;
+                let grant =
+                    self.grant_service_client(&connection_id, &delegation_id, &request_id, &label)?;
+                write_private_frame(
+                    worker,
+                    stream_id,
+                    &json!({
+                        "type": "controllerGranted",
+                        "deviceId": grant.device_id,
+                        "clientId": grant.client_id,
+                        "clientToken": grant.client_token(),
+                        "connectionId": grant.connection_id,
+                        "delegationId": grant.delegation_id,
+                        "requestId": grant.request_id,
+                        "reconciled": grant.reconciled,
+                        "networkGeneration": network_generation,
+                    }),
+                )
+            }
+            RemoteTargetPrivateRequest::AuthorizeTool {
+                device_id,
+                network_generation,
+                session_id,
+                client_id,
+                tool_name,
+                expires_at,
+            } => {
+                self.require_current_network_binding(&device_id, network_generation)?;
+                let authorized_expires_at =
+                    authorizer.authorize_tool(&session_id, &client_id, &tool_name, expires_at)?;
+                let now = unix_seconds()?;
+                if authorized_expires_at <= now || authorized_expires_at > expires_at {
+                    return Err(RemoteComputerTargetError::AuthorityUnavailable);
+                }
+                self.activate_session(&session_id)?;
+                let generation =
+                    self.grant_tool(&session_id, &client_id, &tool_name, authorized_expires_at)?;
+                write_private_frame(
+                    worker,
+                    stream_id,
+                    &json!({
+                        "type": "toolAuthorized",
+                        "deviceId": device_id,
+                        "sessionId": session_id,
+                        "clientId": client_id,
+                        "toolName": tool_name,
+                        "expiresAt": authorized_expires_at,
+                        "grantGeneration": generation,
+                        "networkGeneration": network_generation,
+                    }),
+                )
+            }
+            RemoteTargetPrivateRequest::Operation {
+                device_id,
+                network_generation,
+                session_id,
+                client_id,
+                request_id,
+                tool_name,
+                request_sha256,
+                grant_generation,
+                arguments,
+                disk_preflight,
+            } => {
+                self.require_current_network_binding(&device_id, network_generation)?;
+                let locally_computed_sha256 =
+                    operation_request_sha256(&tool_name, &arguments, &disk_preflight)?;
+                if locally_computed_sha256 != request_sha256 {
+                    return Err(RemoteComputerTargetError::IdentityMismatch);
+                }
+                let claimed =
+                    self.claim_operation(&session_id, &request_id, &tool_name, &request_sha256)?;
+                if claimed.client_id != client_id || claimed.grant_generation != grant_generation {
+                    return Err(RemoteComputerTargetError::IdentityMismatch);
+                }
+
+                // Fence account switches, network revoke and generation rollover again after
+                // the Core claim but before any native side effect is dispatched.
+                self.require_current_network_binding(&device_id, network_generation)?;
+
+                match executor.execute(&claimed, &arguments, &disk_preflight) {
+                    RemoteComputerNativeOutcome::OutcomeUnknown => write_private_frame(
+                        worker,
+                        stream_id,
+                        &json!({
+                            "type": "operationResult",
+                            "deviceId": device_id,
+                            "sessionId": session_id,
+                            "requestId": request_id,
+                            "requestSha256": request_sha256,
+                            "status": "outcome_unknown",
+                            "networkGeneration": network_generation,
+                        }),
+                    ),
+                    RemoteComputerNativeOutcome::Completed(result) => self.finish_native_operation(
+                        worker,
+                        stream_id,
+                        &claimed,
+                        &device_id,
+                        network_generation,
+                        "completed",
+                        result,
+                    ),
+                    RemoteComputerNativeOutcome::Failed(result) => self.finish_native_operation(
+                        worker,
+                        stream_id,
+                        &claimed,
+                        &device_id,
+                        network_generation,
+                        "failed",
+                        result,
+                    ),
+                }
+            }
+        }
+    }
+
+    fn finish_native_operation(
+        &self,
+        worker: &mut OwnedNetworkWorker,
+        stream_id: &str,
+        claimed: &ClaimedRemoteOperation,
+        device_id: &str,
+        network_generation: i64,
+        status: &str,
+        result: Value,
+    ) -> Result<(), RemoteComputerTargetError> {
+        let result_bytes =
+            serde_json::to_vec(&result).map_err(|_| RemoteComputerTargetError::OutcomeUnknown)?;
+        if result_bytes.len() > REMOTE_TARGET_RESULT_MAX_BYTES {
+            return Err(RemoteComputerTargetError::OutcomeUnknown);
+        }
+        let result_sha256 = sha256_hex(&result_bytes);
+        let core_result = if claimed.sensitive_result {
+            None
+        } else {
+            Some(result)
+        };
+        self.publish_result(claimed, status, &result_sha256, core_result)
+            .map_err(|_| RemoteComputerTargetError::OutcomeUnknown)?;
+        write_private_frame(
+            worker,
+            stream_id,
+            &json!({
+                "type": "operationResult",
+                "deviceId": device_id,
+                "sessionId": claimed.session_id,
+                "requestId": claimed.request_id,
+                "requestSha256": claimed.request_sha256,
+                "resultSha256": result_sha256,
+                "status": status,
+                "networkGeneration": network_generation,
+            }),
+        )
+    }
+
+    fn require_current_network_binding(
+        &self,
+        device_id: &str,
+        expected_generation: i64,
+    ) -> Result<RemoteNetworkBinding, RemoteComputerTargetError> {
+        let binding = self.network_binding()?;
+        if binding.device_id != device_id
+            || binding.generation != expected_generation
+            || !binding.active
+            || binding.expires_at <= unix_seconds()?
+        {
+            return Err(RemoteComputerTargetError::IdentityMismatch);
+        }
+        Ok(binding)
+    }
+
     pub fn network_binding(&self) -> Result<RemoteNetworkBinding, RemoteComputerTargetError> {
         let (credential, device_secret) = self.authority()?;
         let response = self.post_json(
@@ -549,6 +837,78 @@ impl FabushiCoreTargetClient {
             active: response.get("active").and_then(Value::as_bool).unwrap_or(false),
         })
     }
+}
+
+
+fn unix_seconds() -> Result<i64, RemoteComputerTargetError> {
+    let seconds = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_err(|_| RemoteComputerTargetError::AuthorityUnavailable)?
+        .as_secs();
+    i64::try_from(seconds).map_err(|_| RemoteComputerTargetError::AuthorityUnavailable)
+}
+
+fn read_private_frame(
+    worker: &mut OwnedNetworkWorker,
+    stream_id: &str,
+) -> Result<Vec<u8>, RemoteComputerTargetError> {
+    let mut frame = Vec::new();
+    loop {
+        let remaining = REMOTE_TARGET_FRAME_MAX_BYTES.saturating_sub(frame.len());
+        if remaining == 0 {
+            return Err(RemoteComputerTargetError::InvalidResponse);
+        }
+        let read = worker
+            .stream_read(stream_id, remaining, REMOTE_TARGET_STREAM_TIMEOUT_MS)
+            .map_err(|_| RemoteComputerTargetError::TransportFailed)?;
+        frame.extend_from_slice(&read.data);
+        if let Some(newline) = frame.iter().position(|byte| *byte == b'\n') {
+            if frame[newline + 1..]
+                .iter()
+                .any(|byte| !byte.is_ascii_whitespace())
+            {
+                return Err(RemoteComputerTargetError::InvalidResponse);
+            }
+            frame.truncate(newline);
+            if frame.is_empty() {
+                return Err(RemoteComputerTargetError::InvalidResponse);
+            }
+            return Ok(frame);
+        }
+        if read.eof {
+            return Err(RemoteComputerTargetError::InvalidResponse);
+        }
+    }
+}
+
+fn write_private_frame(
+    worker: &mut OwnedNetworkWorker,
+    stream_id: &str,
+    value: &Value,
+) -> Result<(), RemoteComputerTargetError> {
+    let mut encoded =
+        serde_json::to_vec(value).map_err(|_| RemoteComputerTargetError::InvalidResponse)?;
+    if encoded.len() >= REMOTE_TARGET_FRAME_MAX_BYTES {
+        return Err(RemoteComputerTargetError::InvalidResponse);
+    }
+    encoded.push(b'\n');
+    let written = worker
+        .stream_write(stream_id, &encoded, REMOTE_TARGET_STREAM_TIMEOUT_MS)
+        .map_err(|_| RemoteComputerTargetError::TransportFailed)?;
+    if written != encoded.len() {
+        return Err(RemoteComputerTargetError::TransportFailed);
+    }
+    Ok(())
+}
+
+fn sha256_hex(bytes: &[u8]) -> String {
+    let digest = Sha256::digest(bytes);
+    let mut encoded = String::with_capacity(64);
+    use std::fmt::Write as _;
+    for byte in digest {
+        let _ = write!(&mut encoded, "{byte:02x}");
+    }
+    encoded
 }
 
 fn required_text(value: &Value, key: &str) -> Result<String, RemoteComputerTargetError> {
