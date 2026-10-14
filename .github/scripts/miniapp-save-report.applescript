@@ -53,7 +53,16 @@ on run argv
       click pathField
       keystroke "a" using {command down}
       keystroke reportDirectory
-      if (value of pathField) is not reportDirectory then error "REPORT_DIRECTORY_INPUT_MISMATCH"
+      set directoryInputReady to false
+      repeat 100 times
+        set enteredDirectory to value of pathField
+        if enteredDirectory is reportDirectory or enteredDirectory is (reportDirectory & "/") then
+          set directoryInputReady to true
+          exit repeat
+        end if
+        delay 0.1
+      end repeat
+      if not directoryInputReady then error "REPORT_DIRECTORY_INPUT_MISMATCH"
       key code 36
       set directoryChosen to false
       repeat 100 times
