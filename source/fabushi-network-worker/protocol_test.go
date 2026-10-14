@@ -71,3 +71,65 @@ func TestRequestIDIsBoundedAndOpaque(t *testing.T) {
 		}
 	}
 }
+
+func TestStreamTargetIsTailnetOnlyAndBounded(t *testing.T) {
+	for _, peer := range []string{"100.64.0.10", "100.127.255.254", "fd7a:115c:a1e0::1234"} {
+		if _, ok := streamAddress(peer, 443); !ok {
+			t.Fatalf("valid tailnet target rejected: %s", peer)
+		}
+	}
+	for _, peer := range []string{"127.0.0.1", "10.0.0.1", "192.168.1.1", "8.8.8.8", "2001:4860:4860::8888", "example.com"} {
+		if _, ok := streamAddress(peer, 443); ok {
+			t.Fatalf("non-tailnet target accepted: %s", peer)
+		}
+	}
+	if _, ok := streamAddress("100.64.0.10", 0); ok {
+		t.Fatal("zero port accepted")
+	}
+	if _, ok := streamTimeoutMS(99); ok {
+		t.Fatal("sub-minimum timeout accepted")
+	}
+	if value, ok := streamTimeoutMS(0); !ok || value != 5000 {
+		t.Fatalf("default timeout mismatch: %d %v", value, ok)
+	}
+}
+
+func TestStreamChunkAndReadBoundsAreFailClosed(t *testing.T) {
+	okChunk := base64.StdEncoding.EncodeToString(make([]byte, maxStreamChunkBytes))
+	if data, ok := decodeStreamChunk(okChunk); !ok || len(data) != maxStreamChunkBytes {
+		t.Fatal("maximum stream chunk was rejected")
+	}
+	tooLarge := base64.StdEncoding.EncodeToString(make([]byte, maxStreamChunkBytes+1))
+	if _, ok := decodeStreamChunk(tooLarge); ok {
+		t.Fatal("oversized stream chunk was accepted")
+	}
+	if _, ok := decodeStreamChunk("***"); ok {
+		t.Fatal("invalid base64 stream chunk was accepted")
+	}
+	if _, ok := boundedReadSize(maxStreamChunkBytes + 1); ok {
+		t.Fatal("oversized stream read was accepted")
+	}
+}
+
+type protocolTestAddr string
+
+func (a protocolTestAddr) Network() string { return "tcp" }
+func (a protocolTestAddr) String() string  { return string(a) }
+
+func TestPeerBoundListenValidation(t *testing.T) {
+	if address, ok := listenAddress(8443); !ok || address != ":8443" {
+		t.Fatalf("listen address mismatch: %q %v", address, ok)
+	}
+	if _, ok := listenAddress(0); ok {
+		t.Fatal("ephemeral/unbound port unexpectedly accepted")
+	}
+	if !remotePeerMatches(protocolTestAddr("100.64.0.30:51234"), "100.64.0.30") {
+		t.Fatal("expected Tailnet peer did not match")
+	}
+	if remotePeerMatches(protocolTestAddr("100.64.0.31:51234"), "100.64.0.30") {
+		t.Fatal("different Tailnet peer unexpectedly matched")
+	}
+	if remotePeerMatches(protocolTestAddr("10.0.0.5:51234"), "100.64.0.30") {
+		t.Fatal("non-Tailnet remote peer unexpectedly matched")
+	}
+}

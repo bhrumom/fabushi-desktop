@@ -79,6 +79,36 @@ while IFS= read -r request; do
       request_id="$(printf '%s' "$request" | sed -n 's/.*"requestId":"\([^"]*\)".*/\1/p')"
       printf '%s\n' "{{\"type\":\"status\",\"requestId\":\"$request_id\",\"backendState\":\"Running\",\"tailscaleIps\":[\"100.64.0.10\"]}}"
       ;;
+    *'"type":"streamDial"'*)
+      request_id="$(printf '%s' "$request" | sed -n 's/.*"requestId":"\([^"]*\)".*/\1/p')"
+      session_id="$(printf '%s' "$request" | sed -n 's/.*"sessionId":"\([^"]*\)".*/\1/p')"
+      printf '%s\n' "{{\"type\":\"streamDialed\",\"requestId\":\"$request_id\",\"sessionId\":\"$session_id\"}}"
+      ;;
+    *'"type":"streamListen"'*)
+      request_id="$(printf '%s' "$request" | sed -n 's/.*"requestId":"\([^"]*\)".*/\1/p')"
+      session_id="$(printf '%s' "$request" | sed -n 's/.*"sessionId":"\([^"]*\)".*/\1/p')"
+      printf '%s\n' "{{\"type\":\"streamAccepted\",\"requestId\":\"$request_id\",\"sessionId\":\"$session_id\"}}"
+      ;;
+    *'"type":"streamWrite"'*)
+      request_id="$(printf '%s' "$request" | sed -n 's/.*"requestId":"\([^"]*\)".*/\1/p')"
+      session_id="$(printf '%s' "$request" | sed -n 's/.*"sessionId":"\([^"]*\)".*/\1/p')"
+      printf '%s\n' "{{\"type\":\"streamWritten\",\"requestId\":\"$request_id\",\"sessionId\":\"$session_id\",\"bytes\":4}}"
+      ;;
+    *'"type":"streamRead"'*)
+      request_id="$(printf '%s' "$request" | sed -n 's/.*"requestId":"\([^"]*\)".*/\1/p')"
+      session_id="$(printf '%s' "$request" | sed -n 's/.*"sessionId":"\([^"]*\)".*/\1/p')"
+      printf '%s\n' "{{\"type\":\"streamData\",\"requestId\":\"$request_id\",\"sessionId\":\"$session_id\",\"dataB64\":\"cG9uZw==\",\"bytes\":4}}"
+      ;;
+    *'"type":"streamCancel"'*)
+      request_id="$(printf '%s' "$request" | sed -n 's/.*"requestId":"\([^"]*\)".*/\1/p')"
+      session_id="$(printf '%s' "$request" | sed -n 's/.*"sessionId":"\([^"]*\)".*/\1/p')"
+      printf '%s\n' "{{\"type\":\"streamCancelled\",\"requestId\":\"$request_id\",\"sessionId\":\"$session_id\"}}"
+      ;;
+    *'"type":"streamClose"'*)
+      request_id="$(printf '%s' "$request" | sed -n 's/.*"requestId":"\([^"]*\)".*/\1/p')"
+      session_id="$(printf '%s' "$request" | sed -n 's/.*"sessionId":"\([^"]*\)".*/\1/p')"
+      printf '%s\n' "{{\"type\":\"streamClosed\",\"requestId\":\"$request_id\",\"sessionId\":\"$session_id\"}}"
+      ;;
     *'"type":"shutdown"'*) printf '%s\n' '{{"type":"shutdown"}}'; exit 0 ;;
   esac
 done
@@ -108,6 +138,34 @@ exit 0
     let status = owned.status().expect("read fake worker status");
     assert_eq!(status.backend_state, "Running");
     assert_eq!(status.tailscale_ips, vec!["100.64.0.10"]);
+    let stream = owned
+        .stream_dial("100.64.0.20", 443, 1_000)
+        .expect("open fake stream");
+    assert!(stream.starts_with("stream-"));
+    assert_eq!(
+        owned
+            .stream_write(&stream, b"ping", 1_000)
+            .expect("write fake stream"),
+        4
+    );
+    let read = owned
+        .stream_read(&stream, 32, 1_000)
+        .expect("read fake stream");
+    assert_eq!(read.data, b"pong");
+    assert!(!read.eof);
+    owned.stream_close(&stream).expect("close fake stream");
+    let accepted = owned
+        .stream_listen("100.64.0.30", 8443, 1_000)
+        .expect("accept peer-bound fake stream");
+    assert!(accepted.starts_with("stream-"));
+    owned
+        .stream_cancel(&accepted)
+        .expect("cancel accepted fake stream");
+    assert!(
+        owned
+            .stream_write(&stream, &[0_u8; 32 * 1024 + 1], 1_000)
+            .is_err()
+    );
     owned.close().expect("close fake worker");
     let _ = fs::remove_dir_all(root);
 }
