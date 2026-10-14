@@ -54,6 +54,12 @@ impl FabushiCoreCredential {
     }
 }
 
+pub trait FabushiCoreCredentialProvider: Send + Sync {
+    fn get_fabushi_core_credential(
+        &self,
+    ) -> Result<FabushiCoreCredential, FabushiCoreCredentialError>;
+}
+
 #[derive(Debug, Error, Clone, PartialEq, Eq)]
 #[error("{message}")]
 pub struct FabushiCoreCredentialError {
@@ -212,6 +218,14 @@ pub struct HostAuthService {
     machine_id: MachineIdProvider,
     now_ms: Arc<dyn Fn() -> u64 + Send + Sync>,
     log: AuthLog,
+}
+
+impl FabushiCoreCredentialProvider for HostAuthService {
+    fn get_fabushi_core_credential(
+        &self,
+    ) -> Result<FabushiCoreCredential, FabushiCoreCredentialError> {
+        HostAuthService::get_fabushi_core_credential(self)
+    }
 }
 
 impl HostAuthService {
