@@ -799,6 +799,7 @@ struct SensitiveResultAccess {
     width: Option<u32>,
     height: Option<u32>,
     expires_at: i64,
+    next_offset: usize,
 }
 
 pub struct FabushiCoreTargetClient {
@@ -1536,6 +1537,7 @@ impl FabushiCoreTargetClient {
                     "width": access.width,
                     "height": access.height,
                     "expiresAt": access.expires_at,
+                    "nextOffset": access.next_offset,
                     "networkGeneration": network_generation,
                 }))
             }
@@ -1701,6 +1703,7 @@ impl FabushiCoreTargetClient {
             width: entry.width,
             height: entry.height,
             expires_at: entry.expires_at,
+            next_offset: entry.next_offset,
         })
     }
 
