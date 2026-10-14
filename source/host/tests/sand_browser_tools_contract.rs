@@ -16,9 +16,12 @@ use mahayana_host_runtime::runner::tools::sand_browser_tools::{
     browser_tool_specs, capture_browser_review_state,
     build_browser_driver_invocation, decode_envelope, encode_envelope,
     parse_driver_response, sanitize_for_box_path, stash_screenshot,
-    take_stashed_screenshot, to_browser_review_action,
+    take_stashed_screenshot, to_browser_review_action, validate_browser_arguments,
 };
 use serde_json::{Map, Value, json};
+
+const BROWSER_AUTO_REVIEW_SOURCE: &str = include_str!("../src/runner/sand_browser_auto_review.rs");
+const AUTO_REVIEW_SUMMARIES_SOURCE: &str = include_str!("../src/runner/sand_auto_review_summaries.rs");
 
 struct BaseBridge;
 
@@ -382,6 +385,90 @@ fn browser_exact_frame_targeting_is_unambiguous_and_frame_scoped() {
             "missing exact-frame invariant: {required}"
         );
     }
+}
+
+#[test]
+fn browser_file_transfer_is_workspace_bounded_reviewed_and_recoverable() {
+    let specs = browser_tool_specs();
+    let download = specs
+        .iter()
+        .find(|spec| spec.name == "browser_download")
+        .expect("download tool");
+    let upload = specs
+        .iter()
+        .find(|spec| spec.name == "browser_upload_file")
+        .expect("upload tool");
+    assert_eq!(download.op, "download");
+    assert_eq!(upload.op, "upload_file");
+
+    let tools = SandBrowserToolBridge::new(Arc::new(BaseBridge), Arc::new(FakeBrowserExecutor))
+        .list_tools()
+        .expect("browser tools");
+    let upload_tool = tools
+        .iter()
+        .find(|tool| tool.name == "browser_upload_file")
+        .expect("upload tool definition");
+    assert_eq!(
+        upload_tool.input_schema["properties"]["filePath"]["type"],
+        "string"
+    );
+
+    let mut invalid = Map::new();
+    invalid.insert("ref".into(), json!("e1"));
+    invalid.insert("filePath".into(), json!(7));
+    let invalid_path = validate_browser_arguments(&upload.schema, &invalid)
+        .expect_err("non-string upload filePath must fail closed");
+    assert!(invalid_path.to_string().contains("filePath"));
+
+    let review = to_browser_review_action(
+        "upload_file",
+        json!({
+            "viewId":"view-a",
+            "expectedGeneration":"generation-a",
+            "ref":"e1",
+            "element":"attachment picker",
+            "filePath":"/workspace/report.pdf"
+        })
+        .as_object()
+        .expect("upload args"),
+        "default",
+    );
+    assert_eq!(review.file_path.as_deref(), Some("/workspace/report.pdf"));
+
+    for required in [
+        "const WORKSPACE_ROOT = \"/workspace\";",
+        "realpathSync(rawPath)",
+        "relative(WORKSPACE_ROOT, resolved)",
+        "rel.startsWith(\"../\")",
+        "isAbsolute(rel)",
+        "info.isFile()",
+        "MAX_UPLOAD_BYTES = 25 * 1024 * 1024",
+        "MAX_DOWNLOAD_BYTES = 64 * 1024 * 1024",
+        "page.waitForEvent(\"download\"",
+        "await download.saveAs(path);",
+        "createHash(\"sha256\")",
+        "await element.setInputFiles(upload.path);",
+        "\"download\",",
+        "\"upload_file\",",
+    ] {
+        assert!(
+            SAND_BROWSER_DRIVER_SOURCE.contains(required),
+            "missing browser file-transfer invariant: {required}"
+        );
+    }
+    for required in [
+        "\"download\" | \"upload_file\"",
+        "SAND_BROWSER_AUTO_REVIEW_MAX_FILE_PATH_CHARS",
+        "object.get(\"filePath\")",
+    ] {
+        assert!(
+            BROWSER_AUTO_REVIEW_SOURCE.contains(required),
+            "missing file-transfer review invariant: {required}"
+        );
+    }
+    assert!(AUTO_REVIEW_SUMMARIES_SOURCE.contains("\"download\" =>"));
+    assert!(AUTO_REVIEW_SUMMARIES_SOURCE.contains("\"upload_file\" =>"));
+    assert!(AUTO_REVIEW_SUMMARIES_SOURCE.contains("redact_inline_secrets(args.file_path"));
 }
 
 #[test]
