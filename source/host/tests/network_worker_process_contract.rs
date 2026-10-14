@@ -133,7 +133,9 @@ exit 0
         .expect("open fake stream");
     assert!(stream.starts_with("stream-"));
     assert_eq!(
-        owned.stream_write(&stream, b"ping", 1_000).expect("write fake stream"),
+        owned
+            .stream_write(&stream, b"ping", 1_000)
+            .expect("write fake stream"),
         4
     );
     let read = owned
@@ -142,7 +144,11 @@ exit 0
     assert_eq!(read.data, b"pong");
     assert!(!read.eof);
     owned.stream_close(&stream).expect("close fake stream");
-    assert!(owned.stream_write(&stream, &[0_u8; 32 * 1024 + 1], 1_000).is_err());
+    assert!(
+        owned
+            .stream_write(&stream, &[0_u8; 32 * 1024 + 1], 1_000)
+            .is_err()
+    );
     owned.close().expect("close fake worker");
     let _ = fs::remove_dir_all(root);
 }
