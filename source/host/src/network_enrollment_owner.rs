@@ -2,7 +2,7 @@ use std::fs::{self, OpenOptions};
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::sync::{
-    Arc,
+    Arc, Mutex,
     atomic::{AtomicBool, Ordering},
 };
 use std::thread::{self, JoinHandle};
@@ -574,19 +574,45 @@ pub trait NetworkWorkerService: Send + Sync {
 pub struct NetworkEnrollmentSupervisor {
     stop: Arc<AtomicBool>,
     join: Option<JoinHandle<()>>,
+    service: Arc<Mutex<Option<Arc<dyn NetworkWorkerService>>>>,
 }
 
 impl NetworkEnrollmentSupervisor {
     pub fn start(owner: NetworkEnrollmentOwner) -> Result<Self, NetworkEnrollmentError> {
-        Self::start_with_service(owner, None)
+        let service = Arc::new(Mutex::new(None));
+        Self::start_with_shared_service(owner, service)
     }
 
     pub fn start_with_service(
         owner: NetworkEnrollmentOwner,
         service: Option<Arc<dyn NetworkWorkerService>>,
     ) -> Result<Self, NetworkEnrollmentError> {
+        let supervisor = NetworkEnrollmentSupervisor::start(owner)?;
+        if let Some(service) = service {
+            supervisor.install_service(service)?;
+        }
+        Ok(supervisor)
+    }
+
+    fn install_service(
+        &self,
+        service: Arc<dyn NetworkWorkerService>,
+    ) -> Result<(), NetworkEnrollmentError> {
+        let mut slot = self
+            .service
+            .lock()
+            .map_err(|_| NetworkEnrollmentError::StateFailed)?;
+        *slot = Some(service);
+        Ok(())
+    }
+
+    fn start_with_shared_service(
+        owner: NetworkEnrollmentOwner,
+        service: Arc<Mutex<Option<Arc<dyn NetworkWorkerService>>>>,
+    ) -> Result<Self, NetworkEnrollmentError> {
         let stop = Arc::new(AtomicBool::new(false));
         let stop_worker = Arc::clone(&stop);
+        let service_worker = Arc::clone(&service);
         let join = thread::Builder::new()
             .name("fabushi-fdn-network-owner".into())
             .spawn(move || {
@@ -616,6 +642,10 @@ impl NetworkEnrollmentSupervisor {
                                     Err(_) => {}
                                 }
                             }
+                            let service = service_worker
+                                .lock()
+                                .ok()
+                                .and_then(|slot| slot.clone());
                             let reset_worker = if let (Some(runtime), Some(owned)) =
                                 (service.as_ref(), worker.as_mut())
                             {
@@ -640,7 +670,11 @@ impl NetworkEnrollmentSupervisor {
                         }
                         Err(_) => {}
                     }
-                    let idle_ms = if service.is_some() {
+                    let has_service = service_worker
+                        .lock()
+                        .map(|slot| slot.is_some())
+                        .unwrap_or(false);
+                    let idle_ms = if has_service {
                         SERVICE_SUPERVISOR_POLL_MS
                     } else {
                         SUPERVISOR_POLL_MS
@@ -657,7 +691,11 @@ impl NetworkEnrollmentSupervisor {
                 }
             })
             .map_err(|_| NetworkEnrollmentError::StateFailed)?;
-        Ok(Self { stop, join: Some(join) })
+        Ok(Self {
+            stop,
+            join: Some(join),
+            service,
+        })
     }
 
     pub fn stop(&mut self) {
