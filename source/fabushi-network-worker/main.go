@@ -181,6 +181,77 @@ func run(stdin io.Reader, stdout, stderr io.Writer) int {
 			}
 			streams[request.SessionID] = conn
 			_ = emit(stdout, workerEvent{Type: "streamDialed", RequestID: request.RequestID, SessionID: request.SessionID})
+		case "streamListen":
+			if !validRequestID(request.RequestID) || !validSessionID(request.SessionID) {
+				emitRequestError(stdout, request, "invalid_stream_identity", "stream request identity is invalid")
+				continue
+			}
+			if _, exists := streams[request.SessionID]; exists {
+				emitRequestError(stdout, request, "stream_session_exists", "stream session already exists")
+				continue
+			}
+			if len(streams) >= maxStreamSessions {
+				emitRequestError(stdout, request, "stream_session_limit", "stream session limit reached")
+				continue
+			}
+			expectedPeer, peerOK := tailnetPeer(request.TargetPeer)
+			address, addressOK := listenAddress(request.TargetPort)
+			timeoutMS, timeoutOK := streamTimeoutMS(request.TimeoutMS)
+			if !peerOK || !addressOK || !timeoutOK {
+				emitRequestError(stdout, request, "invalid_stream_listener", "stream listener target or timeout is invalid")
+				continue
+			}
+			listener, listenErr := server.Listen("tcp", address)
+			if listenErr != nil {
+				emitRequestError(stdout, request, "stream_listen_failed", "stream listen failed")
+				continue
+			}
+			deadline := time.Now().Add(time.Duration(timeoutMS) * time.Millisecond)
+			var accepted net.Conn
+			for accepted == nil {
+				remaining := time.Until(deadline)
+				if remaining <= 0 {
+					break
+				}
+				type acceptResult struct {
+					conn net.Conn
+					err  error
+				}
+				resultCh := make(chan acceptResult, 1)
+				go func() {
+					conn, acceptErr := listener.Accept()
+					resultCh <- acceptResult{conn: conn, err: acceptErr}
+				}()
+				timer := time.NewTimer(remaining)
+				select {
+				case result := <-resultCh:
+					if !timer.Stop() {
+						<-timer.C
+					}
+					if result.err != nil {
+						remaining = 0
+						continue
+					}
+					if !remotePeerMatches(result.conn.RemoteAddr(), expectedPeer) {
+						_ = result.conn.Close()
+						continue
+					}
+					accepted = result.conn
+				case <-timer.C:
+					_ = listener.Close()
+					remaining = 0
+				}
+				if remaining <= 0 {
+					break
+				}
+			}
+			_ = listener.Close()
+			if accepted == nil {
+				emitRequestError(stdout, request, "stream_accept_timeout", "stream listener timed out")
+				continue
+			}
+			streams[request.SessionID] = accepted
+			_ = emit(stdout, workerEvent{Type: "streamAccepted", RequestID: request.RequestID, SessionID: request.SessionID})
 		case "streamWrite":
 			if !validRequestID(request.RequestID) || !validSessionID(request.SessionID) {
 				emitRequestError(stdout, request, "invalid_stream_identity", "stream request identity is invalid")
@@ -248,6 +319,19 @@ func run(stdin io.Reader, stdout, stderr io.Writer) int {
 				Bytes:     count,
 				EOF:       eof,
 			})
+		case "streamCancel":
+			if !validRequestID(request.RequestID) || !validSessionID(request.SessionID) {
+				emitRequestError(stdout, request, "invalid_stream_identity", "stream request identity is invalid")
+				continue
+			}
+			conn := streams[request.SessionID]
+			if conn == nil {
+				emitRequestError(stdout, request, "stream_session_not_found", "stream session was not found")
+				continue
+			}
+			_ = conn.Close()
+			delete(streams, request.SessionID)
+			_ = emit(stdout, workerEvent{Type: "streamCancelled", RequestID: request.RequestID, SessionID: request.SessionID})
 		case "streamClose":
 			if !validRequestID(request.RequestID) || !validSessionID(request.SessionID) {
 				emitRequestError(stdout, request, "invalid_stream_identity", "stream request identity is invalid")
