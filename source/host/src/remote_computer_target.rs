@@ -1,7 +1,8 @@
 use std::fs;
 use std::path::PathBuf;
-use std::sync::Arc;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::net::IpAddr;
+use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use reqwest::blocking::Client;
 use serde::Deserialize;
@@ -13,6 +14,7 @@ use url::Url;
 use crate::extensions::auth::auth_service::{
     FabushiCoreCredential, FabushiCoreCredentialProvider,
 };
+use crate::network_enrollment_owner::{NetworkEnrollmentError, NetworkWorkerService};
 use crate::network_worker_process::OwnedNetworkWorker;
 use crate::runner::routed_provider_runtime::RoutedToolBridge;
 use crate::runner::tools::sand_computer_tool::{
@@ -22,6 +24,8 @@ use crate::runner::tools::sand_computer_tool::{
 const CORE_REQUEST_TIMEOUT_SECS: u64 = 15;
 const MAX_CORE_RESPONSE_BYTES: usize = 1024 * 1024;
 const REMOTE_TARGET_STREAM_TIMEOUT_MS: u64 = 15_000;
+const REMOTE_TARGET_SERVICE_STREAM_TIMEOUT_MS: u64 = 1_000;
+const REMOTE_TARGET_INGRESS_CACHE_TTL: Duration = Duration::from_secs(10);
 const REMOTE_TARGET_FRAME_MAX_BYTES: usize = 32 * 1024;
 const REMOTE_TARGET_RESULT_MAX_BYTES: usize = 1024 * 1024;
 
@@ -418,6 +422,32 @@ pub struct RemoteNetworkBinding {
     pub active: bool,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RemoteNetworkIngress {
+    pub device_id: String,
+    pub cell_id: String,
+    pub target_generation: i64,
+    pub service_id: String,
+    pub node_id: String,
+    pub ingress_generation: i64,
+    pub expires_at: i64,
+    pub active: bool,
+}
+
+fn is_fabushi_tailnet_peer(value: &str) -> bool {
+    match value.parse::<IpAddr>() {
+        Ok(IpAddr::V4(ip)) => {
+            let [first, second, _, _] = ip.octets();
+            first == 100 && (64..=127).contains(&second)
+        }
+        Ok(IpAddr::V6(ip)) => {
+            let segments = ip.segments();
+            segments[0] == 0xfd7a && segments[1] == 0x115c && segments[2] == 0xa1e0
+        }
+        Err(_) => false,
+    }
+}
+
 pub struct FabushiCoreTargetClient {
     base_url: Url,
     credential_provider: Arc<dyn FabushiCoreCredentialProvider>,
@@ -517,6 +547,63 @@ impl FabushiCoreTargetClient {
             return Err(RemoteComputerTargetError::InvalidResponse);
         }
         serde_json::from_slice(&bytes).map_err(|_| RemoteComputerTargetError::InvalidResponse)
+    }
+
+    pub fn network_ingress(
+        &self,
+        service_id: &str,
+    ) -> Result<RemoteNetworkIngress, RemoteComputerTargetError> {
+        if service_id != "official-device-mcp" {
+            return Err(RemoteComputerTargetError::InvalidResponse);
+        }
+        let (credential, device_secret) = self.authority()?;
+        let response = self.post_json(
+            &credential,
+            self.endpoint(&["v1", "computers", "network-ingress"])?,
+            json!({
+                "deviceId": credential.device_id,
+                "deviceSecret": device_secret,
+                "serviceId": service_id,
+            }),
+        )?;
+        if response.get("deviceId").and_then(Value::as_str)
+            != Some(credential.device_id.as_str())
+            || response.get("serviceId").and_then(Value::as_str) != Some(service_id)
+            || response.get("active").and_then(Value::as_bool) != Some(true)
+        {
+            return Err(RemoteComputerTargetError::IdentityMismatch);
+        }
+        let cell_id = required_text(&response, "cellId")?;
+        let node_id = required_text(&response, "nodeId")?;
+        if !is_fabushi_tailnet_peer(&node_id) {
+            return Err(RemoteComputerTargetError::IdentityMismatch);
+        }
+        let target_generation = response
+            .get("targetGeneration")
+            .and_then(Value::as_i64)
+            .filter(|generation| *generation > 0)
+            .ok_or(RemoteComputerTargetError::InvalidResponse)?;
+        let ingress_generation = response
+            .get("ingressGeneration")
+            .and_then(Value::as_i64)
+            .filter(|generation| *generation > 0)
+            .ok_or(RemoteComputerTargetError::InvalidResponse)?;
+        let now = unix_seconds()?;
+        let expires_at = response
+            .get("expiresAt")
+            .and_then(Value::as_i64)
+            .filter(|expires_at| *expires_at > now)
+            .ok_or(RemoteComputerTargetError::InvalidResponse)?;
+        Ok(RemoteNetworkIngress {
+            device_id: credential.device_id,
+            cell_id,
+            target_generation,
+            service_id: service_id.to_string(),
+            node_id,
+            ingress_generation,
+            expires_at,
+            active: true,
+        })
     }
 
     pub fn grant_service_client(
@@ -735,11 +822,37 @@ impl FabushiCoreTargetClient {
         authorizer: &dyn RemoteComputerToolAuthorizer,
         executor: &dyn RemoteComputerNativeExecutor,
     ) -> Result<(), RemoteComputerTargetError> {
-        if expected_peer.trim().is_empty() || local_port == 0 {
+        self.serve_private_request_with_timeout(
+            worker,
+            expected_peer,
+            local_port,
+            REMOTE_TARGET_STREAM_TIMEOUT_MS,
+            catalog,
+            authorizer,
+            executor,
+        )
+    }
+
+    pub fn serve_private_request_with_timeout(
+        &self,
+        worker: &mut OwnedNetworkWorker,
+        expected_peer: &str,
+        local_port: u16,
+        timeout_ms: u64,
+        catalog: &dyn RemoteComputerToolCatalog,
+        authorizer: &dyn RemoteComputerToolAuthorizer,
+        executor: &dyn RemoteComputerNativeExecutor,
+    ) -> Result<(), RemoteComputerTargetError> {
+        if expected_peer.trim().is_empty()
+            || !is_fabushi_tailnet_peer(expected_peer)
+            || local_port == 0
+            || timeout_ms == 0
+            || timeout_ms > REMOTE_TARGET_STREAM_TIMEOUT_MS
+        {
             return Err(RemoteComputerTargetError::TransportFailed);
         }
         let stream_id = worker
-            .stream_listen(expected_peer, local_port, REMOTE_TARGET_STREAM_TIMEOUT_MS)
+            .stream_listen(expected_peer, local_port, timeout_ms)
             .map_err(|_| RemoteComputerTargetError::TransportFailed)?;
         let result = self.serve_private_stream(worker, &stream_id, catalog, authorizer, executor);
         let close_result = worker.stream_close(&stream_id);
@@ -1025,6 +1138,106 @@ fn unix_seconds() -> Result<i64, RemoteComputerTargetError> {
         .map_err(|_| RemoteComputerTargetError::AuthorityUnavailable)?
         .as_secs();
     i64::try_from(seconds).map_err(|_| RemoteComputerTargetError::AuthorityUnavailable)
+}
+
+pub struct RemoteComputerTargetNetworkService {
+    client: Arc<FabushiCoreTargetClient>,
+    catalog: Arc<dyn RemoteComputerToolCatalog>,
+    authorizer: Arc<dyn RemoteComputerToolAuthorizer>,
+    executor: Arc<dyn RemoteComputerNativeExecutor>,
+    local_port: u16,
+    ingress_cache: Mutex<Option<(RemoteNetworkIngress, Instant)>>,
+}
+
+impl RemoteComputerTargetNetworkService {
+    pub fn new(
+        client: Arc<FabushiCoreTargetClient>,
+        catalog: Arc<dyn RemoteComputerToolCatalog>,
+        authorizer: Arc<dyn RemoteComputerToolAuthorizer>,
+        executor: Arc<dyn RemoteComputerNativeExecutor>,
+        local_port: u16,
+    ) -> Result<Self, RemoteComputerTargetError> {
+        if local_port == 0 {
+            return Err(RemoteComputerTargetError::TransportFailed);
+        }
+        Ok(Self {
+            client,
+            catalog,
+            authorizer,
+            executor,
+            local_port,
+            ingress_cache: Mutex::new(None),
+        })
+    }
+
+    fn ingress(&self) -> Result<RemoteNetworkIngress, RemoteComputerTargetError> {
+        let now = unix_seconds()?;
+        {
+            let cache = self
+                .ingress_cache
+                .lock()
+                .map_err(|_| RemoteComputerTargetError::AuthorityUnavailable)?;
+            if let Some((ingress, fetched_at)) = cache.as_ref() {
+                if fetched_at.elapsed() <= REMOTE_TARGET_INGRESS_CACHE_TTL
+                    && ingress.active
+                    && ingress.expires_at > now + 15
+                {
+                    return Ok(ingress.clone());
+                }
+            }
+        }
+        let ingress = self.client.network_ingress("official-device-mcp")?;
+        let binding = self.client.network_binding()?;
+        if binding.device_id != ingress.device_id
+            || binding.cell_id != ingress.cell_id
+            || binding.generation != ingress.target_generation
+            || !binding.active
+            || binding.expires_at <= now
+        {
+            return Err(RemoteComputerTargetError::IdentityMismatch);
+        }
+        let mut cache = self
+            .ingress_cache
+            .lock()
+            .map_err(|_| RemoteComputerTargetError::AuthorityUnavailable)?;
+        *cache = Some((ingress.clone(), Instant::now()));
+        Ok(ingress)
+    }
+}
+
+impl NetworkWorkerService for RemoteComputerTargetNetworkService {
+    fn poll(&self, worker: &mut OwnedNetworkWorker) -> Result<(), NetworkEnrollmentError> {
+        let ingress = self.ingress().map_err(|error| match error {
+            RemoteComputerTargetError::AuthorityUnavailable => NetworkEnrollmentError::AuthorityUnavailable,
+            RemoteComputerTargetError::RequestFailed | RemoteComputerTargetError::TransportFailed => {
+                NetworkEnrollmentError::RequestFailed
+            }
+            RemoteComputerTargetError::OutcomeUnknown => NetworkEnrollmentError::OutcomeUnknown,
+            RemoteComputerTargetError::IdentityMismatch | RemoteComputerTargetError::InvalidResponse => {
+                NetworkEnrollmentError::RequestRejected
+            }
+        })?;
+        self.client
+            .serve_private_request_with_timeout(
+                worker,
+                &ingress.node_id,
+                self.local_port,
+                REMOTE_TARGET_SERVICE_STREAM_TIMEOUT_MS,
+                self.catalog.as_ref(),
+                self.authorizer.as_ref(),
+                self.executor.as_ref(),
+            )
+            .map_err(|error| match error {
+                RemoteComputerTargetError::AuthorityUnavailable => NetworkEnrollmentError::AuthorityUnavailable,
+                RemoteComputerTargetError::RequestFailed | RemoteComputerTargetError::TransportFailed => {
+                    NetworkEnrollmentError::RequestFailed
+                }
+                RemoteComputerTargetError::OutcomeUnknown => NetworkEnrollmentError::OutcomeUnknown,
+                RemoteComputerTargetError::IdentityMismatch | RemoteComputerTargetError::InvalidResponse => {
+                    NetworkEnrollmentError::RequestRejected
+                }
+            })
+    }
 }
 
 fn read_private_frame(

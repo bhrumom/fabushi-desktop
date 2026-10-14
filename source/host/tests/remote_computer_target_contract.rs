@@ -152,3 +152,55 @@ fn remote_computer_reuses_existing_host_computer_executor_and_fails_closed_for_u
         "remote Screenshot must remain explicitly fenced until the sensitive result channel exists"
     );
 }
+
+#[test]
+fn target_ingress_peer_is_core_projected_same_cell_and_exact_peer_only() {
+    for required in [
+        "pub struct RemoteNetworkIngress",
+        r#"self.endpoint(&["v1", "computers", "network-ingress"])"#,
+        r#""deviceId": credential.device_id"#,
+        r#""deviceSecret": device_secret"#,
+        r#""serviceId": service_id"#,
+        r#"service_id != "official-device-mcp""#,
+        r#"response.get("active").and_then(Value::as_bool) != Some(true)"#,
+        "is_fabushi_tailnet_peer(&node_id)",
+        "binding.cell_id != ingress.cell_id",
+        "binding.generation != ingress.target_generation",
+        "binding.expires_at <= now",
+        "stream_listen(expected_peer, local_port, timeout_ms)",
+        "|| !is_fabushi_tailnet_peer(expected_peer)",
+    ] {
+        assert!(
+            TARGET_SOURCE.contains(required),
+            "missing exact target ingress peer fence: {required}"
+        );
+    }
+    assert!(
+        !TARGET_SOURCE.contains(r#"stream_listen("*""#),
+        "target listener must never accept a wildcard peer"
+    );
+}
+
+#[test]
+fn target_network_service_requires_explicit_authorizer_catalog_and_executor() {
+    for required in [
+        "pub struct RemoteComputerTargetNetworkService",
+        "catalog: Arc<dyn RemoteComputerToolCatalog>",
+        "authorizer: Arc<dyn RemoteComputerToolAuthorizer>",
+        "executor: Arc<dyn RemoteComputerNativeExecutor>",
+        "impl NetworkWorkerService for RemoteComputerTargetNetworkService",
+        r#"self.client.network_ingress("official-device-mcp")"#,
+        "REMOTE_TARGET_SERVICE_STREAM_TIMEOUT_MS",
+        "self.authorizer.as_ref()",
+        "self.executor.as_ref()",
+    ] {
+        assert!(
+            TARGET_SOURCE.contains(required),
+            "missing target network service dependency: {required}"
+        );
+    }
+    assert!(
+        !TARGET_SOURCE.contains("AllowAllRemoteComputerToolAuthorizer"),
+        "private network availability must not synthesize blanket tool authorization"
+    );
+}
