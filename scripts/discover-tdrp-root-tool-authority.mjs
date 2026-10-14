@@ -69,7 +69,7 @@ add([key('.github/workflows/linux.yml',73)],{
   kind:'tool-bootstrap-versioned-archive',disposition:'non-product-source-toolchain',version:'4.13.6',...ccache
 });
 const rustup=hashUrl('https://sh.rustup.rs','rustup-init.sh');
-add([key('snap/snapcraft.yaml',490),key('Telegram/build/docker/centos_env/Dockerfile',998),key('Telegram/build/prepare/prepare.py',597)],{
+add([key('snap/snapcraft.yaml',490),key('Telegram/build/docker/centos_env/Dockerfile',1000),key('Telegram/build/prepare/prepare.py',597)],{
   kind:'tool-bootstrap-content-snapshot',disposition:'non-product-source-toolchain',...rustup,
   rationale:'rustup installer is toolchain bootstrap; accepted sources separately pin the Rust toolchain version.'
 });
@@ -79,7 +79,7 @@ add([
   key('Telegram/build/docker/centos_env/Dockerfile',14),
   key('Telegram/build/docker/centos_env/Dockerfile',16),
   key('Telegram/build/docker/centos_env/Dockerfile',18),
-  key('Telegram/build/docker/centos_env/Dockerfile',30),
+  key('Telegram/build/docker/centos_env/Dockerfile',31),
 ],{
   kind:'package-manager-toolchain',disposition:'non-product-source-toolchain',
   rationale:'Rocky Linux dnf and pip packages provide compilers/build tools; they are not source inputs whose product responsibilities are migrated. The base image is separately resolved to an OCI digest.'
@@ -103,11 +103,11 @@ add([key('Telegram/build/prepare/prepare.py',580),key('Telegram/build/prepare/pr
 
 // Actual source archives remain source authority and are content-addressed.
 const boost=hashUrl('https://archives.boost.io/release/1.90.0/source/boost_1_90_0.tar.gz','boost-1.90.0.tar.gz');
-add([key('Telegram/build/docker/centos_env/Dockerfile',903)],{
+add([key('Telegram/build/docker/centos_env/Dockerfile',904)],{
   kind:'source-archive-content-authority',disposition:'immutable-source-archive',version:'1.90.0',...boost
 });
 const libiconv=hashUrl('https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.18.tar.gz','libiconv-1.18.tar.gz');
-add([key('Telegram/build/prepare/prepare.py',804)],{
+add([key('Telegram/build/prepare/prepare.py',805)],{
   kind:'source-archive-content-authority',disposition:'immutable-source-archive',version:'1.18',...libiconv
 });
 
