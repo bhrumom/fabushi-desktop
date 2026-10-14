@@ -150,11 +150,19 @@
           "source_path": "Telegram/build/prepare/prepare.py",
           "source_line": 1883,
           "observed_ref": "v3.2.4"
-        },
+        }
+      ],
+      "status": "immutable-snapshot-pending-recursive-scan"
+    },
+    {
+      "id": "ROOT-MUT-049",
+      "repository": "https://github.com/ada-url/ada",
+      "commit": "6b4612162c34e7ffcee08c03b107b449e07a5683",
+      "occurrences": [
         {
           "source_path": "snap/snapcraft.yaml",
           "source_line": 135,
-          "observed_ref": "v3.2.4"
+          "observed_ref": "v3.2.9"
         }
       ],
       "status": "immutable-snapshot-pending-recursive-scan"
