@@ -214,6 +214,18 @@ signed proof tests are required before a real approved release exists.
 
 ## Source references
 
+### Live approved proof interoperability gate
+
+After genuine protected approval, an opt-in Actions-only test uses the real fixed
+production CatalogClient to enumerate the approved descriptor, independently
+verify current trust and exact release signatures, download its signed CAS bytes,
+verify the exact candidate manifest/resources, activate into an isolated fixture
+SQLite connection, reload/reverify cached authorization and remove code. Pin
+de10/453093/0.1.0; never manufacture a synthetic approval or account. This verifies
+public-proof/Host-library interoperability only, not shipping account wiring or
+packaged installed acceptance, which remains MU-07. Required workflow sets the
+opt-in variable explicitly; absence must never count as live acceptance.
+
 - `docs/specs/desktop-catalog-package-installation.md`
 - `docs/specs/offline-first-installable-mini-app-platform.md` (OMA-001)
 - `docs/specs/fabushi-plugins-marketplace-owner-inventory.md` (FPM-001)

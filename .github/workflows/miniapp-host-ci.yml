@@ -57,6 +57,7 @@ jobs:
         env:
           FABUSHI_SIGNED_HOST_FIXTURE: ${{ github.workspace }}/signed-fixture/global-dandelion-0.1.0.fabapp
           FABUSHI_PRODUCTION_TRUST_FIXTURE: ${{ github.workspace }}/signed-fixture/production-trust.json
+          FABUSHI_APPROVED_PUBLIC_ACCEPTANCE: '1'
         run: cargo test --manifest-path source/host/Cargo.toml --lib installable_package
       - uses: actions/upload-artifact@v4
         if: always()

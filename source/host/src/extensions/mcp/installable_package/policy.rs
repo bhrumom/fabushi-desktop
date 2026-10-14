@@ -721,6 +721,7 @@ pub fn descriptor_app_id(value: &Value) -> Option<&str> {
     }
     match (namespace, name) {
         ("bhrumom", "global-dandelion") => Some("org.fabushi.global-dandelion"),
+        ("bhrumom", "chatgpt-auto-confirm") => Some("org.fabushi.chatgpt-auto-confirm"),
         _ => None,
     }
 }
@@ -998,6 +999,79 @@ mod tests {
         let envelope = extract_install_trust_response(&response).unwrap();
         let feed = verify_trust_feed(&envelope, now_ms(), false).unwrap();
         assert_eq!(feed.epoch, 1);
+    }
+
+    #[test]
+    fn live_approved_catalog_cas_install_reload_and_remove() {
+        if std::env::var("FABUSHI_APPROVED_PUBLIC_ACCEPTANCE").as_deref() != Ok("1") {
+            return; // Not live acceptance unless the dedicated Actions gate opts in.
+        }
+        use super::super::{ledger, verify_catalog_bundle};
+        let client = CatalogClient::production_from_environment().unwrap();
+        let app_id = "org.fabushi.global-dandelion";
+        let descriptor = client
+            .list_descriptors()
+            .unwrap()
+            .into_iter()
+            .find(|value| descriptor_app_id(value) == Some(app_id))
+            .expect("approved Dandelion must be in the public catalog");
+        let feed_raw = client.fetch_install_trust().unwrap();
+        let feed = verify_trust_feed(&feed_raw, now_ms(), false).unwrap();
+        let proof_raw = client.fetch_install_proof(&descriptor).unwrap();
+        let proof_raw = overlay_trust(&proof_raw, &feed_raw).unwrap();
+        let proof = verify_install_proof(&proof_raw, app_id, now_ms(), false).unwrap();
+        assert_eq!(proof.authorization.version, "0.1.0");
+        assert_eq!(proof.artifact.size_bytes, 453093);
+        assert_eq!(
+            proof.artifact.digest,
+            "de10e02115415908f827723457817e51cb4f39aa5ca68798da824fecc483118a"
+        );
+        let bytes = client
+            .download_artifact(&proof.artifact.digest, proof.artifact.size_bytes)
+            .unwrap();
+        let package = verify_catalog_bundle(&bytes, &proof.authorization).unwrap();
+        let mut db = rusqlite::Connection::open_in_memory().unwrap();
+        ledger::initialize(&db).unwrap();
+        ledger::cache_verified_trust(
+            &mut db,
+            feed.epoch,
+            feed.issued_at_ms,
+            &feed.signed_payload,
+            &feed.envelope_json,
+        )
+        .unwrap();
+        let scope = ledger::HostInstallScope {
+            account_scope: "isolated-public-interoperability-fixture".into(),
+            generation: 1,
+        };
+        ledger::activate_authorized(
+            &mut db,
+            &scope,
+            &scope,
+            "public-install-1",
+            package,
+            &proof_raw,
+            now_ms(),
+        )
+        .unwrap();
+        let (cached, saved_proof, trust) =
+            ledger::load_active_authorized_archive(&db, &scope, app_id)
+                .unwrap()
+                .unwrap();
+        let cached_proof = overlay_cached_trust(&saved_proof, trust.as_deref()).unwrap();
+        let verified = verify_install_proof(&cached_proof, app_id, now_ms(), true).unwrap();
+        let loaded = verify_catalog_bundle(&cached, &verified.authorization).unwrap();
+        assert!(
+            loaded
+                .resource("pkg/dandelion_web_adapter_bg.wasm")
+                .is_some()
+        );
+        assert!(ledger::remove(&mut db, &scope, &scope, app_id, "public-remove-1").unwrap());
+        assert!(
+            ledger::load_active_archive(&db, &scope, app_id)
+                .unwrap()
+                .is_none()
+        );
     }
 
     #[test]
