@@ -111,7 +111,6 @@ func TestStreamChunkAndReadBoundsAreFailClosed(t *testing.T) {
 	}
 }
 
-
 type protocolTestAddr string
 
 func (a protocolTestAddr) Network() string { return "tcp" }
