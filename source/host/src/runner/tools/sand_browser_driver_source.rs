@@ -10,6 +10,7 @@ pub const SAND_BROWSER_RESULT_MARKER: &str = "__SAND_BROWSER_RESULT__";
 /// the language required by the box browser/Playwright runtime.
 pub const SAND_BROWSER_DRIVER_SOURCE: &str = r#"
 import { spawn } from "node:child_process";
+import { randomUUID } from "node:crypto";
 import { mkdirSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 
 const RESULT_MARKER = "__SAND_BROWSER_RESULT__";
@@ -32,32 +33,38 @@ function loadState(display) {
       return {
         views: parsed.views && typeof parsed.views === "object" ? parsed.views : {},
         urls: parsed.urls && typeof parsed.urls === "object" ? parsed.urls : {},
+        generations:
+          parsed.generations && typeof parsed.generations === "object" ? parsed.generations : {},
         lastViewId: typeof parsed.lastViewId === "string" ? parsed.lastViewId : undefined,
       };
     }
   } catch {}
-  return { views: {}, urls: {}, lastViewId: undefined };
+  return { views: {}, urls: {}, generations: {}, lastViewId: undefined };
 }
 
-function saveState(display, state) {
+function saveState(display, state, required = false) {
   try {
     mkdirSync(STATE_DIR, { recursive: true });
     const current = loadState(display);
-    const views = { ...current.views, ...state.views };
-    const urls = { ...current.urls, ...state.urls };
+    const views = { ...current.views, ...(state.views ?? {}) };
+    const urls = { ...current.urls, ...(state.urls ?? {}) };
+    const generations = { ...current.generations, ...(state.generations ?? {}) };
     for (const removed of state.deletedViews ?? []) {
       delete views[removed];
       delete urls[removed];
+      delete generations[removed];
     }
     let lastViewId = state.lastViewId ?? current.lastViewId;
     if (lastViewId !== undefined && (state.deletedViews ?? []).includes(lastViewId)) {
       lastViewId = undefined;
     }
-    const merged = { views, urls, lastViewId };
+    const merged = { views, urls, generations, lastViewId };
     const tmp = statePath(display) + "." + String(process.pid) + ".tmp";
     writeFileSync(tmp, JSON.stringify(merged));
     renameSync(tmp, statePath(display));
-  } catch {}
+  } catch (error) {
+    if (required) throw error;
+  }
 }
 
 // Serializes cross-process claims on a live tab: two concurrent driver calls
@@ -67,7 +74,7 @@ function saveState(display, state) {
 // its own turn sees the tab as taken. A lock older than 5s is treated as
 // leaked by a crashed driver and broken. Failure to lock degrades to the
 // unlocked behavior instead of failing the op.
-async function withViewClaimLock(display, fn) {
+async function withViewClaimLock(display, fn, required = false) {
   const lockPath = statePath(display) + ".lock";
   const deadline = Date.now() + 3000;
   let locked = false;
@@ -83,6 +90,9 @@ async function withViewClaimLock(display, fn) {
       await sleep(50);
     }
   }
+  if (required && !locked) {
+    throw new Error("Could not acquire the browser view claim lock for generation-safe state.");
+  }
   try {
     return await fn();
   } finally {
@@ -92,6 +102,42 @@ async function withViewClaimLock(display, fn) {
       } catch {}
     }
   }
+}
+
+function freshViewGeneration() {
+  return String(Date.now()) + "-" + String(process.pid) + "-" + randomUUID();
+}
+
+async function ensureViewGeneration(display, state, viewId) {
+  return withViewClaimLock(
+    display,
+    async () => {
+      const persisted = loadState(display);
+      const existing = persisted.generations[viewId];
+      if (typeof existing === "string" && existing.length > 0) {
+        state.generations[viewId] = existing;
+        return existing;
+      }
+      const generation = freshViewGeneration();
+      state.generations[viewId] = generation;
+      saveState(display, { generations: { [viewId]: generation } }, true);
+      return generation;
+    },
+    true
+  );
+}
+
+async function bumpViewGeneration(display, state, viewId) {
+  return withViewClaimLock(
+    display,
+    async () => {
+      const generation = freshViewGeneration();
+      state.generations[viewId] = generation;
+      saveState(display, { generations: { [viewId]: generation } }, true);
+      return generation;
+    },
+    true
+  );
 }
 
 async function cdpAlive(port) {
@@ -313,6 +359,40 @@ async function pagesByTargetId(context) {
   return byTarget;
 }
 
+const GENERATION_FENCED_OPS = new Set([
+  "navigate",
+  "click",
+  "mouse_click_xy",
+  "type",
+  "fill",
+  "select_option",
+  "press_key",
+  "scroll",
+  "drag",
+  "get_bounding_box",
+  "highlight",
+  "cdp",
+  "screenshot",
+]);
+
+function requireExpectedGeneration(request, viewId, generation) {
+  if (!GENERATION_FENCED_OPS.has(request.op)) return;
+  if (request.op === "navigate" && request.newTab === true) return;
+  const expected = request.expectedGeneration;
+  if (typeof expected !== "string" || expected.length === 0) {
+    throw new Error(
+      "Browser action requires expectedGeneration for view " + JSON.stringify(viewId) +
+        ". Take a fresh browser_snapshot or select the tab again."
+    );
+  }
+  if (expected !== generation) {
+    throw new Error(
+      "Stale browser view generation for " + JSON.stringify(viewId) +
+        ": expected " + JSON.stringify(expected) + ", current " + JSON.stringify(generation) + "."
+    );
+  }
+}
+
 async function resolvePage(request, context, state) {
   const explicit = typeof request.viewId === "string" && request.viewId.length > 0;
   const viewId = explicit ? request.viewId : state.lastViewId ?? "default";
@@ -347,11 +427,20 @@ async function resolvePage(request, context, state) {
           if (candidate.url() === lastUrl && !claimed.has(candidateId)) {
             page = candidate;
             state.views[viewId] = candidateId;
-            saveState(request.display, { views: { [viewId]: candidateId } });
+            const generation = freshViewGeneration();
+            state.generations[viewId] = generation;
+            saveState(
+              request.display,
+              {
+                views: { [viewId]: candidateId },
+                generations: { [viewId]: generation },
+              },
+              true
+            );
             break;
           }
         }
-      });
+      }, true);
     }
   }
   if (page === undefined && !explicit && byTarget.size > 0) {
@@ -363,6 +452,8 @@ async function resolvePage(request, context, state) {
   }
   state.views[viewId] = await targetIdOf(context, page);
   state.lastViewId = viewId;
+  const generation = await ensureViewGeneration(request.display, state, viewId);
+  requireExpectedGeneration(request, viewId, generation);
   page.setDefaultTimeout(ACTION_TIMEOUT_MS);
   return { page, viewId };
 }
@@ -504,14 +595,17 @@ const OPS = {
       const viewId = typeof request.viewId === "string" && request.viewId.length > 0 ? request.viewId : "tab-" + String(Date.now());
       state.views[viewId] = await targetIdOf(context, page);
       state.lastViewId = viewId;
+      await ensureViewGeneration(request.display, state, viewId);
       page.setDefaultTimeout(ACTION_TIMEOUT_MS);
       await page.goto(request.url, { waitUntil: "domcontentloaded", timeout: NAVIGATE_TIMEOUT_MS });
       await page.waitForLoadState("load", { timeout: 5000 }).catch(() => {});
+      await bumpViewGeneration(request.display, state, viewId);
       return { page, viewId, summary: "Opened " + request.url + " in a new tab" };
     }
     const { page, viewId } = await resolvePage(request, context, state);
     await page.goto(request.url, { waitUntil: "domcontentloaded", timeout: NAVIGATE_TIMEOUT_MS });
     await page.waitForLoadState("load", { timeout: 5000 }).catch(() => {});
+    await bumpViewGeneration(request.display, state, viewId);
     return { page, viewId, summary: "Navigated to " + request.url };
   },
   snapshot: async ({ request, context, state }) => {
@@ -635,6 +729,7 @@ const OPS = {
       const viewId = "tab-" + String(Date.now());
       state.views[viewId] = await targetIdOf(context, page);
       state.lastViewId = viewId;
+      await ensureViewGeneration(request.display, state, viewId);
       return { page, viewId, summary: "Opened a new tab" };
     }
     let page;
@@ -670,6 +765,7 @@ const OPS = {
         state.views[viewId] = targetId;
       }
       state.lastViewId = viewId;
+      await ensureViewGeneration(request.display, state, viewId);
       return { page, viewId, summary: "Selected tab " + String(request.index) };
     }
     if (request.action === "close") {
@@ -865,7 +961,11 @@ async function run(request) {
     });
     const out = { ok: true, summary: result.summary };
     if (result.data !== undefined) out.data = result.data;
-    if (result.viewId !== undefined) out.viewId = result.viewId;
+    if (result.viewId !== undefined) {
+      out.viewId = result.viewId;
+      const generation = state.generations[result.viewId];
+      if (typeof generation === "string" && generation.length > 0) out.generation = generation;
+    }
     if (result.page !== undefined) {
       out.url = result.page.url();
       out.title = await result.page.title().catch(() => "");
