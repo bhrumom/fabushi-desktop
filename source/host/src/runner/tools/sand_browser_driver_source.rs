@@ -458,8 +458,41 @@ async function resolvePage(request, context, state) {
   return { page, viewId };
 }
 
-async function refHandle(page, ref) {
-  const handle = await page.evaluateHandle((r) => {
+function resolveFrameScope(page, request) {
+  const frameName =
+    typeof request.frameName === "string" && request.frameName.length > 0
+      ? request.frameName
+      : undefined;
+  const frameUrl =
+    typeof request.frameUrl === "string" && request.frameUrl.length > 0
+      ? request.frameUrl
+      : undefined;
+  if (frameName === undefined && frameUrl === undefined) {
+    return { scope: page, frameName: undefined, frameUrl: undefined };
+  }
+  const matches = page.frames().filter((frame) => {
+    if (frame === page.mainFrame()) return false;
+    if (frameName !== undefined && frame.name() !== frameName) return false;
+    if (frameUrl !== undefined && frame.url() !== frameUrl) return false;
+    return true;
+  });
+  if (matches.length === 0) {
+    throw new Error(
+      "No browser frame matches frameName=" + JSON.stringify(frameName) +
+        " frameUrl=" + JSON.stringify(frameUrl) + "."
+    );
+  }
+  if (matches.length > 1) {
+    throw new Error(
+      "Browser frame selector is ambiguous; provide both exact frameName and frameUrl."
+    );
+  }
+  const frame = matches[0];
+  return { scope: frame, frameName: frame.name(), frameUrl: frame.url() };
+}
+
+async function refHandle(scope, ref) {
+  const handle = await scope.evaluateHandle((r) => {
     const map = globalThis.__sandRefs;
     return map instanceof Map ? map.get(r) : undefined;
   }, ref);
@@ -610,7 +643,8 @@ const OPS = {
   },
   snapshot: async ({ request, context, state }) => {
     const { page, viewId } = await resolvePage(request, context, state);
-    const result = await page.evaluate(SNAPSHOT_FN, {
+    const { scope, frameName, frameUrl } = resolveFrameScope(page, request);
+    const result = await scope.evaluate(SNAPSHOT_FN, {
       interactive: request.interactive === true,
       maxDepth: typeof request.maxDepth === "number" ? request.maxDepth : 20,
       selector: typeof request.selector === "string" && request.selector.length > 0 ? request.selector : undefined,
@@ -621,11 +655,14 @@ const OPS = {
       viewId,
       summary: "Captured page snapshot (" + String(result.refCount) + " interactive refs)",
       data,
+      frameName,
+      frameUrl,
     };
   },
   click: async ({ request, context, state }) => {
     const { page, viewId } = await resolvePage(request, context, state);
-    const element = await refHandle(page, request.ref);
+    const { scope, frameName, frameUrl } = resolveFrameScope(page, request);
+    const element = await refHandle(scope, request.ref);
     const options = clickOptionsFor(request);
     if (typeof request.offsetX === "number" || typeof request.offsetY === "number") {
       const box = await element.boundingBox();
@@ -638,7 +675,7 @@ const OPS = {
     }
     await element.click(options);
     await page.waitForLoadState("domcontentloaded", { timeout: 3000 }).catch(() => {});
-    return { page, viewId, summary: "Clicked " + (request.element ?? request.ref) };
+    return { page, viewId, frameName, frameUrl, summary: "Clicked " + (request.element ?? request.ref) };
   },
   mouse_click_xy: async ({ request, context, state }) => {
     const { page, viewId } = await resolvePage(request, context, state);
@@ -650,7 +687,8 @@ const OPS = {
   },
   type: async ({ request, context, state }) => {
     const { page, viewId } = await resolvePage(request, context, state);
-    const element = await refHandle(page, request.ref);
+    const { scope, frameName, frameUrl } = resolveFrameScope(page, request);
+    const element = await refHandle(scope, request.ref);
     await element.click({ timeout: ACTION_TIMEOUT_MS });
     if (request.clear === true) {
       await element.fill("").catch(() => {});
@@ -660,17 +698,19 @@ const OPS = {
       await page.keyboard.press("Enter");
       await page.waitForLoadState("domcontentloaded", { timeout: 5000 }).catch(() => {});
     }
-    return { page, viewId, summary: "Typed into " + (request.element ?? request.ref) };
+    return { page, viewId, frameName, frameUrl, summary: "Typed into " + (request.element ?? request.ref) };
   },
   fill: async ({ request, context, state }) => {
     const { page, viewId } = await resolvePage(request, context, state);
-    const element = await refHandle(page, request.ref);
+    const { scope, frameName, frameUrl } = resolveFrameScope(page, request);
+    const element = await refHandle(scope, request.ref);
     await element.fill(request.value);
-    return { page, viewId, summary: "Filled " + (request.element ?? request.ref) };
+    return { page, viewId, frameName, frameUrl, summary: "Filled " + (request.element ?? request.ref) };
   },
   select_option: async ({ request, context, state }) => {
     const { page, viewId } = await resolvePage(request, context, state);
-    const element = await refHandle(page, request.ref);
+    const { scope, frameName, frameUrl } = resolveFrameScope(page, request);
+    const element = await refHandle(scope, request.ref);
     const values = Array.isArray(request.values) ? request.values : [];
     let selected;
     try {
@@ -681,6 +721,8 @@ const OPS = {
     return {
       page,
       viewId,
+      frameName,
+      frameUrl,
       summary: "Selected " + JSON.stringify(selected) + " in " + (request.element ?? request.ref),
     };
   },
@@ -693,9 +735,10 @@ const OPS = {
   scroll: async ({ request, context, state }) => {
     const { page, viewId } = await resolvePage(request, context, state);
     if (typeof request.ref === "string" && request.ref.length > 0) {
-      const element = await refHandle(page, request.ref);
+      const { scope, frameName, frameUrl } = resolveFrameScope(page, request);
+      const element = await refHandle(scope, request.ref);
       await element.scrollIntoViewIfNeeded();
-      return { page, viewId, summary: "Scrolled " + (request.element ?? request.ref) + " into view" };
+      return { page, viewId, frameName, frameUrl, summary: "Scrolled " + (request.element ?? request.ref) + " into view" };
     }
     const amount = typeof request.amount === "number" && request.amount > 0 ? request.amount : 300;
     let deltaX = typeof request.deltaX === "number" ? request.deltaX : 0;
@@ -792,14 +835,15 @@ const OPS = {
   },
   drag: async ({ request, context, state }) => {
     const { page, viewId } = await resolvePage(request, context, state);
-    const source = await refHandle(page, request.sourceRef);
+    const { scope, frameName, frameUrl } = resolveFrameScope(page, request);
+    const source = await refHandle(scope, request.sourceRef);
     await source.scrollIntoViewIfNeeded();
     const sourceBox = await source.boundingBox();
     if (sourceBox === null) throw new Error("The drag source has no visible bounding box.");
     let targetX;
     let targetY;
     if (typeof request.targetRef === "string" && request.targetRef.length > 0) {
-      const target = await refHandle(page, request.targetRef);
+      const target = await refHandle(scope, request.targetRef);
       const targetBox = await target.boundingBox();
       if (targetBox === null) throw new Error("The drag target has no visible bounding box.");
       targetX = targetBox.x + targetBox.width / 2;
@@ -825,18 +869,23 @@ const OPS = {
     return {
       page,
       viewId,
+      frameName,
+      frameUrl,
       summary:
         "Dragged " + request.sourceRef + " to (" + String(Math.round(targetX)) + ", " + String(Math.round(targetY)) + ")",
     };
   },
   get_bounding_box: async ({ request, context, state }) => {
     const { page, viewId } = await resolvePage(request, context, state);
-    const element = await refHandle(page, request.ref);
+    const { scope, frameName, frameUrl } = resolveFrameScope(page, request);
+    const element = await refHandle(scope, request.ref);
     const box = await element.boundingBox();
     if (box === null) throw new Error("The element has no visible bounding box.");
     return {
       page,
       viewId,
+      frameName,
+      frameUrl,
       summary: "Bounding box for " + (request.element ?? request.ref),
       data: JSON.stringify({
         x: Math.round(box.x),
@@ -849,7 +898,8 @@ const OPS = {
   highlight: async ({ request, context, state }) => {
     const { page, viewId } = await resolvePage(request, context, state);
     await page.bringToFront().catch(() => {});
-    const element = await refHandle(page, request.ref);
+    const { scope, frameName, frameUrl } = resolveFrameScope(page, request);
+    const element = await refHandle(scope, request.ref);
     await element.scrollIntoViewIfNeeded();
     const durationMs = Math.min(
       typeof request.durationMs === "number" && request.durationMs > 0 ? request.durationMs : 2000,
@@ -868,7 +918,7 @@ const OPS = {
       setTimeout(() => overlay.remove(), ms);
     }, durationMs);
     await sleep(300);
-    return { page, viewId, summary: "Highlighted " + (request.element ?? request.ref) + " for " + String(durationMs) + "ms" };
+    return { page, viewId, frameName, frameUrl, summary: "Highlighted " + (request.element ?? request.ref) + " for " + String(durationMs) + "ms" };
   },
   cdp: async ({ request, context, state }) => {
     const method = typeof request.method === "string" ? request.method : "";
@@ -961,6 +1011,8 @@ async function run(request) {
     });
     const out = { ok: true, summary: result.summary };
     if (result.data !== undefined) out.data = result.data;
+    if (result.frameName !== undefined) out.frameName = result.frameName;
+    if (result.frameUrl !== undefined) out.frameUrl = result.frameUrl;
     if (result.viewId !== undefined) {
       out.viewId = result.viewId;
       const generation = state.generations[result.viewId];

@@ -114,6 +114,8 @@ impl BrowserToolExecutor for FakeBrowserExecutor {
             is_error: false,
             view_id: None,
             generation: None,
+            frame_name: None,
+            frame_url: None,
         })
     }
 }

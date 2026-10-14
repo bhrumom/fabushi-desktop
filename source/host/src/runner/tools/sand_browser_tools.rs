@@ -61,6 +61,8 @@ pub struct BrowserDriverResponse {
     pub title: Option<String>,
     pub view_id: Option<String>,
     pub generation: Option<String>,
+    pub frame_name: Option<String>,
+    pub frame_url: Option<String>,
     pub screenshot: Option<bool>,
 }
 
@@ -74,6 +76,8 @@ pub fn to_driver_response(parsed: &Map<String, Value>) -> BrowserDriverResponse 
         title: string_field(parsed, "title"),
         view_id: string_field(parsed, "viewId"),
         generation: string_field(parsed, "generation"),
+        frame_name: string_field(parsed, "frameName"),
+        frame_url: string_field(parsed, "frameUrl"),
         screenshot: parsed.get("screenshot").and_then(Value::as_bool),
     }
 }
@@ -403,6 +407,23 @@ pub fn validate_browser_arguments(
             return Err(BrowserDriverError::new(format!("{key} is required")));
         }
     }
+    for key in ["frameName", "frameUrl"] {
+        if let Some(value) = args.get(key) {
+            let value = value.as_str().ok_or_else(|| {
+                BrowserDriverError::new(format!("{key} must be a non-empty string"))
+            })?;
+            if value.is_empty() || value.chars().any(char::is_control) {
+                return Err(BrowserDriverError::new(format!(
+                    "{key} must be a non-empty string without control characters"
+                )));
+            }
+            if (key == "frameName" && value.len() > 240)
+                || (key == "frameUrl" && value.len() > 2048)
+            {
+                return Err(BrowserDriverError::new(format!("{key} is too long")));
+            }
+        }
+    }
     if let Some(value) = args.get("expectedGeneration") {
         let generation = value.as_str().ok_or_else(|| {
             BrowserDriverError::new("expectedGeneration must be a non-empty string")
@@ -490,6 +511,8 @@ pub struct BrowserDriverOutput {
     pub is_error: bool,
     pub view_id: Option<String>,
     pub generation: Option<String>,
+    pub frame_name: Option<String>,
+    pub frame_url: Option<String>,
 }
 
 pub fn render_driver_response(
@@ -506,6 +529,8 @@ pub fn render_driver_response(
             is_error: true,
             view_id: response.view_id.clone(),
             generation: response.generation.clone(),
+            frame_name: response.frame_name.clone(),
+            frame_url: response.frame_url.clone(),
         };
     }
     let mut parts = vec![response.summary.clone().unwrap_or_else(|| "Done.".into())];
@@ -528,6 +553,8 @@ pub fn render_driver_response(
         is_error: false,
         view_id: response.view_id.clone(),
         generation: response.generation.clone(),
+        frame_name: response.frame_name.clone(),
+        frame_url: response.frame_url.clone(),
     }
 }
 
@@ -876,6 +903,8 @@ impl RoutedToolBridge for SandBrowserToolBridge {
             "isError": output.is_error,
             "viewId": output.view_id,
             "generation": output.generation,
+            "frameName": output.frame_name,
+            "frameUrl": output.frame_url,
         }))
     }
 }
@@ -892,6 +921,8 @@ fn browser_tool_definition(spec: &BrowserToolSpec) -> RoutedToolDefinition {
     properties
         .entry("expectedGeneration")
         .or_insert_with(|| json!({"type":"string","minLength":1,"maxLength":240}));
+    properties.entry("frameName").or_insert_with(|| json!({"type":"string","minLength":1,"maxLength":240}));
+    properties.entry("frameUrl").or_insert_with(|| json!({"type":"string","minLength":1,"maxLength":2048}));
     RoutedToolDefinition {
         name: spec.name.into(),
         provider_identifier: "fabushi-runner".into(),

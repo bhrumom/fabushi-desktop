@@ -134,6 +134,8 @@ impl BrowserToolExecutor for FakeBrowserExecutor {
             is_error: false,
             view_id: Some("view-fake".into()),
             generation: Some("generation-fake".into()),
+            frame_name: Some("checkout-frame".into()),
+            frame_url: Some("https://example.com/frame".into()),
         })
     }
 }
@@ -257,10 +259,14 @@ fn browser_toolset_registers_frozen_inventory_validates_and_delegates() {
     assert_eq!(result["isError"], false);
     assert_eq!(result["viewId"], "view-fake");
     assert_eq!(result["generation"], "generation-fake");
+    assert_eq!(result["frameName"], "checkout-frame");
+    assert_eq!(result["frameUrl"], "https://example.com/frame");
     assert_eq!(
         navigate.input_schema["properties"]["expectedGeneration"]["type"],
         "string"
     );
+    assert_eq!(navigate.input_schema["properties"]["frameName"]["type"], "string");
+    assert_eq!(navigate.input_schema["properties"]["frameUrl"]["type"], "string");
 
     let base = tools.iter().find(|tool| tool.name == "base_tool").expect("base");
     assert_eq!(
@@ -355,6 +361,27 @@ fn browser_generation_fencing_rejects_missing_or_stale_claims_before_actions() {
         required_index < return_index,
         "generation fence must run before handing the page to an operation"
     );
+}
+
+#[test]
+fn browser_exact_frame_targeting_is_unambiguous_and_frame_scoped() {
+    for required in [
+        "function resolveFrameScope(page, request)",
+        "if (frame === page.mainFrame()) return false;",
+        "frame.name() !== frameName",
+        "frame.url() !== frameUrl",
+        "No browser frame matches frameName=",
+        "Browser frame selector is ambiguous; provide both exact frameName and frameUrl.",
+        "const { scope, frameName, frameUrl } = resolveFrameScope(page, request);",
+        "const handle = await scope.evaluateHandle((r) => {",
+        "if (result.frameName !== undefined) out.frameName = result.frameName;",
+        "if (result.frameUrl !== undefined) out.frameUrl = result.frameUrl;",
+    ] {
+        assert!(
+            SAND_BROWSER_DRIVER_SOURCE.contains(required),
+            "missing exact-frame invariant: {required}"
+        );
+    }
 }
 
 #[test]
