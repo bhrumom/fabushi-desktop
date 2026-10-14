@@ -216,6 +216,13 @@ signed proof tests are required before a real approved release exists.
 
 ### Live approved proof interoperability gate
 
+Canonical signed descriptor runtime.installMode is `fabapp`, as emitted by the
+real publisher and approved server. Require this exact value; the synthetic
+fixture's former `package` value is not a supported wire spelling. Live
+Actions38505915442 exposed this mismatch before shipping (26pass/1fail). Correct
+the client and synthetic fixture, add explicit wrong-mode rejection; never alter
+the immutable approved descriptor or loosen signature/digest binding.
+
 After genuine protected approval, an opt-in Actions-only test uses the real fixed
 production CatalogClient to enumerate the approved descriptor, independently
 verify current trust and exact release signatures, download its signed CAS bytes,

@@ -71,4 +71,9 @@ Plan: preserve installed projection + focused Actions regression; independent
 packaged test through existing release workflow/production CI account; inspect
 exact-source evidence before final release. Rollback keeps code-only removal and
 browser data, no auth/DB/key migration. Existing chat packaged gate remains intact.
+Final distributable uses a monotonic Desktop version1.2.77 (latest public preview
+is1.2.76), with matching npm root/lockfile metadata. PR candidates remain private
+artifacts; public signed/notarized Desktop preview is published only after current
+source CI and both existing chat and new MU-07 installed gates pass. Catalog
+release0.1.0 remains immutable; this host version change is not a new mini-app.
 

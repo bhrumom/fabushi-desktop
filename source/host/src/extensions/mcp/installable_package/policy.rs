@@ -754,7 +754,7 @@ pub fn descriptor_supports_desktop(value: &Value) -> bool {
                 .iter()
                 .any(|entry| entry.as_str() == Some("desktop"))
         })
-        && string_at(value, &["runtime", "installMode"]) == Some("package")
+        && string_at(value, &["runtime", "installMode"]) == Some("fabapp")
 }
 
 /// Replace only the unsigned proof wrapper's trust envelope with the latest
@@ -881,7 +881,7 @@ mod tests {
             "displayName": "Global Dandelion",
             "release": { "version": "0.1.0", "channel": "preview", "platforms": ["desktop"],
                 "requestedCapabilities": [], "bundleDigest": "de10e02115415908f827723457817e51cb4f39aa5ca68798da824fecc483118a" },
-            "runtime": { "installMode": "package" }
+            "runtime": { "installMode": "fabapp" }
         });
         let descriptor_payload = serde_json::to_string(&descriptor).unwrap();
         let descriptor_digest = sha256_hex(descriptor_payload.as_bytes());
@@ -1072,6 +1072,21 @@ mod tests {
                 .unwrap()
                 .is_none()
         );
+    }
+
+    #[test]
+    fn desktop_package_mode_requires_the_canonical_fabapp_spelling() {
+        for mode in ["package", "hosted", "", "FABAPP"] {
+            let descriptor = serde_json::json!({
+                "release": {"platforms": ["desktop"]},
+                "runtime": {"installMode": mode}
+            });
+            assert!(!descriptor_supports_desktop(&descriptor));
+        }
+        assert!(descriptor_supports_desktop(&serde_json::json!({
+            "release": {"platforms": ["desktop"]},
+            "runtime": {"installMode": "fabapp"}
+        })));
     }
 
     #[test]
