@@ -15,6 +15,13 @@ use uuid::Uuid;
 pub const NETWORK_WORKER_PROTOCOL_VERSION: u32 = 1;
 pub const NETWORK_WORKER_START_TIMEOUT_MS: u64 = 30_000;
 pub const NETWORK_WORKER_STOP_TIMEOUT_MS: u64 = 5_000;
+pub const NETWORK_WORKER_STATUS_TIMEOUT_MS: u64 = 5_000;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct NetworkWorkerStatus {
+    pub backend_state: String,
+    pub tailscale_ips: Vec<String>,
+}
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct NetworkWorkerProcessOptions {
@@ -69,12 +76,83 @@ struct NetworkWorkerControl<'a> {
 pub struct OwnedNetworkWorker {
     child: Option<Child>,
     parent_pipe: Option<ChildStdin>,
+    response_rx: Option<mpsc::Receiver<Result<String, String>>>,
     pub pid: u32,
     pub executable_path: PathBuf,
     stop_timeout_ms: u64,
 }
 
 impl OwnedNetworkWorker {
+    pub fn status(&mut self) -> Result<NetworkWorkerStatus, String> {
+        let request_id = format!("status-{}", Uuid::new_v4().simple());
+        let request = serde_json::to_string(&NetworkWorkerControl {
+            kind: "status",
+            request_id: &request_id,
+        })
+        .map_err(|error| format!("could not serialize network worker status request: {error}"))?;
+        let pipe = self
+            .parent_pipe
+            .as_mut()
+            .ok_or_else(|| "network worker control pipe is closed".to_string())?;
+        writeln!(pipe, "{request}")
+            .and_then(|_| pipe.flush())
+            .map_err(|error| format!("could not request network worker status: {error}"))?;
+
+        let receiver = self
+            .response_rx
+            .as_ref()
+            .ok_or_else(|| "network worker status pipe is closed".to_string())?;
+        let deadline = Instant::now() + Duration::from_millis(NETWORK_WORKER_STATUS_TIMEOUT_MS);
+        loop {
+            let remaining = deadline.saturating_duration_since(Instant::now());
+            if remaining.is_zero() {
+                return Err("network worker status timed out".into());
+            }
+            let line = match receiver.recv_timeout(remaining.min(Duration::from_millis(100))) {
+                Ok(Ok(line)) => line,
+                Ok(Err(error)) => return Err(format!("could not read network worker status: {error}")),
+                Err(mpsc::RecvTimeoutError::Timeout) => continue,
+                Err(mpsc::RecvTimeoutError::Disconnected) => {
+                    return Err("network worker status pipe closed".into());
+                }
+            };
+            let event: Value = serde_json::from_str(line.trim())
+                .map_err(|_| "network worker emitted invalid status protocol".to_string())?;
+            if event.get("requestId").and_then(Value::as_str) != Some(request_id.as_str()) {
+                continue;
+            }
+            match event.get("type").and_then(Value::as_str) {
+                Some("status") => {
+                    let backend_state = event
+                        .get("backendState")
+                        .and_then(Value::as_str)
+                        .unwrap_or_default()
+                        .to_string();
+                    let tailscale_ips = event
+                        .get("tailscaleIps")
+                        .and_then(Value::as_array)
+                        .into_iter()
+                        .flatten()
+                        .filter_map(Value::as_str)
+                        .map(str::to_string)
+                        .collect();
+                    return Ok(NetworkWorkerStatus {
+                        backend_state,
+                        tailscale_ips,
+                    });
+                }
+                Some("error") => {
+                    let code = event
+                        .get("code")
+                        .and_then(Value::as_str)
+                        .unwrap_or("network_worker_error");
+                    return Err(format!("network worker status failed: {code}"));
+                }
+                _ => continue,
+            }
+        }
+    }
+
     pub fn close(&mut self) -> Result<(), String> {
         self.close_inner(true)
     }
@@ -288,11 +366,10 @@ pub fn start_network_worker(
             }
         }
     }
-    drop(readiness_rx);
-
     Ok(OwnedNetworkWorker {
         child: Some(child),
         parent_pipe: Some(parent_pipe),
+        response_rx: Some(readiness_rx),
         pid,
         executable_path: options.executable_path,
         stop_timeout_ms: options.stop_timeout_ms,
