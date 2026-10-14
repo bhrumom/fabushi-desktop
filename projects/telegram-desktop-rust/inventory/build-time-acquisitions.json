@@ -1579,13 +1579,24 @@
       "note": "This closes acquisition-pattern candidates for both libavif root snapshots used by accepted TDesktop paths. The selected dav1d dependency remains separately represented by TDesktop's own source/build authority."
     },
     "ada": {
-      "repository": "https://github.com/ada-url/ada",
-      "commit": "010f7c45aeaff1205452e7da2df8702cf725fb3e",
-      "ref": "v3.2.4",
-      "build_entries": [
-        "Telegram/build/prepare/prepare.py",
-        "Telegram/build/docker/centos_env/Dockerfile",
-        "snap/snapcraft.yaml"
+      "observed_authorities": [
+        {
+          "repository": "https://github.com/ada-url/ada",
+          "commit": "010f7c45aeaff1205452e7da2df8702cf725fb3e",
+          "ref": "v3.2.4",
+          "build_entries": [
+            "Telegram/build/prepare/prepare.py",
+            "Telegram/build/docker/centos_env/Dockerfile"
+          ]
+        },
+        {
+          "repository": "https://github.com/ada-url/ada",
+          "commit": "6b4612162c34e7ffcee08c03b107b449e07a5683",
+          "ref": "v3.2.9",
+          "build_entries": [
+            "snap/snapcraft.yaml"
+          ]
+        }
       ],
       "accepted_upstream_evidence": [
         {
@@ -1598,7 +1609,7 @@
         },
         {
           "path": "snap/snapcraft.yaml",
-          "evidence": "Pins ada v3.2.4 and passes ADA_TESTING=OFF, ADA_TOOLS=OFF, ADA_INCLUDE_URL_PATTERN=OFF."
+          "evidence": "Pins ada v3.2.9 and passes ADA_TESTING=OFF, ADA_TOOLS=OFF, ADA_INCLUDE_URL_PATTERN=OFF."
         }
       ],
       "root_candidate_disposition_policy": [
@@ -1635,8 +1646,8 @@
           "disposition": "documentation-not-acquisition"
         }
       ],
-      "root_candidate_policy_status": "complete-for-current-ada-authority",
-      "note": "The policy closes acquisition-pattern matches for the Ada v3.2.4 root snapshot selected by the accepted d77f486 TDesktop build. No CPM dependency acquisition is reachable in the accepted TDesktop build configuration."
+      "root_candidate_policy_status": "complete-for-current-ada-authorities",
+      "note": "The policy closes acquisition-pattern matches for both live Ada root snapshots selected by the d77f486 TDesktop build: v3.2.4 in prepare/Docker and v3.2.9 in Snap. No CPM dependency acquisition is reachable because the accepted configurations disable testing/tools and leave benchmarks off."
     },
     "openal_soft": {
       "observed_authorities": [
