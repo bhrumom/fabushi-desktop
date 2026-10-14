@@ -1,0 +1,516 @@
+name: Formal macOS MCP Phase 1 acceptance
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: Exact canonical fabushi-desktop main SHA represented by the signed package
+        required: true
+        type: string
+      package_run_id:
+        description: Successful release-macos-main.yml run ID that produced the signed/notarized package
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: formal-macos-mcp-phase1
+  cancel-in-progress: false
+
+env:
+  SUPPORT_REPO: https://github.com/bhrumom/fabushi.git
+  SUPPORT_SHA: 8e44f5050d51d2386f357b014df14f9fccefbe2f
+  FABUSHI_API_BASE_URL: ${{ vars.FABUSHI_API_BASE_URL || 'https://api.ombhrum.com' }}
+  MAHAYANA_API_BASE_URL: ${{ vars.FABUSHI_API_BASE_URL || 'https://api.ombhrum.com' }}
+
+jobs:
+  formal-mcp:
+    name: Signed candidate / official MCP / dual-account Phase 1
+    runs-on: macos-15
+    timeout-minutes: 55
+    environment: production
+    env:
+      EXPECTED_SOURCE_SHA: ${{ inputs.source_sha }}
+      PACKAGE_RUN_ID: ${{ inputs.package_run_id }}
+      PRIMARY_DEVICE_ID: gha-${{ github.run_id }}-${{ github.run_attempt }}-macos-app-a
+      PEER_DEVICE_ID: gha-${{ github.run_id }}-${{ github.run_attempt }}-macos-app-b
+      PRIMARY_DEVICE_NAME: Fabushi Formal Primary ${{ github.run_id }}/${{ github.run_attempt }}
+      PEER_DEVICE_NAME: Fabushi Formal Peer ${{ github.run_id }}/${{ github.run_attempt }}
+      FABUSHI_CI_TEST_USERNAME: ${{ secrets.FABUSHI_CI_TEST_USERNAME }}
+      FABUSHI_CI_TEST_PASSWORD: ${{ secrets.FABUSHI_CI_TEST_PASSWORD }}
+
+    steps:
+      - name: Validate requested exact-main source
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$EXPECTED_SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$PACKAGE_RUN_ID" =~ ^[0-9]+$ ]]
+          remote_main="$(git ls-remote https://github.com/$GITHUB_REPOSITORY.git refs/heads/main | awk '{print $1}')"
+          test -n "$remote_main"
+          if [ "$remote_main" != "$EXPECTED_SOURCE_SHA" ]; then
+            echo "::error::Formal acceptance must start from current canonical main. requested=$EXPECTED_SOURCE_SHA current=$remote_main"
+            exit 1
+          fi
+
+      - name: Checkout exact candidate source
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.source_sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Bind checkout to exact canonical main
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_SHA" = "$EXPECTED_SOURCE_SHA"
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SOURCE_SHA"
+
+      - name: Initialize isolated formal-session paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/fabushi-formal-phase1"
+          evidence="$GITHUB_WORKSPACE/formal-macos-phase1-evidence"
+          primary_session="$root/primary-ci-session"
+          primary_account="$root/primary-account"
+          primary_app_session="$root/primary-app-session"
+          primary_data="$root/primary-app-data"
+          peer_session="$root/peer-ci-session"
+          peer_account="$root/peer-account"
+          peer_app_session="$root/peer-app-session"
+          peer_data="$root/peer-app-data"
+          package_dir="$root/package"
+          support="$root/support"
+          mkdir -p "$evidence/steps" "$evidence/package"             "$primary_session" "$primary_account" "$primary_app_session" "$primary_data"             "$peer_session" "$peer_account" "$peer_app_session" "$peer_data" "$package_dir"
+          chmod 700 "$root" "$primary_session" "$primary_account" "$primary_app_session" "$primary_data"             "$peer_session" "$peer_account" "$peer_app_session" "$peer_data"
+          {
+            echo "FORMAL_ROOT=$root"
+            echo "EVIDENCE_DIR=$evidence"
+            echo "PACKAGE_DIR=$package_dir"
+            echo "SUPPORT_DIR=$support"
+            echo "PRIMARY_CI_SESSION_DIR=$primary_session"
+            echo "PRIMARY_ACCOUNT_SESSION_FILE=$primary_account/session.json"
+            echo "PRIMARY_APP_SESSION_FILE=$primary_app_session/session.json"
+            echo "PRIMARY_APP_DATA=$primary_data"
+            echo "PRIMARY_COMPUTER_POLICY_FILE=$primary_session/computer-policy.json"
+            echo "PRIMARY_DEVICE_CALL_TRACE_FILE=$primary_session/device-calls.jsonl"
+            echo "PRIMARY_APP_AGENT_DISCOVERY_FILE=$primary_session/app-agent-bridge.json"
+            echo "PEER_CI_SESSION_DIR=$peer_session"
+            echo "PEER_ACCOUNT_SESSION_FILE=$peer_account/session.json"
+            echo "PEER_APP_SESSION_FILE=$peer_app_session/session.json"
+            echo "PEER_APP_DATA=$peer_data"
+            echo "PEER_COMPUTER_POLICY_FILE=$peer_session/computer-policy.json"
+            echo "PEER_DEVICE_CALL_TRACE_FILE=$peer_session/device-calls.jsonl"
+            echo "PEER_APP_AGENT_DISCOVERY_FILE=$peer_session/app-agent-bridge.json"
+          } >> "$GITHUB_ENV"
+          cat > "$primary_session/computer-policy.json" <<'JSON'
+          {"localExecution":true,"aiComputerControlEnabled":true,"localToolPermission":"always","remoteControlEnabled":true}
+          JSON
+          cat > "$peer_session/computer-policy.json" <<'JSON'
+          {"localExecution":true,"aiComputerControlEnabled":true,"localToolPermission":"always","remoteControlEnabled":true}
+          JSON
+          chmod 600 "$primary_session/computer-policy.json" "$peer_session/computer-policy.json"
+          jq -n             --arg schema 'fabushi.desktop.formal-macos-phase1.v1'             --arg sourceSha "$EXPECTED_SOURCE_SHA"             --arg packageRunId "$PACKAGE_RUN_ID"             --arg runId "$GITHUB_RUN_ID"             --arg runAttempt "$GITHUB_RUN_ATTEMPT"             --arg primaryDeviceId "$PRIMARY_DEVICE_ID"             --arg peerDeviceId "$PEER_DEVICE_ID"             '{schema:$schema,sourceSha:$sourceSha,packageRunId:$packageRunId,runId:$runId,runAttempt:$runAttempt,primaryDeviceId:$primaryDeviceId,peerDeviceId:$peerDeviceId,startedAt:(now|todateiso8601)}'             > "$evidence/source-binding.json"
+
+      - name: Start whole-session evidence recording before package retrieval
+        shell: bash
+        run: |
+          set -euo pipefail
+          /usr/sbin/screencapture -x -D 1 "$EVIDENCE_DIR/steps/000-session-start.png"
+          bash desktop/scripts/macos-session-recorder.sh start "$EVIDENCE_DIR"
+          bash desktop/scripts/macos-session-recorder.sh assert-live "$EVIDENCE_DIR"
+
+      - name: Resolve exact signed package run and artifact provenance
+        id: package
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          run_json="$EVIDENCE_DIR/package/workflow-run.json"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$PACKAGE_RUN_ID" > "$run_json"
+          test "$(jq -r '.status' "$run_json")" = completed
+          test "$(jq -r '.conclusion' "$run_json")" = success
+          test "$(jq -r '.head_sha' "$run_json")" = "$EXPECTED_SOURCE_SHA"
+          test "$(jq -r '.path' "$run_json")" = '.github/workflows/release-macos-main.yml'
+          artifacts="$EVIDENCE_DIR/package/artifacts.json"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$PACKAGE_RUN_ID/artifacts?per_page=100" > "$artifacts"
+          expected_name="fabushi-macos-${EXPECTED_SOURCE_SHA:0:12}"
+          match_count="$(jq --arg name "$expected_name" '[.artifacts[] | select(.name == $name and .expired == false and (.digest | startswith("sha256:")))] | length' "$artifacts")"
+          test "$match_count" = 1
+          artifact_id="$(jq -r --arg name "$expected_name" '.artifacts[] | select(.name == $name and .expired == false) | .id' "$artifacts")"
+          artifact_digest="$(jq -r --arg name "$expected_name" '.artifacts[] | select(.name == $name and .expired == false) | .digest' "$artifacts")"
+          test -n "$artifact_id"
+          test -n "$artifact_digest"
+          {
+            echo "artifact_name=$expected_name"
+            echo "artifact_id=$artifact_id"
+            echo "artifact_digest=$artifact_digest"
+          } >> "$GITHUB_OUTPUT"
+          jq -n             --arg artifactName "$expected_name"             --arg artifactId "$artifact_id"             --arg artifactDigest "$artifact_digest"             --arg packageRunId "$PACKAGE_RUN_ID"             --arg sourceSha "$EXPECTED_SOURCE_SHA"             '{artifactName:$artifactName,artifactId:$artifactId,artifactDigest:$artifactDigest,packageRunId:$packageRunId,sourceSha:$sourceSha}'             > "$EVIDENCE_DIR/package/binding.json"
+
+      - name: Download exact signed/notarized package artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ steps.package.outputs.artifact_name }}
+          path: ${{ env.PACKAGE_DIR }}
+          run-id: ${{ inputs.package_run_id }}
+          github-token: ${{ github.token }}
+
+      - name: Verify package checksums, signature, notarization, and installed candidate
+        id: install
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s "$PACKAGE_DIR/SHA256SUMS.txt"
+          (
+            cd "$PACKAGE_DIR"
+            shasum -a 256 -c SHA256SUMS.txt | tee "$EVIDENCE_DIR/package/checksum-verification.txt"
+          )
+          shopt -s nullglob
+          zips=("$PACKAGE_DIR"/fabushi-*-macos-arm64.zip)
+          dmgs=("$PACKAGE_DIR"/fabushi-*-macos-arm64.dmg)
+          test "${#zips[@]}" -eq 1
+          test "${#dmgs[@]}" -eq 1
+          zip="${zips[0]}"
+          dmg="${dmgs[0]}"
+          shasum -a 256 "$zip" "$dmg" > "$EVIDENCE_DIR/package/downloaded-sha256.txt"
+          xcrun stapler validate "$dmg" > "$EVIDENCE_DIR/package/dmg-stapler.txt" 2>&1
+          spctl --assess --type open --context context:primary-signature --verbose=2 "$dmg" > "$EVIDENCE_DIR/package/dmg-gatekeeper.txt" 2>&1
+
+          stage="$FORMAL_ROOT/package-stage"
+          rm -rf "$stage"
+          mkdir -p "$stage"
+          ditto -x -k "$zip" "$stage"
+          apps=("$stage"/*.app)
+          test "${#apps[@]}" -eq 1
+          source_app="${apps[0]}"
+          app="/Applications/Fabushi.app"
+          sudo rm -rf "$app"
+          sudo ditto "$source_app" "$app"
+          executable="$app/Contents/MacOS/fabushi"
+          test -x "$executable"
+          codesign --verify --deep --strict --verbose=2 "$app" 2> "$EVIDENCE_DIR/package/app-codesign.txt"
+          spctl --assess --type execute --verbose=2 "$app" 2> "$EVIDENCE_DIR/package/app-gatekeeper.txt"
+          xcrun stapler validate "$app" > "$EVIDENCE_DIR/package/app-stapler.txt" 2>&1
+          /usr/bin/codesign -dv --verbose=4 "$app" 2> "$EVIDENCE_DIR/package/app-signature-details.txt"
+          bundle_id="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app/Contents/Info.plist")"
+          version="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app/Contents/Info.plist")"
+          build="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app/Contents/Info.plist")"
+          test "$bundle_id" = 'com.ombhrum.fabushi'
+          {
+            echo "app=$app"
+            echo "executable=$executable"
+            echo "version=$version"
+            echo "build=$build"
+          } >> "$GITHUB_OUTPUT"
+          jq -n --arg app "$app" --arg executable "$executable" --arg bundleId "$bundle_id" --arg version "$version" --arg build "$build"             '{app:$app,executable:$executable,bundleId:$bundleId,version:$version,build:$build}'             > "$EVIDENCE_DIR/package/installed-candidate.json"
+          /usr/sbin/screencapture -x -D 1 "$EVIDENCE_DIR/steps/001-installed-signed-candidate.png"
+
+      - name: Checkout pinned account/control support without building product
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --filter=blob:none --no-checkout "$SUPPORT_REPO" "$SUPPORT_DIR"
+          git -C "$SUPPORT_DIR" fetch --depth 1 origin "$SUPPORT_SHA"
+          git -C "$SUPPORT_DIR" checkout --detach "$SUPPORT_SHA"
+          test "$(git -C "$SUPPORT_DIR" rev-parse HEAD)" = "$SUPPORT_SHA"
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: ${{ runner.temp }}/fabushi-formal-phase1/support/chatgpt-vps-control/package-lock.json
+
+      - name: Install only support MCP/account dependencies
+        working-directory: ${{ env.SUPPORT_DIR }}/chatgpt-vps-control
+        shell: bash
+        run: npm ci --ignore-scripts --prefer-offline --no-audit --no-fund
+
+      - name: Provision two distinct bounded production account sessions
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$FABUSHI_CI_TEST_USERNAME"
+          test -n "$FABUSHI_CI_TEST_PASSWORD"
+          peer_username="fabushi_mcp_ci_peer"
+          peer_password="$(node -e 'const c=require("node:crypto");process.stdout.write(c.createHmac("sha256",process.env.FABUSHI_CI_TEST_PASSWORD).update("fabushi-mcp-ci-peer-v1").digest("base64url"))')"
+          echo "::add-mask::$peer_password"
+          test "$FABUSHI_CI_TEST_USERNAME" != "$peer_username" || { echo "::error::Formal dual-device Human acceptance requires distinct accounts."; exit 1; }
+
+          provision() {
+            local username="$1" password="$2" device_id="$3" account_file="$4" app_file="$5"
+            (
+              export FABUSHI_CI_TEST_USERNAME="$username"
+              export FABUSHI_CI_TEST_PASSWORD="$password"
+              export DEVICE_ID="$device_id"
+              export FABUSHI_ACCOUNT_SESSION_FILE="$account_file"
+              export FABUSHI_CI_ACCOUNT_SESSION_FILE="$app_file"
+              node "$SUPPORT_DIR/chatgpt-vps-control/scripts/login-ci-test-account.mjs"
+              node "$SUPPORT_DIR/chatgpt-vps-control/scripts/export-ci-app-account-session.mjs"
+              chmod 600 "$account_file" "$app_file"
+              jq -e '.provider == "github-actions" and .ciRunner == true and (.refreshToken | not) and (.accessToken|type) == "string"' "$app_file" >/dev/null
+            )
+          }
+
+          provision "$FABUSHI_CI_TEST_USERNAME" "$FABUSHI_CI_TEST_PASSWORD" "$PRIMARY_DEVICE_ID" "$PRIMARY_ACCOUNT_SESSION_FILE" "$PRIMARY_APP_SESSION_FILE"
+          provision "$peer_username" "$peer_password" "$PEER_DEVICE_ID" "$PEER_ACCOUNT_SESSION_FILE" "$PEER_APP_SESSION_FILE"
+          jq -e --arg primary "$FABUSHI_CI_TEST_USERNAME" --arg peer "$peer_username"             '($primary|length)>0 and ($peer|length)>0 and $primary != $peer' <<< '{}' >/dev/null
+          unset peer_password
+          echo "FABUSHI_CI_PEER_TEST_USERNAME=$peer_username" >> "$GITHUB_ENV"
+          echo 'Two distinct refresh-token-free bounded production sessions are ready.' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Require the bounded production accounts to already be Human peers
+        shell: bash
+        run: |
+          set -euo pipefail
+          primary_token="$(jq -r '.accessToken' "$PRIMARY_APP_SESSION_FILE")"
+          test -n "$primary_token"
+          friends="$(curl --fail --silent --show-error -H "authorization: Bearer $primary_token" "$FABUSHI_API_BASE_URL/api/social/friends")"
+          if ! jq -e --arg peer "$FABUSHI_CI_PEER_TEST_USERNAME" '.data.friends[]? | select((.username // .id | tostring) == $peer)' <<< "$friends" >/dev/null; then
+            echo "::error::The two bounded production accounts are not already friends. Prepare this prerequisite outside formal acceptance; do not seed it with fixtures."
+            exit 1
+          fi
+
+      - name: Launch primary and peer instances of the exact signed executable
+        id: launch
+        shell: bash
+        env:
+          APP_EXECUTABLE: ${{ steps.install.outputs.executable }}
+        run: |
+          set -euo pipefail
+          : > "$PRIMARY_DEVICE_CALL_TRACE_FILE"
+          : > "$PEER_DEVICE_CALL_TRACE_FILE"
+          chmod 600 "$PRIMARY_DEVICE_CALL_TRACE_FILE" "$PEER_DEVICE_CALL_TRACE_FILE"
+
+          RUNNER_TRACKING_ID= env             FABUSHI_E2E=0             DEVICE_ID="$PRIMARY_DEVICE_ID"             DEVICE_NAME="$PRIMARY_DEVICE_NAME"             FABUSHI_CI_SESSION_DIR="$PRIMARY_CI_SESSION_DIR"             FABUSHI_ACCOUNT_SESSION_FILE="$PRIMARY_ACCOUNT_SESSION_FILE"             FABUSHI_CI_ACCOUNT_SESSION_FILE="$PRIMARY_APP_SESSION_FILE"             FABUSHI_COMPUTER_POLICY_FILE="$PRIMARY_COMPUTER_POLICY_FILE"             FABUSHI_DEVICE_CALL_TRACE_FILE="$PRIMARY_DEVICE_CALL_TRACE_FILE"             FABUSHI_APP_AGENT_DISCOVERY_FILE="$PRIMARY_APP_AGENT_DISCOVERY_FILE"             FABUSHI_APP_DATA="$PRIMARY_APP_DATA"             "$APP_EXECUTABLE" --user-data-dir="$PRIMARY_APP_DATA"             > "$EVIDENCE_DIR/primary-app.log" 2>&1 &
+          primary_pid=$!
+          echo "$primary_pid" > "$EVIDENCE_DIR/primary-app.pid"
+
+          primary_online=false
+          for attempt in $(seq 1 120); do
+            kill -0 "$primary_pid"
+            if grep -q 'controllable device online' "$EVIDENCE_DIR/primary-app.log" 2>/dev/null && test -f "$PRIMARY_APP_AGENT_DISCOVERY_FILE"; then
+              primary_online=true
+              break
+            fi
+            sleep 1
+          done
+          test "$primary_online" = true || {
+            echo "::error::Primary signed App did not self-register its official MCP device."
+            tail -n 200 "$EVIDENCE_DIR/primary-app.log" >&2 || true
+            exit 1
+          }
+
+          RUNNER_TRACKING_ID= env             FABUSHI_E2E=0             DEVICE_ID="$PEER_DEVICE_ID"             DEVICE_NAME="$PEER_DEVICE_NAME"             FABUSHI_CI_SESSION_DIR="$PEER_CI_SESSION_DIR"             FABUSHI_ACCOUNT_SESSION_FILE="$PEER_ACCOUNT_SESSION_FILE"             FABUSHI_CI_ACCOUNT_SESSION_FILE="$PEER_APP_SESSION_FILE"             FABUSHI_COMPUTER_POLICY_FILE="$PEER_COMPUTER_POLICY_FILE"             FABUSHI_DEVICE_CALL_TRACE_FILE="$PEER_DEVICE_CALL_TRACE_FILE"             FABUSHI_APP_AGENT_DISCOVERY_FILE="$PEER_APP_AGENT_DISCOVERY_FILE"             FABUSHI_APP_DATA="$PEER_APP_DATA"             "$APP_EXECUTABLE" --user-data-dir="$PEER_APP_DATA"             > "$EVIDENCE_DIR/peer-app.log" 2>&1 &
+          peer_pid=$!
+          echo "$peer_pid" > "$EVIDENCE_DIR/peer-app.pid"
+
+          sleep 8
+          kill -0 "$primary_pid"
+          if ! kill -0 "$peer_pid" 2>/dev/null; then
+            echo "::error::The signed production executable enforced a single-instance boundary across distinct user-data directories; dual-device acceptance cannot be simulated with a fixture."
+            tail -n 200 "$EVIDENCE_DIR/peer-app.log" >&2 || true
+            exit 1
+          fi
+          peer_online=false
+          for attempt in $(seq 1 90); do
+            kill -0 "$peer_pid"
+            if grep -q 'controllable device online' "$EVIDENCE_DIR/peer-app.log" 2>/dev/null && test -f "$PEER_APP_AGENT_DISCOVERY_FILE"; then
+              peer_online=true
+              break
+            fi
+            sleep 1
+          done
+          test "$peer_online" = true || {
+            echo "::error::Peer signed App did not establish its own bounded production device identity."
+            tail -n 200 "$EVIDENCE_DIR/peer-app.log" >&2 || true
+            exit 1
+          }
+
+          /usr/sbin/screencapture -x -D 1 "$EVIDENCE_DIR/steps/002-two-signed-production-apps.png"
+          {
+            echo "primary_pid=$primary_pid"
+            echo "peer_pid=$peer_pid"
+          } >> "$GITHUB_OUTPUT"
+          jq -n --arg phase ready --arg sourceSha "$EXPECTED_SOURCE_SHA" --arg deviceId "$PRIMARY_DEVICE_ID" --arg peerDeviceId "$PEER_DEVICE_ID"             '{phase:$phase,sourceSha:$sourceSha,deviceId:$deviceId,peerDeviceId:$peerDeviceId,appReady:true,updatedAt:(now|todateiso8601)}'             > "$PRIMARY_CI_SESSION_DIR/status.json"
+
+          {
+            echo '## Formal signed Fabushi Phase 1 runner is ready'
+            echo
+            echo "- Exact source: `$EXPECTED_SOURCE_SHA`"
+            echo "- Package run: `$PACKAGE_RUN_ID`"
+            echo "- Official MCP primary device: `$PRIMARY_DEVICE_ID`"
+            echo "- A second signed App instance is running under a distinct bounded production Human account/device."
+            echo '- Use the official Fabushi MCP only: list_devices -> describe_device_tool -> ci_session_status -> fabushi.app.* and native computer_* tools -> ci_session_note -> ci_session_finish.'
+            echo '- The primary App semantic tools address the primary signed candidate; native computer_* tools may operate the peer signed App window on the same macOS runner without crossing MCP account boundaries.'
+            echo '- Do not use shell, browser automation, injected JavaScript, fixture state, Playwright, FABUSHI_E2E, or source-level substitutes for formal product behavior.'
+            echo '- Required PASS note prefix: FABUSHI_DESKTOP_PHASE1 READY PASS categories='
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - id: control
+        name: Hold signed Apps for official MCP formal acceptance
+        if: steps.launch.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          finish_file="$PRIMARY_CI_SESSION_DIR/finish-requested.json"
+          notes_file="$PRIMARY_CI_SESSION_DIR/remote-notes.jsonl"
+          primary_pid="${{ steps.launch.outputs.primary_pid }}"
+          peer_pid="${{ steps.launch.outputs.peer_pid }}"
+          next_renewal=$((SECONDS + 240))
+          last=0
+          deadline=$((SECONDS + 2400))
+          : > "$EVIDENCE_DIR/session-renewal.log"
+
+          while [ "$SECONDS" -lt "$deadline" ]; do
+            kill -0 "$primary_pid" || { echo app-primary-exited > "$EVIDENCE_DIR/control-status.txt"; exit 1; }
+            kill -0 "$peer_pid" || { echo app-peer-exited > "$EVIDENCE_DIR/control-status.txt"; exit 1; }
+
+            if [ "$SECONDS" -ge "$next_renewal" ]; then
+              (
+                export FABUSHI_ACCOUNT_SESSION_FILE="$PRIMARY_ACCOUNT_SESSION_FILE"
+                export FABUSHI_CI_ACCOUNT_SESSION_FILE="$PRIMARY_APP_SESSION_FILE"
+                export DEVICE_ID="$PRIMARY_DEVICE_ID"
+                node "$SUPPORT_DIR/chatgpt-vps-control/scripts/renew-ci-app-account-session.mjs"
+              ) >> "$EVIDENCE_DIR/session-renewal.log" 2>&1
+              (
+                export FABUSHI_ACCOUNT_SESSION_FILE="$PEER_ACCOUNT_SESSION_FILE"
+                export FABUSHI_CI_ACCOUNT_SESSION_FILE="$PEER_APP_SESSION_FILE"
+                export DEVICE_ID="$PEER_DEVICE_ID"
+                node "$SUPPORT_DIR/chatgpt-vps-control/scripts/renew-ci-app-account-session.mjs"
+              ) >> "$EVIDENCE_DIR/session-renewal.log" 2>&1
+              jq -e '.refreshToken | not' "$PRIMARY_APP_SESSION_FILE" >/dev/null
+              jq -e '.refreshToken | not' "$PEER_APP_SESSION_FILE" >/dev/null
+              next_renewal=$((SECONDS + 240))
+            fi
+
+            completed="$(jq -c 'select(.phase == "completed" and .ok == true)' "$PRIMARY_DEVICE_CALL_TRACE_FILE" 2>/dev/null || true)"
+            total="$(printf '%s\n' "$completed" | sed '/^$/d' | wc -l | tr -d ' ')"
+            while [ "$last" -lt "$total" ]; do
+              last=$((last + 1))
+              line="$(printf '%s\n' "$completed" | sed -n "${last}p")"
+              tool="$(printf '%s' "$line" | jq -r '.toolName // "device-call"' 2>/dev/null || echo device-call)"
+              safe_tool="$(printf '%s' "$tool" | tr -cs 'A-Za-z0-9._-' '-')"
+              /usr/sbin/screencapture -x -D 1 "$EVIDENCE_DIR/steps/$(printf '%03d' $((last + 2)))-${safe_tool}.png" || true
+            done
+
+            if test -f "$finish_file"; then
+              if grep -q '^.*FABUSHI_DESKTOP_PHASE1 READY PASS categories=' "$notes_file" 2>/dev/null; then
+                echo passed > "$EVIDENCE_DIR/control-status.txt"
+                /usr/sbin/screencapture -x -D 1 "$EVIDENCE_DIR/steps/998-finished.png" || true
+                exit 0
+              fi
+              echo failed > "$EVIDENCE_DIR/control-status.txt"
+              echo 'ci_session_finish arrived without the required READY PASS note.' >&2
+              exit 1
+            fi
+            sleep 1
+          done
+          echo timeout > "$EVIDENCE_DIR/control-status.txt"
+          echo 'Timed out waiting for official MCP formal acceptance and ci_session_finish.' >&2
+          exit 1
+
+      - name: Collect fail-closed formal evidence
+        if: always()
+        shell: bash
+        run: |
+          set +e
+          /usr/sbin/screencapture -x -D 1 "$EVIDENCE_DIR/steps/999-final.png" || true
+          recorder_stop_status=0
+          bash desktop/scripts/macos-session-recorder.sh stop "$EVIDENCE_DIR" || recorder_stop_status=$?
+          printf '%s\n' "$recorder_stop_status" > "$EVIDENCE_DIR/recorder-stop-exit.txt"
+          cp "$PRIMARY_DEVICE_CALL_TRACE_FILE" "$EVIDENCE_DIR/device-calls.jsonl" 2>/dev/null || : > "$EVIDENCE_DIR/device-calls.jsonl"
+          cp "$PRIMARY_CI_SESSION_DIR/remote-notes.jsonl" "$EVIDENCE_DIR/remote-notes.jsonl" 2>/dev/null || : > "$EVIDENCE_DIR/remote-notes.jsonl"
+          cp "$PRIMARY_CI_SESSION_DIR/finish-requested.json" "$EVIDENCE_DIR/finish-requested.json" 2>/dev/null || true
+          cp "$PRIMARY_CI_SESSION_DIR/status.json" "$EVIDENCE_DIR/final-ci-session-status.json" 2>/dev/null || true
+          node "$SUPPORT_DIR/chatgpt-vps-control/scripts/compile-ci-device-trace.mjs"             "$PRIMARY_DEVICE_CALL_TRACE_FILE" "$EVIDENCE_DIR/generated-regression.json" || true
+          control_status="$(cat "$EVIDENCE_DIR/control-status.txt" 2>/dev/null || echo not-run)"
+          remote_action_count="$(jq -s '[.[] | select(.phase == "completed" and .ok == true)] | length' "$EVIDENCE_DIR/device-calls.jsonl" 2>/dev/null || echo 0)"
+          recorder_playable="$(jq -r '.playable // false' "$EVIDENCE_DIR/recorder-final.json" 2>/dev/null || echo false)"
+          pass_note="$(jq -r 'select(.note | startswith("FABUSHI_DESKTOP_PHASE1 READY PASS categories=")) | .note' "$EVIDENCE_DIR/remote-notes.jsonl" 2>/dev/null | tail -n 1)"
+          jq -n             --arg schema 'fabushi.desktop.formal-macos-phase1.evidence.v1'             --arg sourceSha "$EXPECTED_SOURCE_SHA"             --arg packageRunId "$PACKAGE_RUN_ID"             --arg packageArtifactId "${{ steps.package.outputs.artifact_id }}"             --arg packageArtifactDigest "${{ steps.package.outputs.artifact_digest }}"             --arg primaryDeviceId "$PRIMARY_DEVICE_ID"             --arg peerDeviceId "$PEER_DEVICE_ID"             --arg controlStatus "$control_status"             --arg passNote "$pass_note"             --argjson remoteActionCount "$remote_action_count"             --arg recorderPlayable "$recorder_playable"             '{schema:$schema,sourceSha:$sourceSha,packageRunId:$packageRunId,packageArtifactId:$packageArtifactId,packageArtifactDigest:$packageArtifactDigest,primaryDeviceId:$primaryDeviceId,peerDeviceId:$peerDeviceId,controlStatus:$controlStatus,passNote:$passNote,remoteActionCount:$remoteActionCount,recorderPlayable:($recorderPlayable=="true"),completedAt:(now|todateiso8601)}'             > "$EVIDENCE_DIR/report.json"
+          find "$EVIDENCE_DIR" -type f -print | sort > "$EVIDENCE_DIR/evidence-files.txt"
+
+      - name: Remove private sessions and stop signed Apps
+        if: always()
+        shell: bash
+        run: |
+          set +e
+          if test -f "$EVIDENCE_DIR/primary-app.pid"; then kill -TERM "$(cat "$EVIDENCE_DIR/primary-app.pid")" 2>/dev/null || true; fi
+          if test -f "$EVIDENCE_DIR/peer-app.pid"; then kill -TERM "$(cat "$EVIDENCE_DIR/peer-app.pid")" 2>/dev/null || true; fi
+          rm -rf "$PRIMARY_ACCOUNT_SESSION_FILE" "$PRIMARY_APP_SESSION_FILE" "$PEER_ACCOUNT_SESSION_FILE" "$PEER_APP_SESSION_FILE"
+          rm -rf "$PRIMARY_APP_DATA" "$PEER_APP_DATA"
+          rm -f "$PRIMARY_CI_SESSION_DIR/account-access-token" "$PEER_CI_SESSION_DIR/account-access-token" 2>/dev/null || true
+
+      - name: Upload formal MCP evidence even when acceptance fails
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: formal-macos-phase1-${{ inputs.source_sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: formal-macos-phase1-evidence/
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+
+      - name: Enforce complete official-MCP Phase 1 contract and no main drift
+        if: always()
+        shell: bash
+        env:
+          CONTROL_OUTCOME: ${{ steps.control.outcome }}
+        run: |
+          set -euo pipefail
+          test "$CONTROL_OUTCOME" = success
+          test "$(cat "$EVIDENCE_DIR/control-status.txt")" = passed
+          test "$(cat "$EVIDENCE_DIR/recorder-stop-exit.txt")" = 0
+          bash desktop/scripts/macos-session-recorder.sh verify "$EVIDENCE_DIR"
+          test -s "$EVIDENCE_DIR/finish-requested.json"
+          test -s "$EVIDENCE_DIR/device-calls.jsonl"
+          note="$(jq -r 'select(.note | startswith("FABUSHI_DESKTOP_PHASE1 READY PASS categories=")) | .note' "$EVIDENCE_DIR/remote-notes.jsonl" | tail -n 1)"
+          test -n "$note"
+
+          required_categories=(
+            human-reply human-attachment human-reaction human-search restart-idempotency
+            network-sync-reconnect dual-device-convergence human-agent-handoff
+            voice-outgoing voice-incoming video-outgoing video-incoming permissions
+            mic-selection camera-selection mute camera-toggle screen-share ice-signaling
+            disconnect-reconnect failure hangup
+            settings-appearance settings-privacy settings-storage settings-downloads
+            settings-media settings-devices settings-update settings-advanced
+            a11y-names-roles a11y-keyboard-focus a11y-live-error a11y-text-scale
+            a11y-reduced-motion a11y-high-contrast
+            i18n-localization-formatting i18n-rtl-mixed i18n-cjk-font-emoji i18n-ime
+          )
+          category_csv="${note#*categories=}"
+          for category in "${required_categories[@]}"; do
+            printf '%s' ",$category_csv," | grep -Fq ",$category," || {
+              echo "::error::Formal PASS note is missing required category: $category"
+              exit 1
+            }
+          done
+
+          for tool in fabushi.app.status fabushi.app.snapshot fabushi.app.find fabushi.app.action fabushi.app.wait fabushi.app.assert ci_session_status ci_session_note ci_session_finish; do
+            jq -e --arg tool "$tool" 'select(.phase == "completed" and .ok == true and .toolName == $tool)' "$EVIDENCE_DIR/device-calls.jsonl" >/dev/null || {
+              echo "::error::Required official MCP tool was not successfully exercised: $tool"
+              exit 1
+            }
+          done
+          jq -e 'select(.phase == "completed" and .ok == true and ((.toolName // "") | startswith("computer_")))' "$EVIDENCE_DIR/device-calls.jsonl" >/dev/null || {
+            echo "::error::Dual-account formal acceptance did not exercise native computer_* control for the peer signed App."
+            exit 1
+          }
+
+          test "$(find "$EVIDENCE_DIR/steps" -type f -name '*.png' -size +0c | wc -l | tr -d ' ')" -ge 10
+          jq -e '.sourceSha == env.EXPECTED_SOURCE_SHA and .controlStatus == "passed" and .recorderPlayable == true and .remoteActionCount > 0' "$EVIDENCE_DIR/report.json" >/dev/null
+
+          final_main="$(git ls-remote https://github.com/$GITHUB_REPOSITORY.git refs/heads/main | awk '{print $1}')"
+          if [ "$final_main" != "$EXPECTED_SOURCE_SHA" ]; then
+            echo "::error::Canonical main drifted during formal acceptance: expected $EXPECTED_SOURCE_SHA, current $final_main"
+            exit 1
+          fi

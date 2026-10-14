@@ -59,6 +59,17 @@ jobs:
           cache: npm
           cache-dependency-path: desktop/package-lock.json
       - run: npm ci
+      - name: Typecheck signed Phase 1 packaged acceptance spec
+        run: >-
+          ./node_modules/.bin/tsc --noEmit
+          --target ES2022
+          --module ESNext
+          --moduleResolution Bundler
+          --lib ES2022,DOM,DOM.Iterable
+          --types node
+          --skipLibCheck
+          --esModuleInterop
+          e2e/phase1-packaged-production-acceptance.spec.ts
       - name: Build Grok-shaped Electron runtime
         run: npm run build:electron
       - name: Enforce Agent workspace architecture boundary

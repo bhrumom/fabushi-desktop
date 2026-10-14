@@ -1,0 +1,49 @@
+name: Formal macOS MCP runner contract
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/formal-macos-mcp-phase1.yml'
+      - '.github/workflows/formal-macos-mcp-phase1-contract.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    name: Manual-only official MCP formal contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - name: Bind exact tested HEAD
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+      - name: Parse workflow YAML
+        shell: bash
+        run: |
+          set -euo pipefail
+          ruby -e 'require "yaml"; YAML.load_file(ARGV.fetch(0), aliases: true)' .github/workflows/formal-macos-mcp-phase1.yml
+      - name: Enforce formal MCP governance
+        shell: bash
+        run: |
+          set -euo pipefail
+          workflow=.github/workflows/formal-macos-mcp-phase1.yml
+          grep -Fq 'workflow_dispatch:' "$workflow"
+          ! grep -Eq '^[[:space:]]+(push|pull_request|schedule):' "$workflow"
+          grep -Fq 'FABUSHI_E2E=0' "$workflow"
+          grep -Fq 'ci_session_status' "$workflow"
+          grep -Fq 'ci_session_note' "$workflow"
+          grep -Fq 'ci_session_finish' "$workflow"
+          grep -Fq 'fabushi.app.snapshot' "$workflow"
+          grep -Fq 'computer_' "$workflow"
+          grep -Fq 'release-macos-main.yml' "$workflow"
+          grep -Fq 'xcrun stapler validate' "$workflow"
+          grep -Fq 'codesign --verify --deep --strict' "$workflow"
+          grep -Fq 'spctl --assess' "$workflow"
+          grep -Fq 'Canonical main drifted during formal acceptance' "$workflow"
+          ! grep -Eqi 'npx[[:space:]]+playwright|playwright[[:space:]]+test|electron[[:space:]]+launcher|FABUSHI_E2E=1|FABUSHI_FEATURE_HOST_MODE=test' "$workflow"
