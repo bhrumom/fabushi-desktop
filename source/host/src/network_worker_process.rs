@@ -4,6 +4,7 @@ use std::fs;
 use std::io::{BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Child, ChildStdin, Command, Stdio};
+use std::sync::mpsc;
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -226,13 +227,14 @@ pub fn start_network_worker(
         return Err(format!("could not initialize network worker: {error}"));
     }
 
-    let mut reader = BufReader::new(stdout);
+    let readiness_rx = spawn_protocol_reader(stdout);
     let deadline = Instant::now() + Duration::from_millis(options.start_timeout_ms);
     loop {
         if let Some(status) = child.try_wait().map_err(|error| error.to_string())? {
             return Err(format!("network worker exited before readiness: {status}"));
         }
-        if Instant::now() >= deadline {
+        let now = Instant::now();
+        if now >= deadline {
             drop(parent_pipe);
             let _ = terminate_child(
                 &mut child,
@@ -241,13 +243,10 @@ pub fn start_network_worker(
             );
             return Err("network worker readiness timed out".into());
         }
-
-        let mut line = String::new();
-        match reader.read_line(&mut line) {
-            Ok(0) => {
-                thread::sleep(Duration::from_millis(25));
-            }
-            Ok(_) => {
+        let remaining = deadline.saturating_duration_since(now);
+        let wait = remaining.min(Duration::from_millis(100));
+        match readiness_rx.recv_timeout(wait) {
+            Ok(Ok(line)) => {
                 let event: Value = serde_json::from_str(line.trim()).map_err(|_| {
                     "network worker emitted invalid readiness protocol".to_string()
                 })?;
@@ -269,7 +268,7 @@ pub fn start_network_worker(
                     _ => {}
                 }
             }
-            Err(error) => {
+            Ok(Err(error)) => {
                 drop(parent_pipe);
                 let _ = terminate_child(
                     &mut child,
@@ -278,10 +277,19 @@ pub fn start_network_worker(
                 );
                 return Err(format!("could not read network worker readiness: {error}"));
             }
+            Err(mpsc::RecvTimeoutError::Timeout) => continue,
+            Err(mpsc::RecvTimeoutError::Disconnected) => {
+                drop(parent_pipe);
+                let _ = terminate_child(
+                    &mut child,
+                    pid,
+                    Duration::from_millis(options.stop_timeout_ms),
+                );
+                return Err("network worker status pipe closed before readiness".into());
+            }
         }
     }
-
-    spawn_protocol_drain(reader);
+    drop(readiness_rx);
 
     Ok(OwnedNetworkWorker {
         child: Some(child),
@@ -342,17 +350,27 @@ where
         });
 }
 
-fn spawn_protocol_drain<R>(reader: BufReader<R>)
+fn spawn_protocol_reader<R>(reader: R) -> mpsc::Receiver<Result<String, String>>
 where
     R: std::io::Read + Send + 'static,
 {
+    let (sender, receiver) = mpsc::channel();
     let _ = thread::Builder::new()
         .name("fabushi-network-worker-protocol".into())
         .spawn(move || {
-            for line in reader.lines().map_while(Result::ok) {
-                let _ = serde_json::from_str::<Value>(&line);
+            for line in BufReader::new(reader).lines() {
+                match line {
+                    Ok(line) => {
+                        let _ = sender.send(Ok(line));
+                    }
+                    Err(error) => {
+                        let _ = sender.send(Err(error.to_string()));
+                        break;
+                    }
+                }
             }
         });
+    receiver
 }
 
 fn wait_for_child_exit(child: &mut Child, timeout: Duration) -> Result<bool, String> {
