@@ -1,10 +1,12 @@
 use std::collections::BTreeMap;
+use std::fs;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
 use mahayana_host_runtime::extensions::auth::auth_service::{
-    EXPIRY_LEEWAY_MS, FABUSHI_HOST_ACCESS_CREDENTIAL_FILE_ENV, HostAuthEnvironment,
+    EXPIRY_LEEWAY_MS, FABUSHI_CORE_CREDENTIAL_WAITING_MESSAGE,
+    FABUSHI_HOST_ACCESS_CREDENTIAL_FILE_ENV, HostAuthEnvironment,
     HostAuthService, HostAuthServiceOptions, InferenceCredentialStore,
     SAND_SHORTLIVED_CREDS_WAITING_MESSAGE,
 };
@@ -118,6 +120,136 @@ fn fabushi_account_credential_never_becomes_cursor_host_auth() {
     assert!(service.peek_access_token().is_none());
     assert!(logs.lock().unwrap()[0].contains("reserved for first-party Fabushi"));
     service.dispose();
+}
+
+#[test]
+fn fabushi_core_credential_is_first_party_redacted_and_tracks_account_switch() {
+    let root = std::env::temp_dir().join(format!(
+        "fabushi-core-credential-{}",
+        uuid::Uuid::new_v4()
+    ));
+    fs::create_dir_all(&root).expect("create credential root");
+    let credential_path = root.join("fabushi-host-access-credential-v1.json");
+    let token_a = "fabushi-product-token-account-a";
+    fs::write(
+        &credential_path,
+        serde_json::json!({
+            "version": 1,
+            "accessToken": token_a,
+            "expiresAtMs": 600_000,
+            "sessionId": "session-a",
+            "deviceId": "device-a",
+            "userId": "account-a"
+        })
+        .to_string(),
+    )
+    .expect("write first-party credential");
+
+    let now = Arc::new(Mutex::new(10_000));
+    let logs = Arc::new(Mutex::new(Vec::new()));
+    let service = HostAuthService::new(options(
+        BTreeMap::from([(
+            FABUSHI_HOST_ACCESS_CREDENTIAL_FILE_ENV.into(),
+            credential_path.to_string_lossy().into_owned(),
+        )]),
+        Arc::clone(&now),
+        Arc::clone(&logs),
+        Arc::new(StaticBackend {
+            token: "must-not-be-used".into(),
+            expires_at_ms: 100_000,
+        }),
+    ))
+    .unwrap();
+
+    let first = service
+        .get_fabushi_core_credential()
+        .expect("read Fabushi Core credential");
+    assert_eq!(first.access_token(), token_a);
+    assert_eq!(first.session_id, "session-a");
+    assert_eq!(first.device_id, "device-a");
+    assert_eq!(first.user_id, "account-a");
+    let rendered = format!("{first:?}");
+    assert!(!rendered.contains(token_a));
+    assert!(rendered.contains("<redacted>"));
+    assert!(service.peek_access_token().is_none());
+    assert!(!service.has_renewal_credential());
+
+    fs::write(
+        &credential_path,
+        serde_json::json!({
+            "version": 1,
+            "accessToken": "fabushi-product-token-account-b",
+            "expiresAtMs": 700_000,
+            "sessionId": "session-b",
+            "deviceId": "device-b",
+            "userId": 42
+        })
+        .to_string(),
+    )
+    .expect("replace account credential");
+    let second = service
+        .get_fabushi_core_credential()
+        .expect("read replacement credential");
+    assert_eq!(second.session_id, "session-b");
+    assert_eq!(second.device_id, "device-b");
+    assert_eq!(second.user_id, "42");
+    assert_eq!(second.access_token(), "fabushi-product-token-account-b");
+
+    let log_text = logs.lock().unwrap().join("\n");
+    assert!(!log_text.contains(token_a));
+    assert!(!log_text.contains("fabushi-product-token-account-b"));
+    assert!(!log_text.contains(&credential_path.to_string_lossy().to_string()));
+    service.dispose();
+    fs::remove_dir_all(root).expect("remove credential root");
+}
+
+#[test]
+fn fabushi_core_credential_fails_closed_for_expiry_or_malformed_content() {
+    let root = std::env::temp_dir().join(format!(
+        "fabushi-core-credential-invalid-{}",
+        uuid::Uuid::new_v4()
+    ));
+    fs::create_dir_all(&root).expect("create credential root");
+    let credential_path = root.join("credential.json");
+    let now = Arc::new(Mutex::new(100_000));
+    let service = HostAuthService::new(options(
+        BTreeMap::from([(
+            FABUSHI_HOST_ACCESS_CREDENTIAL_FILE_ENV.into(),
+            credential_path.to_string_lossy().into_owned(),
+        )]),
+        Arc::clone(&now),
+        Arc::new(Mutex::new(Vec::new())),
+        Arc::new(StaticBackend {
+            token: "unused".into(),
+            expires_at_ms: 500_000,
+        }),
+    ))
+    .unwrap();
+
+    fs::write(
+        &credential_path,
+        serde_json::json!({
+            "version": 1,
+            "accessToken": "expired-secret",
+            "expiresAtMs": 100_000 + EXPIRY_LEEWAY_MS,
+            "sessionId": "session-expired",
+            "deviceId": "device-expired",
+            "userId": "account-expired"
+        })
+        .to_string(),
+    )
+    .expect("write expired credential");
+    let expired = service.get_fabushi_core_credential().unwrap_err();
+    assert_eq!(expired.to_string(), FABUSHI_CORE_CREDENTIAL_WAITING_MESSAGE);
+    assert!(!expired.to_string().contains("expired-secret"));
+
+    fs::write(&credential_path, "{not-json").expect("write malformed credential");
+    let malformed = service.get_fabushi_core_credential().unwrap_err();
+    assert_eq!(malformed.to_string(), FABUSHI_CORE_CREDENTIAL_WAITING_MESSAGE);
+    assert!(!malformed.to_string().contains(&credential_path.to_string_lossy().to_string()));
+
+    service.dispose();
+    fs::remove_dir_all(root).expect("remove credential root");
 }
 
 #[test]
