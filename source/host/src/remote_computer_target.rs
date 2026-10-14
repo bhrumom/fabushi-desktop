@@ -251,8 +251,8 @@ impl RemoteComputerNativeExecutor for HostComputerRemoteExecutor {
     ) -> RemoteComputerNativeOutcome {
         if operation.tool_name == "Screenshot" {
             return RemoteComputerNativeOutcome::Failed(json!({
-                "code": "sensitive_result_channel_unavailable",
-                "message": "Remote Screenshot is disabled until the authenticated chunked sensitive-result channel is active.",
+                "code": "sensitive_result_required",
+                "message": "Remote Screenshot must use the authenticated native sensitive-result executor.",
                 "retryable": false,
             }));
         }
@@ -1163,7 +1163,9 @@ impl FabushiCoreTargetClient {
         grant_generation: i64,
     ) -> Result<ClaimedRemoteOperation, RemoteComputerTargetError> {
         let (credential, _) = self.authority()?;
-        if !Self::sensitive_entry_matches(
+        let credential_bound = entry.account_user_id == credential.user_id
+            && entry.device_id == credential.device_id;
+        if !credential_bound || !Self::sensitive_entry_matches(
             entry,
             &credential.user_id,
             &credential.device_id,
