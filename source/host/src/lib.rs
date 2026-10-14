@@ -47,6 +47,7 @@ pub mod process_crash_guard;
 pub mod network_worker_process;
 pub mod network_enrollment_owner;
 pub mod remote_computer_target;
+pub mod sensitive_input_challenge;
 pub mod r#box;
 pub mod automations;
 pub mod workflows;

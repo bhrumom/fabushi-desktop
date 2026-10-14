@@ -25,6 +25,9 @@ use crate::extensions::auth::auth_service::{
 use crate::network_enrollment_owner::{NetworkEnrollmentError, NetworkWorkerService};
 use crate::network_worker_process::OwnedNetworkWorker;
 use crate::runner::routed_provider_runtime::RoutedToolBridge;
+use crate::sensitive_input_challenge::{
+    SensitiveInputBinding, SensitiveInputChallengeOwner, SENSITIVE_INPUT_CHALLENGE_MAX_TTL_MS,
+};
 use crate::runner::tools::sand_computer_tool::{
     ComputerActionArgs, ComputerActionName, MouseButtonInput, ScrollDirectionInput,
     parse_remote_computer_action,
@@ -596,6 +599,28 @@ enum RemoteTargetPrivateRequest {
         arguments: Value,
         disk_preflight: Value,
     },
+    SensitiveInputIssue {
+        device_id: String,
+        network_generation: i64,
+        session_id: String,
+        client_id: String,
+        request_id: String,
+        request_sha256: String,
+        grant_generation: i64,
+        ttl_ms: i64,
+    },
+    SensitiveInputSubmit {
+        device_id: String,
+        network_generation: i64,
+        session_id: String,
+        client_id: String,
+        request_id: String,
+        request_sha256: String,
+        grant_generation: i64,
+        challenge_id: String,
+        snapshot_generation: u64,
+        payload_base64: String,
+    },
     SensitiveResultResume {
         device_id: String,
         network_generation: i64,
@@ -785,6 +810,7 @@ pub struct FabushiCoreTargetClient {
     device_secret_provider: Arc<dyn RemoteComputerDeviceSecretProvider>,
     http: Client,
     sensitive_results: Mutex<SensitiveResultVault>,
+    sensitive_inputs: SensitiveInputChallengeOwner,
 }
 
 impl std::fmt::Debug for FabushiCoreTargetClient {
@@ -827,6 +853,7 @@ impl FabushiCoreTargetClient {
             device_secret_provider,
             http,
             sensitive_results: Mutex::new(SensitiveResultVault::default()),
+            sensitive_inputs: SensitiveInputChallengeOwner::default(),
         })
     }
 
@@ -1485,6 +1512,192 @@ impl FabushiCoreTargetClient {
                     ),
                 }
             }
+            RemoteTargetPrivateRequest::SensitiveInputIssue {
+                device_id,
+                network_generation,
+                session_id,
+                client_id,
+                request_id,
+                request_sha256,
+                grant_generation,
+                ttl_ms,
+            } => {
+                if !mahayana_computer::control_policy().remote_control_enabled {
+                    return Err(RemoteComputerTargetError::AuthorityUnavailable);
+                }
+                self.require_current_network_binding(&device_id, network_generation)?;
+                if ttl_ms <= 0 || ttl_ms > SENSITIVE_INPUT_CHALLENGE_MAX_TTL_MS {
+                    return Err(RemoteComputerTargetError::InvalidResponse);
+                }
+                let claimed =
+                    self.claim_operation(&session_id, &request_id, "Computer", &request_sha256)?;
+                if claimed.client_id != client_id || claimed.grant_generation != grant_generation {
+                    return Err(RemoteComputerTargetError::IdentityMismatch);
+                }
+                self.require_current_network_binding(&device_id, network_generation)?;
+                let (credential, _) = self.authority()?;
+                if credential.device_id != device_id {
+                    return Err(RemoteComputerTargetError::IdentityMismatch);
+                }
+                let binding = SensitiveInputBinding {
+                    account_id: credential.user_id,
+                    device_id: device_id.clone(),
+                    client_id: client_id.clone(),
+                    session_id: session_id.clone(),
+                    operation_id: request_id.clone(),
+                    request_sha256: request_sha256.clone(),
+                    network_generation,
+                    authorization_generation: grant_generation,
+                };
+                let challenge = self
+                    .sensitive_inputs
+                    .issue(binding, unix_millis()?, ttl_ms)
+                    .map_err(|_| RemoteComputerTargetError::AuthorityUnavailable)?;
+                write_private_frame(worker, stream_id, &json!({
+                    "type": "sensitiveInputChallenge",
+                    "deviceId": device_id,
+                    "sessionId": session_id,
+                    "clientId": client_id,
+                    "requestId": request_id,
+                    "requestSha256": request_sha256,
+                    "grantGeneration": grant_generation,
+                    "challengeId": challenge.challenge_id,
+                    "expiresAtMs": challenge.expires_at_ms,
+                    "networkGeneration": network_generation,
+                }))
+            }
+            RemoteTargetPrivateRequest::SensitiveInputSubmit {
+                device_id,
+                network_generation,
+                session_id,
+                client_id,
+                request_id,
+                request_sha256,
+                grant_generation,
+                challenge_id,
+                snapshot_generation,
+                payload_base64,
+            } => {
+                if !mahayana_computer::control_policy().remote_control_enabled {
+                    return Err(RemoteComputerTargetError::AuthorityUnavailable);
+                }
+                self.require_current_network_binding(&device_id, network_generation)?;
+                let claimed =
+                    self.claim_operation(&session_id, &request_id, "Computer", &request_sha256)?;
+                if claimed.client_id != client_id || claimed.grant_generation != grant_generation {
+                    return Err(RemoteComputerTargetError::IdentityMismatch);
+                }
+                self.require_current_network_binding(&device_id, network_generation)?;
+                let (credential, _) = self.authority()?;
+                if credential.device_id != device_id {
+                    return Err(RemoteComputerTargetError::IdentityMismatch);
+                }
+                let binding = SensitiveInputBinding {
+                    account_id: credential.user_id,
+                    device_id: device_id.clone(),
+                    client_id: client_id.clone(),
+                    session_id: session_id.clone(),
+                    operation_id: request_id.clone(),
+                    request_sha256: request_sha256.clone(),
+                    network_generation,
+                    authorization_generation: grant_generation,
+                };
+                let mut encoded = payload_base64.into_bytes();
+                let decoded = base64::engine::general_purpose::STANDARD.decode(&encoded);
+                encoded.fill(0);
+                let payload = decoded.map_err(|_| RemoteComputerTargetError::InvalidResponse)?;
+                let delivered = self
+                    .sensitive_inputs
+                    .consume(
+                        &challenge_id,
+                        &binding,
+                        unix_millis()?,
+                        payload,
+                        |secret| {
+                            self.require_current_network_binding(&device_id, network_generation)?;
+                            let bytes = std::mem::take(secret);
+                            let text = match String::from_utf8(bytes) {
+                                Ok(text) => text,
+                                Err(error) => {
+                                    let mut bytes = error.into_bytes();
+                                    bytes.fill(0);
+                                    return Err(RemoteComputerTargetError::InvalidResponse);
+                                }
+                            };
+                            let mut action = ComputerAction {
+                                action: ComputerActionKind::Type,
+                                x: None,
+                                y: None,
+                                x2: None,
+                                y2: None,
+                                path: None,
+                                text: Some(text),
+                                key: None,
+                                button: None,
+                                click_count: None,
+                                direction: None,
+                                amount: None,
+                                wait_ms: None,
+                                description: Some("user-provided sensitive input".into()),
+                            };
+                            let lease = mahayana_computer::ComputerControlLeaseRequest::new(
+                                format!("official-device-mcp:{}", client_id),
+                                session_id.clone(),
+                                "local-desktop",
+                                ComputerControlOrigin::RemoteMobile,
+                                "remote-human",
+                            );
+                            let executed = mahayana_computer::execute_with_lease_fenced(
+                                std::slice::from_ref(&action),
+                                ComputerControlOrigin::RemoteMobile,
+                                &lease,
+                                Some(snapshot_generation),
+                            );
+                            if let Some(text) = action.text.take() {
+                                let mut bytes = text.into_bytes();
+                                bytes.fill(0);
+                            }
+                            match executed {
+                                Ok(observed) => Ok(json!({
+                                    "content": "Sensitive input was delivered to the authorized target desktop.",
+                                    "sensitiveInputDelivered": true,
+                                    "snapshotGeneration": observed.snapshot_generation,
+                                })),
+                                Err(mahayana_computer::ComputerError::SnapshotStale { expected, current }) => Ok(json!({
+                                    "content": "Sensitive input was not delivered because the target observation is stale.",
+                                    "sensitiveInputDelivered": false,
+                                    "code": "snapshot_stale",
+                                    "expectedSnapshotGeneration": expected,
+                                    "currentSnapshotGeneration": current,
+                                })),
+                                Err(_) => Ok(json!({
+                                    "content": "Sensitive input delivery failed on the authorized target desktop.",
+                                    "sensitiveInputDelivered": false,
+                                    "code": "sensitive_input_delivery_failed",
+                                })),
+                            }
+                        },
+                    )
+                    .map_err(|_| RemoteComputerTargetError::IdentityMismatch)??;
+                let status = if delivered
+                    .get("sensitiveInputDelivered")
+                    .and_then(Value::as_bool)
+                    == Some(true)
+                {
+                    "completed"
+                } else {
+                    "failed"
+                };
+                self.finish_native_operation(
+                    worker,
+                    stream_id,
+                    &claimed,
+                    &device_id,
+                    network_generation,
+                    status,
+                    delivered,
+                )
+            }
             RemoteTargetPrivateRequest::SensitiveResultResume {
                 device_id,
                 network_generation,
@@ -1875,6 +2088,14 @@ impl FabushiCoreTargetClient {
     }
 }
 
+
+fn unix_millis() -> Result<i64, RemoteComputerTargetError> {
+    let millis = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_err(|_| RemoteComputerTargetError::AuthorityUnavailable)?
+        .as_millis();
+    i64::try_from(millis).map_err(|_| RemoteComputerTargetError::AuthorityUnavailable)
+}
 
 fn unix_seconds() -> Result<i64, RemoteComputerTargetError> {
     let seconds = SystemTime::now()
