@@ -69,7 +69,7 @@ add([key('.github/workflows/linux.yml',73)],{
   kind:'tool-bootstrap-versioned-archive',disposition:'non-product-source-toolchain',version:'4.13.6',...ccache
 });
 const rustup=hashUrl('https://sh.rustup.rs','rustup-init.sh');
-add([key('snap/snapcraft.yaml',490),key('Telegram/build/docker/centos_env/Dockerfile',1000),key('Telegram/build/prepare/prepare.py',597)],{
+add([key('Telegram/build/docker/centos_env/Dockerfile',1000),key('Telegram/build/prepare/prepare.py',597)],{
   kind:'tool-bootstrap-content-snapshot',disposition:'non-product-source-toolchain',...rustup,
   rationale:'rustup installer is toolchain bootstrap; accepted sources separately pin the Rust toolchain version.'
 });
