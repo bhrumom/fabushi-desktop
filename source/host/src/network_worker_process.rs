@@ -8,6 +8,8 @@ use std::sync::mpsc;
 use std::thread;
 use std::time::{Duration, Instant};
 
+use base64::Engine as _;
+use base64::engine::general_purpose::STANDARD as BASE64_STANDARD;
 use serde::Serialize;
 use serde_json::Value;
 use uuid::Uuid;
@@ -21,6 +23,12 @@ pub const NETWORK_WORKER_STATUS_TIMEOUT_MS: u64 = 5_000;
 pub struct NetworkWorkerStatus {
     pub backend_state: String,
     pub tailscale_ips: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct NetworkWorkerStreamRead {
+    pub data: Vec<u8>,
+    pub eof: bool,
 }
 
 #[derive(Clone, PartialEq, Eq)]
@@ -72,6 +80,25 @@ struct NetworkWorkerControl<'a> {
     request_id: &'a str,
 }
 
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct NetworkWorkerStreamRequest<'a> {
+    #[serde(rename = "type")]
+    kind: &'a str,
+    request_id: &'a str,
+    session_id: &'a str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    target_peer: Option<&'a str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    target_port: Option<u16>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    data_b64: Option<&'a str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    max_bytes: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    timeout_ms: Option<u64>,
+}
+
 #[derive(Debug)]
 pub struct OwnedNetworkWorker {
     child: Option<Child>,
@@ -83,6 +110,186 @@ pub struct OwnedNetworkWorker {
 }
 
 impl OwnedNetworkWorker {
+    fn send_private_request(&mut self, request: &str) -> Result<(), String> {
+        let pipe = self
+            .parent_pipe
+            .as_mut()
+            .ok_or_else(|| "network worker control pipe is closed".to_string())?;
+        writeln!(pipe, "{request}")
+            .and_then(|_| pipe.flush())
+            .map_err(|error| format!("could not write network worker request: {error}"))
+    }
+
+    fn wait_for_response(&self, request_id: &str, timeout_ms: u64) -> Result<Value, String> {
+        let receiver = self
+            .response_rx
+            .as_ref()
+            .ok_or_else(|| "network worker response pipe is closed".to_string())?;
+        let deadline = Instant::now() + Duration::from_millis(timeout_ms);
+        loop {
+            let remaining = deadline.saturating_duration_since(Instant::now());
+            if remaining.is_zero() {
+                return Err("network worker response timed out".into());
+            }
+            let line = match receiver.recv_timeout(remaining.min(Duration::from_millis(100))) {
+                Ok(Ok(line)) => line,
+                Ok(Err(error)) => {
+                    return Err(format!("could not read network worker response: {error}"));
+                }
+                Err(mpsc::RecvTimeoutError::Timeout) => continue,
+                Err(mpsc::RecvTimeoutError::Disconnected) => {
+                    return Err("network worker response pipe closed".into());
+                }
+            };
+            let event: Value = serde_json::from_str(line.trim())
+                .map_err(|_| "network worker emitted invalid response protocol".to_string())?;
+            if event.get("requestId").and_then(Value::as_str) != Some(request_id) {
+                continue;
+            }
+            if event.get("type").and_then(Value::as_str) == Some("error") {
+                let code = event
+                    .get("code")
+                    .and_then(Value::as_str)
+                    .unwrap_or("network_worker_error");
+                return Err(format!("network worker request failed: {code}"));
+            }
+            return Ok(event);
+        }
+    }
+
+    pub fn stream_dial(
+        &mut self,
+        target_peer: &str,
+        target_port: u16,
+        timeout_ms: u64,
+    ) -> Result<String, String> {
+        let request_id = format!("stream-dial-{}", Uuid::new_v4().simple());
+        let session_id = format!("stream-{}", Uuid::new_v4().simple());
+        let request = serde_json::to_string(&NetworkWorkerStreamRequest {
+            kind: "streamDial",
+            request_id: &request_id,
+            session_id: &session_id,
+            target_peer: Some(target_peer),
+            target_port: Some(target_port),
+            data_b64: None,
+            max_bytes: None,
+            timeout_ms: Some(timeout_ms),
+        })
+        .map_err(|error| format!("could not serialize network worker dial request: {error}"))?;
+        self.send_private_request(&request)?;
+        let event = self.wait_for_response(&request_id, timeout_ms.saturating_add(1_000))?;
+        if event.get("type").and_then(Value::as_str) != Some("streamDialed")
+            || event.get("sessionId").and_then(Value::as_str) != Some(session_id.as_str())
+        {
+            return Err("network worker emitted invalid dial response".into());
+        }
+        Ok(session_id)
+    }
+
+    pub fn stream_write(
+        &mut self,
+        session_id: &str,
+        data: &[u8],
+        timeout_ms: u64,
+    ) -> Result<usize, String> {
+        if data.len() > 32 * 1024 {
+            return Err("network worker stream write exceeds 32 KiB".into());
+        }
+        let request_id = format!("stream-write-{}", Uuid::new_v4().simple());
+        let encoded = BASE64_STANDARD.encode(data);
+        let request = serde_json::to_string(&NetworkWorkerStreamRequest {
+            kind: "streamWrite",
+            request_id: &request_id,
+            session_id,
+            target_peer: None,
+            target_port: None,
+            data_b64: Some(&encoded),
+            max_bytes: None,
+            timeout_ms: Some(timeout_ms),
+        })
+        .map_err(|error| format!("could not serialize network worker write request: {error}"))?;
+        self.send_private_request(&request)?;
+        let event = self.wait_for_response(&request_id, timeout_ms.saturating_add(1_000))?;
+        if event.get("type").and_then(Value::as_str) != Some("streamWritten")
+            || event.get("sessionId").and_then(Value::as_str) != Some(session_id)
+        {
+            return Err("network worker emitted invalid write response".into());
+        }
+        event
+            .get("bytes")
+            .and_then(Value::as_u64)
+            .and_then(|value| usize::try_from(value).ok())
+            .filter(|written| *written <= data.len())
+            .ok_or_else(|| "network worker emitted invalid write count".to_string())
+    }
+
+    pub fn stream_read(
+        &mut self,
+        session_id: &str,
+        max_bytes: usize,
+        timeout_ms: u64,
+    ) -> Result<NetworkWorkerStreamRead, String> {
+        if max_bytes == 0 || max_bytes > 32 * 1024 {
+            return Err("network worker stream read bound must be 1..32768 bytes".into());
+        }
+        let request_id = format!("stream-read-{}", Uuid::new_v4().simple());
+        let request = serde_json::to_string(&NetworkWorkerStreamRequest {
+            kind: "streamRead",
+            request_id: &request_id,
+            session_id,
+            target_peer: None,
+            target_port: None,
+            data_b64: None,
+            max_bytes: Some(max_bytes),
+            timeout_ms: Some(timeout_ms),
+        })
+        .map_err(|error| format!("could not serialize network worker read request: {error}"))?;
+        self.send_private_request(&request)?;
+        let event = self.wait_for_response(&request_id, timeout_ms.saturating_add(1_000))?;
+        if event.get("type").and_then(Value::as_str) != Some("streamData")
+            || event.get("sessionId").and_then(Value::as_str) != Some(session_id)
+        {
+            return Err("network worker emitted invalid read response".into());
+        }
+        let encoded = event
+            .get("dataB64")
+            .and_then(Value::as_str)
+            .ok_or_else(|| "network worker read response omitted data".to_string())?;
+        let data = BASE64_STANDARD
+            .decode(encoded)
+            .map_err(|_| "network worker read response contained invalid base64".to_string())?;
+        if data.len() > max_bytes {
+            return Err("network worker read response exceeded requested bound".into());
+        }
+        Ok(NetworkWorkerStreamRead {
+            data,
+            eof: event.get("eof").and_then(Value::as_bool).unwrap_or(false),
+        })
+    }
+
+    pub fn stream_close(&mut self, session_id: &str) -> Result<(), String> {
+        let request_id = format!("stream-close-{}", Uuid::new_v4().simple());
+        let request = serde_json::to_string(&NetworkWorkerStreamRequest {
+            kind: "streamClose",
+            request_id: &request_id,
+            session_id,
+            target_peer: None,
+            target_port: None,
+            data_b64: None,
+            max_bytes: None,
+            timeout_ms: None,
+        })
+        .map_err(|error| format!("could not serialize network worker close request: {error}"))?;
+        self.send_private_request(&request)?;
+        let event = self.wait_for_response(&request_id, NETWORK_WORKER_STATUS_TIMEOUT_MS)?;
+        if event.get("type").and_then(Value::as_str) != Some("streamClosed")
+            || event.get("sessionId").and_then(Value::as_str) != Some(session_id)
+        {
+            return Err("network worker emitted invalid close response".into());
+        }
+        Ok(())
+    }
+
     pub fn status(&mut self) -> Result<NetworkWorkerStatus, String> {
         let request_id = format!("status-{}", Uuid::new_v4().simple());
         let request = serde_json::to_string(&NetworkWorkerControl {
