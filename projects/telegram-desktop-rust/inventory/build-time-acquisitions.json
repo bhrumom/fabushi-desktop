@@ -1223,12 +1223,12 @@
         },
         {
           "path": "Telegram/build/docker/centos_env/Dockerfile",
-          "blob": "5516c448c628d5928d690687ed948d67b5cdaac3",
+          "blob": "126b74a759c4e09a51a37e951fa694c407b2a747",
           "evidence": "Qt 6 Linux image initializes only qtbase qtdeclarative qtwayland qtimageformats qtsvg qtshadertools."
         },
         {
           "path": "snap/snapcraft.yaml",
-          "blob": "5cff7cf59aedc430b0a9a2d6d66ab6fe3c29bd9f",
+          "blob": "824d6a30f1d4b85a29eece886bc1c1e2f42f59d4",
           "evidence": "Snap Qt source-submodules lists only qtbase qtdeclarative qtimageformats qtshadertools qtsvg qtwayland."
         }
       ],
