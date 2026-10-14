@@ -29,7 +29,7 @@ pub enum RemoteComputerTargetError {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct RemoteServiceClientGrant {
     pub device_id: String,
     pub client_id: String,
@@ -38,6 +38,21 @@ pub struct RemoteServiceClientGrant {
     pub delegation_id: String,
     pub request_id: String,
     pub reconciled: bool,
+}
+
+impl std::fmt::Debug for RemoteServiceClientGrant {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("RemoteServiceClientGrant")
+            .field("device_id", &self.device_id)
+            .field("client_id", &self.client_id)
+            .field("client_token", &"<redacted>")
+            .field("connection_id", &self.connection_id)
+            .field("delegation_id", &self.delegation_id)
+            .field("request_id", &self.request_id)
+            .field("reconciled", &self.reconciled)
+            .finish()
+    }
 }
 
 impl RemoteServiceClientGrant {
