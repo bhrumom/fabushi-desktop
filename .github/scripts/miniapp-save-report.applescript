@@ -26,11 +26,37 @@ on run argv
       if saveSheet is missing value then error "EXPECTED_REPORT_SAVE_PANEL_MISSING"
       if (value of text field 1 of saveSheet) is not expectedName then error "REPORT_FILENAME_MISMATCH"
       keystroke "g" using {command down, shift down}
-      delay 0.3
+      set goSheet to missing value
+      repeat 100 times
+        if exists sheet 1 of saveSheet then
+          set goSheet to sheet 1 of saveSheet
+          if exists combo box 1 of goSheet then exit repeat
+          if exists text field 1 of goSheet then exit repeat
+        end if
+        delay 0.1
+      end repeat
+      if goSheet is missing value then error "REPORT_DIRECTORY_PANEL_MISSING"
+      -- A second Save panel may remember the first destination. Replace it;
+      -- never append to a previous path or type before the nested panel exists.
+      keystroke "a" using {command down}
       keystroke reportDirectory
       key code 36
-      delay 0.3
+      set directoryChosen to false
+      repeat 100 times
+        if not (exists sheet 1 of saveSheet) then
+          set directoryChosen to true
+          exit repeat
+        end if
+        delay 0.1
+      end repeat
+      if not directoryChosen then error "REPORT_DIRECTORY_SELECTION_INCOMPLETE"
+      if (value of text field 1 of saveSheet) is not expectedName then error "REPORT_FILENAME_CHANGED"
       click button "Save" of saveSheet
+      repeat 100 times
+        if not (exists saveSheet) then return "Exact report Save panel dismissed"
+        delay 0.1
+      end repeat
+      error "REPORT_SAVE_PANEL_NOT_DISMISSED"
     end tell
   end tell
   return "Exact report save intent completed"

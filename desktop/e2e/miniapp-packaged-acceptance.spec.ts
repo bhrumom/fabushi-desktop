@@ -237,7 +237,7 @@ async function exportAndVerifyReport(page: Page, appPid: number, downloadDir: st
   const reportDir = await mkdtemp(path.join(downloadDir, 'report-'));
     await page.getByRole('button', { name: '导出报告', exact: true }).click();
     execFileSync('/usr/bin/osascript', [path.resolve('../.github/scripts/miniapp-save-report.applescript'), String(appPid), reportDir], {
-      encoding: 'utf8', timeout: 20_000, stdio: ['ignore', 'pipe', 'pipe'],
+      encoding: 'utf8', timeout: 45_000, stdio: ['ignore', 'pipe', 'pipe'],
     });
     const reportFilename = 'global-dandelion-local-report.json';
     const reportPath = path.join(reportDir, reportFilename);
@@ -461,6 +461,13 @@ test.describe('signed production Mini App install and offline lifecycle', () => 
       evidence.launchModes.push('online-reinstall-retained-app-data');
       await writeFile(path.join(evidenceDir, 'reinstalled.png'), await mini.screenshot());
       await writeFile(path.join(evidenceDir, 'acceptance.json'), JSON.stringify(evidence, null, 2));
+    } catch (error) {
+      // Disposable Actions desktop only; never collect the native credential store.
+      execFileSync('/usr/sbin/screencapture', ['-x', path.join(evidenceDir, 'failure-desktop.png')], { timeout: 10_000 });
+      await writeFile(path.join(evidenceDir, 'report-directories.json'), JSON.stringify(
+        await Promise.all((await readdir(evidenceDir)).filter((name) => name.startsWith('report-'))
+          .map(async (name) => ({ directory: name, members: await readdir(path.join(evidenceDir, name)) }))), null, 2));
+      throw error;
     } finally {
       try {
         if (app) await quitSignedApp(app.process, app.browser);

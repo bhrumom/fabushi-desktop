@@ -109,3 +109,12 @@ Record binarySource=e62ea0 and harnessSource separately; never pretend this acce
 a later binary SHA. Final shipping still requires fresh canonical-main exact-source
 build/sign/notarize and all packaged gates. Iteration has no public-release write.
 
+Actions38509498798/08efea verifies online report contents, settings and genuine
+OS-offline whole-process cold launch/Wasm execution, but the second report did not
+appear at its expected destination. Treat a Save-button click as intent only, not
+completion. The harness must explicitly replace any remembered Go-to-folder input,
+wait for that nested panel to close, and wait for the native Save panel to dismiss.
+Use bounded UI-state waits rather than fixed 300ms delays. On failure preserve only
+the disposable CI desktop screenshot and expected report-directory member names;
+do not inspect app-data or relax the report-content assertions.
+
