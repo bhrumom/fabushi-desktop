@@ -1,3 +1,5 @@
+use std::fs;
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use reqwest::blocking::Client;
@@ -75,6 +77,73 @@ pub fn operation_request_sha256(
 
 pub trait RemoteComputerDeviceSecretProvider: Send + Sync {
     fn get_device_secret(&self, credential: &FabushiCoreCredential) -> Result<String, RemoteComputerTargetError>;
+}
+
+pub const FABUSHI_REMOTE_COMPUTER_DEVICE_CREDENTIAL_FILE_ENV: &str =
+    "FABUSHI_REMOTE_COMPUTER_DEVICE_CREDENTIAL_FILE";
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct RemoteComputerDeviceCredentialFile {
+    version: u32,
+    user_id: serde_json::Value,
+    device_id: String,
+    device_secret: String,
+}
+
+#[derive(Clone)]
+pub struct FileRemoteComputerDeviceSecretProvider {
+    path: PathBuf,
+}
+
+impl std::fmt::Debug for FileRemoteComputerDeviceSecretProvider {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("FileRemoteComputerDeviceSecretProvider")
+            .field("path", &"<host-private>")
+            .finish()
+    }
+}
+
+impl FileRemoteComputerDeviceSecretProvider {
+    pub fn new(path: impl Into<PathBuf>) -> Self {
+        Self { path: path.into() }
+    }
+
+    pub fn from_environment() -> Result<Self, RemoteComputerTargetError> {
+        let path = std::env::var(FABUSHI_REMOTE_COMPUTER_DEVICE_CREDENTIAL_FILE_ENV)
+            .map_err(|_| RemoteComputerTargetError::AuthorityUnavailable)?;
+        if path.trim().is_empty() {
+            return Err(RemoteComputerTargetError::AuthorityUnavailable);
+        }
+        Ok(Self::new(path))
+    }
+}
+
+impl RemoteComputerDeviceSecretProvider for FileRemoteComputerDeviceSecretProvider {
+    fn get_device_secret(
+        &self,
+        credential: &FabushiCoreCredential,
+    ) -> Result<String, RemoteComputerTargetError> {
+        let raw = fs::read_to_string(&self.path)
+            .map_err(|_| RemoteComputerTargetError::AuthorityUnavailable)?;
+        let parsed: RemoteComputerDeviceCredentialFile = serde_json::from_str(&raw)
+            .map_err(|_| RemoteComputerTargetError::AuthorityUnavailable)?;
+        let user_id = match parsed.user_id {
+            Value::String(value) if !value.trim().is_empty() => value,
+            Value::Number(value) => value.to_string(),
+            _ => return Err(RemoteComputerTargetError::AuthorityUnavailable),
+        };
+        if parsed.version != 1
+            || parsed.device_id != credential.device_id
+            || user_id != credential.user_id
+            || parsed.device_secret.len() < 48
+            || parsed.device_secret.len() > 256
+        {
+            return Err(RemoteComputerTargetError::AuthorityUnavailable);
+        }
+        Ok(parsed.device_secret)
+    }
 }
 
 #[derive(Debug, Error, Clone, PartialEq, Eq)]
