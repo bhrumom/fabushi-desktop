@@ -12,6 +12,7 @@ use mahayana_host_protocol::ComputerAction;
 use mahayana_host_protocol::ComputerActionKind;
 use mahayana_host_protocol::ComputerActionResult;
 use mahayana_host_protocol::ComputerControlOrigin;
+use mahayana_host_protocol::ComputerDisplay;
 use mahayana_host_protocol::ComputerSnapshot;
 use mahayana_host_protocol::ComputerStatus;
 use mahayana_host_protocol::LocalToolPermission;
@@ -324,6 +325,15 @@ fn current_control_lease_at(now_ms: i64) -> Option<ComputerControlLeaseSnapshot>
         *lease = None;
     }
     lease.clone()
+}
+
+pub fn displays() -> Result<Vec<ComputerDisplay>, ComputerError> {
+    #[cfg(target_os = "macos")]
+    return macos::displays();
+    #[cfg(any(target_os = "windows", target_os = "linux"))]
+    return portable::displays();
+    #[cfg(not(any(target_os = "macos", target_os = "windows", target_os = "linux")))]
+    Err(ComputerError::Unavailable)
 }
 
 pub fn capture_screen() -> Result<ComputerSnapshot, ComputerError> {
@@ -731,6 +741,35 @@ mod portable {
         }
     }
 
+    pub(super) fn displays() -> Result<Vec<ComputerDisplay>, ComputerError> {
+        let monitors = Monitor::all().map_err(|error| ComputerError::Capture(error.to_string()))?;
+        let mut displays = Vec::with_capacity(monitors.len());
+        for monitor in monitors {
+            let id = monitor.id().map_err(|error| ComputerError::Capture(error.to_string()))?;
+            let x = monitor.x().map_err(|error| ComputerError::Capture(error.to_string()))?;
+            let y = monitor.y().map_err(|error| ComputerError::Capture(error.to_string()))?;
+            let width = monitor.width().map_err(|error| ComputerError::Capture(error.to_string()))?;
+            let height = monitor.height().map_err(|error| ComputerError::Capture(error.to_string()))?;
+            let is_primary = monitor
+                .is_primary()
+                .map_err(|error| ComputerError::Capture(error.to_string()))?;
+            displays.push(ComputerDisplay {
+                id: id.to_string(),
+                x,
+                y,
+                width,
+                height,
+                pixel_width: width,
+                pixel_height: height,
+                is_primary,
+            });
+        }
+        if displays.is_empty() {
+            return Err(ComputerError::Capture("no monitor is available".into()));
+        }
+        Ok(displays)
+    }
+
     pub(super) fn capture_screen() -> Result<ComputerSnapshot, ComputerError> {
         let monitors = Monitor::all().map_err(|error| ComputerError::Capture(error.to_string()))?;
         let monitor = monitors
@@ -827,6 +866,61 @@ mod macos {
     fn event_source() -> Result<CGEventSource, ComputerError> {
         CGEventSource::new(CGEventSourceStateID::HIDSystemState)
             .map_err(|_| ComputerError::Input("could not create CoreGraphics event source".into()))
+    }
+
+    pub(super) fn displays() -> Result<Vec<ComputerDisplay>, ComputerError> {
+        let ids = CGDisplay::active_displays()
+            .map_err(|error| ComputerError::Capture(format!("CoreGraphics display inventory failed: {error:?}")))?;
+        let main_id = CGDisplay::main().id;
+        let mut displays = Vec::with_capacity(ids.len());
+        for id in ids {
+            let display = CGDisplay::new(id);
+            let bounds = display.bounds();
+            let width = if bounds.size.width.is_finite() && bounds.size.width >= 0.0 {
+                bounds.size.width.round().min(f64::from(u32::MAX)) as u32
+            } else {
+                return Err(ComputerError::Capture("CoreGraphics returned invalid display width".into()));
+            };
+            let height = if bounds.size.height.is_finite() && bounds.size.height >= 0.0 {
+                bounds.size.height.round().min(f64::from(u32::MAX)) as u32
+            } else {
+                return Err(ComputerError::Capture("CoreGraphics returned invalid display height".into()));
+            };
+            let x = if bounds.origin.x.is_finite()
+                && bounds.origin.x >= f64::from(i32::MIN)
+                && bounds.origin.x <= f64::from(i32::MAX)
+            {
+                bounds.origin.x.round() as i32
+            } else {
+                return Err(ComputerError::Capture("CoreGraphics returned invalid display x".into()));
+            };
+            let y = if bounds.origin.y.is_finite()
+                && bounds.origin.y >= f64::from(i32::MIN)
+                && bounds.origin.y <= f64::from(i32::MAX)
+            {
+                bounds.origin.y.round() as i32
+            } else {
+                return Err(ComputerError::Capture("CoreGraphics returned invalid display y".into()));
+            };
+            let pixel_width = u32::try_from(display.pixels_wide())
+                .map_err(|_| ComputerError::Capture("display pixel width exceeds protocol range".into()))?;
+            let pixel_height = u32::try_from(display.pixels_high())
+                .map_err(|_| ComputerError::Capture("display pixel height exceeds protocol range".into()))?;
+            displays.push(ComputerDisplay {
+                id: id.to_string(),
+                x,
+                y,
+                width,
+                height,
+                pixel_width,
+                pixel_height,
+                is_primary: id == main_id,
+            });
+        }
+        if displays.is_empty() {
+            return Err(ComputerError::Capture("no active display is available".into()));
+        }
+        Ok(displays)
     }
 
     pub(super) fn capture_screen() -> Result<ComputerSnapshot, ComputerError> {
