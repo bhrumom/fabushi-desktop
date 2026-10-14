@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { promises as fs } from "node:fs";
 import { dirname } from "node:path";
 
@@ -9,9 +9,12 @@ import { deleteSecret, readSecret, writeSecret } from "../../electron-main/secre
 export const FABUSHI_ACCOUNT_SESSION_SECRET = "fabushi-account-session-v1";
 export const FABUSHI_CI_ACCOUNT_SESSION_FILE_ENV = "FABUSHI_CI_ACCOUNT_SESSION_FILE";
 export const FABUSHI_HOST_ACCESS_CREDENTIAL_FILE_ENV = "FABUSHI_HOST_ACCESS_CREDENTIAL_FILE";
+export const FABUSHI_REMOTE_COMPUTER_DEVICE_CREDENTIAL_FILE_ENV = "FABUSHI_REMOTE_COMPUTER_DEVICE_CREDENTIAL_FILE";
+const FABUSHI_REMOTE_COMPUTER_DEVICE_SECRET_PREFIX = "fabushi-remote-computer-device-secret-v1";
 const REFRESH_LEEWAY_MS = 60_000;
 const MIN_POLL_MS = 250;
 const MAX_POLL_MS = 5_000;
+const REMOTE_COMPUTER_HEARTBEAT_MS = 25_000;
 
 interface BrowserAttempt {
   readonly attemptId: string;
@@ -78,6 +81,7 @@ export interface FabushiAuthServiceOptions {
   readonly env: NodeJS.ProcessEnv;
   readonly machineId: string;
   readonly hostAccessCredentialFile: string;
+  readonly hostRemoteComputerCredentialFile?: string;
   readonly fetchImpl?: typeof fetch;
   readonly now?: () => number;
 }
@@ -92,6 +96,10 @@ export class FabushiAuthService implements AuthServicePort {
   private operationEpoch = 0;
   private ciSessionPromise: Promise<FabushiSession | null> | undefined;
   private refreshPromise: Promise<FabushiSession | null> | undefined;
+  private remoteComputerRegistrationPromise: Promise<void> | undefined;
+  private remoteComputerRegisteredIdentity: string | undefined;
+  private remoteComputerHeartbeatIdentity: string | undefined;
+  private remoteComputerHeartbeatTimer: ReturnType<typeof setTimeout> | undefined;
 
   constructor(private readonly options: FabushiAuthServiceOptions) {
     this.baseUrl = normalizeFabushiApiBaseUrl(options.env.FABUSHI_API_BASE_URL);
@@ -190,6 +198,131 @@ export class FabushiAuthService implements AuthServicePort {
     await fs.rm(this.options.hostAccessCredentialFile, { force: true }).catch(() => {});
   }
 
+  private remoteComputerDeviceSecretKey(session: FabushiSession): string {
+    const scope = createHash("sha256")
+      .update(String(session.userId))
+      .update("\0")
+      .update(session.deviceId)
+      .digest("hex");
+    return `${FABUSHI_REMOTE_COMPUTER_DEVICE_SECRET_PREFIX}:${scope}`;
+  }
+
+  private async writeHostRemoteComputerCredential(session: FabushiSession, deviceSecret: string): Promise<void> {
+    const path = this.options.hostRemoteComputerCredentialFile;
+    if (!path) return;
+    await fs.mkdir(dirname(path), { recursive: true, mode: 0o700 });
+    const temporary = `${path}.${process.pid}.${randomUUID()}.tmp`;
+    await fs.writeFile(temporary, JSON.stringify({
+      version: 1,
+      userId: session.userId,
+      deviceId: session.deviceId,
+      deviceSecret,
+    }), { encoding: "utf8", mode: 0o600, flag: "wx" });
+    try {
+      await fs.rename(temporary, path);
+      await fs.chmod(path, 0o600).catch(() => {});
+    } catch (error) {
+      await fs.rm(temporary, { force: true }).catch(() => {});
+      throw error;
+    }
+  }
+
+  private async clearHostRemoteComputerCredential(): Promise<void> {
+    const path = this.options.hostRemoteComputerCredentialFile;
+    if (path) await fs.rm(path, { force: true }).catch(() => {});
+  }
+
+  private stopRemoteComputerHeartbeat(): void {
+    if (this.remoteComputerHeartbeatTimer != null) clearTimeout(this.remoteComputerHeartbeatTimer);
+    this.remoteComputerHeartbeatTimer = undefined;
+    this.remoteComputerHeartbeatIdentity = undefined;
+  }
+
+  private async remoteComputerHeartbeat(session: FabushiSession): Promise<void> {
+    const deviceSecret = await readSecret(this.remoteComputerDeviceSecretKey(session));
+    if (deviceSecret == null || deviceSecret.length < 48 || deviceSecret.length > 256) {
+      throw new Error("Fabushi Remote Computer device authority is unavailable.");
+    }
+    const response = await this.requestJson("/v1/computers/heartbeat", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${session.accessToken}` },
+      body: JSON.stringify({ deviceId: session.deviceId, deviceSecret }),
+    });
+    if (!isRecord(response) || response.ok !== true || typeof response.lastSeenAt !== "number") {
+      throw new Error("Fabushi Remote Computer heartbeat failed validation.");
+    }
+  }
+
+  private scheduleRemoteComputerHeartbeat(identity: string): void {
+    if (this.remoteComputerHeartbeatIdentity === identity && this.remoteComputerHeartbeatTimer != null) return;
+    this.stopRemoteComputerHeartbeat();
+    this.remoteComputerHeartbeatIdentity = identity;
+    const scheduleNext = () => {
+      if (this.remoteComputerHeartbeatIdentity !== identity || this.remoteComputerHeartbeatTimer != null) return;
+      this.remoteComputerHeartbeatTimer = setTimeout(() => {
+        this.remoteComputerHeartbeatTimer = undefined;
+        void (async () => {
+          try {
+            const session = await this.currentSession();
+            if (session == null || `${String(session.userId)}\0${session.deviceId}` !== identity) {
+              this.stopRemoteComputerHeartbeat();
+              return;
+            }
+            await this.remoteComputerHeartbeat(session);
+          } catch {
+            this.remoteComputerRegisteredIdentity = undefined;
+            await this.clearHostRemoteComputerCredential();
+          } finally {
+            if (this.remoteComputerHeartbeatIdentity === identity && this.remoteComputerHeartbeatTimer == null) scheduleNext();
+          }
+        })();
+      }, REMOTE_COMPUTER_HEARTBEAT_MS);
+      this.remoteComputerHeartbeatTimer.unref?.();
+    };
+    scheduleNext();
+  }
+
+  private async ensureRemoteComputerRegistration(session: FabushiSession): Promise<void> {
+    const identity = `${String(session.userId)}\0${session.deviceId}`;
+    if (this.remoteComputerRegisteredIdentity === identity) {
+      this.scheduleRemoteComputerHeartbeat(identity);
+      return;
+    }
+    if (this.remoteComputerRegistrationPromise != null) {
+      await this.remoteComputerRegistrationPromise;
+      if (this.remoteComputerRegisteredIdentity === identity) return;
+    }
+    this.remoteComputerRegistrationPromise = (async () => {
+      const secretKey = this.remoteComputerDeviceSecretKey(session);
+      let deviceSecret = await readSecret(secretKey);
+      if (deviceSecret == null || deviceSecret.length < 48 || deviceSecret.length > 256) {
+        deviceSecret = randomBytes(48).toString("base64url");
+        await writeSecret(secretKey, deviceSecret);
+      }
+      const response = await this.requestJson("/v1/computers/register", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${session.accessToken}` },
+        body: JSON.stringify({
+          deviceId: session.deviceId,
+          label: "Fabushi Desktop",
+          deviceSecret,
+          provider: "fabushi-desktop",
+          platform: process.platform,
+          capabilities: [],
+        }),
+      });
+      if (!isRecord(response) || response.deviceId !== session.deviceId) {
+        throw new Error("Fabushi Remote Computer registration failed identity validation.");
+      }
+      await this.writeHostRemoteComputerCredential(session, deviceSecret);
+      this.remoteComputerRegisteredIdentity = identity;
+      this.scheduleRemoteComputerHeartbeat(identity);
+    })().finally(() => {
+      this.remoteComputerRegistrationPromise = undefined;
+    });
+    await this.remoteComputerRegistrationPromise;
+  }
+
   private async resolveIdentity(session: FabushiSession): Promise<FabushiSession> {
     const body = await this.requestJson("/api/auth/user-info", {
       headers: { Authorization: `Bearer ${session.accessToken}` },
@@ -219,11 +352,15 @@ export class FabushiAuthService implements AuthServicePort {
       }
       const verified = await this.resolveIdentity(next);
       await this.saveStoredSession(verified);
+      await this.ensureRemoteComputerRegistration(verified);
       await this.writeHostCredential(verified);
       return verified;
     })().catch(async (error) => {
       await this.clearStoredSession().catch(() => {});
       await this.clearHostCredential();
+      await this.clearHostRemoteComputerCredential();
+      this.remoteComputerRegisteredIdentity = undefined;
+      this.stopRemoteComputerHeartbeat();
       throw error;
     }).finally(() => {
       this.refreshPromise = undefined;
@@ -236,16 +373,22 @@ export class FabushiAuthService implements AuthServicePort {
     let session = ci ?? await this.readStoredSession();
     if (session == null) {
       await this.clearHostCredential();
+      await this.clearHostRemoteComputerCredential();
+      this.remoteComputerRegisteredIdentity = undefined;
+      this.stopRemoteComputerHeartbeat();
       return null;
     }
     if (session.accessTokenExpiresAt <= this.now() + REFRESH_LEEWAY_MS) {
       if (ci != null || session.refreshToken == null) {
         await this.clearHostCredential();
+        await this.clearHostRemoteComputerCredential();
+        this.remoteComputerRegisteredIdentity = undefined;
         return null;
       }
       session = await this.refreshSession(session);
       if (session == null) return null;
     }
+    await this.ensureRemoteComputerRegistration(session);
     await this.writeHostCredential(session);
     return session;
   }
@@ -326,6 +469,7 @@ export class FabushiAuthService implements AuthServicePort {
           const verified = await this.resolveIdentity(session);
           if (epoch !== this.operationEpoch || controller.signal.aborted) return await this.getStatus();
           await this.saveStoredSession(verified);
+          await this.ensureRemoteComputerRegistration(verified);
           await this.writeHostCredential(verified);
           const status = statusFromSession(verified);
           this.emit(status);
@@ -372,6 +516,9 @@ export class FabushiAuthService implements AuthServicePort {
     const session = await this.currentSession().catch(() => null);
     await this.clearStoredSession().catch(() => {});
     await this.clearHostCredential();
+    await this.clearHostRemoteComputerCredential();
+    this.remoteComputerRegisteredIdentity = undefined;
+    this.stopRemoteComputerHeartbeat();
     if (session?.refreshToken != null) {
       void this.requestJson("/api/auth/logout", {
         method: "POST",

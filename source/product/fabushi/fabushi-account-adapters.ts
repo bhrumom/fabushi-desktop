@@ -19,6 +19,7 @@ import {
 import {
   DEFAULT_FABUSHI_RESPONSES_URL,
   FABUSHI_HOST_ACCESS_CREDENTIAL_FILE_ENV,
+  FABUSHI_REMOTE_COMPUTER_DEVICE_CREDENTIAL_FILE_ENV,
   FabushiAuthService,
   normalizeFabushiApiBaseUrl,
 } from "./fabushi-account-service.js";
@@ -49,6 +50,10 @@ function productHostCredentialPath(context: ProductionServiceContext): string {
   return join(context.native.app.getPath("userData"), "fabushi-host-access-credential-v1.json");
 }
 
+function productHostRemoteComputerCredentialPath(context: ProductionServiceContext): string {
+  return join(context.native.app.getPath("userData"), "fabushi-remote-computer-device-credential-v1.json");
+}
+
 async function openServerAcceptedFabushiLoginUrl(
   context: Pick<ProductionServiceContext, "env" | "native">,
   value: string,
@@ -63,8 +68,10 @@ async function openServerAcceptedFabushiLoginUrl(
 
 function installProductEnvironment(context: ProductionServiceContext): string {
   const credentialPath = productHostCredentialPath(context);
+  const remoteComputerCredentialPath = productHostRemoteComputerCredentialPath(context);
   context.env[FABUSHI_PRODUCT_MODE_ENV] = "1";
   context.env[FABUSHI_HOST_ACCESS_CREDENTIAL_FILE_ENV] = credentialPath;
+  context.env[FABUSHI_REMOTE_COMPUTER_DEVICE_CREDENTIAL_FILE_ENV] = remoteComputerCredentialPath;
   // Signed production must never inherit a shell-provided inference origin:
   // the account bearer is scoped to Fabushi's first-party control plane.
   if (context.native.app.isPackaged || context.env[FABUSHI_RESPONSES_URL_ENV]?.trim().length === 0 || context.env[FABUSHI_RESPONSES_URL_ENV] == null) {
@@ -96,6 +103,7 @@ export function createFabushiProductionAccountOAuthBinding(): ElectronProduction
           env: context.env,
           machineId: context.machineId,
           hostAccessCredentialFile,
+          hostRemoteComputerCredentialFile: context.env[FABUSHI_REMOTE_COMPUTER_DEVICE_CREDENTIAL_FILE_ENV],
         }),
         fetchProfile: async () => null,
         updateProfileName: async () => {},
