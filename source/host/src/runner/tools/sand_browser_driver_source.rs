@@ -412,6 +412,9 @@ async function pagesByTargetId(context) {
 
 const GENERATION_FENCED_OPS = new Set([
   "navigate",
+  "refresh",
+  "back",
+  "forward",
   "click",
   "mouse_click_xy",
   "type",
@@ -693,6 +696,35 @@ const OPS = {
     await page.waitForLoadState("load", { timeout: 5000 }).catch(() => {});
     await bumpViewGeneration(request.display, state, viewId);
     return { page, viewId, summary: "Navigated to " + request.url };
+  },
+  refresh: async ({ request, context, state }) => {
+    const { page, viewId } = await resolvePage(request, context, state);
+    await page.reload({ waitUntil: "domcontentloaded", timeout: NAVIGATE_TIMEOUT_MS });
+    await page.waitForLoadState("load", { timeout: 5000 }).catch(() => {});
+    await bumpViewGeneration(request.display, state, viewId);
+    return { page, viewId, summary: "Refreshed the current tab" };
+  },
+  back: async ({ request, context, state }) => {
+    const { page, viewId } = await resolvePage(request, context, state);
+    const previousUrl = page.url();
+    const response = await page.goBack({ waitUntil: "domcontentloaded", timeout: NAVIGATE_TIMEOUT_MS });
+    await page.waitForLoadState("load", { timeout: 5000 }).catch(() => {});
+    if (response === null && page.url() === previousUrl) {
+      throw new Error("No previous browser history entry is available for this tab.");
+    }
+    await bumpViewGeneration(request.display, state, viewId);
+    return { page, viewId, summary: "Navigated back in the current tab" };
+  },
+  forward: async ({ request, context, state }) => {
+    const { page, viewId } = await resolvePage(request, context, state);
+    const previousUrl = page.url();
+    const response = await page.goForward({ waitUntil: "domcontentloaded", timeout: NAVIGATE_TIMEOUT_MS });
+    await page.waitForLoadState("load", { timeout: 5000 }).catch(() => {});
+    if (response === null && page.url() === previousUrl) {
+      throw new Error("No forward browser history entry is available for this tab.");
+    }
+    await bumpViewGeneration(request.display, state, viewId);
+    return { page, viewId, summary: "Navigated forward in the current tab" };
   },
   snapshot: async ({ request, context, state }) => {
     const { page, viewId } = await resolvePage(request, context, state);

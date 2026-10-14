@@ -367,6 +367,42 @@ fn browser_generation_fencing_rejects_missing_or_stale_claims_before_actions() {
 }
 
 #[test]
+fn browser_history_navigation_is_generation_fenced_and_rotates_the_claim() {
+    let specs = browser_tool_specs();
+    for (name, op) in [
+        ("browser_refresh", "refresh"),
+        ("browser_back", "back"),
+        ("browser_forward", "forward"),
+    ] {
+        let spec = specs.iter().find(|spec| spec.name == name).expect(name);
+        assert_eq!(spec.op, op);
+        assert!(spec.can_navigate);
+        assert!(!spec.skip_screenshot);
+        assert!(
+            SAND_BROWSER_DRIVER_SOURCE.contains(&format!("  \"{op}\",")),
+            "{op} must be in the generation-fenced op set"
+        );
+    }
+
+    for required in [
+        "refresh: async ({ request, context, state }) => {",
+        "await page.reload({ waitUntil: \"domcontentloaded\", timeout: NAVIGATE_TIMEOUT_MS });",
+        "back: async ({ request, context, state }) => {",
+        "await page.goBack({ waitUntil: \"domcontentloaded\", timeout: NAVIGATE_TIMEOUT_MS });",
+        "No previous browser history entry is available for this tab.",
+        "forward: async ({ request, context, state }) => {",
+        "await page.goForward({ waitUntil: \"domcontentloaded\", timeout: NAVIGATE_TIMEOUT_MS });",
+        "No forward browser history entry is available for this tab.",
+        "await bumpViewGeneration(request.display, state, viewId);",
+    ] {
+        assert!(
+            SAND_BROWSER_DRIVER_SOURCE.contains(required),
+            "missing browser history-navigation invariant: {required}"
+        );
+    }
+}
+
+#[test]
 fn browser_exact_frame_targeting_is_unambiguous_and_frame_scoped() {
     for required in [
         "function resolveFrameScope(page, request)",

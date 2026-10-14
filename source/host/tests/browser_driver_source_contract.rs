@@ -37,6 +37,9 @@ fn frozen_browser_driver_retains_tab_revival_and_cross_process_claim_fences() {
 fn frozen_browser_driver_retains_core_interaction_operations() {
     for operation in [
         "navigate",
+        "refresh",
+        "back",
+        "forward",
         "click",
         "type",
         "tabs",
