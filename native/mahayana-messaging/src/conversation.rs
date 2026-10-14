@@ -59,6 +59,16 @@ pub struct ConversationPermissions {
     pub can_send_messages: bool,
     pub can_send_media: bool,
     pub can_send_polls: bool,
+    /// Source-neutral equivalent of Telegram SendOther eligibility. Old
+    /// persisted snapshots default false so an upgrade cannot broaden exposure.
+    #[serde(default)]
+    pub can_send_other: bool,
+    /// Inline/bot-style content eligibility used by typed recipient search.
+    #[serde(default)]
+    pub can_send_inline: bool,
+    /// Game-style content eligibility used by typed recipient search.
+    #[serde(default)]
+    pub can_send_games: bool,
     pub can_add_members: bool,
     pub can_pin_messages: bool,
     pub can_manage_topics: bool,
@@ -71,6 +81,9 @@ impl Default for ConversationPermissions {
             can_send_messages: true,
             can_send_media: true,
             can_send_polls: true,
+            can_send_other: true,
+            can_send_inline: true,
+            can_send_games: true,
             can_add_members: true,
             can_pin_messages: true,
             can_manage_topics: true,
