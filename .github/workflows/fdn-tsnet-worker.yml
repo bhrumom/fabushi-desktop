@@ -69,20 +69,6 @@ jobs:
           grep -F 'tailscale.com v1.104.1' go.mod
           go list -m all > module-list.txt
           grep -F 'tailscale.com v1.104.1' module-list.txt
-      - name: Format
-        shell: bash
-        run: |
-          set -euo pipefail
-          test -z "$(gofmt -l .)"
-      - name: Unit tests
-        shell: bash
-        run: go test ./...
-      - name: Vet
-        shell: bash
-        run: go vet ./...
-      - name: Compile packaged worker
-        shell: bash
-        run: go build ./...
       - name: Record Go dependency lock
         if: runner.os == 'Linux'
         uses: actions/upload-artifact@v4
@@ -94,6 +80,21 @@ jobs:
             source/fabushi-network-worker/module-list.txt
           if-no-files-found: error
           retention-days: 90
+      - name: Format
+        shell: bash
+        run: |
+          set -euo pipefail
+          gofmt -d .
+          test -z "$(gofmt -l .)"
+      - name: Unit tests
+        shell: bash
+        run: go test ./...
+      - name: Vet
+        shell: bash
+        run: go vet ./...
+      - name: Compile packaged worker
+        shell: bash
+        run: go build ./...
 
   rust-host-supervisor:
     name: Rust Host supervisor
