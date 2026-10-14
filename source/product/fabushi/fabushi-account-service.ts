@@ -4,6 +4,7 @@ import { dirname } from "node:path";
 
 import type { AuthServicePort } from "../../electron-main/account/cursor-auth-wiring.js";
 import type { SandAuthStatus } from "../../electron-main/account/cursor-auth.js";
+import { settleOptionalRemoteComputerTarget } from "./remote-target-availability.js";
 import { deleteSecret, readSecret, writeSecret } from "../../electron-main/secrets/secret-store.js";
 
 export const FABUSHI_ACCOUNT_SESSION_SECRET = "fabushi-account-session-v1";
@@ -84,19 +85,6 @@ export interface FabushiAuthServiceOptions {
   readonly hostRemoteComputerCredentialFile?: string;
   readonly fetchImpl?: typeof fetch;
   readonly now?: () => number;
-}
-
-export async function settleOptionalRemoteComputerTarget(
-  ensureTarget: () => Promise<void>,
-  onUnavailable: () => Promise<void>,
-): Promise<"ready" | "unavailable"> {
-  try {
-    await ensureTarget();
-    return "ready";
-  } catch {
-    await onUnavailable();
-    return "unavailable";
-  }
 }
 
 export class FabushiAuthService implements AuthServicePort {
