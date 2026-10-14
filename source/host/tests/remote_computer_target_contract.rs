@@ -79,3 +79,35 @@ fn operation_digest_is_canonical_across_object_key_order() {
         .expect("changed digest")
     );
 }
+
+
+#[test]
+fn target_private_transport_is_peer_bound_generation_fenced_and_never_auto_replays() {
+    for required in [
+        "stream_listen(expected_peer, local_port, REMOTE_TARGET_STREAM_TIMEOUT_MS)",
+        "RemoteTargetPrivateRequest::GrantController",
+        "RemoteTargetPrivateRequest::AuthorizeTool",
+        "RemoteTargetPrivateRequest::Operation",
+        "operation_request_sha256(&tool_name, &arguments, &disk_preflight)",
+        "claimed.client_id != client_id || claimed.grant_generation != grant_generation",
+        "RemoteComputerNativeOutcome::OutcomeUnknown",
+        "map_err(|_| RemoteComputerTargetError::OutcomeUnknown)",
+        "binding.generation != expected_generation",
+        "binding.expires_at <= unix_seconds()?",
+    ] {
+        assert!(TARGET_SOURCE.contains(required), "missing private target invariant: {required}");
+    }
+    assert!(
+        TARGET_SOURCE.matches("self.require_current_network_binding(&device_id, network_generation)?;").count() >= 4,
+        "target transport must fence network binding both before authorization/claim and again before native side effects"
+    );
+    assert_eq!(
+        TARGET_SOURCE.matches("executor.execute(&claimed, &arguments, &disk_preflight)").count(),
+        1,
+        "a claimed side-effecting operation must be dispatched to the native executor at most once"
+    );
+    assert!(
+        !TARGET_SOURCE.contains("executor.execute(&claimed, &arguments, &disk_preflight).retry"),
+        "native execution must never be automatically retried after transport uncertainty"
+    );
+}
