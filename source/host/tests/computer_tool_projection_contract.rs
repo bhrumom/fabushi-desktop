@@ -23,7 +23,7 @@ use mahayana_host_runtime::runner::tools::sand_computer_tool::{
     ComputerUseResult, MouseButtonInput, ReportedComputerAction, ScrollDirectionInput,
     build_computer_action_sequence, computer_tool_definitions, describe_outcome, drag_path,
     parse_remote_computer_action, persist_computer_screenshot, reported_batch_position, to_action,
-    validate_computer_action,
+    to_exact_action_value, validate_computer_action,
 };
 
 #[test]
@@ -505,4 +505,38 @@ fn production_computer_executor_checks_live_takeover_before_input_but_allows_scr
     takeover.store(false, std::sync::atomic::Ordering::SeqCst);
     executor.execute(&click, "released").expect("input after hand back");
     assert_eq!(port.requests.lock().expect("requests").len(), 2);
+}
+
+
+#[test]
+fn remote_computer_snapshot_generation_is_primary_only_and_exactly_projected() {
+    let parsed = parse_remote_computer_action(&serde_json::json!({
+        "action": "click",
+        "x": 10,
+        "y": 20,
+        "snapshotGeneration": 7
+    }))
+    .expect("parse generation-fenced action");
+    assert_eq!(parsed.snapshot_generation, Some(7));
+    assert_eq!(to_exact_action_value(&parsed)["snapshotGeneration"], 7);
+
+    let nested = parse_remote_computer_action(&serde_json::json!({
+        "action": "move",
+        "x": 1,
+        "y": 2,
+        "then": [{
+            "action": "wait",
+            "durationMs": 1,
+            "snapshotGeneration": 7
+        }]
+    }))
+    .expect_err("nested generation must not override the primary observation fence");
+    assert!(nested.to_string().contains("only allowed on the primary action"));
+
+    let zero = parse_remote_computer_action(&serde_json::json!({
+        "action": "screenshot",
+        "snapshotGeneration": 0
+    }))
+    .expect_err("generation zero is not a successful observation");
+    assert!(zero.to_string().contains("positive integer"));
 }

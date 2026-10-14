@@ -198,6 +198,7 @@ pub struct RemoteComputerSensitiveResult {
     pub media_type: String,
     pub bytes: Vec<u8>,
     pub captured_at_ms: i64,
+    pub snapshot_generation: u64,
     pub width: Option<u32>,
     pub height: Option<u32>,
 }
@@ -209,6 +210,7 @@ impl std::fmt::Debug for RemoteComputerSensitiveResult {
             .field("media_type", &self.media_type)
             .field("bytes", &format_args!("<redacted:{} bytes>", self.bytes.len()))
             .field("captured_at_ms", &self.captured_at_ms)
+            .field("snapshot_generation", &self.snapshot_generation)
             .field("width", &self.width)
             .field("height", &self.height)
             .finish()
@@ -320,6 +322,7 @@ impl RemoteComputerToolCatalog for NativeDesktopRemoteToolCatalog {
                     "direction": {"type": "string", "enum": ["up", "down", "left", "right"]},
                     "amount": {"type": "integer"},
                     "durationMs": {"type": "integer", "minimum": 0, "maximum": 30000},
+                    "snapshotGeneration": {"type": "integer", "minimum": 1},
                     "description": {"type": "string"},
                     "then": {"type": "array", "minItems": 1, "maxItems": 9, "items": {"type": "object"}}
                 }
@@ -327,11 +330,12 @@ impl RemoteComputerToolCatalog for NativeDesktopRemoteToolCatalog {
             "outputSchema": {
                 "type": "object",
                 "additionalProperties": false,
-                "required": ["content", "actionsExecuted", "capturedAtMs", "screenshotTransferred"],
+                "required": ["content", "actionsExecuted", "capturedAtMs", "snapshotGeneration", "screenshotTransferred"],
                 "properties": {
                     "content": {"type": "string"},
                     "actionsExecuted": {"type": "integer", "minimum": 1},
                     "capturedAtMs": {"type": "integer"},
+                    "snapshotGeneration": {"type": "integer", "minimum": 1},
                     "width": {"type": ["integer", "null"]},
                     "height": {"type": ["integer", "null"]},
                     "screenshotTransferred": {"type": "boolean"}
@@ -472,30 +476,49 @@ impl RemoteComputerNativeExecutor for NativeDesktopRemoteExecutor {
             ComputerControlOrigin::RemoteMobile,
             "remote-human",
         );
-        match mahayana_computer::execute_with_lease(&actions, ComputerControlOrigin::RemoteMobile, &lease) {
-            Ok(result) if sensitive_screenshot => {
-                match decode_sensitive_snapshot(
-                    &result.snapshot.data_url,
-                    result.snapshot.captured_at_ms,
-                    result.snapshot.width,
-                    result.snapshot.height,
-                ) {
-                    Ok(sensitive) => RemoteComputerNativeOutcome::SensitiveCompleted(sensitive),
-                    Err(_) => RemoteComputerNativeOutcome::Failed(json!({
-                        "code":"computer_capture_invalid",
-                        "message":"Target screenshot could not be prepared for the authenticated sensitive-result channel.",
-                        "retryable":false
-                    })),
+        match mahayana_computer::execute_with_lease_fenced(
+            &actions,
+            ComputerControlOrigin::RemoteMobile,
+            &lease,
+            parsed.snapshot_generation,
+        ) {
+            Ok(observed) => {
+                let result = observed.result;
+                if sensitive_screenshot {
+                    return match decode_sensitive_snapshot(
+                        &result.snapshot.data_url,
+                        result.snapshot.captured_at_ms,
+                        observed.snapshot_generation,
+                        result.snapshot.width,
+                        result.snapshot.height,
+                    ) {
+                        Ok(sensitive) => RemoteComputerNativeOutcome::SensitiveCompleted(sensitive),
+                        Err(_) => RemoteComputerNativeOutcome::Failed(json!({
+                            "code":"computer_capture_invalid",
+                            "message":"Target screenshot could not be prepared for the authenticated sensitive-result channel.",
+                            "retryable":false
+                        })),
+                    };
                 }
+                RemoteComputerNativeOutcome::Completed(json!({
+                    "content": "Computer action ran on the authorized target desktop.",
+                    "actionsExecuted": result.actions_executed,
+                    "capturedAtMs": result.snapshot.captured_at_ms,
+                    "snapshotGeneration": observed.snapshot_generation,
+                    "width": result.snapshot.width,
+                    "height": result.snapshot.height,
+                    "screenshotTransferred": false,
+                }))
             }
-            Ok(result) => RemoteComputerNativeOutcome::Completed(json!({
-                "content": "Computer action ran on the authorized target desktop.",
-                "actionsExecuted": result.actions_executed,
-                "capturedAtMs": result.snapshot.captured_at_ms,
-                "width": result.snapshot.width,
-                "height": result.snapshot.height,
-                "screenshotTransferred": false,
-            })),
+            Err(mahayana_computer::ComputerError::SnapshotStale { expected, current }) => {
+                RemoteComputerNativeOutcome::Failed(json!({
+                    "code":"snapshot_stale",
+                    "message":"The requested desktop observation is stale; observe again before retrying the action.",
+                    "expectedSnapshotGeneration": expected,
+                    "currentSnapshotGeneration": current,
+                    "retryable":false
+                }))
+            }
             Err(error) => RemoteComputerNativeOutcome::Failed(json!({"code":"computer_action_failed","message":error.to_string(),"retryable":false})),
         }
     }
@@ -504,6 +527,7 @@ impl RemoteComputerNativeExecutor for NativeDesktopRemoteExecutor {
 fn decode_sensitive_snapshot(
     data_url: &str,
     captured_at_ms: i64,
+    snapshot_generation: u64,
     width: Option<u32>,
     height: Option<u32>,
 ) -> Result<RemoteComputerSensitiveResult, RemoteComputerTargetError> {
@@ -526,6 +550,7 @@ fn decode_sensitive_snapshot(
         media_type,
         bytes,
         captured_at_ms,
+        snapshot_generation,
         width,
         height,
     })
@@ -697,6 +722,7 @@ struct SensitiveResultEntry {
     media_type: String,
     bytes: Vec<u8>,
     captured_at_ms: i64,
+    snapshot_generation: u64,
     width: Option<u32>,
     height: Option<u32>,
     expires_at: i64,
@@ -746,6 +772,7 @@ struct SensitiveResultAccess {
     result_sha256: String,
     media_type: String,
     captured_at_ms: i64,
+    snapshot_generation: u64,
     width: Option<u32>,
     height: Option<u32>,
     expires_at: i64,
@@ -1488,6 +1515,7 @@ impl FabushiCoreTargetClient {
                     "resultSha256": access.result_sha256,
                     "mediaType": access.media_type,
                     "capturedAtMs": access.captured_at_ms,
+                    "snapshotGeneration": access.snapshot_generation,
                     "width": access.width,
                     "height": access.height,
                     "expiresAt": access.expires_at,
@@ -1567,6 +1595,7 @@ impl FabushiCoreTargetClient {
         self.require_current_network_binding(device_id, network_generation)?;
         let now = unix_seconds()?;
         let result_sha256 = sha256_hex(&result.bytes);
+        let snapshot_generation = result.snapshot_generation;
         let result_ref = format!("sensitive-result-{}", Uuid::new_v4());
         let expires_at = now.saturating_add(REMOTE_SENSITIVE_RESULT_TTL_SECONDS);
         let entry = SensitiveResultEntry {
@@ -1583,6 +1612,7 @@ impl FabushiCoreTargetClient {
             media_type: result.media_type,
             bytes: result.bytes,
             captured_at_ms: result.captured_at_ms,
+            snapshot_generation,
             width: result.width,
             height: result.height,
             expires_at,
@@ -1612,6 +1642,7 @@ impl FabushiCoreTargetClient {
             "status": "completed",
             "sensitiveResult": true,
             "resultRef": result_ref,
+            "snapshotGeneration": snapshot_generation,
             "expiresAt": expires_at,
             "networkGeneration": network_generation,
         }))
@@ -1654,6 +1685,7 @@ impl FabushiCoreTargetClient {
             result_sha256: entry.result_sha256,
             media_type: entry.media_type,
             captured_at_ms: entry.captured_at_ms,
+            snapshot_generation: entry.snapshot_generation,
             width: entry.width,
             height: entry.height,
             expires_at: entry.expires_at,
@@ -2067,6 +2099,7 @@ mod sensitive_result_tests {
             captured_at_ms: 123,
             width: Some(100),
             height: Some(80),
+            snapshot_generation: 1,
             expires_at: now + 60,
             next_offset: 0,
         }

@@ -112,6 +112,7 @@ pub struct ComputerActionArgs {
     pub amount: Option<i64>,
     pub duration_ms: Option<u64>,
     pub description: Option<String>,
+    pub snapshot_generation: Option<u64>,
     pub then_actions: Vec<ComputerActionArgs>,
 }
 
@@ -132,6 +133,7 @@ impl ComputerActionArgs {
             amount: None,
             duration_ms: None,
             description: None,
+            snapshot_generation: None,
             then_actions: Vec::new(),
         }
     }
@@ -161,6 +163,11 @@ pub fn validate_computer_action(
     args: &ComputerActionArgs,
     auto_review_mode: Option<SandAutoReviewMode>,
 ) -> Result<(), SandComputerToolInputError> {
+    if args.snapshot_generation == Some(0) {
+        return Err(SandComputerToolInputError(
+            "Computer snapshotGeneration must be a positive observation generation.".to_string(),
+        ));
+    }
     if args.then_actions.len() > SAND_COMPUTER_MAX_FOLLOW_UP_ACTIONS {
         return Err(SandComputerToolInputError(format!(
             "Computer then supports at most {SAND_COMPUTER_MAX_FOLLOW_UP_ACTIONS} follow-up actions."
@@ -496,6 +503,9 @@ pub fn to_exact_action_value(args: &ComputerActionArgs) -> Value {
     }
     if let Some(amount) = args.amount { object.insert("amount".into(), Value::from(amount)); }
     if let Some(duration_ms) = args.duration_ms { object.insert("durationMs".into(), Value::from(duration_ms)); }
+    if let Some(snapshot_generation) = args.snapshot_generation {
+        object.insert("snapshotGeneration".into(), Value::from(snapshot_generation));
+    }
     Value::Object(object)
 }
 
@@ -544,6 +554,19 @@ fn parse_computer_action(
         .ok_or_else(|| ProviderSessionError::Tool("Computer action is required".into()))
         .and_then(parse_action_name)?;
     let mut args = ComputerActionArgs::simple(action);
+    args.snapshot_generation = match object.get("snapshotGeneration") {
+        None | Some(Value::Null) => None,
+        Some(value) => Some(value.as_u64().filter(|value| *value > 0).ok_or_else(|| {
+            ProviderSessionError::Tool(
+                "Computer snapshotGeneration must be a positive integer".into(),
+            )
+        })?),
+    };
+    if !allow_followups && args.snapshot_generation.is_some() {
+        return Err(ProviderSessionError::Tool(
+            "Computer snapshotGeneration is only allowed on the primary action".into(),
+        ));
+    }
     args.x = parse_i64(object, "x")?;
     args.y = parse_i64(object, "y")?;
     args.x2 = parse_i64(object, "x2")?;
@@ -645,6 +668,7 @@ pub fn computer_tool_definitions() -> Vec<RoutedToolDefinition> {
                     "direction":{"type":"string","enum":["up","down","left","right"]},
                     "amount":{"type":"integer"},
                     "durationMs":{"type":"integer","minimum":0,"maximum":SAND_COMPUTER_MAX_WAIT_MS},
+                    "snapshotGeneration":{"type":"integer","minimum":1},
                     "description":{"type":"string"},
                     "then":{"type":"array","minItems":1,"maxItems":SAND_COMPUTER_MAX_FOLLOW_UP_ACTIONS,"items":{"type":"object"}}
                 }

@@ -209,3 +209,24 @@ fn target_network_service_requires_explicit_authorizer_catalog_and_executor() {
         "private network availability must not synthesize blanket tool authorization"
     );
 }
+
+
+#[test]
+fn native_snapshot_generation_is_projected_and_stale_fenced() {
+    for required in [
+        r#""snapshotGeneration": {"type": "integer", "minimum": 1}"#,
+        "mahayana_computer::execute_with_lease_fenced(",
+        "parsed.snapshot_generation",
+        "ComputerError::SnapshotStale { expected, current }",
+        r#""code":"snapshot_stale""#,
+        r#""snapshotGeneration": observed.snapshot_generation"#,
+        "pub snapshot_generation: u64",
+        r#""snapshotGeneration": access.snapshot_generation"#,
+        r#""snapshotGeneration": snapshot_generation"#,
+    ] {
+        assert!(
+            TARGET_SOURCE.contains(required),
+            "missing native snapshot generation/stale-fence invariant: {required}"
+        );
+    }
+}
