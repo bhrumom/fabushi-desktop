@@ -8,15 +8,15 @@
     "repository": "telegramdesktop/tdesktop",
     "url": "https://github.com/telegramdesktop/tdesktop",
     "discovery_ref": "refs/heads/dev",
-    "commit": "fad667c6d71c5e965a9da71e48dc1ab82ba0568d",
-    "tree": "af26efe828d4a3be7e6b2c9dbab95cd4a73741de",
-    "committed_at": "2026-10-14T12:47:31Z",
+    "commit": "c317da960b2664962aeb17892adbd6dda59c98fe",
+    "tree": "c3cb760798f61e436c949aa19e33ccdc4f077cf9",
+    "committed_at": "2026-10-14T17:51:11Z",
     "accepted": false
   },
   "previous_historical_baseline": {
-    "commit": "d77f486228a98e15d6695514d5f2b28ce1c6a872",
+    "commit": "fad667c6d71c5e965a9da71e48dc1ab82ba0568d",
     "evidence_status": "historical-only",
-    "reason": "Upstream dev advanced by three commits that only modify agent/instruction tooling; previous current baseline retained as predecessor evidence."
+    "reason": "Upstream dev advanced by one commit modifying five Telegram/SourceFiles paths. Root inventory cardinality and all direct gitlinks are unchanged; predecessor evidence remains historical-only."
   },
   "observed_root_inventory": {
     "tree_truncated": false,
@@ -28,8 +28,8 @@
     "root_non_directory_count": 6694
   },
   "delta_from_previous_baseline": {
-    "ahead_by": 3,
-    "changed_paths": 14
+    "ahead_by": 1,
+    "changed_paths": 5
   },
   "direct_gitlinks": [
     {
@@ -260,7 +260,7 @@
     "unknown_minimum": 15788,
     "unread_minimum": 15761,
     "omitted_known": 0,
-    "note": "Revision 9 rebaseline in progress for fad667c6d71c5e965a9da71e48dc1ab82ba0568d. Root and recursive authority shape are unchanged from d77f486228a98e15d6695514d5f2b28ce1c6a872; the three upstream commits change only agent/instruction tooling outside Telegram production/build-acquisition paths. Full source closure remains open and current-head Actions must revalidate live pins and recursive authority."
+    "note": "Revision 9 rebaseline in progress for c317da960b2664962aeb17892adbd6dda59c98fe. Root and recursive authority shape are unchanged from fad667c6d71c5e965a9da71e48dc1ab82ba0568d; the upstream delta modifies five Telegram/SourceFiles paths. The reviewed url_auth_box.cpp responsibility changed blob identity and is refreshed in the parity ledger; build-time acquisition paths are unchanged. Full source closure remains open and current-head Actions must revalidate live pins and recursive authority."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -274,7 +274,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Rebaseline to telegramdesktop/tdesktop@fad667c6d71c5e965a9da71e48dc1ab82ba0568d remains unaccepted pending current-head GitHub Actions provenance. The upstream delta is limited to agent/instruction tooling; predecessor evidence stays historical-only."
+    "note": "Rebaseline to telegramdesktop/tdesktop@c317da960b2664962aeb17892adbd6dda59c98fe remains unaccepted pending current-head GitHub Actions provenance. The five-path upstream source delta is explicitly re-read; the affected reviewed url_auth_box.cpp row is rebound to its new blob while predecessor evidence remains historical-only."
   },
   "baseline_identity_evidence": {
     "status": "pending-current-head-revalidation",
