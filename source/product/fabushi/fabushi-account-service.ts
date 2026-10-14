@@ -14,6 +14,7 @@ const FABUSHI_REMOTE_COMPUTER_DEVICE_SECRET_PREFIX = "fabushi-remote-computer-de
 const REFRESH_LEEWAY_MS = 60_000;
 const MIN_POLL_MS = 250;
 const MAX_POLL_MS = 5_000;
+const REMOTE_COMPUTER_HEARTBEAT_MS = 25_000;
 
 interface BrowserAttempt {
   readonly attemptId: string;
@@ -97,6 +98,8 @@ export class FabushiAuthService implements AuthServicePort {
   private refreshPromise: Promise<FabushiSession | null> | undefined;
   private remoteComputerRegistrationPromise: Promise<void> | undefined;
   private remoteComputerRegisteredIdentity: string | undefined;
+  private remoteComputerHeartbeatIdentity: string | undefined;
+  private remoteComputerHeartbeatTimer: ReturnType<typeof setTimeout> | undefined;
 
   constructor(private readonly options: FabushiAuthServiceOptions) {
     this.baseUrl = normalizeFabushiApiBaseUrl(options.env.FABUSHI_API_BASE_URL);
@@ -229,9 +232,62 @@ export class FabushiAuthService implements AuthServicePort {
     if (path) await fs.rm(path, { force: true }).catch(() => {});
   }
 
+  private stopRemoteComputerHeartbeat(): void {
+    if (this.remoteComputerHeartbeatTimer != null) clearTimeout(this.remoteComputerHeartbeatTimer);
+    this.remoteComputerHeartbeatTimer = undefined;
+    this.remoteComputerHeartbeatIdentity = undefined;
+  }
+
+  private async remoteComputerHeartbeat(session: FabushiSession): Promise<void> {
+    const deviceSecret = await readSecret(this.remoteComputerDeviceSecretKey(session));
+    if (deviceSecret == null || deviceSecret.length < 48 || deviceSecret.length > 256) {
+      throw new Error("Fabushi Remote Computer device authority is unavailable.");
+    }
+    const response = await this.requestJson("/v1/computers/heartbeat", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${session.accessToken}` },
+      body: JSON.stringify({ deviceId: session.deviceId, deviceSecret }),
+    });
+    if (!isRecord(response) || response.ok !== true || typeof response.lastSeenAt !== "number") {
+      throw new Error("Fabushi Remote Computer heartbeat failed validation.");
+    }
+  }
+
+  private scheduleRemoteComputerHeartbeat(identity: string): void {
+    if (this.remoteComputerHeartbeatIdentity === identity && this.remoteComputerHeartbeatTimer != null) return;
+    this.stopRemoteComputerHeartbeat();
+    this.remoteComputerHeartbeatIdentity = identity;
+    const scheduleNext = () => {
+      if (this.remoteComputerHeartbeatIdentity !== identity) return;
+      this.remoteComputerHeartbeatTimer = setTimeout(() => {
+        this.remoteComputerHeartbeatTimer = undefined;
+        void (async () => {
+          try {
+            const session = await this.currentSession();
+            if (session == null || `${String(session.userId)}\0${session.deviceId}` !== identity) {
+              this.stopRemoteComputerHeartbeat();
+              return;
+            }
+            await this.remoteComputerHeartbeat(session);
+          } catch {
+            this.remoteComputerRegisteredIdentity = undefined;
+            await this.clearHostRemoteComputerCredential();
+          } finally {
+            if (this.remoteComputerHeartbeatIdentity === identity) scheduleNext();
+          }
+        })();
+      }, REMOTE_COMPUTER_HEARTBEAT_MS);
+      this.remoteComputerHeartbeatTimer.unref?.();
+    };
+    scheduleNext();
+  }
+
   private async ensureRemoteComputerRegistration(session: FabushiSession): Promise<void> {
     const identity = `${String(session.userId)}\0${session.deviceId}`;
-    if (this.remoteComputerRegisteredIdentity === identity) return;
+    if (this.remoteComputerRegisteredIdentity === identity) {
+      this.scheduleRemoteComputerHeartbeat(identity);
+      return;
+    }
     if (this.remoteComputerRegistrationPromise != null) {
       await this.remoteComputerRegistrationPromise;
       if (this.remoteComputerRegisteredIdentity === identity) return;
@@ -260,6 +316,7 @@ export class FabushiAuthService implements AuthServicePort {
       }
       await this.writeHostRemoteComputerCredential(session, deviceSecret);
       this.remoteComputerRegisteredIdentity = identity;
+      this.scheduleRemoteComputerHeartbeat(identity);
     })().finally(() => {
       this.remoteComputerRegistrationPromise = undefined;
     });
@@ -303,6 +360,7 @@ export class FabushiAuthService implements AuthServicePort {
       await this.clearHostCredential();
       await this.clearHostRemoteComputerCredential();
       this.remoteComputerRegisteredIdentity = undefined;
+      this.stopRemoteComputerHeartbeat();
       throw error;
     }).finally(() => {
       this.refreshPromise = undefined;
@@ -317,6 +375,7 @@ export class FabushiAuthService implements AuthServicePort {
       await this.clearHostCredential();
       await this.clearHostRemoteComputerCredential();
       this.remoteComputerRegisteredIdentity = undefined;
+      this.stopRemoteComputerHeartbeat();
       return null;
     }
     if (session.accessTokenExpiresAt <= this.now() + REFRESH_LEEWAY_MS) {
@@ -459,6 +518,7 @@ export class FabushiAuthService implements AuthServicePort {
     await this.clearHostCredential();
     await this.clearHostRemoteComputerCredential();
     this.remoteComputerRegisteredIdentity = undefined;
+    this.stopRemoteComputerHeartbeat();
     if (session?.refreshToken != null) {
       void this.requestJson("/api/auth/logout", {
         method: "POST",
