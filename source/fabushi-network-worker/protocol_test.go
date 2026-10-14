@@ -37,11 +37,11 @@ func TestValidateInitializeAcceptsPrivateTsnetConfiguration(t *testing.T) {
 
 func TestValidateInitializeRejectsUnsafeControlURLAndKey(t *testing.T) {
 	for name, mutate := range map[string]func(*workerRequest){
-		"http": func(r *workerRequest) { r.ControlURL = "http://coord.example.test" },
-		"userinfo": func(r *workerRequest) { r.ControlURL = "https://token@coord.example.test" },
+		"http":           func(r *workerRequest) { r.ControlURL = "http://coord.example.test" },
+		"userinfo":       func(r *workerRequest) { r.ControlURL = "https://token@coord.example.test" },
 		"relative-state": func(r *workerRequest) { r.StateDir = "relative/state" },
-		"short-key": func(r *workerRequest) { r.StateKeyB64 = base64.StdEncoding.EncodeToString(make([]byte, 16)) },
-		"bad-hostname": func(r *workerRequest) { r.Hostname = "node with spaces" },
+		"short-key":      func(r *workerRequest) { r.StateKeyB64 = base64.StdEncoding.EncodeToString(make([]byte, 16)) },
+		"bad-hostname":   func(r *workerRequest) { r.Hostname = "node with spaces" },
 	} {
 		t.Run(name, func(t *testing.T) {
 			request := validInitializeRequest(t)
