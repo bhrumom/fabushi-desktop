@@ -75,6 +75,10 @@ esac
 printf '%s\n' '{{"type":"ready"}}'
 while IFS= read -r request; do
   case "$request" in
+    *'"type":"status"'*)
+      request_id="$(printf '%s' "$request" | sed -n 's/.*"requestId":"\([^"]*\)".*/\1/p')"
+      printf '%s\n' "{\"type\":\"status\",\"requestId\":\"$request_id\",\"backendState\":\"Running\",\"tailscaleIps\":[\"100.64.0.10\"]}"
+      ;;
     *'"type":"shutdown"'*) printf '%s\n' '{{"type":"shutdown"}}'; exit 0 ;;
   esac
 done
@@ -101,6 +105,9 @@ exit 0
     .expect("start fake worker");
     assert!(owned.pid > 0);
     assert_eq!(owned.executable_path, executable);
+    let status = owned.status().expect("read fake worker status");
+    assert_eq!(status.backend_state, "Running");
+    assert_eq!(status.tailscale_ips, vec!["100.64.0.10"]);
     owned.close().expect("close fake worker");
     let _ = fs::remove_dir_all(root);
 }
