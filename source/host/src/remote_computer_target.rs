@@ -8,6 +8,10 @@ use reqwest::blocking::Client;
 use serde::Deserialize;
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
+use mahayana_host_protocol::{
+    ComputerAction, ComputerActionKind, ComputerControlOrigin, ComputerMouseButton, ComputerPoint,
+    ComputerScrollDirection,
+};
 use thiserror::Error;
 use url::Url;
 
@@ -18,7 +22,8 @@ use crate::network_enrollment_owner::{NetworkEnrollmentError, NetworkWorkerServi
 use crate::network_worker_process::OwnedNetworkWorker;
 use crate::runner::routed_provider_runtime::RoutedToolBridge;
 use crate::runner::tools::sand_computer_tool::{
-    ComputerToolExecutor, ComputerUseResult, parse_remote_computer_action,
+    ComputerActionArgs, ComputerActionName, ComputerToolExecutor, ComputerUseResult,
+    MouseButtonInput, ScrollDirectionInput, parse_remote_computer_action,
 };
 
 const CORE_REQUEST_TIMEOUT_SECS: u64 = 15;
@@ -28,6 +33,8 @@ const REMOTE_TARGET_SERVICE_STREAM_TIMEOUT_MS: u64 = 1_000;
 const REMOTE_TARGET_INGRESS_CACHE_TTL: Duration = Duration::from_secs(10);
 const REMOTE_TARGET_FRAME_MAX_BYTES: usize = 32 * 1024;
 const REMOTE_TARGET_RESULT_MAX_BYTES: usize = 1024 * 1024;
+pub const REMOTE_COMPUTER_TARGET_PORT: u16 = 8792;
+const REMOTE_NATIVE_TOOL_GRANT_MAX_SECONDS: i64 = 5 * 60;
 
 fn canonical_json(value: &Value, output: &mut String) -> Result<(), RemoteComputerTargetError> {
     match value {
@@ -324,6 +331,188 @@ impl RemoteComputerToolCatalog for RoutedRemoteComputerToolCatalog {
             "inputSchema": tool.input_schema,
             "outputSchema": output_schema,
         })))
+    }
+}
+
+pub struct NativeDesktopRemoteToolCatalog;
+
+impl RemoteComputerToolCatalog for NativeDesktopRemoteToolCatalog {
+    fn describe_tool(&self, tool_name: &str) -> Result<Option<Value>, RemoteComputerTargetError> {
+        if tool_name != "Computer" || !mahayana_computer::control_policy().remote_control_enabled {
+            return Ok(None);
+        }
+        Ok(Some(json!({
+            "name": "Computer",
+            "title": "Computer",
+            "description": "Interact with this authorized Fabushi desktop using mouse, keyboard, scrolling, waits, and target-local observation.",
+            "inputSchema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["action"],
+                "properties": {
+                    "action": {"type": "string", "enum": ["click", "move", "drag", "type", "key", "scroll", "wait"]},
+                    "x": {"type": "integer"}, "y": {"type": "integer"},
+                    "x2": {"type": "integer"}, "y2": {"type": "integer"},
+                    "path": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["x", "y"], "properties": {"x": {"type": "integer"}, "y": {"type": "integer"}}}},
+                    "text": {"type": "string"}, "key": {"type": "string"},
+                    "button": {"type": "string", "enum": ["left", "right", "middle"]},
+                    "count": {"type": "integer", "minimum": 1, "maximum": 3},
+                    "direction": {"type": "string", "enum": ["up", "down", "left", "right"]},
+                    "amount": {"type": "integer"},
+                    "durationMs": {"type": "integer", "minimum": 0, "maximum": 30000},
+                    "description": {"type": "string"},
+                    "then": {"type": "array", "minItems": 1, "maxItems": 9, "items": {"type": "object"}}
+                }
+            },
+            "outputSchema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["content", "actionsExecuted", "capturedAtMs", "screenshotTransferred"],
+                "properties": {
+                    "content": {"type": "string"},
+                    "actionsExecuted": {"type": "integer", "minimum": 1},
+                    "capturedAtMs": {"type": "integer"},
+                    "width": {"type": ["integer", "null"]},
+                    "height": {"type": ["integer", "null"]},
+                    "screenshotTransferred": {"type": "boolean"}
+                }
+            }
+        })))
+    }
+}
+
+pub struct NativeDesktopRemoteToolAuthorizer;
+
+impl RemoteComputerToolAuthorizer for NativeDesktopRemoteToolAuthorizer {
+    fn authorize_tool(
+        &self,
+        session_id: &str,
+        client_id: &str,
+        tool_name: &str,
+        requested_expires_at: i64,
+    ) -> Result<i64, RemoteComputerTargetError> {
+        let policy = mahayana_computer::control_policy();
+        if session_id.trim().is_empty()
+            || client_id.trim().is_empty()
+            || tool_name != "Computer"
+            || !policy.remote_control_enabled
+        {
+            return Err(RemoteComputerTargetError::AuthorityUnavailable);
+        }
+        let now = unix_seconds()?;
+        if requested_expires_at <= now {
+            return Err(RemoteComputerTargetError::AuthorityUnavailable);
+        }
+        Ok(requested_expires_at.min(now.saturating_add(REMOTE_NATIVE_TOOL_GRANT_MAX_SECONDS)))
+    }
+}
+
+fn native_i32(value: Option<i64>, label: &str) -> Result<Option<i32>, String> {
+    value
+        .map(|value| i32::try_from(value).map_err(|_| format!("{label} is out of native desktop range")))
+        .transpose()
+}
+
+fn native_computer_action(args: &ComputerActionArgs) -> Result<ComputerAction, String> {
+    let action = match args.action {
+        ComputerActionName::Screenshot => ComputerActionKind::Screenshot,
+        ComputerActionName::Click => ComputerActionKind::Click,
+        ComputerActionName::Move => ComputerActionKind::Move,
+        ComputerActionName::Drag => ComputerActionKind::Drag,
+        ComputerActionName::Type => ComputerActionKind::Type,
+        ComputerActionName::Key => ComputerActionKind::Key,
+        ComputerActionName::Scroll => ComputerActionKind::Scroll,
+        ComputerActionName::Wait => ComputerActionKind::Wait,
+    };
+    let path = if args.path.is_empty() {
+        None
+    } else {
+        Some(args.path.iter().map(|point| {
+            Ok(ComputerPoint {
+                x: i32::try_from(point.x).map_err(|_| "drag path x is out of native desktop range".to_string())?,
+                y: i32::try_from(point.y).map_err(|_| "drag path y is out of native desktop range".to_string())?,
+            })
+        }).collect::<Result<Vec<_>, String>>()?)
+    };
+    Ok(ComputerAction {
+        action,
+        x: native_i32(args.x, "x")?, y: native_i32(args.y, "y")?,
+        x2: native_i32(args.x2, "x2")?, y2: native_i32(args.y2, "y2")?,
+        path,
+        text: args.text.clone(), key: args.key.clone(),
+        button: args.button.map(|button| match button {
+            MouseButtonInput::Left => ComputerMouseButton::Left,
+            MouseButtonInput::Right => ComputerMouseButton::Right,
+            MouseButtonInput::Middle => ComputerMouseButton::Middle,
+        }),
+        click_count: args.count,
+        direction: args.direction.map(|direction| match direction {
+            ScrollDirectionInput::Up => ComputerScrollDirection::Up,
+            ScrollDirectionInput::Down => ComputerScrollDirection::Down,
+            ScrollDirectionInput::Left => ComputerScrollDirection::Left,
+            ScrollDirectionInput::Right => ComputerScrollDirection::Right,
+        }),
+        amount: native_i32(args.amount, "amount")?,
+        wait_ms: args.duration_ms,
+        description: args.description.clone(),
+    })
+}
+
+fn native_computer_actions(args: &ComputerActionArgs) -> Result<Vec<ComputerAction>, String> {
+    let mut actions = Vec::with_capacity(1 + args.then_actions.len());
+    actions.push(native_computer_action(args)?);
+    for follow_up in &args.then_actions {
+        actions.push(native_computer_action(follow_up)?);
+    }
+    Ok(actions)
+}
+
+pub struct NativeDesktopRemoteExecutor;
+
+impl RemoteComputerNativeExecutor for NativeDesktopRemoteExecutor {
+    fn execute(
+        &self,
+        operation: &ClaimedRemoteOperation,
+        arguments: &Value,
+        _disk_preflight: &Value,
+    ) -> RemoteComputerNativeOutcome {
+        if operation.tool_name != "Computer" {
+            return RemoteComputerNativeOutcome::Failed(json!({"code":"unsupported_tool","message":"Only the product Computer contract is enabled on this target path.","retryable":false}));
+        }
+        if !mahayana_computer::control_policy().remote_control_enabled {
+            return RemoteComputerNativeOutcome::Failed(json!({"code":"remote_control_disabled","message":"Remote Computer is disabled in Fabushi settings.","retryable":false}));
+        }
+        let parsed = match parse_remote_computer_action(arguments) {
+            Ok(action) => action,
+            Err(error) => return RemoteComputerNativeOutcome::Failed(json!({"code":"invalid_arguments","message":error.to_string(),"retryable":false})),
+        };
+        if parsed.action == ComputerActionName::Screenshot
+            || parsed.then_actions.iter().any(|action| action.action == ComputerActionName::Screenshot)
+        {
+            return RemoteComputerNativeOutcome::Failed(json!({"code":"sensitive_result_channel_unavailable","message":"Remote screenshot transfer is disabled until the authenticated sensitive-result channel is active.","retryable":false}));
+        }
+        let actions = match native_computer_actions(&parsed) {
+            Ok(actions) => actions,
+            Err(message) => return RemoteComputerNativeOutcome::Failed(json!({"code":"invalid_arguments","message":message,"retryable":false})),
+        };
+        let lease = mahayana_computer::ComputerControlLeaseRequest::new(
+            format!("official-device-mcp:{}", operation.client_id),
+            operation.session_id.clone(),
+            "local-desktop",
+            ComputerControlOrigin::RemoteMobile,
+            "remote-human",
+        );
+        match mahayana_computer::execute_with_lease(&actions, ComputerControlOrigin::RemoteMobile, &lease) {
+            Ok(result) => RemoteComputerNativeOutcome::Completed(json!({
+                "content": "Computer action ran on the authorized target desktop.",
+                "actionsExecuted": result.actions_executed,
+                "capturedAtMs": result.snapshot.captured_at_ms,
+                "width": result.snapshot.width,
+                "height": result.snapshot.height,
+                "screenshotTransferred": false,
+            })),
+            Err(error) => RemoteComputerNativeOutcome::Failed(json!({"code":"computer_action_failed","message":error.to_string(),"retryable":false})),
+        }
     }
 }
 
@@ -1210,6 +1399,21 @@ impl RemoteComputerTargetNetworkService {
         *cache = Some((ingress.clone(), Instant::now()));
         Ok(ingress)
     }
+}
+
+pub fn production_remote_computer_target_service(
+    base_url: &str,
+    credential_provider: Arc<dyn FabushiCoreCredentialProvider>,
+    device_secret_provider: Arc<dyn RemoteComputerDeviceSecretProvider>,
+) -> Result<Arc<dyn NetworkWorkerService>, RemoteComputerTargetError> {
+    let client = Arc::new(FabushiCoreTargetClient::new(base_url, credential_provider, device_secret_provider)?);
+    Ok(Arc::new(RemoteComputerTargetNetworkService::new(
+        client,
+        Arc::new(NativeDesktopRemoteToolCatalog),
+        Arc::new(NativeDesktopRemoteToolAuthorizer),
+        Arc::new(NativeDesktopRemoteExecutor),
+        REMOTE_COMPUTER_TARGET_PORT,
+    )?))
 }
 
 impl NetworkWorkerService for RemoteComputerTargetNetworkService {

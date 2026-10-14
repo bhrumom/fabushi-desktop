@@ -243,10 +243,12 @@ use mahayana_host_runtime::host_production_extensions::{
     start_production_host_extensions,
 };
 use mahayana_host_runtime::network_enrollment_owner::{
-    NetworkEnrollmentOwner, NetworkEnrollmentSupervisor,
+    DEFAULT_FABUSHI_API_BASE_URL, FABUSHI_API_BASE_URL_ENV, NetworkEnrollmentOwner,
+    NetworkEnrollmentSupervisor,
 };
 use mahayana_host_runtime::remote_computer_target::{
     FileRemoteComputerDeviceSecretProvider, RemoteComputerDeviceSecretProvider,
+    production_remote_computer_target_service,
 };
 use mahayana_host_runtime::extensions::auth::auth_service::FabushiCoreCredentialProvider;
 use mahayana_host_runtime::host_invariant::{install_invariant_reporter, invariant_failure};
@@ -10940,12 +10942,24 @@ fn main() {
                     production_extensions.auth.service().clone();
                 let device_secret_provider: Arc<dyn RemoteComputerDeviceSecretProvider> =
                     Arc::new(device_provider);
+                let api_base_url = std::env::var(FABUSHI_API_BASE_URL_ENV)
+                    .unwrap_or_else(|_| DEFAULT_FABUSHI_API_BASE_URL.to_string());
+                let target_service = production_remote_computer_target_service(
+                    &api_base_url,
+                    Arc::clone(&credential_provider),
+                    Arc::clone(&device_secret_provider),
+                )
+                .map(Some)
+                .unwrap_or_else(|error| {
+                    eprintln!("[fabushi-fdn] remote target service unavailable: {error}");
+                    None
+                });
                 match NetworkEnrollmentOwner::from_environment(
                     credential_provider,
                     device_secret_provider,
                     app_data_dir.join("fdn-network"),
                 ) {
-                    Ok(owner) => match NetworkEnrollmentSupervisor::start(owner) {
+                    Ok(owner) => match NetworkEnrollmentSupervisor::start_with_service(owner, target_service) {
                         Ok(supervisor) => Some(supervisor),
                         Err(error) => {
                             eprintln!("[fabushi-fdn] network enrollment supervisor unavailable: {error}");
