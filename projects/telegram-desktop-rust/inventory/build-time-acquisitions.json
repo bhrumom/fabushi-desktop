@@ -128,7 +128,7 @@
       "source_line": 954,
       "repository": "https://github.com/desktop-app/tg_owt.git",
       "ref_kind": "commit",
-      "commit": "e2d0e88d1bde6cc600da5dc92581dc97e4c1e685",
+      "commit": "07fb35bc33b3e79125a1beab7690e830f183f5d8",
       "disposition": "build-input-exact-pin",
       "status": "classified",
       "source_scope": "accepted-upstream"
@@ -205,7 +205,7 @@
       "source_line": 510,
       "repository": "https://github.com/desktop-app/tg_owt.git",
       "ref_kind": "commit",
-      "commit": "e2d0e88d1bde6cc600da5dc92581dc97e4c1e685",
+      "commit": "07fb35bc33b3e79125a1beab7690e830f183f5d8",
       "disposition": "build-input-exact-pin",
       "status": "classified",
       "source_scope": "accepted-upstream"
