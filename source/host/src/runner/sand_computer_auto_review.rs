@@ -81,7 +81,7 @@ pub fn is_sand_computer_auto_review_mutating_action(action: &str) -> bool {
 }
 
 pub fn requires_sand_computer_declared_description(action: &str) -> bool {
-    matches!(action, "click" | "drag")
+    matches!(action, "click" | "doubleClick" | "drag")
 }
 
 pub fn normalize_sand_computer_exact_action_args(raw: &Value) -> Result<Value, SandComputerAutoReviewBlockedError> {
@@ -323,7 +323,7 @@ where
         && normalize_sand_computer_description(description)?.is_none()
     {
         return Err(SandComputerAutoReviewBlockedError(
-            "Computer click and drag actions require a concise description field stating the intended UI target and purpose.".into(),
+            "Computer click, Double Click, and drag actions require a concise description field stating the intended UI target and purpose.".into(),
         ));
     }
     let display_state_identity = capture_display_state_identity()

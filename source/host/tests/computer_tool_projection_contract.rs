@@ -21,8 +21,8 @@ use mahayana_host_runtime::runner::tools::sand_computer_tool::{
     ComputerActionArgs, ComputerActionName, ComputerCoordinate, ComputerToolExecutor,
     ComputerToolExposure, SandComputerToolBridge,
     ComputerUseResult, MouseButtonInput, ReportedComputerAction, ScrollDirectionInput,
-    build_computer_action_sequence, describe_outcome, drag_path,
-    persist_computer_screenshot, reported_batch_position, to_action,
+    build_computer_action_sequence, computer_tool_definitions, describe_outcome, drag_path,
+    parse_remote_computer_action, persist_computer_screenshot, reported_batch_position, to_action,
     validate_computer_action,
 };
 
@@ -88,6 +88,44 @@ fn actions_and_batch_reporting_match_frozen_defaults() {
     let action = to_action(&click).expect("right click");
     assert_eq!(action.value["button"], "RIGHT");
     assert_eq!(action.value["count"], 2);
+}
+
+#[test]
+fn double_click_is_explicit_but_reuses_the_frozen_click_protocol() {
+    let parsed = parse_remote_computer_action(&serde_json::json!({
+        "action": "doubleClick",
+        "x": 10,
+        "y": 20,
+        "description": "Open the selected item"
+    }))
+    .expect("parse doubleClick");
+    assert_eq!(parsed.action, ComputerActionName::DoubleClick);
+    assert!(validate_computer_action(&parsed, Some(SandAutoReviewMode::Enforce)).is_ok());
+
+    let projected = to_action(&parsed).expect("project doubleClick");
+    assert_eq!(projected.action_case, "click");
+    assert_eq!(projected.value["count"], 2);
+    assert_eq!(
+        reported_batch_position(&[parsed.clone()]),
+        Some(ReportedComputerAction::Click {
+            x: 10,
+            y: 20,
+            button: "left".into(),
+            count: 2,
+        })
+    );
+
+    let mut invalid = parsed.clone();
+    invalid.count = Some(3);
+    assert!(validate_computer_action(&invalid, None).is_err());
+
+    let definitions = computer_tool_definitions();
+    let computer = definitions.iter().find(|tool| tool.name == "Computer").expect("Computer");
+    assert!(computer.input_schema["properties"]["action"]["enum"]
+        .as_array()
+        .expect("action enum")
+        .iter()
+        .any(|value| value.as_str() == Some("doubleClick")));
 }
 
 #[test]

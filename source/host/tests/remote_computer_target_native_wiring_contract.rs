@@ -82,6 +82,19 @@ fn sensitive_screenshot_uses_native_capture_and_never_persists_plaintext_to_core
 }
 
 #[test]
+fn remote_target_advertises_double_click_and_maps_it_to_the_existing_native_click_executor() {
+    for required in [
+        "\"doubleClick\"",
+        "ComputerActionName::DoubleClick => ComputerActionKind::Click",
+        "args.action == ComputerActionName::DoubleClick",
+        "Some(2)",
+        "doubleClick has a fixed click count of 2",
+    ] {
+        assert!(TARGET.contains(required), "missing Double Click target invariant: {required}");
+    }
+}
+
+#[test]
 fn shipping_host_attaches_target_service_to_same_network_owner() {
     for required in [
         "production_remote_computer_target_service(",
