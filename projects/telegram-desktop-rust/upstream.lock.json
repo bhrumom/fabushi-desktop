@@ -11,7 +11,7 @@
     "commit": "d77f486228a98e15d6695514d5f2b28ce1c6a872",
     "tree": "c7b1a84d6ae8c4bb63a835ee24a593c740b147a2",
     "committed_at": "2026-10-14T08:21:16Z",
-    "accepted": true
+    "accepted": false
   },
   "previous_historical_baseline": {
     "commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
@@ -274,7 +274,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Rebaseline to telegramdesktop/tdesktop@d77f486228a98e15d6695514d5f2b28ce1c6a872 is pending current-head GitHub Actions evidence. Full Revision 9 source closure remains open; no predecessor run is promoted to current evidence."
+    "note": "Rebaseline to telegramdesktop/tdesktop@d77f486228a98e15d6695514d5f2b28ce1c6a872 remains unaccepted pending current-head GitHub Actions provenance. Full Revision 9 source closure remains open; predecessor evidence stays historical-only."
   },
   "baseline_identity_evidence": {
     "status": "pending-current-head-revalidation",
