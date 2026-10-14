@@ -37,7 +37,7 @@
     {
       "id": "ACQ-R9-IMMUTABLE-002",
       "source_path": "Telegram/build/docker/centos_env/Dockerfile",
-      "source_line": 163,
+      "source_line": 164,
       "repository": "https://github.com/desktop-app/patches.git",
       "ref_kind": "commit",
       "commit": "f7433965ed33996c641a822c78a81eef3526c9e7",
@@ -125,7 +125,7 @@
     {
       "id": "ACQ-R9-IMMUTABLE-010",
       "source_path": "Telegram/build/docker/centos_env/Dockerfile",
-      "source_line": 954,
+      "source_line": 955,
       "repository": "https://github.com/desktop-app/tg_owt.git",
       "ref_kind": "commit",
       "commit": "07fb35bc33b3e79125a1beab7690e830f183f5d8",
@@ -147,7 +147,7 @@
     {
       "id": "ACQ-R9-IMMUTABLE-012",
       "source_path": "Telegram/build/docker/centos_env/Dockerfile",
-      "source_line": 1007,
+      "source_line": 1009,
       "repository": "https://github.com/dkaraush/tlottie.git",
       "ref_kind": "commit",
       "commit": "92df98dc209bc39b1e567ec74a8c86a0af5239de",
@@ -191,7 +191,7 @@
     {
       "id": "ACQ-R9-IMMUTABLE-016",
       "source_path": "snap/snapcraft.yaml",
-      "source_line": 479,
+      "source_line": 510,
       "repository": "https://github.com/dkaraush/tlottie.git",
       "ref_kind": "commit",
       "commit": "92df98dc209bc39b1e567ec74a8c86a0af5239de",
@@ -202,10 +202,32 @@
     {
       "id": "ACQ-R9-IMMUTABLE-017",
       "source_path": "snap/snapcraft.yaml",
-      "source_line": 510,
+      "source_line": 529,
       "repository": "https://github.com/desktop-app/tg_owt.git",
       "ref_kind": "commit",
       "commit": "07fb35bc33b3e79125a1beab7690e830f183f5d8",
+      "disposition": "build-input-exact-pin",
+      "status": "classified",
+      "source_scope": "accepted-upstream"
+    },
+    {
+      "id": "ACQ-R9-IMMUTABLE-018",
+      "source_path": "Telegram/build/docker/centos_env/Dockerfile",
+      "source_line": 1015,
+      "repository": "https://github.com/i582/wallet-engine.git",
+      "ref_kind": "commit",
+      "commit": "e59e0d89d7ee90c388bf36e3334c5b276f396697",
+      "disposition": "build-input-exact-pin",
+      "status": "classified",
+      "source_scope": "accepted-upstream"
+    },
+    {
+      "id": "ACQ-R9-IMMUTABLE-019",
+      "source_path": "snap/snapcraft.yaml",
+      "source_line": 517,
+      "repository": "https://github.com/i582/wallet-engine.git",
+      "ref_kind": "commit",
+      "commit": "e59e0d89d7ee90c388bf36e3334c5b276f396697",
       "disposition": "build-input-exact-pin",
       "status": "classified",
       "source_scope": "accepted-upstream"
