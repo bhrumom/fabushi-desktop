@@ -132,3 +132,23 @@ fn target_tool_description_is_service_bound_and_sourced_from_existing_host_bridg
         "tool description responses must not expose the service-bound controller credential"
     );
 }
+
+
+#[test]
+fn remote_computer_reuses_existing_host_computer_executor_and_fails_closed_for_untransferred_screenshots() {
+    for required in [
+        "pub struct HostComputerRemoteExecutor",
+        "computer: Arc<dyn ComputerToolExecutor>",
+        "parse_remote_computer_action(arguments)",
+        "self.computer.execute(&action, &operation.request_id)",
+        ""sensitive_result_channel_unavailable"",
+        ""screenshotTransferred": false",
+        ""unsupported_tool"",
+    ] {
+        assert!(TARGET_SOURCE.contains(required), "missing Host Computer adapter invariant: {required}");
+    }
+    assert!(
+        TARGET_SOURCE.contains("if operation.tool_name == "Screenshot""),
+        "remote Screenshot must remain explicitly fenced until the sensitive result channel exists"
+    );
+}
