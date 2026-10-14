@@ -196,6 +196,10 @@ pub trait RemoteComputerToolAuthorizer: Send + Sync {
     ) -> Result<i64, RemoteComputerTargetError>;
 }
 
+pub trait RemoteComputerToolCatalog: Send + Sync {
+    fn describe_tool(&self, tool_name: &str) -> Result<Option<Value>, RemoteComputerTargetError>;
+}
+
 #[derive(Debug, Deserialize)]
 #[serde(tag = "type", rename_all = "camelCase", deny_unknown_fields)]
 enum RemoteTargetPrivateRequest {
@@ -206,6 +210,15 @@ enum RemoteTargetPrivateRequest {
         delegation_id: String,
         request_id: String,
         label: String,
+    },
+    DescribeTool {
+        device_id: String,
+        network_generation: i64,
+        connection_id: String,
+        delegation_id: String,
+        request_id: String,
+        label: String,
+        tool_name: String,
     },
     AuthorizeTool {
         device_id: String,
@@ -595,6 +608,7 @@ impl FabushiCoreTargetClient {
         worker: &mut OwnedNetworkWorker,
         expected_peer: &str,
         local_port: u16,
+        catalog: &dyn RemoteComputerToolCatalog,
         authorizer: &dyn RemoteComputerToolAuthorizer,
         executor: &dyn RemoteComputerNativeExecutor,
     ) -> Result<(), RemoteComputerTargetError> {
@@ -604,7 +618,7 @@ impl FabushiCoreTargetClient {
         let stream_id = worker
             .stream_listen(expected_peer, local_port, REMOTE_TARGET_STREAM_TIMEOUT_MS)
             .map_err(|_| RemoteComputerTargetError::TransportFailed)?;
-        let result = self.serve_private_stream(worker, &stream_id, authorizer, executor);
+        let result = self.serve_private_stream(worker, &stream_id, catalog, authorizer, executor);
         let close_result = worker.stream_close(&stream_id);
         match (result, close_result) {
             (Err(error), _) => Err(error),
@@ -617,6 +631,7 @@ impl FabushiCoreTargetClient {
         &self,
         worker: &mut OwnedNetworkWorker,
         stream_id: &str,
+        catalog: &dyn RemoteComputerToolCatalog,
         authorizer: &dyn RemoteComputerToolAuthorizer,
         executor: &dyn RemoteComputerNativeExecutor,
     ) -> Result<(), RemoteComputerTargetError> {
@@ -648,6 +663,47 @@ impl FabushiCoreTargetClient {
                         "delegationId": grant.delegation_id,
                         "requestId": grant.request_id,
                         "reconciled": grant.reconciled,
+                        "networkGeneration": network_generation,
+                    }),
+                )
+            }
+            RemoteTargetPrivateRequest::DescribeTool {
+                device_id,
+                network_generation,
+                connection_id,
+                delegation_id,
+                request_id,
+                label,
+                tool_name,
+            } => {
+                self.require_current_network_binding(&device_id, network_generation)?;
+                let grant =
+                    self.grant_service_client(&connection_id, &delegation_id, &request_id, &label)?;
+                let tool = catalog.describe_tool(&tool_name)?;
+                if let Some(descriptor) = tool.as_ref() {
+                    if descriptor.get("name").and_then(Value::as_str) != Some(tool_name.as_str()) {
+                        return Err(RemoteComputerTargetError::IdentityMismatch);
+                    }
+                }
+                let schema_version = tool
+                    .as_ref()
+                    .map(tool_descriptor_sha256)
+                    .transpose()?
+                    .unwrap_or_default();
+                write_private_frame(
+                    worker,
+                    stream_id,
+                    &json!({
+                        "type": "toolDescription",
+                        "deviceId": device_id,
+                        "clientId": grant.client_id,
+                        "connectionId": connection_id,
+                        "delegationId": delegation_id,
+                        "requestId": request_id,
+                        "toolName": tool_name,
+                        "available": tool.is_some(),
+                        "schemaVersion": schema_version,
+                        "tool": tool,
                         "networkGeneration": network_generation,
                     }),
                 )
@@ -899,6 +955,12 @@ fn write_private_frame(
         return Err(RemoteComputerTargetError::TransportFailed);
     }
     Ok(())
+}
+
+fn tool_descriptor_sha256(value: &Value) -> Result<String, RemoteComputerTargetError> {
+    let mut canonical = String::new();
+    canonical_json(value, &mut canonical)?;
+    Ok(sha256_hex(canonical.as_bytes()))
 }
 
 fn sha256_hex(bytes: &[u8]) -> String {
