@@ -128,3 +128,10 @@ func (s *encryptedStateStore) pathFor(id ipn.StateKey) string {
 	sum := sha256.Sum256([]byte(id))
 	return filepath.Join(s.dir, hex.EncodeToString(sum[:])+".bin")
 }
+
+func replaceFile(source, destination string) error {
+	// Both paths live in the same private state directory. os.Rename maps to
+	// the platform's same-filesystem rename/replace primitive and prevents a
+	// partially-written destination from becoming visible.
+	return os.Rename(source, destination)
+}
