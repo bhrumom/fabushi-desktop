@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use reqwest::blocking::Client;
 use serde_json::{Value, json};
+use sha2::{Digest, Sha256};
 use thiserror::Error;
 use url::Url;
 
@@ -11,6 +12,66 @@ use crate::extensions::auth::auth_service::{
 
 const CORE_REQUEST_TIMEOUT_SECS: u64 = 15;
 const MAX_CORE_RESPONSE_BYTES: usize = 1024 * 1024;
+
+fn canonical_json(value: &Value, output: &mut String) -> Result<(), RemoteComputerTargetError> {
+    match value {
+        Value::Null => output.push_str("null"),
+        Value::Bool(value) => output.push_str(if *value { "true" } else { "false" }),
+        Value::Number(value) => output.push_str(&value.to_string()),
+        Value::String(value) => output.push_str(
+            &serde_json::to_string(value).map_err(|_| RemoteComputerTargetError::InvalidResponse)?,
+        ),
+        Value::Array(values) => {
+            output.push('[');
+            for (index, value) in values.iter().enumerate() {
+                if index > 0 {
+                    output.push(',');
+                }
+                canonical_json(value, output)?;
+            }
+            output.push(']');
+        }
+        Value::Object(values) => {
+            output.push('{');
+            let mut keys = values.keys().collect::<Vec<_>>();
+            keys.sort_unstable();
+            for (index, key) in keys.into_iter().enumerate() {
+                if index > 0 {
+                    output.push(',');
+                }
+                output.push_str(
+                    &serde_json::to_string(key)
+                        .map_err(|_| RemoteComputerTargetError::InvalidResponse)?,
+                );
+                output.push(':');
+                canonical_json(&values[key], output)?;
+            }
+            output.push('}');
+        }
+    }
+    Ok(())
+}
+
+pub fn operation_request_sha256(
+    tool_name: &str,
+    arguments: &Value,
+    disk_preflight: &Value,
+) -> Result<String, RemoteComputerTargetError> {
+    let request = json!({
+        "arguments": arguments,
+        "diskPreflight": disk_preflight,
+        "toolName": tool_name,
+    });
+    let mut canonical = String::new();
+    canonical_json(&request, &mut canonical)?;
+    let digest = Sha256::digest(canonical.as_bytes());
+    let mut encoded = String::with_capacity(64);
+    use std::fmt::Write as _;
+    for byte in digest {
+        write!(&mut encoded, "{byte:02x}").map_err(|_| RemoteComputerTargetError::InvalidResponse)?;
+    }
+    Ok(encoded)
+}
 
 pub trait RemoteComputerDeviceSecretProvider: Send + Sync {
     fn get_device_secret(&self, credential: &FabushiCoreCredential) -> Result<String, RemoteComputerTargetError>;
