@@ -780,6 +780,7 @@ struct DownloadPackSink {
     owner: Option<(u32, u32)>,
     budget: Arc<BoxStoreByteBudget>,
     summary: Arc<Mutex<BoxStoreDownloadSummary>>,
+    progress_report_lock: Mutex<()>,
     options: BoxStoreDownloadOptions,
 }
 
@@ -873,6 +874,10 @@ impl PackExtractionSink for DownloadPackSink {
                     .remove(rel_path);
                 continue;
             }
+            let _report_guard = self
+                .progress_report_lock
+                .lock()
+                .expect("pack progress report lock");
             let progress = {
                 let mut summary = self.summary.lock().expect("download summary lock");
                 summary.verified = summary.verified.saturating_add(1);
@@ -966,6 +971,7 @@ fn restore_bulk_small_from_packs(
         owner,
         budget,
         summary,
+        progress_report_lock: Mutex::new(()),
         options: options.clone(),
     });
     let temp_dir = std::env::temp_dir().join(PACK_TMP_DIR_NAME);
