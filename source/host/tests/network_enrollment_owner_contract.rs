@@ -107,3 +107,16 @@ fn shipping_host_wires_network_owner_without_making_account_login_depend_on_it()
     assert!(APP_MAIN.contains("Err(_) => None"));
     assert!(APP_MAIN.contains("[fabushi-fdn] network enrollment owner unavailable"));
 }
+
+#[test]
+fn fdn_network_owner_only_marks_transport_uncertainty_as_outcome_unknown() {
+    assert!(OWNER.contains("RequestRejected"));
+    assert!(OWNER.contains("return Err(NetworkEnrollmentError::RequestRejected);"));
+    assert!(OWNER.contains(
+        "NetworkEnrollmentError::RequestFailed => NetworkEnrollmentError::OutcomeUnknown"
+    ));
+    assert!(
+        !OWNER.contains("NetworkEnrollmentError::RequestRejected => NetworkEnrollmentError::OutcomeUnknown"),
+        "explicit broker/Core rejection must not be rewritten as uncertain execution"
+    );
+}
