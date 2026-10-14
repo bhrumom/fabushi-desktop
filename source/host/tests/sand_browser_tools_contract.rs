@@ -8,6 +8,7 @@ use mahayana_host_runtime::runner::box_tool_access::{
     RunnerBoxWriteRequest,
 };
 use mahayana_host_runtime::runner::routed_provider_runtime::RoutedToolBridge;
+use mahayana_host_runtime::runner::tools::sand_browser_driver_source::SAND_BROWSER_DRIVER_SOURCE;
 use mahayana_host_runtime::runner::tools::sand_browser_tools::{
     BOX_CDP_PORT_BASE, BrowserDriverOutput, BrowserEnvelope, BrowserToolExecutor,
     BrowserShellSafetyCallback, BrowserToolSpec, ProductionBrowserToolExecutor,
@@ -87,7 +88,7 @@ impl RunnerBoxResourcePort for ProductionBoxPort {
                 "kind":"success",
                 "output":{
                     "kind":"content",
-                    "content":"driver log\n__SAND_BROWSER_RESULT__{\"ok\":true,\"summary\":\"Opened page\",\"url\":\"https://example.com\",\"title\":\"Example\",\"screenshot\":true}\n"
+                    "content":"driver log\n__SAND_BROWSER_RESULT__{\"ok\":true,\"summary\":\"Opened page\",\"url\":\"https://example.com\",\"title\":\"Example\",\"viewId\":\"agent-browser\",\"generation\":\"generation-7\",\"screenshot\":true}\n"
                 }
             }));
         }
@@ -131,6 +132,8 @@ impl BrowserToolExecutor for FakeBrowserExecutor {
             ),
             image_b64: None,
             is_error: false,
+            view_id: Some("view-fake".into()),
+            generation: Some("generation-fake".into()),
         })
     }
 }
@@ -157,11 +160,13 @@ fn browser_envelope_and_driver_result_round_trip_frozen_shapes() {
     );
 
     let response = parse_driver_response(
-        "diagnostic\n__SAND_BROWSER_RESULT__{\"ok\":true,\"summary\":\"Clicked\",\"url\":\"https://example.com\",\"screenshot\":true}\nafter-result diagnostic\n",
+        "diagnostic\n__SAND_BROWSER_RESULT__{\"ok\":true,\"summary\":\"Clicked\",\"url\":\"https://example.com\",\"viewId\":\"view-a\",\"generation\":\"generation-a\",\"screenshot\":true}\nafter-result diagnostic\n",
     ).expect("driver response");
     assert!(response.ok);
     assert_eq!(response.summary.as_deref(), Some("Clicked"));
     assert_eq!(response.url.as_deref(), Some("https://example.com"));
+    assert_eq!(response.view_id.as_deref(), Some("view-a"));
+    assert_eq!(response.generation.as_deref(), Some("generation-a"));
     assert_eq!(response.screenshot, Some(true));
 }
 
@@ -250,6 +255,12 @@ fn browser_toolset_registers_frozen_inventory_validates_and_delegates() {
     ).expect("navigate result");
     assert_eq!(result["text"], "navigate:tool-nav:https://example.com");
     assert_eq!(result["isError"], false);
+    assert_eq!(result["viewId"], "view-fake");
+    assert_eq!(result["generation"], "generation-fake");
+    assert_eq!(
+        navigate.input_schema["properties"]["expectedGeneration"]["type"],
+        "string"
+    );
 
     let base = tools.iter().find(|tool| tool.name == "base_tool").expect("base");
     assert_eq!(
@@ -286,6 +297,64 @@ fn browser_review_state_uses_host_box_probe_and_view_mapping() {
         request.command.contains("http://127.0.0.1:9226/json/list")
             && request.command.contains("/tmp/sand-browser-review-state-browserreview1.json")
     }));
+}
+
+#[test]
+fn browser_claim_generation_is_persisted_under_the_existing_cross_process_lock() {
+    for required in [
+        "generations:",
+        "freshViewGeneration",
+        "ensureViewGeneration",
+        "bumpViewGeneration",
+        "withViewClaimLock(display, fn, required = false)",
+        "if (required && !locked)",
+        "saveState(display, state, required = false)",
+        "if (required) throw error",
+        "generations: { [viewId]: generation }",
+        "await bumpViewGeneration(request.display, state, viewId);",
+        "out.generation = generation",
+    ] {
+        assert!(
+            SAND_BROWSER_DRIVER_SOURCE.contains(required),
+            "missing browser generation invariant: {required}"
+        );
+    }
+    assert!(
+        SAND_BROWSER_DRIVER_SOURCE.contains("}, true);"),
+        "generation-sensitive view claims must require the cross-process lock"
+    );
+    assert!(
+        SAND_BROWSER_DRIVER_SOURCE.contains("delete generations[removed];"),
+        "closing a view must remove its persisted generation"
+    );
+}
+
+#[test]
+fn browser_generation_fencing_rejects_missing_or_stale_claims_before_actions() {
+    for required in [
+        "const GENERATION_FENCED_OPS = new Set([",
+        "function requireExpectedGeneration(request, viewId, generation)",
+        "Browser action requires expectedGeneration for view",
+        "Stale browser view generation for ",
+        "if (expected !== generation)",
+        "requireExpectedGeneration(request, viewId, generation);",
+    ] {
+        assert!(
+            SAND_BROWSER_DRIVER_SOURCE.contains(required),
+            "missing browser stale-generation invariant: {required}"
+        );
+    }
+    let required_index = SAND_BROWSER_DRIVER_SOURCE
+        .find("requireExpectedGeneration(request, viewId, generation);")
+        .expect("generation fence call");
+    let return_index = SAND_BROWSER_DRIVER_SOURCE[required_index..]
+        .find("return { page, viewId };")
+        .map(|offset| required_index + offset)
+        .expect("resolved page return");
+    assert!(
+        required_index < return_index,
+        "generation fence must run before handing the page to an operation"
+    );
 }
 
 #[test]
@@ -354,6 +423,8 @@ fn production_browser_executor_uses_only_host_box_port() {
     assert!(output.text.contains("Opened page"));
     assert!(output.text.contains("https://example.com"));
     assert!(output.image_b64.as_deref().is_some_and(|value| !value.is_empty()));
+    assert_eq!(output.view_id.as_deref(), Some("agent-browser"));
+    assert_eq!(output.generation.as_deref(), Some("generation-7"));
     assert_eq!(
         persisted_images.lock().expect("persisted images").as_slice(),
         &[(vec![137, 80, 78, 71], "image/png".to_string())]
