@@ -500,6 +500,12 @@ fn parse_action_name(value: &str) -> Result<ComputerActionName, ProviderSessionE
     }
 }
 
+pub fn parse_remote_computer_action(
+    value: &Value,
+) -> Result<ComputerActionArgs, ProviderSessionError> {
+    parse_computer_action(value, true)
+}
+
 fn parse_computer_action(
     value: &Value,
     allow_followups: bool,
