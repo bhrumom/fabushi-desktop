@@ -84,6 +84,11 @@ while IFS= read -r request; do
       session_id="$(printf '%s' "$request" | sed -n 's/.*"sessionId":"\([^"]*\)".*/\1/p')"
       printf '%s\n' "{{\"type\":\"streamDialed\",\"requestId\":\"$request_id\",\"sessionId\":\"$session_id\"}}"
       ;;
+    *'"type":"streamListen"'*)
+      request_id="$(printf '%s' "$request" | sed -n 's/.*"requestId":"\([^"]*\)".*/\1/p')"
+      session_id="$(printf '%s' "$request" | sed -n 's/.*"sessionId":"\([^"]*\)".*/\1/p')"
+      printf '%s\n' "{{\"type\":\"streamAccepted\",\"requestId\":\"$request_id\",\"sessionId\":\"$session_id\"}}"
+      ;;
     *'"type":"streamWrite"'*)
       request_id="$(printf '%s' "$request" | sed -n 's/.*"requestId":"\([^"]*\)".*/\1/p')"
       session_id="$(printf '%s' "$request" | sed -n 's/.*"sessionId":"\([^"]*\)".*/\1/p')"
@@ -93,6 +98,11 @@ while IFS= read -r request; do
       request_id="$(printf '%s' "$request" | sed -n 's/.*"requestId":"\([^"]*\)".*/\1/p')"
       session_id="$(printf '%s' "$request" | sed -n 's/.*"sessionId":"\([^"]*\)".*/\1/p')"
       printf '%s\n' "{{\"type\":\"streamData\",\"requestId\":\"$request_id\",\"sessionId\":\"$session_id\",\"dataB64\":\"cG9uZw==\",\"bytes\":4}}"
+      ;;
+    *'"type":"streamCancel"'*)
+      request_id="$(printf '%s' "$request" | sed -n 's/.*"requestId":"\([^"]*\)".*/\1/p')"
+      session_id="$(printf '%s' "$request" | sed -n 's/.*"sessionId":"\([^"]*\)".*/\1/p')"
+      printf '%s\n' "{{\"type\":\"streamCancelled\",\"requestId\":\"$request_id\",\"sessionId\":\"$session_id\"}}"
       ;;
     *'"type":"streamClose"'*)
       request_id="$(printf '%s' "$request" | sed -n 's/.*"requestId":"\([^"]*\)".*/\1/p')"
@@ -144,6 +154,13 @@ exit 0
     assert_eq!(read.data, b"pong");
     assert!(!read.eof);
     owned.stream_close(&stream).expect("close fake stream");
+    let accepted = owned
+        .stream_listen("100.64.0.30", 8443, 1_000)
+        .expect("accept peer-bound fake stream");
+    assert!(accepted.starts_with("stream-"));
+    owned
+        .stream_cancel(&accepted)
+        .expect("cancel accepted fake stream");
     assert!(
         owned
             .stream_write(&stream, &[0_u8; 32 * 1024 + 1], 1_000)
