@@ -790,6 +790,19 @@ impl SensitiveResultVault {
     }
 }
 
+fn sensitive_chunk_range(
+    entry: &SensitiveResultEntry,
+    offset: usize,
+) -> Result<(usize, bool), RemoteComputerTargetError> {
+    if offset != entry.next_offset || offset >= entry.bytes.len() {
+        return Err(RemoteComputerTargetError::IdentityMismatch);
+    }
+    let end = offset
+        .saturating_add(REMOTE_SENSITIVE_RESULT_CHUNK_BYTES)
+        .min(entry.bytes.len());
+    Ok((end, end == entry.bytes.len()))
+}
+
 #[derive(Debug, Clone)]
 struct SensitiveResultAccess {
     result_ref: String,
@@ -1116,7 +1129,8 @@ impl FabushiCoreTargetClient {
 
     fn sensitive_entry_matches(
         entry: &SensitiveResultEntry,
-        credential: &FabushiCoreCredential,
+        current_account_user_id: &str,
+        current_device_id: &str,
         device_id: &str,
         network_generation: i64,
         session_id: &str,
@@ -1125,8 +1139,8 @@ impl FabushiCoreTargetClient {
         request_sha256: &str,
         grant_generation: i64,
     ) -> bool {
-        entry.account_user_id == credential.user_id
-            && entry.device_id == credential.device_id
+        entry.account_user_id == current_account_user_id
+            && entry.device_id == current_device_id
             && entry.device_id == device_id
             && entry.network_generation == network_generation
             && entry.session_id == session_id
@@ -1151,7 +1165,8 @@ impl FabushiCoreTargetClient {
         let (credential, _) = self.authority()?;
         if !Self::sensitive_entry_matches(
             entry,
-            &credential,
+            &credential.user_id,
+            &credential.device_id,
             device_id,
             network_generation,
             session_id,
@@ -1732,12 +1747,8 @@ impl FabushiCoreTargetClient {
             &entry, device_id, network_generation, session_id, client_id,
             request_id, request_sha256, grant_generation,
         )?;
-        if offset != entry.next_offset || offset >= entry.bytes.len() {
-            return Err(RemoteComputerTargetError::IdentityMismatch);
-        }
-        let end = offset.saturating_add(REMOTE_SENSITIVE_RESULT_CHUNK_BYTES).min(entry.bytes.len());
+        let (end, done) = sensitive_chunk_range(&entry, offset)?;
         let encoded = base64::engine::general_purpose::STANDARD.encode(&entry.bytes[offset..end]);
-        let done = end == entry.bytes.len();
         {
             let mut vault = self.sensitive_results
                 .lock()
@@ -2093,4 +2104,101 @@ fn required_text(value: &Value, key: &str) -> Result<String, RemoteComputerTarge
         .filter(|value| !value.is_empty())
         .map(str::to_string)
         .ok_or(RemoteComputerTargetError::InvalidResponse)
+}
+
+
+#[cfg(test)]
+mod sensitive_result_tests {
+    use super::*;
+
+    fn entry(now: i64) -> SensitiveResultEntry {
+        SensitiveResultEntry {
+            account_user_id: "account-a".into(),
+            device_id: "device-a".into(),
+            network_generation: 7,
+            session_id: "session-a".into(),
+            client_id: "client-a".into(),
+            request_id: "request-00000001".into(),
+            request_sha256: "a".repeat(64),
+            tool_name: "Computer".into(),
+            grant_generation: 9,
+            result_sha256: "b".repeat(64),
+            media_type: "image/png".into(),
+            bytes: vec![42; REMOTE_SENSITIVE_RESULT_CHUNK_BYTES + 3],
+            captured_at_ms: 123,
+            width: Some(100),
+            height: Some(80),
+            expires_at: now + 60,
+            next_offset: 0,
+        }
+    }
+
+    #[test]
+    fn sensitive_binding_rejects_wrong_account_device_session_digest_and_generation() {
+        let item = entry(100);
+        assert!(FabushiCoreTargetClient::sensitive_entry_matches(
+            &item, "account-a", "device-a", "device-a", 7, "session-a", "client-a",
+            "request-00000001", &"a".repeat(64), 9,
+        ));
+        assert!(!FabushiCoreTargetClient::sensitive_entry_matches(
+            &item, "account-b", "device-a", "device-a", 7, "session-a", "client-a",
+            "request-00000001", &"a".repeat(64), 9,
+        ));
+        assert!(!FabushiCoreTargetClient::sensitive_entry_matches(
+            &item, "account-a", "device-b", "device-a", 7, "session-a", "client-a",
+            "request-00000001", &"a".repeat(64), 9,
+        ));
+        assert!(!FabushiCoreTargetClient::sensitive_entry_matches(
+            &item, "account-a", "device-a", "device-a", 7, "session-b", "client-a",
+            "request-00000001", &"a".repeat(64), 9,
+        ));
+        assert!(!FabushiCoreTargetClient::sensitive_entry_matches(
+            &item, "account-a", "device-a", "device-a", 7, "session-a", "client-b",
+            "request-00000001", &"a".repeat(64), 9,
+        ));
+        assert!(!FabushiCoreTargetClient::sensitive_entry_matches(
+            &item, "account-a", "device-a", "device-a", 7, "session-a", "client-a",
+            "request-00000001", &"c".repeat(64), 9,
+        ));
+        assert!(!FabushiCoreTargetClient::sensitive_entry_matches(
+            &item, "account-a", "device-a", "device-a", 8, "session-a", "client-a",
+            "request-00000001", &"a".repeat(64), 9,
+        ));
+        assert!(!FabushiCoreTargetClient::sensitive_entry_matches(
+            &item, "account-a", "device-a", "device-a", 7, "session-a", "client-a",
+            "request-00000001", &"a".repeat(64), 10,
+        ));
+    }
+
+    #[test]
+    fn sensitive_chunk_range_is_sequential_and_replay_rejected() {
+        let mut item = entry(100);
+        let (end, done) = sensitive_chunk_range(&item, 0).expect("first chunk");
+        assert_eq!(end, REMOTE_SENSITIVE_RESULT_CHUNK_BYTES);
+        assert!(!done);
+        item.next_offset = end;
+        assert_eq!(
+            sensitive_chunk_range(&item, 0),
+            Err(RemoteComputerTargetError::IdentityMismatch),
+            "old offset must not replay"
+        );
+        let (final_end, final_done) = sensitive_chunk_range(&item, end).expect("final chunk");
+        assert_eq!(final_end, item.bytes.len());
+        assert!(final_done);
+    }
+
+    #[test]
+    fn sensitive_vault_purges_expired_entries_and_is_bounded() {
+        let mut vault = SensitiveResultVault::default();
+        vault.insert("expired".into(), entry(0), 0);
+        vault.purge_expired(61);
+        assert!(vault.entries.is_empty());
+
+        for index in 0..(REMOTE_SENSITIVE_RESULT_MAX_ENTRIES + 2) {
+            let mut item = entry(100);
+            item.expires_at = 200 + index as i64;
+            vault.insert(format!("ref-{index}"), item, 100);
+        }
+        assert!(vault.entries.len() <= REMOTE_SENSITIVE_RESULT_MAX_ENTRIES);
+    }
 }
