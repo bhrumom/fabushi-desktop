@@ -4,6 +4,7 @@ import { dirname } from "node:path";
 
 import type { AuthServicePort } from "../../electron-main/account/cursor-auth-wiring.js";
 import type { SandAuthStatus } from "../../electron-main/account/cursor-auth.js";
+import { settleOptionalRemoteComputerTarget } from "./remote-target-availability.js";
 import { deleteSecret, readSecret, writeSecret } from "../../electron-main/secrets/secret-store.js";
 
 export const FABUSHI_ACCOUNT_SESSION_SECRET = "fabushi-account-session-v1";
@@ -352,7 +353,7 @@ export class FabushiAuthService implements AuthServicePort {
       }
       const verified = await this.resolveIdentity(next);
       await this.saveStoredSession(verified);
-      await this.ensureRemoteComputerRegistration(verified);
+      await this.settleRemoteComputerTarget(verified);
       await this.writeHostCredential(verified);
       return verified;
     })().catch(async (error) => {
@@ -366,6 +367,17 @@ export class FabushiAuthService implements AuthServicePort {
       this.refreshPromise = undefined;
     });
     return await this.refreshPromise;
+  }
+
+  private async settleRemoteComputerTarget(session: FabushiSession): Promise<void> {
+    await settleOptionalRemoteComputerTarget(
+      async () => await this.ensureRemoteComputerRegistration(session),
+      async () => {
+        this.remoteComputerRegisteredIdentity = undefined;
+        this.stopRemoteComputerHeartbeat();
+        await this.clearHostRemoteComputerCredential().catch(() => {});
+      },
+    );
   }
 
   private async currentSession(): Promise<FabushiSession | null> {
@@ -388,7 +400,7 @@ export class FabushiAuthService implements AuthServicePort {
       session = await this.refreshSession(session);
       if (session == null) return null;
     }
-    await this.ensureRemoteComputerRegistration(session);
+    await this.settleRemoteComputerTarget(session);
     await this.writeHostCredential(session);
     return session;
   }
@@ -469,7 +481,7 @@ export class FabushiAuthService implements AuthServicePort {
           const verified = await this.resolveIdentity(session);
           if (epoch !== this.operationEpoch || controller.signal.aborted) return await this.getStatus();
           await this.saveStoredSession(verified);
-          await this.ensureRemoteComputerRegistration(verified);
+          await this.settleRemoteComputerTarget(verified);
           await this.writeHostCredential(verified);
           const status = statusFromSession(verified);
           this.emit(status);
