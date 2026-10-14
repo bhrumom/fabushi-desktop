@@ -62,7 +62,13 @@ on run argv
         end if
         delay 0.1
       end repeat
-      if not directoryInputReady then error "REPORT_DIRECTORY_INPUT_MISMATCH"
+      if not directoryInputReady then
+        set observedPath to enteredDirectory as text
+        if observedPath starts with "/Users/runner/" and (count characters of observedPath) < 512 then
+          error "REPORT_DIRECTORY_INPUT_MISMATCH observed=" & observedPath
+        end if
+        error "REPORT_DIRECTORY_INPUT_MISMATCH length=" & (count characters of observedPath)
+      end if
       key code 36
       set directoryChosen to false
       repeat 100 times

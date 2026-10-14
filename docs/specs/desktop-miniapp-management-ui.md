@@ -120,5 +120,8 @@ do not inspect app-data or relax the report-content assertions.
 The native controller must bind the Save panel by its owning window's stable name,
 not a mutable window index. macOS may expose GoToWindow as a separate top-level
 sheet; resolve its PathTextField by AX identifier and verify the entered directory
-before confirming navigation. Diagnostic traces contain only fixed stage names.
+before confirming navigation. Diagnostic traces contain fixed stage names; the
+sole additional field may be a bounded GoToWindow PathTextField readback beginning
+with `/Users/runner/`, identifying only the disposable public-fixture destination.
+Do not capture other account/window text or clipboard contents.
 
