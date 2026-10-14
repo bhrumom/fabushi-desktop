@@ -6,7 +6,7 @@ use std::sync::{
     atomic::{AtomicBool, Ordering},
 };
 use std::thread::{self, JoinHandle};
-use std::time::Duration;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64_STANDARD};
 use reqwest::blocking::Client;
@@ -112,6 +112,25 @@ impl EnrollmentState {
     fn clear_one_time_secrets(&mut self) {
         self.grant_secret = None;
         self.auth_key = None;
+    }
+
+    fn reset_expired_uncertain_start(&mut self, now: i64) -> bool {
+        if self.phase != "worker_start_outcome_unknown"
+            || self.enrollment_expires_at.is_none_or(|expires_at| expires_at > now)
+        {
+            return false;
+        }
+        self.request_id = format!("network-enroll-request-{}", Uuid::new_v4().simple());
+        self.phase = "grant_pending".into();
+        self.grant_id = None;
+        self.grant_secret = None;
+        self.cell_id = None;
+        self.generation = None;
+        self.enrollment_expires_at = None;
+        self.control_url = None;
+        self.auth_key = None;
+        self.node_id = None;
+        true
     }
 }
 
@@ -471,6 +490,10 @@ impl NetworkEnrollmentOwner {
         let (state_path, tsnet_state_dir) = self.identity_paths(&credential);
         let mut state = self.load_or_create_state(&credential, &state_path)?;
 
+        if state.reset_expired_uncertain_start(unix_seconds()?) {
+            write_state(&state_path, &state)?;
+        }
+
         if state.phase == "completion_outcome_unknown" {
             self.complete_enrollment(&credential, &state_path, &mut state)?;
         }
@@ -533,6 +556,14 @@ impl NetworkEnrollmentOwner {
         }
         Ok(worker)
     }
+}
+
+fn unix_seconds() -> Result<i64, NetworkEnrollmentError> {
+    let seconds = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_err(|_| NetworkEnrollmentError::StateFailed)?
+        .as_secs();
+    i64::try_from(seconds).map_err(|_| NetworkEnrollmentError::StateFailed)
 }
 
 pub struct NetworkEnrollmentSupervisor {
