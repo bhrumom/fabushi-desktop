@@ -35,7 +35,7 @@ fn fdn_network_owner_uses_existing_first_party_authority_boundaries() {
 fn fdn_network_owner_persists_reconcile_identity_before_side_effects() {
     let state_write = OWNER.find("write_state(path, &state)?").expect("initial durable state");
     let grant_request = OWNER
-        .find(""network-enrollment-grants"")
+        .find(r#""network-enrollment-grants""#)
         .expect("Core grant request");
     assert!(
         state_write < grant_request,
@@ -59,10 +59,10 @@ fn fdn_network_owner_never_blindly_reuses_uncertain_one_time_auth_key() {
     assert!(OWNER.contains("worker_start_outcome_unknown"));
     assert!(OWNER.contains("state.auth_key = None"));
     assert!(OWNER.contains(
-        ""worker_start_outcome_unknown" | "completion_outcome_unknown" | "completed" => String::new()"
+        r#""worker_start_outcome_unknown" | "completion_outcome_unknown" | "completed" => String::new()"#
     ));
     assert!(
-        !OWNER.contains("worker_start_outcome_unknown" => state.auth_key"),
+        !OWNER.contains(r#""worker_start_outcome_unknown" => state.auth_key"#),
         "uncertain worker start must not automatically replay the one-time authKey"
     );
 }
@@ -89,10 +89,10 @@ fn fdn_network_owner_fences_account_switch_and_supervises_shipping_worker() {
 fn fdn_network_owner_keeps_private_state_and_network_secrets_out_of_debug() {
     assert!(OWNER.contains("options.mode(0o600)"));
     assert!(OWNER.contains("Permissions::from_mode(0o600)"));
-    assert!(OWNER.contains(".field("credential_provider", &"<first-party>")"));
-    assert!(OWNER.contains(".field("device_secret_provider", &"<redacted>")"));
-    assert!(!OWNER.contains(".field("auth_key""));
-    assert!(!OWNER.contains("eprintln!("{auth_key}"));
+    assert!(OWNER.contains(r#".field("credential_provider", &"<first-party>")"#));
+    assert!(OWNER.contains(r#".field("device_secret_provider", &"<redacted>")"#));
+    assert!(!OWNER.contains(r#".field("auth_key""#));
+    assert!(!OWNER.contains(r#"eprintln!("{auth_key}"#));
 }
 
 #[test]
