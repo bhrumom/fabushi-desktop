@@ -86,6 +86,19 @@ export interface FabushiAuthServiceOptions {
   readonly now?: () => number;
 }
 
+export async function settleOptionalRemoteComputerTarget(
+  ensureTarget: () => Promise<void>,
+  onUnavailable: () => Promise<void>,
+): Promise<"ready" | "unavailable"> {
+  try {
+    await ensureTarget();
+    return "ready";
+  } catch {
+    await onUnavailable();
+    return "unavailable";
+  }
+}
+
 export class FabushiAuthService implements AuthServicePort {
   private readonly listeners = new Set<(status: SandAuthStatus) => void>();
   private readonly baseUrl: string;
@@ -388,7 +401,14 @@ export class FabushiAuthService implements AuthServicePort {
       session = await this.refreshSession(session);
       if (session == null) return null;
     }
-    await this.ensureRemoteComputerRegistration(session);
+    await settleOptionalRemoteComputerTarget(
+      async () => await this.ensureRemoteComputerRegistration(session),
+      async () => {
+        this.remoteComputerRegisteredIdentity = undefined;
+        this.stopRemoteComputerHeartbeat();
+        await this.clearHostRemoteComputerCredential().catch(() => {});
+      },
+    );
     await this.writeHostCredential(session);
     return session;
   }
