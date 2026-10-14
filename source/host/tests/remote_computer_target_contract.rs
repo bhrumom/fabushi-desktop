@@ -135,22 +135,27 @@ fn target_tool_description_is_service_bound_and_sourced_from_existing_host_bridg
 
 
 #[test]
-fn remote_computer_reuses_existing_host_computer_executor_and_fails_closed_for_untransferred_screenshots() {
+fn remote_computer_removes_superseded_host_adapter_after_native_sensitive_result_wiring() {
     for required in [
+        "pub struct NativeDesktopRemoteExecutor",
+        "parse_remote_computer_action(arguments)",
+        r#""sensitive_result_required""#,
+        r#""screenshotTransferred": false"#,
+        "RemoteComputerNativeOutcome::SensitiveCompleted",
+    ] {
+        assert!(TARGET_SOURCE.contains(required), "missing native Remote Computer invariant: {required}");
+    }
+    for forbidden in [
         "pub struct HostComputerRemoteExecutor",
         "computer: Arc<dyn ComputerToolExecutor>",
-        "parse_remote_computer_action(arguments)",
         "self.computer.execute(&action, &operation.request_id)",
-        r#""sensitive_result_channel_unavailable""#,
-        r#""screenshotTransferred": false"#,
-        r#""unsupported_tool""#,
+        "sensitive_result_channel_unavailable",
     ] {
-        assert!(TARGET_SOURCE.contains(required), "missing Host Computer adapter invariant: {required}");
+        assert!(
+            !TARGET_SOURCE.contains(forbidden),
+            "superseded Host Computer adapter invariant remains in the shipping target: {forbidden}"
+        );
     }
-    assert!(
-        TARGET_SOURCE.contains(r#"if operation.tool_name == "Screenshot""#),
-        "remote Screenshot must remain explicitly fenced until the sensitive result channel exists"
-    );
 }
 
 #[test]

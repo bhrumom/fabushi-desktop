@@ -1,7 +1,10 @@
+use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 use std::net::IpAddr;
 use std::sync::{Arc, Mutex};
+
+use base64::Engine as _;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use reqwest::blocking::Client;
@@ -14,6 +17,7 @@ use mahayana_host_protocol::{
 };
 use thiserror::Error;
 use url::Url;
+use uuid::Uuid;
 
 use crate::extensions::auth::auth_service::{
     FabushiCoreCredential, FabushiCoreCredentialProvider,
@@ -22,8 +26,8 @@ use crate::network_enrollment_owner::{NetworkEnrollmentError, NetworkWorkerServi
 use crate::network_worker_process::OwnedNetworkWorker;
 use crate::runner::routed_provider_runtime::RoutedToolBridge;
 use crate::runner::tools::sand_computer_tool::{
-    ComputerActionArgs, ComputerActionName, ComputerToolExecutor, ComputerUseResult,
-    MouseButtonInput, ScrollDirectionInput, parse_remote_computer_action,
+    ComputerActionArgs, ComputerActionName, MouseButtonInput, ScrollDirectionInput,
+    parse_remote_computer_action,
 };
 
 const CORE_REQUEST_TIMEOUT_SECS: u64 = 15;
@@ -33,6 +37,10 @@ const REMOTE_TARGET_SERVICE_STREAM_TIMEOUT_MS: u64 = 1_000;
 const REMOTE_TARGET_INGRESS_CACHE_TTL: Duration = Duration::from_secs(10);
 const REMOTE_TARGET_FRAME_MAX_BYTES: usize = 32 * 1024;
 const REMOTE_TARGET_RESULT_MAX_BYTES: usize = 1024 * 1024;
+const REMOTE_SENSITIVE_RESULT_MAX_BYTES: usize = 8 * 1024 * 1024;
+const REMOTE_SENSITIVE_RESULT_CHUNK_BYTES: usize = 16 * 1024;
+const REMOTE_SENSITIVE_RESULT_TTL_SECONDS: i64 = 60;
+const REMOTE_SENSITIVE_RESULT_MAX_ENTRIES: usize = 8;
 pub const REMOTE_COMPUTER_TARGET_PORT: u16 = 8792;
 const REMOTE_NATIVE_TOOL_GRANT_MAX_SECONDS: i64 = 5 * 60;
 
@@ -185,9 +193,32 @@ pub enum RemoteComputerTargetError {
 
 
 
+#[derive(Clone, PartialEq, Eq)]
+pub struct RemoteComputerSensitiveResult {
+    pub media_type: String,
+    pub bytes: Vec<u8>,
+    pub captured_at_ms: i64,
+    pub width: Option<u32>,
+    pub height: Option<u32>,
+}
+
+impl std::fmt::Debug for RemoteComputerSensitiveResult {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("RemoteComputerSensitiveResult")
+            .field("media_type", &self.media_type)
+            .field("bytes", &format_args!("<redacted:{} bytes>", self.bytes.len()))
+            .field("captured_at_ms", &self.captured_at_ms)
+            .field("width", &self.width)
+            .field("height", &self.height)
+            .finish()
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum RemoteComputerNativeOutcome {
     Completed(Value),
+    SensitiveCompleted(RemoteComputerSensitiveResult),
     Failed(Value),
     OutcomeUnknown,
 }
@@ -199,77 +230,6 @@ pub trait RemoteComputerNativeExecutor: Send + Sync {
         arguments: &Value,
         disk_preflight: &Value,
     ) -> RemoteComputerNativeOutcome;
-}
-
-pub struct HostComputerRemoteExecutor {
-    computer: Arc<dyn ComputerToolExecutor>,
-}
-
-impl HostComputerRemoteExecutor {
-    pub fn new(computer: Arc<dyn ComputerToolExecutor>) -> Self {
-        Self { computer }
-    }
-}
-
-impl RemoteComputerNativeExecutor for HostComputerRemoteExecutor {
-    fn execute(
-        &self,
-        operation: &ClaimedRemoteOperation,
-        arguments: &Value,
-        _disk_preflight: &Value,
-    ) -> RemoteComputerNativeOutcome {
-        if operation.tool_name == "Screenshot" {
-            return RemoteComputerNativeOutcome::Failed(json!({
-                "code": "sensitive_result_channel_unavailable",
-                "message": "Remote Screenshot is disabled until the authenticated chunked sensitive-result channel is active.",
-                "retryable": false,
-            }));
-        }
-        if operation.tool_name != "Computer" {
-            return RemoteComputerNativeOutcome::Failed(json!({
-                "code": "unsupported_tool",
-                "message": "This target executor only owns the existing Host Computer tool.",
-                "retryable": false,
-            }));
-        }
-        let action = match parse_remote_computer_action(arguments) {
-            Ok(action) => action,
-            Err(error) => {
-                return RemoteComputerNativeOutcome::Failed(json!({
-                    "code": "invalid_arguments",
-                    "message": error.to_string(),
-                    "retryable": false,
-                }));
-            }
-        };
-        match self.computer.execute(&action, &operation.request_id) {
-            Ok(ComputerUseResult::Success(success)) => RemoteComputerNativeOutcome::Completed(json!({
-                "content": "Computer action ran on the target desktop.",
-                "cursorPosition": success.cursor_position.map(|position| json!({
-                    "x": position.x,
-                    "y": position.y,
-                })),
-                "observedScreenshotAvailableOnTarget": success.screenshot.is_some()
-                    || success.screenshot_path.is_some(),
-                "screenshotTransferred": false,
-            })),
-            Ok(ComputerUseResult::Error(error)) => RemoteComputerNativeOutcome::Failed(json!({
-                "code": "computer_action_failed",
-                "message": error,
-                "retryable": false,
-            })),
-            Ok(ComputerUseResult::Other(state)) => RemoteComputerNativeOutcome::Failed(json!({
-                "code": "computer_action_unconfirmed",
-                "message": state,
-                "retryable": false,
-            })),
-            Err(error) => RemoteComputerNativeOutcome::Failed(json!({
-                "code": "computer_executor_error",
-                "message": error.to_string(),
-                "retryable": false,
-            })),
-        }
-    }
 }
 
 pub trait RemoteComputerToolAuthorizer: Send + Sync {
@@ -350,7 +310,7 @@ impl RemoteComputerToolCatalog for NativeDesktopRemoteToolCatalog {
                 "additionalProperties": false,
                 "required": ["action"],
                 "properties": {
-                    "action": {"type": "string", "enum": ["click", "move", "drag", "type", "key", "scroll", "wait"]},
+                    "action": {"type": "string", "enum": ["screenshot", "click", "move", "drag", "type", "key", "scroll", "wait"]},
                     "x": {"type": "integer"}, "y": {"type": "integer"},
                     "x2": {"type": "integer"}, "y2": {"type": "integer"},
                     "path": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["x", "y"], "properties": {"x": {"type": "integer"}, "y": {"type": "integer"}}}},
@@ -486,10 +446,12 @@ impl RemoteComputerNativeExecutor for NativeDesktopRemoteExecutor {
             Ok(action) => action,
             Err(error) => return RemoteComputerNativeOutcome::Failed(json!({"code":"invalid_arguments","message":error.to_string(),"retryable":false})),
         };
-        if parsed.action == ComputerActionName::Screenshot
-            || parsed.then_actions.iter().any(|action| action.action == ComputerActionName::Screenshot)
-        {
-            return RemoteComputerNativeOutcome::Failed(json!({"code":"sensitive_result_channel_unavailable","message":"Remote screenshot transfer is disabled until the authenticated sensitive-result channel is active.","retryable":false}));
+        if parsed.then_actions.iter().any(|action| action.action == ComputerActionName::Screenshot) {
+            return RemoteComputerNativeOutcome::Failed(json!({"code":"invalid_arguments","message":"Screenshot may only be the primary Computer action.","retryable":false}));
+        }
+        let sensitive_screenshot = parsed.action == ComputerActionName::Screenshot;
+        if sensitive_screenshot && !operation.sensitive_result {
+            return RemoteComputerNativeOutcome::Failed(json!({"code":"sensitive_result_required","message":"Remote screenshot requires a sensitive-result operation.","retryable":false}));
         }
         let actions = match native_computer_actions(&parsed) {
             Ok(actions) => actions,
@@ -503,6 +465,21 @@ impl RemoteComputerNativeExecutor for NativeDesktopRemoteExecutor {
             "remote-human",
         );
         match mahayana_computer::execute_with_lease(&actions, ComputerControlOrigin::RemoteMobile, &lease) {
+            Ok(result) if sensitive_screenshot => {
+                match decode_sensitive_snapshot(
+                    &result.snapshot.data_url,
+                    result.snapshot.captured_at_ms,
+                    result.snapshot.width,
+                    result.snapshot.height,
+                ) {
+                    Ok(sensitive) => RemoteComputerNativeOutcome::SensitiveCompleted(sensitive),
+                    Err(_) => RemoteComputerNativeOutcome::Failed(json!({
+                        "code":"computer_capture_invalid",
+                        "message":"Target screenshot could not be prepared for the authenticated sensitive-result channel.",
+                        "retryable":false
+                    })),
+                }
+            }
             Ok(result) => RemoteComputerNativeOutcome::Completed(json!({
                 "content": "Computer action ran on the authorized target desktop.",
                 "actionsExecuted": result.actions_executed,
@@ -514,6 +491,36 @@ impl RemoteComputerNativeExecutor for NativeDesktopRemoteExecutor {
             Err(error) => RemoteComputerNativeOutcome::Failed(json!({"code":"computer_action_failed","message":error.to_string(),"retryable":false})),
         }
     }
+}
+
+fn decode_sensitive_snapshot(
+    data_url: &str,
+    captured_at_ms: i64,
+    width: Option<u32>,
+    height: Option<u32>,
+) -> Result<RemoteComputerSensitiveResult, RemoteComputerTargetError> {
+    let Some((header, encoded)) = data_url.split_once(',') else {
+        return Err(RemoteComputerTargetError::InvalidResponse);
+    };
+    let media_type = header
+        .strip_prefix("data:")
+        .and_then(|value| value.strip_suffix(";base64"))
+        .filter(|value| matches!(*value, "image/jpeg" | "image/png" | "image/webp"))
+        .ok_or(RemoteComputerTargetError::InvalidResponse)?
+        .to_string();
+    let bytes = base64::engine::general_purpose::STANDARD
+        .decode(encoded)
+        .map_err(|_| RemoteComputerTargetError::InvalidResponse)?;
+    if bytes.is_empty() || bytes.len() > REMOTE_SENSITIVE_RESULT_MAX_BYTES {
+        return Err(RemoteComputerTargetError::InvalidResponse);
+    }
+    Ok(RemoteComputerSensitiveResult {
+        media_type,
+        bytes,
+        captured_at_ms,
+        width,
+        height,
+    })
 }
 
 #[derive(Debug, Deserialize)]
@@ -555,6 +562,36 @@ enum RemoteTargetPrivateRequest {
         grant_generation: i64,
         arguments: Value,
         disk_preflight: Value,
+    },
+    SensitiveResultResume {
+        device_id: String,
+        network_generation: i64,
+        session_id: String,
+        client_id: String,
+        request_id: String,
+        request_sha256: String,
+        grant_generation: i64,
+    },
+    SensitiveResultChunk {
+        device_id: String,
+        network_generation: i64,
+        session_id: String,
+        client_id: String,
+        request_id: String,
+        request_sha256: String,
+        grant_generation: i64,
+        result_ref: String,
+        offset: usize,
+    },
+    SensitiveResultRevoke {
+        device_id: String,
+        network_generation: i64,
+        session_id: String,
+        client_id: String,
+        request_id: String,
+        request_sha256: String,
+        grant_generation: i64,
+        result_ref: String,
     },
 }
 
@@ -637,11 +674,82 @@ fn is_fabushi_tailnet_peer(value: &str) -> bool {
     }
 }
 
+#[derive(Clone)]
+struct SensitiveResultEntry {
+    account_user_id: String,
+    device_id: String,
+    network_generation: i64,
+    session_id: String,
+    client_id: String,
+    request_id: String,
+    request_sha256: String,
+    tool_name: String,
+    grant_generation: i64,
+    result_sha256: String,
+    media_type: String,
+    bytes: Vec<u8>,
+    captured_at_ms: i64,
+    width: Option<u32>,
+    height: Option<u32>,
+    expires_at: i64,
+    next_offset: usize,
+}
+
+#[derive(Default)]
+struct SensitiveResultVault {
+    entries: HashMap<String, SensitiveResultEntry>,
+}
+
+impl SensitiveResultVault {
+    fn purge_expired(&mut self, now: i64) {
+        self.entries.retain(|_, entry| entry.expires_at > now);
+    }
+
+    fn insert(&mut self, result_ref: String, entry: SensitiveResultEntry, now: i64) {
+        self.purge_expired(now);
+        if self.entries.len() >= REMOTE_SENSITIVE_RESULT_MAX_ENTRIES {
+            if let Some(oldest) = self.entries.iter()
+                .min_by_key(|(_, entry)| entry.expires_at)
+                .map(|(key, _)| key.clone())
+            {
+                self.entries.remove(&oldest);
+            }
+        }
+        self.entries.insert(result_ref, entry);
+    }
+}
+
+fn sensitive_chunk_range(
+    entry: &SensitiveResultEntry,
+    offset: usize,
+) -> Result<(usize, bool), RemoteComputerTargetError> {
+    if offset != entry.next_offset || offset >= entry.bytes.len() {
+        return Err(RemoteComputerTargetError::IdentityMismatch);
+    }
+    let end = offset
+        .saturating_add(REMOTE_SENSITIVE_RESULT_CHUNK_BYTES)
+        .min(entry.bytes.len());
+    Ok((end, end == entry.bytes.len()))
+}
+
+#[derive(Debug, Clone)]
+struct SensitiveResultAccess {
+    result_ref: String,
+    result_sha256: String,
+    media_type: String,
+    captured_at_ms: i64,
+    width: Option<u32>,
+    height: Option<u32>,
+    expires_at: i64,
+    next_offset: usize,
+}
+
 pub struct FabushiCoreTargetClient {
     base_url: Url,
     credential_provider: Arc<dyn FabushiCoreCredentialProvider>,
     device_secret_provider: Arc<dyn RemoteComputerDeviceSecretProvider>,
     http: Client,
+    sensitive_results: Mutex<SensitiveResultVault>,
 }
 
 impl std::fmt::Debug for FabushiCoreTargetClient {
@@ -683,6 +791,7 @@ impl FabushiCoreTargetClient {
             credential_provider,
             device_secret_provider,
             http,
+            sensitive_results: Mutex::new(SensitiveResultVault::default()),
         })
     }
 
@@ -914,6 +1023,104 @@ impl FabushiCoreTargetClient {
             .get("revoked")
             .and_then(Value::as_bool)
             .ok_or(RemoteComputerTargetError::InvalidResponse)
+    }
+
+    pub fn validate_sensitive_result_access(
+        &self,
+        operation: &ClaimedRemoteOperation,
+        expected_result_sha256: &str,
+    ) -> Result<(), RemoteComputerTargetError> {
+        let (credential, device_secret) = self.authority()?;
+        let response = self.post_json(
+            &credential,
+            self.endpoint(&[
+                "v1", "computers", &credential.device_id, "sessions", &operation.session_id,
+                "operations", &operation.request_id, "access",
+            ])?,
+            json!({"deviceSecret": device_secret}),
+        )?;
+        if response.get("allowed").and_then(Value::as_bool) != Some(true)
+            || response.get("deviceId").and_then(Value::as_str) != Some(credential.device_id.as_str())
+            || response.get("sessionId").and_then(Value::as_str) != Some(operation.session_id.as_str())
+            || response.get("clientId").and_then(Value::as_str) != Some(operation.client_id.as_str())
+            || response.get("requestId").and_then(Value::as_str) != Some(operation.request_id.as_str())
+            || response.get("toolName").and_then(Value::as_str) != Some(operation.tool_name.as_str())
+            || response.get("requestSha256").and_then(Value::as_str) != Some(operation.request_sha256.as_str())
+            || response.get("grantGeneration").and_then(Value::as_i64) != Some(operation.grant_generation)
+            || response.get("sensitiveResult").and_then(Value::as_bool) != Some(true)
+            || response.get("state").and_then(Value::as_str) != Some("completed")
+            || response.get("resultSha256").and_then(Value::as_str) != Some(expected_result_sha256)
+        {
+            return Err(RemoteComputerTargetError::IdentityMismatch);
+        }
+        Ok(())
+    }
+
+    fn sensitive_entry_matches(
+        entry: &SensitiveResultEntry,
+        current_account_user_id: &str,
+        current_device_id: &str,
+        device_id: &str,
+        network_generation: i64,
+        session_id: &str,
+        client_id: &str,
+        request_id: &str,
+        request_sha256: &str,
+        grant_generation: i64,
+    ) -> bool {
+        entry.account_user_id == current_account_user_id
+            && entry.device_id == current_device_id
+            && entry.device_id == device_id
+            && entry.network_generation == network_generation
+            && entry.session_id == session_id
+            && entry.client_id == client_id
+            && entry.request_id == request_id
+            && entry.request_sha256 == request_sha256
+            && entry.grant_generation == grant_generation
+            && entry.tool_name == "Computer"
+    }
+
+    fn validate_sensitive_entry(
+        &self,
+        entry: &SensitiveResultEntry,
+        device_id: &str,
+        network_generation: i64,
+        session_id: &str,
+        client_id: &str,
+        request_id: &str,
+        request_sha256: &str,
+        grant_generation: i64,
+    ) -> Result<ClaimedRemoteOperation, RemoteComputerTargetError> {
+        let (credential, _) = self.authority()?;
+        let credential_bound = entry.account_user_id == credential.user_id
+            && entry.device_id == credential.device_id;
+        if !credential_bound || !Self::sensitive_entry_matches(
+            entry,
+            &credential.user_id,
+            &credential.device_id,
+            device_id,
+            network_generation,
+            session_id,
+            client_id,
+            request_id,
+            request_sha256,
+            grant_generation,
+        ) || entry.expires_at <= unix_seconds()?
+        {
+            return Err(RemoteComputerTargetError::IdentityMismatch);
+        }
+        self.require_current_network_binding(device_id, network_generation)?;
+        let operation = ClaimedRemoteOperation {
+            request_id: entry.request_id.clone(),
+            session_id: entry.session_id.clone(),
+            client_id: entry.client_id.clone(),
+            tool_name: entry.tool_name.clone(),
+            request_sha256: entry.request_sha256.clone(),
+            grant_generation: entry.grant_generation,
+            sensitive_result: true,
+        };
+        self.validate_sensitive_result_access(&operation, &entry.result_sha256)?;
+        Ok(operation)
     }
 
     pub fn claim_operation(
@@ -1215,6 +1422,14 @@ impl FabushiCoreTargetClient {
                             "networkGeneration": network_generation,
                         }),
                     ),
+                    RemoteComputerNativeOutcome::SensitiveCompleted(result) => self.finish_sensitive_operation(
+                        worker,
+                        stream_id,
+                        &claimed,
+                        &device_id,
+                        network_generation,
+                        result,
+                    ),
                     RemoteComputerNativeOutcome::Completed(result) => self.finish_native_operation(
                         worker,
                         stream_id,
@@ -1235,7 +1450,300 @@ impl FabushiCoreTargetClient {
                     ),
                 }
             }
+            RemoteTargetPrivateRequest::SensitiveResultResume {
+                device_id,
+                network_generation,
+                session_id,
+                client_id,
+                request_id,
+                request_sha256,
+                grant_generation,
+            } => {
+                let access = self.resume_sensitive_result(
+                    &device_id,
+                    network_generation,
+                    &session_id,
+                    &client_id,
+                    &request_id,
+                    &request_sha256,
+                    grant_generation,
+                )?;
+                write_private_frame(worker, stream_id, &json!({
+                    "type": "sensitiveResultReady",
+                    "deviceId": device_id,
+                    "sessionId": session_id,
+                    "clientId": client_id,
+                    "requestId": request_id,
+                    "requestSha256": request_sha256,
+                    "grantGeneration": grant_generation,
+                    "resultRef": access.result_ref,
+                    "resultSha256": access.result_sha256,
+                    "mediaType": access.media_type,
+                    "capturedAtMs": access.captured_at_ms,
+                    "width": access.width,
+                    "height": access.height,
+                    "expiresAt": access.expires_at,
+                    "nextOffset": access.next_offset,
+                    "networkGeneration": network_generation,
+                }))
+            }
+            RemoteTargetPrivateRequest::SensitiveResultChunk {
+                device_id,
+                network_generation,
+                session_id,
+                client_id,
+                request_id,
+                request_sha256,
+                grant_generation,
+                result_ref,
+                offset,
+            } => {
+                let chunk = self.read_sensitive_result_chunk(
+                    &device_id,
+                    network_generation,
+                    &session_id,
+                    &client_id,
+                    &request_id,
+                    &request_sha256,
+                    grant_generation,
+                    &result_ref,
+                    offset,
+                )?;
+                write_private_frame(worker, stream_id, &chunk)
+            }
+            RemoteTargetPrivateRequest::SensitiveResultRevoke {
+                device_id,
+                network_generation,
+                session_id,
+                client_id,
+                request_id,
+                request_sha256,
+                grant_generation,
+                result_ref,
+            } => {
+                self.revoke_sensitive_result(
+                    &device_id,
+                    network_generation,
+                    &session_id,
+                    &client_id,
+                    &request_id,
+                    &request_sha256,
+                    grant_generation,
+                    &result_ref,
+                )?;
+                write_private_frame(worker, stream_id, &json!({
+                    "type": "sensitiveResultRevoked",
+                    "requestId": request_id,
+                    "resultRef": result_ref,
+                }))
+            }
         }
+    }
+
+    fn finish_sensitive_operation(
+        &self,
+        worker: &mut OwnedNetworkWorker,
+        stream_id: &str,
+        claimed: &ClaimedRemoteOperation,
+        device_id: &str,
+        network_generation: i64,
+        result: RemoteComputerSensitiveResult,
+    ) -> Result<(), RemoteComputerTargetError> {
+        if !claimed.sensitive_result || result.bytes.is_empty() || result.bytes.len() > REMOTE_SENSITIVE_RESULT_MAX_BYTES {
+            return Err(RemoteComputerTargetError::InvalidResponse);
+        }
+        let (credential, _) = self.authority()?;
+        if credential.device_id != device_id {
+            return Err(RemoteComputerTargetError::IdentityMismatch);
+        }
+        self.require_current_network_binding(device_id, network_generation)?;
+        let now = unix_seconds()?;
+        let result_sha256 = sha256_hex(&result.bytes);
+        let result_ref = format!("sensitive-result-{}", Uuid::new_v4());
+        let expires_at = now.saturating_add(REMOTE_SENSITIVE_RESULT_TTL_SECONDS);
+        let entry = SensitiveResultEntry {
+            account_user_id: credential.user_id,
+            device_id: device_id.to_string(),
+            network_generation,
+            session_id: claimed.session_id.clone(),
+            client_id: claimed.client_id.clone(),
+            request_id: claimed.request_id.clone(),
+            request_sha256: claimed.request_sha256.clone(),
+            tool_name: claimed.tool_name.clone(),
+            grant_generation: claimed.grant_generation,
+            result_sha256: result_sha256.clone(),
+            media_type: result.media_type,
+            bytes: result.bytes,
+            captured_at_ms: result.captured_at_ms,
+            width: result.width,
+            height: result.height,
+            expires_at,
+            next_offset: 0,
+        };
+        {
+            let mut vault = self.sensitive_results
+                .lock()
+                .map_err(|_| RemoteComputerTargetError::OutcomeUnknown)?;
+            vault.insert(result_ref.clone(), entry, now);
+        }
+        if self.publish_result(claimed, "completed", &result_sha256, None).is_err() {
+            if let Ok(mut vault) = self.sensitive_results.lock() {
+                vault.entries.remove(&result_ref);
+            }
+            return Err(RemoteComputerTargetError::OutcomeUnknown);
+        }
+        write_private_frame(worker, stream_id, &json!({
+            "type": "operationResult",
+            "deviceId": device_id,
+            "sessionId": claimed.session_id,
+            "clientId": claimed.client_id,
+            "requestId": claimed.request_id,
+            "requestSha256": claimed.request_sha256,
+            "grantGeneration": claimed.grant_generation,
+            "resultSha256": result_sha256,
+            "status": "completed",
+            "sensitiveResult": true,
+            "resultRef": result_ref,
+            "expiresAt": expires_at,
+            "networkGeneration": network_generation,
+        }))
+    }
+
+    fn resume_sensitive_result(
+        &self,
+        device_id: &str,
+        network_generation: i64,
+        session_id: &str,
+        client_id: &str,
+        request_id: &str,
+        request_sha256: &str,
+        grant_generation: i64,
+    ) -> Result<SensitiveResultAccess, RemoteComputerTargetError> {
+        let now = unix_seconds()?;
+        let mut vault = self.sensitive_results
+            .lock()
+            .map_err(|_| RemoteComputerTargetError::AuthorityUnavailable)?;
+        vault.purge_expired(now);
+        let (result_ref, entry) = vault.entries.iter()
+            .find(|(_, entry)| {
+                entry.device_id == device_id
+                    && entry.network_generation == network_generation
+                    && entry.session_id == session_id
+                    && entry.client_id == client_id
+                    && entry.request_id == request_id
+                    && entry.request_sha256 == request_sha256
+                    && entry.grant_generation == grant_generation
+            })
+            .map(|(result_ref, entry)| (result_ref.clone(), entry.clone()))
+            .ok_or(RemoteComputerTargetError::IdentityMismatch)?;
+        drop(vault);
+        self.validate_sensitive_entry(
+            &entry, device_id, network_generation, session_id, client_id,
+            request_id, request_sha256, grant_generation,
+        )?;
+        Ok(SensitiveResultAccess {
+            result_ref,
+            result_sha256: entry.result_sha256,
+            media_type: entry.media_type,
+            captured_at_ms: entry.captured_at_ms,
+            width: entry.width,
+            height: entry.height,
+            expires_at: entry.expires_at,
+            next_offset: entry.next_offset,
+        })
+    }
+
+    fn read_sensitive_result_chunk(
+        &self,
+        device_id: &str,
+        network_generation: i64,
+        session_id: &str,
+        client_id: &str,
+        request_id: &str,
+        request_sha256: &str,
+        grant_generation: i64,
+        result_ref: &str,
+        offset: usize,
+    ) -> Result<Value, RemoteComputerTargetError> {
+        let now = unix_seconds()?;
+        let entry = {
+            let mut vault = self.sensitive_results
+                .lock()
+                .map_err(|_| RemoteComputerTargetError::AuthorityUnavailable)?;
+            vault.purge_expired(now);
+            vault.entries.get(result_ref).cloned()
+                .ok_or(RemoteComputerTargetError::IdentityMismatch)?
+        };
+        self.validate_sensitive_entry(
+            &entry, device_id, network_generation, session_id, client_id,
+            request_id, request_sha256, grant_generation,
+        )?;
+        let (end, done) = sensitive_chunk_range(&entry, offset)?;
+        let encoded = base64::engine::general_purpose::STANDARD.encode(&entry.bytes[offset..end]);
+        {
+            let mut vault = self.sensitive_results
+                .lock()
+                .map_err(|_| RemoteComputerTargetError::AuthorityUnavailable)?;
+            let current = vault.entries.get_mut(result_ref)
+                .ok_or(RemoteComputerTargetError::IdentityMismatch)?;
+            if current.next_offset != offset {
+                return Err(RemoteComputerTargetError::IdentityMismatch);
+            }
+            if done {
+                vault.entries.remove(result_ref);
+            } else {
+                current.next_offset = end;
+            }
+        }
+        Ok(json!({
+            "type": "sensitiveResultChunk",
+            "deviceId": device_id,
+            "sessionId": session_id,
+            "clientId": client_id,
+            "requestId": request_id,
+            "requestSha256": request_sha256,
+            "grantGeneration": grant_generation,
+            "resultRef": result_ref,
+            "resultSha256": entry.result_sha256,
+            "mediaType": entry.media_type,
+            "offset": offset,
+            "nextOffset": end,
+            "done": done,
+            "dataBase64": encoded,
+            "expiresAt": entry.expires_at,
+            "networkGeneration": network_generation,
+        }))
+    }
+
+    fn revoke_sensitive_result(
+        &self,
+        device_id: &str,
+        network_generation: i64,
+        session_id: &str,
+        client_id: &str,
+        request_id: &str,
+        request_sha256: &str,
+        grant_generation: i64,
+        result_ref: &str,
+    ) -> Result<(), RemoteComputerTargetError> {
+        let now = unix_seconds()?;
+        let entry = {
+            let mut vault = self.sensitive_results
+                .lock()
+                .map_err(|_| RemoteComputerTargetError::AuthorityUnavailable)?;
+            vault.purge_expired(now);
+            vault.entries.get(result_ref).cloned()
+                .ok_or(RemoteComputerTargetError::IdentityMismatch)?
+        };
+        self.validate_sensitive_entry(
+            &entry, device_id, network_generation, session_id, client_id,
+            request_id, request_sha256, grant_generation,
+        )?;
+        let mut vault = self.sensitive_results
+            .lock()
+            .map_err(|_| RemoteComputerTargetError::AuthorityUnavailable)?;
+        vault.entries.remove(result_ref);
+        Ok(())
     }
 
     fn finish_native_operation(
@@ -1527,4 +2035,101 @@ fn required_text(value: &Value, key: &str) -> Result<String, RemoteComputerTarge
         .filter(|value| !value.is_empty())
         .map(str::to_string)
         .ok_or(RemoteComputerTargetError::InvalidResponse)
+}
+
+
+#[cfg(test)]
+mod sensitive_result_tests {
+    use super::*;
+
+    fn entry(now: i64) -> SensitiveResultEntry {
+        SensitiveResultEntry {
+            account_user_id: "account-a".into(),
+            device_id: "device-a".into(),
+            network_generation: 7,
+            session_id: "session-a".into(),
+            client_id: "client-a".into(),
+            request_id: "request-00000001".into(),
+            request_sha256: "a".repeat(64),
+            tool_name: "Computer".into(),
+            grant_generation: 9,
+            result_sha256: "b".repeat(64),
+            media_type: "image/png".into(),
+            bytes: vec![42; REMOTE_SENSITIVE_RESULT_CHUNK_BYTES + 3],
+            captured_at_ms: 123,
+            width: Some(100),
+            height: Some(80),
+            expires_at: now + 60,
+            next_offset: 0,
+        }
+    }
+
+    #[test]
+    fn sensitive_binding_rejects_wrong_account_device_session_digest_and_generation() {
+        let item = entry(100);
+        assert!(FabushiCoreTargetClient::sensitive_entry_matches(
+            &item, "account-a", "device-a", "device-a", 7, "session-a", "client-a",
+            "request-00000001", &"a".repeat(64), 9,
+        ));
+        assert!(!FabushiCoreTargetClient::sensitive_entry_matches(
+            &item, "account-b", "device-a", "device-a", 7, "session-a", "client-a",
+            "request-00000001", &"a".repeat(64), 9,
+        ));
+        assert!(!FabushiCoreTargetClient::sensitive_entry_matches(
+            &item, "account-a", "device-b", "device-a", 7, "session-a", "client-a",
+            "request-00000001", &"a".repeat(64), 9,
+        ));
+        assert!(!FabushiCoreTargetClient::sensitive_entry_matches(
+            &item, "account-a", "device-a", "device-a", 7, "session-b", "client-a",
+            "request-00000001", &"a".repeat(64), 9,
+        ));
+        assert!(!FabushiCoreTargetClient::sensitive_entry_matches(
+            &item, "account-a", "device-a", "device-a", 7, "session-a", "client-b",
+            "request-00000001", &"a".repeat(64), 9,
+        ));
+        assert!(!FabushiCoreTargetClient::sensitive_entry_matches(
+            &item, "account-a", "device-a", "device-a", 7, "session-a", "client-a",
+            "request-00000001", &"c".repeat(64), 9,
+        ));
+        assert!(!FabushiCoreTargetClient::sensitive_entry_matches(
+            &item, "account-a", "device-a", "device-a", 8, "session-a", "client-a",
+            "request-00000001", &"a".repeat(64), 9,
+        ));
+        assert!(!FabushiCoreTargetClient::sensitive_entry_matches(
+            &item, "account-a", "device-a", "device-a", 7, "session-a", "client-a",
+            "request-00000001", &"a".repeat(64), 10,
+        ));
+    }
+
+    #[test]
+    fn sensitive_chunk_range_is_sequential_and_replay_rejected() {
+        let mut item = entry(100);
+        let (end, done) = sensitive_chunk_range(&item, 0).expect("first chunk");
+        assert_eq!(end, REMOTE_SENSITIVE_RESULT_CHUNK_BYTES);
+        assert!(!done);
+        item.next_offset = end;
+        assert_eq!(
+            sensitive_chunk_range(&item, 0),
+            Err(RemoteComputerTargetError::IdentityMismatch),
+            "old offset must not replay"
+        );
+        let (final_end, final_done) = sensitive_chunk_range(&item, end).expect("final chunk");
+        assert_eq!(final_end, item.bytes.len());
+        assert!(final_done);
+    }
+
+    #[test]
+    fn sensitive_vault_purges_expired_entries_and_is_bounded() {
+        let mut vault = SensitiveResultVault::default();
+        vault.insert("expired".into(), entry(0), 0);
+        vault.purge_expired(61);
+        assert!(vault.entries.is_empty());
+
+        for index in 0..(REMOTE_SENSITIVE_RESULT_MAX_ENTRIES + 2) {
+            let mut item = entry(100);
+            item.expires_at = 200 + index as i64;
+            vault.insert(format!("ref-{index}"), item, 100);
+        }
+        assert!(vault.entries.len() <= REMOTE_SENSITIVE_RESULT_MAX_ENTRIES);
+    }
 }
