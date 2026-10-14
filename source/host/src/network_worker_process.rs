@@ -110,7 +110,9 @@ impl OwnedNetworkWorker {
             }
             let line = match receiver.recv_timeout(remaining.min(Duration::from_millis(100))) {
                 Ok(Ok(line)) => line,
-                Ok(Err(error)) => return Err(format!("could not read network worker status: {error}")),
+                Ok(Err(error)) => {
+                    return Err(format!("could not read network worker status: {error}"));
+                }
                 Err(mpsc::RecvTimeoutError::Timeout) => continue,
                 Err(mpsc::RecvTimeoutError::Disconnected) => {
                     return Err("network worker status pipe closed".into());
