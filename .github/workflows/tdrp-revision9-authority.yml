@@ -132,6 +132,7 @@ jobs:
           node scripts/discover-tdrp-root-tool-authority.mjs
 
       - name: Upload source-authority evidence
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: tdrp-revision9-authority-${{ github.sha }}
