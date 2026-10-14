@@ -242,12 +242,12 @@
     {
       "path": "Telegram/build/docker/centos_env/Dockerfile",
       "dependency": "desktop-app/patches",
-      "commit": "ebcd707f1763651089e3e7220ddd4f97cbcf87e0"
+      "commit": "f7433965ed33996c641a822c78a81eef3526c9e7"
     },
     {
       "path": "snap/snapcraft.yaml",
       "dependency": "desktop-app/patches",
-      "commit": "ebcd707f1763651089e3e7220ddd4f97cbcf87e0"
+      "commit": "f7433965ed33996c641a822c78a81eef3526c9e7"
     }
   ],
   "lfs": {
