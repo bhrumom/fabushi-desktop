@@ -10,16 +10,67 @@ pub const SAND_BROWSER_RESULT_MARKER: &str = "__SAND_BROWSER_RESULT__";
 /// the language required by the box browser/Playwright runtime.
 pub const SAND_BROWSER_DRIVER_SOURCE: &str = r#"
 import { spawn } from "node:child_process";
-import { randomUUID } from "node:crypto";
-import { mkdirSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync } from "node:fs";
+import { createHash, randomUUID } from "node:crypto";
+import { mkdirSync, readFileSync, realpathSync, renameSync, statSync, unlinkSync, writeFileSync } from "node:fs";
+import { isAbsolute, relative } from "node:path";
 
 const RESULT_MARKER = "__SAND_BROWSER_RESULT__";
 const STATE_DIR = "/tmp/.sand-browser";
 const ACTION_TIMEOUT_MS = 10000;
 const NAVIGATE_TIMEOUT_MS = 25000;
+const WORKSPACE_ROOT = "/workspace";
+const DOWNLOAD_DIR = WORKSPACE_ROOT + "/.fabushi-downloads";
+const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
+const MAX_DOWNLOAD_BYTES = 64 * 1024 * 1024;
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function restrictedUploadFile(rawPath) {
+  if (typeof rawPath !== "string" || rawPath.length === 0) {
+    throw new Error("Browser upload requires a filePath.");
+  }
+  const resolved = realpathSync(rawPath);
+  const rel = relative(WORKSPACE_ROOT, resolved);
+  if (rel === ".." || rel.startsWith("../") || isAbsolute(rel)) {
+    throw new Error("Browser upload filePath escapes the authorized /workspace root.");
+  }
+  const info = statSync(resolved);
+  if (!info.isFile()) {
+    throw new Error("Browser upload filePath must resolve to a regular file.");
+  }
+  if (info.size > MAX_UPLOAD_BYTES) {
+    throw new Error("Browser upload file exceeds the 25 MiB limit.");
+  }
+  return { path: resolved, sizeBytes: info.size };
+}
+
+function safeDownloadFilename(value) {
+  const raw = typeof value === "string" ? value : "download";
+  const cleaned = raw.replace(/[^A-Za-z0-9._-]+/g, "_").replace(/^\.+/, "").slice(0, 120);
+  return cleaned.length > 0 ? cleaned : "download";
+}
+
+async function persistTrackedDownload(download) {
+  mkdirSync(DOWNLOAD_DIR, { recursive: true });
+  const downloadId = randomUUID();
+  const path = DOWNLOAD_DIR + "/" + downloadId + "-" + safeDownloadFilename(download.suggestedFilename());
+  await download.saveAs(path);
+  const info = statSync(path);
+  if (!info.isFile() || info.size > MAX_DOWNLOAD_BYTES) {
+    unlinkSync(path);
+    throw new Error("Browser download exceeded the 64 MiB tracked-download limit.");
+  }
+  const bytes = readFileSync(path);
+  const sha256 = createHash("sha256").update(bytes).digest("hex");
+  return {
+    downloadId,
+    path,
+    suggestedFilename: download.suggestedFilename(),
+    sizeBytes: info.size,
+    sha256,
+  };
 }
 
 function statePath(display) {
@@ -373,6 +424,8 @@ const GENERATION_FENCED_OPS = new Set([
   "highlight",
   "cdp",
   "screenshot",
+  "download",
+  "upload_file",
 ]);
 
 function requireExpectedGeneration(request, viewId, generation) {
@@ -676,6 +729,38 @@ const OPS = {
     await element.click(options);
     await page.waitForLoadState("domcontentloaded", { timeout: 3000 }).catch(() => {});
     return { page, viewId, frameName, frameUrl, summary: "Clicked " + (request.element ?? request.ref) };
+  },
+  download: async ({ request, context, state }) => {
+    const { page, viewId } = await resolvePage(request, context, state);
+    const { scope, frameName, frameUrl } = resolveFrameScope(page, request);
+    const element = await refHandle(scope, request.ref);
+    const pending = page.waitForEvent("download", { timeout: NAVIGATE_TIMEOUT_MS });
+    await element.click(clickOptionsFor(request));
+    const download = await pending;
+    const tracked = await persistTrackedDownload(download);
+    return {
+      page,
+      viewId,
+      frameName,
+      frameUrl,
+      summary: "Downloaded " + tracked.suggestedFilename,
+      data: JSON.stringify(tracked),
+    };
+  },
+  upload_file: async ({ request, context, state }) => {
+    const { page, viewId } = await resolvePage(request, context, state);
+    const { scope, frameName, frameUrl } = resolveFrameScope(page, request);
+    const element = await refHandle(scope, request.ref);
+    const upload = restrictedUploadFile(request.filePath);
+    await element.setInputFiles(upload.path);
+    return {
+      page,
+      viewId,
+      frameName,
+      frameUrl,
+      summary: "Uploaded an authorized workspace file",
+      data: JSON.stringify({ sizeBytes: upload.sizeBytes }),
+    };
   },
   mouse_click_xy: async ({ request, context, state }) => {
     const { page, viewId } = await resolvePage(request, context, state);

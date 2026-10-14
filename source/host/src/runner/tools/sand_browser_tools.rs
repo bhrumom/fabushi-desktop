@@ -306,6 +306,7 @@ pub struct BrowserReviewAction {
     pub double_click: Option<bool>,
     pub button: Option<String>,
     pub modifiers: Option<Vec<String>>,
+    pub file_path: Option<String>,
 }
 
 pub fn to_browser_review_action(
@@ -349,6 +350,7 @@ pub fn to_browser_review_action(
         double_click: args.get("doubleClick").and_then(Value::as_bool),
         button: string_field(args, "button"),
         modifiers: string_array(args, "modifiers"),
+        file_path: string_field(args, "filePath"),
     }
 }
 
@@ -384,6 +386,8 @@ pub fn browser_tool_specs() -> Vec<BrowserToolSpec> {
         spec("BROWSER_SNAPSHOT", "browser_snapshot", "snapshot", "Capture a structured snapshot of the current page with ref handles for interactive elements.", &[], &[], false, false),
         spec("BROWSER_CLICK", "browser_click", "click", "Click an element by ref from browser_snapshot.", &["ref"], &[], true, false),
         spec("BROWSER_MOUSE_CLICK_XY", "browser_mouse_click_xy", "mouse_click_xy", "Click at viewport coordinates.", &["x","y"], &[], true, false),
+        spec("BROWSER_DOWNLOAD", "browser_download", "download", "Click an element and track the resulting download into the authorized workspace download area with bounded size and SHA-256 evidence.", &["ref"], &[], true, false),
+        spec("BROWSER_UPLOAD_FILE", "browser_upload_file", "upload_file", "Upload one explicitly authorized regular file from the box /workspace root into a file input.", &["ref","filePath"], &[], false, false),
         spec("BROWSER_TYPE", "browser_type", "type", "Type text into an editable element by ref.", &["ref","text"], &[], true, false),
         spec("BROWSER_FILL", "browser_fill", "fill", "Set the value of an editable element by ref.", &["ref","value"], &[], false, false),
         spec("BROWSER_SELECT_OPTION", "browser_select_option", "select_option", "Select one or more options in a select element by ref.", &["ref","values"], &[], false, false),
@@ -405,6 +409,16 @@ pub fn validate_browser_arguments(
     for key in &schema.required {
         if args.get(*key).is_none_or(|value| value.is_null() || value.as_str() == Some("")) {
             return Err(BrowserDriverError::new(format!("{key} is required")));
+        }
+    }
+    if let Some(value) = args.get("filePath") {
+        let path = value.as_str().ok_or_else(|| {
+            BrowserDriverError::new("filePath must be a non-empty string")
+        })?;
+        if path.is_empty() || path.len() > 4096 || path.chars().any(char::is_control) {
+            return Err(BrowserDriverError::new(
+                "filePath must be a non-empty string of at most 4096 non-control characters",
+            ));
         }
     }
     for key in ["frameName", "frameUrl"] {
@@ -923,6 +937,7 @@ fn browser_tool_definition(spec: &BrowserToolSpec) -> RoutedToolDefinition {
         .or_insert_with(|| json!({"type":"string","minLength":1,"maxLength":240}));
     properties.entry("frameName").or_insert_with(|| json!({"type":"string","minLength":1,"maxLength":240}));
     properties.entry("frameUrl").or_insert_with(|| json!({"type":"string","minLength":1,"maxLength":2048}));
+    properties.insert("filePath".into(), json!({"type":"string","minLength":1,"maxLength":4096}));
     RoutedToolDefinition {
         name: spec.name.into(),
         provider_identifier: "fabushi-runner".into(),
