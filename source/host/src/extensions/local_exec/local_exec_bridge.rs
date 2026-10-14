@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::sync::{
     Arc, Mutex,
+    atomic::{AtomicBool, Ordering},
     mpsc::{self, Receiver, RecvTimeoutError, Sender},
 };
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -488,9 +489,21 @@ impl SandLocalExecBridge {
 
     pub fn request(
         &self,
-        mut frame: Value,
+        frame: Value,
         computer_id: Option<&str>,
     ) -> Result<LocalExecRequest, SandLocalExecError> {
+        self.request_with_before_send(frame, computer_id, |_| Ok(()))
+    }
+
+    pub fn request_with_before_send<F>(
+        &self,
+        mut frame: Value,
+        computer_id: Option<&str>,
+        before_send: F,
+    ) -> Result<LocalExecRequest, SandLocalExecError>
+    where
+        F: FnOnce(LocalExecCancellationHandle) -> Result<(), SandLocalExecError>,
+    {
         let now = (self.now_ms)();
         let request_id = (self.random_id)();
         let (send, receiver) = mpsc::channel();
@@ -511,6 +524,15 @@ impl SandLocalExecBridge {
             ));
         };
         object.insert("requestId".into(), Value::String(request_id.clone()));
+        let cancel_sent = Arc::new(AtomicBool::new(false));
+        if let Err(error) = before_send(LocalExecCancellationHandle {
+            request_id: request_id.clone(),
+            provider_send: provider.send.clone(),
+            cancel_sent: Arc::clone(&cancel_sent),
+        }) {
+            self.finish_request(&request_id);
+            return Err(error);
+        }
         if provider.send.send(frame).is_err() {
             self.finish_request(&request_id);
             return Err(SandLocalExecError::new(SAND_NO_LOCAL_MACHINE_MESSAGE));
@@ -522,6 +544,7 @@ impl SandLocalExecBridge {
             provider_send: provider.send,
             receiver,
             closed: false,
+            cancel_sent,
         })
     }
 
@@ -645,17 +668,50 @@ impl Drop for LocalExecProviderRegistration {
     }
 }
 
+#[derive(Clone)]
+pub struct LocalExecCancellationHandle {
+    request_id: String,
+    provider_send: Sender<Value>,
+    cancel_sent: Arc<AtomicBool>,
+}
+
+impl LocalExecCancellationHandle {
+    pub fn request_id(&self) -> &str {
+        &self.request_id
+    }
+
+    pub fn cancel(&self) -> bool {
+        if self.cancel_sent.swap(true, Ordering::AcqRel) {
+            return false;
+        }
+        let _ = self.provider_send.send(json!({
+            "kind": "cancel",
+            "requestId": self.request_id,
+        }));
+        true
+    }
+}
+
 pub struct LocalExecRequest {
     bridge: SandLocalExecBridge,
     request_id: String,
     provider_send: Sender<Value>,
     receiver: Receiver<Value>,
     closed: bool,
+    cancel_sent: Arc<AtomicBool>,
 }
 
 impl LocalExecRequest {
     pub fn request_id(&self) -> &str {
         &self.request_id
+    }
+
+    pub fn cancellation_handle(&self) -> LocalExecCancellationHandle {
+        LocalExecCancellationHandle {
+            request_id: self.request_id.clone(),
+            provider_send: self.provider_send.clone(),
+            cancel_sent: Arc::clone(&self.cancel_sent),
+        }
     }
 
     pub fn recv_timeout(&self, timeout: Duration) -> Result<Value, RecvTimeoutError> {
@@ -673,10 +729,12 @@ impl LocalExecRequest {
         }
         self.closed = true;
         self.bridge.finish_request(&self.request_id);
-        let _ = self.provider_send.send(json!({
-            "kind": "cancel",
-            "requestId": self.request_id,
-        }));
+        if !self.cancel_sent.swap(true, Ordering::AcqRel) {
+            let _ = self.provider_send.send(json!({
+                "kind": "cancel",
+                "requestId": self.request_id,
+            }));
+        }
     }
 }
 
