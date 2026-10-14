@@ -38,8 +38,10 @@ pub const DEFAULT_FABUSHI_API_BASE_URL: &str = "https://api.ombhrum.com";
 pub enum NetworkEnrollmentError {
     #[error("Fabushi network authority is unavailable.")]
     AuthorityUnavailable,
-    #[error("Fabushi network enrollment request failed.")]
+    #[error("Fabushi network enrollment request transport failed.")]
     RequestFailed,
+    #[error("Fabushi network enrollment request was explicitly rejected.")]
+    RequestRejected,
     #[error("Fabushi network enrollment response failed validation.")]
     InvalidResponse,
     #[error("Fabushi network worker execution outcome is unknown.")]
@@ -307,7 +309,7 @@ impl NetworkEnrollmentOwner {
             .send()
             .map_err(|_| NetworkEnrollmentError::RequestFailed)?;
         if !response.status().is_success() {
-            return Err(NetworkEnrollmentError::RequestFailed);
+            return Err(NetworkEnrollmentError::RequestRejected);
         }
         let bytes = response.bytes().map_err(|_| NetworkEnrollmentError::RequestFailed)?;
         if bytes.len() > MAX_RESPONSE_BYTES {
