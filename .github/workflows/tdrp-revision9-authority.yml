@@ -64,6 +64,24 @@ jobs:
           expected_count="$(node -p "require('./projects/telegram-desktop-rust/inventory/build-time-acquisitions.json').discovery.candidate_lines_total")"
           if [ "$actual_count" != "$expected_count" ]; then
             echo "::error::build-time acquisition candidate drift: discovered $actual_count, inventory expects $expected_count"
+            node - <<'NODE'
+          const fs = require('node:fs');
+          const inventory = require('./projects/telegram-desktop-rust/inventory/build-time-acquisitions.json');
+          const discovered = fs.readFileSync('artifacts/tdrp-authority/build-time-acquisition-candidates.txt', 'utf8').split(/\r?\n/).filter(Boolean);
+          const classified = new Set();
+          for (const item of inventory.immutable_commit_pin_occurrences || []) {
+            classified.add(item.source_path + ':' + item.source_line);
+          }
+          for (const group of inventory.candidate_disposition_groups || []) {
+            for (const line of group.source_lines || []) classified.add(group.source_path + ':' + line);
+          }
+          for (const line of discovered) {
+            const match = line.match(/^(.*):(\d+):/);
+            if (match && !classified.has(match[1] + ':' + match[2])) {
+              console.log('UNCLASSIFIED_ACQUISITION ' + line);
+            }
+          }
+          NODE
             exit 1
           fi
           node - <<'NODE'
@@ -114,6 +132,7 @@ jobs:
           node scripts/discover-tdrp-root-tool-authority.mjs
 
       - name: Upload source-authority evidence
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: tdrp-revision9-authority-${{ github.sha }}
