@@ -3,6 +3,12 @@ name: TDRP Revision 9 source authority
 on:
   push:
     branches: [main]
+  pull_request:
+    paths:
+      - "scripts/discover-tdrp-recursive-*.mjs"
+      - "scripts/validate-tdrp-revision9-authority.mjs"
+      - "projects/telegram-desktop-rust/**"
+      - ".github/workflows/tdrp-revision9-authority.yml"
   workflow_dispatch:
 
 permissions:
