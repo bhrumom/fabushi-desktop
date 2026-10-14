@@ -11,7 +11,12 @@ fn target_reuses_product_native_computer_owner_and_remote_policy() {
         "mahayana_computer::control_policy().remote_control_enabled",
         "mahayana_computer::ComputerControlLeaseRequest::new(",
         "ComputerControlOrigin::RemoteMobile",
-        "mahayana_computer::execute_with_lease(",
+        "mahayana_computer::execute_with_lease_fenced(",
+        "parsed.snapshot_generation",
+        "Err(mahayana_computer::ComputerError::SnapshotStale { expected, current })",
+        "\"code\":\"snapshot_stale\"",
+        "\"expectedSnapshotGeneration\": expected",
+        "\"currentSnapshotGeneration\": current",
         "REMOTE_NATIVE_TOOL_GRANT_MAX_SECONDS",
         "\"screenshotTransferred\": false",
         "\"screenshot\", \"click\"",
@@ -19,6 +24,10 @@ fn target_reuses_product_native_computer_owner_and_remote_policy() {
     ] {
         assert!(TARGET.contains(required), "missing native target invariant: {required}");
     }
+    assert!(
+        !TARGET.contains("mahayana_computer::execute_with_lease("),
+        "remote Computer production target must keep snapshot-generation fencing and must not regress to the unfenced lease API"
+    );
     assert!(TARGET.contains("tool_name != \"Computer\""));
     assert!(!TARGET.contains("AllowAllRemoteComputerToolAuthorizer"));
     assert!(!TARGET.contains("sensitive_result_channel_unavailable"));
