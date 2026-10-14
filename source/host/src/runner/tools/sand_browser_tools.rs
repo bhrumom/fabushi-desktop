@@ -60,6 +60,7 @@ pub struct BrowserDriverResponse {
     pub url: Option<String>,
     pub title: Option<String>,
     pub view_id: Option<String>,
+    pub generation: Option<String>,
     pub screenshot: Option<bool>,
 }
 
@@ -72,6 +73,7 @@ pub fn to_driver_response(parsed: &Map<String, Value>) -> BrowserDriverResponse 
         url: string_field(parsed, "url"),
         title: string_field(parsed, "title"),
         view_id: string_field(parsed, "viewId"),
+        generation: string_field(parsed, "generation"),
         screenshot: parsed.get("screenshot").and_then(Value::as_bool),
     }
 }
@@ -401,6 +403,16 @@ pub fn validate_browser_arguments(
             return Err(BrowserDriverError::new(format!("{key} is required")));
         }
     }
+    if let Some(value) = args.get("expectedGeneration") {
+        let generation = value.as_str().ok_or_else(|| {
+            BrowserDriverError::new("expectedGeneration must be a non-empty string")
+        })?;
+        if generation.is_empty() || generation.len() > 240 || generation.chars().any(char::is_control) {
+            return Err(BrowserDriverError::new(
+                "expectedGeneration must be a non-empty string of at most 240 non-control characters",
+            ));
+        }
+    }
     for (key, values) in &schema.enum_values {
         let value = args
             .get(*key)
@@ -476,6 +488,8 @@ pub struct BrowserDriverOutput {
     pub text: String,
     pub image_b64: Option<String>,
     pub is_error: bool,
+    pub view_id: Option<String>,
+    pub generation: Option<String>,
 }
 
 pub fn render_driver_response(
@@ -490,6 +504,8 @@ pub fn render_driver_response(
                 .unwrap_or_else(|| "The browser action failed.".into()),
             image_b64: None,
             is_error: true,
+            view_id: response.view_id.clone(),
+            generation: response.generation.clone(),
         };
     }
     let mut parts = vec![response.summary.clone().unwrap_or_else(|| "Done.".into())];
@@ -510,6 +526,8 @@ pub fn render_driver_response(
             None
         },
         is_error: false,
+        view_id: response.view_id.clone(),
+        generation: response.generation.clone(),
     }
 }
 
@@ -856,6 +874,8 @@ impl RoutedToolBridge for SandBrowserToolBridge {
             "text": output.text,
             "imageB64": output.image_b64,
             "isError": output.is_error,
+            "viewId": output.view_id,
+            "generation": output.generation,
         }))
     }
 }
@@ -869,6 +889,9 @@ fn browser_tool_definition(spec: &BrowserToolSpec) -> RoutedToolDefinition {
         properties.insert((*key).to_string(), json!({"type":"string","enum":values}));
     }
     properties.entry("viewId").or_insert_with(|| json!({"type":"string"}));
+    properties
+        .entry("expectedGeneration")
+        .or_insert_with(|| json!({"type":"string","minLength":1,"maxLength":240}));
     RoutedToolDefinition {
         name: spec.name.into(),
         provider_identifier: "fabushi-runner".into(),
