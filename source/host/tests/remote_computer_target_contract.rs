@@ -122,13 +122,13 @@ fn target_tool_description_is_service_bound_and_sourced_from_existing_host_bridg
         "RemoteTargetPrivateRequest::DescribeTool",
         "self.grant_service_client(&connection_id, &delegation_id, &request_id, &label)?",
         "catalog.describe_tool(&tool_name)?",
-        ""type": "toolDescription"",
-        ""schemaVersion": schema_version",
+        r#""type": "toolDescription""#,
+        r#""schemaVersion": schema_version"#,
     ] {
         assert!(TARGET_SOURCE.contains(required), "missing target tool projection invariant: {required}");
     }
     assert!(
-        !TARGET_SOURCE.contains(""clientToken": grant.client_token(),\n                        "type": "toolDescription""),
+        !TARGET_SOURCE.contains(r#""clientToken": grant.client_token(),\n                        "type": "toolDescription""#),
         "tool description responses must not expose the service-bound controller credential"
     );
 }
@@ -141,14 +141,14 @@ fn remote_computer_reuses_existing_host_computer_executor_and_fails_closed_for_u
         "computer: Arc<dyn ComputerToolExecutor>",
         "parse_remote_computer_action(arguments)",
         "self.computer.execute(&action, &operation.request_id)",
-        ""sensitive_result_channel_unavailable"",
-        ""screenshotTransferred": false",
-        ""unsupported_tool"",
+        r#""sensitive_result_channel_unavailable""#,
+        r#""screenshotTransferred": false"#,
+        r#""unsupported_tool""#,
     ] {
         assert!(TARGET_SOURCE.contains(required), "missing Host Computer adapter invariant: {required}");
     }
     assert!(
-        TARGET_SOURCE.contains("if operation.tool_name == "Screenshot""),
+        TARGET_SOURCE.contains(r#"if operation.tool_name == "Screenshot""#),
         "remote Screenshot must remain explicitly fenced until the sensitive result channel exists"
     );
 }
