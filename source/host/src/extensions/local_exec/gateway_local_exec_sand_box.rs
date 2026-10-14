@@ -8,6 +8,8 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
+use sha2::{Digest, Sha256};
+use uuid::Uuid;
 
 use super::local_exec_bridge::{
     LocalExecCancellationHandle, LocalExecComputer, SandLocalExecBridge,
@@ -343,6 +345,7 @@ impl GatewayLocalExecSandBox {
         box_path: &str,
         data: &[u8],
     ) -> Result<(), SandLocalExecError> {
+        const CHUNK_BYTES: usize = 256 * 1024;
         if data.len() > self.max_file_bytes {
             return Err(SandLocalExecError::new(local_exec_file_too_large_message(
                 data.len(),
@@ -352,38 +355,61 @@ impl GatewayLocalExecSandBox {
         self.check_blocked()?;
         self.bridge
             .assert_computer_available(self.computer_id.as_deref(), "upload", scope.agent_id.as_deref())?;
-        let approval_id = self
-            .gate
-            .authorize(scope, "write-file", box_path)?;
-        let mut frame = json!({
-            "kind": "upload",
-            "path": box_path,
-            "bytesBase64": BASE64.encode(data),
-        });
-        if let Some(approval_id) = approval_id {
-            frame["approvalId"] = Value::String(approval_id);
-        }
-        let mut request = self.bridge.request(frame, self.computer_id.as_deref())?;
-        loop {
-            let response = request
-                .recv_timeout(Duration::from_secs(10))
-                .map_err(|_| SandLocalExecError::new(SAND_NO_LOCAL_MACHINE_MESSAGE))?;
-            match response.get("kind").and_then(Value::as_str) {
-                Some("file") => {
-                    request.close();
-                    return Ok(());
-                }
-                Some("file-error") => {
-                    let message = response
-                        .get("error")
-                        .and_then(Value::as_str)
-                        .unwrap_or(SAND_NO_LOCAL_MACHINE_MESSAGE);
-                    request.close();
-                    return Err(SandLocalExecError::new(message));
-                }
-                _ => {}
+        let approval_id = self.gate.authorize(scope, "write-file", box_path)?;
+        let transfer_id = Uuid::new_v4().to_string();
+        let digest = Sha256::digest(data);
+        let sha256 = digest.iter().map(|byte| format!("{byte:02x}")).collect::<String>();
+
+        let send_frame = |mut frame: Value| -> Result<(), SandLocalExecError> {
+            if let Some(approval_id) = approval_id.as_ref() {
+                frame["approvalId"] = Value::String(approval_id.clone());
             }
+            let mut request = self.bridge.request(frame, self.computer_id.as_deref())?;
+            loop {
+                let response = request
+                    .recv_timeout(Duration::from_secs(10))
+                    .map_err(|_| SandLocalExecError::new(SAND_NO_LOCAL_MACHINE_MESSAGE))?;
+                match response.get("kind").and_then(Value::as_str) {
+                    Some("file") => {
+                        request.close();
+                        return Ok(());
+                    }
+                    Some("file-error") => {
+                        let message = response
+                            .get("error")
+                            .and_then(Value::as_str)
+                            .unwrap_or(SAND_NO_LOCAL_MACHINE_MESSAGE);
+                        request.close();
+                        return Err(SandLocalExecError::new(message));
+                    }
+                    _ => {}
+                }
+            }
+        };
+
+        send_frame(json!({
+            "kind": "upload-start",
+            "transferId": transfer_id,
+            "path": box_path,
+            "totalBytes": data.len(),
+            "sha256": sha256,
+        }))?;
+
+        for (index, chunk) in data.chunks(CHUNK_BYTES).enumerate() {
+            send_frame(json!({
+                "kind": "upload-chunk",
+                "transferId": transfer_id,
+                "path": box_path,
+                "offset": index * CHUNK_BYTES,
+                "bytesBase64": BASE64.encode(chunk),
+            }))?;
         }
+
+        send_frame(json!({
+            "kind": "upload-commit",
+            "transferId": transfer_id,
+            "path": box_path,
+        }))
     }
 
     pub fn download_file(
